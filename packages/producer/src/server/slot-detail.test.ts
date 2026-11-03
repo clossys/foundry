@@ -15,7 +15,7 @@ const links = { gallery: (agent: string) => `/${agent}`, leaf: (agent: string, s
 function fixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'slot-detail-'))); roots.push(root);
   const agent = join(root, 'clossys/agents/writer');
-  const dir = join(agent, 'passages.test/test-records', id);
+  const dir = join(agent, id);
   mkdirSync(join(dir, 'candidates'), { recursive: true });
   const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#B4-writer-detail', extensions: [], nodes: [
     { id: 'passages.test', label: 'Passages', children: [{ id: 'test-records', label: 'Test records', slots: [id] }] },
@@ -95,7 +95,7 @@ describe('slot details', () => {
     const { root, dir } = fixture();
     const upstream = 'brief.example';
     const agent = join(root, 'clossys/agents/director');
-    const upstreamDir = join(agent, 'examples/group', upstream);
+    const upstreamDir = join(agent, upstream);
     mkdirSync(join(upstreamDir, 'candidates'), { recursive: true });
     const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic#readiness', extensions: [], nodes: [
       { id: 'examples', label: 'Examples', children: [{ id: 'group', label: 'Group', slots: [upstream] }] },
@@ -194,7 +194,7 @@ describe('slot details', () => {
   it('renders an emitted native Publisher page at all six viewport/theme variants without replacing its slot contract', () => {
     const { root } = fixture();
     const id = 'page.example', agent = join(root, 'clossys/agents/publisher');
-    const dir = join(agent, 'web/pages', id);
+    const dir = join(agent, id);
     mkdirSync(join(dir, 'candidates'), { recursive: true });
     const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#publisher-detail', extensions: [], nodes: [{ id: 'web', label: 'Web', children: [{ id: 'pages', label: 'Pages', slots: [id] }] }] };
     writeFileSync(join(agent, 'ia.json'), JSON.stringify(ia));
@@ -270,7 +270,7 @@ describe('slot details', () => {
   it('binds only the validated native Director pin to the existing record mount in all six viewport/theme variants', () => {
     const { root } = fixture();
     const id = 'context.market.size', agent = join(root, 'clossys/agents/director');
-    const dir = join(agent, 'context/market', id);
+    const dir = join(agent, id);
     mkdirSync(join(dir, 'candidates'), { recursive: true });
     const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#director-viewports', extensions: [], nodes: [{ id: 'context', label: 'Context', children: [{ id: 'market', label: 'Market', slots: [id] }] }] };
     writeFileSync(join(agent, 'ia.json'), JSON.stringify(ia));
@@ -328,7 +328,7 @@ describe('slot details', () => {
     const { root } = fixture();
     const consumer = join(root, 'clossys');
     const designer = join(consumer, 'agents/designer');
-    const dir = join(designer, 'sections.test/test-records/sections.example');
+    const dir = join(designer, 'sections.example');
     mkdirSync(join(dir, 'candidates'), { recursive: true });
     const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#B4-designer-viewport', extensions: [],
       nodes: [{ id: 'sections.test', label: 'Sections', children: [{ id: 'test-records', label: 'Test records', slots: ['sections.example'] }] }] };

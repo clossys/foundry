@@ -11,7 +11,7 @@ let root: string;
 let base: string;
 const save = (path: string, value: unknown) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, jsonBytes(value)); };
 const load = (path: string) => JSON.parse(readFileSync(path, "utf8"));
-const dir = (id: string) => join(base, "pages", "examples", id);
+const dir = (id: string) => join(base, id);
 const page = { schema: "clossys.page/1", path: "/", title: "example.title", frame: "frames.plain", sections: [], copy: { title: "strings.example#title" }, meta: { source: { kind: "original", ref: [] } } };
 
 beforeEach(() => {

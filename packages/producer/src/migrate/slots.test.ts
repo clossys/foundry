@@ -386,9 +386,9 @@ describe("clossys migrate slots", () => {
       expect(issueCodes()).toEqual(["orphan"]);
     });
 
-    it("ia-path / slot-missing: a slot moved to the wrong L2", () => {
+    it("slot-missing / orphan: a slot nested under a grouping folder (folders are flat)", () => {
       const entry = pinnedSlot("publisher");
-      const target = join(dirname(dirname(entry.dir)), "wrong-l2", entry.id);
+      const target = join(dirname(entry.dir), "wrong-l2", entry.id);
       mkdirSync(dirname(target), { recursive: true });
       cpSync(entry.dir, target, { recursive: true });
       rmSync(entry.dir, { recursive: true });

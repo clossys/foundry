@@ -13,13 +13,13 @@ async function fixture(t, placement = 'strings.interface/interface-field-labels/
   const root = await mkdtemp(join(tmpdir(), 'studio-copy-'));
   t.after(() => rm(root, { recursive: true, force: true }));
   const writer = join(root, 'agents/writer');
-  const dir = join(writer, placement);
+  const dir = join(writer, slot);
   await mkdir(join(dir, 'candidates'), { recursive: true });
   await writeFile(join(writer, 'ia.json'), JSON.stringify({ nodes: [
     { id: nodeId, children: [{ id: groupId, slots: [slot] }] },
     { id: 'lexicon.voice', children: [{ id: 'voice-tone', slots: ['lexicon.warmth'] }] },
   ] }));
-  const unrelated = join(writer, 'lexicon.voice/voice-tone/lexicon.warmth');
+  const unrelated = join(writer, 'lexicon.warmth');
   await mkdir(unrelated, { recursive: true });
   await writeFile(join(unrelated, 'pin.json'), '{"candidate":"voice-v1.md"}');
   async function candidate(text, name = 'studio-v1.md', pin = true) {
@@ -160,7 +160,7 @@ test('Preview refuses numeric-version ties and compares large versions without r
   await assert.rejects(studioCopyRegistry(f.root, preview), /Ambiguous Studio Writer draft version/);
 });
 
-test('Preview is limited to the four exact approved IA placements', async t => {
+test('Preview is limited to the four approved Studio copy slots, wherever the IA groups them', async t => {
   for (const placement of [
     'strings.metadata/metadata-descriptions/strings.descriptions',
     'strings.interface/interface-statuses/strings.statuses',
@@ -169,14 +169,15 @@ test('Preview is limited to the four exact approved IA placements', async t => {
   ]) {
     const f = await fixture(t, placement);
     await f.candidate('Allowed draft', 'studio-v1.md', false);
+    // Regroup the slot in ia.json only: the flat folder agents/writer/<slot> does not move.
     const ia = JSON.parse(await readFile(join(f.writer, 'ia.json'), 'utf8'));
     const slot = placement.split('/')[2];
-    ia.nodes.push({ id: 'unrelated', children: [{ id: 'wrong-group', slots: [slot] }] });
+    ia.nodes[0].children[0].slots = ia.nodes[0].children[0].slots.filter(id => id !== slot);
+    ia.nodes.push({ id: 'regrouped', children: [{ id: 'other-group', slots: [slot] }] });
     await writeFile(join(f.writer, 'ia.json'), JSON.stringify(ia));
-    const wrong = join(f.writer, 'unrelated/wrong-group', slot);
-    await mkdir(wrong, { recursive: true });
-    await writeFile(join(wrong, 'pin.json'), '{');
-    assert.equal((await studioCopyRegistry(f.root, preview)).entries[0].text, 'Allowed draft');
+    const registry = await studioCopyRegistry(f.root, preview);
+    assert.equal(registry.entries[0].text, 'Allowed draft');
+    assert.equal(JSON.parse(registry.source.reference.slice('clossys/agents/writer#'.length))[0].placement, `regrouped/other-group/${slot}`);
     assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
   }
 });

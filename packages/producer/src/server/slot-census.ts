@@ -26,7 +26,7 @@ function presence(path: string): 'present' | 'missing' | 'error' {
 }
 
 function censusRow(consumer: string, agent: SlotAgent, id: string, position: SlotPosition) {
-  const dir = slotDir(consumer, agent, position, id);
+  const dir = slotDir(consumer, agent, id);
   const folder = presence(dir);
   const row: SlotCensusRow = { id, agent, folder, candidates: [], slot: 'missing', pin: 'missing' };
   try { row.candidates = listCandidateNames(dir); } catch { row.candidatesError = true; }

@@ -45,7 +45,7 @@ async function fixture() {
   for (const id of ["frames.site-shell", slot]) {
     const position = positions.get(id), definition = native.slots.get(id);
     if (!position || !definition) throw new Error(`canonical Designer slot missing: ${id}`);
-    const directory = slotDir(root, "designer", position, id);
+    const directory = slotDir(root, "designer", id);
     mkdirSync(directory, { recursive: true });
     writeFileSync(slotFile(directory), jsonBytes({ schema: SLOT_SCHEMA, id, agent: "designer", ia: position, kind: definition.kind, contract: definition.contract, inputs: definition.declaredInputs, uses: definition.declaredUses }));
   }

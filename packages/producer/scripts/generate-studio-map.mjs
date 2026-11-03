@@ -159,11 +159,14 @@ function pinnedItem(clossysRoot, entries, slot) {
   return { slot, element: item.name, version, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, item.name), module: `../${folder}/${item.name}` };
 }
 
-const STUDIO_COPY_PLACEMENTS = new Set([
-  'strings.metadata/metadata-descriptions/strings.descriptions',
-  'strings.interface/interface-statuses/strings.statuses',
-  'strings.interface/interface-field-labels/strings.common',
-  'strings.interface/interface-field-labels/strings.field-labels',
+// Studio copy slots, by slot id: folders are flat (agents/writer/<slot-id>), so a
+// regroup in ia.json never drops a slot from Studio copy. `placement` in the
+// recorded source is the slot's current IA position (provenance only).
+const STUDIO_COPY_SLOTS = new Set([
+  'strings.descriptions',
+  'strings.statuses',
+  'strings.common',
+  'strings.field-labels',
 ]);
 const candidateVersion = name => /^[a-z0-9][a-z0-9.-]*-v([1-9][0-9]*)\.md$/.exec(name)?.[1];
 
@@ -177,9 +180,9 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
   catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
   const entries = [], revisions = [], sources = [];
   for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
+    if (!STUDIO_COPY_SLOTS.has(slot)) continue;
     const placement = `${node.id}/${group.id}/${slot}`;
-    if (!STUDIO_COPY_PLACEMENTS.has(placement)) continue;
-    const dir = join(root, placement);
+    const dir = join(root, slot);
     let pin, candidate, selectedBy;
     try { pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8')); }
     catch (error) { if (error.code !== 'ENOENT') throw error; }

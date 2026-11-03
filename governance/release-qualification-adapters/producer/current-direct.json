@@ -7,11 +7,11 @@
   },
   "fixtures": [
     "satisfied/clossys/agents/director/ia.json",
-    "satisfied/clossys/agents/director/brief/examples/brief.qualification/slot.json",
-    "satisfied/clossys/agents/director/brief/examples/brief.qualification/candidates/brief-v1.md",
+    "satisfied/clossys/agents/director/brief.qualification/slot.json",
+    "satisfied/clossys/agents/director/brief.qualification/candidates/brief-v1.md",
     "violated/clossys/agents/director/ia.json",
-    "violated/clossys/agents/director/brief/examples/brief.qualification/slot.json",
-    "violated/clossys/agents/director/brief/examples/brief.qualification/candidates/brief-v1.md"
+    "violated/clossys/agents/director/brief.qualification/slot.json",
+    "violated/clossys/agents/director/brief.qualification/candidates/brief-v1.md"
   ],
   "cases": [
     {

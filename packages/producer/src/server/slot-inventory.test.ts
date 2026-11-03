@@ -20,7 +20,7 @@ function fixture() {
   mkdirSync(base, { recursive: true });
   writeFileSync(join(base, "ia.json"), JSON.stringify(ia));
   const dirs = new Map(ids.map(id => {
-    const dir = join(base, "pages/web", id);
+    const dir = join(base, id);
     mkdirSync(join(dir, "candidates"), { recursive: true });
     writeFileSync(join(dir, "slot.json"), JSON.stringify({ schema: "clossys.slot/1", id, agent: "publisher",
       kind: id.startsWith("publication.") ? "publication" : "page", ia: slotPositions("publisher", ia).get(id), contract: {}, inputs: [], uses: [] }));

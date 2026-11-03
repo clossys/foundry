@@ -36,7 +36,7 @@ function fixture() {
   ];
   for (const [agent, id, l1, kind] of slots) {
     const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: l1, label: "Examples", children: [{ id: "examples", label: "Examples", slots: [id] }] }] };
-    const dir = join(consumer, "agents", agent, l1, "examples", id);
+    const dir = join(consumer, "agents", agent, id);
     dirs[agent] = dir;
     mkdirSync(join(dir, "candidates"), { recursive: true });
     save(join(consumer, "agents", agent, "ia.json"), ia);
@@ -142,11 +142,8 @@ describe("default native model enforcement", () => {
     ["uses names an unknown slot", dir => { const slot = JSON.parse(readFileSync(join(dir, "slot.json"), "utf8")); save(join(dir, "slot.json"), { ...slot, uses: ["unknown.synthetic"] }); }, "schema"],
     ["candidate carries status", dir => { const path = join(dir, "candidates", "sample-v1.json"); save(path, { ...JSON.parse(readFileSync(path, "utf8")), status: "active" }); }, "candidate-status"],
     ["slot is at the wrong IA path", dir => {
-      const iaPath = join(dirname(dirname(dirname(dir))), "ia.json");
-      const ia = JSON.parse(readFileSync(iaPath, "utf8"));
-      ia.nodes[0].children.push({ id: "other", label: "Other", slots: [] }); save(iaPath, ia);
-      const parent = join(dirname(dirname(dir)), "other"); mkdirSync(parent);
-      renameSync(dir, join(parent, "components.synthetic"));
+      // Folders are flat (agents/<agent>/<slot-id>): a Designer slot under the Writer agent is misplaced.
+      renameSync(dir, join(dirname(dirname(dir)), "writer", "components.synthetic"));
     }, "ia-path"],
   ];
   it.each(mutations)("mutation proof: %s returns native rc 1", async (_name, mutate, code) => {

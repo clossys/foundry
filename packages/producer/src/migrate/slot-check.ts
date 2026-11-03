@@ -1,7 +1,7 @@
 /**
  * `clossys migrate slots --check` / `--compare` and `clossys check --slots --readiness`.
  *
- * check: folder == IA position, one pin, pin hash matches, a single `source`
+ * check: folder == agents/<agent>/<slot-id> for every IA slot, slot.json ia == ia.json position, one pin, pin hash matches, a single `source`
  * key, no candidate-side status, inputs/uses name real slots, no orphans.
  * compare: re-derive the old projections from the old stores and from the slot
  * model and diff them; 0 diffs is the migration's acceptance.
@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hashFiles, sha256Hex } from "../records/hash.js";
 import {
-  AGENT_FILES, AGENT_KIND, CANDIDATES_DIR, IA_FILE, LEGACY_ENTRIES, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath,
+  AGENT_FILES, AGENT_KIND, CANDIDATES_DIR, IA_FILE, LEGACY_ENTRIES, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath, isNonSlotEntry, slotDir, slotRel,
   parseFrontmatter, sameJson, slotPositions, validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotModelIssue,
 } from "../records/slot-model/index.js";
@@ -37,16 +37,16 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
     if (!found.length) ias.set(agent, ia as IaDoc);
   }
   if (!ias.size && !issues.length) return [{ code: "ia-invalid", path: "agents", message: "no agents/<agent>/ia.json: run clossys migrate slots" }];
-  const known = new Set<string>(), where = new Map<string, { agent: SlotAgent; l1: string; l2: string }>();
-  for (const [agent, ia] of ias) for (const [id, position] of slotPositions(agent, ia)) { known.add(id); where.set(id, { agent, l1: position.l1, l2: position.l2 }); }
+  const known = new Set<string>(), where = new Map<string, SlotAgent>();
+  for (const [agent, ia] of ias) for (const id of slotPositions(agent, ia).keys()) { known.add(id); where.set(id, agent); }
 
   for (const [agent, ia] of ias) {
     const positions = slotPositions(agent, ia);
     const base = agentDir(consumer, agent);
     for (const [id, position] of positions) {
-      const rel = `agents/${agent}/${position.l1}/${position.l2}/${id}`;
-      const dir = join(base, position.l1, position.l2, id);
-      if (!isDir(dir)) { issues.push({ code: "slot-missing", path: rel, message: `IA slot ${id} has no folder at its IA position` }); continue; }
+      const rel = `agents/${agent}/${slotRel(id)}`;
+      const dir = slotDir(consumer, agent, id);
+      if (!isDir(dir)) { issues.push({ code: "slot-missing", path: rel, message: `IA slot ${id} has no folder at agents/${agent}/${id}` }); continue; }
       let doc: SlotDoc | undefined;
       try {
         const value = readJsonFile(join(dir, SLOT_FILE));
@@ -83,22 +83,17 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
       }
       for (const name of list(dir)) if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
     }
-    // Orphans: folders the IA does not place (legacy stores excepted until F8).
-    const l1s = new Map(ia.nodes.map(node => [node.id, new Map(node.children.map(child => [child.id, new Set(child.slots)]))]));
-    for (const l1 of list(base)) {
-      if (l1 === IA_FILE || AGENT_FILES[agent].includes(l1) || LEGACY_ENTRIES[agent].includes(l1)) continue;
-      const l2s = l1s.get(l1);
-      if (!l2s) { issues.push({ code: "orphan", path: `agents/${agent}/${l1}`, message: `${l1} is not an L1 of the ${agent} IA` }); continue; }
-      for (const l2 of list(join(base, l1))) {
-        const slots = l2s.get(l2);
-        if (!slots) { issues.push({ code: "orphan", path: `agents/${agent}/${l1}/${l2}`, message: `${l2} is not an L2 under ${l1}` }); continue; }
-        for (const slot of list(join(base, l1, l2))) {
-          if (slots.has(slot)) continue;
-          const home = where.get(slot);
-          if (home) issues.push({ code: "ia-path", path: `agents/${agent}/${l1}/${l2}/${slot}`, message: `${slot} belongs at agents/${home.agent}/${home.l1}/${home.l2}` });
-          else issues.push({ code: "orphan", path: `agents/${agent}/${l1}/${l2}/${slot}`, message: `${slot} is not a slot of the ${agent} IA` });
-        }
-      }
+    // Orphans: agent-folder entries that are not an IA slot of this agent. The
+    // layout is flat (agents/<agent>/<slot-id>), so grouping never shows up as
+    // folders; `_`-prefixed folders (e.g. `_evidence`) are explicitly non-slot.
+    // Legacy stores are excepted until F8.
+    for (const name of list(base)) {
+      if (name === IA_FILE || AGENT_FILES[agent].includes(name) || LEGACY_ENTRIES[agent].includes(name)) continue;
+      if (isNonSlotEntry(name) && isDir(join(base, name))) continue;
+      if (positions.has(name)) continue;
+      const home = where.get(name);
+      if (home) issues.push({ code: "ia-path", path: `agents/${agent}/${name}`, message: `${name} belongs at agents/${home}/${name}` });
+      else issues.push({ code: "orphan", path: `agents/${agent}/${name}`, message: `${name} is not a slot of the ${agent} IA` });
     }
   }
   return issues.sort((a, b) => cmp(a.path, b.path) || cmp(a.code, b.code));
@@ -256,6 +251,9 @@ function projections(root: string): Map<string, unknown> {
   return out;
 }
 async function comparePublisher(consumer: string, old: OldStores, diff: (message: string) => void): Promise<void> {
+  // Once the legacy Publisher store is removed the slot model is the only source:
+  // there is no old projection left to diff against.
+  if (!old.publisher) return;
   const model = modelSlots(consumer, "publisher");
   for (const [id, version] of Object.entries(old.publisher?.tree.active ?? {})) {
     if (typeof version !== "number" || !model.has(id)) continue;

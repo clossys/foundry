@@ -1,11 +1,14 @@
 /**
  * The slot model (SLOT-MODEL §1): one on-disk layout for all four agents.
  *
- *   <consumer>/agents/<agent>/ia.json                          IA tree as data, every slot in IA order
- *   <consumer>/agents/<agent>/<L1>/<L2>/<slot>/slot.json       generated from the IA
- *   <consumer>/agents/<agent>/<L1>/<L2>/<slot>/candidates/<name>-v<n>.<ext>
- *   <consumer>/agents/<agent>/<L1>/<L2>/<slot>/pin.json        absent = no pin
+ *   <consumer>/agents/<agent>/ia.json                   IA tree as data, every slot in IA order
+ *   <consumer>/agents/<agent>/<slot>/slot.json          generated from the IA
+ *   <consumer>/agents/<agent>/<slot>/candidates/<name>-v<n>.<ext>
+ *   <consumer>/agents/<agent>/<slot>/pin.json           absent = no pin
+ *   <consumer>/agents/<agent>/_<name>/                  `_`-prefixed: never a slot (e.g. `_evidence`)
  *
+ * Slot folders are flat: grouping (L1/L2) lives only in ia.json and slot.json
+ * `ia`, so the IA can be regrouped without moving a file.
  * Nothing about pinning lives in a candidate. Provenance is one `source` key.
  */
 export const SLOT_AGENTS = ["director", "designer", "writer", "publisher"] as const;

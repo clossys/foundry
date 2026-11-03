@@ -14,7 +14,7 @@ import { readIa } from "../records/slots.js";
 import {
   AGENT_KIND, DIRECTOR_PINNED_BY, IA_SCHEMA, MIGRATION_PINNED_BY, PAGE_SCHEMA, PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_SCHEMA,
   candidateName, deriveRefs, designerIa, directorIa, feedsIndex, iaPath, jsonBytes, serializeFrontmatter, slotPositions,
-  slotRel, toSlotId, validateSlotDoc, withExtensions, writerIa,
+  SLOT_FILE, slotDir, slotRel, toSlotId, validateSlotDoc, withExtensions, writerIa,
   type FoundryIa, type FoundrySlot, type IaDoc, type IaLeafGroup, type IaNode, type PinDoc, type RawRefs, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "../records/slot-model/index.js";
 import { agentModule } from "../server/cells.js";
@@ -304,7 +304,17 @@ function planPublisher(consumer: string, store: OldStore | null): AgentPlan {
   if (!raw || !Array.isArray(raw.tree)) {
     let ia: IaDoc = { schema: IA_SCHEMA, source: "consumer#agents/publisher/tree.json", extensions: [], nodes: [] };
     try { ia = readJsonFile(iaPath(consumer, "publisher")) as IaDoc; } catch { /* no Publisher store yet */ }
-    return emptyPlan(null, "publisher", ia);
+    const plan = emptyPlan(null, "publisher", ia);
+    // No legacy tree (removed once the slot model is authoritative): the slot
+    // model is the only Publisher source, so keep each authored slot.json
+    // declaration instead of regenerating a default page slot.
+    for (const [id, slot] of plan.slots) {
+      let doc: SlotDoc;
+      try { doc = readJsonFile(join(slotDir(consumer, "publisher", id), SLOT_FILE)) as SlotDoc; } catch { continue; }
+      if (validateSlotDoc(doc).length || doc.id !== id || doc.agent !== "publisher" || !AGENT_KIND.publisher.includes(doc.kind)) continue;
+      plan.slots.set(id, { ...slot, kind: doc.kind, contract: doc.contract, raw: { inputs: [...doc.inputs], uses: [...doc.uses] } });
+    }
+    return plan;
   }
   const publications = new Map<string, Record<string, any>>((Array.isArray(raw.meta?.publications) ? raw.meta.publications : []).map((pub: Record<string, any>) => [pub.id, pub]));
   const nodes: IaNode[] = [];
@@ -427,7 +437,7 @@ export async function planMigration(consumer: string): Promise<MigrationPlan> {
       const derived = deriveRefs(agent, slot.kind, id, slot.raw as RawRefs, ctx);
       dropped += derived.dropped.length;
       const doc: SlotDoc = { schema: SLOT_SCHEMA, id, agent, ia: position, kind: slot.kind, contract: slot.contract, inputs: derived.inputs, uses: derived.uses };
-      const rel = `agents/${agent}/${slotRel(position, id)}`;
+      const rel = `agents/${agent}/${slotRel(id)}`;
       files.set(`${rel}/slot.json`, jsonBytes({ ...doc, ...existingWiring(consumer, rel, doc) }));
       for (const candidate of slot.candidates) files.set(`${rel}/candidates/${candidate.name}`, candidate.bytes);
       if (slot.pin) {

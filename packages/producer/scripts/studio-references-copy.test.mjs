@@ -24,7 +24,7 @@ test('References copy resolves all existing labels as draft and its normal pinne
     const id = `studio.references-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;
     assert.deepEqual(registry.entries.find(entry => entry.id === id), { id, text, context: 'lib/references-copy.ts, sections/studio-references/index.tsx', status: 'draft' });
   }
-  const candidateDir = join(root, 'clossys/agents/designer/sections.extensions/extensions/sections.studio.references');
+  const candidateDir = join(root, 'clossys/agents/designer/sections.studio.references');
   const pin = JSON.parse(await readFile(join(candidateDir, 'pin.json'), 'utf8'));
   const bytes = await readFile(join(candidateDir, 'candidates', pin.candidate), 'utf8');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), pin.sha256);

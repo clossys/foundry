@@ -19,12 +19,12 @@ Each Designer slot is one folder in the slot model, placed by the Designer IA:
 
 ```
 clossys/agents/designer/ia.json                                 the IA: L1/L2 groups and their slots
-clossys/agents/designer/<L1>/<L2>/<slot>/slot.json              clossys.slot/1 (kind: element)
-clossys/agents/designer/<L1>/<L2>/<slot>/candidates/<element>-v<N>.json
+clossys/agents/designer/<slot>/slot.json                        clossys.slot/1 (kind: element)
+clossys/agents/designer/<slot>/candidates/<element>-v<N>.json
                                                                 one option: a shadcn registry item
                                                                 (files[] with content; meta.source,
                                                                 meta.element, meta.preview)
-clossys/agents/designer/<L1>/<L2>/<slot>/pin.json               { candidate, sha256, pinnedBy, at }
+clossys/agents/designer/<slot>/pin.json                         { candidate, sha256, pinnedBy, at }
 ```
 
 Slot contracts ship in the installed Designer package at
@@ -117,7 +117,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
 7. **Check and commit.**
    ```sh
    npx clossys check --suites
-   git add clossys/agents/designer/<L1>/<L2>/<slot>   # consumer files, not shipped
+   git add clossys/agents/designer/<slot>   # consumer files, not shipped
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
 

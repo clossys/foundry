@@ -9,7 +9,7 @@ import { assertPreviewContext, draftStudioItems, pinnedBindings, previewArgument
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const slot = 'sections.studio.options', element = 'example', at = '2026-10-31T12:00:00Z';
-const slotPath = `agents/designer/sections.extensions/extensions/${slot}`;
+const slotPath = `agents/designer/${slot}`;
 const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 async function fixture(t) {
   const root = await realpath(await mkdtemp(join(tmpdir(), 'studio-native-draft-')));

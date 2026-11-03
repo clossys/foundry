@@ -24,7 +24,7 @@ test('Checks copy resolves all existing labels as draft and its normal pinned pa
     const id = `studio.checks-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;
     assert.deepEqual(registry.entries.find(entry => entry.id === id), { id, text, context: 'lib/checks-copy.ts, sections/studio-checks/index.tsx', status: 'draft' });
   }
-  const candidateDir = join(root, 'clossys/agents/designer/sections.extensions/extensions/sections.studio.checks');
+  const candidateDir = join(root, 'clossys/agents/designer/sections.studio.checks');
   const pin = JSON.parse(await readFile(join(candidateDir, 'pin.json'), 'utf8'));
   const bytes = await readFile(join(candidateDir, 'candidates', pin.candidate), 'utf8');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), pin.sha256);

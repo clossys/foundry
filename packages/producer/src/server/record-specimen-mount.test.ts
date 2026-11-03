@@ -20,7 +20,7 @@ it('dispatches record specimens through the running Producer host and exposes on
     ['director', 'context.market.size', '## Direction\nMeasure demand\n## Because\nEvidence\n## Watch\nSignals'],
     ['writer', 'strings.label', '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script>'],
   ] as const) {
-    const dir = join(root, 'clossys', 'agents', agent, 'one/two', id);
+    const dir = join(root, 'clossys', 'agents', agent, id);
     await mkdir(join(dir, 'candidates'), { recursive: true });
     const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#record-mount', extensions: [], nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: [id] }] }] };
     await writeFile(join(root, 'clossys', 'agents', agent, 'ia.json'), JSON.stringify(ia));

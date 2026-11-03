@@ -1,6 +1,6 @@
 /**
  * PROOF-2 Designer library projection: the Studio gallery (`/designer`) and leaf detail
- * (`/designer/<leaf>`) read the Designer slot model only (`agents/designer/<L1>/<L2>/<slot>/`:
+ * (`/designer/<leaf>`) read the Designer slot model only (`agents/designer/<slot>/`:
  * `candidates/*.json` plus `pin.json`), grouped by the Designer IA.
  *
  * REPLACE: this module and its two API routes are the minimal route table PROOF-2 allows

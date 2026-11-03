@@ -94,7 +94,8 @@ function candidate(value: JsonObject, kind: "page" | "publication", path: string
 }
 async function pinned(root: string, index: Map<string, Position>, id: string, kind: "page" | "publication") {
   const position = index.get(id); if (!position) fail(id, "Slot is not declared in Publisher IA");
-  const dir = join(position.l1, position.l2, id), slotPath = join(dir, "slot.json");
+  // Flat layout: agents/publisher/<slot-id>; grouping lives only in ia.json + slot.json ia.
+  const dir = id, slotPath = join(dir, "slot.json");
   const slot = parse(await bytes(root, slotPath), slotPath);
   keys(slot, ["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses"], slotPath);
   if (slot.schema !== "clossys.slot/1" || slot.id !== id || slot.agent !== "publisher" || slot.kind !== kind || !object(slot.ia)

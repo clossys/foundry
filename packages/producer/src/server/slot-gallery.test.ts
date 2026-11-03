@@ -27,7 +27,7 @@ function writerRecordFixture(body: string, locales: readonly string[] = ['en']) 
   const id = 'strings.label', candidate = 'record-v1.md';
   const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#native-writer-projection', extensions: [],
     nodes: [{ id: 'strings.copy', label: 'Copy', children: [{ id: 'copy', label: 'Labels', slots: [id] }] }] };
-  const dir = join(root, 'agents/writer/strings.copy/copy', id);
+  const dir = join(root, 'agents/writer', id);
   mkdirSync(join(dir, 'candidates'), { recursive: true });
   writeFileSync(join(root, 'agents/writer/ia.json'), JSON.stringify(ia));
   writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'writer',
@@ -62,7 +62,7 @@ describe('IA-first gallery data', () => {
           : kind === 'page' ? { schema: malformed ? 'invalid' : 'clossys.page/1', title: 'Example', path: '/', frame: null, sections: [], copy: {}, meta }
             : { schema: malformed ? 'invalid' : 'clossys.publication/1', format: 'website', entryOrder: [], meta });
       };
-      const dirs = wanted.map(id => join(root, 'agents', agent, 'one/two', id));
+      const dirs = wanted.map(id => join(root, 'agents', agent, id));
       const docs = wanted.map(id => ({ schema: 'clossys.slot/1', id, agent, ia: slotPositions(agent, ia).get(id)!, kind, contract: {}, inputs: [], uses: [] } satisfies SlotDoc));
       const pin = (bytes: string) => ({ candidate, sha256: sha256Hex(bytes), pinnedBy: 'owner:synthetic-test-only:gallery-validation', at: '2026-01-01T00:00:00Z' });
       const reset = () => wanted.forEach((id, i) => {
@@ -204,7 +204,7 @@ describe('IA-first gallery data', () => {
       mkdirSync(join(root, 'agents/designer'), { recursive: true });
       writeFileSync(join(root, 'agents/designer/ia.json'), JSON.stringify(ia));
       for (const id of wanted.slice(0, -1)) {
-        const dir = join(root, 'agents/designer/components/controls', id);
+        const dir = join(root, 'agents/designer', id);
         mkdirSync(join(dir, 'candidates'), { recursive: true });
         writeFileSync(join(dir, 'slot.json'), JSON.stringify({
           schema: 'clossys.slot/1', id, agent: 'designer', ia: slotPositions('designer', ia).get(id)!,
@@ -242,11 +242,11 @@ describe('IA-first gallery data', () => {
       mkdirSync(join(root, 'agents/designer'), { recursive: true });
       writeFileSync(join(root, 'agents/designer/ia.json'), JSON.stringify(ia));
       for (const id of wanted) {
-        const dir = join(root, 'agents/designer/components/controls', id);
+        const dir = join(root, 'agents/designer', id);
         mkdirSync(join(dir, 'candidates'), { recursive: true });
         writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'designer', ia: slotPositions('designer', ia).get(id)!, kind: 'element', contract: {}, inputs: [], uses: [] } satisfies SlotDoc));
       }
-      const dir = join(root, 'agents/designer/components/controls/components.example');
+      const dir = join(root, 'agents/designer/components.example');
       const content = JSON.stringify({ name: 'example', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
       writeFileSync(join(dir, 'candidates/example-v1.json'), content);
       writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('return null;', 'return <div />;'));
@@ -302,7 +302,7 @@ describe('IA-first gallery data', () => {
   it('keeps Writer slots in IA order but advertises a record iframe only for the intact pin', () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-slots-')));
     try {
-      const dir = join(root, 'agents/writer/strings.copy/copy/strings.label');
+      const dir = join(root, 'agents/writer/strings.label');
       mkdirSync(dir, { recursive: true });
       const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#gallery-pin', extensions: [], nodes: [{ id: 'strings.copy', label: 'Copy', children: [{ id: 'copy', label: 'Labels', slots: ['strings.label'] }] }] };
       writeFileSync(join(root, 'agents/writer/ia.json'), JSON.stringify(ia));
@@ -359,7 +359,7 @@ describe('IA-first gallery data', () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'director-specimen-pin-')));
     try {
       const id = 'context.market.size', name = 'record-v1.md';
-      const dir = join(root, `agents/director/one/two/${id}`);
+      const dir = join(root, `agents/director/${id}`);
       mkdirSync(join(dir, 'candidates'), { recursive: true });
       const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#director-pin', extensions: [], nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: [id] }] }] };
       writeFileSync(join(root, 'agents/director/ia.json'), JSON.stringify(ia));
@@ -417,7 +417,7 @@ describe('IA-first gallery data', () => {
         ['director', 'context.market.size', '## Direction\nMeasure demand\n## Because\nEvidence\n## Watch\nSignals'],
         ['writer', 'strings.label', '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script>'],
       ] as const) {
-        const dir = join(root, `agents/${agent}/one/two/${id}`);
+        const dir = join(root, `agents/${agent}/${id}`);
         mkdirSync(join(dir, 'candidates'), { recursive: true });
         const ia: IaDoc = { schema: 'clossys.ia/1', source: `synthetic-test-only#${agent}-specimen`, extensions: [], nodes: [{ id: 'one', label: 'One', children: [{ id: 'two', label: 'Two', slots: [id] }] }] };
         writeFileSync(join(root, `agents/${agent}/ia.json`), JSON.stringify(ia));

@@ -32,7 +32,7 @@ async function fixture(t) {
   const ia = JSON.parse(await readFile(join(designer, 'ia.json'), 'utf8'));
   await cp(join(designer, 'ia.json'), join(copy, 'ia.json'));
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
-    await cp(join(designer, node.id, child.id, slot), join(copy, node.id, child.id, slot), { recursive: true });
+    await cp(join(designer, slot), join(copy, slot), { recursive: true });
   }
   return { clossysRoot, outputDir, appDir: join(dir, 'app'), installOut: join(dir, 'install'), publisherRoot: join(clossysRoot, 'agents', 'publisher') };
 }
@@ -46,7 +46,7 @@ const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.cl
 async function designerSlot(options, id) {
   const root = join(options.clossysRoot, 'agents/designer');
   const ia = JSON.parse(await readFile(join(root, 'ia.json'), 'utf8'));
-  for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) return join(root, node.id, child.id, id, 'slot.json');
+  for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) return join(root, id, 'slot.json');
   assert.fail(`Missing Designer slot ${id}`);
 }
 
@@ -106,7 +106,7 @@ async function writerCallerFixture(t) {
   const options = await fixture(t);
   const writer = join(options.clossysRoot, 'agents/writer');
   const placement = 'strings.interface/interface-field-labels/strings.common';
-  const dir = join(writer, placement);
+  const dir = join(writer, 'strings.common');
   await mkdir(join(dir, 'candidates'), { recursive: true });
   // A valid Writer IA: the Studio install lists the Writer record store's leaves.
   await writeFile(join(writer, 'ia.json'), JSON.stringify({ schema: 'clossys.ia/1', source: '@clossys/writer#test', extensions: [], nodes: [
@@ -178,7 +178,7 @@ test('Studio Writer caller refuses malformed present pins and wrong hashes in de
 async function selected(options, id) {
   const ia = JSON.parse(await readFile(join(options.publisherRoot, 'ia.json'), 'utf8'));
   for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) {
-    const dir = join(options.publisherRoot, node.id, child.id, id);
+    const dir = join(options.publisherRoot, id);
     const pinPath = join(dir, 'pin.json'), pin = JSON.parse(await readFile(pinPath, 'utf8'));
     const path = join(dir, 'candidates', pin.candidate);
     return { path, pinPath, pin, record: JSON.parse(await readFile(path, 'utf8')) };
@@ -208,7 +208,7 @@ async function nativeFixture(t) {
 }
 
 const PAGE_NAMES = ['home', 'director', 'designer', 'writer', 'publisher'];
-const pageSlot = name => join('studio', name === 'home' ? 'studio.pages' : 'agents', `page.${name}`);
+const pageSlot = name => `page.${name}`;
 const withoutCopyLink = route => {
   const next = structuredClone(route);
   for (const manifest of [next.manifest, ...(next.leaf ? [next.leaf.manifest] : [])]) {
@@ -381,7 +381,7 @@ async function pinnedDesignerSlot(options, id) {
   const copy = join(options.clossysRoot, 'agents', 'designer');
   const ia = JSON.parse(await readFile(join(copy, 'ia.json'), 'utf8'));
   for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) {
-    const dir = join(copy, node.id, child.id, id), pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8'));
+    const dir = join(copy, id), pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8'));
     return { dir, pin, candidate: join(dir, 'candidates', pin.candidate) };
   }
   throw new Error(`no Designer slot ${id}`);

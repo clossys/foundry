@@ -18,7 +18,7 @@ function workspace(): string {
   put(join(lib, 'agents/designer/globals.css'), '@import "tailwindcss";\n@theme inline {\n  --font-heading: var(--font-display);\n}\n:root { --font-display: "Hand Picked"; }\n');
   const slot = 'themes.font-heading';
   const ia: IaDoc = { schema: 'clossys.ia/1', source: 'consumer#fixture', extensions: [], nodes: [{ id: 'themes.typography', label: 'Typography', children: [{ id: 'fonts', label: 'Fonts', slots: [slot] }] }] };
-  const position = slotPositions('designer', ia).get(slot)!, dir = slotDir(lib, 'designer', position, slot);
+  const position = slotPositions('designer', ia).get(slot)!, dir = slotDir(lib, 'designer', slot);
   put(iaPath(lib, 'designer'), jsonBytes(ia));
   put(slotFile(dir), jsonBytes({ schema: 'clossys.slot/1', id: slot, agent: 'designer', kind: 'element', ia: position, contract: {}, inputs: [], uses: [] }));
   const candidate = jsonBytes({

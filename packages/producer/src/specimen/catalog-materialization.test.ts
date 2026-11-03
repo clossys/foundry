@@ -25,7 +25,7 @@ async function fixture() {
   mkdirSync(join(root, "agents/designer"), { recursive: true });
   writeFileSync(join(root, "agents/designer/ia.json"), jsonBytes(ia));
   for (const id of ["frames.site-shell", "sections.hero"] as const) {
-    const position = slotPositions("designer", ia).get(id)!, dir = slotDir(root, "designer", position, id);
+    const position = slotPositions("designer", ia).get(id)!, dir = slotDir(root, "designer", id);
     mkdirSync(dir, { recursive: true });
     writeFileSync(slotFile(dir), jsonBytes({ schema: SLOT_SCHEMA, id, agent: "designer", ia: position, kind: "element", contract: build.slots.find(slot => slot.id === id)!.contract, inputs: [], uses: [] }));
   }

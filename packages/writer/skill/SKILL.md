@@ -19,10 +19,10 @@ Each Writer slot is one folder in the slot model, placed by the Writer IA:
 
 ```
 clossys/agents/writer/ia.json                                  the IA: L1/L2 groups and their slots
-clossys/agents/writer/<L1>/<L2>/<slot>/slot.json               clossys.slot/1 (kind: strings)
-clossys/agents/writer/<L1>/<L2>/<slot>/candidates/<name>-v<N>.md
+clossys/agents/writer/<slot>/slot.json                         clossys.slot/1 (kind: strings)
+clossys/agents/writer/<slot>/candidates/<name>-v<N>.md
                                                                one option: the copy records, per locale
-clossys/agents/writer/<L1>/<L2>/<slot>/pin.json                { candidate, sha256, pinnedBy, at }; the owner writes it
+clossys/agents/writer/<slot>/pin.json                          { candidate, sha256, pinnedBy, at }; the owner writes it
 ```
 
 The slot's leaf rule (length, kind) is in `slot.json` `contract`, copied from
@@ -57,7 +57,7 @@ in a candidate.
 ## Loop (one slot)
 
 1. **List the copy keys.** Read the Designer candidates of every frame and
-   section the page uses (`clossys/agents/designer/<L1>/<L2>/<slot>/candidates/`);
+   section the page uses (`clossys/agents/designer/<slot>/candidates/`);
    each one's `meta.element.reads.copyKeys` lists the copy it renders. Work from
    the candidates; you do not wait for Designer pins. The Publisher page
    candidates (`clossys/agents/publisher/.../candidates/`) show which pages
@@ -92,7 +92,7 @@ in a candidate.
    write `pin.json`; the owner pins.
 7. **Commit** the candidates:
    ```sh
-   git add clossys/agents/writer/<L1>/<L2>/<slot>   # consumer files, not shipped
+   git add clossys/agents/writer/<slot>   # consumer files, not shipped
    git commit -m "writer: <slot> <name> v<N>"
    ```
 

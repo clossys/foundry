@@ -8,7 +8,7 @@ import { slotInstallInputs } from "./slot-install-inputs.js";
 
 let root: string;
 const ia: IaDoc = { schema: "clossys.ia/1", source: "consumer#fixture", extensions: [], nodes: [{ id: "components.content", label: "Content", children: [{ id: "cards", label: "Cards", slots: ["components.card", "components.button", "components.empty"] }] }] };
-const dir = (slot = "components.card") => slotDir(root, "designer", slotPositions("designer", ia).get(slot)!, slot);
+const dir = (slot = "components.card") => slotDir(root, "designer", slot);
 const put = (path: string, bytes: string) => { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, bytes); };
 function candidate(element = "card", version = 1, slot = "components.card", content = "export default function Card() { return null; }") {
   const bytes = jsonBytes({ name: element, type: "registry:component", files: [{ path: `${element}.tsx`, type: "registry:component", content }], meta: { source: { kind: "original", ref: [] }, element: { id: element, slot } } });

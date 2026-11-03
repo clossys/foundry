@@ -15,7 +15,7 @@ const roots: string[] = [];
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
 async function root() { const path = await realpath(await mkdtemp(join(tmpdir(), "publisher-pinned-"))); roots.push(path); return path; }
-const dir = (path: string, id: string) => join(path, "catalog", "bindings", id);
+const dir = (path: string, id: string) => join(path, id);
 const candidatePath = (path: string, id: string) => join(dir(path, id), "candidates", "record-v1.json");
 async function put(path: string, value: unknown) { await writeFile(path, json(value)); }
 async function edit(path: string, change: (value: JsonObject) => void) { const value = JSON.parse(await readFile(path, "utf8")); change(value); await put(path, value); }
@@ -113,7 +113,7 @@ it("NATIVE reads the repository's actual selected Studio publication and page pa
   const path = fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url));
   const ia = JSON.parse(await readFile(join(path, "ia.json"), "utf8"));
   const locations = new Map<string, string>();
-  for (const node of ia.nodes) for (const child of node.children) for (const id of child.slots) locations.set(id, join(path, node.id, child.id, id));
+  for (const node of ia.nodes) for (const child of node.children) for (const id of child.slots) locations.set(id, join(path, id));
   const selected = async (id: string) => {
     const folder = locations.get(id)!, pin = JSON.parse(await readFile(join(folder, "pin.json"), "utf8"));
     return JSON.parse(await readFile(join(folder, "candidates", pin.candidate), "utf8"));

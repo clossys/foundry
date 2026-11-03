@@ -23,7 +23,7 @@ const body = () => `## en\n### example.title\n<!-- ${JSON.stringify({ id: "title
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "native-writer-reader-")));
   writer = join(root, "clossys", "agents", "writer");
-  dir = join(writer, "examples", "group", id);
+  dir = join(writer, id);
   mkdirSync(join(dir, "candidates"), { recursive: true });
   const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "examples", label: "Examples", children: [{ id: "group", label: "Group", slots: [id] }] }] };
   save(join(writer, "ia.json"), ia);

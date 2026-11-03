@@ -76,7 +76,7 @@ function locate(consumer: string, agent: SlotAgent, id: string): { position: Slo
   const ia = readIa(consumer, agent);
   const position = ia ? slotPositions(agent, ia).get(id) : undefined;
   if (!position) throw new Error(`${agent} slot ${id} is not in ia.json`);
-  return { position, dir: slotDir(consumer, agent, position, id) };
+  return { position, dir: slotDir(consumer, agent, id) };
 }
 
 /** Every IA slot of one agent, in IA order; empty slots included. */
@@ -84,7 +84,7 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
   const ia = readIa(consumer, agent);
   if (!ia) return [];
   return [...slotPositions(agent, ia)].map(([id, position]) => {
-    const dir = slotDir(consumer, agent, position, id);
+    const dir = slotDir(consumer, agent, id);
     return { id, agent, position, dir, candidates: listCandidateNames(dir), pin: readPinAt(dir) };
   });
 }
@@ -138,11 +138,24 @@ export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinE
   try {
     const top = execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: consumer, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
     const rel = relative(top, path).split(sep).join("/");
-    const commits = execFileSync("git", ["log", "--format=%H", "--", rel], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).split("\n").filter(Boolean);
+    // --follow keeps history across slot-folder moves (the flat layout, or any
+    // future regroup); each commit is read at the path the file had then.
+    const log = execFileSync("git", ["log", "--follow", "--format=%x00%H", "--name-only", "--", rel], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+    const commits = log.split("\0").filter(Boolean).map(chunk => {
+      const [commit = "", ...paths] = chunk.split("\n").map(line => line.trim()).filter(Boolean);
+      return { commit, path: paths[0] ?? rel };
+    });
+    const read = commits.map(({ commit, path: at }) => {
+      try { return { commit, at, bytes: execFileSync("git", ["show", `${commit}:${at}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }) }; }
+      catch { return { commit, at, bytes: undefined }; /* deleted in this commit: an unpin, not a pin event */ }
+    });
     const events: PinEvent[] = [];
-    for (const commit of commits) {
-      try { events.push({ ...JSON.parse(execFileSync("git", ["show", `${commit}:${rel}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] })) as PinDoc, commit }); }
-      catch { /* deleted in this commit: an unpin, not a pin event */ }
+    for (const [index, entry] of read.entries()) {
+      if (entry.bytes === undefined) continue;
+      const older = read[index + 1];
+      // A pure move (new path, same bytes) is not a pin event.
+      if (older && older.at !== entry.at && older.bytes === entry.bytes) continue;
+      try { events.push({ ...JSON.parse(entry.bytes) as PinDoc, commit: entry.commit }); } catch { /* unreadable historical pin */ }
     }
     if (events.length) return events;
   } catch { /* not a git checkout */ }

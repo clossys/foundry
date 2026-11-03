@@ -30,7 +30,7 @@ beforeEach(() => {
     "- title: writer:landing.hero", "- hero.subtitle = subtitle: writer:landing.hero", "## Notes",
     "- ignored: writer:landing.hero", "",
   ].join("\n"));
-  dir = join(base, "pages", "examples", "page.home");
+  dir = join(base, "page.home");
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 

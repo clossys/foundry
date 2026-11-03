@@ -19,7 +19,7 @@ beforeEach(() => {
   for (const agent of Object.keys(ids) as SlotAgent[]) {
     const id = ids[agent];
     const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "examples", label: "Examples", children: [{ id: "group", label: "Group", slots: [id] }] }] };
-    const dir = join(root, "agents", agent, "examples", "group", id);
+    const dir = join(root, "agents", agent, id);
     dirs[agent] = dir;
     mkdirSync(join(dir, "candidates"), { recursive: true });
     save(join(root, "agents", agent, "ia.json"), ia);

@@ -375,7 +375,7 @@ describe("slot status derivation", () => {
 
   it("reads a whole Designer slot model from disk, including a tampered candidate", () => {
     const ia: IaDoc = { schema: "clossys.ia/1", source: "consumer#fixture", extensions: [], nodes: [{ id: "sections.content", label: "Content", children: [{ id: "heroes", label: "Heroes", slots: ["sections.hero", "sections.faq"] }] }] };
-    const dirOf = (slot: string) => slotDir(root, "designer", slotPositions("designer", ia).get(slot)!, slot);
+    const dirOf = (slot: string) => slotDir(root, "designer", slot);
     const put = (path: string, bytes: string) => { mkdirSync(join(path, ".."), { recursive: true }); writeFileSync(path, bytes); };
     put(iaPath(root, "designer"), jsonBytes(ia));
     for (const [id, position] of slotPositions("designer", ia)) put(slotFile(dirOf(id)), jsonBytes({ schema: "clossys.slot/1", id, agent: "designer", kind: "element", ia: position, contract: {}, inputs: [], uses: [] }));

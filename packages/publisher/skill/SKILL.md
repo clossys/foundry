@@ -22,12 +22,12 @@ Each page is one Publisher slot in the slot model, placed by the Publisher IA:
 
 ```
 clossys/agents/publisher/ia.json                                  the IA: L1/L2 groups and their page slots
-clossys/agents/publisher/<L1>/<L2>/<page slot>/slot.json          clossys.slot/1 (kind: page)
-clossys/agents/publisher/<L1>/<L2>/<page slot>/candidates/<name>-v<N>.json
+clossys/agents/publisher/<page slot>/slot.json                    clossys.slot/1 (kind: page)
+clossys/agents/publisher/<page slot>/candidates/<name>-v<N>.json
                                                                   one option: a page record
-clossys/agents/publisher/<L1>/<L2>/<page slot>/pin.json           { candidate, sha256, pinnedBy, at }; the owner writes it
-clossys/agents/designer/<L1>/<L2>/<slot>/candidates/              frames and sections (read only)
-clossys/agents/writer/<L1>/<L2>/<slot>/candidates/                Writer copy keys (read only)
+clossys/agents/publisher/<page slot>/pin.json                     { candidate, sha256, pinnedBy, at }; the owner writes it
+clossys/agents/designer/<slot>/candidates/                        frames and sections (read only)
+clossys/agents/writer/<slot>/candidates/                          Writer copy keys (read only)
 ```
 
 Page slot ids are `page.<id>` (`page.home`). Candidates are immutable: a change
@@ -120,7 +120,7 @@ A page candidate (`clossys.page/1`):
    Designer. The output folder is build output; do not commit it.
 8. **Commit** the candidate:
    ```sh
-   git add clossys/agents/publisher/<L1>/<L2>/page.<id>   # consumer files, not shipped
+   git add clossys/agents/publisher/page.<id>   # consumer files, not shipped
    git commit -m "publisher: page.<id> <name> v<N>"
    ```
 

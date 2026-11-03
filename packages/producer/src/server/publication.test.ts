@@ -169,7 +169,7 @@ async function nativePublisherFixture(keepLegacy = false) {
 async function nativeRecord(publisher: string, id: string) {
   const ia = JSON.parse(await readFile(join(publisher, "ia.json"), "utf8"));
   for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) {
-    const dir = join(publisher, node.id, child.id, id), pinPath = join(dir, "pin.json");
+    const dir = join(publisher, id), pinPath = join(dir, "pin.json");
     const pin = JSON.parse(await readFile(pinPath, "utf8")), path = join(dir, "candidates", pin.candidate);
     return { dir, path, pinPath, pin, record: JSON.parse(await readFile(path, "utf8")) };
   }
