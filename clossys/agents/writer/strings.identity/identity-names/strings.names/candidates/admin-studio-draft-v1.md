@@ -1,7 +1,7 @@
 ---
 slot: "strings.names"
 locales: ["en"]
-source: {"kind":"derived","ref":["packages/writer/src/catalog/records/admin-studio.r1.en.json#records","packages/writer/src/catalog/records/admin-studio.r1.en.json#sourceCommit=cf91e48ecf01ebc20c00b1e00c2fe887acd537ae"],"hash":"86dd332f49b4d487f367c6e9fca9213a9fbc1b024cabdca0bb7a4ba0a094210f"}
+source: {"kind":"derived","ref":["packages/writer/src/catalog/records/admin-studio.r1.en.json#records","packages/writer/src/catalog/records/admin-studio.r1.en.json#sourceCommit=cf91e48ecf01ebc20c00b1e00c2fe887acd537ae"],"hash":"a958c6661b684957c64c6fd28a20bba5460cacc58b6051cdf33314564986f3d9"}
 ---
 
 ## en
@@ -980,7 +980,7 @@ Foreground
 
 ### designer.item.themes.card
 <!-- {"id":"st.3qv0jq1mse","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.3qv0jq1mse","leaf":"strings.names","context":"designer.item.themes.card","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
-Card
+Card surface
 
 ### designer.item.themes.card-foreground
 <!-- {"id":"st.prs4mmtvsb","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.prs4mmtvsb","leaf":"strings.names","context":"designer.item.themes.card-foreground","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
@@ -988,7 +988,7 @@ Card foreground
 
 ### designer.item.themes.popover
 <!-- {"id":"st.29b0b9fp48","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.29b0b9fp48","leaf":"strings.names","context":"designer.item.themes.popover","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
-Popover
+Popover surface
 
 ### designer.item.themes.popover-foreground
 <!-- {"id":"st.kwy5bz99tz","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.kwy5bz99tz","leaf":"strings.names","context":"designer.item.themes.popover-foreground","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
@@ -1064,7 +1064,7 @@ Chart 5
 
 ### designer.item.themes.sidebar
 <!-- {"id":"st.ytv1j32r1v","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.ytv1j32r1v","leaf":"strings.names","context":"designer.item.themes.sidebar","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
-Sidebar
+Sidebar surface
 
 ### designer.item.themes.sidebar-foreground
 <!-- {"id":"st.y6jzebe750","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.y6jzebe750","leaf":"strings.names","context":"designer.item.themes.sidebar-foreground","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
@@ -1129,3 +1129,79 @@ Vertical marquee
 ### designer.item.themes.animate-shiny-text
 <!-- {"id":"st.s4rxrrvs92","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.s4rxrrvs92","leaf":"strings.names","context":"designer.item.themes.animate-shiny-text","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
 Shiny text
+
+### designer.item.components.rich-text
+<!-- {"id":"st.6jy6zkbrtc","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.6jy6zkbrtc","leaf":"strings.names","context":"designer.item.components.rich-text","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Rich text
+
+### designer.item.components.media-player
+<!-- {"id":"st.q9yej4b759","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.q9yej4b759","leaf":"strings.names","context":"designer.item.components.media-player","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Media player
+
+### designer.item.sections.sectioned-document
+<!-- {"id":"st.3rssm8ztcx","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.3rssm8ztcx","leaf":"strings.names","context":"designer.item.sections.sectioned-document","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Sectioned document
+
+### designer.item.sections.specimen-swatch
+<!-- {"id":"st.cjqh0xwhnk","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.cjqh0xwhnk","leaf":"strings.names","context":"designer.item.sections.specimen-swatch","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Color swatch
+
+### designer.item.sections.specimen-color-ramp
+<!-- {"id":"st.7jafpb477w","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.7jafpb477w","leaf":"strings.names","context":"designer.item.sections.specimen-color-ramp","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Color ramp
+
+### designer.item.sections.specimen-type-ladder
+<!-- {"id":"st.h9ffj447ed","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.h9ffj447ed","leaf":"strings.names","context":"designer.item.sections.specimen-type-ladder","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Type scale
+
+### designer.item.sections.specimen-spacing-ladder
+<!-- {"id":"st.rymde5gdqj","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.rymde5gdqj","leaf":"strings.names","context":"designer.item.sections.specimen-spacing-ladder","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Spacing scale
+
+### designer.item.sections.specimen-radius-ladder
+<!-- {"id":"st.f4bcsks90s","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.f4bcsks90s","leaf":"strings.names","context":"designer.item.sections.specimen-radius-ladder","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Corner scale
+
+### designer.item.sections.specimen-motion-player
+<!-- {"id":"st.4z8j4g6a93","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.4z8j4g6a93","leaf":"strings.names","context":"designer.item.sections.specimen-motion-player","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Motion preview
+
+### designer.item.sections.specimen-asset-grid
+<!-- {"id":"st.at8wzd8jdm","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.at8wzd8jdm","leaf":"strings.names","context":"designer.item.sections.specimen-asset-grid","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Asset grid
+
+### designer.item.sections.specimen-icon-grid
+<!-- {"id":"st.5mqkqzgpy0","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.5mqkqzgpy0","leaf":"strings.names","context":"designer.item.sections.specimen-icon-grid","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Icon grid
+
+### designer.item.sections.specimen-variant-matrix
+<!-- {"id":"st.wz9kb2dwjc","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.wz9kb2dwjc","leaf":"strings.names","context":"designer.item.sections.specimen-variant-matrix","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Variant grid
+
+### designer.item.sections.specimen-section-viewports
+<!-- {"id":"st.2gwprmztsy","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.2gwprmztsy","leaf":"strings.names","context":"designer.item.sections.specimen-section-viewports","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Section at each size
+
+### designer.item.sections.specimen-frame-viewports
+<!-- {"id":"st.b5883vry72","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.b5883vry72","leaf":"strings.names","context":"designer.item.sections.specimen-frame-viewports","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Frame at each size
+
+### designer.item.sections.specimen-rich-passage
+<!-- {"id":"st.q2ap1p1dt2","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.q2ap1p1dt2","leaf":"strings.names","context":"designer.item.sections.specimen-rich-passage","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Rich passage
+
+### designer.item.sections.specimen-copy-in-context
+<!-- {"id":"st.mb0qw39cd5","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.mb0qw39cd5","leaf":"strings.names","context":"designer.item.sections.specimen-copy-in-context","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Copy in context
+
+### designer.item.sections.specimen-page-viewports
+<!-- {"id":"st.w086w23spg","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.w086w23spg","leaf":"strings.names","context":"designer.item.sections.specimen-page-viewports","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Page at each size
+
+### designer.ia.sections.specimens
+<!-- {"id":"st.nevhwv4t5n","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.nevhwv4t5n","leaf":"strings.names","context":"designer.ia.sections.specimens","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Specimens
+
+### designer.ia.sections.specimens-content
+<!-- {"id":"st.xh7spvvaer","bindings":[],"catalogue":{"version":1,"revision":1,"state":"draft","activation":"none","locale":"en","sourceCommit":"cf91e48ecf01ebc20c00b1e00c2fe887acd537ae","record":{"id":"st.xh7spvvaer","leaf":"strings.names","context":"designer.ia.sections.specimens-content","status":"draft","origin":"foundry-default","limits":{"maxChars":60}}}} -->
+Content and presentation

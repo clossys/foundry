@@ -1,6 +1,10 @@
 # Producer Studio
 
-Read-only Next App Router composition over Producer's cells API. The frame, sections and controls load from the consumer's emitted Designer selection, with navigation enabled, the account footer hidden, and no right panel. All content comes from same-origin HTTP requests; Studio does not read a consumer repository.
+Read-only Next App Router composition over Producer's cells API. Every page is the pinned `frames.studio-shell` frame (the shadcn sidebar-15 block) plus pinned sections, built from the Designer's shadcn components in `@clossys/designer-ui` and the stock shadcn block markup they come from. All content comes from same-origin HTTP requests; Studio does not read a consumer repository.
+
+- Left sidebar: the sidebar-07 navigation, with the consumer's brand as the one workspace and a static local-workspace row in the footer.
+- Right panel: the chat sidebar. It is present and toggles from the header's far-right icon, but it is not yet connected: it shows an empty state, and agents work through the CLI for now. Below 768px both sidebars open as sheets.
+- Agent galleries show one card per L3 slot with its pinned version, status and live preview. The card's title links to that slot's detail route, which holds the options, history and contract.
 
 From the repository root, after dependencies and the Controller, Strategist, and Designer prerequisites are built:
 
@@ -20,7 +24,7 @@ The client adapter validates the aggregate index (`agents` with each agent’s `
 
 Existing registered Sections used: content, section-header, article, empty-state, and band. Designer's NavigationTree honors grouping from the returned tree; a malformed grouping is an error. Labels use the cell title or leaf name, and Designer badges show status. The first available cell is selected automatically; explicit cell links remain bookmarkable. No new registered leaf is introduced.
 
-The root fetches the consumer's compiler-generated token CSS from `/api/config` before rendering application content. A consumer without active brand cells receives the official Foundry theme and a visible Unbranded notice. Studio applies compiler CSS without reconstructing token values. The selected frame owns light/dark mode.
+Studio previews the consumer's workspace in the consumer's brand. The root fetches the consumer's compiler-generated token CSS from `/api/config` before rendering application content. When the consumer has no theme pins, Studio is unbranded: it uses the official Foundry theme, and Producer's report list carries an info finding, "Consumer theme not compiled". The Unbranded notice is not rendered yet, because info findings stay out of the Checks popover and Home. Studio applies compiler CSS without reconstructing token values. The selected frame owns light/dark mode.
 
 Producer emits the consumer's selected components and surfaces, bundles their actual implementation modules, and compiles their utility CSS with Designer's existing compiler. Missing seats use Designer's default planners; the Designer page lists each fallback as a NEED. Studio applies the runtime and verified stylesheet together. Cell change events refresh both theme and selected implementations.
 

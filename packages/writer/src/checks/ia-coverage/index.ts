@@ -14,6 +14,10 @@ import { graphCycles, reachableFrom } from "./graph.js";
 import type { CoverageInput, CoverageFinding, CoverageEdge, CoverageLeaf, CoverageReport, FillState } from "./types.js";
 export type * from "./types.js";
 
+// Specimen sections are Studio previews with host-injected parts; Writer does
+// not mirror them, so they carry no passage pair or coverage edges here.
+const specimenSection = (id: string): boolean => id.startsWith("sections.specimen-");
+
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 const order: readonly FillState[] = ["absent", "draft", "checked", "approved"];
@@ -77,11 +81,11 @@ export function checkIACoverage(input: CoverageInput): CoverageReport {
     const row = { from, to, kind }; edgeMap.set(JSON.stringify(row), row);
   };
   for (const slot of input.catalog.slots) for (const to of slot.requires) edge(slot.id, to, "requires");
-  for (const slot of input.designer.slots) for (const to of [...slot.requires ?? [], ...strings(slot.contract.parts), ...strings(slot.contract.composes)]) edge(slot.id, to, "requires");
+  for (const slot of input.designer.slots) if (!specimenSection(slot.id)) for (const to of [...slot.requires ?? [], ...strings(slot.contract.parts), ...strings(slot.contract.composes)]) edge(slot.id, to, "requires");
   for (const row of input.connections?.nodes ?? []) for (const to of row.uses) edge(row.id, to, "external");
   const pairs: { section: string; passage: string; resolved: boolean }[] = [];
   for (const slot of input.designer.slots) {
-    if (slot.contract.kind !== "section" || typeof slot.contract.passageSchema !== "string") continue;
+    if (slot.contract.kind !== "section" || typeof slot.contract.passageSchema !== "string" || specimenSection(slot.id)) continue;
     const passage = slot.contract.passageSchema, target = writer.get(passage);
     const resolved = target?.contract.sectionId === slot.id && target.contract.passageSchema === passage;
     pairs.push({ section: slot.id, passage, resolved }); edge(slot.id, passage, "schema");

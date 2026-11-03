@@ -6,9 +6,9 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import ts from "typescript";
 import type { ReactElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, waitFor, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render as renderBare, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { CopyRef, CopyResolution, CopyResolver } from "@clossys/writer";
 import type { IconNode } from "@clossys/designer/components/server";
@@ -25,6 +25,9 @@ import { SITE_MAIN_ID, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./ind
 import type { SiteFrameConfig, SiteShellInput } from "./index.js";
 import { resolveShell } from "../../../../designer/dist/frames/site-frame/internal/resolveShell.js";
 import { FOOTER_ICON_LIMIT, FOOTER_LINK_LIMIT, SiteFooterContractError } from "../../../../designer/dist/frames/site-frame/site-frame-contract.js";
+import { hostedRender, hostedMarkup } from "../__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 afterEach(cleanup);
 

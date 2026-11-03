@@ -11,20 +11,19 @@
   ],
   "activation": "none",
   "sourceFiles": {
-    "packages/designer/src/studio/Scorecard.tsx": "257817dd33eb52be06c64e12455254ec8d05859505804d630220e5cdc66e0ec0",
+    "packages/designer/src/studio/Scorecard.tsx": "d724e62002acff7941236a87a23fc8be606cd0768f8a5d9ef9c94eccd00e9ef4",
     "packages/designer/src/studio/matrix-model.ts": "d96127237eba37bbb1f061848efbef183479b4c400dec1b5850987e1a34f9231",
-    "packages/designer/src/studio/system-canvas/inspector/Inspector.tsx": "a5587a23c3b1d98c6db4a4837de8865ae47b836b3183dcd3c73485e82fade7ee",
     "packages/designer/src/catalog/ia/themes.json": "5d085a7c66fe99e565541f524be4484da388255f9cc2f2f2781d2b21447c984e",
     "packages/designer/src/catalog/slots/themes.json": "744f2c2a7bf3c17d0583aff6da33c219f2dbb28270066ea185d18abbe7b5bcc7",
-    "packages/designer/src/catalog/ia/assets.json": "96838f0aaa8df1efe187335011372483c13d3546dc67967111961b704bf34456",
-    "packages/designer/src/catalog/slots/assets.json": "84919f96c40ad8a8826469f260c17179e4c7d3ff98efeea84663086351e180ea",
-    "packages/designer/src/catalog/ia/components.json": "4c4bff58b5b3d78e7c0cf2906b3267fac9ab398dc507a172044191e5c38e9d2c",
-    "packages/designer/src/catalog/slots/components.json": "4df9f95a28f65aac3a505d4386bcf31cfd6db244d2254a964dc7d0c2cde1b55b",
-    "packages/designer/src/catalog/ia/sections.json": "94b63e8a9a83a0118023ed40025c747ef355b7949ccac7f28a39247e29ffb4d0",
-    "packages/designer/src/catalog/slots/sections.json": "8f1d1f33c511bbfab4c862b2585473bb25f7dfdf0604537abc143a215aa259e1",
+    "packages/designer/src/catalog/ia/assets.json": "dce5da12b8c55104c378bb484f3349a3238adb3150e57c85e69959cdeac0ae50",
+    "packages/designer/src/catalog/slots/assets.json": "ae3852dc0cf1481a4f5b20b56041f2ed72dc7d0e8736cfd01cde95f2a274a950",
+    "packages/designer/src/catalog/ia/components.json": "175364fb728373f3859935e37867352d40cd65968554d4b5595eb3e70122dc8f",
+    "packages/designer/src/catalog/slots/components.json": "e7e671b450b5b11081fd9e70f7baaf3f9440d041b10fc27193b5f4ef5091f371",
+    "packages/designer/src/catalog/ia/sections.json": "11015a5eb7193196de462a4527c5076a65cfed5b8e611f7dc03b2e17d9d4eb62",
+    "packages/designer/src/catalog/slots/sections.json": "dc29df5a4ed7970c22a2408aa832d6463ccd106c304358769e4f561f917284fa",
     "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
-    "packages/designer/src/catalog/slots/frames.json": "87405cb53f09694f962a01574ca26b24e9fca47849a7fa5d67c4fdefe51c4f09",
-    "packages/designer/src/catalog-core/check.ts": "d54f16e5aba43e9f6b196ece84baf1da14166d77784aaf7c79e5653bcaf6d5fc"
+    "packages/designer/src/catalog/slots/frames.json": "4afddf0f2ba37dbbd8156a16df3660d618f62d5e29f4e7fe3e2335674ce52db7",
+    "packages/designer/src/catalog-core/check.ts": "fb6d49a85b3848472c1b27b7429df27736015951ea3af7363b57918811c850e3"
   },
   "records": [
     {
@@ -4277,7 +4276,7 @@
       "context": "designer.item.themes.card",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Card",
+      "text": "Card surface",
       "limits": {
         "maxChars": 60
       }
@@ -4299,7 +4298,7 @@
       "context": "designer.item.themes.popover",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Popover",
+      "text": "Popover surface",
       "limits": {
         "maxChars": 60
       }
@@ -4508,7 +4507,7 @@
       "context": "designer.item.themes.sidebar",
       "status": "draft",
       "origin": "foundry-default",
-      "text": "Sidebar",
+      "text": "Sidebar surface",
       "limits": {
         "maxChars": 60
       }
@@ -4685,6 +4684,215 @@
       "status": "draft",
       "origin": "foundry-default",
       "text": "Shiny text",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.6jy6zkbrtc",
+      "leaf": "strings.names",
+      "context": "designer.item.components.rich-text",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Rich text",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.q9yej4b759",
+      "leaf": "strings.names",
+      "context": "designer.item.components.media-player",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Media player",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.3rssm8ztcx",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.sectioned-document",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Sectioned document",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.cjqh0xwhnk",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-swatch",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Color swatch",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.7jafpb477w",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-color-ramp",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Color ramp",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.h9ffj447ed",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-type-ladder",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Type scale",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.rymde5gdqj",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-spacing-ladder",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Spacing scale",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.f4bcsks90s",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-radius-ladder",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Corner scale",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.4z8j4g6a93",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-motion-player",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Motion preview",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.at8wzd8jdm",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-asset-grid",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Asset grid",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.5mqkqzgpy0",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-icon-grid",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Icon grid",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.wz9kb2dwjc",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-variant-matrix",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Variant grid",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.2gwprmztsy",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-section-viewports",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Section at each size",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.b5883vry72",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-frame-viewports",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Frame at each size",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.q2ap1p1dt2",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-rich-passage",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Rich passage",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.mb0qw39cd5",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-copy-in-context",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Copy in context",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.w086w23spg",
+      "leaf": "strings.names",
+      "context": "designer.item.sections.specimen-page-viewports",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Page at each size",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.nevhwv4t5n",
+      "leaf": "strings.names",
+      "context": "designer.ia.sections.specimens",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Specimens",
+      "limits": {
+        "maxChars": 60
+      }
+    },
+    {
+      "id": "st.xh7spvvaer",
+      "leaf": "strings.names",
+      "context": "designer.ia.sections.specimens-content",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Content and presentation",
       "limits": {
         "maxChars": 60
       }
@@ -9726,7 +9934,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 57,
+        "line": 65,
         "key": "designer.finding.C8.01"
       },
       "before": "`status: ${subject} is stable without an owner sign-off`",
@@ -9748,7 +9956,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 62,
+        "line": 70,
         "key": "designer.finding.C1.02"
       },
       "before": "`contract: ${slot.id} optional members must be declared closed members`",
@@ -9770,7 +9978,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 63,
+        "line": 71,
         "key": "designer.finding.C3.03"
       },
       "before": "`standards: unknown clause ${clause} in ${slot.id}`",
@@ -9793,7 +10001,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 67,
+        "line": 76,
         "key": "designer.finding.C4.04"
       },
       "before": "`binding: ${css} is not a shipped token`",
@@ -9815,7 +10023,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 68,
+        "line": 77,
         "key": "designer.finding.C4.05"
       },
       "before": "`coverage: ${id} (emits ${css}) has no value in profile ${input.library.source.id}`",
@@ -9838,7 +10046,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 70,
+        "line": 79,
         "key": "designer.finding.C4.06"
       },
       "before": "`coverage: slot ${slot.id} has no consumer fill`",
@@ -9860,7 +10068,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 76,
+        "line": 85,
         "key": "designer.finding.C4.07"
       },
       "before": "`coverage: ${member} has no value in profile ${input.library.source.id}`",
@@ -9883,7 +10091,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 80,
+        "line": 89,
         "key": "designer.finding.C4.08"
       },
       "before": "`binding: ${css} is bound to ${ordered[0]} and ${ordered[1]}`",
@@ -9907,7 +10115,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 82,
+        "line": 91,
         "key": "designer.finding.C4.09"
       },
       "before": "`binding: shipped token ${token.property} is not bound`",
@@ -9929,7 +10137,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 89,
+        "line": 98,
         "key": "designer.finding.C7.10"
       },
       "before": "`selection: consumer fill ${meta.id} names source ${meta.source}, expected ${input.library.source.id}`",
@@ -9953,7 +10161,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 90,
+        "line": 99,
         "key": "designer.finding.C7.11"
       },
       "before": "`selection: consumer fill ${meta.id} has mode ${meta.mode}, expected implementation`",
@@ -9976,7 +10184,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 91,
+        "line": 100,
         "key": "designer.finding.C4.12"
       },
       "before": "`orphan: ${meta.id} names slot ${meta.slot}, which is not registered`",
@@ -9999,7 +10207,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 92,
+        "line": 101,
         "key": "designer.finding.C3.13"
       },
       "before": "`standards: slot ${slot.id} requires ${clause}; ${meta.id} does not claim it`",
@@ -10022,7 +10230,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 94,
+        "line": 103,
         "key": "designer.finding.C3.14"
       },
       "before": "`standards: unknown clause ${clause} in ${meta.id}`",
@@ -10045,7 +10253,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 95,
+        "line": 104,
         "key": "designer.finding.C3.15"
       },
       "before": "`standards: ${meta.id} claims ${clause} with no evidence`",
@@ -10068,7 +10276,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 98,
+        "line": 107,
         "key": "designer.finding.C3.16"
       },
       "before": "`standards: unknown clause ${evidence.clause} in ${meta.id}`",
@@ -10091,7 +10299,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 99,
+        "line": 108,
         "key": "designer.finding.C3.17"
       },
       "before": "`standards: ${meta.id} evidence for ${evidence.clause} not found at ${evidence.path}`",
@@ -10114,7 +10322,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 101,
+        "line": 110,
         "key": "designer.finding.C3.18"
       },
       "before": "`standards: ${meta.id} evidence paths not verified in this environment`",
@@ -10136,7 +10344,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 103,
+        "line": 112,
         "key": "designer.finding.C6.19"
       },
       "before": "`pin: external source ${source.id} has no pin`",
@@ -10158,7 +10366,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 106,
+        "line": 115,
         "key": "designer.finding.C6.20"
       },
       "before": "`pin: ${meta.id} pin ${field}=${got} differs from source ${source.id} (${want})`",
@@ -10182,7 +10390,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 108,
+        "line": 117,
         "key": "designer.finding.C6.21"
       },
       "before": "`licence: ${meta.id} licence ${meta.license} is not on the allow list`",
@@ -10205,7 +10413,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 110,
+        "line": 119,
         "key": "designer.finding.C6.22"
       },
       "before": "`licence: ${meta.id} licence ${meta.license} differs from source ${source.id} licence ${source.license}`",
@@ -10228,7 +10436,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 112,
+        "line": 121,
         "key": "designer.finding.C10.23"
       },
       "before": "`provenance: ${meta.id} originKinds does not summarize its members`",
@@ -10250,7 +10458,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 113,
+        "line": 122,
         "key": "designer.finding.C2.24"
       },
       "before": "`reads: ${meta.id} must declare token and asset leaf reads`",
@@ -10272,7 +10480,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 122,
+        "line": 131,
         "key": "designer.finding.C10.25"
       },
       "before": "`provenance: ${member} has invalid origin`",
@@ -10294,7 +10502,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 126,
+        "line": 135,
         "key": "designer.finding.C10.26"
       },
       "before": "`provenance: ${member} has inconsistent alias materialization metadata`",
@@ -10316,7 +10524,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 128,
+        "line": 137,
         "key": "designer.finding.C10.27"
       },
       "before": "`provenance: ${member} adopted content differs from its recorded sha256; re-kind as authored`",
@@ -10338,7 +10546,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 140,
+        "line": 149,
         "key": "designer.finding.C6.28"
       },
       "before": "`pin: ${member} adopted external source ${origin.source} has no valid pinned receipt`",
@@ -10361,7 +10569,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 141,
+        "line": 150,
         "key": "designer.finding.C6.29"
       },
       "before": "`licence: ${member} origin licence ${origin.license} differs from source ${origin.source} licence ${originSource.license}`",
@@ -10384,7 +10592,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 142,
+        "line": 151,
         "key": "designer.finding.C6.30"
       },
       "before": "`licence: ${member} origin licence ${origin.license} differs from pinned fill ${origin.fill} licence ${metaOf(candidate).license}`",
@@ -10407,7 +10615,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 144,
+        "line": 153,
         "key": "designer.finding.C10.31"
       },
       "before": "`provenance: ${member} aliasOf is not an upstream read`",
@@ -10429,7 +10637,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 145,
+        "line": 154,
         "key": "designer.finding.C10.32"
       },
       "before": "`provenance: ${member} has upstream drift from source ${origin.source} (${origin.fill})`",
@@ -10453,7 +10661,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 146,
+        "line": 155,
         "key": "designer.finding.C6.33"
       },
       "before": "`licence: ${member} origin licence ${origin.license} is not on the allow list`",
@@ -10476,7 +10684,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 148,
+        "line": 157,
         "key": "designer.finding.C6.34"
       },
       "before": "`licence: ${member} origin licence ${origin.license} is not on the allow list`",
@@ -10499,7 +10707,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 150,
+        "line": 159,
         "key": "designer.finding.C10.35"
       },
       "before": "`provenance: ${member} uses unknown rule ${origin.rule}`",
@@ -10522,7 +10730,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 152,
+        "line": 161,
         "key": "designer.finding.C10.36"
       },
       "before": "`provenance: ${member} differs from declared inputs for ${origin.rule}`",
@@ -10545,7 +10753,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 153,
+        "line": 162,
         "key": "designer.finding.C10.37"
       },
       "before": "`provenance: ${member} ${String(error)}`",
@@ -10567,7 +10775,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 155,
+        "line": 164,
         "key": "designer.finding.C10.38"
       },
       "before": "`provenance: ${member} has stale inputsHash for ${origin.rule}; re-derive explicitly`",
@@ -10590,7 +10798,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 156,
+        "line": 165,
         "key": "designer.finding.C10.39"
       },
       "before": "`provenance: ${member} has unresolved inputs for ${origin.rule}`",
@@ -10613,7 +10821,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 162,
+        "line": 171,
         "key": "designer.finding.C1.40"
       },
       "before": "`contract: ${meta.id} member ${member} has $type ${token.$type}, slot ${slot.id} requires ${want}`",
@@ -10638,7 +10846,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 164,
+        "line": 173,
         "key": "designer.finding.C1.41"
       },
       "before": "`contract: ${meta.id} provides unknown member ${member} (slot ${slot.id} is closed)`",
@@ -10661,7 +10869,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 167,
+        "line": 176,
         "key": "designer.finding.C1.42"
       },
       "before": "`contract: ${meta.id} member ${member} does not match pattern ${members.pattern}`",
@@ -10683,7 +10891,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 170,
+        "line": 179,
         "key": "designer.finding.C1.43"
       },
       "before": "`contract: ${meta.id} sets mode dark but slot ${slot.id} allows only light`",
@@ -10705,7 +10913,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 174,
+        "line": 183,
         "key": "designer.finding.C10.44"
       },
       "before": "`provenance: ${member} contains an unmaterialized template`",
@@ -10727,7 +10935,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 175,
+        "line": 184,
         "key": "designer.finding.C1.45"
       },
       "before": "`contract: ${meta.id} member ${member} has a malformed ${token.$type} value`",
@@ -10750,7 +10958,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 179,
+        "line": 189,
         "key": "designer.finding.C1.46"
       },
       "before": "`contract: ${meta.id} member ${member} has unsafe CSS text (${unsafe})`",
@@ -10772,7 +10980,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 183,
+        "line": 193,
         "key": "designer.finding.C6.47"
       },
       "before": "`licence: ${meta.id} licence ${font.license} is not on the allow list`",
@@ -10795,7 +11003,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 186,
+        "line": 196,
         "key": "designer.finding.C2.48"
       },
       "before": "`reads: ${member} in ${meta.id} reads undeclared leaf ${leafOf(ref)}`",
@@ -10818,7 +11026,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 192,
+        "line": 202,
         "key": "designer.finding.C6.49"
       },
       "before": "`licence: ${source.id} licence ${source.license} is not on the allow list`",
@@ -10841,7 +11049,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 193,
+        "line": 203,
         "key": "designer.finding.C6.50"
       },
       "before": "`pin: external source ${source.id} has no pin`",
@@ -10863,7 +11071,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 195,
+        "line": 205,
         "key": "designer.finding.C5.51"
       },
       "before": "`uniqueness: source ${source} has ${count} fills for slot ${slot}`",
@@ -10887,7 +11095,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 196,
+        "line": 210,
         "key": "designer.finding.C10.52"
       },
       "before": "\"provenance: generated selection differs from consumer fills and rationale\"",
@@ -10907,7 +11115,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 206,
+        "line": 220,
         "key": "designer.finding.C2.53"
       },
       "before": "`reads: ${member} in ${meta.id} reads ${leaf}, which does not resolve in profile ${input.library.source.id}`",
@@ -10931,7 +11139,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 208,
+        "line": 222,
         "key": "designer.finding.C2.54"
       },
       "before": "`reads: ${member} in ${meta.id} reads upward to ${leaf} (${rank(entry.slot)} may not read ${rank(targetSlot)})`",
@@ -10954,7 +11162,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 216,
+        "line": 230,
         "key": "designer.finding.C2.55"
       },
       "before": "`reads: ${member} in ${meta.id} reads ${target}, which does not resolve in profile ${input.library.source.id}`",
@@ -10977,7 +11185,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 217,
+        "line": 231,
         "key": "designer.finding.C2.56"
       },
       "before": "`reads: ${member} in ${meta.id} reads upward to ${target} (${rank(entry.slot)} may not read ${rank(targetSlot)})`",
@@ -11000,7 +11208,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 224,
+        "line": 238,
         "key": "designer.finding.C2.57"
       },
       "before": "`reads: ${member} alias chain exceeds 16 hops`",
@@ -11022,7 +11230,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 240,
+        "line": 254,
         "key": "designer.finding.C2.58"
       },
       "before": "`reads: cycle ${cycle}`",
@@ -11044,7 +11252,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 241,
+        "line": 255,
         "key": "designer.finding.C5.59"
       },
       "before": "`uniqueness: resolved member ${id} does not match a single implementation`",
@@ -11066,7 +11274,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 243,
+        "line": 257,
         "key": "designer.finding.C3.60"
       },
       "before": "`standards: ${id} overrides fixed Foundry scale ${member.emit}; emitted to scales.css`",
@@ -11089,7 +11297,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 256,
+        "line": 270,
         "key": "designer.finding.C9.61"
       },
       "before": "`contrast: ${pair.foreground} on ${pair.background} is ${ratio.toFixed(2)}:1 in ${mode}, needs ${pair.minimumRatio}:1`",
@@ -11115,7 +11323,7 @@
       "source": {
         "commit": "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae",
         "path": "packages/designer/src/catalog-core/check.ts",
-        "line": 258,
+        "line": 272,
         "key": "designer.finding.C9.62"
       },
       "before": "`contrast: ${pair.foreground} on ${pair.background} cannot be measured in ${mode}`",
@@ -12907,7 +13115,7 @@
         "key": "designer.item.themes.card"
       },
       "before": "Card",
-      "after": "Card",
+      "after": "Card surface",
       "rationale": "Give the themes Explorer entry a Writer-owned display name matching the shadcn theme variable it names. Grouping and permanent item IDs are unchanged.",
       "role": "label",
       "budget": 60
@@ -12943,7 +13151,7 @@
         "key": "designer.item.themes.popover"
       },
       "before": "Popover",
-      "after": "Popover",
+      "after": "Popover surface",
       "rationale": "Give the themes Explorer entry a Writer-owned display name matching the shadcn theme variable it names. Grouping and permanent item IDs are unchanged.",
       "role": "label",
       "budget": 60
@@ -13285,7 +13493,7 @@
         "key": "designer.item.themes.sidebar"
       },
       "before": "Sidebar",
-      "after": "Sidebar",
+      "after": "Sidebar surface",
       "rationale": "Give the themes Explorer entry a Writer-owned display name matching the shadcn theme variable it names. Grouping and permanent item IDs are unchanged.",
       "role": "label",
       "budget": 60
@@ -13611,6 +13819,348 @@
       "before": "Shiny text",
       "after": "Shiny text",
       "rationale": "Give the themes Explorer entry a Writer-owned display name matching the shadcn theme variable it names. Grouping and permanent item IDs are unchanged.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.6jy6zkbrtc",
+      "cellId": "designer.item.components.rich-text",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 3293,
+        "key": "designer.item.components.rich-text"
+      },
+      "before": "components.rich-text",
+      "after": "Rich text",
+      "rationale": "Name components.rich-text for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.q9yej4b759",
+      "cellId": "designer.item.components.media-player",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/components.json",
+        "line": 3359,
+        "key": "designer.item.components.media-player"
+      },
+      "before": "components.media-player",
+      "after": "Media player",
+      "rationale": "Name components.media-player for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.3rssm8ztcx",
+      "cellId": "designer.item.sections.sectioned-document",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 8037,
+        "key": "designer.item.sections.sectioned-document"
+      },
+      "before": "sections.sectioned-document",
+      "after": "Sectioned document",
+      "rationale": "Name sections.sectioned-document for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.cjqh0xwhnk",
+      "cellId": "designer.item.sections.specimen-swatch",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 3,
+        "key": "designer.item.sections.specimen-swatch"
+      },
+      "before": "sections.specimen-swatch",
+      "after": "Color swatch",
+      "rationale": "Name sections.specimen-swatch for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.7jafpb477w",
+      "cellId": "designer.item.sections.specimen-color-ramp",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 80,
+        "key": "designer.item.sections.specimen-color-ramp"
+      },
+      "before": "sections.specimen-color-ramp",
+      "after": "Color ramp",
+      "rationale": "Name sections.specimen-color-ramp for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.h9ffj447ed",
+      "cellId": "designer.item.sections.specimen-type-ladder",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 157,
+        "key": "designer.item.sections.specimen-type-ladder"
+      },
+      "before": "sections.specimen-type-ladder",
+      "after": "Type scale",
+      "rationale": "Name sections.specimen-type-ladder for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.rymde5gdqj",
+      "cellId": "designer.item.sections.specimen-spacing-ladder",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 226,
+        "key": "designer.item.sections.specimen-spacing-ladder"
+      },
+      "before": "sections.specimen-spacing-ladder",
+      "after": "Spacing scale",
+      "rationale": "Name sections.specimen-spacing-ladder for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.f4bcsks90s",
+      "cellId": "designer.item.sections.specimen-radius-ladder",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 295,
+        "key": "designer.item.sections.specimen-radius-ladder"
+      },
+      "before": "sections.specimen-radius-ladder",
+      "after": "Corner scale",
+      "rationale": "Name sections.specimen-radius-ladder for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.4z8j4g6a93",
+      "cellId": "designer.item.sections.specimen-motion-player",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 364,
+        "key": "designer.item.sections.specimen-motion-player"
+      },
+      "before": "sections.specimen-motion-player",
+      "after": "Motion preview",
+      "rationale": "Name sections.specimen-motion-player for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.at8wzd8jdm",
+      "cellId": "designer.item.sections.specimen-asset-grid",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 434,
+        "key": "designer.item.sections.specimen-asset-grid"
+      },
+      "before": "sections.specimen-asset-grid",
+      "after": "Asset grid",
+      "rationale": "Name sections.specimen-asset-grid for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.5mqkqzgpy0",
+      "cellId": "designer.item.sections.specimen-icon-grid",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 504,
+        "key": "designer.item.sections.specimen-icon-grid"
+      },
+      "before": "sections.specimen-icon-grid",
+      "after": "Icon grid",
+      "rationale": "Name sections.specimen-icon-grid for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.wz9kb2dwjc",
+      "cellId": "designer.item.sections.specimen-variant-matrix",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 574,
+        "key": "designer.item.sections.specimen-variant-matrix"
+      },
+      "before": "sections.specimen-variant-matrix",
+      "after": "Variant grid",
+      "rationale": "Name sections.specimen-variant-matrix for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.2gwprmztsy",
+      "cellId": "designer.item.sections.specimen-section-viewports",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 652,
+        "key": "designer.item.sections.specimen-section-viewports"
+      },
+      "before": "sections.specimen-section-viewports",
+      "after": "Section at each size",
+      "rationale": "Name sections.specimen-section-viewports for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.b5883vry72",
+      "cellId": "designer.item.sections.specimen-frame-viewports",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 730,
+        "key": "designer.item.sections.specimen-frame-viewports"
+      },
+      "before": "sections.specimen-frame-viewports",
+      "after": "Frame at each size",
+      "rationale": "Name sections.specimen-frame-viewports for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.q2ap1p1dt2",
+      "cellId": "designer.item.sections.specimen-rich-passage",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 808,
+        "key": "designer.item.sections.specimen-rich-passage"
+      },
+      "before": "sections.specimen-rich-passage",
+      "after": "Rich passage",
+      "rationale": "Name sections.specimen-rich-passage for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.mb0qw39cd5",
+      "cellId": "designer.item.sections.specimen-copy-in-context",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 878,
+        "key": "designer.item.sections.specimen-copy-in-context"
+      },
+      "before": "sections.specimen-copy-in-context",
+      "after": "Copy in context",
+      "rationale": "Name sections.specimen-copy-in-context for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.w086w23spg",
+      "cellId": "designer.item.sections.specimen-page-viewports",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/slots/sections.json",
+        "line": 958,
+        "key": "designer.item.sections.specimen-page-viewports"
+      },
+      "before": "sections.specimen-page-viewports",
+      "after": "Page at each size",
+      "rationale": "Name sections.specimen-page-viewports for Explorer, graph and Inspector links without exposing the technical ID as prose. This draft adds no item and grants no approval.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.nevhwv4t5n",
+      "cellId": "designer.ia.sections.specimens",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/ia/sections.json",
+        "line": 5,
+        "key": "designer.ia.sections.specimens"
+      },
+      "before": "Specimens",
+      "after": "Specimens",
+      "rationale": "Give the sections Explorer group specimens a Writer-owned display name. Grouping and permanent item IDs are unchanged.",
+      "role": "label",
+      "budget": 60
+    },
+    {
+      "recordId": "st.xh7spvvaer",
+      "cellId": "designer.ia.sections.specimens-content",
+      "severity": "P1",
+      "status": "fixed",
+      "scope": "draft only",
+      "source": {
+        "commit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+        "path": "packages/designer/src/catalog/ia/sections.json",
+        "line": 8,
+        "key": "designer.ia.sections.specimens-content"
+      },
+      "before": "Content and presentation",
+      "after": "Content and presentation",
+      "rationale": "Give the sections Explorer group specimens-content a Writer-owned display name. Grouping and permanent item IDs are unchanged.",
       "role": "label",
       "budget": 60
     }
@@ -16719,6 +17269,120 @@
       "recordId": "st.c331pzvwey",
       "target": "packages/designer/src/studio/system-canvas/DesignerPage.tsx",
       "kind": "label"
+    },
+    {
+      "cellId": "designer.item.components.rich-text",
+      "recordId": "st.6jy6zkbrtc",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.components.media-player",
+      "recordId": "st.q9yej4b759",
+      "target": "packages/designer/src/catalog/slots/components.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.sectioned-document",
+      "recordId": "st.3rssm8ztcx",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-swatch",
+      "recordId": "st.cjqh0xwhnk",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-color-ramp",
+      "recordId": "st.7jafpb477w",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-type-ladder",
+      "recordId": "st.h9ffj447ed",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-spacing-ladder",
+      "recordId": "st.rymde5gdqj",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-radius-ladder",
+      "recordId": "st.f4bcsks90s",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-motion-player",
+      "recordId": "st.4z8j4g6a93",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-asset-grid",
+      "recordId": "st.at8wzd8jdm",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-icon-grid",
+      "recordId": "st.5mqkqzgpy0",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-variant-matrix",
+      "recordId": "st.wz9kb2dwjc",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-section-viewports",
+      "recordId": "st.2gwprmztsy",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-frame-viewports",
+      "recordId": "st.b5883vry72",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-rich-passage",
+      "recordId": "st.q2ap1p1dt2",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-copy-in-context",
+      "recordId": "st.mb0qw39cd5",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.item.sections.specimen-page-viewports",
+      "recordId": "st.w086w23spg",
+      "target": "packages/designer/src/catalog/slots/sections.json",
+      "kind": "item-name"
+    },
+    {
+      "cellId": "designer.ia.sections.specimens",
+      "recordId": "st.nevhwv4t5n",
+      "target": "packages/designer/src/catalog/ia/sections.json",
+      "kind": "ia-name"
+    },
+    {
+      "cellId": "designer.ia.sections.specimens-content",
+      "recordId": "st.xh7spvvaer",
+      "target": "packages/designer/src/catalog/ia/sections.json",
+      "kind": "ia-name"
     }
   ],
   "needs": [
@@ -20098,12 +20762,145 @@
       "severity": "P0",
       "status": "Need",
       "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.6jy6zkbrtc",
+      "cellId": "designer.item.components.rich-text",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.q9yej4b759",
+      "cellId": "designer.item.components.media-player",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.3rssm8ztcx",
+      "cellId": "designer.item.sections.sectioned-document",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.cjqh0xwhnk",
+      "cellId": "designer.item.sections.specimen-swatch",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.7jafpb477w",
+      "cellId": "designer.item.sections.specimen-color-ramp",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.h9ffj447ed",
+      "cellId": "designer.item.sections.specimen-type-ladder",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.rymde5gdqj",
+      "cellId": "designer.item.sections.specimen-spacing-ladder",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.f4bcsks90s",
+      "cellId": "designer.item.sections.specimen-radius-ladder",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.4z8j4g6a93",
+      "cellId": "designer.item.sections.specimen-motion-player",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.at8wzd8jdm",
+      "cellId": "designer.item.sections.specimen-asset-grid",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.5mqkqzgpy0",
+      "cellId": "designer.item.sections.specimen-icon-grid",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.wz9kb2dwjc",
+      "cellId": "designer.item.sections.specimen-variant-matrix",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.2gwprmztsy",
+      "cellId": "designer.item.sections.specimen-section-viewports",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.b5883vry72",
+      "cellId": "designer.item.sections.specimen-frame-viewports",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.q2ap1p1dt2",
+      "cellId": "designer.item.sections.specimen-rich-passage",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.mb0qw39cd5",
+      "cellId": "designer.item.sections.specimen-copy-in-context",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.w086w23spg",
+      "cellId": "designer.item.sections.specimen-page-viewports",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.nevhwv4t5n",
+      "cellId": "designer.ia.sections.specimens",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
+    },
+    {
+      "recordId": "st.xh7spvvaer",
+      "cellId": "designer.ia.sections.specimens-content",
+      "severity": "P0",
+      "status": "Need",
+      "message": "Draft only: validate and bind this CopyRef in a later host unit; do not activate or replace a missing binding with English."
     }
   ],
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 499,
+    "proposedBindings": 519,
     "draftRecords": 486,
     "reusedExistingRecords": 10
   },
@@ -20162,8 +20959,8 @@
       ],
       "sourceFiles": {
         "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
-        "packages/designer/src/catalog/slots/frames.json": "87405cb53f09694f962a01574ca26b24e9fca47849a7fa5d67c4fdefe51c4f09",
-        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "40c75828b3f6aee0173b436a09d7655efc78f3bb0ada61fdec0501245edd786a"
+        "packages/designer/src/catalog/slots/frames.json": "4afddf0f2ba37dbbd8156a16df3660d618f62d5e29f4e7fe3e2335674ce52db7",
+        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b"
       },
       "revisions": [
         {
@@ -20295,8 +21092,8 @@
       ],
       "sourceFiles": {
         "packages/designer/src/catalog-core/check-guidance.ts": "06d435ca6d405d76eea788b2b3da0c9ff88c5b86897932034763aac8274ec04f",
-        "packages/designer/src/catalog-core/types.ts": "b4df006e39c86086c756df26f47aa47e873e8cf24f6719de303b39093b0827af",
-        "packages/designer/src/catalog-core/check.ts": "afd6b992f95c5a3ff8e1618daccc6ac3c18568a4ab57241b8001fbfe7c7a6c56",
+        "packages/designer/src/catalog-core/types.ts": "8300652ef106e2a463c17892fe66cbbc39166ecf96f14493fe2aa2abd0e31468",
+        "packages/designer/src/catalog-core/check.ts": "fb6d49a85b3848472c1b27b7429df27736015951ea3af7363b57918811c850e3",
         "packages/designer/src/studio/Scorecard.tsx": "d724e62002acff7941236a87a23fc8be606cd0768f8a5d9ef9c94eccd00e9ef4"
       },
       "revisions": [],
@@ -20385,7 +21182,18 @@
         "st.29etzjj4kz",
         "st.jg4ndev7w5",
         "st.0pv4wr6skb",
-        "st.s4rxrrvs92"
+        "st.s4rxrrvs92",
+        "st.yp9jcda42g",
+        "st.g8cdn1vmr7",
+        "st.9fpt6f67wx",
+        "st.a1qp1vcmyr",
+        "st.xx87k8vc06",
+        "st.5r9jd8zqt1",
+        "st.h0xys4q2y0",
+        "st.t6thy09ja9",
+        "st.ykrqq0590w",
+        "st.zv5186a6rx",
+        "st.9wthr22vkx"
       ],
       "sourceFiles": {
         "packages/designer/src/catalog/ia/themes.json": "5d085a7c66fe99e565541f524be4484da388255f9cc2f2f2781d2b21447c984e",
@@ -20394,6 +21202,40 @@
       "revisions": [],
       "defaults": [
         "The tokens layer is retired; its names move to the 42 themes entries. Reused drafts keep their wording."
+      ]
+    },
+    {
+      "unit": "T6-WR-CATALOG-NAMES",
+      "sourceCommit": "395fc641d52510024361027c1870dd4ec1cf17cc",
+      "recordIds": [
+        "st.6jy6zkbrtc",
+        "st.q9yej4b759",
+        "st.3rssm8ztcx",
+        "st.cjqh0xwhnk",
+        "st.7jafpb477w",
+        "st.h9ffj447ed",
+        "st.rymde5gdqj",
+        "st.f4bcsks90s",
+        "st.4z8j4g6a93",
+        "st.at8wzd8jdm",
+        "st.5mqkqzgpy0",
+        "st.wz9kb2dwjc",
+        "st.2gwprmztsy",
+        "st.b5883vry72",
+        "st.q2ap1p1dt2",
+        "st.mb0qw39cd5",
+        "st.w086w23spg",
+        "st.nevhwv4t5n",
+        "st.xh7spvvaer"
+      ],
+      "sourceFiles": {
+        "packages/designer/src/catalog/slots/components.json": "e7e671b450b5b11081fd9e70f7baaf3f9440d041b10fc27193b5f4ef5091f371",
+        "packages/designer/src/catalog/slots/sections.json": "dc29df5a4ed7970c22a2408aa832d6463ccd106c304358769e4f561f917284fa",
+        "packages/designer/src/catalog/ia/sections.json": "11015a5eb7193196de462a4527c5076a65cfed5b8e611f7dc03b2e17d9d4eb62"
+      },
+      "revisions": [],
+      "defaults": [
+        "Leaves registered after the last naming pass get plain display names. Specimen sections are named for Explorer even though Writer does not mirror them as passages."
       ]
     }
   ],
@@ -20812,6 +21654,26 @@
       "recordId": "st.zxh419w2k5",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.item.sections.chat"
+    },
+    {
+      "recordId": "st.5f3rjs6dsb",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.bk53k3wgh5",
+      "source": "admin-meta.r1.en.json",
+      "sourceContext": "admin.enum.foundry"
+    },
+    {
+      "recordId": "st.wbt4xc7wcy",
+      "source": "admin-meta.r1.en.json",
+      "sourceContext": "admin.enum.consumer"
+    },
+    {
+      "recordId": "st.tgwyyxspsd",
+      "source": "admin-meta.r1.en.json",
+      "sourceContext": "admin.enum.fixture"
     }
   ]
 }

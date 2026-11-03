@@ -8,7 +8,9 @@ export const repositoryRoot = [process.cwd(), resolve(process.cwd(), "../..")].f
 export function catalogFixture<T>(path: string): T { return JSON.parse(readFileSync(resolve(repositoryRoot, path), "utf8")) as T; }
 export const draftEnvelopes = ["admin-voice.r1.en.json", "admin-studio.r1.en.json", "admin-meta.r1.en.json"].map(name =>
   catalogFixture<{ records: { id: string; status: string; text: string; args?: { name: string; type: string }[] }[]; bindings?: { cellId: string; recordId: string; kind: string; target: string }[]; reviews: { recordId: string; source: { path: string }; before: string; argumentMapping?: Record<string, string> }[] }>(`packages/writer/src/catalog/records/${name}`));
-const knownIds = new Set(draftEnvelopes.flatMap(envelope => envelope.records.map(record => record.id)));
+// Shared labels were canonicalized into common-labels, whose external declarations resolve from their owners (sign-in, paging).
+const common = catalogFixture<{ records: { id: string }[]; externalRecords: { recordId: string }[] }>("packages/writer/src/catalog/records/common-labels.r1.en.json");
+const knownIds = new Set([...draftEnvelopes.flatMap(envelope => envelope.records.map(record => record.id)), ...common.records.map(record => record.id), ...common.externalRecords.map(row => row.recordId)]);
 export function pseudoStudioCopy(locale = "en") {
   const requests: StudioCopyRef[] = [];
   const copy: StudioCopyBinding = { locale, resolver(ref) {

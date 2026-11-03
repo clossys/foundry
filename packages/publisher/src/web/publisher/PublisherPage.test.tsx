@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { publisherCopyFixtureResolver } from "./__fixtures__/writer-copy.js";
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render as renderBare, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { AppFrame } from "@clossys/designer/frames";
@@ -16,6 +16,8 @@ import { PublisherPlanStore } from "../../planning/change-set.js";
 import { STANDARD_PACK_INSTANCES, createStandardPackLibrary, STANDARD_PACK_REGISTRIES } from "./__fixtures__/standard-website.js";
 import { appBindingFixture } from "./app/__fixtures__/binding.js";
 import { fixtureCompiler } from "./__fixtures__/compiler.js";
+import { hostedRender } from "../__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
 
 let planStore: PublisherPlanStore;
 beforeEach(async () => { installFrameTestEnvironment(); planStore = await acceptedExampleStore(); });

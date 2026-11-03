@@ -1,14 +1,17 @@
 /** @vitest-environment jsdom */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render as renderBare, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, planSurfaceDefaults } from "../catalog-core/index.js";
 import type { SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../catalog-core/index.js";
 import * as studioEntry from "./index.js";
 import { packageSurfacePreview, planSurfacePreviews, SURFACE_SAMPLE_STATES } from "./planned-surface-previews.js";
 import { surfaceStateSample } from "./surface-preview-sample-content.js";
 import { specimenDataset } from "./specimen-dataset.js";
+import { hostedRender, hostedMarkup } from "../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 const SITE_SHELL_GAP = { slot: "frames.site-shell", reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" };
 

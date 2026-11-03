@@ -1,4 +1,4 @@
-import { renderToString } from "react-dom/server";
+import { renderToString as renderToStringBare } from "react-dom/server";
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { checkWiring, type WiringSource } from "../catalog-core/wiring.js";
@@ -6,6 +6,8 @@ import { expect, it } from "vitest";
 import { AppFrame } from "../frames/AppFrame.js";
 import { Studio } from "./Studio.js";
 import { labels, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
+import { hostedMarkup } from "../frames/__fixtures__/shell-copy.js";
+const renderToString = hostedMarkup(renderToStringBare);
 it("mounts only the system page canvas and its right rail on the existing Studio entry", () => {
   const html = renderToString(<AppFrame brand={{markSrc:"/mark.svg",wordmark:"Example",label:"Home"}} navigation={{tree:[]}} account={{signedOutLabel:"Account",sections:[]}} commands={{heading:"Commands",triggerLabel:"Search",searchLabel:"Search commands",closeLabel:"Close",emptyMessage:"No commands",groups:[]}}><Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }) }} labels={labels} /></AppFrame>);
   const host = document.createElement("div"); host.innerHTML = html;

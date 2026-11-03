@@ -43,6 +43,21 @@ describe("passage derivation", () => {
     expect(source).toEqual(before);
   });
 
+  it("leaves specimen sections and their emptied IA groups out of the Writer mirror", () => {
+    const source = fixture();
+    source.ia.nodes.unshift({ id: "specimens", label: "Specimens", children: [{ id: "specimens-content", label: "Content", leaves: ["sections.specimen-swatch"] }] });
+    source.ia.nodes[1]!.children[0]!.leaves.push("sections.specimen-grid");
+    source.slots.push(
+      { id: "sections.specimen-swatch", layer: "sections", contract: { kind: "section", passageSchema: "passages.specimen-swatch", copy: { sourceLocale: "en", fields: [] } } },
+      { id: "sections.specimen-grid", layer: "sections", contract: { kind: "section", passageSchema: "passages.specimen-grid", copy: { sourceLocale: "en", fields: [] } } },
+    );
+    const result = derivePassages(source.ia, source.slots);
+    expect(result.slots.map((slot: { id: string }) => slot.id)).toEqual(["passages.article", "passages.band"]);
+    expect(result.ia).toEqual(derivePassages(fixture().ia, fixture().slots).ia);
+    source.ia.nodes[1]!.children[0]!.leaves.pop();
+    expect(() => derivePassages(source.ia, source.slots)).toThrow(/Missing section placement: sections.specimen-grid/);
+  });
+
   it.each([
     ["unknown placement", (s: ReturnType<typeof fixture>) => { s.ia.nodes[0]!.children[0]!.leaves.push("sections.unknown"); }],
     ["duplicate placement", (s: ReturnType<typeof fixture>) => { s.ia.nodes[0]!.children[0]!.leaves.push("sections.band"); }],
@@ -116,16 +131,19 @@ describe("SU-9W section copy cascade", () => {
   const read = (path: string): any => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
   const copy = read("../records/section-defaults.r1.en.json");
   const cascade = read("../records/pending/sections-upgrade.r1.en.json");
-  const source = read("../../../../designer/src/catalog/slots/sections.json");
+  // Specimen sections are excluded from the Writer mirror (owner default).
+  const source = read("../../../../designer/src/catalog/slots/sections.json").filter((s: any) => !s.id.startsWith("sections.specimen-"));
+  // Live pairs registered after the cascade was approved sit outside its projection.
+  const postCascade = ["sections.sectioned-document"];
   const allRecords = withDeclaredCommonRecords(copy, cascade);
   const aliases = { ...copy.aliases, ...cascade.aliases };
   const strings = allRecords.filter((r: WriterRecord) => r.id.startsWith("st."));
 
-  it("pins 51 current live pairs separately from 52 approved projected pairs", () => {
+  it("pins 52 current live pairs separately from 52 approved projected pairs", () => {
     const current = loadWriterCatalog().slots.filter(slot => slot.layer === "passages");
-    expect(source).toHaveLength(51);
-    expect(current).toHaveLength(51);
-    expect(new Set(current.map(slot => slot.id)).size).toBe(51);
+    expect(source).toHaveLength(52);
+    expect(current).toHaveLength(52);
+    expect(new Set(current.map(slot => slot.id)).size).toBe(52);
     expect(current.map(slot => slot.id).sort()).toEqual(source.map((s: any) => s.contract.passageSchema).sort());
     expect(cascade.merges.map((m: any) => [m.fromSection, m.toSection])).toEqual([
       ["sections.logo-mark", "sections.logo-hero"],
@@ -135,7 +153,8 @@ describe("SU-9W section copy cascade", () => {
     expect(cascade.additions.map((a: any) => a.sectionId)).toEqual([
       "sections.canvas-lane", "sections.slot-board", "sections.canvas-controls",
     ]);
-    const projected = new Set(source.map((s: any) => s.id));
+    for (const id of postCascade) expect(source.some((s: any) => s.id === id)).toBe(true);
+    const projected = new Set(source.map((s: any) => s.id).filter((id: string) => !postCascade.includes(id)));
     for (const merge of cascade.merges) {
       expect(projected.has(merge.toSection)).toBe(true);
       // Idempotent across the pre-cascade base and the integrated catalog.

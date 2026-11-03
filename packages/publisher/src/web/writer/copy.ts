@@ -1,10 +1,10 @@
 import type { AdminCopyRef } from "@clossys/writer/admin-copy";
 /** Writer-owned draft references, with no inline text fallback. */
 export const WRITER_COPY_REFS = {
-  "pagination": {"id": "st.84cb7kqs37", "locale": "en"},
-  "previousPage": {"id": "st.3x4jygc06q", "locale": "en"},
-  "nextPage": {"id": "st.8hbhss001b", "locale": "en"},
-  "pageSummary": {"id": "st.r05nskpktg", "locale": "en"},
+  "pagination": {"id": "st.efsb6h9dmb", "locale": "en"},
+  "previousPage": {"id": "st.96qkp2bzpm", "locale": "en"},
+  "nextPage": {"id": "st.kb8ve83tjp", "locale": "en"},
+  "pageSummary": {"id": "st.88wbh5rn5a", "locale": "en"},
 
   "resize": { "id": "st.1t2qqmrptq", "locale": "en" },
   "records": {
@@ -28,7 +28,7 @@ export const WRITER_COPY_REFS = {
     "locale": "en"
   },
   "status": {
-    "id": "st.869b5ff0a5",
+    "id": "st.v6ra67gp67",
     "locale": "en"
   },
   "locale": {
@@ -36,7 +36,7 @@ export const WRITER_COPY_REFS = {
     "locale": "en"
   },
   "text": {
-    "id": "st.7b2005db95",
+    "id": "st.fg1dznm6qa",
     "locale": "en"
   },
   "bindings": {
@@ -52,15 +52,15 @@ export const WRITER_COPY_REFS = {
     "locale": "en"
   },
   "draft": {
-    "id": "st.8177dd6868",
+    "id": "st.td8tdah4rw",
     "locale": "en"
   },
   "approved": {
-    "id": "st.6006673533",
+    "id": "st.1re7rsx0et",
     "locale": "en"
   },
   "retired": {
-    "id": "st.4475278462",
+    "id": "st.dvdvvejry8",
     "locale": "en"
   },
   "noSelection": {

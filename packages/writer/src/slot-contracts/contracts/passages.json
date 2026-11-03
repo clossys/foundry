@@ -498,6 +498,14 @@
           "footnote": {
             "required": false,
             "maxChars": 480
+          },
+          "aside[].label": {
+            "required": false,
+            "maxChars": 120
+          },
+          "aside[].value": {
+            "required": false,
+            "maxChars": 480
           }
         },
         "designerSection": "sections.content"
@@ -1576,6 +1584,46 @@
             "required": false,
             "maxChars": 160,
             "maxLines": 1
+          },
+          "records[].image.alt": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.author.name": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.author.label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.date.label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.readingTime.value": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.readingTime.label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.tags[].label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.summary": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].editorial.outcomeStats[].label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.outcomeStats[].value": {
+            "required": false,
+            "maxChars": 160
           }
         },
         "designerSection": "sections.cards"

@@ -85,7 +85,7 @@ function setup(skeleton: AdminPageSkeleton = { l0: [{ id: "strings", label: {id:
   return { registry, pages, runtime, session, host, values, copy, publicationHosts };
 }
 describe("WX-2 shared copy on six native routes through prepareRegisteredRoute (fixture declarations)", () => {
-  it("resolves all 363 page binding cells in prepared route data and renders the collapsed table plus both Arabic records", async () => {
+  it("resolves all 354 page binding cells in prepared route data and renders the collapsed table plus both Arabic records", async () => {
     const f = setup({ l0: [{ id: "strings", label: {id:"strings.admin.group.writer.strings"}, count: 4, estimate: 80, partition: "l1", l1: [{ id: "names", label: {id:"strings.admin.ia.writer.strings.identity-names"}, count: 4, estimate: 400, l2: ["primary", "secondary"].map(id => ({ id, label: {id:id === "primary" ? "strings.admin.column.key" : "strings.admin.column.text"}, count: 2, estimate: 200 })) }] }] });
     const pair = f.pages.writer, route = pair.list;
     const ref = (name: string, kind: RuntimeContent["reference"]["kind"] = "records") => ({ kind, ref: `fixture.writer/${name}` });
@@ -124,11 +124,11 @@ describe("WX-2 shared copy on six native routes through prepareRegisteredRoute (
     expect(prepared.hash).toBe(runtimeHash(prepared.value));
     const preparedRows = prepared.value as readonly { id: string; key: string; text: string }[];
     const bindingRows = preparedRows.filter(row => row.id.startsWith("binding-"));
-    expect(bindings).toHaveLength(363);
-    expect(cells).toHaveLength(363);
-    expect(bindingRows).toHaveLength(363);
-    expect(new Set(bindingRows.map(row => row.id)).size).toBe(363);
-    expect(new Set(bindingRows.map(row => row.key)).size).toBe(363);
+    expect(bindings).toHaveLength(354);
+    expect(cells).toHaveLength(354);
+    expect(bindingRows).toHaveLength(354);
+    expect(new Set(bindingRows.map(row => row.id)).size).toBe(354);
+    expect(new Set(bindingRows.map(row => row.key)).size).toBe(354);
     expect(bindingRows.map(row => row.id)).toEqual(cells.map(cell => cell.id));
     expect(bindingRows.map(row => row.key)).toEqual(bindings.map(binding => binding.cellId));
     expect(Object.keys(ADMIN_PAGES_COPY_EN.aliases).sort()).toEqual(bindingRows.map(row => row.key).sort());

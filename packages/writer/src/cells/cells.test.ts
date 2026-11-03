@@ -106,9 +106,9 @@ describe("Writer section cells against the pinned source inventory", () => {
     const result = await compileWriterCells(root);
     expect(result.files).toEqual(originals);
     expect(Object.keys(originals)).toHaveLength(12);
-    expect(countByLocale(originals)).toEqual({ en: 1429, ar: 38 });
+    expect(countByLocale(originals)).toEqual({ en: 1433, ar: 38 });
     expect(countByLocale(result.files)).toEqual(countByLocale(originals));
-    expect(result.recordCount).toBe(1467);
+    expect(result.recordCount).toBe(1471);
   });
 
   it("preserves the nested pending envelope at its original relative output path", async () => {
@@ -119,7 +119,7 @@ describe("Writer section cells against the pinned source inventory", () => {
     expect(result.files[path]).toEqual(originals[path]);
     expect(await json(join(output, path))).toEqual(originals[path]);
     expect(result.files).not.toHaveProperty("sections-upgrade.r1.en.json");
-    await expect(compileWriterCells(root, output, { check: true })).resolves.toMatchObject({ recordCount: 1467 });
+    await expect(compileWriterCells(root, output, { check: true })).resolves.toMatchObject({ recordCount: 1471 });
   });
 
   it("round-trips sign-in English and Arabic records, passage skeletons and locale metadata", async () => {
