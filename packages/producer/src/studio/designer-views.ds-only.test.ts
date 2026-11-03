@@ -119,7 +119,7 @@ export function declaredSections(folder: string, clossys = CLOSSYS): Set<string>
 export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set()): string[] {
   const violations: string[] = [];
   for (const name of readdirSync(folder)) {
-    if (!/\.tsx?$/.test(name)) continue;
+    if (!/\.tsx?$/.test(name) || /\.test\.tsx?$/.test(name)) continue;
     const file = join(folder, name);
     const label = relative(STUDIO, file);
     const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, name.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
