@@ -1,5 +1,6 @@
 import { StudioPage } from './StudioPage';
 import { studioPages } from '../generated/studio-map';
+import { loadPageSeed } from '../lib/studio-seed';
 
 /**
  * Studio's assembly module for the routes Publisher installs into `app/` (`publish --install
@@ -10,10 +11,12 @@ const LEAF_SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const pageById = new Map(studioPages.map(page => [page.id, page]));
 const segmentsOf = (path: string) => path.split('/').filter(Boolean);
 
-export function PublishedPage({ page, slug }: { page: string; slug?: string }) {
+/** The installed page, rendered on the server over the data it shows so the first paint is the page. */
+export async function PublishedPage({ page, slug }: { page: string; slug?: string }) {
   const record = pageById.get(page);
   if (!record) throw new Error(`Studio has no installed page ${page}`);
-  return <StudioPage segments={[...segmentsOf(record.path), ...(slug === undefined ? [] : [slug])]} />;
+  const seed = await loadPageSeed(record, slug);
+  return <StudioPage segments={[...segmentsOf(record.path), ...(slug === undefined ? [] : [slug])]} {...(seed ? { seed } : {})} />;
 }
 
 /** Whether the gallery's record store holds a leaf, asked of Producer's library API at request time. */

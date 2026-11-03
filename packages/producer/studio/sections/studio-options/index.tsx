@@ -1,6 +1,4 @@
-import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFigure, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
-
-import { BlockViewerIframe } from '../studio-specimen/BlockViewerIframe';
+import { Badge, BlockViewerIframe, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFigure, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
 
 /**
  * What one version shows beside the others: a framed render (Designer items, Publisher pages),

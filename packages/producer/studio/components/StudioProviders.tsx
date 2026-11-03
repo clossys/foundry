@@ -2,20 +2,20 @@
 import { studioCopy } from '../lib/studio-copy';
 
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { RouterProvider } from 'react-aria-components';
 import { loadCells, type AgentCells } from '../lib/cells-client';
 import { studioCellChange } from '../lib/cell-events';
-import { studioReports, type StudioReport } from '../lib/studio-report';
+import type { StudioReport } from '../lib/studio-report';
+import { loadBrand, loadReports, type Resource, type StudioBrandInfo, type StudioSeed } from '../lib/studio-seed';
 import { StudioRouteMapProvider } from './StudioRouteMap';
 
-export type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
+export type { Resource, StudioBrandInfo } from '../lib/studio-seed';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
-/** The consumer's brand as its Designer output names it; the mark image is served by Producer. */
-export interface StudioBrandInfo { name?: string }
-interface StudioData { cells: Resource<AgentCells[]>; revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo> }
+/** `census` is only the server-rendered slot census; Home refreshes it per revision itself. */
+interface StudioData { cells: Resource<AgentCells[]>; revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo>; census?: StudioSeed['census'] }
 const DataContext = createContext<StudioData>({ cells: { state: 'loading' }, revision: 0, reports: { state: 'loading' }, brand: { state: 'loading' } });
 const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolved: 'light', setMode: () => {} });
 
@@ -37,27 +37,14 @@ function applyMode(mode: ThemeMode): 'light' | 'dark' {
   return dark ? 'dark' : 'light';
 }
 
-async function loadReports(signal: AbortSignal): Promise<StudioReport[]> {
-  const response = await fetch('/api/config', { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-its-configuration", { value0: String(response.status) }));
-  const config = await response.json() as Record<string, unknown>;
-  // Only the report fields leave this function; the session token is never retained.
-  return studioReports({ selection: config.selection, theme: config.theme, compilation: config.compilation });
-}
-
-async function loadBrand(signal: AbortSignal): Promise<StudioBrandInfo> {
-  const response = await fetch('/api/brand', { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) return {};
-  const value = await response.json() as Record<string, unknown>;
-  return typeof value.name === 'string' && value.name.trim() ? { name: value.name.trim() } : {};
-}
-
-export function StudioProviders({ children }: { children: ReactNode }) {
+/** `seed` is what the server render already loaded: the first paint shows it and the first revision does not refetch it. */
+export function StudioProviders({ children, seed }: { children: ReactNode; seed?: StudioSeed }) {
   const router = useRouter();
   const [revision, setRevision] = useState(0);
-  const [cells, setCells] = useState<Resource<AgentCells[]>>({ state: 'loading' });
-  const [reports, setReports] = useState<Resource<StudioReport[]>>({ state: 'loading' });
-  const [brand, setBrand] = useState<Resource<StudioBrandInfo>>({ state: 'loading' });
+  const [cells, setCells] = useState<Resource<AgentCells[]>>(() => seed?.cells ?? { state: 'loading' });
+  const [reports, setReports] = useState<Resource<StudioReport[]>>(() => seed?.reports ?? { state: 'loading' });
+  const [brand, setBrand] = useState<Resource<StudioBrandInfo>>(() => seed ? { state: 'ready', value: seed.brand } : { state: 'loading' });
+  const seeded = useRef(seed ? 0 : undefined);
   const [mode, setModeState] = useState<ThemeMode>('system');
   const [resolved, setResolved] = useState<'light' | 'dark'>('light');
 
@@ -85,19 +72,23 @@ export function StudioProviders({ children }: { children: ReactNode }) {
     return () => events.close();
   }, []);
   useEffect(() => {
+    if (seeded.current === revision) return;
+    seeded.current = undefined;
     const controller = new AbortController();
     loadCells(controller.signal).then(value => setCells({ state: 'ready', value }), error => { if (!controller.signal.aborted) setCells({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
     loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
-    loadBrand(controller.signal).then(value => {
-      setBrand({ state: 'ready', value });
-      document.title = value.name ? studioCopy("studio.branded-title", { value0: String(value.name) }) : studioCopy("studio.studio");
-    }, () => { if (!controller.signal.aborted) setBrand({ state: 'ready', value: {} }); });
+    loadBrand(controller.signal).then(value => setBrand({ state: 'ready', value }), () => { if (!controller.signal.aborted) setBrand({ state: 'ready', value: {} }); });
     return () => controller.abort();
   }, [revision]);
+  useEffect(() => {
+    if (brand.state !== 'ready') return;
+    document.title = brand.value.name ? studioCopy("studio.branded-title", { value0: String(brand.value.name) }) : studioCopy("studio.studio");
+  }, [brand]);
 
-  const data = useMemo(() => ({ cells, revision, reports, brand }), [cells, revision, reports, brand]);
+  const census = seed?.census;
+  const data = useMemo(() => ({ cells, revision, reports, brand, ...(census ? { census } : {}) }), [cells, revision, reports, brand, census]);
   const theme = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
   return <RouterProvider navigate={href => router.push(href)}>
-    <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider revision={revision}>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>
+    <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider revision={revision} initial={seed?.galleries}>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>
   </RouterProvider>;
 }

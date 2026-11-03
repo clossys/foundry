@@ -1,11 +1,12 @@
 import { Badge, Card, CardContent, CardDescription, CardTitle, HomeStockGrid, HomeStockCensusCard, HomeStockHeader, HomeStockNeedsHeader } from '@clossys/designer-ui';
 
-import type { HomeSlotCensus } from '../../lib/slot-census';
-
 export type HomeTone = 'secondary' | 'outline' | 'destructive';
 
 /** Counts come from the slot census, independently of gallery/renderer availability. */
-export type HomeCensus = HomeSlotCensus;
+export type HomeCensus =
+  | { state: 'ready'; total: number; withCandidate: number; pinned: number }
+  | { state: 'loading' }
+  | { state: 'error'; message: string };
 
 /** One agent on Home. Navigation belongs to the shared frame; counts use the independent native census. */
 export interface HomeAgent { id: string; label: string; purpose: string; icon: React.ReactNode; census?: HomeCensus; count?: { label: string; tone: HomeTone }; href: string; openLabel: string; openIcon?: React.ReactNode }

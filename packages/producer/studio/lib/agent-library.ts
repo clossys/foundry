@@ -1,3 +1,4 @@
+import { producerUrl } from './producer-url';
 import { optionCopy, optionsCopy } from './options-copy';
 import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
@@ -63,7 +64,7 @@ const refHref = (links: StudioLinks, ref: AgentRef) => ref.agent && ref.slug ? l
 const toRef = (links: StudioLinks, ref: AgentRef): ReferenceLink => { const href = refHref(links, ref); return { label: ref.label, ...(href ? { href } : {}) }; };
 
 async function request(path: string, signal: AbortSignal): Promise<unknown> {
-  const response = await fetch(path, { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+  const response = await fetch(producerUrl(path), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
   if (response.status === 404) return undefined;
   if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-this-agent-library", { value0: String(response.status) }));
   return response.json();

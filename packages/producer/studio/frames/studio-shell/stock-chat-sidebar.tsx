@@ -4,8 +4,7 @@ import type { ComponentProps, CSSProperties, ReactNode } from "react"
 import { MessageSquareIcon, SparklesIcon } from "lucide-react"
 import {
   Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
-  Sheet, SheetDescription, SheetHeader, SheetTitle,
-  Sidebar, SidebarContent, SidebarGroupLabel, SidebarHeader,
+  Sidebar, SidebarSheet, SidebarContent, SidebarGroupLabel, SidebarHeader,
 } from "@clossys/designer-ui"
 
 /** sidebar-15 right-side slots, bound to Studio's existing unconnected chat state. */
@@ -33,15 +32,13 @@ export function StockChatSidebar() {
   </Sidebar>
 }
 
-/** The same native Sheet width and content slots as Sidebar's mobile branch. */
-export function StockSidebarSheet({ panel, children, ...props }: Pick<ComponentProps<typeof Sheet>, "isOpen" | "onOpenChange"> & {
+/** The Designer's stock Sidebar mobile Sheet, for the navigation or the chat. */
+export function StockSidebarSheet({ panel, children, ...props }: Pick<ComponentProps<typeof SidebarSheet>, "isOpen" | "onOpenChange"> & {
   panel: "left" | "chat";
   children: ReactNode;
 }) {
-  return <Sheet {...props} side={panel === "left" ? "left" : "right"} data-sidebar="sidebar" data-slot="sidebar" data-mobile="true" data-panel={panel}
-    className="w-(--sidebar-width) bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-    style={{ "--sidebar-width": "18rem" } as CSSProperties}>
-    <SheetHeader className="sr-only"><SheetTitle>{panel === "left" ? "Sidebar" : "Chat"}</SheetTitle><SheetDescription>{panel === "left" ? "Displays the mobile sidebar." : "Ask an agent about the open page."}</SheetDescription></SheetHeader>
-    <div className="flex h-full w-full flex-col">{children}</div>
-  </Sheet>
+  return <SidebarSheet {...props} side={panel === "left" ? "left" : "right"} data-panel={panel}
+    title={panel === "left" ? "Sidebar" : "Chat"} description={panel === "left" ? "Displays the mobile sidebar." : "Ask an agent about the open page."}>
+    {children}
+  </SidebarSheet>
 }
