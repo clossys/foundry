@@ -1,0 +1,103 @@
+{
+  "name": "command",
+  "type": "registry:ui",
+  "registryDependencies": [
+    "dialog",
+    "input-group"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "command.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Autocomplete,\n  Collection,\n  composeRenderProps,\n  Header,\n  Input,\n  Menu,\n  MenuItem,\n  MenuSection,\n  SearchField,\n  Separator,\n  useFilter,\n  type AutocompleteProps,\n  type InputProps,\n  type MenuItemProps,\n  type MenuProps,\n  type MenuSectionProps,\n  type SeparatorProps,\n} from \"react-aria-components\"\n\nimport {\n  Dialog,\n  DialogDescription,\n  DialogHeader,\n  DialogTitle,\n} from \"@/components/ui/dialog\"\nimport {\n  InputGroup,\n  InputGroupAddon,\n} from \"@/components/ui/input-group\"\nimport { SearchIcon, CheckIcon } from \"lucide-react\"\n\nfunction Command({\n  className,\n  dir,\n  style,\n  ...props\n}: Omit<AutocompleteProps, \"className\" | \"style\"> & {\n  className?: string\n  dir?: React.HTMLAttributes<HTMLDivElement>[\"dir\"]\n  style?: React.CSSProperties\n}) {\n  const { contains } = useFilter({ sensitivity: \"base\" })\n  return (\n    <div\n      data-slot=\"command\"\n      dir={dir}\n      className={cn(\n        \"flex size-full flex-col overflow-hidden rounded-xl! bg-popover p-1 text-popover-foreground\",\n        className\n      )}\n      style={style}\n    >\n      <Autocomplete {...props} filter={props.filter || contains}>\n        {props.children}\n      </Autocomplete>\n    </div>\n  )\n}\n\nfunction CommandDialog({\n  title = \"Command Palette\",\n  description = \"Search for a command to run...\",\n  children,\n  open,\n  onOpenChange,\n  className,\n  showCloseButton = false,\n  ...props\n}: Omit<\n  React.ComponentProps<typeof Dialog>,\n  \"children\" | \"className\" | \"isOpen\" | \"onOpenChange\"\n> & {\n  title?: string\n  description?: string\n  open?: boolean\n  onOpenChange?: (isOpen: boolean) => void\n  className?: string\n  showCloseButton?: boolean\n  children: React.ReactNode\n}) {\n  return (\n    <Dialog\n      isOpen={open}\n      onOpenChange={onOpenChange}\n      className={cn(\n        \"top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0\",\n        className\n      )}\n      showCloseButton={showCloseButton}\n      isDismissable\n      {...props}\n    >\n      <DialogHeader className=\"sr-only\">\n        <DialogTitle>{title}</DialogTitle>\n        <DialogDescription>{description}</DialogDescription>\n      </DialogHeader>\n      {children}\n    </Dialog>\n  )\n}\n\nfunction CommandInput({ className, ...props }: InputProps) {\n  return (\n    <SearchField\n      autoFocus\n      aria-label={props.placeholder || \"Search\"}\n      data-slot=\"command-input-wrapper\"\n      className=\"p-1 pb-0\"\n    >\n      <InputGroup className=\"h-8! rounded-lg! border-input/30 bg-input/30 shadow-none! *:data-[slot=input-group-addon]:pl-2!\">\n        <Input\n          {...props}\n          data-slot=\"command-input\"\n          className={cn(\n            \"w-full text-sm outline-hidden disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden\",\n            className\n          )}\n        />\n        <InputGroupAddon>\n          <SearchIcon\n            className=\"size-4 shrink-0 opacity-50\"\n          />\n        </InputGroupAddon>\n      </InputGroup>\n    </SearchField>\n  )\n}\n\nfunction CommandList<T extends object>({ className, ...props }: MenuProps<T>) {\n  return (\n    <Menu\n      {...props}\n      data-slot=\"command-list\"\n      className={cn(\n        \"no-scrollbar max-h-72 scroll-py-1 overflow-x-hidden overflow-y-auto outline-none\",\n        className\n      )}\n    />\n  )\n}\n\nfunction CommandEmpty({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"command-empty\"\n      className={cn(\"py-6 text-center text-sm\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction CommandGroup<T extends object>({\n  className,\n  children,\n  items,\n  heading,\n  ...props\n}: MenuSectionProps<T> & { heading?: string }) {\n  return (\n    <MenuSection\n      data-slot=\"command-group\"\n      className={cn(\n        \"overflow-hidden p-1 text-foreground **:[[cmdk-group-heading]]:px-2 **:[[cmdk-group-heading]]:py-1.5 **:[[cmdk-group-heading]]:text-xs **:[[cmdk-group-heading]]:font-medium **:[[cmdk-group-heading]]:text-muted-foreground\",\n        className\n      )}\n      {...props}\n    >\n      {heading && <Header cmdk-group-heading=\"\">{heading}</Header>}\n      <Collection items={items}>{children}</Collection>\n    </MenuSection>\n  )\n}\n\nfunction CommandSeparator({ className, ...props }: SeparatorProps) {\n  return (\n    <Separator\n      data-slot=\"command-separator\"\n      className={cn(\"-mx-1 h-px bg-border\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction CommandItem<T extends object>({\n  className,\n  children,\n  textValue,\n  ...props\n}: MenuItemProps<T>) {\n  return (\n    <MenuItem\n      {...props}\n      data-slot=\"command-item\"\n      className={cn(\n        \"group/command-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! data-focused:bg-muted data-focused:text-foreground data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-muted data-selected:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-focused:*:[svg]:text-foreground data-selected:*:[svg]:text-foreground\",\n        className\n      )}\n      textValue={\n        textValue || (typeof children === \"string\" ? children : undefined)\n      }\n    >\n      {composeRenderProps(children, (children) => (\n        <>\n          {children}\n          <CheckIcon\n            className=\"ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100\"\n          />\n        </>\n      ))}\n    </MenuItem>\n  )\n}\n\nfunction CommandShortcut({\n  className,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"command-shortcut\"\n      className={cn(\n        \"ml-auto text-xs tracking-widest text-muted-foreground group-data-focused/command-item:text-foreground group-data-selected/command-item:text-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Command,\n  CommandDialog,\n  CommandInput,\n  CommandList,\n  CommandEmpty,\n  CommandGroup,\n  CommandItem,\n  CommandShortcut,\n  CommandSeparator,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.command",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/command@4.23.0"
+      ],
+      "hash": "sha256:f96ae8f790d4420c870211b8faa0fce952c3601d6e8778819f4adf0a086e9a5a",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "command.tsx": "registry/aria-nova/ui/command.tsx"
+      }
+    },
+    "element": {
+      "id": "components.command/command",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.command",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/command@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for components.command.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "dialog",
+          "input-group"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--sidebar-primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--shadow",
+          "--ring",
+          "--sidebar-ring",
+          "--tracking-tight",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

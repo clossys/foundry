@@ -1,0 +1,99 @@
+{
+  "name": "toggle-group",
+  "type": "registry:ui",
+  "registryDependencies": [
+    "toggle"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "toggle-group.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"cn\"\nimport {\n  ToggleButtonGroup as ToggleGroupPrimitive,\n  ToggleButton as TogglePrimitive,\n  type ToggleButtonGroupProps,\n  type ToggleButtonProps,\n} from \"react-aria-components\"\n\nimport { toggleVariants } from \"@/components/ui/toggle\"\n\nconst ToggleGroupContext = React.createContext<\n  VariantProps<typeof toggleVariants> & {\n    spacing?: number\n    orientation?: \"horizontal\" | \"vertical\"\n  }\n>({\n  size: \"default\",\n  variant: \"default\",\n  spacing: 2,\n  orientation: \"horizontal\",\n})\n\nfunction ToggleGroup({\n  className,\n  variant,\n  size,\n  spacing = 2,\n  orientation = \"horizontal\",\n  children,\n  ...props\n}: Omit<ToggleButtonGroupProps, \"children\"> &\n  VariantProps<typeof toggleVariants> & {\n    spacing?: number\n    orientation?: \"horizontal\" | \"vertical\"\n    children?: React.ReactNode\n  }) {\n  return (\n    <ToggleGroupPrimitive\n      data-slot=\"toggle-group\"\n      data-variant={variant}\n      data-size={size}\n      data-spacing={spacing}\n      orientation={orientation}\n      style={\n        { \"--gap\": `calc(var(--spacing) * ${spacing})` } as React.CSSProperties\n      }\n      className={cn(\n        \"group/toggle-group flex w-fit flex-row items-center gap-(--gap) rounded-lg data-[size=sm]:rounded-[min(var(--radius-md),10px)] data-vertical:flex-col data-vertical:items-stretch\",\n        className\n      )}\n      {...props}\n    >\n      <ToggleGroupContext.Provider\n        value={{ variant, size, spacing, orientation }}\n      >\n        {children}\n      </ToggleGroupContext.Provider>\n    </ToggleGroupPrimitive>\n  )\n}\n\nfunction ToggleGroupItem({\n  className,\n  children,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: ToggleButtonProps & VariantProps<typeof toggleVariants>) {\n  const context = React.useContext(ToggleGroupContext)\n\n  return (\n    <TogglePrimitive\n      data-slot=\"toggle-group-item\"\n      data-variant={context.variant || variant}\n      data-size={context.size || size}\n      data-spacing={context.spacing}\n      className={cn(\n        \"shrink-0 group-data-[spacing=0]/toggle-group:rounded-none group-data-[spacing=0]/toggle-group:px-2 focus:z-10 focus-visible:z-10 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-end]:pr-1.5 group-data-[spacing=0]/toggle-group:has-data-[icon=inline-start]:pl-1.5 group-data-horizontal/toggle-group:data-[spacing=0]:first:rounded-l-lg group-data-vertical/toggle-group:data-[spacing=0]:first:rounded-t-lg group-data-horizontal/toggle-group:data-[spacing=0]:last:rounded-r-lg group-data-vertical/toggle-group:data-[spacing=0]:last:rounded-b-lg group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:border-l-0 group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:border-t-0 group-data-horizontal/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-l group-data-vertical/toggle-group:data-[spacing=0]:data-[variant=outline]:first:border-t\",\n        toggleVariants({\n          variant: context.variant || variant,\n          size: context.size || size,\n        }),\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </TogglePrimitive>\n  )\n}\n\nexport { ToggleGroup, ToggleGroupItem }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.toggle-group",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/toggle-group@4.23.0"
+      ],
+      "hash": "sha256:6ae8db2f28a60f2c3e5b993ff64512a30a8441f1a964c95fc67c6e4330ccefc8",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "toggle-group.tsx": "registry/aria-nova/ui/toggle-group.tsx"
+      }
+    },
+    "element": {
+      "id": "components.toggle-group/toggle-group",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.toggle-group",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/toggle-group@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for components.toggle-group.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "toggle"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--ring",
+          "--sidebar-ring"
+        ]
+      }
+    }
+  }
+}
