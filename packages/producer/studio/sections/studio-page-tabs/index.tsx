@@ -17,7 +17,7 @@ export interface PageTabsInput {
 
 /** `sections.studio.page-tabs`: stock shadcn Tabs in a ScrollArea; each tab is a link to its route. */
 export default function PageTabsSection({ tabs }: { tabs: PageTabsInput }) {
-  return <ScrollArea data-studio-section="page-tabs" className="w-full px-6">
+  return <ScrollArea data-studio-section="page-tabs" className="w-full">
     <Tabs selectedKey={tabs.active}>
       <TabsList aria-label={tabs.label}>
         {tabs.tabs.map(tab => <TabsTrigger key={tab.id} id={tab.id} href={tab.href}>{tab.label}</TabsTrigger>)}

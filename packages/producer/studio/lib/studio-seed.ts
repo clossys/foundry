@@ -19,7 +19,8 @@ export type Resource<T> = { state: 'loading' } | { state: 'error'; message: stri
 /** The consumer's brand as its Designer output names it; the mark image is served by Producer. */
 export interface StudioBrandInfo { name?: string }
 /** One agent's slots as Producer's slot gallery returns them: IA sections, each with its slot cards. */
-export interface SlotGroupsRecord { sections: readonly SlotGallerySection[]; count: number }
+/** A tab's record: the agent's gallery and, beside it, the publication whose pages its cards may frame. */
+export interface SlotGroupsRecord { sections: readonly SlotGallerySection[]; count: number; publication?: PublicationResponse }
 /** A leaf's record: the slot detail and, beside it, the publication that may have emitted it. */
 export interface LeafRecord { detail: SlotDetail; publication?: PublicationResponse }
 
@@ -47,7 +48,11 @@ export async function loadSlotGroups(agent: string, signal: AbortSignal): Promis
   if (!response.ok) throw new Error(studioCopy("studio.the-library-could-not-load"));
   const value = await response.json() as { state?: unknown; sections?: unknown; count?: unknown };
   if (value.state !== 'ready' || !Array.isArray(value.sections)) throw new Error(studioCopy("studio.the-library-could-not-load"));
-  return { sections: value.sections as SlotGallerySection[], count: typeof value.count === 'number' ? value.count : 0 };
+  const sections = value.sections as SlotGallerySection[];
+  // Only a gallery of page slots frames published pages; the others never ask for the publication.
+  const pages = sections.some(section => section.cards.some(card => card.kind === 'page' && card.status === 'active'));
+  const publication = pages ? await loadPublication(signal).catch(() => undefined) : undefined;
+  return { sections, count: typeof value.count === 'number' ? value.count : 0, ...(publication ? { publication } : {}) };
 }
 
 export async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promise<LeafRecord | undefined> {

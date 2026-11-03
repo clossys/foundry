@@ -16,6 +16,9 @@ import {
 import { studioIcon } from "../../lib/studio-icons"
 import { useStudioData, useThemeMode } from "../../components/StudioProviders"
 
+/** sidebar-07's sample avatar image; Producer serves every `/avatars/*` image as the workspace placeholder. */
+const placeholderAvatar = { src: "/avatars/shadcn.jpg" }
+
 /** The consumer's mark served for one ground (`dark` = a light mark for a dark ground). */
 function BrandMark({ ground }: { ground: "light" | "dark" }) {
   return <img data-brand-mark={ground} src={`/api/brand/mark.svg?ground=${ground}`} alt="" width={16} height={16} />
@@ -40,6 +43,7 @@ export function AppSidebar({
     user: {
       name: "Local workspace",
       email: "Producer on this machine",
+      avatar: placeholderAvatar.src,
       initials: "LW",
     },
     teams: [

@@ -19,7 +19,7 @@ function runtimeMap(): ContentMap {
     const tab = pageById.get(leaf.page);
     const parent = entryById.get(leaf.page)?.parentId;
     if (!tab?.leaf || parent === undefined) return [];
-    return [{ id: leafId(leaf), parentId: parent, order: 1000 + index, title: leaf.slug, kind: 'page', path: leaf.path, source: { frameId: tab.frameId, sectionIds: [...tab.leaf.sectionIds] } } as ContentMapEntry];
+    return [{ id: leafId(leaf), parentId: parent, order: 1000 + index, title: leaf.title ?? leaf.slug, kind: 'page', path: leaf.path, source: { frameId: tab.frameId, sectionIds: [...tab.leaf.sectionIds] } } as ContentMapEntry];
   });
   return { ...studioMap, entries: [...studioMap.entries, ...extra] };
 }
@@ -65,8 +65,21 @@ export function studioShellProjection(map: ContentMap, entryId: string): StudioS
     homeHref: home && 'path' in home && home.path ? home.path : '/',
     navigation: projectNavigation(map, navigationActive(map, entryId)),
     commands: projectCommands(map),
-    breadcrumbs: projectBreadcrumbs(map, entryId),
+    breadcrumbs: studioBreadcrumbs(map, entryId),
   };
+}
+
+/**
+ * The trail of an entry, from the map: its root group, then its pages. A leaf sits under its tab's
+ * record in the map (the map stays within its depth), so its trail is its tab's trail plus itself.
+ */
+function studioBreadcrumbs(map: ContentMap, entryId: string): readonly ContentMapBreadcrumb[] {
+  const leaf = studioLeaves.find(row => leafId(row) === entryId);
+  const own = leaf ? [...projectBreadcrumbs(map, leaf.page), ...projectBreadcrumbs(map, entryId).slice(-1)] : projectBreadcrumbs(map, entryId);
+  const group = studioGroupOf(leaf ? leaf.page : entryId);
+  if (!group || own.some(crumb => crumb.id === group.id)) return own;
+  const href = studioLanding(group.id);
+  return [{ id: group.id, label: group.title, ...(href ? { href } : {}) }, ...own];
 }
 
 /** The compiled child pages of an entry, in map order: a record's tabs, an agent group's records. */
@@ -97,6 +110,15 @@ export function studioGroupOf(id: string): ContentMapNode | undefined {
 /** The served path of a slot's leaf, through the map: the tab of the record whose leaf template reads that agent. */
 export function studioLeafHref(agent: string, slug: string): string | undefined {
   return studioLeaves.find(row => row.slug === slug && pageById.get(row.page)?.leaf?.data.agent === agent)?.path;
+}
+
+/**
+ * A slot's display label, through the map: the title the content-map projection gave its leaf
+ * (the Writer's name for the slot). Nav, header, cards, breadcrumbs and the command menu all read
+ * this one projection.
+ */
+export function studioLeafTitle(agent: string, slug: string): string | undefined {
+  return studioLeaves.find(row => row.slug === slug && pageById.get(row.page)?.leaf?.data.agent === agent)?.title;
 }
 
 /** Every page entry the map holds, in map order: the routes a publication table lists. */

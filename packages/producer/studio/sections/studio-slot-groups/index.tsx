@@ -1,4 +1,5 @@
 import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton } from '@clossys/designer-ui';
+import { SpecimenContent, type SpecimenInput } from '../studio-specimen';
 
 export type SlotTone = 'secondary' | 'outline' | 'destructive';
 
@@ -10,7 +11,8 @@ export interface SlotCard {
   statusLabel: string;
   statusTone: SlotTone;
   version?: number;
-  excerpt: readonly string[];
+  /** What the slot's pin produces, drawn by the detail page's specimen renderer: a view-only frame or the record's lead lines. */
+  specimen: SpecimenInput;
 }
 
 /** One IA group of the active tab: its label and its slots, in IA order. */
@@ -39,9 +41,9 @@ export default function SlotGroupsSection({ groups }: { groups: SlotGroupsInput 
               {card.version ? <Badge variant="ghost">v{card.version}</Badge> : null}
               <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
             </CardTitle>
-            <CardDescription>{card.id}</CardDescription>
+            <CardDescription className="font-mono text-xs">{card.id}</CardDescription>
           </CardHeader>
-          {card.excerpt.length ? <CardContent>{card.excerpt.map(line => <CardDescription key={line}>{line}</CardDescription>)}</CardContent> : null}
+          <SpecimenContent specimen={card.specimen} />
         </Card>)}
       </CardGrid>
     </section>) : <CardDescription>{groups.empty}</CardDescription>}

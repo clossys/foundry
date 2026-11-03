@@ -20,11 +20,11 @@ import type { OptionsInput } from '../sections/studio-options';
 import type { PageHeaderInput } from '../sections/studio-page-header';
 import type { PageTabsInput } from '../sections/studio-page-tabs';
 import type { SlotGroupsInput, SlotTone } from '../sections/studio-slot-groups';
-import { slotDetailInputs } from '../lib/slot-detail';
+import { slotCardSpecimen, slotDetailInputs } from '../lib/slot-detail';
 import { studioCopy } from '../lib/studio-copy';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
-import { resolveStudioRoute, studioChildren, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
+import { resolveStudioRoute, studioChildren, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { useSlotCensus } from '../lib/slot-census';
 import { loadLeaf, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
@@ -119,8 +119,10 @@ function useHomeInputs({ page }: LoaderProps): Loaded {
       const record = pageById.get(studioChildren(group.id)[0]?.id ?? '');
       if (!href || !record) return [];
       const Icon = studioIcon(group.icon);
+      // The agent's purpose, which its records carry beside their own description.
+      const purpose = record.data.purpose ?? record.data.description;
       return [{
-        id: group.id, label: group.title, purpose: record.data.description ? studioCopy(record.data.description) : '', icon: <Icon className="size-4" />,
+        id: group.id, label: group.title, purpose: purpose ? studioCopy(purpose) : '', icon: <Icon className="size-4" />,
         census: census[group.id], href, openLabel: studioCopy("studio.open", { value0: String(group.title) }), openIcon: <ArrowRightIcon data-icon="inline-end" />,
       }];
     });
@@ -134,6 +136,7 @@ function useHomeInputs({ page }: LoaderProps): Loaded {
 /** A group-tab page: the record's head, its tab routes, and the tab's IA groups of slot cards. */
 function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
   const { reports } = useStudioData();
+  const { resolved } = useThemeMode();
   const agent = spec.data.agent;
   const seed = useContext(PageSeedContext).groups;
   const record = useResource<SlotGroupsRecord>(agent, seed && { key: seed.agent, record: seed.record }, signal => loadSlotGroups(agent!, signal), studioCopy("studio.the-library-could-not-load"));
@@ -149,11 +152,14 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
       empty: studioCopy("studio.nothing-to-preview-yet"),
       groups: (spec.data.groups ?? []).flatMap(id => {
         const section = sections.get(id);
-        return section ? [{ id, label: section.label, cards: section.cards.map(card => ({
-          id: card.id, name: card.name, href: studioLeafHref(agent, card.slug) ?? '',
-          statusLabel: studioCopy(`studio.${card.status}`), statusTone: STATUS_TONE[card.status] ?? 'outline',
-          ...(card.version ? { version: card.version } : {}), excerpt: card.excerpt,
-        })) }] : [];
+        return section ? [{ id, label: section.label, cards: section.cards.map(card => {
+          const name = studioLeafTitle(agent, card.slug) ?? card.id;
+          return {
+            id: card.id, name, href: studioLeafHref(agent, card.slug) ?? '',
+            statusLabel: studioCopy(`studio.${card.status}`), statusTone: STATUS_TONE[card.status] ?? 'outline',
+            ...(card.version ? { version: card.version } : {}), specimen: slotCardSpecimen(card, name, resolved, record.value.publication),
+          };
+        }) }] : [];
       }),
     };
     const cards = groups.groups.flatMap(group => group.cards);
@@ -163,7 +169,7 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
     const waiting = record.value.sections.flatMap(section => section.level === 2 && sections.has(section.id) ? section.cards.filter(card => card.status !== 'active' && card.options > 0) : []);
     const options = cards.filter(card => waiting.some(row => row.id === card.id)).map(cardRow);
     return { state: 'ready', inputs: { header: { ...pageHeader(owner) }, tabs, groups }, modules: { checks: checksInput(failing, options, openNeeds(list, report => report.agent === agent).map(needRow)) } };
-  }, [agent, record, entry, page, spec, reports]);
+  }, [agent, record, entry, page, spec, reports, resolved]);
 }
 
 /** A leaf page: one slot's detail, back-linked to the tab that lists it. */
@@ -180,7 +186,7 @@ function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
     if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-could-not-load-61e548"), description: record.message } };
     const label = studioGroupOf(page.id)?.title ?? agent;
     if (!record.value) return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-is-gone"), description: studioCopy("studio.no-longer-records", { value0: String(label), value1: String(slug) }) } };
-    const inputs = slotDetailInputs(record.value.detail, { leaf: studioLeafHref, back: { href: page.path, label: page.title } }, resolved, record.value.publication);
+    const inputs = slotDetailInputs(record.value.detail, { leaf: studioLeafHref, label: studioLeafTitle, back: { href: page.path, label: page.title } }, resolved, record.value.publication);
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     return { state: 'ready', inputs, modules: { checks: leafChecks(inputs, list, agent, slug) } };
   }, [agent, slug, record, page, spec, resolved, reports]);

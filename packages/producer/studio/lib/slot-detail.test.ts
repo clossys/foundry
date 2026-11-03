@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { SlotDetail } from '../../src/server/slot-detail';
 import { slotDetailInputs } from './slot-detail';
 
-const links = { leaf: (agent: string, id: string) => `/${agent}/${id}`, back: { href: '/tab', label: 'Tab' } };
+const links = { leaf: (agent: string, id: string) => `/${agent}/${id}`, label: () => 'Example', back: { href: '/tab', label: 'Tab' } };
 const detail: SlotDetail = {
   agent: 'designer', id: 'sections.example', kind: 'element', trail: ['Sections', 'Examples'],
   contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, history: [], checks: [],

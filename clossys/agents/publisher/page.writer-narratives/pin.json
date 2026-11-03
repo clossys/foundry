@@ -1,6 +1,6 @@
 {
-  "candidate": "page-v1.json",
-  "sha256": "d54e21cf0f92ff22e438574a8432cd47707edf88b6b979c78a2c23465304e20f",
-  "pinnedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
-  "at": "2026-11-03T12:00:00Z"
+  "candidate": "page-v2.json",
+  "sha256": "998b5dea5a1fde9821b979541fe85d3bfe1ebcd731f83c57483e2a4cb7540cbe",
+  "pinnedBy": "owner:2026-11-03 STUDIO-TEMPLATE-FIX go",
+  "at": "2026-11-03T15:00:00Z"
 }

@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "7fe9196657658af27ee8bdcb0b01114651a1aa2a46b681a71082be62259a1b14",
+  "revision": "ca029cf00748e7709f32c7e6b66e6fdc69acbe3a546b88e6cd080c563929f9d1",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -1589,6 +1589,114 @@
       "id": "studio.checks-findings",
       "text": "{failing} of {count} checks report a finding.",
       "context": "lib/checks-copy.ts, sections/studio-checks/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-context",
+      "text": "The market, customers, competitors and company the strategy starts from.",
+      "context": "publisher:page.director-context",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-aspiration",
+      "text": "What the business sets out to become: its purpose, culture and goals.",
+      "context": "publisher:page.director-aspiration",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-focus",
+      "text": "Where the business plays: its category, segments, offers, reach and customer lifecycle.",
+      "context": "publisher:page.director-focus",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-advantage",
+      "text": "Why customers choose this business: its proposition, what defends it and the model behind it.",
+      "context": "publisher:page.director-advantage",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-identity",
+      "text": "Who the business is: its brand, names, and verbal and visual identity.",
+      "context": "publisher:page.director-identity",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-capability",
+      "text": "What the business needs to deliver: competencies, sourcing, operations, team and resources.",
+      "context": "publisher:page.director-capability",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-director-execution",
+      "text": "How the strategy runs: priorities, roadmap, measures and risks.",
+      "context": "publisher:page.director-execution",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-themes",
+      "text": "The tokens every surface reads: colors, shape, typography, space, depth and motion.",
+      "context": "publisher:page.designer-themes",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-assets",
+      "text": "The logo, app identity, icons and media the product shows.",
+      "context": "publisher:page.designer-assets",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-components",
+      "text": "The building blocks sections and frames are composed from: actions, inputs, display, feedback, navigation and containment.",
+      "context": "publisher:page.designer-components",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-sections",
+      "text": "The page sections Publisher places, each composed from pinned components.",
+      "context": "publisher:page.designer-sections",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-designer-frames",
+      "text": "The shells pages sit in: page shells, regions and overlays.",
+      "context": "publisher:page.designer-frames",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-lexicon",
+      "text": "The voice and the words: tone, terminology, claims and formats.",
+      "context": "publisher:page.writer-lexicon",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-strings",
+      "text": "Every short string the product shows: interface, feedback, identity, media text and metadata.",
+      "context": "publisher:page.writer-strings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-patterns",
+      "text": "Reusable copy shapes: headings, actions, messages, forms, lists and attribution.",
+      "context": "publisher:page.writer-patterns",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-passages",
+      "text": "The copy each kind of section carries, written to its structure.",
+      "context": "publisher:page.writer-passages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-writer-narratives",
+      "text": "The stories told end to end: on the web, in documents and in communications.",
+      "context": "publisher:page.writer-narratives",
+      "status": "draft"
+    },
+    {
+      "id": "studio.group-publisher-studio",
+      "text": "The pages Studio publishes, each a pinned frame and its sections, and the publication they make.",
+      "context": "publisher:page.publisher-studio",
       "status": "draft"
     }
   ]

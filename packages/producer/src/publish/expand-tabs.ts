@@ -18,6 +18,7 @@
 import type { ContentMap, ContentMapEntry, ContentMapNode } from "@clossys/publisher/content-map";
 import type { NextRouteLeafTemplate } from "@clossys/publisher/install";
 import { readIa } from "../records/slots.js";
+import { slotLabel } from "../records/slot-labels.js";
 import type { SlotAgent } from "../records/slot-model/index.js";
 
 type Json = Record<string, unknown>;
@@ -94,7 +95,7 @@ export function expandPublication(consumer: string, map: ContentMap, routes: rea
       tabs.push(tab);
       entries.push({ id: tab.id, parentId: record.id, order, title: tab.title, kind: "page", path: tab.path, ...(record.source ? { source: record.source } : {}) } as ContentMapEntry);
       outRoutes.push({ ...own, instanceId: tab.id, path: tab.path, label: tab.title, data: { ...(own.data as Json), groups: tab.groups }, leaf });
-      leafTemplates.push({ pageId: tab.id, parentId: record.id, param: "slug", leaves: tab.slots.map(slot => ({ slug: slot, title: slot })) });
+      leafTemplates.push({ pageId: tab.id, parentId: record.id, param: "slug", leaves: tab.slots.map(slot => ({ slug: slot, title: slotLabel(consumer, spec.agent, slot) })) });
       const legacyBase = record.parentId === undefined ? undefined : byId.get(record.parentId);
       if (legacyBase?.kind === "group") {
         if (!firstTabOfGroup.has(legacyBase.id)) firstTabOfGroup.set(legacyBase.id, tab.path);

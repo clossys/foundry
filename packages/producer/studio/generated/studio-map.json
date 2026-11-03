@@ -4318,7 +4318,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-context"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4394,7 +4395,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-aspiration"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4470,7 +4472,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-focus"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4546,7 +4549,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-advantage"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4622,7 +4626,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-identity"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4698,7 +4703,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-capability"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4774,7 +4780,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the"
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-execution"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4850,7 +4857,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the"
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -4926,7 +4934,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the"
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-assets"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5002,7 +5011,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the"
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5078,7 +5088,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the"
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5154,7 +5165,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the"
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-frames"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5230,7 +5242,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the"
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-lexicon"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5306,7 +5319,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the"
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-strings"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5382,7 +5396,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the"
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5458,7 +5473,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the"
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5534,7 +5550,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the"
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-narratives"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5610,7 +5627,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its"
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio"
       },
       "inputs": {
         "sections.studio.page-header": "header",
@@ -5686,7 +5704,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-context",
         "groups": [
           "context/context.market"
         ]
@@ -5881,7 +5900,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-context",
         "groups": [
           "context/context.customer"
         ]
@@ -6076,7 +6096,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-context",
         "groups": [
           "context/context.competition"
         ]
@@ -6271,7 +6292,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-context",
         "groups": [
           "context/context.company"
         ]
@@ -6466,7 +6488,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-aspiration",
         "groups": [
           "aspiration/aspiration.purpose"
         ]
@@ -6661,7 +6684,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-aspiration",
         "groups": [
           "aspiration/aspiration.culture"
         ]
@@ -6856,7 +6880,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-aspiration",
         "groups": [
           "aspiration/aspiration.goal"
         ]
@@ -7051,7 +7076,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-focus",
         "groups": [
           "focus/focus.category"
         ]
@@ -7246,7 +7272,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-focus",
         "groups": [
           "focus/focus.segment"
         ]
@@ -7441,7 +7468,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-focus",
         "groups": [
           "focus/focus.offer"
         ]
@@ -7636,7 +7664,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-focus",
         "groups": [
           "focus/focus.reach"
         ]
@@ -7831,7 +7860,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-focus",
         "groups": [
           "focus/focus.lifecycle"
         ]
@@ -8026,7 +8056,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-advantage",
         "groups": [
           "advantage/advantage.proposition"
         ]
@@ -8221,7 +8252,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-advantage",
         "groups": [
           "advantage/advantage.defensibility"
         ]
@@ -8416,7 +8448,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-advantage",
         "groups": [
           "advantage/advantage.model"
         ]
@@ -8611,7 +8644,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-identity",
         "groups": [
           "identity/identity.brand"
         ]
@@ -8806,7 +8840,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-identity",
         "groups": [
           "identity/identity.naming"
         ]
@@ -9001,7 +9036,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-identity",
         "groups": [
           "identity/identity.verbal"
         ]
@@ -9196,7 +9232,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-identity",
         "groups": [
           "identity/identity.visual"
         ]
@@ -9391,7 +9428,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-capability",
         "groups": [
           "capability/capability.competency"
         ]
@@ -9586,7 +9624,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-capability",
         "groups": [
           "capability/capability.sourcing"
         ]
@@ -9781,7 +9820,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-capability",
         "groups": [
           "capability/capability.operation"
         ]
@@ -9976,7 +10016,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-capability",
         "groups": [
           "capability/capability.team"
         ]
@@ -10171,7 +10212,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-capability",
         "groups": [
           "capability/capability.resource"
         ]
@@ -10366,7 +10408,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-execution",
         "groups": [
           "execution/execution.priority"
         ]
@@ -10561,7 +10604,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-execution",
         "groups": [
           "execution/execution.roadmap"
         ]
@@ -10756,7 +10800,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-execution",
         "groups": [
           "execution/execution.measure"
         ]
@@ -10951,7 +10996,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "director",
-        "description": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "purpose": "studio.strategy-the-direction-reasoning-and-signals-the",
+        "description": "studio.group-director-execution",
         "groups": [
           "execution/execution.risk"
         ]
@@ -11146,7 +11192,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes",
         "groups": [
           "themes.colors/colors-surfaces",
           "themes.colors/colors-actions",
@@ -11345,7 +11392,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes",
         "groups": [
           "themes.shape/shape-corners"
         ]
@@ -11540,7 +11588,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes",
         "groups": [
           "themes.typography/typography-fonts",
           "themes.typography/typography-tracking"
@@ -11736,7 +11785,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes",
         "groups": [
           "themes.space/space-rhythm"
         ]
@@ -11931,7 +11981,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes",
         "groups": [
           "themes.depth/depth-effects"
         ]
@@ -12126,7 +12177,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-themes",
         "groups": [
           "themes.motion/motion-animations"
         ]
@@ -12321,7 +12373,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-assets",
         "groups": [
           "assets.logo/logo-artwork"
         ]
@@ -12516,7 +12569,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-assets",
         "groups": [
           "assets.app-identity/app-identity-browser",
           "assets.app-identity/app-identity-application"
@@ -12712,7 +12766,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-assets",
         "groups": [
           "assets.icons/icons-navigation",
           "assets.icons/icons-actions",
@@ -12910,7 +12965,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-assets",
         "groups": [
           "assets.imagery/imagery-framing",
           "assets.imagery/imagery-resources",
@@ -13107,7 +13163,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
         "groups": [
           "components.actions/actions-buttons",
           "components.actions/actions-menus",
@@ -13304,7 +13361,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
         "groups": [
           "components.inputs/inputs-form",
           "components.inputs/inputs-text",
@@ -13506,7 +13564,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
         "groups": [
           "components.display/display-data",
           "components.display/display-labels",
@@ -13708,7 +13767,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
         "groups": [
           "components.feedback/feedback-messages",
           "components.feedback/feedback-indicators",
@@ -13905,7 +13965,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
         "groups": [
           "components.navigation/navigation-links",
           "components.navigation/navigation-panels",
@@ -14102,7 +14163,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
         "groups": [
           "components.containment/containment-structure",
           "components.containment/containment-overlays"
@@ -14298,7 +14360,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.specimens/specimens-content"
         ]
@@ -14493,7 +14556,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.parts/parts-structure",
           "sections.parts/parts-navigation"
@@ -14689,7 +14753,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.explain/explain-introductions",
           "sections.explain/explain-reading",
@@ -14889,7 +14954,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.organize/organize-collections",
           "sections.organize/organize-comparison",
@@ -15088,7 +15154,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.collect/collect-forms",
           "sections.collect/collect-workflows",
@@ -15288,7 +15355,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.navigate/navigate-indexes",
           "sections.navigate/navigate-discovery"
@@ -15484,7 +15552,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.respond/respond-states",
           "sections.respond/respond-messages"
@@ -15680,7 +15749,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
         "groups": [
           "sections.extensions/extensions"
         ]
@@ -15875,7 +15945,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-frames",
         "groups": [
           "frames.page-shells/page-shells-documents",
           "frames.page-shells/page-shells-workspaces",
@@ -16072,7 +16143,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-frames",
         "groups": [
           "frames.regions/headers",
           "frames.regions/navigation",
@@ -16270,7 +16342,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-frames",
         "groups": [
           "frames.overlay-shells/overlay-shells-panels",
           "frames.overlay-shells/overlay-shells-commands"
@@ -16466,7 +16539,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "designer",
-        "description": "studio.design-decisions-tokens-sections-and-frames-the",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-frames",
         "groups": [
           "frames.extensions/extensions"
         ]
@@ -16661,7 +16735,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-lexicon",
         "groups": [
           "lexicon.voice/voice-tone",
           "lexicon.voice/voice-person-and-mood",
@@ -16858,7 +16933,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-lexicon",
         "groups": [
           "lexicon.terminology/terminology-brand-names",
           "lexicon.terminology/terminology-glossary",
@@ -17057,7 +17133,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-lexicon",
         "groups": [
           "lexicon.claims/claims-product-facts",
           "lexicon.claims/claims-metrics",
@@ -17255,7 +17332,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-lexicon",
         "groups": [
           "lexicon.formats/formats-numbers-and-plurals",
           "lexicon.formats/formats-dates-and-times",
@@ -17454,7 +17532,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-strings",
         "groups": [
           "strings.interface/interface-actions",
           "strings.interface/interface-navigation",
@@ -17653,7 +17732,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-strings",
         "groups": [
           "strings.feedback/feedback-errors",
           "strings.feedback/feedback-warnings",
@@ -17852,7 +17932,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-strings",
         "groups": [
           "strings.identity/identity-names",
           "strings.identity/identity-taglines",
@@ -18049,7 +18130,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-strings",
         "groups": [
           "strings.media-text/media-text-alt-text",
           "strings.media-text/media-text-captions",
@@ -18246,7 +18328,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-strings",
         "groups": [
           "strings.metadata/metadata-page-titles",
           "strings.metadata/metadata-descriptions",
@@ -18444,7 +18527,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.headings/headings-headlines",
           "patterns.headings/headings-section-titles"
@@ -18640,7 +18724,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.actions/actions-calls-to-action",
           "patterns.actions/actions-links"
@@ -18836,7 +18921,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.messages/messages-problems",
           "patterns.messages/messages-outcomes",
@@ -19034,7 +19120,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.forms/forms-fields",
           "patterns.forms/forms-consent"
@@ -19230,7 +19317,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.data-and-lists/data-and-lists-items",
           "patterns.data-and-lists/data-and-lists-tables"
@@ -19426,7 +19514,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.attribution/attribution-quotes",
           "patterns.attribution/attribution-figures"
@@ -19622,7 +19711,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-patterns",
         "groups": [
           "patterns.identity/identity-messaging-kit"
         ]
@@ -19817,7 +19907,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages",
         "groups": [
           "passages.parts/parts-structure",
           "passages.parts/parts-navigation"
@@ -20013,7 +20104,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages",
         "groups": [
           "passages.explain/explain-introductions",
           "passages.explain/explain-reading",
@@ -20213,7 +20305,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages",
         "groups": [
           "passages.organize/organize-collections",
           "passages.organize/organize-comparison",
@@ -20412,7 +20505,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages",
         "groups": [
           "passages.collect/collect-forms",
           "passages.collect/collect-workflows",
@@ -20612,7 +20706,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages",
         "groups": [
           "passages.navigate/navigate-indexes",
           "passages.navigate/navigate-discovery"
@@ -20808,7 +20903,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-passages",
         "groups": [
           "passages.respond/respond-states",
           "passages.respond/respond-messages"
@@ -21004,7 +21100,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-narratives",
         "groups": [
           "narratives.web/web-site-and-demo",
           "narratives.web/web-app-and-admin",
@@ -21201,7 +21298,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-narratives",
         "groups": [
           "narratives.documents/documents-docs",
           "narratives.documents/documents-slides"
@@ -21397,7 +21495,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "writer",
-        "description": "studio.copy-the-voice-and-every-string-the",
+        "purpose": "studio.copy-the-voice-and-every-string-the",
+        "description": "studio.group-writer-narratives",
         "groups": [
           "narratives.communications/communications-messages",
           "narratives.communications/communications-videos"
@@ -21593,7 +21692,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
         "groups": [
           "studio/studio.pages"
         ]
@@ -21788,7 +21888,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
         "groups": [
           "studio/director"
         ]
@@ -21983,7 +22084,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
         "groups": [
           "studio/designer"
         ]
@@ -22178,7 +22280,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
         "groups": [
           "studio/writer"
         ]
@@ -22373,7 +22476,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
         "groups": [
           "studio/publisher"
         ]
@@ -22568,7 +22672,8 @@
       "data": {
         "loader": "slot-groups",
         "agent": "publisher",
-        "description": "studio.pages-what-gets-published-where-and-its",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
         "groups": [
           "studio/publication"
         ]
@@ -22754,2341 +22859,2809 @@
     {
       "page": "director-context.market",
       "slug": "context.market.size",
+      "title": "Market size",
       "path": "/director/context/market/context.market.size"
     },
     {
       "page": "director-context.market",
       "slug": "context.market.trend",
+      "title": "Market trend",
       "path": "/director/context/market/context.market.trend"
     },
     {
       "page": "director-context.customer",
       "slug": "context.customer.need",
+      "title": "Customer need",
       "path": "/director/context/customer/context.customer.need"
     },
     {
       "page": "director-context.customer",
       "slug": "context.customer.buying",
+      "title": "Customer buying",
       "path": "/director/context/customer/context.customer.buying"
     },
     {
       "page": "director-context.competition",
       "slug": "context.competition.alternative",
+      "title": "Competition alternative",
       "path": "/director/context/competition/context.competition.alternative"
     },
     {
       "page": "director-context.competition",
       "slug": "context.competition.gap",
+      "title": "Competition gap",
       "path": "/director/context/competition/context.competition.gap"
     },
     {
       "page": "director-context.company",
       "slug": "context.company.strength",
+      "title": "Company strength",
       "path": "/director/context/company/context.company.strength"
     },
     {
       "page": "director-context.company",
       "slug": "context.company.constraint",
+      "title": "Company constraint",
       "path": "/director/context/company/context.company.constraint"
     },
     {
       "page": "director-aspiration.purpose",
       "slug": "aspiration.purpose.mission",
+      "title": "Purpose mission",
       "path": "/director/aspiration/purpose/aspiration.purpose.mission"
     },
     {
       "page": "director-aspiration.purpose",
       "slug": "aspiration.purpose.vision",
+      "title": "Purpose vision",
       "path": "/director/aspiration/purpose/aspiration.purpose.vision"
     },
     {
       "page": "director-aspiration.culture",
       "slug": "aspiration.culture.belief",
+      "title": "Culture belief",
       "path": "/director/aspiration/culture/aspiration.culture.belief"
     },
     {
       "page": "director-aspiration.culture",
       "slug": "aspiration.culture.behavior",
+      "title": "Culture behavior",
       "path": "/director/aspiration/culture/aspiration.culture.behavior"
     },
     {
       "page": "director-aspiration.goal",
       "slug": "aspiration.goal.long-term",
+      "title": "Goal long term",
       "path": "/director/aspiration/goal/aspiration.goal.long-term"
     },
     {
       "page": "director-aspiration.goal",
       "slug": "aspiration.goal.annual",
+      "title": "Goal annual",
       "path": "/director/aspiration/goal/aspiration.goal.annual"
     },
     {
       "page": "director-focus.category",
       "slug": "focus.category.definition",
+      "title": "Category definition",
       "path": "/director/focus/category/focus.category.definition"
     },
     {
       "page": "director-focus.category",
       "slug": "focus.category.stance",
+      "title": "Category stance",
       "path": "/director/focus/category/focus.category.stance"
     },
     {
       "page": "director-focus.segment",
       "slug": "focus.segment.core",
+      "title": "Segment core",
       "path": "/director/focus/segment/focus.segment.core"
     },
     {
       "page": "director-focus.segment",
       "slug": "focus.segment.next",
+      "title": "Segment next",
       "path": "/director/focus/segment/focus.segment.next"
     },
     {
       "page": "director-focus.offer",
       "slug": "focus.offer.included",
+      "title": "Offer included",
       "path": "/director/focus/offer/focus.offer.included"
     },
     {
       "page": "director-focus.offer",
       "slug": "focus.offer.excluded",
+      "title": "Offer excluded",
       "path": "/director/focus/offer/focus.offer.excluded"
     },
     {
       "page": "director-focus.reach",
       "slug": "focus.reach.geography",
+      "title": "Reach geography",
       "path": "/director/focus/reach/focus.reach.geography"
     },
     {
       "page": "director-focus.reach",
       "slug": "focus.reach.channel",
+      "title": "Reach channel",
       "path": "/director/focus/reach/focus.reach.channel"
     },
     {
       "page": "director-focus.lifecycle",
       "slug": "focus.lifecycle.acquisition",
+      "title": "Lifecycle acquisition",
       "path": "/director/focus/lifecycle/focus.lifecycle.acquisition"
     },
     {
       "page": "director-focus.lifecycle",
       "slug": "focus.lifecycle.retention",
+      "title": "Lifecycle retention",
       "path": "/director/focus/lifecycle/focus.lifecycle.retention"
     },
     {
       "page": "director-advantage.proposition",
       "slug": "advantage.proposition.promise",
+      "title": "Proposition promise",
       "path": "/director/advantage/proposition/advantage.proposition.promise"
     },
     {
       "page": "director-advantage.proposition",
       "slug": "advantage.proposition.proof",
+      "title": "Proposition proof",
       "path": "/director/advantage/proposition/advantage.proposition.proof"
     },
     {
       "page": "director-advantage.defensibility",
       "slug": "advantage.defensibility.differentiator",
+      "title": "Defensibility differentiator",
       "path": "/director/advantage/defensibility/advantage.defensibility.differentiator"
     },
     {
       "page": "director-advantage.defensibility",
       "slug": "advantage.defensibility.moat",
+      "title": "Defensibility moat",
       "path": "/director/advantage/defensibility/advantage.defensibility.moat"
     },
     {
       "page": "director-advantage.model",
       "slug": "advantage.model.pricing",
+      "title": "Model pricing",
       "path": "/director/advantage/model/advantage.model.pricing"
     },
     {
       "page": "director-advantage.model",
       "slug": "advantage.model.margin",
+      "title": "Model margin",
       "path": "/director/advantage/model/advantage.model.margin"
     },
     {
       "page": "director-identity.brand",
       "slug": "identity.brand.essence",
+      "title": "Brand essence",
       "path": "/director/identity/brand/identity.brand.essence"
     },
     {
       "page": "director-identity.brand",
       "slug": "identity.brand.personality",
+      "title": "Brand personality",
       "path": "/director/identity/brand/identity.brand.personality"
     },
     {
       "page": "director-identity.naming",
       "slug": "identity.naming.name",
+      "title": "Naming name",
       "path": "/director/identity/naming/identity.naming.name"
     },
     {
       "page": "director-identity.naming",
       "slug": "identity.naming.architecture",
+      "title": "Naming architecture",
       "path": "/director/identity/naming/identity.naming.architecture"
     },
     {
       "page": "director-identity.verbal",
       "slug": "identity.verbal.narrative",
+      "title": "Verbal narrative",
       "path": "/director/identity/verbal/identity.verbal.narrative"
     },
     {
       "page": "director-identity.verbal",
       "slug": "identity.verbal.voice",
+      "title": "Verbal voice",
       "path": "/director/identity/verbal/identity.verbal.voice"
     },
     {
       "page": "director-identity.visual",
       "slug": "identity.visual.style",
+      "title": "Visual style",
       "path": "/director/identity/visual/identity.visual.style"
     },
     {
       "page": "director-identity.visual",
       "slug": "identity.visual.imagery",
+      "title": "Visual imagery",
       "path": "/director/identity/visual/identity.visual.imagery"
     },
     {
       "page": "director-capability.competency",
       "slug": "capability.competency.critical",
+      "title": "Competency critical",
       "path": "/director/capability/competency/capability.competency.critical"
     },
     {
       "page": "director-capability.competency",
       "slug": "capability.competency.gap",
+      "title": "Competency gap",
       "path": "/director/capability/competency/capability.competency.gap"
     },
     {
       "page": "director-capability.sourcing",
       "slug": "capability.sourcing.build",
+      "title": "Sourcing build",
       "path": "/director/capability/sourcing/capability.sourcing.build"
     },
     {
       "page": "director-capability.sourcing",
       "slug": "capability.sourcing.partner",
+      "title": "Sourcing partner",
       "path": "/director/capability/sourcing/capability.sourcing.partner"
     },
     {
       "page": "director-capability.sourcing",
       "slug": "capability.sourcing.acquire",
+      "title": "Sourcing acquire",
       "path": "/director/capability/sourcing/capability.sourcing.acquire"
     },
     {
       "page": "director-capability.operation",
       "slug": "capability.operation.delivery",
+      "title": "Operation delivery",
       "path": "/director/capability/operation/capability.operation.delivery"
     },
     {
       "page": "director-capability.operation",
       "slug": "capability.operation.technology",
+      "title": "Operation technology",
       "path": "/director/capability/operation/capability.operation.technology"
     },
     {
       "page": "director-capability.team",
       "slug": "capability.team.role",
+      "title": "Team role",
       "path": "/director/capability/team/capability.team.role"
     },
     {
       "page": "director-capability.team",
       "slug": "capability.team.structure",
+      "title": "Team structure",
       "path": "/director/capability/team/capability.team.structure"
     },
     {
       "page": "director-capability.resource",
       "slug": "capability.resource.funding",
+      "title": "Resource funding",
       "path": "/director/capability/resource/capability.resource.funding"
     },
     {
       "page": "director-capability.resource",
       "slug": "capability.resource.allocation",
+      "title": "Resource allocation",
       "path": "/director/capability/resource/capability.resource.allocation"
     },
     {
       "page": "director-execution.priority",
       "slug": "execution.priority.bet",
+      "title": "Priority bet",
       "path": "/director/execution/priority/execution.priority.bet"
     },
     {
       "page": "director-execution.priority",
       "slug": "execution.priority.parked",
+      "title": "Priority parked",
       "path": "/director/execution/priority/execution.priority.parked"
     },
     {
       "page": "director-execution.roadmap",
       "slug": "execution.roadmap.milestone",
+      "title": "Roadmap milestone",
       "path": "/director/execution/roadmap/execution.roadmap.milestone"
     },
     {
       "page": "director-execution.roadmap",
       "slug": "execution.roadmap.release",
+      "title": "Roadmap release",
       "path": "/director/execution/roadmap/execution.roadmap.release"
     },
     {
       "page": "director-execution.measure",
       "slug": "execution.measure.north-star",
+      "title": "Measure north star",
       "path": "/director/execution/measure/execution.measure.north-star"
     },
     {
       "page": "director-execution.measure",
       "slug": "execution.measure.driver",
+      "title": "Measure driver",
       "path": "/director/execution/measure/execution.measure.driver"
     },
     {
       "page": "director-execution.risk",
       "slug": "execution.risk.threat",
+      "title": "Risk threat",
       "path": "/director/execution/risk/execution.risk.threat"
     },
     {
       "page": "director-execution.risk",
       "slug": "execution.risk.mitigation",
+      "title": "Risk mitigation",
       "path": "/director/execution/risk/execution.risk.mitigation"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.background",
+      "title": "Background",
       "path": "/designer/themes/colors/themes.background"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.foreground",
+      "title": "Foreground",
       "path": "/designer/themes/colors/themes.foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.card",
+      "title": "Card surface",
       "path": "/designer/themes/colors/themes.card"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.card-foreground",
+      "title": "Card foreground",
       "path": "/designer/themes/colors/themes.card-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.popover",
+      "title": "Popover surface",
       "path": "/designer/themes/colors/themes.popover"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.popover-foreground",
+      "title": "Popover foreground",
       "path": "/designer/themes/colors/themes.popover-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.primary",
+      "title": "Primary",
       "path": "/designer/themes/colors/themes.primary"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.primary-foreground",
+      "title": "Primary foreground",
       "path": "/designer/themes/colors/themes.primary-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.secondary",
+      "title": "Secondary",
       "path": "/designer/themes/colors/themes.secondary"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.secondary-foreground",
+      "title": "Secondary foreground",
       "path": "/designer/themes/colors/themes.secondary-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.accent",
+      "title": "Accent",
       "path": "/designer/themes/colors/themes.accent"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.accent-foreground",
+      "title": "Accent foreground",
       "path": "/designer/themes/colors/themes.accent-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.destructive",
+      "title": "Destructive",
       "path": "/designer/themes/colors/themes.destructive"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.success",
+      "title": "Success",
       "path": "/designer/themes/colors/themes.success"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.warning",
+      "title": "Warning",
       "path": "/designer/themes/colors/themes.warning"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.info",
+      "title": "Info",
       "path": "/designer/themes/colors/themes.info"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.muted",
+      "title": "Muted",
       "path": "/designer/themes/colors/themes.muted"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.muted-foreground",
+      "title": "Muted foreground",
       "path": "/designer/themes/colors/themes.muted-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.border",
+      "title": "Border",
       "path": "/designer/themes/colors/themes.border"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.input",
+      "title": "Input",
       "path": "/designer/themes/colors/themes.input"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.ring",
+      "title": "Ring",
       "path": "/designer/themes/colors/themes.ring"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.chart-1",
+      "title": "Chart 1",
       "path": "/designer/themes/colors/themes.chart-1"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.chart-2",
+      "title": "Chart 2",
       "path": "/designer/themes/colors/themes.chart-2"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.chart-3",
+      "title": "Chart 3",
       "path": "/designer/themes/colors/themes.chart-3"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.chart-4",
+      "title": "Chart 4",
       "path": "/designer/themes/colors/themes.chart-4"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.chart-5",
+      "title": "Chart 5",
       "path": "/designer/themes/colors/themes.chart-5"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar",
+      "title": "Sidebar surface",
       "path": "/designer/themes/colors/themes.sidebar"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-foreground",
+      "title": "Sidebar foreground",
       "path": "/designer/themes/colors/themes.sidebar-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-primary",
+      "title": "Sidebar primary",
       "path": "/designer/themes/colors/themes.sidebar-primary"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-primary-foreground",
+      "title": "Sidebar primary foreground",
       "path": "/designer/themes/colors/themes.sidebar-primary-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-accent",
+      "title": "Sidebar accent",
       "path": "/designer/themes/colors/themes.sidebar-accent"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-accent-foreground",
+      "title": "Sidebar accent foreground",
       "path": "/designer/themes/colors/themes.sidebar-accent-foreground"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-border",
+      "title": "Sidebar border",
       "path": "/designer/themes/colors/themes.sidebar-border"
     },
     {
       "page": "designer-themes.colors",
       "slug": "themes.sidebar-ring",
+      "title": "Sidebar ring",
       "path": "/designer/themes/colors/themes.sidebar-ring"
     },
     {
       "page": "designer-themes.shape",
       "slug": "themes.radius",
+      "title": "Radius",
       "path": "/designer/themes/shape/themes.radius"
     },
     {
       "page": "designer-themes.typography",
       "slug": "themes.font-sans",
+      "title": "Sans font",
       "path": "/designer/themes/typography/themes.font-sans"
     },
     {
       "page": "designer-themes.typography",
       "slug": "themes.font-heading",
+      "title": "Heading font",
       "path": "/designer/themes/typography/themes.font-heading"
     },
     {
       "page": "designer-themes.typography",
       "slug": "themes.font-mono",
+      "title": "Mono font",
       "path": "/designer/themes/typography/themes.font-mono"
     },
     {
       "page": "designer-themes.typography",
       "slug": "themes.font-serif",
+      "title": "Serif font",
       "path": "/designer/themes/typography/themes.font-serif"
     },
     {
       "page": "designer-themes.typography",
       "slug": "themes.tracking-tight",
+      "title": "Tight tracking",
       "path": "/designer/themes/typography/themes.tracking-tight"
     },
     {
       "page": "designer-themes.space",
       "slug": "themes.spacing",
+      "title": "Spacing",
       "path": "/designer/themes/space/themes.spacing"
     },
     {
       "page": "designer-themes.depth",
       "slug": "themes.shadow",
+      "title": "Shadow",
       "path": "/designer/themes/depth/themes.shadow"
     },
     {
       "page": "designer-themes.motion",
       "slug": "themes.animate-marquee",
+      "title": "Marquee",
       "path": "/designer/themes/motion/themes.animate-marquee"
     },
     {
       "page": "designer-themes.motion",
       "slug": "themes.animate-marquee-vertical",
+      "title": "Vertical marquee",
       "path": "/designer/themes/motion/themes.animate-marquee-vertical"
     },
     {
       "page": "designer-themes.motion",
       "slug": "themes.animate-shiny-text",
+      "title": "Shiny text",
       "path": "/designer/themes/motion/themes.animate-shiny-text"
     },
     {
       "page": "designer-assets.logo",
       "slug": "assets.lockup",
+      "title": "Logo with name",
       "path": "/designer/assets/logo/assets.lockup"
     },
     {
       "page": "designer-assets.logo",
       "slug": "assets.mark",
+      "title": "Mark",
       "path": "/designer/assets/logo/assets.mark"
     },
     {
       "page": "designer-assets.app-identity",
       "slug": "assets.favicon",
+      "title": "Favicon",
       "path": "/designer/assets/app-identity/assets.favicon"
     },
     {
       "page": "designer-assets.app-identity",
       "slug": "assets.app-icon",
+      "title": "App icon",
       "path": "/designer/assets/app-identity/assets.app-icon"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-chevron-down",
+      "title": "Down chevron",
       "path": "/designer/assets/icons/assets.icon-chevron-down"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-chevron-up",
+      "title": "Up chevron",
       "path": "/designer/assets/icons/assets.icon-chevron-up"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-chevron-left",
+      "title": "Left chevron",
       "path": "/designer/assets/icons/assets.icon-chevron-left"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-chevron-right",
+      "title": "Right chevron",
       "path": "/designer/assets/icons/assets.icon-chevron-right"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-arrow-right",
+      "title": "Right arrow",
       "path": "/designer/assets/icons/assets.icon-arrow-right"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-external-link",
+      "title": "External link",
       "path": "/designer/assets/icons/assets.icon-external-link"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-home",
+      "title": "Icon home",
       "path": "/designer/assets/icons/assets.icon-home"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-panel-left",
+      "title": "Panel left",
       "path": "/designer/assets/icons/assets.icon-panel-left"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-search",
+      "title": "Icon search",
       "path": "/designer/assets/icons/assets.icon-search"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-close",
+      "title": "Icon close",
       "path": "/designer/assets/icons/assets.icon-close"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-check",
+      "title": "Check",
       "path": "/designer/assets/icons/assets.icon-check"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-settings",
+      "title": "Icon settings",
       "path": "/designer/assets/icons/assets.icon-settings"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-list-view",
+      "title": "List view",
       "path": "/designer/assets/icons/assets.icon-list-view"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-grid-view",
+      "title": "Grid view",
       "path": "/designer/assets/icons/assets.icon-grid-view"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-theme-light",
+      "title": "Icon theme light",
       "path": "/designer/assets/icons/assets.icon-theme-light"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-theme-dark",
+      "title": "Icon theme dark",
       "path": "/designer/assets/icons/assets.icon-theme-dark"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-theme-system",
+      "title": "Icon theme system",
       "path": "/designer/assets/icons/assets.icon-theme-system"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-success",
+      "title": "Success",
       "path": "/designer/assets/icons/assets.icon-success"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-warning",
+      "title": "Icon warning",
       "path": "/designer/assets/icons/assets.icon-warning"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-danger",
+      "title": "Danger",
       "path": "/designer/assets/icons/assets.icon-danger"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-info",
+      "title": "Info",
       "path": "/designer/assets/icons/assets.icon-info"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-user",
+      "title": "User",
       "path": "/designer/assets/icons/assets.icon-user"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-team",
+      "title": "Team",
       "path": "/designer/assets/icons/assets.icon-team"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-organization",
+      "title": "Organization",
       "path": "/designer/assets/icons/assets.icon-organization"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-website",
+      "title": "Icon website",
       "path": "/designer/assets/icons/assets.icon-website"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-institution",
+      "title": "Institution",
       "path": "/designer/assets/icons/assets.icon-institution"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-guide",
+      "title": "Guide",
       "path": "/designer/assets/icons/assets.icon-guide"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-document",
+      "title": "Document",
       "path": "/designer/assets/icons/assets.icon-document"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-document-approved",
+      "title": "Approved document",
       "path": "/designer/assets/icons/assets.icon-document-approved"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-folder",
+      "title": "Folder",
       "path": "/designer/assets/icons/assets.icon-folder"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-date",
+      "title": "Icon date",
       "path": "/designer/assets/icons/assets.icon-date"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-time",
+      "title": "Time",
       "path": "/designer/assets/icons/assets.icon-time"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-payment",
+      "title": "Payment",
       "path": "/designer/assets/icons/assets.icon-payment"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-receipt",
+      "title": "Receipt",
       "path": "/designer/assets/icons/assets.icon-receipt"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-business",
+      "title": "Business",
       "path": "/designer/assets/icons/assets.icon-business"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-security",
+      "title": "Security",
       "path": "/designer/assets/icons/assets.icon-security"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-locked",
+      "title": "Locked",
       "path": "/designer/assets/icons/assets.icon-locked"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-legal",
+      "title": "Legal",
       "path": "/designer/assets/icons/assets.icon-legal"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-package",
+      "title": "Package",
       "path": "/designer/assets/icons/assets.icon-package"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-layers",
+      "title": "Icon layers",
       "path": "/designer/assets/icons/assets.icon-layers"
     },
     {
       "page": "designer-assets.icons",
       "slug": "assets.icon-integration",
+      "title": "Integration",
       "path": "/designer/assets/icons/assets.icon-integration"
     },
     {
       "page": "designer-assets.imagery",
       "slug": "assets.image-ratio",
+      "title": "Image ratio",
       "path": "/designer/assets/imagery/assets.image-ratio"
     },
     {
       "page": "designer-assets.imagery",
       "slug": "assets.image",
+      "title": "Image",
       "path": "/designer/assets/imagery/assets.image"
     },
     {
       "page": "designer-assets.imagery",
       "slug": "assets.video",
+      "title": "Video",
       "path": "/designer/assets/imagery/assets.video"
     },
     {
       "page": "designer-assets.imagery",
       "slug": "assets.pattern",
+      "title": "Pattern",
       "path": "/designer/assets/imagery/assets.pattern"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.button",
+      "title": "Button",
       "path": "/designer/components/actions/components.button"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.native-action",
+      "title": "Native action",
       "path": "/designer/components/actions/components.native-action"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.toggle-button",
+      "title": "Toggle button",
       "path": "/designer/components/actions/components.toggle-button"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.menu",
+      "title": "Menu",
       "path": "/designer/components/actions/components.menu"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.command",
+      "title": "Command",
       "path": "/designer/components/actions/components.command"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.dropdown-menu",
+      "title": "Dropdown menu",
       "path": "/designer/components/actions/components.dropdown-menu"
     },
     {
       "page": "designer-components.actions",
       "slug": "components.toolbar",
+      "title": "Toolbar",
       "path": "/designer/components/actions/components.toolbar"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.field",
+      "title": "Field",
       "path": "/designer/components/inputs/components.field"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.form",
+      "title": "Form",
       "path": "/designer/components/inputs/components.form"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.text-field",
+      "title": "Text field",
       "path": "/designer/components/inputs/components.text-field"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.search-field",
+      "title": "Search field",
       "path": "/designer/components/inputs/components.search-field"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.checkbox",
+      "title": "Checkbox",
       "path": "/designer/components/inputs/components.checkbox"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.radio-group",
+      "title": "Radio group",
       "path": "/designer/components/inputs/components.radio-group"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.switch",
+      "title": "Switch",
       "path": "/designer/components/inputs/components.switch"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.select",
+      "title": "Select",
       "path": "/designer/components/inputs/components.select"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.combo-box",
+      "title": "Combo box",
       "path": "/designer/components/inputs/components.combo-box"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.toggle-group",
+      "title": "Toggle group",
       "path": "/designer/components/inputs/components.toggle-group"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.tag-group",
+      "title": "Tag group",
       "path": "/designer/components/inputs/components.tag-group"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.number-field",
+      "title": "Number field",
       "path": "/designer/components/inputs/components.number-field"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.slider",
+      "title": "Slider",
       "path": "/designer/components/inputs/components.slider"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.date-field",
+      "title": "Date field",
       "path": "/designer/components/inputs/components.date-field"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.date-picker",
+      "title": "Date picker",
       "path": "/designer/components/inputs/components.date-picker"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.calendar",
+      "title": "Calendar",
       "path": "/designer/components/inputs/components.calendar"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.color-picker",
+      "title": "Color picker",
       "path": "/designer/components/inputs/components.color-picker"
     },
     {
       "page": "designer-components.inputs",
       "slug": "components.file-trigger",
+      "title": "File trigger",
       "path": "/designer/components/inputs/components.file-trigger"
     },
     {
       "page": "designer-components.display",
       "slug": "components.table",
+      "title": "Table",
       "path": "/designer/components/display/components.table"
     },
     {
       "page": "designer-components.display",
       "slug": "components.grid-list",
+      "title": "Grid list",
       "path": "/designer/components/display/components.grid-list"
     },
     {
       "page": "designer-components.display",
       "slug": "components.tree",
+      "title": "Tree",
       "path": "/designer/components/display/components.tree"
     },
     {
       "page": "designer-components.display",
       "slug": "components.meter",
+      "title": "Meter",
       "path": "/designer/components/display/components.meter"
     },
     {
       "page": "designer-components.display",
       "slug": "components.badge",
+      "title": "Badge",
       "path": "/designer/components/display/components.badge"
     },
     {
       "page": "designer-components.display",
       "slug": "components.keyboard",
+      "title": "Keyboard",
       "path": "/designer/components/display/components.keyboard"
     },
     {
       "page": "designer-components.display",
       "slug": "components.avatar",
+      "title": "Avatar",
       "path": "/designer/components/display/components.avatar"
     },
     {
       "page": "designer-components.display",
       "slug": "components.media-player",
+      "title": "Media player",
       "path": "/designer/components/display/components.media-player"
     },
     {
       "page": "designer-components.display",
       "slug": "components.icon",
+      "title": "Icon",
       "path": "/designer/components/display/components.icon"
     },
     {
       "page": "designer-components.display",
       "slug": "components.logo",
+      "title": "Logo",
       "path": "/designer/components/display/components.logo"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-bar",
+      "title": "Bar chart",
       "path": "/designer/components/display/components.chart-bar"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-line",
+      "title": "Line chart",
       "path": "/designer/components/display/components.chart-line"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-area",
+      "title": "Area chart",
       "path": "/designer/components/display/components.chart-area"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-sparkline",
+      "title": "Sparkline",
       "path": "/designer/components/display/components.chart-sparkline"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-status-strip",
+      "title": "Status strip",
       "path": "/designer/components/display/components.chart-status-strip"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-scatter",
+      "title": "Scatter plot",
       "path": "/designer/components/display/components.chart-scatter"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-heatmap",
+      "title": "Heatmap",
       "path": "/designer/components/display/components.chart-heatmap"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-range",
+      "title": "Range chart",
       "path": "/designer/components/display/components.chart-range"
     },
     {
       "page": "designer-components.display",
       "slug": "components.chart-waterfall",
+      "title": "Waterfall chart",
       "path": "/designer/components/display/components.chart-waterfall"
     },
     {
       "page": "designer-components.display",
       "slug": "components.semantic-content",
+      "title": "Semantic content",
       "path": "/designer/components/display/components.semantic-content"
     },
     {
       "page": "designer-components.display",
       "slug": "components.rich-text",
+      "title": "Rich text",
       "path": "/designer/components/display/components.rich-text"
     },
     {
       "page": "designer-components.display",
       "slug": "components.item",
+      "title": "Item",
       "path": "/designer/components/display/components.item"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.banner",
+      "title": "Banner",
       "path": "/designer/components/feedback/components.banner"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.toast",
+      "title": "Toast",
       "path": "/designer/components/feedback/components.toast"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.empty",
+      "title": "Empty",
       "path": "/designer/components/feedback/components.empty"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.status-mark",
+      "title": "Status mark",
       "path": "/designer/components/feedback/components.status-mark"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.progress-bar",
+      "title": "Progress bar",
       "path": "/designer/components/feedback/components.progress-bar"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.spinner",
+      "title": "Spinner",
       "path": "/designer/components/feedback/components.spinner"
     },
     {
       "page": "designer-components.feedback",
       "slug": "components.skeleton",
+      "title": "Skeleton",
       "path": "/designer/components/feedback/components.skeleton"
     },
     {
       "page": "designer-components.navigation",
       "slug": "components.link",
+      "title": "Link",
       "path": "/designer/components/navigation/components.link"
     },
     {
       "page": "designer-components.navigation",
       "slug": "components.breadcrumbs",
+      "title": "Breadcrumbs",
       "path": "/designer/components/navigation/components.breadcrumbs"
     },
     {
       "page": "designer-components.navigation",
       "slug": "components.tabs",
+      "title": "Tabs",
       "path": "/designer/components/navigation/components.tabs"
     },
     {
       "page": "designer-components.navigation",
       "slug": "components.navigation-tree",
+      "title": "Navigation tree",
       "path": "/designer/components/navigation/components.navigation-tree"
     },
     {
       "page": "designer-components.navigation",
       "slug": "components.sidebar",
+      "title": "Sidebar",
       "path": "/designer/components/navigation/components.sidebar"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.card",
+      "title": "Card",
       "path": "/designer/components/containment/components.card"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.separator",
+      "title": "Separator",
       "path": "/designer/components/containment/components.separator"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.disclosure",
+      "title": "Disclosure",
       "path": "/designer/components/containment/components.disclosure"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.resize-handle",
+      "title": "Resize handle",
       "path": "/designer/components/containment/components.resize-handle"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.scroll-area",
+      "title": "Scroll area",
       "path": "/designer/components/containment/components.scroll-area"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.dialog",
+      "title": "Dialog",
       "path": "/designer/components/containment/components.dialog"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.popover",
+      "title": "Popover",
       "path": "/designer/components/containment/components.popover"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.tooltip",
+      "title": "Tooltip",
       "path": "/designer/components/containment/components.tooltip"
     },
     {
       "page": "designer-components.containment",
       "slug": "components.sheet",
+      "title": "Sheet",
       "path": "/designer/components/containment/components.sheet"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-swatch",
+      "title": "Color swatch",
       "path": "/designer/sections/specimens/sections.specimen-swatch"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-color-ramp",
+      "title": "Color ramp",
       "path": "/designer/sections/specimens/sections.specimen-color-ramp"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-type-ladder",
+      "title": "Type scale",
       "path": "/designer/sections/specimens/sections.specimen-type-ladder"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-spacing-ladder",
+      "title": "Spacing scale",
       "path": "/designer/sections/specimens/sections.specimen-spacing-ladder"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-radius-ladder",
+      "title": "Corner scale",
       "path": "/designer/sections/specimens/sections.specimen-radius-ladder"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-motion-player",
+      "title": "Motion preview",
       "path": "/designer/sections/specimens/sections.specimen-motion-player"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-asset-grid",
+      "title": "Asset grid",
       "path": "/designer/sections/specimens/sections.specimen-asset-grid"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-icon-grid",
+      "title": "Icon grid",
       "path": "/designer/sections/specimens/sections.specimen-icon-grid"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-variant-matrix",
+      "title": "Variant grid",
       "path": "/designer/sections/specimens/sections.specimen-variant-matrix"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-section-viewports",
+      "title": "Section at each size",
       "path": "/designer/sections/specimens/sections.specimen-section-viewports"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-frame-viewports",
+      "title": "Frame at each size",
       "path": "/designer/sections/specimens/sections.specimen-frame-viewports"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-rich-passage",
+      "title": "Rich passage",
       "path": "/designer/sections/specimens/sections.specimen-rich-passage"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-copy-in-context",
+      "title": "Copy in context",
       "path": "/designer/sections/specimens/sections.specimen-copy-in-context"
     },
     {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-page-viewports",
+      "title": "Page at each size",
       "path": "/designer/sections/specimens/sections.specimen-page-viewports"
     },
     {
       "page": "designer-sections.parts",
       "slug": "sections.band",
+      "title": "Band",
       "path": "/designer/sections/parts/sections.band"
     },
     {
       "page": "designer-sections.parts",
       "slug": "sections.section-header",
+      "title": "Section header",
       "path": "/designer/sections/parts/sections.section-header"
     },
     {
       "page": "designer-sections.parts",
       "slug": "sections.pagination",
+      "title": "Pagination",
       "path": "/designer/sections/parts/sections.pagination"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.hero",
+      "title": "Hero",
       "path": "/designer/sections/explain/sections.hero"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.logo-hero",
+      "title": "Logo introduction",
       "path": "/designer/sections/explain/sections.logo-hero"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.page-header",
+      "title": "Page header",
       "path": "/designer/sections/explain/sections.page-header"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.logo-mark",
+      "title": "Logo mark",
       "path": "/designer/sections/explain/sections.logo-mark"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.content",
+      "title": "Content",
       "path": "/designer/sections/explain/sections.content"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.article",
+      "title": "Article",
       "path": "/designer/sections/explain/sections.article"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.sectioned-document",
+      "title": "Sectioned document",
       "path": "/designer/sections/explain/sections.sectioned-document"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.legal-prose",
+      "title": "Legal content",
       "path": "/designer/sections/explain/sections.legal-prose"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.features",
+      "title": "Features",
       "path": "/designer/sections/explain/sections.features"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.call-to-action",
+      "title": "Call to action",
       "path": "/designer/sections/explain/sections.call-to-action"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.testimonials",
+      "title": "Testimonials",
       "path": "/designer/sections/explain/sections.testimonials"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.logo-cloud",
+      "title": "Logo collection",
       "path": "/designer/sections/explain/sections.logo-cloud"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.people",
+      "title": "People",
       "path": "/designer/sections/explain/sections.people"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.media",
+      "title": "Media",
       "path": "/designer/sections/explain/sections.media"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.gallery",
+      "title": "Gallery",
       "path": "/designer/sections/explain/sections.gallery"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.faq",
+      "title": "Questions and answers",
       "path": "/designer/sections/explain/sections.faq"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.steps",
+      "title": "Steps",
       "path": "/designer/sections/explain/sections.steps"
     },
     {
       "page": "designer-sections.explain",
       "slug": "sections.timeline",
+      "title": "Timeline",
       "path": "/designer/sections/explain/sections.timeline"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.cards",
+      "title": "Cards",
       "path": "/designer/sections/organize/sections.cards"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.resource-list",
+      "title": "Resource list",
       "path": "/designer/sections/organize/sections.resource-list"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.task-list",
+      "title": "Task list",
       "path": "/designer/sections/organize/sections.task-list"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.comparison",
+      "title": "Comparison",
       "path": "/designer/sections/organize/sections.comparison"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.pricing",
+      "title": "Pricing",
       "path": "/designer/sections/organize/sections.pricing"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.stats",
+      "title": "Statistics",
       "path": "/designer/sections/organize/sections.stats"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.status-list",
+      "title": "Status list",
       "path": "/designer/sections/organize/sections.status-list"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.usage",
+      "title": "Usage",
       "path": "/designer/sections/organize/sections.usage"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.account-summary",
+      "title": "Account summary",
       "path": "/designer/sections/organize/sections.account-summary"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.data-table",
+      "title": "Data table",
       "path": "/designer/sections/organize/sections.data-table"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.data-grid",
+      "title": "Data grid",
       "path": "/designer/sections/organize/sections.data-grid"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.record-detail",
+      "title": "Record detail",
       "path": "/designer/sections/organize/sections.record-detail"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.activity-feed",
+      "title": "Activity feed",
       "path": "/designer/sections/organize/sections.activity-feed"
     },
     {
       "page": "designer-sections.organize",
       "slug": "sections.audit-log",
+      "title": "Audit log",
       "path": "/designer/sections/organize/sections.audit-log"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.form",
+      "title": "Form",
       "path": "/designer/sections/collect/sections.form"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.newsletter",
+      "title": "Newsletter",
       "path": "/designer/sections/collect/sections.newsletter"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.wizard",
+      "title": "Wizard",
       "path": "/designer/sections/collect/sections.wizard"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.settings",
+      "title": "Settings",
       "path": "/designer/sections/collect/sections.settings"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.column-mapper",
+      "title": "Column mapper",
       "path": "/designer/sections/collect/sections.column-mapper"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.access-matrix",
+      "title": "Access matrix",
       "path": "/designer/sections/collect/sections.access-matrix"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.chat",
+      "title": "Chat",
       "path": "/designer/sections/collect/sections.chat"
     },
     {
       "page": "designer-sections.collect",
       "slug": "sections.sign-in-form",
+      "title": "Sign in form",
       "path": "/designer/sections/collect/sections.sign-in-form"
     },
     {
       "page": "designer-sections.navigate",
       "slug": "sections.link-index",
+      "title": "Link index",
       "path": "/designer/sections/navigate/sections.link-index"
     },
     {
       "page": "designer-sections.navigate",
       "slug": "sections.table-of-contents",
+      "title": "Table of contents",
       "path": "/designer/sections/navigate/sections.table-of-contents"
     },
     {
       "page": "designer-sections.navigate",
       "slug": "sections.explorer",
+      "title": "Explorer",
       "path": "/designer/sections/navigate/sections.explorer"
     },
     {
       "page": "designer-sections.navigate",
       "slug": "sections.filter-builder",
+      "title": "Filter builder",
       "path": "/designer/sections/navigate/sections.filter-builder"
     },
     {
       "page": "designer-sections.respond",
       "slug": "sections.empty-state",
+      "title": "Empty state",
       "path": "/designer/sections/respond/sections.empty-state"
     },
     {
       "page": "designer-sections.respond",
       "slug": "sections.error-state",
+      "title": "Error state",
       "path": "/designer/sections/respond/sections.error-state"
     },
     {
       "page": "designer-sections.respond",
       "slug": "sections.boundary-message",
+      "title": "Boundary message",
       "path": "/designer/sections/respond/sections.boundary-message"
     },
     {
       "page": "designer-sections.respond",
       "slug": "sections.notices",
+      "title": "Notices",
       "path": "/designer/sections/respond/sections.notices"
     },
     {
       "page": "designer-sections.respond",
       "slug": "sections.consent",
+      "title": "Consent",
       "path": "/designer/sections/respond/sections.consent"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.module.checks",
+      "title": "Module checks",
       "path": "/designer/sections/extensions/sections.module.checks"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.module.outline",
+      "title": "Module outline",
       "path": "/designer/sections/extensions/sections.module.outline"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.checks",
+      "title": "Studio checks",
       "path": "/designer/sections/extensions/sections.studio.checks"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.contract",
+      "title": "Studio contract",
       "path": "/designer/sections/extensions/sections.studio.contract"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.history",
+      "title": "Studio history",
       "path": "/designer/sections/extensions/sections.studio.history"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.home",
+      "title": "Studio home",
       "path": "/designer/sections/extensions/sections.studio.home"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.leaf-header",
+      "title": "Studio leaf header",
       "path": "/designer/sections/extensions/sections.studio.leaf-header"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.options",
+      "title": "Studio options",
       "path": "/designer/sections/extensions/sections.studio.options"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.page-header",
+      "title": "Studio page header",
       "path": "/designer/sections/extensions/sections.studio.page-header"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.page-tabs",
+      "title": "Studio page tabs",
       "path": "/designer/sections/extensions/sections.studio.page-tabs"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.publications",
+      "title": "Studio publications",
       "path": "/designer/sections/extensions/sections.studio.publications"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.references",
+      "title": "Studio references",
       "path": "/designer/sections/extensions/sections.studio.references"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.slot-groups",
+      "title": "Studio slot groups",
       "path": "/designer/sections/extensions/sections.studio.slot-groups"
     },
     {
       "page": "designer-sections.extensions",
       "slug": "sections.studio.specimen",
+      "title": "Studio specimen",
       "path": "/designer/sections/extensions/sections.studio.specimen"
     },
     {
       "page": "designer-frames.page-shells",
       "slug": "frames.site-shell",
+      "title": "Website page",
       "path": "/designer/frames/page-shells/frames.site-shell"
     },
     {
       "page": "designer-frames.page-shells",
       "slug": "frames.document",
+      "title": "Document page",
       "path": "/designer/frames/page-shells/frames.document"
     },
     {
       "page": "designer-frames.page-shells",
       "slug": "frames.app-shell",
+      "title": "Workspace page",
       "path": "/designer/frames/page-shells/frames.app-shell"
     },
     {
       "page": "designer-frames.page-shells",
       "slug": "frames.auth-shell",
+      "title": "Auth shell",
       "path": "/designer/frames/page-shells/frames.auth-shell"
     },
     {
       "page": "designer-frames.regions",
       "slug": "frames.site-header",
+      "title": "Website header",
       "path": "/designer/frames/regions/frames.site-header"
     },
     {
       "page": "designer-frames.regions",
       "slug": "frames.app-header",
+      "title": "Workspace header",
       "path": "/designer/frames/regions/frames.app-header"
     },
     {
       "page": "designer-frames.regions",
       "slug": "frames.app-sidebar",
+      "title": "Workspace sidebar",
       "path": "/designer/frames/regions/frames.app-sidebar"
     },
     {
       "page": "designer-frames.regions",
       "slug": "frames.inspector",
+      "title": "Details panel",
       "path": "/designer/frames/regions/frames.inspector"
     },
     {
       "page": "designer-frames.regions",
       "slug": "frames.site-footer",
+      "title": "Website footer",
       "path": "/designer/frames/regions/frames.site-footer"
     },
     {
       "page": "designer-frames.overlay-shells",
       "slug": "frames.sheet",
+      "title": "Sheet",
       "path": "/designer/frames/overlay-shells/frames.sheet"
     },
     {
       "page": "designer-frames.overlay-shells",
       "slug": "frames.command",
+      "title": "Command menu",
       "path": "/designer/frames/overlay-shells/frames.command"
     },
     {
       "page": "designer-frames.extensions",
       "slug": "frames.studio-shell",
+      "title": "Studio shell",
       "path": "/designer/frames/extensions/frames.studio-shell"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.formality",
+      "title": "Formality",
       "path": "/writer/lexicon/voice/lexicon.formality"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.warmth",
+      "title": "Warmth",
       "path": "/writer/lexicon/voice/lexicon.warmth"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.energy",
+      "title": "Energy",
       "path": "/writer/lexicon/voice/lexicon.energy"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.person",
+      "title": "Person",
       "path": "/writer/lexicon/voice/lexicon.person"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.mood",
+      "title": "Mood",
       "path": "/writer/lexicon/voice/lexicon.mood"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.sentence-length",
+      "title": "Sentence length",
       "path": "/writer/lexicon/voice/lexicon.sentence-length"
     },
     {
       "page": "writer-lexicon.voice",
       "slug": "lexicon.reading-level",
+      "title": "Reading level",
       "path": "/writer/lexicon/voice/lexicon.reading-level"
     },
     {
       "page": "writer-lexicon.terminology",
       "slug": "lexicon.brand-names",
+      "title": "Brand names",
       "path": "/writer/lexicon/terminology/lexicon.brand-names"
     },
     {
       "page": "writer-lexicon.terminology",
       "slug": "lexicon.preferred-terms",
+      "title": "Preferred terms",
       "path": "/writer/lexicon/terminology/lexicon.preferred-terms"
     },
     {
       "page": "writer-lexicon.terminology",
       "slug": "lexicon.avoid-terms",
+      "title": "Avoid terms",
       "path": "/writer/lexicon/terminology/lexicon.avoid-terms"
     },
     {
       "page": "writer-lexicon.terminology",
       "slug": "lexicon.avoid-patterns",
+      "title": "Avoid patterns",
       "path": "/writer/lexicon/terminology/lexicon.avoid-patterns"
     },
     {
       "page": "writer-lexicon.terminology",
       "slug": "lexicon.spelling-variant",
+      "title": "Spelling variant",
       "path": "/writer/lexicon/terminology/lexicon.spelling-variant"
     },
     {
       "page": "writer-lexicon.terminology",
       "slug": "lexicon.pronunciation",
+      "title": "Pronunciation",
       "path": "/writer/lexicon/terminology/lexicon.pronunciation"
     },
     {
       "page": "writer-lexicon.claims",
       "slug": "lexicon.product-claims",
+      "title": "Product claims",
       "path": "/writer/lexicon/claims/lexicon.product-claims"
     },
     {
       "page": "writer-lexicon.claims",
       "slug": "lexicon.metric-claims",
+      "title": "Metric claims",
       "path": "/writer/lexicon/claims/lexicon.metric-claims"
     },
     {
       "page": "writer-lexicon.claims",
       "slug": "lexicon.compliance-statements",
+      "title": "Compliance statements",
       "path": "/writer/lexicon/claims/lexicon.compliance-statements"
     },
     {
       "page": "writer-lexicon.claims",
       "slug": "lexicon.comparison-claims",
+      "title": "Comparison claims",
       "path": "/writer/lexicon/claims/lexicon.comparison-claims"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.number-format",
+      "title": "Number format",
       "path": "/writer/lexicon/formats/lexicon.number-format"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.plural-rules",
+      "title": "Plural rules",
       "path": "/writer/lexicon/formats/lexicon.plural-rules"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.date-format",
+      "title": "Date format",
       "path": "/writer/lexicon/formats/lexicon.date-format"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.time-format",
+      "title": "Time format",
       "path": "/writer/lexicon/formats/lexicon.time-format"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.currency-format",
+      "title": "Currency format",
       "path": "/writer/lexicon/formats/lexicon.currency-format"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.unit-format",
+      "title": "Unit format",
       "path": "/writer/lexicon/formats/lexicon.unit-format"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.capitalization",
+      "title": "Capitalization",
       "path": "/writer/lexicon/formats/lexicon.capitalization"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.punctuation",
+      "title": "Punctuation",
       "path": "/writer/lexicon/formats/lexicon.punctuation"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.direction",
+      "title": "Direction",
       "path": "/writer/lexicon/formats/lexicon.direction"
     },
     {
       "page": "writer-lexicon.formats",
       "slug": "lexicon.expansion-budget",
+      "title": "Expansion budget",
       "path": "/writer/lexicon/formats/lexicon.expansion-budget"
     },
     {
       "page": "writer-strings.interface",
       "slug": "strings.actions",
+      "title": "Actions",
       "path": "/writer/strings/interface/strings.actions"
     },
     {
       "page": "writer-strings.interface",
       "slug": "strings.navigation",
+      "title": "Navigation",
       "path": "/writer/strings/interface/strings.navigation"
     },
     {
       "page": "writer-strings.interface",
       "slug": "strings.field-labels",
+      "title": "Field labels",
       "path": "/writer/strings/interface/strings.field-labels"
     },
     {
       "page": "writer-strings.interface",
       "slug": "strings.common",
+      "title": "Common",
       "path": "/writer/strings/interface/strings.common"
     },
     {
       "page": "writer-strings.interface",
       "slug": "strings.statuses",
+      "title": "Statuses",
       "path": "/writer/strings/interface/strings.statuses"
     },
     {
       "page": "writer-strings.interface",
       "slug": "strings.counters",
+      "title": "Counters",
       "path": "/writer/strings/interface/strings.counters"
     },
     {
       "page": "writer-strings.feedback",
       "slug": "strings.errors",
+      "title": "Errors",
       "path": "/writer/strings/feedback/strings.errors"
     },
     {
       "page": "writer-strings.feedback",
       "slug": "strings.warnings",
+      "title": "Warnings",
       "path": "/writer/strings/feedback/strings.warnings"
     },
     {
       "page": "writer-strings.feedback",
       "slug": "strings.confirmations",
+      "title": "Confirmations",
       "path": "/writer/strings/feedback/strings.confirmations"
     },
     {
       "page": "writer-strings.feedback",
       "slug": "strings.empty",
+      "title": "Empty",
       "path": "/writer/strings/feedback/strings.empty"
     },
     {
       "page": "writer-strings.feedback",
       "slug": "strings.loading",
+      "title": "Loading",
       "path": "/writer/strings/feedback/strings.loading"
     },
     {
       "page": "writer-strings.identity",
       "slug": "strings.names",
+      "title": "Names",
       "path": "/writer/strings/identity/strings.names"
     },
     {
       "page": "writer-strings.identity",
       "slug": "strings.taglines",
+      "title": "Taglines",
       "path": "/writer/strings/identity/strings.taglines"
     },
     {
       "page": "writer-strings.identity",
       "slug": "strings.legal-lines",
+      "title": "Legal lines",
       "path": "/writer/strings/identity/strings.legal-lines"
     },
     {
       "page": "writer-strings.media-text",
       "slug": "strings.alt-text",
+      "title": "Alt text",
       "path": "/writer/strings/media-text/strings.alt-text"
     },
     {
       "page": "writer-strings.media-text",
       "slug": "strings.captions",
+      "title": "Captions",
       "path": "/writer/strings/media-text/strings.captions"
     },
     {
       "page": "writer-strings.media-text",
       "slug": "strings.transcripts",
+      "title": "Transcripts",
       "path": "/writer/strings/media-text/strings.transcripts"
     },
     {
       "page": "writer-strings.metadata",
       "slug": "strings.page-titles",
+      "title": "Page titles",
       "path": "/writer/strings/metadata/strings.page-titles"
     },
     {
       "page": "writer-strings.metadata",
       "slug": "strings.descriptions",
+      "title": "Descriptions",
       "path": "/writer/strings/metadata/strings.descriptions"
     },
     {
       "page": "writer-strings.metadata",
       "slug": "strings.share-text",
+      "title": "Share text",
       "path": "/writer/strings/metadata/strings.share-text"
     },
     {
       "page": "writer-strings.metadata",
       "slug": "strings.email-subjects",
+      "title": "Email subjects",
       "path": "/writer/strings/metadata/strings.email-subjects"
     },
     {
       "page": "writer-strings.metadata",
       "slug": "strings.email-preheaders",
+      "title": "Email preheaders",
       "path": "/writer/strings/metadata/strings.email-preheaders"
     },
     {
       "page": "writer-patterns.headings",
       "slug": "patterns.headline",
+      "title": "Headline",
       "path": "/writer/patterns/headings/patterns.headline"
     },
     {
       "page": "writer-patterns.headings",
       "slug": "patterns.headline-subhead",
+      "title": "Headline subhead",
       "path": "/writer/patterns/headings/patterns.headline-subhead"
     },
     {
       "page": "writer-patterns.headings",
       "slug": "patterns.eyebrow-headline",
+      "title": "Eyebrow headline",
       "path": "/writer/patterns/headings/patterns.eyebrow-headline"
     },
     {
       "page": "writer-patterns.headings",
       "slug": "patterns.section-title",
+      "title": "Section title",
       "path": "/writer/patterns/headings/patterns.section-title"
     },
     {
       "page": "writer-patterns.actions",
       "slug": "patterns.primary-action",
+      "title": "Primary action",
       "path": "/writer/patterns/actions/patterns.primary-action"
     },
     {
       "page": "writer-patterns.actions",
       "slug": "patterns.secondary-action",
+      "title": "Secondary action",
       "path": "/writer/patterns/actions/patterns.secondary-action"
     },
     {
       "page": "writer-patterns.actions",
       "slug": "patterns.inline-link",
+      "title": "Inline link",
       "path": "/writer/patterns/actions/patterns.inline-link"
     },
     {
       "page": "writer-patterns.messages",
       "slug": "patterns.error-message",
+      "title": "Error message",
       "path": "/writer/patterns/messages/patterns.error-message"
     },
     {
       "page": "writer-patterns.messages",
       "slug": "patterns.warning-message",
+      "title": "Warning message",
       "path": "/writer/patterns/messages/patterns.warning-message"
     },
     {
       "page": "writer-patterns.messages",
       "slug": "patterns.confirmation",
+      "title": "Confirmation",
       "path": "/writer/patterns/messages/patterns.confirmation"
     },
     {
       "page": "writer-patterns.messages",
       "slug": "patterns.empty-state",
+      "title": "Empty state",
       "path": "/writer/patterns/messages/patterns.empty-state"
     },
     {
       "page": "writer-patterns.messages",
       "slug": "patterns.hint",
+      "title": "Hint",
       "path": "/writer/patterns/messages/patterns.hint"
     },
     {
       "page": "writer-patterns.messages",
       "slug": "patterns.tooltip",
+      "title": "Tooltip",
       "path": "/writer/patterns/messages/patterns.tooltip"
     },
     {
       "page": "writer-patterns.forms",
       "slug": "patterns.form-field",
+      "title": "Form field",
       "path": "/writer/patterns/forms/patterns.form-field"
     },
     {
       "page": "writer-patterns.forms",
       "slug": "patterns.consent-line",
+      "title": "Consent line",
       "path": "/writer/patterns/forms/patterns.consent-line"
     },
     {
       "page": "writer-patterns.data-and-lists",
       "slug": "patterns.feature-bullet",
+      "title": "Feature bullet",
       "path": "/writer/patterns/data-and-lists/patterns.feature-bullet"
     },
     {
       "page": "writer-patterns.data-and-lists",
       "slug": "patterns.stat",
+      "title": "Stat",
       "path": "/writer/patterns/data-and-lists/patterns.stat"
     },
     {
       "page": "writer-patterns.data-and-lists",
       "slug": "patterns.pricing-item",
+      "title": "Pricing item",
       "path": "/writer/patterns/data-and-lists/patterns.pricing-item"
     },
     {
       "page": "writer-patterns.data-and-lists",
       "slug": "patterns.table-header",
+      "title": "Table header",
       "path": "/writer/patterns/data-and-lists/patterns.table-header"
     },
     {
       "page": "writer-patterns.data-and-lists",
       "slug": "patterns.table-caption",
+      "title": "Table caption",
       "path": "/writer/patterns/data-and-lists/patterns.table-caption"
     },
     {
       "page": "writer-patterns.attribution",
       "slug": "patterns.quote",
+      "title": "Quote",
       "path": "/writer/patterns/attribution/patterns.quote"
     },
     {
       "page": "writer-patterns.attribution",
       "slug": "patterns.testimonial",
+      "title": "Testimonial",
       "path": "/writer/patterns/attribution/patterns.testimonial"
     },
     {
       "page": "writer-patterns.attribution",
       "slug": "patterns.figure-caption",
+      "title": "Figure caption",
       "path": "/writer/patterns/attribution/patterns.figure-caption"
     },
     {
       "page": "writer-patterns.identity",
       "slug": "patterns.messaging-kit",
+      "title": "Messaging kit",
       "path": "/writer/patterns/identity/patterns.messaging-kit"
     },
     {
       "page": "writer-passages.parts",
       "slug": "passages.band",
+      "title": "Band",
       "path": "/writer/passages/parts/passages.band"
     },
     {
       "page": "writer-passages.parts",
       "slug": "passages.section-header",
+      "title": "Section header",
       "path": "/writer/passages/parts/passages.section-header"
     },
     {
       "page": "writer-passages.parts",
       "slug": "passages.pagination",
+      "title": "Pagination",
       "path": "/writer/passages/parts/passages.pagination"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.hero",
+      "title": "Hero",
       "path": "/writer/passages/explain/passages.hero"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.logo-hero",
+      "title": "Logo hero",
       "path": "/writer/passages/explain/passages.logo-hero"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.page-header",
+      "title": "Page header",
       "path": "/writer/passages/explain/passages.page-header"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.logo-mark",
+      "title": "Logo mark",
       "path": "/writer/passages/explain/passages.logo-mark"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.content",
+      "title": "Content",
       "path": "/writer/passages/explain/passages.content"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.article",
+      "title": "Article",
       "path": "/writer/passages/explain/passages.article"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.sectioned-document",
+      "title": "Sectioned document",
       "path": "/writer/passages/explain/passages.sectioned-document"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.legal-prose",
+      "title": "Legal prose",
       "path": "/writer/passages/explain/passages.legal-prose"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.features",
+      "title": "Features",
       "path": "/writer/passages/explain/passages.features"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.call-to-action",
+      "title": "Call to action",
       "path": "/writer/passages/explain/passages.call-to-action"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.testimonials",
+      "title": "Testimonials",
       "path": "/writer/passages/explain/passages.testimonials"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.logo-cloud",
+      "title": "Logo cloud",
       "path": "/writer/passages/explain/passages.logo-cloud"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.people",
+      "title": "People",
       "path": "/writer/passages/explain/passages.people"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.media",
+      "title": "Media",
       "path": "/writer/passages/explain/passages.media"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.gallery",
+      "title": "Gallery",
       "path": "/writer/passages/explain/passages.gallery"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.faq",
+      "title": "Faq",
       "path": "/writer/passages/explain/passages.faq"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.steps",
+      "title": "Steps",
       "path": "/writer/passages/explain/passages.steps"
     },
     {
       "page": "writer-passages.explain",
       "slug": "passages.timeline",
+      "title": "Timeline",
       "path": "/writer/passages/explain/passages.timeline"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.cards",
+      "title": "Cards",
       "path": "/writer/passages/organize/passages.cards"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.resource-list",
+      "title": "Resource list",
       "path": "/writer/passages/organize/passages.resource-list"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.task-list",
+      "title": "Task list",
       "path": "/writer/passages/organize/passages.task-list"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.comparison",
+      "title": "Comparison",
       "path": "/writer/passages/organize/passages.comparison"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.pricing",
+      "title": "Pricing",
       "path": "/writer/passages/organize/passages.pricing"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.stats",
+      "title": "Stats",
       "path": "/writer/passages/organize/passages.stats"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.status-list",
+      "title": "Status list",
       "path": "/writer/passages/organize/passages.status-list"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.usage",
+      "title": "Usage",
       "path": "/writer/passages/organize/passages.usage"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.account-summary",
+      "title": "Account summary",
       "path": "/writer/passages/organize/passages.account-summary"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.data-table",
+      "title": "Data table",
       "path": "/writer/passages/organize/passages.data-table"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.data-grid",
+      "title": "Data grid",
       "path": "/writer/passages/organize/passages.data-grid"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.record-detail",
+      "title": "Record detail",
       "path": "/writer/passages/organize/passages.record-detail"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.activity-feed",
+      "title": "Activity feed",
       "path": "/writer/passages/organize/passages.activity-feed"
     },
     {
       "page": "writer-passages.organize",
       "slug": "passages.audit-log",
+      "title": "Audit log",
       "path": "/writer/passages/organize/passages.audit-log"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.form",
+      "title": "Form",
       "path": "/writer/passages/collect/passages.form"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.newsletter",
+      "title": "Newsletter",
       "path": "/writer/passages/collect/passages.newsletter"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.wizard",
+      "title": "Wizard",
       "path": "/writer/passages/collect/passages.wizard"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.settings",
+      "title": "Settings",
       "path": "/writer/passages/collect/passages.settings"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.column-mapper",
+      "title": "Column mapper",
       "path": "/writer/passages/collect/passages.column-mapper"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.access-matrix",
+      "title": "Access matrix",
       "path": "/writer/passages/collect/passages.access-matrix"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.chat",
+      "title": "Chat",
       "path": "/writer/passages/collect/passages.chat"
     },
     {
       "page": "writer-passages.collect",
       "slug": "passages.sign-in-form",
+      "title": "Sign in form",
       "path": "/writer/passages/collect/passages.sign-in-form"
     },
     {
       "page": "writer-passages.navigate",
       "slug": "passages.link-index",
+      "title": "Link index",
       "path": "/writer/passages/navigate/passages.link-index"
     },
     {
       "page": "writer-passages.navigate",
       "slug": "passages.table-of-contents",
+      "title": "Table of contents",
       "path": "/writer/passages/navigate/passages.table-of-contents"
     },
     {
       "page": "writer-passages.navigate",
       "slug": "passages.explorer",
+      "title": "Explorer",
       "path": "/writer/passages/navigate/passages.explorer"
     },
     {
       "page": "writer-passages.navigate",
       "slug": "passages.filter-builder",
+      "title": "Filter builder",
       "path": "/writer/passages/navigate/passages.filter-builder"
     },
     {
       "page": "writer-passages.respond",
       "slug": "passages.empty-state",
+      "title": "Empty state",
       "path": "/writer/passages/respond/passages.empty-state"
     },
     {
       "page": "writer-passages.respond",
       "slug": "passages.error-state",
+      "title": "Error state",
       "path": "/writer/passages/respond/passages.error-state"
     },
     {
       "page": "writer-passages.respond",
       "slug": "passages.boundary-message",
+      "title": "Boundary message",
       "path": "/writer/passages/respond/passages.boundary-message"
     },
     {
       "page": "writer-passages.respond",
       "slug": "passages.notices",
+      "title": "Notices",
       "path": "/writer/passages/respond/passages.notices"
     },
     {
       "page": "writer-passages.respond",
       "slug": "passages.consent",
+      "title": "Consent",
       "path": "/writer/passages/respond/passages.consent"
     },
     {
       "page": "writer-narratives.web",
       "slug": "narratives.page-story",
+      "title": "Page story",
       "path": "/writer/narratives/web/narratives.page-story"
     },
     {
       "page": "writer-narratives.web",
       "slug": "narratives.screen",
+      "title": "Screen",
       "path": "/writer/narratives/web/narratives.screen"
     },
     {
       "page": "writer-narratives.web",
       "slug": "narratives.site-chrome",
+      "title": "Site chrome",
       "path": "/writer/narratives/web/narratives.site-chrome"
     },
     {
       "page": "writer-narratives.web",
       "slug": "narratives.app-chrome",
+      "title": "App chrome",
       "path": "/writer/narratives/web/narratives.app-chrome"
     },
     {
       "page": "writer-narratives.documents",
       "slug": "narratives.article",
+      "title": "Article",
       "path": "/writer/narratives/documents/narratives.article"
     },
     {
       "page": "writer-narratives.documents",
       "slug": "narratives.guide",
+      "title": "Guide",
       "path": "/writer/narratives/documents/narratives.guide"
     },
     {
       "page": "writer-narratives.documents",
       "slug": "narratives.release-notes",
+      "title": "Release notes",
       "path": "/writer/narratives/documents/narratives.release-notes"
     },
     {
       "page": "writer-narratives.documents",
       "slug": "narratives.legal-document",
+      "title": "Legal document",
       "path": "/writer/narratives/documents/narratives.legal-document"
     },
     {
       "page": "writer-narratives.documents",
       "slug": "narratives.deck-script",
+      "title": "Deck script",
       "path": "/writer/narratives/documents/narratives.deck-script"
     },
     {
       "page": "writer-narratives.communications",
       "slug": "narratives.email",
+      "title": "Email",
       "path": "/writer/narratives/communications/narratives.email"
     },
     {
       "page": "writer-narratives.communications",
       "slug": "narratives.notification",
+      "title": "Notification",
       "path": "/writer/narratives/communications/narratives.notification"
     },
     {
       "page": "writer-narratives.communications",
       "slug": "narratives.video-script",
+      "title": "Video script",
       "path": "/writer/narratives/communications/narratives.video-script"
     },
     {
       "page": "publisher-studio.pages",
       "slug": "page.home",
+      "title": "Home",
       "path": "/publisher/studio/pages/page.home"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-context",
+      "title": "Director context",
       "path": "/publisher/studio/director/page.director-context"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-aspiration",
+      "title": "Director aspiration",
       "path": "/publisher/studio/director/page.director-aspiration"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-focus",
+      "title": "Director focus",
       "path": "/publisher/studio/director/page.director-focus"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-advantage",
+      "title": "Director advantage",
       "path": "/publisher/studio/director/page.director-advantage"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-identity",
+      "title": "Director identity",
       "path": "/publisher/studio/director/page.director-identity"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-capability",
+      "title": "Director capability",
       "path": "/publisher/studio/director/page.director-capability"
     },
     {
       "page": "publisher-studio.director",
       "slug": "page.director-execution",
+      "title": "Director execution",
       "path": "/publisher/studio/director/page.director-execution"
     },
     {
       "page": "publisher-studio.designer",
       "slug": "page.designer-themes",
+      "title": "Designer themes",
       "path": "/publisher/studio/designer/page.designer-themes"
     },
     {
       "page": "publisher-studio.designer",
       "slug": "page.designer-assets",
+      "title": "Designer assets",
       "path": "/publisher/studio/designer/page.designer-assets"
     },
     {
       "page": "publisher-studio.designer",
       "slug": "page.designer-components",
+      "title": "Designer components",
       "path": "/publisher/studio/designer/page.designer-components"
     },
     {
       "page": "publisher-studio.designer",
       "slug": "page.designer-sections",
+      "title": "Designer sections",
       "path": "/publisher/studio/designer/page.designer-sections"
     },
     {
       "page": "publisher-studio.designer",
       "slug": "page.designer-frames",
+      "title": "Designer frames",
       "path": "/publisher/studio/designer/page.designer-frames"
     },
     {
       "page": "publisher-studio.writer",
       "slug": "page.writer-lexicon",
+      "title": "Writer lexicon",
       "path": "/publisher/studio/writer/page.writer-lexicon"
     },
     {
       "page": "publisher-studio.writer",
       "slug": "page.writer-strings",
+      "title": "Writer strings",
       "path": "/publisher/studio/writer/page.writer-strings"
     },
     {
       "page": "publisher-studio.writer",
       "slug": "page.writer-patterns",
+      "title": "Writer patterns",
       "path": "/publisher/studio/writer/page.writer-patterns"
     },
     {
       "page": "publisher-studio.writer",
       "slug": "page.writer-passages",
+      "title": "Writer passages",
       "path": "/publisher/studio/writer/page.writer-passages"
     },
     {
       "page": "publisher-studio.writer",
       "slug": "page.writer-narratives",
+      "title": "Writer narratives",
       "path": "/publisher/studio/writer/page.writer-narratives"
     },
     {
       "page": "publisher-studio.publisher",
       "slug": "page.publisher-studio",
+      "title": "Publisher studio",
       "path": "/publisher/studio/publisher/page.publisher-studio"
     },
     {
       "page": "publisher-studio.publication",
       "slug": "publication.studio",
+      "title": "Studio",
       "path": "/publisher/studio/publication/publication.studio"
     }
   ],
@@ -27458,7 +28031,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 9
+      "version": 10
     },
     {
       "slot": "sections.studio.page-header",
@@ -27483,12 +28056,12 @@
     {
       "slot": "sections.studio.page-tabs",
       "element": "studio-page-tabs",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.studio.leaf-header",
