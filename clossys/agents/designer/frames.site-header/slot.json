@@ -125,5 +125,9 @@
     "components.icon",
     "components.link",
     "components.logo"
-  ]
+  ],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). The only direct item, tailark-oss/mist-hero-section-1-header@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03"
+  }
 }
