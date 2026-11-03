@@ -90,6 +90,18 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
 }
 
 /**
+ * One IA slot's entry, as `listSlots` would list it, without reading every other slot's folder.
+ * Undefined when the id is not in the agent's IA.
+ */
+export function readSlotEntry(consumer: string, agent: SlotAgent, id: string): SlotEntry | undefined {
+  const ia = readIa(consumer, agent);
+  const position = ia ? slotPositions(agent, ia).get(id) : undefined;
+  if (!position) return undefined;
+  const dir = slotDir(consumer, agent, id);
+  return { id, agent, position, dir, candidates: listCandidateNames(dir), pin: readPinAt(dir) };
+}
+
+/**
  * A schema-valid slot document and whether it is the document its IA position names (same id,
  * agent and position). Malformed documents throw `Invalid <agent> slot <id>`, as in `readSlot`.
  */

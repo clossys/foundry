@@ -67,6 +67,20 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(record!.version).toBe(Number(/-v(\d+)\.json$/.exec(pin.candidate)![1]));
   });
 
+  it("loads every pinned canonical element in bounded time (a full slot scan per load hung Studio startup)", async () => {
+    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const pinned = listSlots(consumer, "designer").flatMap(entry => {
+      const element = entry.pin && /^(.+)-v\d+\.json$/.exec(entry.pin.candidate)?.[1];
+      return element ? [`${entry.id}/${element}`] : [];
+    });
+    expect(pinned.length).toBeGreaterThan(150);
+    const store = libraryRecordStore([consumer]);
+    const started = performance.now();
+    for (const id of pinned) await store.load(id).catch(() => undefined);
+    // O(slots) per load was ~70 ms each here (~15 s for one pass); per-slot reads take a few ms.
+    expect(performance.now() - started).toBeLessThan(4000);
+  }, 30_000);
+
   it("rejects candidate identity drift even after a temporary fixture is re-pinned to those bytes", async () => {
     const slot = card(), item = JSON.parse(readFileSync(candidate(), "utf8"));
     const bytes = jsonBytes({ ...item, name: "another-element" });

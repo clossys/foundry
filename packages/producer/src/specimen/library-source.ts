@@ -5,7 +5,7 @@
  */
 import { resolve } from "node:path";
 import { recordStoreSource, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore } from "@clossys/publisher/specimen";
-import { listSlots, readCandidate, readSlot, type SlotEntry } from "../records/slots.js";
+import { listSlots, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
 
@@ -23,24 +23,40 @@ function versions(entry: SlotEntry, element: string): { name: string; version: n
   });
 }
 
-/** Locate only candidates placed in the Designer IA; a bare name must be unique. */
-export function locateLibraryElement(roots: readonly string[], id: string): { root: string; slot: string; element: string } | undefined {
+function findLibraryElement(roots: readonly string[], id: string): { root: string; entry: SlotEntry; element: string } | undefined {
   const parts = id.split("/");
   if (parts.length > 2 || !parts.every(part => SEGMENT.test(part) && !part.includes(".."))) return undefined;
   const element = parts.at(-1)!;
   for (const root of roots) {
-    const matches = listSlots(root, "designer").filter(entry => (parts.length === 1 || entry.id === parts[0]) && versions(entry, element).length);
+    // A slot-qualified id reads only its own slot folder: a full listing per load made every
+    // specimen read O(slots) and a whole pass O(slots^2) synchronous filesystem work.
+    if (parts.length === 2) {
+      const entry = readSlotEntry(root, "designer", parts[0]!);
+      if (entry && versions(entry, element).length) return { root, entry, element };
+      continue;
+    }
+    const matches = listSlots(root, "designer").filter(entry => versions(entry, element).length);
     if (matches.length > 1) throw new Error(`element ${element} is in ${matches.length} slots (${matches.map(entry => entry.id).join(", ")}); name it as <slot>/${element}`);
-    if (matches.length) return { root, slot: matches[0]!.id, element };
+    if (matches.length) return { root, entry: matches[0]!, element };
   }
   return undefined;
 }
 
-/** A missing or invalid pin never selects the newest candidate. */
-export function pinnedLibraryVersion(root: string, slot: string, element: string): number | undefined {
-  const pin = listSlots(root, "designer").find(entry => entry.id === slot)?.pin;
+/** Locate only candidates placed in the Designer IA; a bare name must be unique. */
+export function locateLibraryElement(roots: readonly string[], id: string): { root: string; slot: string; element: string } | undefined {
+  const found = findLibraryElement(roots, id);
+  return found && { root: found.root, slot: found.entry.id, element: found.element };
+}
+
+function pinnedVersionOf(entry: SlotEntry | undefined, element: string): number | undefined {
+  const pin = entry?.pin;
   const match = pin && CANDIDATE_NAME.exec(pin.candidate);
   return match && match[1] === element ? Number(match[2]) : undefined;
+}
+
+/** A missing or invalid pin never selects the newest candidate. */
+export function pinnedLibraryVersion(root: string, slot: string, element: string): number | undefined {
+  return pinnedVersionOf(readSlotEntry(root, "designer", slot), element);
 }
 
 /** Every byte and the pin come from the common model reader. No store fallback. */
@@ -48,11 +64,10 @@ export function libraryRecordStore(rootsIn: readonly string[]): SpecimenRecordSt
   const roots = rootsIn.map(root => resolve(root));
   return {
     async load(id, version) {
-      const where = locateLibraryElement(roots, id);
+      const where = findLibraryElement(roots, id);
       if (!where) return undefined;
-      const { root, slot, element } = where;
-      const entry = listSlots(root, "designer").find(entry => entry.id === slot)!;
-      const chosen = version ?? pinnedLibraryVersion(root, slot, element);
+      const { root, entry, element } = where, slot = entry.id;
+      const chosen = version ?? pinnedVersionOf(entry, element);
       if (chosen === undefined) return undefined;
       const candidate = versions(entry, element).find(candidate => candidate.version === chosen);
       if (!candidate) return undefined;
