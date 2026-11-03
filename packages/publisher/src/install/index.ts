@@ -499,4 +499,6 @@ export type { PageHostModuleOptions, PageHostSelection } from "./host.js";
 export type { NativeNextDraftCandidate, NativeNextDraftOptions, NativeNextDraftResult } from "./native-next-draft.js";
 
 export { resolveNativeNextFonts } from "./native-next-fonts.js";
+export { NEXT_LEAF_EXPORT, NEXT_PAGE_EXPORT, NEXT_ROUTE_MARKER, planNextRoutes } from "./next-routes.js";
+export type { NextRouteFile, NextRouteLeaf, NextRouteLeafTemplate, NextRoutesOptions, NextRoutesPlan } from "./next-routes.js";
 export type { NativeNextFontBinding, NativeNextFontsOptions, NativeNextFontsResult } from "./native-next-fonts.js";

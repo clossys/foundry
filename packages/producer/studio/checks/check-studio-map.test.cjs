@@ -111,7 +111,10 @@ test('changing a Publisher page cell without regenerating fails projection drift
   const source = path.join(repositoryRoot, 'clossys');
   fs.cpSync(path.join(source, 'agents/publisher'), path.join(clossysRoot, 'agents/publisher'), { recursive: true });
   fs.cpSync(path.join(source, 'agents/designer'), path.join(clossysRoot, 'agents/designer'), { recursive: true });
+  // The installed Studio routes list every gallery's leaves, so the fixture carries all agents' records and app/.
+  for (const agent of ['director', 'writer']) fs.cpSync(path.join(source, 'agents', agent), path.join(clossysRoot, 'agents', agent), { recursive: true });
   fs.cpSync(path.join(studioRoot, 'generated'), outputDir, { recursive: true });
+  fs.cpSync(path.join(studioRoot, 'app'), path.join(temporary, 'app'), { recursive: true });
   const generator = await import(pathToFileURL(path.resolve(studioRoot, '../scripts/generate-studio-map.mjs')).href);
   await generator.generateStudioMap({ clossysRoot, outputDir, check: true });
   const cellRoot = path.join(clossysRoot, 'agents/publisher');

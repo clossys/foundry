@@ -7,7 +7,9 @@ import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it } from "vitest";
 import { agentModule, agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
-import { previewRoot, themePage } from "./publication.js";
+import { createServer, type Server } from "node:http";
+import { publication, previewRoot, servePreview, themePage, type ServedApp } from "./publication.js";
+import { publishNext } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { renderNativePreview } from "./publisher-preview-render.js";
@@ -262,4 +264,49 @@ it("applies the preview theme on <html> without dropping the page's own classes"
   expect(themePage('<!doctype html><html lang="en" class="font-sans dark"><body></body></html>', "light")).toBe('<!doctype html><html lang="en" class="font-sans" style="color-scheme:light"><body></body></html>');
   expect(themePage("<html class='font-sans' style=\"--x:1\"><body></body></html>", "dark")).toBe('<html class="font-sans dark" style="color-scheme:dark;--x:1"><body></body></html>');
   expect(themePage("<HTML><body></body></HTML>", "dark")).toBe('<html class="dark" style="color-scheme:dark"><body></body></HTML>');
+});
+
+it("lists the Studio publication's installed pages as ready with frame previews once publish --install --next put them in the app Producer serves", async () => {
+  await nativePublisherFixture();
+  const app = join(root, "studio", "app"), outs = join(root, "outs");
+  const leaves = { director: [], designer: [{ slug: "sections.hero", title: "Hero" }], writer: [], publisher: [] };
+  const install = await publishNext({ root, publication: "studio", app, assembly: "../components/StudioInstalledPage.tsx", live: true, out: join(outs, "next-studio"), leaves });
+  expect(install.findings).toEqual([]);
+  const rendered: string[] = [];
+  const served: ServedApp = { app, render: async path => { rendered.push(path); return `<!doctype html><html><head><title>${path}</title></head><body><h1>Rendered ${path}</h1></body></html>`; } };
+  const ids = ["home", "director", "designer", "writer", "publisher"];
+  for (const requested of ["studio", undefined]) {
+    const metadata = await publication(root, requested, outs, served);
+    expect(metadata).toMatchObject({ state: "ready", publication: "studio", pages: ids.map(id => ({ id, cellId: `page.${id}`, emitted: true, previewUrl: `/preview/studio/pages/${id}.html`, frameUrl: `/preview/studio/frame/${id}.html` })) });
+    expect(metadata.manifest?.routes.find(route => route.id === "designer")?.source.file).toBe("designer/page.tsx");
+  }
+  // Every /publisher page card is a Publisher page slot, and each one now has its frame preview.
+  const cards = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).filter(card => ids.includes(card.id.replace(/^page\./, "")));
+  expect(cards.map(card => card.id).sort()).toEqual(ids.map(id => `page.${id}`).sort());
+  // Installed, but not in the app Producer serves: nothing is emitted, never a guessed render.
+  const elsewhere = await publication(root, "studio", outs, { app: join(root, "other"), render: served.render });
+  expect(elsewhere.pages?.every(page => !page.emitted)).toBe(true);
+  // The preview page is the served app's own render of the installed route, under the no-script sandbox.
+  const host: Server = createServer((request, response) => {
+    const url = new URL(request.url!, "http://127.0.0.1");
+    void servePreview(root, url.pathname, request.method!, response, outs, url.searchParams, served);
+  });
+  await new Promise<void>(accept => host.listen(0, "127.0.0.1", accept));
+  try {
+    const port = (host.address() as { port: number }).port;
+    const fetchText = (path: string) => new Promise<{ status: number; text: string; headers: Record<string, any> }>((accept, reject) => {
+      const req = request({ hostname: "127.0.0.1", port, path }, response => { let text = ""; response.setEncoding("utf8"); response.on("data", chunk => { text += chunk; }); response.on("end", () => accept({ status: response.statusCode!, text, headers: response.headers })); });
+      req.on("error", reject); req.end();
+    });
+    const page = await fetchText("/preview/studio/pages/designer.html");
+    expect(page.status).toBe(200);
+    expect(page.text).toContain("<h1>Rendered /designer</h1>");
+    expect(page.headers["content-security-policy"]).not.toContain("allow-scripts");
+    expect(rendered).toContain("/designer");
+    expect((await fetchText("/preview/studio/frame/designer.html")).text).toContain("/preview/studio/pages/designer.html");
+    // A hand-edited route file is no longer Publisher's install, so it is not previewed.
+    await writeFile(join(app, "writer", "page.tsx"), "export default function Page() { return null; }\n");
+    expect((await publication(root, "studio", outs, served)).pages?.find(row => row.id === "writer")?.emitted).toBe(false);
+    expect((await fetchText("/preview/studio/pages/writer.html")).status).toBe(404);
+  } finally { await new Promise(accept => host.close(accept)); }
 });

@@ -8,7 +8,7 @@ const { createServer } = require('node:http');
 const { checkCommand, probeBrowser, failureReport, REPORT_EXIT_CODES } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
-const plan = { routes: ['/', '/agents/publisher'], templates: ['/[[...route]]', '/content/[agent]/[id]'], agents: ['publisher'], contentRoute: true };
+const plan = { routes: ['/', '/agents/publisher'], templates: ['/', '/agents/publisher', '/agents/publisher/[slug]', '/content/[agent]/[id]'], leafTemplates: ['/agents/publisher/[slug]'], agents: ['publisher'], contentRoute: true };
 const defectRules = ['raw-cell-id', 'fact-placeholder', 'owner-placeholder', 'empty-heading', 'missing-asset', 'http-error'];
 async function fixtureServer() {
   const requests = [];

@@ -13,7 +13,8 @@ const studioRoot = path.resolve(__dirname, '..');
 function fixture(t) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'no-page-jsx-')));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const file of [...APP_FILES, 'components/StudioPage.tsx']) {
+  fs.cpSync(path.join(studioRoot, 'app'), path.join(root, 'app'), { recursive: true });
+  for (const file of [...APP_FILES, 'components/StudioPage.tsx', 'components/StudioInstalledPage.tsx']) {
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
     fs.copyFileSync(path.join(studioRoot, file), path.join(root, file));
   }
@@ -25,16 +26,20 @@ test('the checked-in Studio has one generic renderer and no page JSX', () => {
   assert.deepEqual(checkNoPageJsx(), []);
 });
 
-test('mutation: a page rendered inline in the catch-all fails', t => {
-  const root = fixture(t), page = path.join(root, 'app/[[...route]]/page.tsx');
-  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('return <StudioPage segments={route} />;', 'return <main><h1>Designer</h1><StudioPage segments={route} /></main>;'));
+test('a copy of the tree passes before it is mutated', t => {
+  assert.deepEqual(checkNoPageJsx({ studioRoot: fixture(t) }), []);
+});
+
+test('mutation: a page rendered inline in an installed route fails', t => {
+  const root = fixture(t), page = path.join(root, 'app/designer/page.tsx');
+  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('return createElement(PublishedPage, { page: "designer" });', 'return <main><h1>Designer</h1></main>;'));
   assert.deepEqual([...new Set(rules(checkNoPageJsx({ studioRoot: root })))], ['page-jsx']);
 });
 
-test('mutation: a hand-made route folder beside the catch-all fails', t => {
+test('mutation: a hand-made route folder beside the installed routes fails', t => {
   const root = fixture(t);
-  fs.mkdirSync(path.join(root, 'app/designer'), { recursive: true });
-  fs.writeFileSync(path.join(root, 'app/designer/page.tsx'), 'export default function Page() { return null; }');
+  fs.mkdirSync(path.join(root, 'app/settings'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'app/settings/page.tsx'), 'export default function Page() { return null; }');
   assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })), ['extra-app-route-file']);
 });
 
@@ -45,10 +50,13 @@ test('mutation: importing a section, frame or old view into app/ fails', () => {
   assert.deepEqual(rules(inspectAppSource(`const X = await import('../../sections/studio-home');`, 'app/layout.tsx')), ['page-composition-import']);
 });
 
-test('mutation: a catch-all that stops handing the route to the generic renderer fails', t => {
-  const root = fixture(t), page = path.join(root, 'app/[[...route]]/page.tsx');
-  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace("from '../../components/StudioPage'", "from '../../components/OtherPage'"));
-  assert.ok(rules(checkNoPageJsx({ studioRoot: root })).includes('catch-all-not-generic-renderer'));
+test('mutation: an installed route that stops mounting the assembly, or an assembly that stops using the renderer, fails', t => {
+  const root = fixture(t), page = path.join(root, 'app/designer/[slug]/page.tsx');
+  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('"../../../components/StudioInstalledPage"', '"../../../components/OtherPage"'));
+  assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })), ['installed-route-not-generic-renderer']);
+  const assembly = path.join(root, 'components/StudioInstalledPage.tsx');
+  fs.writeFileSync(assembly, fs.readFileSync(assembly, 'utf8').replace("from './StudioPage'", "from './OtherPage'"));
+  assert.ok(rules(checkNoPageJsx({ studioRoot: root })).includes('assembly-not-generic-renderer'));
   fs.rmSync(path.join(root, 'components/StudioPage.tsx'));
   assert.ok(rules(checkNoPageJsx({ studioRoot: root })).includes('missing-generic-renderer'));
 });

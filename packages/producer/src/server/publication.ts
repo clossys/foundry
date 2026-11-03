@@ -1,11 +1,12 @@
 import { readdir, realpath, stat } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
-import { extname, join } from "node:path";
+import { extname, join, relative } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { inventory } from "./cells.js";
 import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
+import { isInstalledRoute, NEXT_INSTALL_KIND, NEXT_INSTALL_REPORT } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 
 export const PREVIEW_PREFIX = "/preview/";
@@ -61,12 +62,17 @@ async function descriptor(root: string, publication: string): Promise<Publicatio
   const source = await previewSource(previewRoot(root, publication), "preview.json");
   return parsePublicationManifest(JSON.parse(generatedBody(source.toString("utf8"))), publication);
 }
-export async function publication(root: string, requested?: string, installOut?: string): Promise<PublicationResponse> {
+/**
+ * The Next app this Producer serves (Studio). A publication installed into it with
+ * `publish --install --next` previews through it: its page HTML is the served route's own render.
+ */
+export interface ServedApp { readonly app: string; readonly render: (path: string) => Promise<string | undefined> }
+export async function publication(root: string, requested?: string, installOut?: string, served?: ServedApp): Promise<PublicationResponse> {
   try {
     if (requested !== undefined && !identity(requested)) throw new Error("Invalid publication identity");
     const entries = await readdir(previewRoot(root), { withFileTypes: true }).catch(error => { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; });
     const publications = entries.filter(entry => entry.isDirectory() && identity(entry.name)).map(entry => entry.name).sort();
-    if (!publications.length) return await installPublication(root, requested, installOut);
+    if (!publications.length) return await installPublication(root, requested, installOut, served);
     const selected = requested ?? publications[0];
     if (!selected) return { state: "missing", message: "Not published yet", command: PREVIEW_COMMAND };
     const manifest = await descriptor(root, selected);
@@ -91,8 +97,12 @@ export async function publication(root: string, requested?: string, installOut?:
     return { state: "error", message: "Publication preview could not be read; publish a valid browser preview", command: PREVIEW_COMMAND };
   }
 }
-/** One page written by `clossys publish --install` (paths relative to the install out root). */
-interface InstallPage { id: string; html?: string; css: string[]; written: number }
+/**
+ * One page written by `clossys publish --install` (paths relative to the install out root). A page
+ * installed into a Next app (`publish --install --next`) has no static HTML: it names its route
+ * file and served path instead, and previews only through the app Producer serves.
+ */
+interface InstallPage { id: string; html?: string; css: string[]; written: number; next?: { app: string; file: string; route: string } }
 interface InstallPublication { base: string; manifest: PublicationManifest; pages: PublicationPage[]; installs: InstallPage[] }
 const blockingFinding = (finding: unknown) => object(finding) && finding.severity !== "info";
 /** The install out root holds one dir per page (`install-<id>` by default, or each `--out`). */
@@ -105,8 +115,17 @@ async function installPages(base: string): Promise<InstallPage[]> {
       await confinedPreviewFile(base, `${dir}/${INSTALL_MARKER}`);
       const reportFile = `${dir}/install-report.json`;
       const report = JSON.parse((await previewSource(base, reportFile)).toString("utf8"));
-      if (!object(report) || typeof report.page !== "string" || !identity(report.page)) continue;
       const written = (await stat(await confinedPreviewFile(base, reportFile))).mtimeMs;
+      if (object(report) && report.kind === NEXT_INSTALL_KIND) {
+        if (typeof report.app !== "string" || !Array.isArray(report.pages) || (Array.isArray(report.findings) && report.findings.some(blockingFinding))) continue;
+        for (const row of report.pages) {
+          if (!object(row) || typeof row.page !== "string" || !identity(row.page) || typeof row.file !== "string" || typeof row.route !== "string" || !row.route.startsWith("/")) continue;
+          if ((found.get(row.page)?.written ?? -1) > written) continue;
+          found.set(row.page, { id: row.page, css: [], written, next: { app: report.app, file: row.file, route: row.route } });
+        }
+        continue;
+      }
+      if (!object(report) || typeof report.page !== "string" || !identity(report.page)) continue;
       if ((found.get(report.page)?.written ?? -1) > written) continue;
       let html: string | undefined = `${dir}/site/${report.page}/index.html`;
       // A failed rerun leaves the last page on disk; its report decides whether it is current.
@@ -120,7 +139,17 @@ async function installPages(base: string): Promise<InstallPage[]> {
   return [...found.values()];
 }
 /** Native publication ownership and presentation come only from intact Publisher pins. */
-async function nativeInstallPublication(root: string, base: string, installs: InstallPage[], requested?: string): Promise<InstallPublication | undefined> {
+/** A Next-installed page renders when its marked route file is in place in the app Producer serves. */
+async function servedRoute(page: InstallPage, served?: ServedApp): Promise<boolean> {
+  if (!page.next || !served) return false;
+  try {
+    const app = await realpath(page.next.app);
+    if (app !== await realpath(served.app)) return false;
+    const file = join(app, ...page.next.file.split("/"));
+    return !relative(app, file).startsWith("..") && await isInstalledRoute(file);
+  } catch { return false; }
+}
+async function nativeInstallPublication(root: string, base: string, installs: InstallPage[], requested?: string, served?: ServedApp): Promise<InstallPublication | undefined> {
   const consumer = join(root, "clossys"), installed = new Map(installs.map(page => [page.id, page]));
   const slots = listSlots(consumer, "publisher");
   const publications = await Promise.all(slots.filter(slot => slot.id.startsWith("publication.")).map(async slot => ({
@@ -155,25 +184,27 @@ async function nativeInstallPublication(root: string, base: string, installs: In
     cellIds.set(metadata.entryId, pageSlot.id);
   }
   if (entries.some(entry => !cellIds.has(entry.id))) return undefined;
+  const routed = new Map(await Promise.all(entries.map(async entry => [entry.id, await servedRoute(installed.get(entry.id)!, served)] as const)));
   const pages: PublicationPage[] = entries.map(entry => ({ id: entry.id, cellId: cellIds.get(entry.id)!, route: entry.path!, title: entry.title,
     ...(entry.description === undefined ? {} : { description: entry.description }),
     ...(entry.indexing === undefined ? {} : { indexing: entry.indexing.mode }),
-    emitted: !!installed.get(entry.id)!.html, ...pageRoutes(id, entry.id) }));
+    emitted: !!installed.get(entry.id)!.html || routed.get(entry.id)!, ...pageRoutes(id, entry.id) }));
   return { base, installs: pages.map(page => installed.get(page.id)!), pages, manifest: {
     schemaVersion: 1, publication: id, sourceApp: typeof routePack?.app === "string" ? routePack.app : "clossys publish --install", format: "web.page.responsive",
     routes: pages.flatMap(page => {
-      const file = installed.get(page.id)!.html;
+      const install = installed.get(page.id)!;
+      const file = install.html ?? (routed.get(page.id) ? install.next!.file : undefined);
       return file === undefined ? [] : [{ id: page.id, path: page.route, source: { file, export: "default" } }];
     }),
     contentMap: { ...map, entries: map.entries.map(entry => ({ ...entry })) },
   } };
 }
-async function readInstallPublication(root: string, installOut?: string, requested?: string): Promise<InstallPublication | undefined> {
+async function readInstallPublication(root: string, installOut?: string, requested?: string, served?: ServedApp): Promise<InstallPublication | undefined> {
   let base: string;
   try { base = await realpath(installOut ?? installOutRoot(root)); } catch { return undefined; }
   const installs = await installPages(base);
   if (!installs.length) return undefined;
-  if (readIa(join(root, "clossys"), "publisher")) return nativeInstallPublication(root, base, installs, requested);
+  if (readIa(join(root, "clossys"), "publisher")) return nativeInstallPublication(root, base, installs, requested, served);
   const publisher = await inventory(root, "publisher");
   const meta = publisher.tree?.meta as Record<string, unknown> | undefined;
   const declared = (Array.isArray(meta?.publications) ? meta.publications : []).find((value: any) => object(value?.entryIds) && identity(String(value.id)) && installs.some(page => Object.values(value.entryIds).includes(page.id))) as Record<string, any> | undefined;
@@ -194,8 +225,8 @@ async function readInstallPublication(root: string, installOut?: string, request
   return { base, manifest, pages, installs };
 }
 /** Studio's publication view over `clossys publish --install` output. */
-async function installPublication(root: string, requested?: string, installOut?: string): Promise<PublicationResponse> {
-  const found = await readInstallPublication(root, installOut, requested);
+async function installPublication(root: string, requested?: string, installOut?: string, served?: ServedApp): Promise<PublicationResponse> {
+  const found = await readInstallPublication(root, installOut, requested, served);
   if (!found || (requested !== undefined && requested !== found.manifest.publication)) return { state: "missing", message: "Not published yet", command: PREVIEW_COMMAND };
   return { state: "ready", publication: found.manifest.publication, manifest: found.manifest, pages: found.pages, publications: [found.manifest.publication] };
 }
@@ -233,7 +264,7 @@ export function themePage(html: string, theme: PreviewTheme): string {
 }
 const FRAME_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP, "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin" };
 /** Called after the server's existing Host, Origin and run-token guards. */
-export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams()): Promise<void> {
+export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams(), served?: ServedApp): Promise<void> {
   const fail = (status: number, message: string) => { response.writeHead(status, { ...SECURITY, "Content-Type": "text/plain; charset=utf-8" }); response.end(message); };
   if (method !== "GET" && method !== "HEAD") { fail(405, "Publication preview is read-only"); return; }
   const match = /^\/preview\/([^/]+)\/(pages|assets|frame)\/(.+)$/.exec(pathname);
@@ -252,7 +283,7 @@ export async function servePreview(root: string, pathname: string, method: strin
   try {
     let type: string, bytes: Buffer;
     const base = previewRoot(root, selected);
-    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut, theme); return; }
+    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut, theme, served); return; }
     if (kind === "pages") {
       const manifest = await descriptor(root, selected);
       const route = manifest.routes.find(route => `${route.id}.html` === file);
@@ -273,12 +304,18 @@ export async function servePreview(root: string, pathname: string, method: strin
 }
 
 /** Install output: the page's static HTML with its own substrate build's stylesheets, and those build assets. */
-async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string, theme: PreviewTheme = "light"): Promise<void> {
-  const found = await readInstallPublication(root, installOut, selected);
+async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string, theme: PreviewTheme = "light", served?: ServedApp): Promise<void> {
+  const found = await readInstallPublication(root, installOut, selected, served);
   if (!found || found.manifest.publication !== selected) { fail(404, "Publication preview is unavailable"); return; }
   let type: string, bytes: Buffer;
-  if (kind === "pages") {
-    const install = found.installs.find(page => `${page.id}.html` === file);
+  const install = kind === "pages" ? found.installs.find(page => `${page.id}.html` === file) : undefined;
+  if (install?.next) {
+    // The installed route's own render, served under the same no-script sandbox as any page.
+    const html = found.pages.find(page => page.id === install.id)?.emitted && served ? await served.render(install.next.route) : undefined;
+    if (html === undefined) { fail(404, "Publication page is unavailable"); return; }
+    type = TYPES[".html"]!;
+    bytes = Buffer.from(themePage(html, theme));
+  } else if (kind === "pages") {
     if (!install?.html) { fail(404, "Publication page is unavailable"); return; }
     const links = install.css.map(css => `<link rel="stylesheet" href="${PREVIEW_PREFIX}${encodeURIComponent(selected)}/assets/${css.split("/").map(encodeURIComponent).join("/")}">`).join("");
     const html = (await previewSource(found.base, install.html)).toString("utf8");

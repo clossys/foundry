@@ -1,11 +1,12 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { resolve, join } from 'node:path';
+import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
+import { publishNext } from '../dist/publish/install-next.js';
 import { checkPayload } from './studio-payload.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
@@ -226,7 +227,24 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
     source: { kind: 'consumer', reference }, entries };
 }
 
-export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), check = false, payloads = true, target, previewItems } = {}) {
+/** Studio's assembly module, relative to its app directory: what every installed route mounts. */
+export const STUDIO_ASSEMBLY = '../components/StudioInstalledPage.tsx';
+
+/**
+ * Install Studio's own routes: Publisher installs `publication.studio` into the app directory
+ * (`publish --install --next`), one route per page and one live `[slug]` route per leaf template.
+ * Returns the installed route per page id; check mode refuses drift instead of writing.
+ */
+export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, appDir = resolve(studioRoot, 'app'), check = false, installOut } = {}) {
+  const result = await publishNext({ root: dirname(resolve(clossysRoot)), publication: 'studio', app: appDir, assembly: STUDIO_ASSEMBLY, live: true, check, ...(installOut ? { out: installOut } : {}) });
+  const blocking = result.findings.filter(finding => finding.severity !== 'info');
+  if (blocking.length) fail(`Publisher could not install the studio routes: ${blocking.map(finding => finding.detail).join('; ')}`);
+  const drift = result.files.filter(file => file.state === 'drift');
+  if (drift.length) throw new Error(`Generated Studio routes drift: ${drift.map(file => file.file).join(', ')}`);
+  return result.files.filter(file => file.state !== 'removed');
+}
+
+export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), appDir = join(outputDir, '..', 'app'), installOut, check = false, payloads = true, target, previewItems } = {}) {
   if ((target !== undefined && target !== 'preview') || (target !== 'preview' && previewItems !== undefined)) fail('Draft bindings require an explicit preview target');
   const publisherRoot = join(clossysRoot, 'agents', 'publisher');
   const { map, routePack } = await readPinnedPublication(publisherRoot, 'studio');
@@ -248,6 +266,11 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     for (const slot of slots) items.push(pinnedItem(clossysRoot, entries, slot));
   }
   if (payloads) for (const item of items) await checkPayload(item);
+  const installed = await installStudioRoutes({ clossysRoot, appDir, check, installOut });
+  const routeOf = (page, kind) => {
+    const row = installed.find(file => file.pageId === page.id && file.kind === kind);
+    return row && { path: row.route, entry: { file: `studio/app/${row.file}`, export: 'default' } };
+  };
   const frames = items.filter(item => item.slot.startsWith('frames.'));
   const sections = items.filter(item => item.slot.startsWith('sections.'));
   const projection = {
@@ -256,8 +279,12 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     items: items.map(item => ({ slot: item.slot, element: item.element, version: item.version, ...(item.previewEvidence ? { previewEvidence: item.previewEvidence } : {}) })),
     // Page module actions per page, for the selected-runtime module census.
     pageActions: Object.fromEntries(map.entries.filter(entry => entry.kind === 'page').map(entry => [entry.id, entry.actions ?? []])),
-    // Every page renders through the one generic App Router page.
-    routes: pages.map(page => ({ instanceId: page.id, path: page.path, label: page.title, entry: { file: 'studio/app/[[...route]]/page.tsx', export: 'default' } })),
+    // Every page is an App Router route Publisher installed; a leaf template is one more, `[slug]`.
+    routes: pages.map(page => {
+      const own = routeOf(page, 'page'), leaf = routeOf(page, 'leaf');
+      if (!own || (page.leaf && !leaf)) fail(`${page.id} has no route installed by Publisher`);
+      return { instanceId: page.id, path: page.path, label: page.title, entry: own.entry, ...(leaf ? { leaf } : {}) };
+    }),
   };
   const assemblyBanner = target === 'preview' ? '// Generated Studio DRAFT preview from explicit native bindings; unapproved and not release qualified.\n' : banner;
   const module = `${assemblyBanner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
@@ -282,6 +309,9 @@ export const studioItems = projection.items as readonly { slot: string; element:
 /** A page module action, as the Publisher content map declares it. */
 export type StudioPageAction = ContentMapPageAction;
 export const studioPageActions = projection.pageActions as unknown as Readonly<Record<string, readonly ContentMapPageAction[]>>;
+/** The route files Publisher installed under app/ (\`publish --install --next\`): each page, and each gallery's leaf template. */
+export interface StudioInstalledRoute { instanceId: string; path: string; label: string; entry: { file: string; export: string }; leaf?: { path: string; entry: { file: string; export: string } } }
+export const studioRoutes = projection.routes as readonly StudioInstalledRoute[];
 export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
 `;
   const bindings = `${assemblyBanner}import type { ComponentType } from 'react';
