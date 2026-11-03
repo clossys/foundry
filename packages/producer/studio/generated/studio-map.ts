@@ -21,4 +21,7 @@ export const studioItems = projection.items as readonly { slot: string; element:
 /** A page module action, as the Publisher content map declares it. */
 export type StudioPageAction = ContentMapPageAction;
 export const studioPageActions = projection.pageActions as unknown as Readonly<Record<string, readonly ContentMapPageAction[]>>;
+/** The route files Publisher installed under app/ (`publish --install --next`): each page, and each gallery's leaf template. */
+export interface StudioInstalledRoute { instanceId: string; path: string; label: string; entry: { file: string; export: string }; leaf?: { path: string; entry: { file: string; export: string } } }
+export const studioRoutes = projection.routes as readonly StudioInstalledRoute[];
 export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));

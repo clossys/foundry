@@ -31,6 +31,12 @@ export interface CliArgs {
   origin?: string;
   /** publish --install --site: run the substrate's Vite build. */
   build: boolean;
+  /** publish --install --site: install the publication's routes into this Next app directory. */
+  next?: string;
+  /** publish --install --next: the consumer's assembly module, relative to the app directory. */
+  assembly?: string;
+  /** publish --install --next: resolve leaves at request time through the assembly. */
+  live: boolean;
   /** publish --install: the consumer's component selection module, `<module>[#export]`. */
   selection?: string;
   /** check: validate the slot model and report coverage (slots / with candidate / pinned). */
@@ -50,10 +56,11 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default); migration: clossys migrate slots [--check] [--compare]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
-  + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)";
+  + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
+  + "Next app: clossys publish --install --site <publication> --next <app dir> --assembly <module> [--live] [--check] (one route file per page, one [slug] route per leaf template)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
-  const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, slots: false, readiness: false };
+  const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, live: false, slots: false, readiness: false };
   for (let index = 0; index < argv.length; index++) {
     const arg = argv[index]!;
     const value = (): string => {
@@ -81,6 +88,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--site": args.site = value(); break;
       case "--build": args.build = true; break;
       case "--origin": args.origin = value(); break;
+      case "--next": args.next = value(); break;
+      case "--assembly": args.assembly = value(); break;
+      case "--live": args.live = true; break;
       case "--slots": args.slots = true; break;
       case "--readiness": args.readiness = true; break;
       case "--port": {
@@ -109,6 +119,9 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if (args.selection !== undefined && !args.install) throw new CliUsageError("--selection requires publish --install");
   if ((args.page !== undefined || args.site !== undefined) && !args.install) throw new CliUsageError("--page and --site require --install");
   if ((args.build || args.origin !== undefined) && args.site === undefined) throw new CliUsageError("--build and --origin require --site");
+  if ((args.next !== undefined || args.assembly !== undefined || args.live) && (args.site === undefined || !args.install)) throw new CliUsageError("--next, --assembly and --live require publish --install --site");
+  if ((args.next === undefined) !== (args.assembly === undefined)) throw new CliUsageError("publish --install --next requires --assembly <module>, and --assembly requires --next");
+  if (args.next !== undefined && (args.build || args.origin !== undefined || args.selection !== undefined || args.records.length)) throw new CliUsageError("--next installs routes only; it takes no --build, --origin, --selection or --records");
   if (args.brief && args.verb !== "write" && args.verb !== "design") throw new CliUsageError("--brief requires design or write");
   if (args.brief && args.check) throw new CliUsageError("--brief and --check are mutually exclusive");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");

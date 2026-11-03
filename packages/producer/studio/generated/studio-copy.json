@@ -1,10 +1,10 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "56e78d560b36437d9c9a53c38ae56fafd6b1280893956ae25902ce562a4641cd",
+  "revision": "1763426dfa018fb41131ce855d788abc53f913c49da43c4eb9132173344ffe8b",
   "source": {
     "kind": "consumer",
-    "reference": "clossys/agents/writer#[{\"placement\":\"strings.interface/interface-field-labels/strings.field-labels\",\"candidate\":\"studio-contract-v5.md\",\"version\":\"5\",\"sha256\":\"4cb09172dac1afa6781eb44919186a555a9b667526fb5b1ebbbabf723ceff1cc\",\"selectedBy\":\"absent-pin-preview\"},{\"placement\":\"strings.interface/interface-field-labels/strings.common\",\"candidate\":\"studio-v3.md\",\"version\":\"3\",\"sha256\":\"72f6f043572b91254b091bbf55d3eaba591a6b123ea8bb9284f80a3af9ad0d92\",\"selectedBy\":\"absent-pin-preview\"},{\"placement\":\"strings.interface/interface-statuses/strings.statuses\",\"candidate\":\"studio-v4.md\",\"version\":\"4\",\"sha256\":\"463b958ce0ba2d5cdff110b57c4375a4f9598580e7294b1e9740345adea49c81\",\"selectedBy\":\"absent-pin-preview\"},{\"placement\":\"strings.metadata/metadata-descriptions/strings.descriptions\",\"candidate\":\"studio-v3.md\",\"version\":\"3\",\"sha256\":\"8983b99f1754e757e4392199fa8772a0bc7d269fa9470774519dde1860c53df2\",\"selectedBy\":\"absent-pin-preview\"}]"
+    "reference": "clossys/agents/writer#[{\"placement\":\"strings.interface/interface-field-labels/strings.field-labels\",\"candidate\":\"studio-contract-v5.md\",\"version\":\"5\",\"sha256\":\"4cb09172dac1afa6781eb44919186a555a9b667526fb5b1ebbbabf723ceff1cc\",\"selectedBy\":\"absent-pin-preview\"},{\"placement\":\"strings.interface/interface-field-labels/strings.common\",\"candidate\":\"studio-v3.md\",\"version\":\"3\",\"sha256\":\"72f6f043572b91254b091bbf55d3eaba591a6b123ea8bb9284f80a3af9ad0d92\",\"selectedBy\":\"absent-pin-preview\"},{\"placement\":\"strings.interface/interface-statuses/strings.statuses\",\"candidate\":\"studio-v5.md\",\"version\":\"5\",\"sha256\":\"28cb2faf166efa72a1f2d4af2691c0a7bfc6f7dc6a2fcd4fba94b614fc3f8d63\",\"selectedBy\":\"absent-pin-preview\"},{\"placement\":\"strings.metadata/metadata-descriptions/strings.descriptions\",\"candidate\":\"studio-v3.md\",\"version\":\"3\",\"sha256\":\"8983b99f1754e757e4392199fa8772a0bc7d269fa9470774519dde1860c53df2\",\"selectedBy\":\"absent-pin-preview\"}]"
   },
   "entries": [
     {
@@ -1457,6 +1457,12 @@
       "id": "studio.awaiting-owner-input",
       "text": "awaiting owner input",
       "context": "lib/studio-text.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.installed-by-publisher",
+      "text": "Installed by Publisher",
+      "context": "components/StudioPage.tsx",
       "status": "draft"
     },
     {

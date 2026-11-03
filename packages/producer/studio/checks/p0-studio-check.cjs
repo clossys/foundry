@@ -2,6 +2,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
+const { ROUTE_MARKER } = require('./check-studio-routes.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
@@ -93,12 +94,14 @@ function discoverRoutePlan(options = {}) {
   const pages = appPages(path.join(root, 'app'));
   const templates = pages.map(page => page.template);
   const represented = new Set();
+  const leafTemplates = [];
   let contentRoute = false;
   for (const page of pages) {
     const source = fs.readFileSync(page.file, 'utf8');
-    if (page.template === '/[[...route]]') {
-      assert.match(source, /resolveStudioRoute/, 'The publication catchall no longer resolves through the Studio route map');
-      for (const route of routes) represented.add(route);
+    const leafOf = /^(.*)\/\[slug\]$/.exec(page.template);
+    if (leafOf && source.split('\n', 1)[0] === ROUTE_MARKER && routes.includes(leafOf[1] || '/')) {
+      // A Publisher-installed leaf template; its leaves are the record store's, served live.
+      leafTemplates.push(page.template);
     } else if (page.template === '/%5F_specimen') {
       // Query-dependent record transport, exercised by record-specimen-mount.test.ts.
       continue;
@@ -114,7 +117,7 @@ function discoverRoutePlan(options = {}) {
   assert.equal(new Set(agents).size, agents.length, 'Duplicate agent identities in content map');
   const galleries = Object.fromEntries(content.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').map(row => [row.path, row.id]));
   const home = content.entries.find(row => row.kind === 'page' && row.id === 'home')?.path;
-  return { routes: [...represented].sort(), templates: templates.sort(), agents, galleries, home, contentRoute };
+  return { routes: [...represented].sort(), templates: templates.sort(), leafTemplates: leafTemplates.sort(), agents, galleries, home, contentRoute };
 }
 /** The live resource index expands dynamic content identities and their exposed version. */
 function expandContentRoutes(plan, inventory) {

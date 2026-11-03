@@ -8,10 +8,10 @@ import { resolveAgent } from "../agents.js";
 import { AGENT_KINDS, CELL_ID, agentRoot, hasCellTree, inventory, readStudioCells, summary, type CompileResult } from "./cells.js";
 import type { StudioGateReport } from './studio-render-policy.js';
 import { TOKEN_HEADER } from "./contract.js";
-import { startStudio, studioEntry, type StudioChild } from "./studio.js";
+import { renderStudioRoute, startStudio, STUDIO_APP, studioEntry, type StudioChild } from "./studio.js";
 import { watchCells } from "./watch.js";
 import { studioTheme } from "./theme.js";
-import { publication, servePreview } from "./publication.js";
+import { publication, servePreview, type ServedApp } from "./publication.js";
 import { selectionProfile, selectionRuntime, studioSelection } from "./selection.js";
 import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
@@ -102,6 +102,8 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   const onSignal = () => { void close(); };
   if (options.handleSignals !== false) { process.once("SIGINT", onSignal); process.once("SIGTERM", onSignal); }
 
+  // Studio's own publication previews through the Studio this server runs.
+  const served: ServedApp = { app: STUDIO_APP, render: async path => child ? renderStudioRoute(child.port, path) : undefined };
   async function handle(request: IncomingMessage, response: ServerResponse): Promise<void> {
     const host = request.headers.host;
     if (headerCount(request, "host") !== 1 || (host !== `127.0.0.1:${port}` && host !== `localhost:${port}`)) {
@@ -210,7 +212,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const gateReports: StudioGateReport[] = [];
         json(response, 200, { agents: await Promise.all(AGENT_KINDS.map(agent => inventory(options.root, agent, finding => gateReports.push(finding)))), gateReports }); return;
       }
-      if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined, options.installOut)); return; }
+      if (pathname === "/api/publication") { json(response, 200, await publication(options.root, new URL(raw, origin).searchParams.get("publication") ?? undefined, options.installOut, served)); return; }
       if (pathname === "/api/apps") { json(response, 200, await consumerApps(options.root)); return; }
       if (pathname === "/api/checks") {
         const requested = new URL(raw, origin).searchParams.get("agent");
@@ -263,7 +265,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;
     }
-    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams); return; }
+    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams, served); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers);
     if (recordSpecimen) {

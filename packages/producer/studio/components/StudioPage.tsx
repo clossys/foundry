@@ -14,7 +14,7 @@ import { notFound } from 'next/navigation';
 import { ArrowRightIcon } from 'lucide-react';
 import type { ContentMap, ContentMapEntry } from '@clossys/publisher/content-map';
 import { studioFrames, studioSections } from '../generated/assembly-bindings';
-import { studioPublicationRoot, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
+import { studioPublicationRoot, studioRoutes, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
 import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
 import type { AgentGalleryInput } from '../sections/studio-agent-gallery';
 import type { ChecksInput } from '../sections/studio-checks';
@@ -152,15 +152,27 @@ function useHomeInputs(): Loaded {
 }
 
 /** Every route the Studio publication serves: the compiled pages and the leaves the record stores add. */
+/** Whether Publisher installed the App Router file that serves a Studio map entry: its page, or for a leaf its gallery's `[slug]` route. */
+const INSTALLED_ROOT = 'studio/app/';
+function installedByPublisher(entryId: string): boolean {
+  const [pageId, leaf] = entryId.split(':');
+  const route = studioRoutes.find(row => row.instanceId === pageId);
+  const file = leaf === undefined ? route?.entry.file : route?.leaf?.entry.file;
+  return typeof file === 'string' && file.startsWith(INSTALLED_ROOT);
+}
+
 function studioPublication(map: ContentMap, origin: string): Publication {
   const entries = studioPageEntries(map);
   return {
     id: map.publicationId, title: studioCopy("studio.studio"), root: origin || 'localhost', rootNote: studioPublicationRoot.note,
     routes: entries.map(entry => {
       const compiled = !entry.id.includes(':');
+      // Installed by Publisher (a route file under app/) is distinct from compiled-only (in the map, no installed route).
+      const status = installedByPublisher(entry.id) ? { label: studioCopy("studio.installed-by-publisher"), tone: 'secondary' as const }
+        : compiled ? { label: studioCopy("studio.compiled"), tone: 'secondary' as const } : { label: studioCopy("studio.from-records"), tone: 'outline' as const };
       return {
         key: entry.id, path: entry.path, pageId: entry.id, frame: entry.source?.frameId ?? '—', sections: entry.source?.sectionIds ?? [],
-        status: compiled ? { label: studioCopy("studio.compiled"), tone: 'secondary' as const } : { label: studioCopy("studio.from-records"), tone: 'outline' as const },
+        status,
         leaf: { label: entry.title, href: entry.path },
       };
     }),

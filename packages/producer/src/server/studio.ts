@@ -79,3 +79,21 @@ export async function startStudio(entry: string, origin: string, signal: AbortSi
     throw new Error(signal.aborted ? "Producer startup cancelled" : "Studio child did not become ready before the startup deadline");
   } catch (error) { signal.removeEventListener("abort", abort); await stop(); throw error; }
 }
+
+/** The Studio app source Producer builds and serves; Publisher installs Studio's own routes into it. */
+export const STUDIO_APP = fileURLToPath(new URL("../../studio/app/", import.meta.url));
+
+/** One served Studio route's HTML, as the child renders it for a GET; undefined unless it answers 200. */
+export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000): Promise<string | undefined> {
+  return new Promise(resolve => {
+    const request = get({ hostname: "127.0.0.1", port, path, timeout: timeoutMs, headers: { Accept: "text/html", Host: `127.0.0.1:${port}` } }, response => {
+      if (response.statusCode !== 200 || !String(response.headers["content-type"] ?? "").startsWith("text/html")) { response.resume(); resolve(undefined); return; }
+      const chunks: Buffer[] = [];
+      response.on("data", chunk => chunks.push(chunk));
+      response.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      response.on("error", () => resolve(undefined));
+    });
+    request.on("timeout", () => request.destroy());
+    request.on("error", () => resolve(undefined));
+  });
+}

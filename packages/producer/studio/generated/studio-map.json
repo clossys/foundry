@@ -2301,7 +2301,7 @@
       "path": "/",
       "label": "Home",
       "entry": {
-        "file": "studio/app/[[...route]]/page.tsx",
+        "file": "studio/app/page.tsx",
         "export": "default"
       }
     },
@@ -2310,8 +2310,15 @@
       "path": "/director",
       "label": "Director",
       "entry": {
-        "file": "studio/app/[[...route]]/page.tsx",
+        "file": "studio/app/director/page.tsx",
         "export": "default"
+      },
+      "leaf": {
+        "path": "/director/[slug]",
+        "entry": {
+          "file": "studio/app/director/[slug]/page.tsx",
+          "export": "default"
+        }
       }
     },
     {
@@ -2319,8 +2326,15 @@
       "path": "/designer",
       "label": "Designer",
       "entry": {
-        "file": "studio/app/[[...route]]/page.tsx",
+        "file": "studio/app/designer/page.tsx",
         "export": "default"
+      },
+      "leaf": {
+        "path": "/designer/[slug]",
+        "entry": {
+          "file": "studio/app/designer/[slug]/page.tsx",
+          "export": "default"
+        }
       }
     },
     {
@@ -2328,8 +2342,15 @@
       "path": "/writer",
       "label": "Writer",
       "entry": {
-        "file": "studio/app/[[...route]]/page.tsx",
+        "file": "studio/app/writer/page.tsx",
         "export": "default"
+      },
+      "leaf": {
+        "path": "/writer/[slug]",
+        "entry": {
+          "file": "studio/app/writer/[slug]/page.tsx",
+          "export": "default"
+        }
       }
     },
     {
@@ -2337,8 +2358,15 @@
       "path": "/publisher",
       "label": "Publisher",
       "entry": {
-        "file": "studio/app/[[...route]]/page.tsx",
+        "file": "studio/app/publisher/page.tsx",
         "export": "default"
+      },
+      "leaf": {
+        "path": "/publisher/[slug]",
+        "entry": {
+          "file": "studio/app/publisher/[slug]/page.tsx",
+          "export": "default"
+        }
       }
     }
   ]

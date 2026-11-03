@@ -14,7 +14,12 @@ const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 /** Every Designer slot the Studio pages assemble. */
 const STUDIO_SLOTS = ['frames.studio-shell', ...['checks', 'explorer', 'outline'].map(id => `sections.module.${id}`),
   ...['agent-gallery', 'checks', 'contract', 'history', 'home', 'leaf-header', 'options', 'publications', 'references', 'specimen'].map(id => `sections.studio.${id}`)];
-const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
+/** The route files Publisher installs for one Studio page: its page and, for a gallery, its leaf template. */
+const installedEntry = (instanceId, path, label, leaf = true) => {
+  const folder = path === '/' ? '' : `${path.slice(1)}/`;
+  return { instanceId, path, label, entry: { file: `studio/app/${folder}page.tsx`, export: 'default' },
+    ...(leaf ? { leaf: { path: `${path}/[slug]`, entry: { file: `studio/app/${folder}[slug]/page.tsx`, export: 'default' } } } : {}) };
+};
 
 /** A copy of the Studio records: pinned Publisher candidates and the Designer slot model. */
 async function fixture(t) {
@@ -29,14 +34,14 @@ async function fixture(t) {
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
     await cp(join(designer, node.id, child.id, slot), join(copy, node.id, child.id, slot), { recursive: true });
   }
-  return { clossysRoot, outputDir, publisherRoot: join(clossysRoot, 'agents', 'publisher') };
+  return { clossysRoot, outputDir, appDir: join(dir, 'app'), installOut: join(dir, 'install'), publisherRoot: join(clossysRoot, 'agents', 'publisher') };
 }
 async function replace(path, before, after) {
   const source = await readFile(path, 'utf8');
   assert.ok(source.includes(before), `${path} has ${before}`);
   await writeFile(path, source.replace(before, after));
 }
-const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.clossysRoot, outputDir: options.outputDir, ...extra });
+const run = (options, extra = {}) => generateStudioMap({ clossysRoot: options.clossysRoot, outputDir: options.outputDir, appDir: options.appDir, installOut: options.installOut, ...extra });
 
 async function designerSlot(options, id) {
   const root = join(options.clossysRoot, 'agents/designer');
@@ -103,8 +108,9 @@ async function writerCallerFixture(t) {
   const placement = 'strings.interface/interface-field-labels/strings.common';
   const dir = join(writer, placement);
   await mkdir(join(dir, 'candidates'), { recursive: true });
-  await writeFile(join(writer, 'ia.json'), JSON.stringify({ nodes: [
-    { id: 'strings.interface', children: [{ id: 'interface-field-labels', slots: ['strings.common'] }] },
+  // A valid Writer IA: the Studio install lists the Writer record store's leaves.
+  await writeFile(join(writer, 'ia.json'), JSON.stringify({ schema: 'clossys.ia/1', source: '@clossys/writer#test', extensions: [], nodes: [
+    { id: 'strings.interface', label: 'Interface', children: [{ id: 'interface-field-labels', label: 'Field labels', slots: ['strings.common'] }] },
   ] }));
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, 14);
@@ -313,8 +319,17 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
     assert.equal(page.leaf.sectionIds[0], 'sections.studio.leaf-header');
     for (const slot of ['sections.studio.specimen', 'sections.studio.options', 'sections.studio.history', 'sections.studio.references']) assert.ok(page.leaf.sectionIds.includes(slot));
   }
-  // One generic renderer: every route enters through the same App Router page.
-  for (const route of projection.routes) assert.deepEqual(route.entry, GENERIC_PAGE);
+  // Publisher installs every route: one marked page per map page and a dynamic leaf route per gallery.
+  assert.deepEqual(projection.routes.map(({ instanceId, path, label, entry, leaf }) => ({ instanceId, path, label, entry, ...(leaf ? { leaf } : {}) })), [
+    installedEntry('home', '/', 'Home', false), installedEntry('director', '/director', 'Director'), installedEntry('designer', '/designer', 'Designer'),
+    installedEntry('writer', '/writer', 'Writer'), installedEntry('publisher', '/publisher', 'Publisher'),
+  ]);
+  const { NEXT_ROUTE_MARKER } = await import('@clossys/publisher/install');
+  for (const route of projection.routes) for (const file of [route.entry.file, route.leaf?.entry.file].filter(Boolean)) {
+    assert.equal((await readFile(join(options.appDir, file.slice('studio/app/'.length)), 'utf8')).split('\n', 1)[0], NEXT_ROUTE_MARKER, file);
+  }
+  const report = JSON.parse(await readFile(join(options.installOut, 'install-report.json'), 'utf8'));
+  assert.deepEqual([report.kind, report.publication, report.pages.map(row => row.page)], ['next', 'studio', ['home', 'director', 'designer', 'writer', 'publisher']]);
   for (const page of map.entries.filter(row => row.kind === 'page')) assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
   assert.deepEqual(projection.items.map(item => item.slot).sort(), [
     'frames.studio-shell', 'sections.module.checks', 'sections.module.explorer', 'sections.module.outline', 'sections.studio.agent-gallery', 'sections.studio.checks', 'sections.studio.contract', 'sections.studio.history', 'sections.studio.home',
@@ -334,7 +349,10 @@ test('active title and path edits drive the map, the page records and the comman
   await editPinned(options, 'page.designer', record => { record.title = 'Visual design'; record.path = '/design'; });
   await assert.rejects(run(options, { check: true }), /drift/i);
   const changed = await run(options);
-  assert.deepEqual(changed.routes.find(row => row.instanceId === 'designer'), { instanceId: 'designer', path: '/design', label: 'Visual design', entry: GENERIC_PAGE });
+  assert.deepEqual(changed.routes.find(row => row.instanceId === 'designer'), installedEntry('designer', '/design', 'Visual design'));
+  // The reinstall moves the page and its leaf template, and removes the stale marked files.
+  await readFile(join(options.appDir, 'design/[slug]/page.tsx'), 'utf8');
+  await assert.rejects(readFile(join(options.appDir, 'designer/page.tsx'), 'utf8'), { code: 'ENOENT' });
   assert.equal(changed.pages.find(page => page.id === 'designer').path, '/design');
   assert.ok(projectCommands(changed.map).flatMap(row => row.items).some(row => row.id === 'designer' && row.label === 'Visual design' && row.href === '/design'));
   await run(options, { check: true });
