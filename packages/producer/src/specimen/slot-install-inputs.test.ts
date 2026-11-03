@@ -27,17 +27,11 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("installed specimen input projection", () => {
-  it("uses exact native current pins and newer same-element options despite contradictory legacy stores", () => {
-    put(join(root, "selection.json"), "invalid contradictory legacy selection");
-    mkdirSync(join(root, "library/components.card/other/v99"), { recursive: true });
+  it("uses exact native current pins and newer same-element options", () => {
     const inputs = slotInstallInputs(root)!;
     expect(inputs.pins).toEqual({ "components.card": { element: "card", version: 1 } });
     expect([...inputs.options]).toEqual([["components.card", [2]]]);
     expect(inputs.unpinned).toEqual({});
-    put(join(root, "selection.json"), "changed");
-    mkdirSync(join(root, "library/components.card/card/v100"), { recursive: true });
-    expect(slotInstallInputs(root)).toEqual(inputs);
-    rmSync(join(root, "selection.json")); rmSync(join(root, "library"), { recursive: true });
     expect(slotInstallInputs(root)).toEqual(inputs);
   });
 
@@ -52,7 +46,6 @@ describe("installed specimen input projection", () => {
   });
 
   it.each(["malformed", "missing-candidate", "hash-drift", "invalid-candidate", "identity", "position"])("rejects %s native pins without selecting a newer draft", kind => {
-    put(join(root, "selection.json"), "legacy selection must not be read");
     if (kind === "malformed") put(pinFile(dir()), "{}");
     if (kind === "missing-candidate") rmSync(join(candidatesDir(dir()), "card-v1.json"));
     if (kind === "hash-drift") candidate("card", 1, "components.card", "changed bytes");
@@ -83,14 +76,8 @@ describe("installed specimen input projection", () => {
     expect(slotInstallInputs(root)!.unpinned).toEqual({});
   });
 
-  it("preserves legacy discovery when no IA exists", () => {
+  it("has no inputs when no IA exists", () => {
     rmSync(join(root, "agents"), { recursive: true });
     expect(slotInstallInputs(root)).toBeUndefined();
-    put(join(root, "selection.json"), jsonBytes({ schema: "clossys.selection/1", pins: { "components.card": { element: "old-card", version: 1, hash: `sha256:${"a".repeat(64)}`, event: "e1" } }, history: [{ id: "e1", at: "2026-10-31T00:00:00Z", by: "fixture", action: "pin", slot: "components.card", element: "old-card", version: 1, hash: `sha256:${"a".repeat(64)}` }] }));
-    for (const path of ["components.card/old-card/v1", "components.card/old-card/v2", "components.button/button/v3", "components.empty/a/v1", "components.empty/b/v2"]) mkdirSync(join(root, "library", path), { recursive: true });
-    const inputs = slotInstallInputs(root)!;
-    expect(inputs.pins).toEqual({ "components.card": { element: "old-card", version: 1 } });
-    expect([...inputs.options]).toEqual([["components.card", [2]]]);
-    expect(inputs.unpinned).toEqual({ "components.button": { element: "button", version: 3 } });
   });
 });

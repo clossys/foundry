@@ -9,7 +9,7 @@
  * writer:<cell>` binds the copy slot `<slot>` to `<cell>.<key>`. Keys may contain dots.
  *
  * Publisher owns install and bind (`@clossys/publisher/install`); this module supplies its
- * inputs (the consumer's selection pins, its library through `libraryRecordSource`, its
+ * inputs (the consumer's Designer slot-model pins, its library through `libraryRecordSource`, its
  * compiled Writer copy), runs shadcn without a shell, and renders the result.
  */
 import { execFile } from "node:child_process";
@@ -20,7 +20,7 @@ import { createRequire, isBuiltin } from "node:module";
 import { join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
 import { installAndBind, isBlocking, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type InstallResult, type ShadcnRunner } from "@clossys/publisher/install";
-import { loadSelection, SELECTION_FILE } from "../records/index.js";
+import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { hasSlotModel, readCandidate, readIa, readPin, readSlot } from "../records/slots.js";
 import { slotPositions, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -319,10 +319,16 @@ export async function renderBoundPage(page: BoundPage, substrate: string): Promi
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${page.id}</title></head><body>${body}</body></html>\n`;
 }
 
+/** The consumer's pinned Designer elements, from its slot model (`clossys/agents/designer`). */
+export function designerPins(root: string): InstallPins {
+  const inputs = slotInstallInputs(join(root, "clossys"));
+  if (!inputs) throw new Error("publish --install: the consumer has no Designer slot model (clossys/agents/designer/ia.json)");
+  return inputs.pins;
+}
+
 export async function publishInstall(options: PublishInstallOptions): Promise<PublishInstallResult> {
   const root = resolve(options.root);
-  const selection = loadSelection(join(root, "clossys", SELECTION_FILE));
-  const pins: InstallPins = Object.fromEntries(Object.entries(selection.pins).map(([slot, pin]) => [slot, { element: pin.element, version: pin.version }]));
+  const pins = designerPins(root);
   const file = resolve(options.cwd ?? process.cwd(), options.page);
   const page = /^(page\.)?[a-z0-9][a-z0-9-]*$/.test(options.page) && !existsSync(file)
     ? await pageRecordFromCell(root, options.page, pins)

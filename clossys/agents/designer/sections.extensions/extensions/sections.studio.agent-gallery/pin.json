@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-agent-gallery-v4.json",
-  "sha256": "305434b40bdf46f866b72336a3a8a4223ab800d3710f39c6b34d56b783d7152c",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T22:00:00Z"
+  "candidate": "studio-agent-gallery-v5.json",
+  "sha256": "f5b9d19fb5de86fd2e05bb348c9f04081a48cc6cb4a10dac8c694d562c34006e",
+  "pinnedBy": "owner:base-release2 e38",
+  "at": "2026-11-02T22:45:00Z"
 }

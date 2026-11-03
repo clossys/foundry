@@ -1,12 +1,11 @@
 /**
- * Studio selection and brand from a library workspace (`clossys/selection.json`, schema
- * `clossys.selection/1`, pinning shadcn registry items under `clossys/library/`). This is the
- * current library reader; the legacy Designer fills schema is only read when no such workspace
- * exists.
+ * Studio selection and brand from the Designer slot model (`clossys/agents/designer`): each
+ * slot's `pin.json` and the shadcn registry item candidate it names. The legacy Designer fills
+ * schema is only read when the consumer has no Designer slot model.
  */
-import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { loadSelection, SELECTION_FILE } from "../records/index.js";
+import { listSlots, readCandidate } from "../records/slots.js";
+import { hasAgentSlots } from "./slot-gallery.js";
 import { themeHash, type StudioTheme } from "./theme-default.js";
 
 export interface LibrarySelection {
@@ -15,24 +14,32 @@ export interface LibrarySelection {
   gateReports: never[];
 }
 
-const SCHEMA = "clossys.selection/1";
-
-/** The library workspace of a consumer root, when it pins items in the current selection format. */
+/** The consumer's `clossys/` root, when it carries a Designer slot model. */
 export function libraryWorkspace(root: string): string | undefined {
-  const library = join(root, "clossys"), file = join(library, SELECTION_FILE);
-  if (!existsSync(file) || !existsSync(join(library, "library"))) return undefined;
-  try { return (JSON.parse(readFileSync(file, "utf8")) as { schema?: unknown }).schema === SCHEMA ? library : undefined; } catch { return undefined; }
+  const library = join(root, "clossys");
+  return hasAgentSlots(library, "designer") ? library : undefined;
 }
 
-/** One leaf per pinned slot, provenance `consumer`, hashed from the selection file's bytes. */
+/** A pinned candidate's registry item, only while its bytes still match the pin. */
+function pinnedItems(library: string): Map<string, { item: Record<string, any>; version: number; sha256: string }> {
+  const items = new Map<string, { item: Record<string, any>; version: number; sha256: string }>();
+  for (const entry of listSlots(library, "designer")) {
+    if (!entry.pin || !entry.candidates.includes(entry.pin.candidate)) continue;
+    try {
+      const candidate = readCandidate(library, "designer", entry.id, entry.pin.candidate);
+      const item = JSON.parse(candidate.bytes);
+      const version = Number(/-v([1-9][0-9]*)\.json$/.exec(entry.pin.candidate)?.[1] ?? 0);
+      if (candidate.sha256 === entry.pin.sha256 && typeof item?.name === "string" && version) items.set(entry.id, { item, version, sha256: candidate.sha256 });
+    } catch { /* an unreadable pin is not part of the selection */ }
+  }
+  return items;
+}
+
+/** One leaf per pinned slot, provenance `consumer`, hashed from the pins it reads. */
 export function librarySelection(library: string): LibrarySelection {
-  const file = join(library, SELECTION_FILE);
-  const pins = loadSelection(file).pins;
-  return {
-    hash: themeHash(readFileSync(file, "utf8")),
-    leaves: Object.entries(pins).sort(([a], [b]) => a.localeCompare(b)).map(([leaf, pin]) => ({ leaf, source: "consumer" as const, fill: `${pin.element}@v${pin.version}`, ...(pin.hash ? { hash: pin.hash } : {}) })),
-    gateReports: [],
-  };
+  const leaves = [...pinnedItems(library)].sort(([a], [b]) => a.localeCompare(b))
+    .map(([leaf, pin]) => ({ leaf, source: "consumer" as const, fill: `${pin.item.name}@v${pin.version}`, hash: `sha256:${pin.sha256}` }));
+  return { hash: themeHash(JSON.stringify(leaves)), leaves, gateReports: [] };
 }
 
 const CSS_NAME = /^[a-z][a-z0-9-]*$/;
@@ -43,12 +50,8 @@ const declarations = (vars: unknown) => Object.entries(vars && typeof vars === "
 
 /** The pinned theme (and heading font) as Studio's brand stylesheet: shadcn variables for light and dark. */
 export function libraryTheme(library: string): StudioTheme | undefined {
-  const pins = loadSelection(join(library, SELECTION_FILE)).pins;
-  const item = (slot: string) => {
-    const pin = pins[slot];
-    if (!pin) return undefined;
-    try { return JSON.parse(readFileSync(join(library, "library", slot, pin.element, `v${pin.version}`, "registry-item.json"), "utf8")); } catch { return undefined; }
-  };
+  const pins = pinnedItems(library);
+  const item = (slot: string) => pins.get(slot)?.item;
   const theme = item("themes.theme");
   if (!theme?.cssVars) return undefined;
   const font = item("themes.font-heading")?.font;

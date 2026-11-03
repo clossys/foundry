@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-home-v2.json",
-  "sha256": "a63d9892bd10e97cb24a263c0b78f49cc446d8688008bdb153e1d188124adf5a",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T18:00:00Z"
+  "candidate": "studio-home-v3.json",
+  "sha256": "fb075dfd7e0cfde1662c58c4924f8ca47677c499e68ec93e6c79ebf1b2de680e",
+  "pinnedBy": "owner:base-release2 e37",
+  "at": "2026-11-02T22:45:00Z"
 }
