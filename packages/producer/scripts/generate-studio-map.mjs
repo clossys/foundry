@@ -120,7 +120,7 @@ export function assemblyOf(entry, route, contracts) {
 async function readJson(path) { return JSON.parse(await readFile(path, 'utf8')); }
 
 /** Read Designer's IA in order and use only contracts belonging to their slot. */
-function designerContracts(clossysRoot) {
+export function designerContracts(clossysRoot) {
   const ia = readIa(clossysRoot, 'designer');
   if (!ia) fail('Designer IA is missing');
   const contracts = new Map();

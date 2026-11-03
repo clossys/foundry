@@ -11,6 +11,8 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, sep } from "node:path";
 import { sha256Hex } from "../records/hash.js";
 import { readIa } from "../records/slots.js";
+import { validateSlotContract } from "../records/validate.js";
+import type { SlotContract } from "../records/types.js";
 import {
   AGENT_KIND, DIRECTOR_PINNED_BY, IA_SCHEMA, MIGRATION_PINNED_BY, PAGE_SCHEMA, PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_SCHEMA,
   candidateName, deriveRefs, designerIa, directorIa, feedsIndex, iaPath, jsonBytes, serializeFrontmatter, slotPositions,
@@ -147,6 +149,14 @@ async function designerCellCandidate(cell: OldCell): Promise<string> {
     meta: { slot: cell.id, source: sourceFrom(kind, parsed.sources), ...(parsed.rationale ? { rationale: parsed.rationale } : {}) },
   });
 }
+/** The contract an owner-signed Designer extension already declares in its slot.json, if valid. */
+function existingDesignerContract(consumer: string, id: string): SlotContract | undefined {
+  let doc: SlotDoc;
+  try { doc = readJsonFile(join(slotDir(consumer, "designer", id), SLOT_FILE)) as SlotDoc; } catch { return undefined; }
+  if (validateSlotDoc(doc).length || doc.id !== id || doc.agent !== "designer") return undefined;
+  const checked = validateSlotContract(doc.contract);
+  return checked.ok && checked.value.slot === id ? checked.value : undefined;
+}
 async function planDesigner(consumer: string, store: OldStore | null, library: readonly LibraryVersion[], selection: Record<string, any> | null): Promise<AgentPlan> {
   const base = designerIa();
   const slots = new Map(base.slots);
@@ -157,7 +167,8 @@ async function planDesigner(consumer: string, store: OldStore | null, library: r
   const contracts = readDesignerContracts(consumer);
   for (const id of extensions) {
     if (foundry.slots.has(id)) continue;
-    const contract = contracts.get(id);
+    // Once the legacy contract file is gone the extension's own slot.json holds its contract.
+    const contract = contracts.get(id) ?? existingDesignerContract(consumer, id);
     if (contract) slots.set(id, {
       id, kind: "element", contract, declaredInputs: [], declaredUses: [], feeds: [],
     });

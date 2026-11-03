@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
-import { HANDLERS, assemblyOf, checkManifest, generateStudioMap } from './generate-studio-map.mjs';
+import { HANDLERS, assemblyOf, checkManifest, designerContracts, generateStudioMap } from './generate-studio-map.mjs';
 import { pinnedBindings } from './studio-draft-items.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
@@ -221,7 +221,7 @@ const withoutCopyLink = route => {
 test('L16 v3 records remove only Copy link and retain the request-change prompt and other popovers', async t => {
   const options = await nativeFixture(t), root = options.publisherRoot;
   const { routePack } = await readPinnedPublication(root, 'studio');
-  const contracts = new Map(JSON.parse(await readFile(join(clossys, 'agents/designer/slot-contracts/studio.json'), 'utf8')).map(contract => [contract.slot, contract]));
+  const contracts = designerContracts(clossys);
   assert.deepEqual(HANDLERS, ['copy-prompt']);
   for (const name of PAGE_NAMES) {
     const oldCandidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v2.json'), 'utf8'));
@@ -263,7 +263,7 @@ test('L16 active generation contains no copy-link and leaves native candidate hi
 
 test('L16 rejects a restored copy-link kind, a renamed copy-link action and stale wiring on every page and leaf', async t => {
   const options = await nativeFixture(t);
-  const contracts = new Map(JSON.parse(await readFile(join(clossys, 'agents/designer/slot-contracts/studio.json'), 'utf8')).map(contract => [contract.slot, contract]));
+  const contracts = designerContracts(clossys);
   for (const name of PAGE_NAMES) {
     const route = (await selected(options, `page.${name}`)).record.meta.entry.blocks.Route;
     for (const original of [route.manifest, ...(route.leaf ? [route.leaf.manifest] : [])]) {
