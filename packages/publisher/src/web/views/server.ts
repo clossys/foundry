@@ -35,7 +35,7 @@ export { BrandGuideView } from "./BrandGuideView.js";
 export { SystemAuditView } from "./SystemAuditView.js";
 export { PackReviewView } from "./PackReviewView.js";
 export type { PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice } from "./PackReviewView.js";
-export type { SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
+export type { SectionedViewCallToAction, SectionedViewLandmark, SectionedViewProps } from "./SectionedView.js";
 
 export { LegalView } from "./LegalView.js";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./LegalView.js";
