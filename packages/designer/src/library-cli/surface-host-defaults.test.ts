@@ -10,18 +10,19 @@ import { dirname, join } from "node:path";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import type { CompositeCatalogData, CompositeLibraryData } from "../catalog-core/types.js";
-import { packageSurfaceLibrary } from "./__fixtures__/package-surface-library.js";
+import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "./__fixtures__/package-surface-library.js";
 import { checkLibrary, emitLibrary, isCompositeChangeSet, libraryFiles, readLibrary, writeCompositeLibrary } from "./fs-library.js";
 
-let catalog: CompositeCatalogData, host: CompositeCatalogData, library: CompositeLibraryData, files: ReadonlyMap<string, string>;
+let catalog: CompositeCatalogData, host: CompositeCatalogData, componentOptions: PackageSurfaceLibrary["componentOptions"], library: CompositeLibraryData, files: ReadonlyMap<string, string>;
 let temporary: string, root: string;
 
 beforeAll(async () => {
   const fixture = await packageSurfaceLibrary();
-  ({ catalog, library } = fixture);
+  ({ catalog, library, componentOptions } = fixture);
   // What a host that never wired Sections or Frames passes: value and component catalogs only.
   host = { values: catalog.values, components: catalog.components };
-  files = libraryFiles(catalog, library, undefined, undefined, fixture.options);
+  // Component package-export evidence is the host's input for the selected package components; surface evidence stays omitted below.
+  files = libraryFiles(catalog, library, undefined, componentOptions, fixture.options);
 }, 120_000);
 beforeEach(async () => {
   temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "surface-host-defaults-")));
@@ -49,12 +50,12 @@ describe("package-pointer surfaces without host surface wiring", { timeout: 120_
 
   it("checks clean with no host evidence by reading the installed package barrels", async () => {
     for (const given of [catalog, host]) {
-      const result = await checkLibrary(root, given);
+      const result = await checkLibrary(root, given, componentOptions);
       expect(surfaceErrors(result.findings)).toEqual([]);
       expect(result.findings.some(row => row.rule === "surfaces" && row.severity === "notice" && /package pointer/.test(row.message))).toBe(true);
     }
     // Evidence the host does pass is used as given: an empty inventory still fails S4.
-    expect(surfaceErrors((await checkLibrary(root, host, undefined, { packages: [], measurements: [] })).findings).some(row => row.startsWith("S4 "))).toBe(true);
+    expect(surfaceErrors((await checkLibrary(root, host, componentOptions, { packages: [], measurements: [] })).findings).some(row => row.startsWith("S4 "))).toBe(true);
   });
 
   it("saves a values change through a host catalog without surfaces or options and keeps every pointer", async () => {
@@ -62,7 +63,7 @@ describe("package-pointer surfaces without host surface wiring", { timeout: 120_
     const lucide = library.values.fills.find(fill => fill.$extensions["com.clossys.fill"].slot.startsWith("assets.icon-") && JSON.stringify(fill).includes('"source":"lucide"'))!;
     const change = { baseHash: compositeLibraryHash(await readLibrary(root, host)), changes: [{ portion: "values" as const, change: { op: "adopt" as const, slot: lucide.$extensions["com.clossys.fill"].slot, source: "lucide" } }] };
     expect(isCompositeChangeSet(change, host)).toBe(true);
-    const saved = await writeCompositeLibrary(root, host, change);
+    const saved = await writeCompositeLibrary(root, host, change, componentOptions);
     expect(pointers(saved)).toBe(pointers(library));
     expect(pointers(await readLibrary(root, host))).toBe(pointers(library));
   });
@@ -70,6 +71,6 @@ describe("package-pointer surfaces without host surface wiring", { timeout: 120_
   it("accepts a surfaces changeset and emits with --check through a host catalog without surfaces", async () => {
     const slot = library.surfaces!.fills[0]!.$extensions["com.clossys.fill"].slot;
     expect(isCompositeChangeSet({ baseHash: compositeLibraryHash(library), changes: [{ portion: "surfaces", change: { op: "remove", slot } }] }, host)).toBe(true);
-    expect(await emitLibrary(root, host, { check: true })).toEqual({ ok: true, drift: [] });
+    expect(await emitLibrary(root, host, { check: true, componentOptions })).toEqual({ ok: true, drift: [] });
   });
 });

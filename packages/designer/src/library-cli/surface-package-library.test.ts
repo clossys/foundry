@@ -13,15 +13,15 @@ import { compositeLibraryHash } from "../catalog-core/library-components.js";
 import type { SurfaceResolutionOptions } from "../catalog-core/surface-types.js";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "../catalog-core/types.js";
 import type { SurfaceCatalog, SurfaceCandidateDocument } from "../catalog-core/index.js";
-import { packageSurfaceLibrary } from "./__fixtures__/package-surface-library.js";
+import { packageSurfaceLibrary, type PackageSurfaceLibrary } from "./__fixtures__/package-surface-library.js";
 import { main } from "./cli.js";
 import { checkLibrary, emitLibrary, libraryFiles, readLibrary, writeCompositeLibrary } from "./fs-library.js";
 
-let catalog: CompositeCatalogData, options: SurfaceResolutionOptions, library: CompositeLibraryData, decisions: readonly { slot: string; source: string }[];
+let catalog: CompositeCatalogData, options: SurfaceResolutionOptions, componentOptions: PackageSurfaceLibrary["componentOptions"], library: CompositeLibraryData, decisions: readonly { slot: string; source: string }[];
 let temporary: string, root: string;
 
 beforeAll(async () => {
-  ({ catalog, library, options, decisions } = await packageSurfaceLibrary());
+  ({ catalog, library, options, componentOptions, decisions } = await packageSurfaceLibrary());
   // A host assembles this entirely from the public catalog API, including the archive.
   const surfaces: SurfaceCatalog = {
     slots: [...loadSectionRegistry().slots, ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames")],
@@ -35,6 +35,8 @@ afterEach(async () => { await fs.rm(temporary, { recursive: true, force: true })
 async function save(files: ReadonlyMap<string, string>): Promise<void> {
   await fs.mkdir(join(root, "fills"), { recursive: true });
   for (const [name, content] of files) { await fs.mkdir(dirname(join(root, name)), { recursive: true }); await fs.writeFile(join(root, name), content); }
+  // The CLI reads package-export evidence for the selected package components from the library root.
+  await fs.writeFile(join(root, "component-observations.json"), JSON.stringify(componentOptions));
 }
 async function cli(...args: string[]) {
   const out: string[] = [], error: string[] = [];
@@ -63,7 +65,7 @@ describe("package-pointer surfaces on disk", { timeout: 120_000 }, () => {
     oldCatalog.surfaces.fills = oldCatalog.surfaces.fills.map(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell" ? candidate as never : doc);
     oldCatalog.surfaces.slots = oldCatalog.surfaces.slots.map(slot => slot.id === "frames.app-shell" ? registration.contract as never : slot);
     oldLibrary.surfaces!.fills = oldLibrary.surfaces!.fills.map(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell" ? held as never : doc);
-    await save(libraryFiles(oldCatalog, oldLibrary, undefined, undefined, options));
+    await save(libraryFiles(oldCatalog, oldLibrary, undefined, componentOptions, options));
     return { from, oldCatalog };
   }
   async function bytes() {
@@ -89,15 +91,15 @@ describe("package-pointer surfaces on disk", { timeout: 120_000 }, () => {
     await staleFrame();
     const before = await bytes(), current = await readLibrary(root, catalog);
     expect((await cli("surfaces", "--refresh", "frames.unknown")).code).not.toBe(0);
-    await expect(writeCompositeLibrary(root, catalog, { baseHash: "sha256:" + "0".repeat(64), changes: [{ portion: "surfaces", change: { op: "refresh", slot: "frames.app-shell", source: "foundry" } }] }, undefined, options)).rejects.toThrow(/baseHash/);
-    await expect(writeCompositeLibrary(root, catalog, { baseHash: compositeLibraryHash(current), changes: [{ portion: "surfaces", change: { op: "refresh", slot: "frames.app-shell", source: "foreign" } }] }, undefined, options)).rejects.toThrow(/source/);
+    await expect(writeCompositeLibrary(root, catalog, { baseHash: "sha256:" + "0".repeat(64), changes: [{ portion: "surfaces", change: { op: "refresh", slot: "frames.app-shell", source: "foundry" } }] }, componentOptions, options)).rejects.toThrow(/baseHash/);
+    await expect(writeCompositeLibrary(root, catalog, { baseHash: compositeLibraryHash(current), changes: [{ portion: "surfaces", change: { op: "refresh", slot: "frames.app-shell", source: "foreign" } }] }, componentOptions, options)).rejects.toThrow(/source/);
     expect(await bytes()).toEqual(before);
   });
   it("a host using public importers and history persists an unrelated operation with the real b740 stale frame", async () => {
     const { from } = await staleFrame();
     const held = await readLibrary(root, catalog);
-    expect((await checkLibrary(root, catalog, undefined, options)).findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", subject: "frames.app-shell", actualHash: from, expectedHash: expect.any(String), nextOperation: { op: "refresh", slot: "frames.app-shell", source: "foundry" } }));
-    const next = await writeCompositeLibrary(root, catalog, { baseHash: compositeLibraryHash(held), changes: [{ portion: "surfaces", change: { op: "remove", slot: "sections.faq" } }] }, undefined, options);
+    expect((await checkLibrary(root, catalog, componentOptions, options)).findings).toContainEqual(expect.objectContaining({ code: "S2", severity: "notice", subject: "frames.app-shell", actualHash: from, expectedHash: expect.any(String), nextOperation: { op: "refresh", slot: "frames.app-shell", source: "foundry" } }));
+    const next = await writeCompositeLibrary(root, catalog, { baseHash: compositeLibraryHash(held), changes: [{ portion: "surfaces", change: { op: "remove", slot: "sections.faq" } }] }, componentOptions, options);
     expect(next.surfaces!.fills.some(doc => doc.$extensions["com.clossys.fill"].slot === "sections.faq")).toBe(false);
     const frame = surfaceEntryOf(next.surfaces!.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell")!) as SurfacePackageEntry & { origin: SurfacePackageOrigin };
     expect(frame.origin.descriptorHash).toBe(from);
@@ -155,7 +157,7 @@ describe("package-pointer surfaces on disk", { timeout: 120_000 }, () => {
 
   it("persists every adopted pointer as a fill with no owned files, and emits its package re-export", async () => {
     expect(decisions.length).toBeGreaterThan(0);
-    const files = libraryFiles(catalog, library, undefined, undefined, options);
+    const files = libraryFiles(catalog, library, undefined, componentOptions, options);
     for (const row of decisions) expect(files.has(`fills/${row.slot}.json`), row.slot).toBe(true);
     expect(JSON.parse(files.get("metadata.json")!).surfaces).toEqual({ version: 1, files: [] });
     expect(files.get("sections/faq/index.ts")).toMatch(/export \{ Faq(?: as Faq)? \} from "@clossys\/designer\/blocks";/);
@@ -163,24 +165,24 @@ describe("package-pointer surfaces on disk", { timeout: 120_000 }, () => {
   });
 
   it("round-trips the persisted library through the disk reader unchanged", async () => {
-    await save(libraryFiles(catalog, library, undefined, undefined, options));
+    await save(libraryFiles(catalog, library, undefined, componentOptions, options));
     const read = await readLibrary(root, catalog);
     expect(read.surfaces!.fills).toHaveLength(decisions.length);
     expect(compositeLibraryHash(read)).toBe(compositeLibraryHash(library));
   });
 
   it("checks clean with host package evidence: the runtime rule is a notice, missing evidence is an error", async () => {
-    await save(libraryFiles(catalog, library, undefined, undefined, options));
-    const surfaces = (await checkLibrary(root, catalog, undefined, options)).findings.filter(row => row.rule === "surfaces");
+    await save(libraryFiles(catalog, library, undefined, componentOptions, options));
+    const surfaces = (await checkLibrary(root, catalog, componentOptions, options)).findings.filter(row => row.rule === "surfaces");
     expect(surfaces.filter(row => row.severity === "error")).toEqual([]);
     expect(surfaces.some(row => row.severity === "notice" && /package pointer/.test(row.message))).toBe(true);
     const unsupported = (await checkLibrary(root, catalog, undefined, { packages: [], measurements: [] })).findings.filter(row => row.rule === "surfaces" && row.severity === "error");
     expect(unsupported.some(row => /package export evidence missing or differs/.test(row.message))).toBe(true);
-    expect(await emitLibrary(root, catalog, { check: true, surfaceOptions: options })).toEqual({ ok: true, drift: [] });
+    expect(await emitLibrary(root, catalog, { check: true, componentOptions, surfaceOptions: options })).toEqual({ ok: true, drift: [] });
   });
 
   it("the CLI checks and emits a package-adopted library against the installed package barrels", async () => {
-    await save(libraryFiles(catalog, library, undefined, undefined, options));
+    await save(libraryFiles(catalog, library, undefined, componentOptions, options));
     for (const layer of ["sections", "frames"]) {
       const result = await cli("check", "--layer", layer, "--json");
       expect(result.error, layer).toBe("");
@@ -192,7 +194,7 @@ describe("package-pointer surfaces on disk", { timeout: 120_000 }, () => {
 
   it("the CLI applies a package adoption changeset with host evidence", async () => {
     const one = { ...library, surfaces: { version: 1 as const, fills: library.surfaces!.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== "sections.faq"), files: [] } };
-    await save(libraryFiles(catalog, one, undefined, undefined, options));
+    await save(libraryFiles(catalog, one, undefined, componentOptions, options));
     const changeset = join(temporary, "adopt.json");
     await fs.writeFile(changeset, JSON.stringify({ baseHash: compositeLibraryHash(await readLibrary(root, catalog)), changes: [{ portion: "surfaces", change: { op: "adopt", slot: "sections.faq", source: "foundry" } }] }));
     const result = await cli("apply", "--changeset", changeset, "--json");
