@@ -35,6 +35,14 @@ describe("slot model schema (F1)", () => {
     expect(codes(validatePin({ ...pin, pinnedBy: "someone" }))).toEqual(["pin-invalid"]);
   });
 
+  it("accepts display layers that cover every L1 once and rejects unknown, repeated or missing nodes", () => {
+    const l1 = ia.nodes[0]!.id, l2 = ia.nodes[0]!.children[0]!.id;
+    expect(validateIa({ ...ia, layers: [{ id: "all", label: "All", nodes: [l1] }] })).toEqual([]);
+    expect(validateIa({ ...ia, layers: [{ id: "all", label: "All", nodes: [`${l1}/${l2}`] }] })).toEqual([]);
+    for (const nodes of [["nope"], [l1, l1], [l1, `${l1}/${l2}`]]) expect(codes(validateIa({ ...ia, layers: [{ id: "all", label: "All", nodes }] }))).toContain("ia-invalid");
+    expect(codes(validateIa({ ...ia, layers: [] }))).toContain("ia-invalid");
+  });
+
   it("refuses pin state and legacy provenance on a candidate", () => {
     expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(page))).toEqual([]);
     expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, status: "active" })))).toContain("candidate-status");

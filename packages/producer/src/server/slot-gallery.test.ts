@@ -111,7 +111,7 @@ describe('IA-first gallery data', () => {
         const layers = agent === 'designer'
           ? designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes)
           : agentGalleryLayers({ state: 'ready', ...(await agentGallery(repo, agent))! }, noRoutes);
-        const projected = layers.flatMap(layer => layer.groups.flatMap(group => group.cards));
+        const projected = layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
         expect(projected.map(card => card.key)).toEqual(wanted);
         expect(projected[0]!.specimen).toBeUndefined();
       }
@@ -260,16 +260,16 @@ describe('IA-first gallery data', () => {
         expect(cards[1]!.element).toBeUndefined();
         expect(cards[1]!.specimen).toBeUndefined();
         expect(cards[1]!.specimenUrl).toBeUndefined();
-        const projected = layers().flatMap(layer => layer.groups.flatMap(group => group.cards));
+        const projected = layers().flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
         expect(projected.map(card => card.key)).toEqual(wanted);
         expect(projected[1]!.specimen).toBeUndefined();
-        if (noPin) expect(projected[1]!.statusLabel).toBe('No pin');
+        if (noPin) expect(projected[1]!.statusLabel).toMatch(/^Options \d+$/);
       };
       assertNoPreview(true);
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       const pinned = slotGallery(root, 'designer').sections.flatMap(section => section.cards)[1]!;
       expect(pinned).toMatchObject({ candidate: 'example-v1.json', version: 1, status: 'active', element: 'example', specimen: 'components.example/example' });
-      const specimen = layers().flatMap(layer => layer.groups.flatMap(group => group.cards))[1]!.specimen!;
+      const specimen = layers().flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)))[1]!.specimen!;
       expect(specimen).toMatchObject({ kind: 'viewports', specimens: [{ light: '/__specimen?element=components.example%2Fexample&theme=light&width=1280&v=1' }] });
       expect(renderToStaticMarkup(createElement(SpecimenContent, { specimen }))).toContain('components.example%2Fexample');
       unlinkSync(join(dir, 'pin.json'));
@@ -293,7 +293,7 @@ describe('IA-first gallery data', () => {
       const layers = agent === 'designer'
         ? designerGalleryLayers({ state: 'ready', ...gallery! } as never, 'light', noRoutes)
         : agentGalleryLayers({ state: 'ready', ...gallery! } as never, noRoutes);
-      expect(layers.flatMap(layer => layer.groups.flatMap(group => group.cards.map(card => card.key)))).toEqual(wanted);
+      expect(layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards).map(card => card.key)))).toEqual(wanted);
       total += gallery!.count;
     }
     expect(total).toBe(['director', 'designer', 'writer', 'publisher'].reduce((sum, agent) => sum + expected(consumer, agent).length, 0));
@@ -311,7 +311,7 @@ describe('IA-first gallery data', () => {
         ia: slotPositions('writer', ia).get('strings.label')!, kind: 'strings', contract: {}, inputs: [], uses: [],
       } satisfies SlotDoc));
       const cards = () => slotGallery(root, 'writer').sections.flatMap(section => section.cards);
-      const projected = () => agentGalleryLayers({ state: 'ready', agent: 'writer', ...slotGallery(root, 'writer') }, noRoutes).flatMap(layer => layer.groups.flatMap(group => group.cards));
+      const projected = () => agentGalleryLayers({ state: 'ready', agent: 'writer', ...slotGallery(root, 'writer') }, noRoutes).flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
       const noFrame = () => {
         expect(cards().map(card => card.id)).toEqual(expected(root, 'writer'));
         expect(projected().map(card => card.key)).toEqual(expected(root, 'writer'));
@@ -328,7 +328,7 @@ describe('IA-first gallery data', () => {
       writeFileSync(join(dir, 'candidates/label-v2.md'), content.replace('Hello <script> & welcome', 'Newer draft'));
       expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'No pin' });
       noFrame();
-      expect(projected()[0]!.statusLabel).toBe('No pin');
+      expect(projected()[0]!.statusLabel).toMatch(/^Options \d+$/);
       const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       expect(cards()[0]).toMatchObject({ status: 'active', candidate: 'label-v1.md', version: 1 });

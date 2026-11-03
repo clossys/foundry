@@ -270,5 +270,32 @@
         }
       ]
     }
+  ],
+  "layers": [
+    {
+      "id": "situation",
+      "label": "Situation",
+      "nodes": [
+        "context",
+        "aspiration"
+      ]
+    },
+    {
+      "id": "strategy",
+      "label": "Strategy",
+      "nodes": [
+        "focus",
+        "advantage",
+        "identity"
+      ]
+    },
+    {
+      "id": "plan",
+      "label": "Plan",
+      "nodes": [
+        "capability",
+        "execution"
+      ]
+    }
   ]
 }

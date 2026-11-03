@@ -56,6 +56,6 @@ describe("Writer specimen kinds", () => {
     expect(detail.tables![0]!.rows[0]!.cells[0]).toEqual({ text: "director:x@1", href: "/director/x", statusLabel: "Draft", statusTone: "outline" });
     expect(detail.status).toMatchObject({ label: "Missing", tone: "destructive" });
     const layers = agentGalleryLayers({ state: "ready", agent: "writer", sections: [{ id: "l", label: "L", level: 0, cards: [] }, { id: "g", label: "G", level: 1, cards: [card] }], count: 1 }, links);
-    expect(layers[0]!.groups[0]!.cards[0]!.specimenStatus).toEqual({ label: "Missing", tone: "destructive" });
+    expect(layers[0]!.groups[0]!.sections[0]!.cards[0]!.specimenStatus).toEqual({ label: "Missing", tone: "destructive" });
   });
 });

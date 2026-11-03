@@ -2,7 +2,7 @@
 import { existsSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
 import { listSlots, readCandidate, readIa, readSlot, type SlotEntry } from '../records/slots.js';
-import { iaPath, pinFile, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
+import { iaPath, pinFile, type IaDoc, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 
 export type SlotEmptyState = 'No candidate' | 'No pin';
@@ -15,6 +15,8 @@ export interface SlotGalleryCard {
   status: 'active' | 'draft' | 'missing' | 'failing'; records: number;
   candidate?: string; element?: string; specimen?: string; emptyState?: SlotEmptyState; excerpt: string[];
   specimenUrl?: string;
+  /** Candidate files on disk (the "N options" state of an unpinned slot). */
+  options: number;
 }
 export interface SlotGallerySection { id: string; label: string; level: 0 | 1 | 2; cards: SlotGalleryCard[] }
 export const candidateVersion = (name: string) => Number(/-v(\d+)\.(?:md|json)$/.exec(name)?.[1] ?? 0);
@@ -81,6 +83,32 @@ export function recordSpecimenHref(agent: 'director' | 'writer', id: string, can
   return `/__specimen?${new URLSearchParams({ agent, slot: id, ...(candidate ? { candidate } : {}) })}`;
 }
 
+/**
+ * L1/L2 display order. Without `layers` it is the IA order with L0 from the
+ * slot position; with `layers` each layer is a tab and an `<l1>/<l2>` ref
+ * shows one L2 group as its own L1 (display only, folders never move).
+ */
+function displayOrder(ia: IaDoc, agent: SlotAgent) {
+  const rows: { layer?: { id: string; label: string }; l1: { id: string; label: string }; group: IaDoc['nodes'][number]['children'][number] }[] = [];
+  if (!ia.layers) {
+    for (const node of ia.nodes) for (const group of node.children) rows.push({ l1: node, group });
+    return rows;
+  }
+  const nodes = new Map(ia.nodes.map(node => [node.id, node]));
+  for (const layer of ia.layers) for (const ref of layer.nodes) {
+    const [l1 = '', l2] = ref.split('/');
+    const node = nodes.get(l1);
+    if (!node) throw new Error(`Invalid ${agent} IA layer: ${ref}`);
+    if (l2 === undefined) for (const group of node.children) rows.push({ layer, l1: node, group });
+    else {
+      const group = node.children.find(child => child.id === l2);
+      if (!group) throw new Error(`Invalid ${agent} IA layer: ${ref}`);
+      rows.push({ layer, l1: { id: ref, label: group.label }, group });
+    }
+  }
+  return rows;
+}
+
 /** One card per IA entry in exactly the IA order, even when slot.json is absent. */
 export function slotGallery(consumer: string, agent: SlotAgent): { sections: SlotGallerySection[]; count: number } {
   const ia = readIa(consumer, agent);
@@ -92,12 +120,12 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     if (!row) { row = { id, label: text, level, cards: [] }; sections.push(row); }
     return row;
   };
-  for (const node of ia.nodes) for (const group of node.children) for (const id of group.slots) {
+  for (const { layer, l1, group } of displayOrder(ia, agent)) for (const id of group.slots) {
     const entry = entries.get(id)!;
-    const layer = entry.position.l0 ?? agent;
-    section(layer, label(layer), 0);
-    section(node.id, node.label, 1);
-    const target = section(`${node.id}/${group.id}`, group.label, 2);
+    const l0 = layer ?? { id: entry.position.l0 ?? agent, label: label(entry.position.l0 ?? agent) };
+    section(l0.id, l0.label, 0);
+    section(l1.id, l1.label, 1);
+    const target = section(`${l1.id}/${group.id}`, group.label, 2);
     const candidate = shownCandidate(entry);
     const missing = !entry.candidates.length;
     let kind: SlotKind = agent === 'director' ? 'brief' : agent === 'writer' ? 'strings' : agent === 'designer' ? 'element' : 'page';
@@ -128,7 +156,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     } catch { failing = true; }
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
-      excerpt: [], ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
+      excerpt: [], options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
       ...(!failing && ((agent === 'writer' && candidate && entry.pin?.candidate === candidate) || (agent === 'director' && recordSpecimenInput(consumer, agent, id, candidate))) ? { specimenUrl: recordSpecimenHref(agent, id, candidate) } : {}),
     });
   }

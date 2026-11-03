@@ -9,14 +9,14 @@ import { studioCopy } from '../lib/studio-copy';
  * each section's contract input, and the pinned frame and sections render it. No page has its
  * own component: every page is this assembly.
  */
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { notFound } from 'next/navigation';
 import { ArrowRightIcon } from 'lucide-react';
 import type { ContentMap, ContentMapEntry } from '@clossys/publisher/content-map';
 import { studioFrames, studioSections } from '../generated/assembly-bindings';
 import { studioPublicationRoot, studioRoutes, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
 import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
-import type { AgentGalleryInput } from '../sections/studio-agent-gallery';
+import type { AgentGalleryInput, GallerySelection } from '../sections/studio-agent-gallery';
 import type { ChecksInput } from '../sections/studio-checks';
 import type { ExplorerGroup } from '../sections/module-explorer';
 import type { HistoryInput } from '../sections/studio-history';
@@ -40,15 +40,15 @@ import { designerGalleryInput, designerLeafInputs, designerNotice, loadDesignerL
 import { loadPublication, publisherFrameUrl, safePreviewUrl, siteRoot, type PublicationResponse } from '../lib/publisher-preview';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
-import { resolveStudioRoute, studioHref, studioLeafCount, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
-import { LEAF_STATUS_LABEL } from '../lib/leaf-status';
+import { resolveStudioRoute, studioHref, studioLeafHref, studioPageEntries, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
+import { resolveSelection, selectionOf } from '../lib/gallery-layout';
 import { useSlotCensus } from '../lib/slot-census';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
 type Inputs = Record<string, unknown>;
 /** What a page's modules show, by manifest source: the explorer tree and the checks. The outline is derived from the placed sections. */
-interface ModuleData { explorer?: readonly ExplorerGroup[]; checks?: ModuleChecksInput }
+interface ModuleData { explorer?: readonly ExplorerGroup[]; checks?: ModuleChecksInput; reveal?: (target: string) => void }
 type Loaded = { state: 'loading' } | { state: 'notice'; notice: PageNoticeData } | { state: 'ready'; inputs: Inputs; modules?: ModuleData };
 
 const AGENT_PURPOSE: Record<string, string> = {
@@ -80,23 +80,45 @@ function checksInput(failing: readonly ModuleCheckRow[], options: readonly Modul
   };
 }
 
-/** The explorer tree of an agent gallery: IA level 1 on top, then its groups and leaves (the map's L3 pages). */
-function galleryExplorer(gallery: AgentGalleryInput): ExplorerGroup[] {
+/** The explorer tree of an agent gallery: each tab, its L1 and L2 groups and their slots (the map's L3 pages). */
+const leafTarget = (key: string) => `[data-gallery-leaf=${JSON.stringify(key)}]`;
+function galleryExplorer(gallery: Omit<AgentGalleryInput, 'selection'>): ExplorerGroup[] {
   return gallery.layers.map(layer => ({
     id: layer.id, label: layer.label,
     items: layer.groups.flatMap(group => [
-      { id: `group:${group.id}`, label: group.label, depth: group.level - 1, target: byId(group.id) },
-      ...group.cards.map(card => ({ id: `leaf:${card.key}`, label: card.name, depth: group.level, target: `[data-gallery-leaf=${JSON.stringify(card.key)}]` })),
+      { id: `group:${group.id}`, label: group.label, depth: 0, target: leafTarget(group.sections[0]?.cards[0]?.key ?? '') },
+      ...group.sections.flatMap(section => [
+        ...(section.id === group.id ? [] : [{ id: `section:${section.id}`, label: section.label, depth: 1, target: byId(section.id) }]),
+        ...section.cards.map(card => ({ id: `leaf:${card.key}`, label: card.name, depth: 2, target: leafTarget(card.key) })),
+      ]),
     ]),
   }));
 }
 
-function galleryChecks(gallery: AgentGalleryInput, reports: readonly StudioReport[], agent: string): ModuleChecksInput {
-  const cards = gallery.layers.flatMap(layer => layer.groups.flatMap(group => group.cards));
+const GALLERY_TAB = 'tab', GALLERY_GROUP = 'group';
+/** The gallery's tab and group, kept in the URL search params (`?tab=&group=`). */
+function useGallerySelection(): [Partial<GallerySelection>, (selection: GallerySelection) => void] {
+  const [wanted, setWanted] = useState<Partial<GallerySelection>>({});
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setWanted({ ...(params.get(GALLERY_TAB) ? { layer: params.get(GALLERY_TAB)! } : {}), ...(params.get(GALLERY_GROUP) ? { group: params.get(GALLERY_GROUP)! } : {}) });
+  }, []);
+  const select = useCallback((selection: GallerySelection) => {
+    setWanted(selection);
+    const url = new URL(window.location.href);
+    url.searchParams.set(GALLERY_TAB, selection.layer);
+    url.searchParams.set(GALLERY_GROUP, selection.group);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  }, []);
+  return [wanted, select];
+}
+
+function galleryChecks(gallery: Omit<AgentGalleryInput, 'selection'>, reports: readonly StudioReport[], agent: string): ModuleChecksInput {
+  const cards = gallery.layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
   const cardRow = (card: (typeof cards)[number]): ModuleCheckRow => ({ id: card.key, badge: card.statusLabel, tone: card.statusTone, title: card.name, href: card.href, openLabel: studioCopy("studio.open", { value0: String(card.name) }) });
   return checksInput(
-    cards.filter(card => card.statusTone === 'destructive').map(cardRow),
-    cards.filter(card => card.statusLabel === LEAF_STATUS_LABEL.pending).map(cardRow),
+    cards.filter(card => card.state === 'failing').map(cardRow),
+    cards.filter(card => card.state === 'options').map(cardRow),
     openNeeds(reports, report => report.agent === agent).map(needRow),
   );
 }
@@ -206,6 +228,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
   const [publication, setPublication] = useState<Resource<PublicationResponse> | undefined>(undefined);
   const [leaves, setLeaves] = useState<ReadonlyMap<string, GalleryLeaf | null> | undefined>(undefined);
   const [origin, setOrigin] = useState('');
+  const [wanted, select] = useGallerySelection();
   useEffect(() => setOrigin(window.location.origin), []);
   useEffect(() => {
     if (!withPublications) return;
@@ -230,7 +253,6 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
     const agent = page.data.agent ?? page.id;
     if (!gallery || gallery.state === 'loading') return { state: 'loading' };
     if (gallery.state === 'error') return { state: 'notice', notice: agent === 'designer' ? designerNotice('error', gallery.message) : agentNotice(agent as LibraryAgent, 'error', gallery.message) };
-    const count = studioLeafCount(map, page.id);
     const pages = publication?.state === 'ready' && publication.value.state === 'ready' ? publication.value.pages : [];
     const previews: GalleryPreviews = new Map([...(leaves ?? [])].map(([id, leaf]) => {
       if (!leaf) return [id, null];
@@ -238,12 +260,25 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
       const legacyPageUrl = leaf.source === 'legacy' && emitted ? publisherFrameUrl(emitted, 1280, resolved) : undefined;
       return [id, galleryLeafInputs(leaf, links, resolved, legacyPageUrl, publication?.state === 'ready' ? publication.value : undefined).specimen];
     }));
-    const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, count) : agentGalleryInput(gallery.value.records, links, count, previews);
+    const purpose = AGENT_PURPOSE[agent] ?? '';
+    const input = gallery.value.agent === 'designer' ? designerGalleryInput(gallery.value.records, resolved, links, purpose) : agentGalleryInput(gallery.value.records, links, purpose, previews);
     const inputs: Inputs = {};
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     const explorer: ExplorerGroup[] = 'layers' in input ? galleryExplorer(input) : [];
     const modules: ModuleData = { explorer, checks: 'layers' in input ? galleryChecks(input, list, agent) : checksInput([], [], openNeeds(list, report => report.agent === agent).map(needRow)) };
-    if ('layers' in input) inputs.gallery = input;
+    if ('layers' in input) {
+      const layers = input.layers;
+      inputs.gallery = { ...input, selection: resolveSelection(layers, wanted), onSelect: select } satisfies AgentGalleryInput;
+      // The explorer can point at a slot in another tab or group: show that group first.
+      modules.reveal = target => {
+        const leaf = /^\[data-gallery-leaf=(".*")\]$/.exec(target)?.[1];
+        const section = /^\[id=(".*")\]$/.exec(target)?.[1];
+        const next = leaf ? selectionOf(layers, JSON.parse(leaf) as string)
+          : section ? layers.flatMap(layer => layer.groups.filter(group => group.sections.some(item => item.id === JSON.parse(section))).map(group => ({ layer: layer.id, group: group.id })))[0]
+            : undefined;
+        if (next) select(next);
+      };
+    }
     else if (!withPublications) return { state: 'notice', notice: input };
     if (withPublications) {
       const site = sitePublication(publication?.state === 'ready' ? publication.value : undefined, publication?.state === 'error' ? publication.message : undefined, links);
@@ -266,7 +301,7 @@ function useGalleryInputs(page: StudioPageRecord): Loaded {
       explorer.push({ id: 'publications', label: studioCopy("studio.publications"), items: publications.publications.map(row => ({ id: `publication:${row.id}`, label: row.title, depth: 0, target: byId(`publication-${row.id}`) })) });
     }
     return { state: 'ready', inputs, modules };
-  }, [map, gallery, resolved, page, withPublications, publication, leaves, origin, reports]);
+  }, [map, gallery, resolved, page, withPublications, publication, leaves, origin, reports, wanted, select]);
 }
 
 
@@ -385,7 +420,13 @@ function useManifestPopovers(entry: ContentMapEntry, spec: StudioAssemblySpec, l
           : module.source === 'page.versions' ? versions.map(item => item.target) : [];
       return {
         id: module.id, label: module.label, icon: module.icon, shortcut: module.shortcut, targets,
-        render: context => Section ? <Section {...{ [module.input]: { ...content, ...(context.active ? { active: context.active } : {}), onSelect: context.select } }} /> : null,
+        render: context => {
+          // Reveal the target first (it may sit in another gallery tab), then scroll once it renders.
+          const onSelect = module.source === 'page.explorer' && data.reveal
+            ? (target: string) => { data.reveal!(target); requestAnimationFrame(() => requestAnimationFrame(() => context.select(target))); }
+            : context.select;
+          return Section ? <Section {...{ [module.input]: { ...content, ...(context.active ? { active: context.active } : {}), onSelect } }} /> : null;
+        },
       };
     });
     const agent = spec.data.agent ? (AGENT_LABELS[spec.data.agent as Agent] ?? spec.data.agent) : 'an agent';

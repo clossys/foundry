@@ -16,7 +16,8 @@ import type { ReferencesInput } from '../sections/studio-references';
 import type { SpecimenInput } from '../sections/studio-specimen';
 import type { PageNoticeData } from '../frames/studio-shell/PageNotice';
 import type { StudioLinks } from './agent-library';
-import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, LEAF_UNIT, leafCountLabel, specimenDescription } from './leaf-status';
+import { LEAF_STATUS_LABEL, LEAF_STATUS_TONE, LEAF_UNIT, specimenDescription } from './leaf-status';
+import { cardState, galleryLayers, pinnedSummary, slotLabel } from './gallery-layout';
 
 /** `pending`: nothing pinned, options recorded. `missing`: no version exists at all. */
 export type DesignerStatus = 'pinned' | 'pending' | 'missing' | 'failing' | 'stale' | 'unreleased';
@@ -83,44 +84,28 @@ export function designerNotice(state: 'missing' | 'error', message?: string): Pa
     : { title: studioCopy("studio.the-designer-library-could-not-load"), description: message ?? studioCopy("studio.producer-returned-an-error") };
 }
 
-/** Records -> display data: L0 sections open a layer; L1/L2 sections become its groups. */
+/** Records -> display data: L0 sections are tabs, L1 sections list entries, L2 sections headings over cards. */
 export function designerGalleryLayers(records: DesignerGallery, theme: 'light' | 'dark', links: StudioLinks): GalleryLayerData[] {
-  const layers: { id: string; label: string; groups: GalleryLayerData['groups'][number][] }[] = [];
-  for (const section of records.sections) {
-    if (section.level === 0) { layers.push({ id: section.id, label: section.label, groups: [] }); continue; }
-    if (!layers.length) layers.push({ id: `${section.id}-layer`, label: section.label, groups: [] });
-    layers.at(-1)!.groups.push({
-      id: section.id, label: section.label, level: section.level,
-      cards: section.cards.flatMap(card => {
-        const href = links.leaf('designer', card.slug);
-        // The full live preview: the active state framed view-only at desktop width in the page's theme.
-        const src = specimenHref(card, theme, GALLERY_WIDTH);
-        const specimen: SpecimenInput | undefined = src ? {
-          kind: 'viewports', name: card.name, title: studioCopy("studio.specimen"), description: specimenDescription(card.status),
-          specimens: [{ viewport: GALLERY_WIDTH, light: src, interactive: false }], empty: studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"),
-        } : undefined;
-        return [{
-          key: card.slot, name: card.name, ...(card.version !== undefined ? { version: card.version } : {}),
-          statusLabel: card.emptyState ?? LEAF_STATUS_LABEL[card.status], statusTone: LEAF_STATUS_TONE[card.status],
-          href: href ?? '', ...(specimen ? { specimen } : { specimenStatus: { label: card.emptyState ?? studioCopy("studio.nothing-to-preview-yet"), tone: 'outline' as const } }),
-        }];
-      }),
-    });
-  }
-  return layers.filter(layer => layer.groups.length);
+  return galleryLayers(records.sections, card => {
+    // The full live preview: the shown state framed view-only at desktop width in the page's theme.
+    const src = card.status === 'failing' ? undefined : specimenHref(card, theme, GALLERY_WIDTH);
+    const specimen: SpecimenInput | undefined = src ? {
+      kind: 'viewports', name: card.name, title: studioCopy("studio.specimen"), description: specimenDescription(card.status),
+      specimens: [{ viewport: GALLERY_WIDTH, light: src, interactive: false }], empty: studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"),
+    } : undefined;
+    return {
+      key: card.slot, name: slotLabel(card.slot), href: links.leaf('designer', card.slug) ?? '',
+      ...cardState({ failing: card.status === 'failing', pinned: card.pinned, options: card.status === 'pending' ? card.options.length : 0 }),
+      ...(specimen ? { specimen } : {}),
+    };
+  });
 }
 
-/** The `gallery` input for the Designer library, or a notice when it has nothing to show. */
-export function designerGalleryInput(records: DesignerGallery, theme: 'light' | 'dark', links: StudioLinks, count: number): AgentGalleryInput | PageNoticeData {
+/** The `gallery` input for the Designer library (the page adds the selection), or a notice when it has nothing to show. */
+export function designerGalleryInput(records: DesignerGallery, theme: 'light' | 'dark', links: StudioLinks, purpose: string): Omit<AgentGalleryInput, 'selection'> | PageNoticeData {
   const layers = designerGalleryLayers(records, theme, links);
   if (records.state === 'missing' || !layers.length) return designerNotice('missing');
-  return {
-    header: {
-      title: studioCopy("studio.designer-library"),
-      description: studioCopy("studio.from-the-record-store-open-a-leaf", { value0: String(leafCountLabel(count)) }),
-    },
-    unit: DESIGNER_UNIT, layers,
-  };
+  return { header: { title: studioCopy("studio.designer"), description: purpose, pinned: pinnedSummary(layers) }, layers };
 }
 
 /** The options description, shared by every agent: how many versions wait beside the pin, if any. */
