@@ -38,8 +38,22 @@ export function configFromComponents(components) {
   };
 }
 
-/** transformImport's specifier rule (shadcn CLI 4.23.0, local registry files). */
+/** A rewritten import must stay a plain module specifier: a components.json alias
+ * cannot carry quotes, newlines or code into the normalized reference. */
+export const MODULE_SPECIFIER = /^[@~\w.][\w@./-]*$/;
+
+/** transformImport's specifier rule (shadcn CLI 4.23.0, local registry files).
+ * Throws when an alias yields anything but a plain module specifier, so the
+ * check fails closed (REF-NORMALIZE). */
 export function mapImport(spec, aliases) {
+  const mapped = rewriteImport(spec, aliases);
+  if (mapped !== spec && (typeof mapped !== "string" || !MODULE_SPECIFIER.test(mapped))) {
+    throw Object.assign(new Error(`components.json alias rewrites ${JSON.stringify(spec)} to ${JSON.stringify(mapped)}, which is not a plain module specifier`), { code: "REF-NORMALIZE" });
+  }
+  return mapped;
+}
+
+function rewriteImport(spec, aliases) {
   let t = spec;
   if (t === "#registry") t = "@/registry";
   else if (t.startsWith("#/")) t = t.replace(/^#\//, "@/");

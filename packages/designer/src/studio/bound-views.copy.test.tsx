@@ -26,10 +26,13 @@ it.each(["en", "ar"])("hand-rolls a measured selected Designer page, Explorer, c
   const { container } = render(<DesignerPage copy={copy} data={{ placements }} viewSize={size} graph={graph}
     initialUrl={{ search: "?layer=themes&node=themes.primary", hash: "" }} />);
   await waitFor(() => expect(container.querySelector('[data-studio-control="zoom-reset"]')).not.toBeNull());
-  expect(container.querySelector('[data-selected-leaf="themes.primary"]')).not.toBeNull();
+  // Read-only: the URL leaf is the camera's target (its cell is on the canvas, its board in the trail), never a selection.
+  expect(container.querySelector('[data-system-cell="themes.primary"]')).not.toBeNull();
+  expect(container.querySelector('[data-system-breadcrumb]')).not.toBeNull();
+  expect(container.querySelector('[data-system-cell][data-selected], [data-selected-leaf], [data-studio-panel="inspector"]')).toBeNull();
   expect(container.querySelector('[data-studio-panel="minimap"]')).not.toBeNull();
   expect(container.querySelector('input[type="range"]')).toHaveAttribute("aria-valuetext", "[[st.zhgkbpn8eq]]");
-  expect(requests.some(ref => ref.id === "st.gcf87s42d5")).toBe(true);
+  expect(requests.some(ref => ref.id === "st.ctpgn255tg")).toBe(true);
   expect(requests.every(ref => ref.locale === locale)).toBe(true);
   expectOnlyResolvedCopy(container);
 });

@@ -95,7 +95,8 @@ describe("AccessMatrix", () => {
     await user.tab();
     act(() => inherited.focus());
     expect(inherited).toHaveFocus();
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("Included with Viewer access to reports.");
+    // The selected tooltip's timing is not placed yet (owner decision): the trigger renders and no tooltip is invented.
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
     await user.keyboard(" ");
     expect(original.onChange).not.toHaveBeenCalled();
     const admin = screen.getByRole("columnheader", { name: /Admin/ });

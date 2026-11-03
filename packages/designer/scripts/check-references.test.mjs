@@ -37,12 +37,23 @@ describe("check-references", () => {
   });
 
   it("covers every registry with items and a license file", () => {
-    assert.deepEqual(Object.keys(manifest.registries).sort(), ["assistant-ui", "diceui", "fontsource", "lucide", "magicui", "shadcn", "shadcn-aria", "tailark-oss", "tailwindcss-typography"]);
+    assert.deepEqual(Object.keys(manifest.registries).sort(), ["assistant-ui", "corsair-ui", "diceui", "fontsource", "lucide", "magicui", "shadcn", "shadcn-app", "shadcn-aria", "tailark-oss", "tailwindcss-typography"]);
     for (const id of Object.keys(manifest.registries)) {
       assert.ok(manifest.items.some((item) => item.registry === id), `${id} has items`);
       assert.ok(manifest.licenses.some((license) => license.path.startsWith(`${id}/`)), `${id} keeps its license`);
     }
     for (const item of manifest.items) assert.equal(treeHash(item.files), item.hash, item.dir);
+  });
+
+  it("vendors a stock shadcn example for frames.site-shell and sections.content", () => {
+    for (const [slot, name] of [["frames.site-shell", "sonner-example"], ["sections.content", "separator-example"]]) {
+      const row = manifest.items.find((item) => item.registry === "shadcn-aria" && item.name === name);
+      assert.ok(row, `shadcn-aria/${name} is vendored`);
+      assert.equal(row.type, "registry:example", `${name} is an example a frame or section may cite verbatim`);
+      assert.equal(row.direct, true);
+      assert.ok(row.slots.includes(slot), `${name} is mapped to ${slot}`);
+      assert.equal(treeHash(row.files), row.hash);
+    }
   });
 
   it("fails when one byte of a reference file is edited (mutation)", () => {

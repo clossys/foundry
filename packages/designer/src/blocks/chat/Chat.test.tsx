@@ -128,7 +128,7 @@ describe("Chat", () => {
     expect(Array.from(view.container.querySelectorAll("code"), element => element.textContent)).toEqual(code);
   });
 
-  it("d: optional message actions use named icon controls and focus tooltips (mutant: actions omitted)", async () => {
+  it("d: optional message actions use named icon controls and no invented tooltip (mutant: actions omitted)", async () => {
     const onCopy = vi.fn(), onRegenerate = vi.fn(), onFeedback = vi.fn();
     const view = render(<Chat {...defaults} />);
     expect(screen.queryByRole("button", { name: "Copy message" })).not.toBeInTheDocument();
@@ -146,7 +146,8 @@ describe("Chat", () => {
     expect(helpful.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     await userEvent.tab({ shift: true });
     expect(helpful).toHaveFocus();
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("Helpful response");
+    // The selected tooltip's timing is not placed yet (owner decision): the trigger renders and no tooltip is invented.
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("e: safe content supports paragraphs, lists, code copy, rel links and the render slot (mutant: raw/plain-only content)", async () => {

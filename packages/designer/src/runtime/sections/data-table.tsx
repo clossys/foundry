@@ -16,7 +16,6 @@ const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("c
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
-const Tooltip = componentLeaf<typeof import("../../components/Tooltip.js").Tooltip>("components.tooltip");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const RECORDS_PER_PAGE = 100;
@@ -68,7 +67,7 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
       case "date": {
         const date = isObject(value) ? value : undefined;
         if (!date || typeof date.relative !== "string" || typeof date.absolute !== "string") throw new TypeError("sections.data-table: date requires consumer-formatted relative and absolute values");
-        return <Tooltip trigger={<SemanticContent as="span" tabIndex={0}>{date.relative}</SemanticContent>}>{date.absolute}</Tooltip>;
+        return <SemanticContent as="span">{date.relative}<SemanticContent as="span" className="sr-only">{" "}{date.absolute}</SemanticContent></SemanticContent>;
       }
       default: return column.id === primaryColumnId && typeof row.href === "string" ? <Link href={row.href}>{text}</Link> : text;
     }

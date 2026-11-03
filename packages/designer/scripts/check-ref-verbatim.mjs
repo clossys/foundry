@@ -87,7 +87,8 @@ export const BASELINE_CEILING = Object.freeze([
   "sections.studio.specimen/studio-specimen@v2#sha256:55b39a4888d8ba1da2e925dc93317b2c3f8b14322e3647247d7789f4db75c61b",
 ]);
 
-const CODE_FILE = /\.(tsx|ts|jsx|js|mjs|cjs|mts|cts)$/;
+/** Code extensions, shared with the section check. */
+export const CODE_FILE = /\.(tsx|ts|jsx|js|mjs|cjs|mts|cts)$/;
 const isCode = (file) => CODE_FILE.test(file) && !file.endsWith(".d.ts");
 const globMatch = (pattern, slot) => (pattern.endsWith("*") ? slot.startsWith(pattern.slice(0, -1)) : pattern === slot);
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");

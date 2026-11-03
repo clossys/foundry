@@ -10,7 +10,6 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const Checkbox = componentLeaf<typeof import("../components/Checkbox.js").Checkbox>("components.checkbox");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
-const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -71,9 +70,9 @@ export function AccessMatrix(props: AccessMatrixProps) {
               const reasonId = `${id}-role-${roleIndex}`;
               return <th key={role.id} scope="col" role="columnheader" className="px-md py-sm text-start align-top text-body-s font-medium">
               <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"><SemanticContent as="span" className="wrap-anywhere">{role.label}</SemanticContent>{role.isLocked ? <>
-                {role.lockedReason ? <Tooltip trigger={<Button variant="ghost" aria-describedby={reasonId} className="justify-start px-0">
+                {role.lockedReason ? <Button variant="ghost" aria-describedby={reasonId} className="justify-start px-0">
                   <Icon glyph={Lock} decorative size="sm" /><SemanticContent as="span">{labels.locked}</SemanticContent>
-                </Button>}>{role.lockedReason}</Tooltip> : <SemanticContent as="span" className="inline-flex items-center gap-xs"><Icon glyph={Lock} decorative size="sm" />{labels.locked}</SemanticContent>}
+                </Button> : <SemanticContent as="span" className="inline-flex items-center gap-xs"><Icon glyph={Lock} decorative size="sm" />{labels.locked}</SemanticContent>}
                 {role.lockedReason ? <SemanticContent as="span" id={reasonId} className="sr-only">{role.lockedReason}</SemanticContent> : null}
               </> : null}</SemanticContent>
             </th>;
@@ -113,7 +112,7 @@ export function AccessMatrix(props: AccessMatrixProps) {
               return <td key={role.id} role="cell" className={CELL}>
                 <SemanticContent as="span" aria-hidden="true" className="min-w-0 wrap-anywhere text-body-s text-ink-secondary tablet:hidden">{role.label}</SemanticContent>
                 <SemanticContent as="span" className="inline-flex min-w-0 flex-wrap items-center gap-xs">
-                  {reason ? <Tooltip trigger={control}>{reason}</Tooltip> : control}
+                  {control}
                   {inherited ? <SemanticContent as="span" className="inline-flex min-w-0 items-center gap-xs text-caption text-ink-secondary"><Icon glyph={Lock} decorative size="sm" /><SemanticContent as="span" className="wrap-anywhere">{labels.inherited}</SemanticContent></SemanticContent> : null}
                   {reason ? <SemanticContent as="span" id={reasonId} className="sr-only">{reason}</SemanticContent> : null}
                 </SemanticContent>
