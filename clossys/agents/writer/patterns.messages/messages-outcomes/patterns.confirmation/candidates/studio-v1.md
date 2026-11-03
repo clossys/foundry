@@ -1,15 +1,15 @@
 ---
 slot: "patterns.confirmation"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
 
-### studio.confirm.prompt.what-happened
-<!-- {"id":"studio.confirm.prompt.what-happened","bindings":[]} -->
-Prompt copied for {agent}.
+### studio.confirm.dismiss.what-happened
+<!-- {"id":"studio.confirm.dismiss.what-happened","bindings":[]} -->
+Notice dismissed. You can undo this for 10 seconds.
 
-### studio.confirm.prompt.undo
-<!-- {"id":"studio.confirm.prompt.undo","bindings":[]} -->
-NEED
+### studio.confirm.dismiss.undo
+<!-- {"id":"studio.confirm.dismiss.undo","bindings":[]} -->
+Undo

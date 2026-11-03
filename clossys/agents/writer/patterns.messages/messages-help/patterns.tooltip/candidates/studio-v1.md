@@ -1,11 +1,11 @@
 ---
 slot: "patterns.tooltip"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
 
 ### studio.tooltip.need.text
 <!-- {"id":"studio.tooltip.need.text","bindings":[]} -->
-NEED marks a fact with no evidence yet.
+A need marks a fact with no evidence yet.
