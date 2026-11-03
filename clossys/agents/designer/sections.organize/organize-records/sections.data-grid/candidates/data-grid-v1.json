@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.data-grid/data-grid",
+      "id": "data-grid",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.data-grid",

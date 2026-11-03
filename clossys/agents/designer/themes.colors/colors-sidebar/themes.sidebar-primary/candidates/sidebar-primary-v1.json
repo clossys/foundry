@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.sidebar-primary/sidebar-primary",
+      "id": "sidebar-primary",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.sidebar-primary",

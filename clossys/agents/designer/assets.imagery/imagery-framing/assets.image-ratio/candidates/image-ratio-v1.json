@@ -20,7 +20,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "assets.image-ratio/image-ratio",
+      "id": "image-ratio",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.image-ratio",

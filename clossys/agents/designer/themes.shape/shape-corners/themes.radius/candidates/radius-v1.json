@@ -24,7 +24,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.radius/radius",
+      "id": "radius",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.radius",

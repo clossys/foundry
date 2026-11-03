@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.destructive/destructive",
+      "id": "destructive",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.destructive",

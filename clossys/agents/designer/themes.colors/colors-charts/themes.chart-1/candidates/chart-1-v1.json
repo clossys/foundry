@@ -24,7 +24,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.chart-1/chart-1",
+      "id": "chart-1",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.chart-1",

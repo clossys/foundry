@@ -20,7 +20,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "assets.pattern/pattern",
+      "id": "pattern",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.pattern",

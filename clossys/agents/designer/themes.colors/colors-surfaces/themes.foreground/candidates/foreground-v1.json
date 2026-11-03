@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.foreground/foreground",
+      "id": "foreground",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.foreground",

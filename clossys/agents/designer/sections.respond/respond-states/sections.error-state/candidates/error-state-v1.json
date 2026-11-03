@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "sections.error-state/error-state",
+      "id": "error-state",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.error-state",

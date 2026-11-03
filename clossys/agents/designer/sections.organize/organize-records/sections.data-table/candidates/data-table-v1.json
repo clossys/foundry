@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.data-table/data-table",
+      "id": "data-table",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.data-table",

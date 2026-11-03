@@ -34,7 +34,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.animate-marquee-vertical/animate-marquee-vertical",
+      "id": "animate-marquee-vertical",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.animate-marquee-vertical",

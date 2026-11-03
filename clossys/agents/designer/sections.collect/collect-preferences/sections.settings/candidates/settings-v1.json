@@ -45,7 +45,7 @@
       }
     },
     "element": {
-      "id": "sections.settings/settings",
+      "id": "settings",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.settings",

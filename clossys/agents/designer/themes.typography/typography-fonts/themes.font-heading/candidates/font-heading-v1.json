@@ -32,7 +32,7 @@
       "license": "OFL-1.1"
     },
     "element": {
-      "id": "themes.font-heading/font-heading",
+      "id": "font-heading",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.font-heading",

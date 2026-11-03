@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-copy-in-context/specimen-copy-in-context",
+      "id": "specimen-copy-in-context",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-copy-in-context",

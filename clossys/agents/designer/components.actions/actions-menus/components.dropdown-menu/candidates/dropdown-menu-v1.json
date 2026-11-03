@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.dropdown-menu/dropdown-menu",
+      "id": "dropdown-menu",
       "package": "designer",
       "layer": "components",
       "slot": "components.dropdown-menu",

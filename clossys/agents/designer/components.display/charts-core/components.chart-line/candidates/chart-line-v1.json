@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "components.chart-line/chart-line",
+      "id": "chart-line",
       "package": "designer",
       "layer": "components",
       "slot": "components.chart-line",

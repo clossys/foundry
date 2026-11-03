@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "components.date-picker/date-picker",
+      "id": "date-picker",
       "package": "designer",
       "layer": "components",
       "slot": "components.date-picker",

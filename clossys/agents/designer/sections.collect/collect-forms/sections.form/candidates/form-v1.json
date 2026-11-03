@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "sections.form/form",
+      "id": "form",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.form",

@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.popover/popover",
+      "id": "popover",
       "package": "designer",
       "layer": "components",
       "slot": "components.popover",

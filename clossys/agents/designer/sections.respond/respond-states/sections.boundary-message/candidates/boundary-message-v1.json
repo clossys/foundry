@@ -38,7 +38,7 @@
       }
     },
     "element": {
-      "id": "sections.boundary-message/boundary-message",
+      "id": "boundary-message",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.boundary-message",

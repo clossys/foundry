@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.muted-foreground/muted-foreground",
+      "id": "muted-foreground",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.muted-foreground",

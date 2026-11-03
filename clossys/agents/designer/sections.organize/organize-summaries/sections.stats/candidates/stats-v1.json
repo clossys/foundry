@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "sections.stats/stats",
+      "id": "stats",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.stats",

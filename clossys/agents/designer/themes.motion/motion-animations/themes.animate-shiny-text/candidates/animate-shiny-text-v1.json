@@ -34,7 +34,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.animate-shiny-text/animate-shiny-text",
+      "id": "animate-shiny-text",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.animate-shiny-text",

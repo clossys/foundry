@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.radio-group/radio-group",
+      "id": "radio-group",
       "package": "designer",
       "layer": "components",
       "slot": "components.radio-group",

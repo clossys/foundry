@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-page-viewports/specimen-page-viewports",
+      "id": "specimen-page-viewports",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-page-viewports",

@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-rich-passage/specimen-rich-passage",
+      "id": "specimen-rich-passage",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-rich-passage",

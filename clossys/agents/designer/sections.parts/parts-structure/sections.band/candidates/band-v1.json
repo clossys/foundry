@@ -34,7 +34,7 @@
       }
     },
     "element": {
-      "id": "sections.band/band",
+      "id": "band",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.band",

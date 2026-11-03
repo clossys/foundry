@@ -25,7 +25,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "assets.lockup/lockup",
+      "id": "lockup",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.lockup",

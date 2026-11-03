@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.button/button",
+      "id": "button",
       "package": "designer",
       "layer": "components",
       "slot": "components.button",

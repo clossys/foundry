@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.popover-foreground/popover-foreground",
+      "id": "popover-foreground",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.popover-foreground",

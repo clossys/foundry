@@ -47,7 +47,7 @@
       }
     },
     "element": {
-      "id": "sections.sign-in-form/sign-in-form",
+      "id": "sign-in-form",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.sign-in-form",

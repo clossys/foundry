@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.empty/empty",
+      "id": "empty",
       "package": "designer",
       "layer": "components",
       "slot": "components.empty",

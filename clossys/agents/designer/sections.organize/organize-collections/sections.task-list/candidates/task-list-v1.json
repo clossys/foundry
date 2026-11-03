@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.task-list/task-list",
+      "id": "task-list",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.task-list",

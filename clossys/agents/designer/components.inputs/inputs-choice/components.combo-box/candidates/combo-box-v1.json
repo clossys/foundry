@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "components.combo-box/combo-box",
+      "id": "combo-box",
       "package": "designer",
       "layer": "components",
       "slot": "components.combo-box",

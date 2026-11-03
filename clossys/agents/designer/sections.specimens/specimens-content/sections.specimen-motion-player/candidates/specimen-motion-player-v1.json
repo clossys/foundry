@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-motion-player/specimen-motion-player",
+      "id": "specimen-motion-player",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-motion-player",

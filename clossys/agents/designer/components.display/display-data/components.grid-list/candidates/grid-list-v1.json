@@ -35,7 +35,7 @@
       }
     },
     "element": {
-      "id": "components.grid-list/grid-list",
+      "id": "grid-list",
       "package": "designer",
       "layer": "components",
       "slot": "components.grid-list",

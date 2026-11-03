@@ -31,7 +31,7 @@
       }
     },
     "element": {
-      "id": "sections.testimonials/testimonials",
+      "id": "testimonials",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.testimonials",

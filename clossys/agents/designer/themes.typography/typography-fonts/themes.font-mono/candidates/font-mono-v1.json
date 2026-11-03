@@ -32,7 +32,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.font-mono/font-mono",
+      "id": "font-mono",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.font-mono",

@@ -24,7 +24,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "assets.image/image",
+      "id": "image",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.image",

@@ -1,0 +1,105 @@
+{
+  "name": "filter-builder",
+  "type": "registry:block",
+  "registryDependencies": [
+    "button",
+    "input",
+    "select"
+  ],
+  "dependencies": [
+    "cn",
+    "lucide-react"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2024 Sadman Sakib\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "filter-builder/filter-builder.tsx",
+      "type": "registry:block",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { PlusIcon, XIcon } from \"lucide-react\"\n\nimport { Button } from \"@/components/ui/button\"\nimport { Input } from \"@/components/ui/input\"\nimport { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from \"@/components/ui/select\"\n\ntype Field = { id: string; label: string }\ntype Operator = { id: string; label: string }\ntype Rule = { key: number; field: string; operator: string; value: string }\n\nfunction Choice({ label, items, value, onChange }: { label: string; items: { id: string; label: string }[]; value: string; onChange: (v: string) => void }) {\n  return (\n    <Select aria-label={label} value={value} onChange={(k) => k !== null && onChange(String(k))}>\n      <SelectTrigger className=\"w-full sm:w-40\">\n        <SelectValue />\n      </SelectTrigger>\n      <SelectContent>\n        {items.map((i) => (\n          <SelectItem key={i.id} id={i.id}>\n            {i.label}\n          </SelectItem>\n        ))}\n      </SelectContent>\n    </Select>\n  )\n}\n\n/**\n * Filter builder composed from aria-nova Select, Input (text-field) and\n * Button, after the diceui faceted filter: rules of field / operator / value\n * joined by one group conjunction.\n */\nexport default function FilterBuilder({\n  heading = \"Filters\",\n  fields = [\n    { id: \"status\", label: \"Status\" },\n    { id: \"owner\", label: \"Owner\" },\n    { id: \"updated\", label: \"Updated\" },\n  ],\n  operators = [\n    { id: \"is\", label: \"is\" },\n    { id: \"is-not\", label: \"is not\" },\n    { id: \"contains\", label: \"contains\" },\n  ],\n  onChange,\n}: {\n  heading?: string\n  fields?: Field[]\n  operators?: Operator[]\n  onChange?: (filter: { match: \"all\" | \"any\"; rules: Omit<Rule, \"key\">[] }) => void\n}) {\n  const next = React.useRef(1)\n  const [match, setMatch] = React.useState<\"all\" | \"any\">(\"all\")\n  const [rules, setRules] = React.useState<Rule[]>([{ key: 0, field: fields[0]?.id ?? \"\", operator: operators[0]?.id ?? \"\", value: \"\" }])\n  React.useEffect(() => onChange?.({ match, rules: rules.map(({ key: _k, ...r }) => r) }), [match, rules, onChange])\n  const update = (key: number, patch: Partial<Rule>) => setRules((rs) => rs.map((r) => (r.key === key ? { ...r, ...patch } : r)))\n\n  return (\n    <section data-slot=\"filter-builder\" className=\"py-8\">\n      <div className=\"mx-auto max-w-5xl space-y-4 px-6\">\n        <div className=\"flex flex-wrap items-center gap-2 text-sm\">\n          <h2 className=\"font-heading text-lg font-semibold\">{heading}</h2>\n          <span className=\"text-muted-foreground\">Match</span>\n          <Choice\n            label=\"Match\"\n            items={[{ id: \"all\", label: \"all rules\" }, { id: \"any\", label: \"any rule\" }]}\n            value={match}\n            onChange={(v) => setMatch(v as \"all\" | \"any\")}\n          />\n        </div>\n        <ul className=\"space-y-2\">\n          {rules.map((r) => (\n            <li key={r.key} className=\"flex flex-col gap-2 sm:flex-row sm:items-center\">\n              <Choice label=\"Field\" items={fields} value={r.field} onChange={(v) => update(r.key, { field: v })} />\n              <Choice label=\"Operator\" items={operators} value={r.operator} onChange={(v) => update(r.key, { operator: v })} />\n              <Input aria-label=\"Value\" placeholder=\"Value\" value={r.value} onChange={(e) => update(r.key, { value: e.target.value })} className=\"sm:flex-1\" />\n              <Button variant=\"ghost\" size=\"icon\" aria-label=\"Remove rule\" isDisabled={rules.length === 1} onPress={() => setRules((rs) => rs.filter((x) => x.key !== r.key))}>\n                <XIcon />\n              </Button>\n            </li>\n          ))}\n        </ul>\n        <Button\n          variant=\"outline\"\n          size=\"sm\"\n          onPress={() => setRules((rs) => [...rs, { key: next.current++, field: fields[0]?.id ?? \"\", operator: operators[0]?.id ?? \"\", value: \"\" }])}\n        >\n          <PlusIcon data-icon=\"inline-start\" />\n          Add rule\n        </Button>\n      </div>\n    </section>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.filter-builder",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "diceui/faceted@04aad54",
+        "npm:react-aria-components@1.21.1#Select"
+      ],
+      "hash": "sha256:7065c62ef703257b5ee4ae11db4570d9157c4d1f4a84c224ca925f0e371b64b2",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "filter-builder",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.filter-builder",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "Filter builder after the diceui faceted pattern, composed of aria-nova Select, Input and Button rows with match all|any.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-PRIMITIVE-AS-REF",
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "lucide-react": "*"
+        },
+        "registry": [
+          "button",
+          "input",
+          "select"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

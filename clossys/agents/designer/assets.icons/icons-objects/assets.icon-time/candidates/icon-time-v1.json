@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-time/icon-time",
+      "id": "icon-time",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-time",

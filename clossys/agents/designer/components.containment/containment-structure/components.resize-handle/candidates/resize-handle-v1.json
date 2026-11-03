@@ -34,7 +34,7 @@
       }
     },
     "element": {
-      "id": "components.resize-handle/resize-handle",
+      "id": "resize-handle",
       "package": "designer",
       "layer": "components",
       "slot": "components.resize-handle",

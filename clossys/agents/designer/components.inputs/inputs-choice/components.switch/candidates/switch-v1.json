@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.switch/switch",
+      "id": "switch",
       "package": "designer",
       "layer": "components",
       "slot": "components.switch",

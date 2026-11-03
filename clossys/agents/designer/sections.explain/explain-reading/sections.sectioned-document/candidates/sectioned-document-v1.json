@@ -43,7 +43,7 @@
       }
     },
     "element": {
-      "id": "sections.sectioned-document/sectioned-document",
+      "id": "sectioned-document",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.sectioned-document",

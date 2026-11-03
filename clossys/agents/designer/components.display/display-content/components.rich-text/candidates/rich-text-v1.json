@@ -1,0 +1,92 @@
+{
+  "name": "rich-text",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "react-aria-components"
+  ],
+  "files": [
+    {
+      "path": "rich-text.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport { TextArea } from \"react-aria-components\"\n\n/** value.json: a minimal ProseMirror-shaped document. */\ntype RichNode = {\n  type: \"doc\" | \"paragraph\" | \"heading\" | \"bulletList\" | \"orderedList\" | \"listItem\" | \"blockquote\" | \"codeBlock\" | \"text\" | \"hardBreak\"\n  attrs?: { level?: 1 | 2 | 3 | 4 }\n  text?: string\n  marks?: { type: \"bold\" | \"italic\" | \"code\" | \"link\"; attrs?: { href?: string } }[]\n  content?: RichNode[]\n}\n\nconst proseClassName =\n  \"max-w-prose text-base leading-7 text-foreground [&_a]:text-primary [&_a]:underline [&_a]:underline-offset-4 [&_blockquote]:border-l-2 [&_blockquote]:border-border [&_blockquote]:pl-4 [&_blockquote]:text-muted-foreground [&_code]:rounded-sm [&_code]:bg-muted [&_code]:px-1 [&_code]:font-mono [&_code]:text-[0.9em] [&_h1]:font-heading [&_h1]:text-3xl [&_h1]:font-semibold [&_h2]:font-heading [&_h2]:text-2xl [&_h2]:font-semibold [&_h3]:font-heading [&_h3]:text-xl [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_pre]:overflow-x-auto [&_pre]:rounded-lg [&_pre]:bg-muted [&_pre]:p-4 [&_ul]:list-disc [&_ul]:pl-6 [&>*+*]:mt-4\"\n\nfunction inline(text: string, key: string): React.ReactNode[] {\n  const out: React.ReactNode[] = []\n  const re = /(\\*\\*[^*]+\\*\\*|\\*[^*]+\\*|`[^`]+`|\\[[^\\]]+\\]\\([^)\\s]+\\))/g\n  let last = 0\n  let m: RegExpExecArray | null\n  let i = 0\n  while ((m = re.exec(text))) {\n    if (m.index > last) out.push(text.slice(last, m.index))\n    const t = m[0]\n    const k = `${key}-${i++}`\n    if (t.startsWith(\"**\")) out.push(<strong key={k}>{t.slice(2, -2)}</strong>)\n    else if (t.startsWith(\"`\")) out.push(<code key={k}>{t.slice(1, -1)}</code>)\n    else if (t.startsWith(\"[\")) {\n      const [, label, href] = /^\\[([^\\]]+)\\]\\(([^)\\s]+)\\)$/.exec(t) ?? []\n      out.push(<a key={k} href={href}>{label}</a>)\n    } else out.push(<em key={k}>{t.slice(1, -1)}</em>)\n    last = m.index + t.length\n  }\n  if (last < text.length) out.push(text.slice(last))\n  return out\n}\n\n/** value.markdown: block subset (headings, paragraphs, lists, quotes, fenced code). */\nfunction fromMarkdown(md: string): React.ReactNode[] {\n  const blocks = md.replace(/\\r\\n/g, \"\\n\").split(/\\n{2,}/)\n  return blocks.map((block, b) => {\n    const key = `b${b}`\n    const lines = block.split(\"\\n\")\n    const heading = /^(#{1,4})\\s+(.*)$/.exec(block)\n    if (block.startsWith(\"```\")) return <pre key={key}><code>{lines.slice(1, lines.at(-1) === \"```\" ? -1 : undefined).join(\"\\n\")}</code></pre>\n    if (heading) return React.createElement(`h${heading[1].length}`, { key }, inline(heading[2], key))\n    if (lines.every((l) => /^[-*]\\s/.test(l))) return <ul key={key}>{lines.map((l, i) => <li key={i}>{inline(l.slice(2), `${key}-${i}`)}</li>)}</ul>\n    if (lines.every((l) => /^\\d+\\.\\s/.test(l))) return <ol key={key}>{lines.map((l, i) => <li key={i}>{inline(l.replace(/^\\d+\\.\\s/, \"\"), `${key}-${i}`)}</li>)}</ol>\n    if (lines.every((l) => l.startsWith(\">\"))) return <blockquote key={key}>{inline(lines.map((l) => l.replace(/^>\\s?/, \"\")).join(\" \"), key)}</blockquote>\n    return <p key={key}>{inline(lines.join(\" \"), key)}</p>\n  })\n}\n\nfunction fromJson(node: RichNode, key = \"n\"): React.ReactNode {\n  const kids = node.content?.map((c, i) => fromJson(c, `${key}-${i}`))\n  switch (node.type) {\n    case \"doc\": return <React.Fragment key={key}>{kids}</React.Fragment>\n    case \"paragraph\": return <p key={key}>{kids}</p>\n    case \"heading\": return React.createElement(`h${node.attrs?.level ?? 2}`, { key }, kids)\n    case \"bulletList\": return <ul key={key}>{kids}</ul>\n    case \"orderedList\": return <ol key={key}>{kids}</ol>\n    case \"listItem\": return <li key={key}>{kids}</li>\n    case \"blockquote\": return <blockquote key={key}>{kids}</blockquote>\n    case \"codeBlock\": return <pre key={key}><code>{node.content?.map((c) => c.text).join(\"\")}</code></pre>\n    case \"hardBreak\": return <br key={key} />\n    case \"text\": {\n      let el: React.ReactNode = node.text\n      for (const mark of node.marks ?? []) {\n        if (mark.type === \"bold\") el = <strong>{el}</strong>\n        else if (mark.type === \"italic\") el = <em>{el}</em>\n        else if (mark.type === \"code\") el = <code>{el}</code>\n        else if (mark.type === \"link\") el = <a href={mark.attrs?.href}>{el}</a>\n      }\n      return <React.Fragment key={key}>{el}</React.Fragment>\n    }\n  }\n}\n\n/**\n * Rich text. state.read-only renders value.markdown or value.json as prose;\n * state.editable shows a React Aria TextArea over the markdown source.\n */\nfunction RichText({\n  value,\n  editable = false,\n  onChange,\n  label = \"Rich text\",\n  className,\n}: {\n  value: string | RichNode\n  editable?: boolean\n  onChange?: (markdown: string) => void\n  label?: string\n  className?: string\n}) {\n  if (editable && typeof value === \"string\") {\n    return (\n      <TextArea\n        data-slot=\"rich-text\"\n        data-state=\"editable\"\n        aria-label={label}\n        value={value}\n        onChange={(e) => onChange?.(e.target.value)}\n        className={cn(\n          \"min-h-40 w-full rounded-lg border border-input bg-transparent px-3 py-2 font-mono text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30\",\n          className\n        )}\n      />\n    )\n  }\n  return (\n    <div data-slot=\"rich-text\" data-state=\"read-only\" className={cn(proseClassName, className)}>\n      {typeof value === \"string\" ? fromMarkdown(value) : fromJson(value)}\n    </div>\n  )\n}\n\nexport { RichText, type RichNode }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.rich-text",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "MIT"
+    },
+    "com.clossys.origin": {
+      "kind": "authored",
+      "license": "MIT",
+      "note": "create (FILL-DESIGNER-3): renders a markdown subset or ProseMirror-style JSON to semantic HTML; editable mode is a React Aria TextArea."
+    },
+    "element": {
+      "id": "rich-text",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.rich-text",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "CREATE (FILL-DESIGNER-3; no free trusted renderer in the registries): renders a markdown subset or ProseMirror-style JSON to semantic HTML; editable mode is a React Aria TextArea.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-NO-SOURCE"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "react-aria-components": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--font-sans",
+          "--font-heading",
+          "--font-mono",
+          "--spacing",
+          "--radius",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

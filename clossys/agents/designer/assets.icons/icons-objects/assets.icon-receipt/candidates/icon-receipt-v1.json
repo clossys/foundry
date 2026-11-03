@@ -24,7 +24,7 @@
       "license": "ISC"
     },
     "element": {
-      "id": "assets.icon-receipt/icon-receipt",
+      "id": "icon-receipt",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.icon-receipt",

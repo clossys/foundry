@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.checkbox/checkbox",
+      "id": "checkbox",
       "package": "designer",
       "layer": "components",
       "slot": "components.checkbox",

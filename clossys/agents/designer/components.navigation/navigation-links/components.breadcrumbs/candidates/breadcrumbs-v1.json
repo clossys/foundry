@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.breadcrumbs/breadcrumbs",
+      "id": "breadcrumbs",
       "package": "designer",
       "layer": "components",
       "slot": "components.breadcrumbs",

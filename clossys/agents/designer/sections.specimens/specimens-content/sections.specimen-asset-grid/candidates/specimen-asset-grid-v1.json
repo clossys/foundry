@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-asset-grid/specimen-asset-grid",
+      "id": "specimen-asset-grid",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-asset-grid",

@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.badge/badge",
+      "id": "badge",
       "package": "designer",
       "layer": "components",
       "slot": "components.badge",

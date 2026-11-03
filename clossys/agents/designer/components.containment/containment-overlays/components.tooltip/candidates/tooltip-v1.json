@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.tooltip/tooltip",
+      "id": "tooltip",
       "package": "designer",
       "layer": "components",
       "slot": "components.tooltip",

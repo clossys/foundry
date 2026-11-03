@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "components.progress-bar/progress-bar",
+      "id": "progress-bar",
       "package": "designer",
       "layer": "components",
       "slot": "components.progress-bar",

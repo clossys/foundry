@@ -33,7 +33,7 @@
       }
     },
     "element": {
-      "id": "frames.site-shell/site-shell",
+      "id": "site-shell",
       "package": "designer",
       "layer": "frames",
       "slot": "frames.site-shell",

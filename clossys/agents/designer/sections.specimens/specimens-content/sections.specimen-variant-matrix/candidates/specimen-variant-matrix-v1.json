@@ -39,7 +39,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-variant-matrix/specimen-variant-matrix",
+      "id": "specimen-variant-matrix",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-variant-matrix",

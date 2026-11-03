@@ -27,7 +27,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.sidebar-ring/sidebar-ring",
+      "id": "sidebar-ring",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.sidebar-ring",

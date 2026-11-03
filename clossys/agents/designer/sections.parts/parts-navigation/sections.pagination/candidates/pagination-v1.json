@@ -37,7 +37,7 @@
       }
     },
     "element": {
-      "id": "sections.pagination/pagination",
+      "id": "pagination",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.pagination",

@@ -18,7 +18,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "assets.video/video",
+      "id": "video",
       "package": "designer",
       "layer": "assets",
       "slot": "assets.video",

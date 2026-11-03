@@ -32,7 +32,7 @@
       "license": "MIT"
     },
     "element": {
-      "id": "themes.font-sans/font-sans",
+      "id": "font-sans",
       "package": "designer",
       "layer": "themes",
       "slot": "themes.font-sans",

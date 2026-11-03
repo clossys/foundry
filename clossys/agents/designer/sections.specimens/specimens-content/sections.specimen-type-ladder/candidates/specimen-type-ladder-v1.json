@@ -36,7 +36,7 @@
       }
     },
     "element": {
-      "id": "sections.specimen-type-ladder/specimen-type-ladder",
+      "id": "specimen-type-ladder",
       "package": "designer",
       "layer": "sections",
       "slot": "sections.specimen-type-ladder",
