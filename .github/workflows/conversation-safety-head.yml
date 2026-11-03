@@ -33,9 +33,11 @@ name: Conversation safety (head)
 # needing no elevated token and no base-repository security context. It is
 # `pull_request_target`'s narrower, re-triggering sibling, not a replacement:
 # comment and review text still has no head-bound required context, and
-# needs an on-demand `npm run check:conversation -- --require-denylist`
-# re-scan (PUBLIC_SAFETY_DENYLIST or --denylist <file>, authenticated gh)
-# for the gap this file does not close. See #944 for a related gap (inline
+# still relies on conversation-safety-sweep.yml as the lagging catch-all for
+# the gap this file does not close (or a local
+# `npm run check:conversation -- --require-denylist` re-scan, needing
+# PUBLIC_SAFETY_DENYLIST or --denylist <file> and an authenticated gh).
+# See #944 for a related gap (inline
 # review comments the event model itself never delivers) this file does not
 # touch either.
 #
