@@ -4,6 +4,7 @@
 const assert = require('node:assert/strict');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
 const fs = require('node:fs');
+const { launchChrome } = require('./chrome-launch.cjs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
 
@@ -40,9 +41,15 @@ async function launchStudioBrowser(options = {}) {
   let runtime;
   try {
     runtime = browserRuntime(options);
+    // Chromium is always the machine's Chrome through the shared helper, never a downloaded browser.
+    if (runtime.name === 'chromium') return await launchChrome(runtime.launch, { playwright: options.playwright, env: options.env });
     return await runtime.type.launch(runtime.launch);
   } catch (cause) {
-    throw reportError({ check: 'studio:check', status: 'ENV', phase: 'browser-launch', executed: false, browser: runtime?.name ?? options.browserName ?? process.env.STUDIO_BROWSER ?? 'chromium', checks: [], diagnostics: [{ rule: 'browser-unavailable', message: cause instanceof Error ? cause.message : String(cause) }] }, cause);
+    const blocked = cause?.code === 'BLOCKED_NO_BROWSER';
+    const first = blocked ? cause.errors[0] ?? cause : cause;
+    const diagnostics = [{ rule: 'browser-unavailable', message: first instanceof Error ? first.message : String(first) }];
+    if (blocked) diagnostics.push({ rule: 'blocked-no-browser', message: cause.message });
+    throw reportError({ check: 'studio:check', status: 'ENV', phase: 'browser-launch', executed: false, browser: runtime?.name ?? options.browserName ?? process.env.STUDIO_BROWSER ?? 'chromium', checks: [], diagnostics }, cause);
   }
 }
 /** One bounded launch/navigation probe; callers may reuse its browser for the entire suite. */

@@ -3,6 +3,7 @@
 
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
+const { launchChrome, failureExitCode } = require('./chrome-launch.cjs');
 
 function hashCss(css) {
   assert.equal(typeof css, 'string', 'Theme CSS is missing');
@@ -81,8 +82,7 @@ async function checkStudio(page, origin, label) {
 }
 
 async function checkThemeParity(origins, { requireDifferent = false } = {}) {
-  const { chromium } = require('playwright');
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+  const browser = await launchChrome({ headless: true, args: ['--no-sandbox'] });
   try {
     const hashes = [];
     for (let index = 0; index < origins.length; index++) {
@@ -105,7 +105,7 @@ if (require.main === module) {
     process.exitCode = 1;
   } else {
     checkThemeParity(origins, { requireDifferent }).then(result => process.stdout.write(`${JSON.stringify({ check: 'Studio applied consumer theme', ...result })}\n`))
-      .catch(error => { process.stderr.write(`Studio consumer theme check failed: ${error.message}\n`); process.exitCode = 1; });
+      .catch(error => { process.stderr.write(`Studio consumer theme check failed: ${error.message}\n`); process.exitCode = failureExitCode(error); });
   }
 }
 

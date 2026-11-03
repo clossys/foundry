@@ -134,8 +134,8 @@ export function runCommand(command, root, signal, timeout = 180_000) {
 
 async function browserDriver() {
   const require = createRequire(import.meta.url);
-  const { chromium } = require('playwright');
-  const browser = await chromium.launch({ headless: true, ...(process.env.CHROMIUM_PATH ? { executablePath: process.env.CHROMIUM_PATH } : {}) });
+  const { launchChrome } = require('./chrome-launch.cjs');
+  const browser = await launchChrome({ headless: true });
   return {
     async sample(url, selector, cssVariable = '--primary') {
       const context = await browser.newContext({ colorScheme: 'light' });
@@ -248,5 +248,5 @@ async function main(args) {
   finally { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main(process.argv.slice(2)).catch(error => { console.error(`Studio propagation failed: ${error.message}`); process.exitCode = 1; });
+  main(process.argv.slice(2)).catch(error => { console.error(`Studio propagation failed: ${error.message}`); process.exitCode = error?.code === 'BLOCKED_NO_BROWSER' ? 2 : 1; });
 }

@@ -106,8 +106,9 @@ node --test packages/producer/studio/checks/check-no-handrolling.test.cjs
 node packages/producer/studio/checks/check-no-handrolling.cjs http://127.0.0.1:4301
 ```
 
-The runner needs Playwright available to Node and Chromium at `CHROMIUM_PATH`
-(default `/usr/bin/chromium`). It launches headless Chromium with `--no-sandbox`.
+The runner needs Playwright available to Node. Every Playwright check launches the
+machine's Chrome through `chrome-launch.cjs`: the `chrome` channel first, then
+`CLOSSYS_CHROME`; with neither it exits 2 with `BLOCKED no browser`.
 Its HTTP cell fixtures are installed through browser interception; no consumer
 repository or private fixture path is required.
 

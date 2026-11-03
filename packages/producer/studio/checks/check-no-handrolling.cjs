@@ -5,6 +5,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
+const { launchChrome, failureExitCode } = require('./chrome-launch.cjs');
 
 // This function is serialized into the browser by Playwright. Keep it standalone.
 function inspectStudioBody() {
@@ -220,11 +221,10 @@ async function proveSourceDisclosure(page, id) {
 }
 
 async function main() {
-  const { chromium } = require('playwright');
   const origin = new URL(process.argv[2] ?? 'http://127.0.0.1:4301').origin;
   const sourceFile = path.join(__dirname, '../components/StudioPage.tsx');
   assert.deepEqual(findHostCellTree(fs.readFileSync(sourceFile, 'utf8'), 'StudioPage.tsx'), [], 'The generic renderer places sections; it authors no nav/ul/li of its own');
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+  const browser = await launchChrome({ headless: true, args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     await page.addInitScript(`window.inspectStudioSelection = ${inspectStudioSelection.toString()};`);
@@ -302,4 +302,4 @@ async function main() {
 }
 
 module.exports = { inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection };
-if (require.main === module) main().catch(error => { console.error(error); process.exitCode = 1; });
+if (require.main === module) main().catch(error => { console.error(error); process.exitCode = failureExitCode(error); });
