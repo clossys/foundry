@@ -1,6 +1,5 @@
 import type { Mode, Resolved } from "../../catalog-core/types.js";
-import { backdropGraphicFromResolved, isBackdropGraphicRecipe, type BackdropGraphicArtifact } from "../../catalog-assets/backdrop-graphic.js";
-import { a276BackdropGraphicReference } from "../../catalog-assets/a276-backdrop-graphic.contribution.js";
+import { patternBackdropFromResolved, type BackdropGraphicArtifact } from "../../catalog-assets/pattern-backdrop.js";
 import { checkConsumerArtContract, type StillBackdropArt } from "../../backdrop/consumer-art.js";
 import { isVideoResource, type VideoResource } from "../../catalog-assets/media.js";
 
@@ -48,11 +47,9 @@ export function resolveHeroBackdrop(value: unknown, resolved?: Resolved, mode: M
   }
   if (row.kind === "graphic") {
     if (typeof row.asset !== "string" || !row.asset.trim()) throw new TypeError("Hero graphic requires an Assets leaf reference");
-    const reference = a276BackdropGraphicReference;
-    if (row.asset === reference.reference || row.asset === reference.slot) {
-      const recipe = resolved?.members[`${reference.slot}.${reference.defaultMember}`]?.value.light;
-      if (isBackdropGraphicRecipe(recipe)) return { kind: "graphic", graphic: backdropGraphicFromResolved(recipe.pattern, resolved!, mode) };
-    }
+    // Owner 2026-11-02: graphic backdrops paint the owner-signed assets.pattern slot.
+    const graphic = patternBackdropFromResolved(row.asset, resolved);
+    if (graphic) return { kind: "graphic", graphic };
     return { kind: "graphic", need: `NEED Assets leaf: ${row.asset}` };
   }
   throw new TypeError("Hero backdrop kind must be none, image, video or graphic");

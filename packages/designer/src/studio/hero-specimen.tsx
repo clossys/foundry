@@ -1,6 +1,5 @@
 import { loadCatalog, applyLibraryChange, libraryHash, resolve } from "../catalog-core/index.js";
-import { withA276BackdropGraphic } from "../catalog-assets/a276-backdrop-graphic.contribution.js";
-import { BACKDROP_GRAPHIC_SLOT } from "../catalog-assets/backdrop-graphic.js";
+import { PATTERN_BACKDROP_SLOT } from "../catalog-assets/pattern-backdrop.js";
 import type { LibraryData, Resolved } from "../catalog-core/types.js";
 /** Explicit synthetic Hero specimen. Copy is resolved through the declared Writer host port. */
 import type { ReactNode } from "react";
@@ -42,15 +41,14 @@ export const HERO_SPECIMEN_BACKDROP = {
 let graphicValues: Resolved | undefined;
 export function heroGraphicSpecimenValues(): Resolved {
   if (graphicValues) return graphicValues;
-  const base = loadCatalog();
-  const catalog = base.slots.some(slot => slot.id === BACKDROP_GRAPHIC_SLOT) ? base : withA276BackdropGraphic(base);
+  const catalog = loadCatalog();
   let library: LibraryData = { source: { id: "hero-specimen", kind: "consumer", author: "consumer", license: "MIT" }, fills: [], adoptedAt: "2026-10-30" };
   const changes = catalog.slots.filter(slot => slot.layer === "themes").flatMap(slot => {
     const offers = catalog.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === slot.id && doc.$extensions["com.clossys.fill"].mode !== "reference");
     const chosen = offers.find(doc => doc.$extensions["com.clossys.fill"].source === "foundry") ?? offers[0];
     return chosen ? [{ op: "adopt" as const, slot: slot.id, source: chosen.$extensions["com.clossys.fill"].source }] : [];
   });
-  changes.push({ op: "adopt", slot: BACKDROP_GRAPHIC_SLOT, source: "foundry" });
+  changes.push({ op: "adopt", slot: PATTERN_BACKDROP_SLOT, source: "foundry" });
   library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes });
   graphicValues = resolve({ catalog, library });
   return graphicValues;
@@ -60,7 +58,7 @@ export const HERO_BACKDROP_SPECIMENS = [
   { kind: "none", backdrop: { kind: "none" } },
   { kind: "image", backdrop: { kind: "image", image: HERO_SPECIMEN_BACKDROP } },
   { kind: "video", backdrop: { kind: "video", missingVideoMessage: "A video file has not been provided. The poster is shown.", poster: HERO_SPECIMEN_BACKDROP, muted: true, autoplay: true, loop: true, playsInline: true } },
-  { kind: "graphic", backdrop: { kind: "graphic", asset: "asset.backdrop.graphic" } },
+  { kind: "graphic", backdrop: { kind: "graphic", asset: PATTERN_BACKDROP_SLOT } },
 ] as const satisfies readonly { readonly kind: string; readonly backdrop: HeroBackdrop }[];
 
 const mark = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath d='M10 10H90V90H10Z' fill='currentColor'/%3E%3C/svg%3E";

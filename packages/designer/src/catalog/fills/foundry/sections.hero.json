@@ -33,7 +33,7 @@
         "scannedComposes": [],
         "scannedReads": {
           "assets": [
-            "assets.backdrop-graphic"
+            "assets.pattern"
           ],
           "components": [],
           "themes": []
@@ -53,7 +53,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
-            "sha256": "4228f105a3c8254801ec04cf59e98205ac2fc8a4c9cfd753b9ebeaf851e087cf"
+            "sha256": "7a3c2031e7a084536d96f49bcaef4110e834e7337b631c6e8c4b6e18db0780dd"
           },
           {
             "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
@@ -72,16 +72,12 @@
             "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
           },
           {
-            "path": "packages/designer/src/catalog-assets/a276-backdrop-graphic.contribution.ts",
-            "sha256": "2dc92ffd4758acbebfc30f7e2e87209ecb4ccad3dca49fc7fba7bf542ae20a45"
-          },
-          {
-            "path": "packages/designer/src/catalog-assets/backdrop-graphic.ts",
-            "sha256": "f6b8c5a66ab9808dce684bc8a6a25363a0e32adabc28481c7a57ead30b55b5e2"
-          },
-          {
             "path": "packages/designer/src/catalog-assets/media.ts",
             "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/catalog-assets/pattern-backdrop.ts",
+            "sha256": "57796833cdf801f240f9d27e21eb74ddbd6068413e1c38c0d7058c5aaee6a95f"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -106,6 +102,10 @@
           {
             "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
             "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+          },
+          {
+            "path": "packages/designer/src/tokens/pattern.ts",
+            "sha256": "134c14989995caef7187c918155225381180acda4d6fe663cdbf0c927027b015"
           }
         ],
         "unresolved": [
@@ -178,7 +178,7 @@
       },
       "reads": {
         "assets": [
-          "assets.backdrop-graphic"
+          "assets.pattern"
         ],
         "themes": []
       },
