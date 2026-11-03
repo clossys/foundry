@@ -51,17 +51,14 @@ export function cardState(input: { failing: boolean; pinned: boolean; options: n
   const state: GalleryCardState = input.failing ? 'failing' : input.pinned ? 'pinned' : input.options ? 'options' : 'empty';
   if (state === 'failing') return { state, statusLabel: LEAF_STATUS_LABEL.failing, statusTone: LEAF_STATUS_TONE.failing };
   if (state === 'pinned') return { state, statusLabel: studioCopy("studio.pinned"), statusTone: 'secondary' };
-  // NEED (Writer): `studio.options-count` "{count, plural, one {# option} other {# options}}" and
-  // `studio.not-filled-yet` "Not filled yet" are not in the Studio copy registry yet.
-  if (state === 'options') return { state, statusLabel: `${studioCopy("studio.options")} ${input.options}`, statusTone: 'outline' };
-  return { state, statusLabel: studioCopy("studio.no-candidate"), statusTone: 'outline' };
+  if (state === 'options') return { state, statusLabel: studioCopy("studio.options-count", { count: input.options }), statusTone: 'outline' };
+  return { state, statusLabel: studioCopy("studio.not-filled-yet"), statusTone: 'outline' };
 }
 
 /** "X of Y slots pinned" over every card the layers hold. */
 export function pinnedSummary(layers: readonly GalleryLayerData[]): string {
   const cards = layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
-  // NEED (Writer): `studio.slots-pinned` "{pinned} of {count} slots pinned" is not in the Studio copy registry yet.
-  return `${studioCopy("studio.pinned")} ${cards.filter(card => card.state === 'pinned').length}/${cards.length}`;
+  return studioCopy("studio.slots-pinned", { pinned: cards.filter(card => card.state === 'pinned').length, total: cards.length });
 }
 
 /** A requested selection, or the first tab and its first group when the request names neither. */

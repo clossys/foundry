@@ -82,7 +82,7 @@ describe('slot-first gallery specimen collection', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect([...rows.keys()]).toEqual([detail.id]);
     expect(galleryLeafInputs(rows.get(detail.id)!, links, 'light').specimen).toEqual(slotDetailInputs(detail, links, 'light').specimen);
-    expect(agentGalleryLayers({ state: 'ready', agent: 'publisher', count: cards.length, sections: [{ id: 'group', label: 'Group', level: 1, cards }] }, links)[0]!.groups[0]!.sections[0]!.cards.map(row => row.statusLabel)).toEqual(['Options 1', 'No candidate', 'Failing', 'Pinned']);
+    expect(agentGalleryLayers({ state: 'ready', agent: 'publisher', count: cards.length, sections: [{ id: 'group', label: 'Group', level: 1, cards }] }, links)[0]!.groups[0]!.sections[0]!.cards.map(row => row.statusLabel)).toEqual(['1 option', 'Not filled yet', 'Failing', 'Pinned']);
   });
 
   it('drops a preview with no data so the card renders without a specimen body, like an empty slot', () => {

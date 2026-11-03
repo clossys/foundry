@@ -263,7 +263,7 @@ describe('IA-first gallery data', () => {
         const projected = layers().flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
         expect(projected.map(card => card.key)).toEqual(wanted);
         expect(projected[1]!.specimen).toBeUndefined();
-        if (noPin) expect(projected[1]!.statusLabel).toMatch(/^Options \d+$/);
+        if (noPin) expect(projected[1]!.statusLabel).toMatch(/^\d+ options?$/);
       };
       assertNoPreview(true);
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
@@ -328,7 +328,7 @@ describe('IA-first gallery data', () => {
       writeFileSync(join(dir, 'candidates/label-v2.md'), content.replace('Hello <script> & welcome', 'Newer draft'));
       expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'No pin' });
       noFrame();
-      expect(projected()[0]!.statusLabel).toMatch(/^Options \d+$/);
+      expect(projected()[0]!.statusLabel).toMatch(/^\d+ options?$/);
       const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       expect(cards()[0]).toMatchObject({ status: 'active', candidate: 'label-v1.md', version: 1 });
