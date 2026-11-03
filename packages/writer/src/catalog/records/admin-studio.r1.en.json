@@ -20,7 +20,7 @@
     "packages/designer/src/catalog/ia/components.json": "175364fb728373f3859935e37867352d40cd65968554d4b5595eb3e70122dc8f",
     "packages/designer/src/catalog/slots/components.json": "e7e671b450b5b11081fd9e70f7baaf3f9440d041b10fc27193b5f4ef5091f371",
     "packages/designer/src/catalog/ia/sections.json": "11015a5eb7193196de462a4527c5076a65cfed5b8e611f7dc03b2e17d9d4eb62",
-    "packages/designer/src/catalog/slots/sections.json": "dc29df5a4ed7970c22a2408aa832d6463ccd106c304358769e4f561f917284fa",
+    "packages/designer/src/catalog/slots/sections.json": "d9ad7602bc4ef9c1c767cefb12df5a442d2b210d497c91feab1a70a6fa3e41a2",
     "packages/designer/src/catalog/ia/frames.json": "a305de6514019a975a0adcd42107b88c047e0134e6feb37f49efffa45be014e8",
     "packages/designer/src/catalog/slots/frames.json": "4afddf0f2ba37dbbd8156a16df3660d618f62d5e29f4e7fe3e2335674ce52db7",
     "packages/designer/src/catalog-core/check.ts": "fb6d49a85b3848472c1b27b7429df27736015951ea3af7363b57918811c850e3"
@@ -21230,7 +21230,7 @@
       ],
       "sourceFiles": {
         "packages/designer/src/catalog/slots/components.json": "e7e671b450b5b11081fd9e70f7baaf3f9440d041b10fc27193b5f4ef5091f371",
-        "packages/designer/src/catalog/slots/sections.json": "dc29df5a4ed7970c22a2408aa832d6463ccd106c304358769e4f561f917284fa",
+        "packages/designer/src/catalog/slots/sections.json": "d9ad7602bc4ef9c1c767cefb12df5a442d2b210d497c91feab1a70a6fa3e41a2",
         "packages/designer/src/catalog/ia/sections.json": "11015a5eb7193196de462a4527c5076a65cfed5b8e611f7dc03b2e17d9d4eb62"
       },
       "revisions": [],
