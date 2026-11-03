@@ -199,7 +199,7 @@ async function main() {
   try {
     const packages = [];
     for (const target of targets) {
-      const packed = packResult(run(npm, ["pack", "--json", "--workspaces=false", "--pack-destination", staging], target.root, invocation.env));
+      const packed = packResult(run(npm, ["pack", "--json", "--ignore-scripts", "--workspaces=false", "--pack-destination", staging], target.root, invocation.env));
       if (packed.name !== target.manifest.name || packed.version !== target.manifest.version || packed.filename !== target.filename) throw new Error(`npm pack identity mismatch for ${target.manifest.name}.`);
       for (const entry of [target.manifest.main, target.manifest.types, ...Object.values(target.manifest.bin ?? {})].filter(Boolean)) {
         if (!packed.files?.some((file) => file.path === entry.replace(/^\.\//, ""))) throw new Error(`Tarball is missing ${target.manifest.name} entry: ${entry}`);

@@ -150,6 +150,30 @@ packed again. `overlayChangeKey()` and `overlayChanged()` in
 `scripts/overlay-manifest.mjs` implement exactly that rule. Use `integrity`
 to pin and check the bytes you downloaded.
 
+## Consumer cohort pack
+
+A consumer that vendors all six packages (`producer`, `strategist`,
+`designer`, `writer`, `publisher`, `controller`) packs them locally from any
+clean checkout, including an integration branch:
+
+```sh
+node scripts/pack-cohort.mjs --out <dir>          # build, pack, write manifest
+node scripts/pack-cohort.mjs --check <dir> [--expected-sha <sha>]
+```
+
+`<dir>` must be empty or absent and outside the checkout. It ends up holding
+exactly `<key>.tgz` for each of the six plus `overlay-manifest.json` in the
+schema above, with `commit` set to the packed HEAD. Building, the Studio
+standalone build and `npm pack --ignore-scripts` are
+`packages/producer/scripts/pack-five.mjs`; `producer.tgz` therefore carries
+`dist/studio/`, which `clossys produce` starts. Versions are packed as they
+are; nothing is bumped, tagged or published. `--check` refuses an extra or
+missing file, any digest, identity or `private` mismatch, and a
+`producer.tgz` without `dist/studio/manifest.json`.
+`overlay-manifest.mjs assert-public --cohort` checks the six source
+`package.json` files. The pack is not scanned with the identity denylist;
+run the artifact-safety scan before the tarballs leave the machine.
+
 ## Limits
 
 - Only `designer` and `publisher` are packed. A dependency of either on
