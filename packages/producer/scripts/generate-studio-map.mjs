@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
-import { readIa, readSlot } from '../dist/records/slots.js';
+import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
 import { checkPayload } from './studio-payload.mjs';
@@ -12,7 +12,7 @@ import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFr
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
 const defaultClossysRoot = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const json = value => `${JSON.stringify(value, null, 2)}\n`;
-const banner = '// Generated from pinned Foundry Publisher candidates and the Studio library selection. Run npm run generate:studio-map.\n';
+const banner = '// Generated from pinned Foundry Publisher and Designer candidates. Run npm run generate:studio-map.\n';
 const LAYER_FOLDER = { frames: 'frames', sections: 'sections' };
 
 function fail(message) { throw new Error(`Studio assembly: ${message}`); }
@@ -136,18 +136,26 @@ function designerContracts(clossysRoot) {
   return contracts;
 }
 
-/** The pinned element for a slot, and the Studio folder that runs it. */
-async function pinnedItem(clossysRoot, selection, slot) {
-  const pin = selection.pins?.[slot];
-  if (!pin) fail(`${slot} has no pin in the Studio library selection`);
+/** The pinned Designer candidate for a slot, and the Studio folder that runs it. */
+function pinnedItem(clossysRoot, entries, slot) {
+  const entry = entries.get(slot);
+  if (!entry) fail(`${slot} is not a Designer slot`);
+  const pin = entry.pin;
+  if (!pin) fail(`${slot} has no pin in the Designer slot model`);
   const layer = slot.split('.')[0];
   const folder = LAYER_FOLDER[layer];
   if (!folder) fail(`${slot} is not a frame or section`);
-  const versionDir = join(clossysRoot, 'library', slot, pin.element, `v${pin.version}`);
-  const element = await readJson(join(versionDir, 'element.json'));
-  if (element.hash !== pin.hash) fail(`${slot} pin hash does not match its library record`);
-  if (!['adopted', 'customized', 'verbatim'].includes(element.lineage?.mode) || !element.lineage?.source?.registry) fail(`${slot} must come from a trusted reference (lineage adopted/customized with a source)`);
-  return { slot, element: pin.element, version: pin.version, versionDir, payload: element.payload, studioDir: join(studioRoot, folder, pin.element), module: `../${folder}/${pin.element}` };
+  if (!entry.candidates.includes(pin.candidate)) fail(`${slot} pins a missing candidate ${pin.candidate}`);
+  const candidate = readCandidate(clossysRoot, 'designer', slot, pin.candidate);
+  if (candidate.sha256 !== pin.sha256) fail(`${slot} pin hash does not match its candidate`);
+  const item = JSON.parse(candidate.bytes);
+  const source = item.meta?.source;
+  if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${slot} must come from a trusted reference (source registry or derived with a ref)`);
+  if (!nonEmpty(item.name) || !Array.isArray(item.files) || !item.files.length) fail(`${slot} candidate ${pin.candidate} carries no files`);
+  const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
+  if (!version) fail(`${slot} pins a non-element candidate ${pin.candidate}`);
+  const files = new Map(item.files.map(file => [file.path, Buffer.from(file.content, 'utf8')]));
+  return { slot, element: item.name, version, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, item.name), module: `../${folder}/${item.name}` };
 }
 
 const STUDIO_COPY_PLACEMENTS = new Set([
@@ -236,8 +244,8 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
   const slots = [...new Set(pages.flatMap(page => [page.frameId, ...page.sectionIds, ...(page.leaf?.sectionIds ?? []), ...manifestSlots(page.manifest), ...(page.leaf ? manifestSlots(page.leaf.manifest) : [])]))];
   const items = target === 'preview' ? await draftStudioItems(clossysRoot, studioRoot, previewItems, slots) : [];
   if (target !== 'preview') {
-    const selection = await readJson(join(clossysRoot, 'selection.json'));
-    for (const slot of slots) items.push(await pinnedItem(clossysRoot, selection, slot));
+    const entries = new Map(listSlots(clossysRoot, 'designer').map(entry => [entry.id, entry]));
+    for (const slot of slots) items.push(pinnedItem(clossysRoot, entries, slot));
   }
   if (payloads) for (const item of items) await checkPayload(item);
   const frames = items.filter(item => item.slot.startsWith('frames.'));
