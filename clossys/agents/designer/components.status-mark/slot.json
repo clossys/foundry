@@ -6,7 +6,7 @@
     "l0": "components",
     "l1": "components.feedback",
     "l2": "feedback-indicators",
-    "order": 141
+    "order": 144
   },
   "kind": "element",
   "contract": {
@@ -27,6 +27,9 @@
       "themes": [
         "themes.spacing",
         "themes.destructive",
+        "themes.success",
+        "themes.warning",
+        "themes.info",
         "themes.foreground",
         "themes.card-foreground",
         "themes.popover-foreground",

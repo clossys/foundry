@@ -44,7 +44,10 @@
             "themes.secondary-foreground",
             "themes.accent",
             "themes.accent-foreground",
-            "themes.destructive"
+            "themes.destructive",
+            "themes.success",
+            "themes.warning",
+            "themes.info"
           ]
         },
         {
