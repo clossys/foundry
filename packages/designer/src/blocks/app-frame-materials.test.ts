@@ -4,11 +4,13 @@ import { dirname, resolve, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { createElement, type ComponentProps } from "react";
-import { render, waitFor } from "@testing-library/react";
+import { render as renderBare, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "../components/Button.js";
 import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
+import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
 
 const root = resolve(import.meta.dirname, "../..");
 const materials = () => (blocks as any).APP_FRAME_MATERIALS ?? [];

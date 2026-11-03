@@ -307,7 +307,8 @@ const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu":
  * Approved same-entry secondary exports, by caller checkpoint. Each name is a local function value of the
  * item's own authenticated entry (proved again by componentSecondaryExports at resolve/emit); nothing else
  * in an entry's export list becomes public. A243.2 admits existing Menu, Dialog, disclosure and
- * table anatomy for surface consumers; A244.4 admits the five Card anatomy exports.
+ * table anatomy for surface consumers; A244.4 admits the five Card anatomy exports; T14 admits the Avatar image and fallback
+ * anatomy the shell account trigger composes.
  * Every target remains a concrete function of its own entry.
  */
 const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
@@ -320,6 +321,7 @@ const secondaryExportApprovals: Readonly<Record<string, readonly { name: string;
   collapsible: ["CollapsibleContent", "CollapsibleTrigger"].map(name => ({ name, export: name })),
   table: ["TableBody", "TableCaption", "TableCell", "TableFooter", "TableHead", "TableHeader", "TableRow"].map(name => ({ name, export: name })),
   card: ["CardHeader", "CardTitle", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name })),
+  avatar: ["AvatarImage", "AvatarFallback"].map(name => ({ name, export: name })),
 };
 const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';

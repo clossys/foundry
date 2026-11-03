@@ -7,9 +7,9 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement, type ReactElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render } from "@testing-library/react";
+import { cleanup, render as renderBare } from "@testing-library/react";
 import ts from "typescript";
 import { checkWiring } from "../catalog-core/wiring.js";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadComponentCompositionRules, planSurfaceDefaults } from "../catalog-core/index.js";
@@ -31,6 +31,9 @@ import { completedTokenLibrary } from "../importers/__fixtures__/completed-token
 import { planSurfacePreviews } from "./planned-surface-previews.js";
 import * as surfaceContent from "./surface-preview-sample-content.js";
 import { specimenDataset } from "./specimen-dataset.js";
+import { hostedRender, hostedMarkup } from "../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 afterEach(cleanup);
 
