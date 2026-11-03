@@ -82,7 +82,9 @@ describe("Designer slot contracts", () => {
   it("makes every section that names the band compose the shell and its tokens", () => {
     const band = committed.sections.find(row => row.slot === "sections.band")!;
     expect(String(band.limits["emits.theme"]).split(",")).toEqual(expect.arrayContaining(["--spacing-section", "--container-measure", "--text-display", "--text-heading", "--text-figure"]));
-    for (const row of committed.sections.filter(row => row.slot !== "sections.band")) {
+    const banded = new Set(sectionSlots.filter(slot => (slot.contract as { anatomy?: { band?: string | null } }).anatomy?.band).map(slot => slot.id));
+    expect(banded.size).toBeGreaterThan(40);
+    for (const row of committed.sections.filter(row => banded.has(row.slot))) {
       expect(row.limits["compose.band"], row.slot).toBe("sections.band");
       for (const rule of ["rule.spacing", "rule.type", "rule.decoration", "rule.copy", "rule.overflow"]) expect(row.limits[rule], `${row.slot} ${rule}`).toEqual(expect.any(String));
     }
