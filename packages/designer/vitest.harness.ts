@@ -94,10 +94,14 @@ export async function ambientFacade(actual: FacadeModule): Promise<FacadeModule>
   return { ...actual, componentLeaf: ((leaf: `components.${string}`, part?: string) => wrap(actual.componentLeaf(leaf, part))) as FacadeModule["componentLeaf"] };
 }
 
-/** Settle pending lazy boundaries and load the ambient selection once a facade was mocked. Cheap when nothing is pending. */
+/**
+ * Settle pending lazy boundaries and load the ambient selection once a facade was mocked. Cheap when nothing is pending.
+ * A selection that cannot load under a test's own module mocks (an absent optional peer, say) stays unloaded, and the
+ * next settle retries it; a leaf rendered without it reports that through SelectedComponentLeaf.
+ */
 export async function settleHarness(loadSelection: () => Promise<{ marketingComponentSelection(): ConsumerComponentSelection }>): Promise<void> {
   const harness = state();
   while (harness.pending.length) await Promise.all(harness.pending.splice(0));
-  if (harness.facade && !harness.selection) harness.selection = (await loadSelection()).marketingComponentSelection();
+  if (harness.facade && !harness.selection) harness.selection = await loadSelection().then(module => module.marketingComponentSelection(), () => undefined);
   while (harness.pending.length) await Promise.all(harness.pending.splice(0));
 }

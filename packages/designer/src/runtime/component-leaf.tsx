@@ -6,12 +6,11 @@ const loadClient = (): Promise<ClientBoundary> => import("./component-leaf.clien
 // (renderToString, renderToStaticMarkup, a first test `render`, streaming SSR)
 // gets the selected leaf synchronously and never suspends on it. The selection
 // itself lives in that module's ConsumerComponentProvider, so a known selection
-// always means the boundary is loadable. RSC bundlers return their client
-// reference for the same import. Only a host that cannot evaluate the client
-// module at all (a raw `node --conditions=react-server` import has no
-// createContext) keeps the deferred boundary, which then reports its own error
-// if a leaf actually renders there.
-const loaded: ClientBoundary | undefined = await loadClient().catch(() => undefined);
+// always means the boundary is loadable. A react-server graph (no createContext)
+// never evaluates the client module here: it keeps the deferred boundary, which
+// an RSC bundler turns into its client reference and which otherwise reports
+// its own error only if a leaf actually renders there.
+const loaded: ClientBoundary | undefined = typeof React.createContext === "function" ? await loadClient().catch(() => undefined) : undefined;
 const SelectedComponentLeaf: React.ElementType = loaded?.SelectedComponentLeaf
   ?? React.lazy(async () => ({ default: (await loadClient()).SelectedComponentLeaf }));
 export type { ConsumerComponentBinding, ConsumerComponentSelection } from "./component-leaf.client.js";
