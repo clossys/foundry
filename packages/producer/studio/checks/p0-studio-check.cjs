@@ -2,7 +2,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { ROUTE_MARKER } = require('./check-studio-routes.cjs');
+const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { createHash } = require('node:crypto');
@@ -81,13 +81,16 @@ function canonical(paths, label) {
   assert.equal(new Set(paths).size, paths.length, `${label} contains duplicate routes`);
   return [...paths].sort();
 }
-/** All publication maps must agree; a newly introduced dynamic route needs an explicit expander. */
-function discoverRoutePlan(options = {}) {
+/**
+ * The generated Studio projection must agree with the pinned publication's route pack and content
+ * map (`options.publication`, else read from the pins); a newly introduced dynamic route needs an
+ * explicit expander.
+ */
+async function discoverRoutePlan(options = {}) {
   const root = options.studioRoot ?? studioRoot;
   const repository = options.repositoryRoot ?? repositoryRoot;
   const projection = readJson(path.join(root, 'generated/studio-map.json'));
-  const pack = readJson(path.join(repository, 'clossys/agents/publisher/route-pack/studio.json'));
-  const content = readJson(path.join(repository, 'clossys/agents/publisher/content-map/studio.json'));
+  const { routePack: pack, map: content } = options.publication ?? await readStudioPublication(repository);
   const routes = canonical(projection.routes.map(row => row.path), 'Studio projection');
   assert.deepEqual(routes, canonical(pack.routes.map(row => row.path), 'Publisher route pack'), 'Studio route projection and route pack differ');
   assert.deepEqual(routes, canonical(content.entries.filter(row => row.kind === 'page').map(row => row.path), 'Publisher content map'), 'Studio route projection and content map differ');
@@ -266,7 +269,7 @@ async function settle(page, pending, timeout) {
 }
 async function runStudioCheck(options = {}) {
   const origin = new URL(options.origin ?? 'http://127.0.0.1:4300').origin;
-  const plan = options.plan ?? discoverRoutePlan(options);
+  const plan = options.plan ?? await discoverRoutePlan(options);
   const timeout = options.timeout ?? 15000;
   const screenshotRoot = path.resolve(options.screenshotRoot ?? path.join(repositoryRoot, 'visual-pass/p0'));
   fs.mkdirSync(screenshotRoot, { recursive: true });

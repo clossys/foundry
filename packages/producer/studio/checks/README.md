@@ -8,10 +8,11 @@ node --test packages/producer/studio/checks/check-studio-map.test.cjs
 node packages/producer/studio/checks/check-studio-map.cjs
 ```
 
-The map check reads the ordinary Foundry Publisher cells under
-`clossys/agents/publisher`, verifies their normal compiled content-map and route
-pack, and regenerates the Studio projection in memory to compare exact output
-bytes. Editing a page cell without regenerating fails. Navigation, command
+The map check reads the pinned Foundry Publisher slots under
+`clossys/agents/publisher` (`publication.studio` and its `page.*` slots),
+projects their content map and route pack, and regenerates the Studio
+projection in memory to compare exact output bytes. Re-pinning a page without
+regenerating fails. Navigation, command
 search, breadcrumbs and routes are projections of that one publication map.
 `lib/studio-route-map.ts` adds the record-store leaves to it at runtime
 (`studioRuntimeMap`) and builds the frame inputs with Publisher's

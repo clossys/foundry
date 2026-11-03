@@ -3,7 +3,7 @@
 
 /**
  * studio-routes: every Studio route is installed by Publisher. Each page entry of the Studio
- * content map (`publication.studio`) needs its `page.tsx` under `app/`, and each page whose route
+ * content map (projected from the pinned `publication.studio` slot) needs its `page.tsx` under `app/`, and each page whose route
  * pack row carries a leaf template needs its dynamic `[slug]/page.tsx`, both written by
  * `clossys publish --install --next` (their first line is Publisher's route marker). No other
  * route file may exist under `app/`; the one named exemption is the internal record-specimen
@@ -39,11 +39,20 @@ function routeFiles(directory, root) {
 }
 const installed = file => { try { return fs.readFileSync(file, 'utf8').split('\n', 1)[0] === ROUTE_MARKER; } catch { return false; } };
 
-function checkStudioRoutes({ studioRoot = STUDIO_ROOT, repositoryRoot = REPOSITORY_ROOT } = {}) {
+/**
+ * The Studio publication's content map and route pack, projected by Publisher from the pinned
+ * `publication.studio` and `page.*` slots (no generated map or route pack is stored).
+ */
+async function readStudioPublication(repositoryRoot = REPOSITORY_ROOT) {
+  const { readPinnedPublication } = await import('@clossys/publisher/content-map/slots');
+  const { map, routePack } = await readPinnedPublication(path.join(repositoryRoot, 'clossys/agents/publisher'), 'studio');
+  if (!routePack) throw new Error('publication.studio has no route pack');
+  return { map, routePack };
+}
+
+async function checkStudioRoutes({ studioRoot = STUDIO_ROOT, repositoryRoot = REPOSITORY_ROOT, publication } = {}) {
   const findings = [];
-  const publisher = path.join(repositoryRoot, 'clossys/agents/publisher');
-  const map = readJson(path.join(publisher, 'content-map/studio.json'));
-  const pack = readJson(path.join(publisher, 'route-pack/studio.json'));
+  const { map, routePack: pack } = publication ?? await readStudioPublication(repositoryRoot);
   const expected = new Map();
   for (const entry of map.entries.filter(row => row.kind === 'page')) expected.set(pageFile(entry.path), { page: entry.id, kind: 'page' });
   for (const route of pack.routes.filter(row => row.leaf)) expected.set(leafFile(route.path), { page: route.instanceId, kind: 'leaf' });
@@ -60,11 +69,12 @@ function checkStudioRoutes({ studioRoot = STUDIO_ROOT, repositoryRoot = REPOSITO
   return findings;
 }
 
-module.exports = { checkStudioRoutes, ROUTE_MARKER, EXEMPT_ROUTES };
+module.exports = { checkStudioRoutes, readStudioPublication, ROUTE_MARKER, EXEMPT_ROUTES };
 if (require.main === module) {
-  const findings = checkStudioRoutes();
-  if (findings.length) {
-    console.error(JSON.stringify({ check: 'Studio routes', findings }, null, 2));
-    process.exitCode = 1;
-  } else console.log('Studio routes: every content-map page and leaf template is installed by Publisher; app/ holds no other route but the specimen frame.');
+  checkStudioRoutes().then(findings => {
+    if (findings.length) {
+      console.error(JSON.stringify({ check: 'Studio routes', findings }, null, 2));
+      process.exitCode = 1;
+    } else console.log('Studio routes: every content-map page and leaf template is installed by Publisher; app/ holds no other route but the specimen frame.');
+  }, error => { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; });
 }

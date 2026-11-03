@@ -8,7 +8,8 @@ import { lstat, readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule, agentRoot, readCells } from "../server/cells.js";
-import { listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
+import { hasSlotModel, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { parseFrontmatter, pinFile, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
 
@@ -30,8 +31,53 @@ export function pageCopy(source: string): PageCopyBinding[] {
   return copy;
 }
 
-/** Publisher: its compiler checks the generated outputs against the active cells, then those outputs are read. */
+/**
+ * Publisher: the pinned native publication when the consumer has a Publisher IA (content map,
+ * route pack and page copy all come from pins and candidates); otherwise the legacy compiler
+ * checks the generated outputs against the active cells, then those outputs are read.
+ */
 export async function readPublisher(root: string, publication?: string): Promise<PublisherInput> {
+  const consumer = join(root, "clossys");
+  if (hasSlotModel(consumer) && readIa(consumer, "publisher")) return readNativePublisher(consumer, publication);
+  return readLegacyPublisher(root, publication);
+}
+
+/** Copy bindings of a native page candidate (`slot → "cell#key"`) in the legacy bullet shape. */
+function nativeCopy(copy: unknown): PageCopyBinding[] {
+  if (!isRecord(copy)) return [];
+  return Object.entries(copy).flatMap(([slot, ref]) => {
+    if (typeof ref !== "string" || ref.indexOf("#") < 1) return [];
+    const cell = ref.slice(0, ref.indexOf("#")), key = ref.slice(ref.indexOf("#") + 1);
+    return [{ key: slot === key ? key : `${slot} = ${key}`, cell }];
+  });
+}
+
+async function readNativePublisher(consumer: string, publication?: string): Promise<PublisherInput> {
+  const base = join(consumer, "agents", "publisher");
+  const entries = listSlots(consumer, "publisher");
+  const ids = publication ? [publication]
+    : entries.filter(entry => entry.pin && entry.id.startsWith("publication.")).map(entry => entry.id.slice("publication.".length));
+  if (!ids.length) throw new Error("Publisher has no publication");
+  const read = await Promise.all(ids.map(async id => ({ id, ...await readPinnedPublication(base, id) })));
+  const chosen = publication ? read[0]! : read.find(row => typeof row.map.format === "string" && row.map.format.startsWith("web.")) ?? read[0]!;
+  const cellOfEntry: Record<string, string> = {};
+  const copy: Record<string, PageCopyBinding[]> = {};
+  for (const entry of entries) {
+    if (!entry.pin || !entry.id.startsWith("page.")) continue;
+    const candidate = readCandidate(consumer, "publisher", entry.id, entry.pin.candidate);
+    if (candidate.sha256 !== entry.pin.sha256) throw new Error(`Publisher candidate hash mismatch: ${entry.id}`);
+    const page = JSON.parse(candidate.bytes) as { copy?: unknown; meta?: { entry?: { entryId?: unknown; publication?: unknown } } };
+    const meta = page.meta?.entry;
+    if (meta?.publication !== chosen.id || typeof meta.entryId !== "string") continue;
+    cellOfEntry[meta.entryId] = entry.id;
+    copy[entry.id] = nativeCopy(page.copy);
+  }
+  const routes = (isRecord(chosen.routePack) && Array.isArray(chosen.routePack.routes) ? chosen.routePack.routes : []) as PublisherInput["routes"];
+  return { publicationId: chosen.map.publicationId, ...(typeof chosen.map.format === "string" ? { format: chosen.map.format } : {}),
+    entries: chosen.map.entries as unknown as PublisherInput["entries"], routes, copy, cellOfEntry };
+}
+
+async function readLegacyPublisher(root: string, publication?: string): Promise<PublisherInput> {
   const base = agentRoot(root, "publisher");
   const compiler = await agentModule("publisher", "content-map/cells.js");
   const { maps } = await compiler.compileContentMaps(base, { check: true });

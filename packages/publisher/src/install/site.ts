@@ -25,7 +25,7 @@ export interface SiteRoutePackRoute {
   readonly state?: string;
   readonly slots: readonly SiteRouteSlot[];
 }
-/** A consumer route pack (`clossys/agents/publisher/route-pack/<packId>.json`). */
+/** A consumer route pack: the pinned `publication.<packId>` slot's projection (`readPinnedPublication`), or a legacy `route-pack/<packId>.json`. */
 export interface SiteRoutePack {
   readonly packId: string;
   readonly app?: string;

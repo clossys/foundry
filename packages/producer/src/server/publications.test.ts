@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from "node:fs/promises";
+import { cp, mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -138,4 +138,19 @@ it("exposes only an explicitly declared local app server URL", async () => {
     await writeFile(path, JSON.stringify(tree));
     expect(await consumerApps(root)).toMatchObject({ state: "error", publications: [] });
   }
+});
+
+it("projects pinned native publications from slots when the legacy Publisher store is absent", async () => {
+  const consumer = await mkdtemp(join(await realpath(tmpdir()), "producer-native-apps-"));
+  try {
+    const publisher = agentRoot(consumer, "publisher");
+    await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
+    for (const name of ["tree.json", "cells", "compile.json", "content-map", "route-pack"]) await rm(join(publisher, name), { recursive: true, force: true });
+    const before = await snapshot(consumer);
+    const apps = await consumerApps(consumer);
+    expect(apps).toMatchObject({ state: "ready", publications: [{ id: "studio", source: "slots", format: "web.page.responsive" }] });
+    const { readPinnedPublication } = await import("@clossys/publisher/content-map/slots");
+    expect(apps.publications[0]!.map).toEqual((await readPinnedPublication(publisher, "studio")).map);
+    expect(await snapshot(consumer)).toEqual(before);
+  } finally { await rm(consumer, { recursive: true, force: true }); }
 });

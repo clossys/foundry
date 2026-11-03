@@ -2,13 +2,15 @@ import { constants } from "node:fs";
 import { lstat, open, readdir } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { ContentMap, ContentMapBreadcrumb, ContentMapCommandGroup, ContentMapNavigation, ContentMapOutlineNode } from "@clossys/publisher/content-map";
+import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
 import { agentModule, agentRoot, readCells } from "./cells.js";
+import { hasSlotModel, listSlots, readCandidate, readIa } from "../records/slots.js";
 
 export interface ConsumerPublication {
   id: string;
   title: string;
   format: ContentMap["format"];
-  source: "cells" | "content-map";
+  source: "slots" | "cells" | "content-map";
   map: ContentMap;
   entryId?: string;
   navigation?: ContentMapNavigation;
@@ -79,6 +81,23 @@ export async function consumerApps(root: string): Promise<ConsumerAppsResponse> 
   try {
     const publisherRoot = agentRoot(root, "publisher");
     await safePath(publisherRoot, ".");
+    const consumer = join(root, "clossys");
+    const sources = new Map<string, { map: ContentMap; title: string; source: ConsumerPublication["source"]; metadata?: unknown }>();
+    const api = await agentModule("publisher", "content-map/index.js");
+    if (hasSlotModel(consumer) && readIa(consumer, "publisher")) {
+      // The slot model is authoritative: only pinned publication slots publish.
+      for (const entry of listSlots(consumer, "publisher")) {
+        if (!entry.pin || !entry.id.startsWith("publication.")) continue;
+        const id = entry.id.slice("publication.".length);
+        const { map, routePack } = await readPinnedPublication(publisherRoot, id);
+        const candidate = readCandidate(consumer, "publisher", entry.id, entry.pin.candidate);
+        if (candidate.sha256 !== entry.pin.sha256) throw new TypeError("Publisher publication pin hash drift");
+        const tree = (JSON.parse(candidate.bytes) as { meta?: { tree?: { name?: unknown } } }).meta?.tree;
+        const title = typeof tree?.name === "string" && tree.name.trim() ? tree.name : id;
+        sources.set(id, { map, title, source: "slots", ...(routePack ? { metadata: routePack } : {}) });
+      }
+      return await projectPublications(root, sources, api);
+    }
     const tree = await optionalJson(publisherRoot, "tree.json");
     if (tree !== undefined && (!object(tree) || tree.meta !== undefined && !object(tree.meta))) throw new TypeError("Invalid Publisher tree");
     const declarations = object(tree) && object(tree.meta) ? tree.meta.publications : undefined;
@@ -87,8 +106,7 @@ export async function consumerApps(root: string): Promise<ConsumerAppsResponse> 
     // even when there are no publications to send through Publisher's reader.
     const active = tree === undefined ? [] : await readCells(root, "publisher", true);
     if (!declarations?.length && active.length) throw new TypeError("Active Publisher cells require publication declarations");
-    const sources = new Map<string, { map: ContentMap; title: string; source: ConsumerPublication["source"]; metadata?: unknown }>();
-    const [api, cells] = await Promise.all([agentModule("publisher", "content-map/index.js"), declarations?.length ? agentModule("publisher", "content-map/cells.js") : Promise.resolve(undefined)]);
+    const cells = declarations?.length ? await agentModule("publisher", "content-map/cells.js") : undefined;
     for (const declaration of declarations ?? []) {
       if (!object(declaration) || !identity(declaration.id) || sources.has(declaration.id)) throw new TypeError("Invalid or repeated publication identity");
       const map: ContentMap = await cells.contentMapFromCells(publisherRoot, declaration.id);
@@ -110,20 +128,24 @@ export async function consumerApps(root: string): Promise<ConsumerAppsResponse> 
       if (api.checkContentMap(map).length || !object(map) || map.publicationId !== id) throw new TypeError("Invalid published content map");
       sources.set(id, { map: map as unknown as ContentMap, title: id, source: "content-map", metadata: await optionalJson(publisherRoot, join("route-pack", filename)) });
     }
-    const publications: ConsumerPublication[] = [];
-    for (const [id, source] of sources) {
-      const { map, title, metadata } = source;
-      const target = await appTarget(root, map, metadata);
-      const entryId = target?.entryId ?? [...map.entries].filter(entry => entry.kind === "page" || entry.kind === "section").sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))[0]?.id;
-      const web = map.format === "web.page.responsive";
-      publications.push({ id, title, format: map.format, source: source.source, map, ...(entryId ? { entryId } : {}),
-        ...(web && entryId ? { navigation: api.projectNavigation(map, entryId) } : {}),
-        commands: web ? api.projectCommands(map) : [],
-        breadcrumbs: web ? Object.fromEntries(map.entries.map(entry => [entry.id, api.projectBreadcrumbs(map, entry.id)])) : {},
-        outline: api.projectOutline(map), ...(target ? { target } : {}) });
-    }
-    return publications.length ? { state: "ready", publications } : { state: "missing", publications: [], message: "Publisher publications are not initialized" };
+    return await projectPublications(root, sources, api);
   } catch {
     return { state: "error", publications: [], message: "Publisher publications could not be read; check the publication maps and cell format" };
   }
+}
+
+async function projectPublications(root: string, sources: ReadonlyMap<string, { map: ContentMap; title: string; source: ConsumerPublication["source"]; metadata?: unknown }>, api: any): Promise<ConsumerAppsResponse> {
+  const publications: ConsumerPublication[] = [];
+  for (const [id, source] of sources) {
+    const { map, title, metadata } = source;
+    const target = await appTarget(root, map, metadata);
+    const entryId = target?.entryId ?? [...map.entries].filter(entry => entry.kind === "page" || entry.kind === "section").sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))[0]?.id;
+    const web = map.format === "web.page.responsive";
+    publications.push({ id, title, format: map.format, source: source.source, map, ...(entryId ? { entryId } : {}),
+      ...(web && entryId ? { navigation: api.projectNavigation(map, entryId) } : {}),
+      commands: web ? api.projectCommands(map) : [],
+      breadcrumbs: web ? Object.fromEntries(map.entries.map(entry => [entry.id, api.projectBreadcrumbs(map, entry.id)])) : {},
+      outline: api.projectOutline(map), ...(target ? { target } : {}) });
+  }
+  return publications.length ? { state: "ready", publications } : { state: "missing", publications: [], message: "Publisher publications are not initialized" };
 }

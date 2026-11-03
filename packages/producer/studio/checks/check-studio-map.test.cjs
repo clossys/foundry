@@ -103,7 +103,7 @@ test('the checked-in Studio projection matches its ordinary Publisher cells and 
   assert.deepEqual(await checkStudioMap(), []);
 });
 
-test('changing a Publisher page cell without regenerating fails projection drift', async t => {
+test('changing a pinned Publisher page without regenerating fails projection drift', async t => {
   const temporary = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'studio-map-check-')));
   t.after(() => fs.rmSync(temporary, { recursive: true, force: true }));
   const clossysRoot = path.join(temporary, 'clossys');
@@ -117,16 +117,15 @@ test('changing a Publisher page cell without regenerating fails projection drift
   fs.cpSync(path.join(studioRoot, 'app'), path.join(temporary, 'app'), { recursive: true });
   const generator = await import(pathToFileURL(path.resolve(studioRoot, '../scripts/generate-studio-map.mjs')).href);
   await generator.generateStudioMap({ clossysRoot, outputDir, check: true });
-  const cellRoot = path.join(clossysRoot, 'agents/publisher');
-  const page = path.join(cellRoot, 'cells', 'page.designer', 'v2.md');
-  const text = fs.readFileSync(page, 'utf8');
-  // A published page title is map input, so changing it must change projected bytes.
-  assert.match(text, /^title:\s*.+$/m);
-  fs.writeFileSync(page, text.replace(/^(title:\s*)(.+)$/m, '$1Fixture changed title'));
+  // A published page title is map input, so re-pinning a changed title must change projected bytes.
+  const slot = path.join(clossysRoot, 'agents/publisher/page.designer');
+  const pin = JSON.parse(fs.readFileSync(path.join(slot, 'pin.json'), 'utf8'));
+  const candidate = path.join(slot, 'candidates', pin.candidate);
+  const record = JSON.parse(fs.readFileSync(candidate, 'utf8'));
+  assert.ok(typeof record.title === 'string' && record.title !== 'Fixture changed title');
+  const bytes = JSON.stringify({ ...record, title: 'Fixture changed title' }, null, 2) + '\n';
+  fs.writeFileSync(candidate, bytes);
+  fs.writeFileSync(path.join(slot, 'pin.json'), JSON.stringify({ ...pin, sha256: require('node:crypto').createHash('sha256').update(bytes).digest('hex') }, null, 2) + '\n');
   const findings = await checkStudioMap({ clossysRoot, outputDir });
-  assert.ok(findings.some(row => row.rule === 'publisher-projection-drift'), JSON.stringify(findings));
-  const { compileContentMaps } = await import('@clossys/publisher/content-map/cells');
-  await compileContentMaps(cellRoot);
-  const staleStudio = await checkStudioMap({ clossysRoot, outputDir });
-  assert.ok(staleStudio.some(row => row.rule === 'publisher-projection-drift' && /Generated Studio projection drift/.test(row.message)), JSON.stringify(staleStudio));
+  assert.ok(findings.some(row => row.rule === 'publisher-projection-drift' && /Generated Studio projection drift/.test(row.message)), JSON.stringify(findings));
 });
