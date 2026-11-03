@@ -1,0 +1,111 @@
+{
+  "name": "pricing",
+  "type": "registry:block",
+  "registryDependencies": [
+    "badge",
+    "button",
+    "icon",
+    "semantic-content",
+    "toggle-group"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2025 Irung\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "pricing/pricing.tsx",
+      "type": "registry:block",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\n\nimport { Badge } from \"@/components/ui/badge\"\nimport { LinkButton } from \"@/components/ui/button\"\nimport { Icon } from \"@/components/ui/icon\"\nimport { SemanticContent } from \"@/components/ui/semantic-content\"\nimport { ToggleGroup, ToggleGroupItem } from \"@/components/ui/toggle-group\"\n\ntype Plan = {\n  name: string\n  description?: string\n  price?: string\n  priceByInterval?: { interval: string; amount: number; priceText: string }[]\n  features?: string[]\n  badge?: string\n  highlight?: boolean\n  cta: { label: string; href: string }\n}\n\n/**\n * tailark mist pricing-1 rebuilt for aria: plans side by side, an interval\n * toggle (aria-nova ToggleGroup) and each plan's call to action as the\n * aria-nova LinkButton in place of Button asChild + next/link.\n */\nexport default function Pricing({\n  heading = \"Pricing that scales with you\",\n  description = \"Pick a plan to start. Switch or cancel at any time.\",\n  intervals = [\"Monthly\", \"Yearly\"],\n  plans = [\n    {\n      name: \"Starter\",\n      description: \"For individuals getting set up\",\n      priceByInterval: [\n        { interval: \"Monthly\", amount: 0, priceText: \"$0\" },\n        { interval: \"Yearly\", amount: 0, priceText: \"$0\" },\n      ],\n      features: [\"One workspace\", \"Community support\", \"Core components\"],\n      cta: { label: \"Start free\", href: \"#\" },\n    },\n    {\n      name: \"Team\",\n      description: \"For teams shipping together\",\n      badge: \"Popular\",\n      highlight: true,\n      priceByInterval: [\n        { interval: \"Monthly\", amount: 24, priceText: \"$24\" },\n        { interval: \"Yearly\", amount: 240, priceText: \"$240\" },\n      ],\n      features: [\"Unlimited workspaces\", \"Priority support\", \"Every section and frame\"],\n      cta: { label: \"Get started\", href: \"#\" },\n    },\n  ],\n}: {\n  heading?: string\n  description?: string\n  intervals?: string[]\n  plans?: Plan[]\n}) {\n  const [interval, setInterval] = React.useState(intervals[0])\n  return (\n    <section data-slot=\"pricing\" className=\"bg-muted py-16 md:py-20\">\n      <div className=\"mx-auto max-w-5xl px-6\">\n        <div className=\"mx-auto max-w-2xl text-center\">\n          <SemanticContent as=\"h2\" className=\"md:text-4xl lg:text-5xl\">{heading}</SemanticContent>\n          <SemanticContent as=\"p\" className=\"mx-auto mt-4 max-w-md text-lg text-muted-foreground\">{description}</SemanticContent>\n        </div>\n        {intervals.length > 1 && (\n          <div className=\"mt-8 flex justify-center\">\n            <ToggleGroup\n              aria-label=\"Billing interval\"\n              variant=\"outline\"\n              selectionMode=\"single\"\n              disallowEmptySelection\n              selectedKeys={[interval]}\n              onSelectionChange={(keys) => {\n                const next = [...keys][0]\n                if (next !== undefined) setInterval(String(next))\n              }}\n            >\n              {intervals.map((i) => (\n                <ToggleGroupItem key={i} id={i}>\n                  {i}\n                </ToggleGroupItem>\n              ))}\n            </ToggleGroup>\n          </div>\n        )}\n        <div className=\"mt-8 grid gap-6 md:mt-12 md:grid-cols-2\">\n          {plans.map((plan) => {\n            const price = plan.priceByInterval?.find((p) => p.interval === interval)?.priceText ?? plan.price\n            return (\n              <div\n                key={plan.name}\n                data-highlight={plan.highlight || undefined}\n                className={cn(\n                  \"flex flex-col gap-6 rounded-xl border border-border bg-background p-8\",\n                  plan.highlight && \"ring-2 ring-primary\"\n                )}\n              >\n                <div className=\"space-y-2\">\n                  <div className=\"flex items-center gap-2\">\n                    <SemanticContent as=\"h3\" className=\"text-xl\">{plan.name}</SemanticContent>\n                    {plan.badge && <Badge>{plan.badge}</Badge>}\n                  </div>\n                  {plan.description && <SemanticContent as=\"p\" className=\"text-muted-foreground\">{plan.description}</SemanticContent>}\n                </div>\n                {price && (\n                  <SemanticContent as=\"p\" className=\"text-5xl font-semibold tracking-tight\">\n                    {price}\n                    <SemanticContent as=\"small\" className=\"ml-1 text-base font-normal\">/ {interval.toLowerCase()}</SemanticContent>\n                  </SemanticContent>\n                )}\n                {plan.features && (\n                  <ul role=\"list\" className=\"space-y-3 text-sm\">\n                    {plan.features.map((f) => (\n                      <li key={f} className=\"flex items-center gap-2\">\n                        <Icon name=\"check\" size=\"sm\" className=\"text-primary\" />\n                        <span>{f}</span>\n                      </li>\n                    ))}\n                  </ul>\n                )}\n                <LinkButton href={plan.cta.href} size=\"lg\" variant={plan.highlight ? \"default\" : \"outline\"} className=\"mt-auto\">\n                  {plan.cta.label}\n                </LinkButton>\n              </div>\n            )\n          })}\n        </div>\n      </div>\n    </section>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.pricing",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "tailark-oss/mist-pricing-1@8139698",
+        "npm:react-aria-components@1.21.1#ToggleGroup"
+      ],
+      "hash": "sha256:702629fd3704dc54b3e635e8689b0d63488e4376984e7dcc36200cc5de9c3156",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "pricing",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.pricing",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "tailark mist pricing-1 with Button asChild replaced by aria-nova LinkButton, the interval switch as aria-nova ToggleGroup, features via Icon check.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "badge",
+          "button",
+          "icon",
+          "semantic-content",
+          "toggle-group"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--tracking-tight",
+          "--radius",
+          "--destructive",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

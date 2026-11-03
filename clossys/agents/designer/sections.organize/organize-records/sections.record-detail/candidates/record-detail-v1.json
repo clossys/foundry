@@ -1,0 +1,98 @@
+{
+  "name": "record-detail",
+  "type": "registry:block",
+  "registryDependencies": [
+    "badge",
+    "button",
+    "collapsible",
+    "skeleton"
+  ],
+  "dependencies": [
+    "cn",
+    "lucide-react"
+  ],
+  "files": [
+    {
+      "path": "record-detail/record-detail.tsx",
+      "type": "registry:block",
+      "content": "\"use client\"\n\nimport { ChevronDownIcon } from \"lucide-react\"\n\nimport { Badge } from \"@/components/ui/badge\"\nimport { Button, LinkButton } from \"@/components/ui/button\"\nimport { Collapsible, CollapsibleContent, CollapsibleTrigger } from \"@/components/ui/collapsible\"\nimport { Skeleton } from \"@/components/ui/skeleton\"\n\ntype FieldRow = { label: string; value?: string }\ntype Group = { title: string; fields: FieldRow[]; collapsed?: boolean }\n\n/**\n * Record detail: status badge, grouped label/value fields (each group a\n * Disclosure), a loading skeleton and record actions.\n */\nexport default function RecordDetail({\n  title = \"Invoice INV-0042\",\n  status = \"Paid\",\n  loading = false,\n  groups = [\n    { title: \"Summary\", fields: [{ label: \"Customer\", value: \"Example Co.\" }, { label: \"Amount\", value: \"$1,200.00\" }, { label: \"Issued\", value: \"Oct 2, 2026\" }] },\n    { title: \"Payment\", fields: [{ label: \"Method\", value: \"Card\" }, { label: \"Reference\", value: \"PAY-9813\" }], collapsed: true },\n  ],\n  actions = [{ id: \"download\", label: \"Download\" }],\n  link,\n  onAction,\n}: {\n  title?: string\n  status?: string\n  loading?: boolean\n  groups?: Group[]\n  actions?: { id: string; label: string }[]\n  link?: { label: string; href: string }\n  onAction?: (id: string) => void\n}) {\n  return (\n    <section data-slot=\"record-detail\" aria-busy={loading || undefined} className=\"py-8\">\n      <div className=\"mx-auto max-w-3xl px-6\">\n        <div className=\"flex flex-wrap items-center justify-between gap-4\">\n          <div className=\"flex items-center gap-2\">\n            <h2 className=\"font-heading text-xl font-semibold tracking-tight\">{title}</h2>\n            {status && <Badge variant=\"secondary\">{status}</Badge>}\n          </div>\n          <div className=\"flex gap-2\">\n            {link && (\n              <LinkButton href={link.href} variant=\"ghost\">\n                {link.label}\n              </LinkButton>\n            )}\n            {actions.map((a) => (\n              <Button key={a.id} variant=\"outline\" onPress={() => onAction?.(a.id)}>\n                {a.label}\n              </Button>\n            ))}\n          </div>\n        </div>\n        <div className=\"mt-6 divide-y divide-border rounded-lg border border-border\">\n          {groups.map((g) => (\n            <Collapsible key={g.title} defaultExpanded={!g.collapsed}>\n              <CollapsibleTrigger className=\"group flex w-full items-center justify-between px-4 py-3 text-sm font-medium\">\n                {g.title}\n                <ChevronDownIcon className=\"size-4 text-muted-foreground transition-transform group-aria-expanded:rotate-180\" />\n              </CollapsibleTrigger>\n              <CollapsibleContent>\n                <dl className=\"grid gap-x-6 gap-y-3 px-4 pb-4 sm:grid-cols-2\">\n                  {g.fields.map((f) => (\n                    <div key={f.label} className=\"space-y-1\">\n                      <dt className=\"text-xs text-muted-foreground\">{f.label}</dt>\n                      <dd className=\"text-sm\">{loading ? <Skeleton className=\"h-4 w-32\" /> : (f.value ?? \"None\")}</dd>\n                    </div>\n                  ))}\n                </dl>\n              </CollapsibleContent>\n            </Collapsible>\n          ))}\n        </div>\n      </div>\n    </section>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.record-detail",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "MIT"
+    },
+    "com.clossys.origin": {
+      "kind": "authored",
+      "license": "MIT",
+      "note": "create (FILL-DESIGNER-3): record detail composed of aria-nova Badge, Collapsible field groups, Skeleton loading and Button/LinkButton actions."
+    },
+    "element": {
+      "id": "record-detail",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.record-detail",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "CREATE (FILL-DESIGNER-3; no trusted reference): record detail composed of aria-nova Badge, Collapsible field groups, Skeleton loading and Button/LinkButton actions.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-NO-SOURCE"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "lucide-react": "*"
+        },
+        "registry": [
+          "badge",
+          "button",
+          "collapsible",
+          "skeleton"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}
