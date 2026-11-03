@@ -406,7 +406,9 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
     if (fill.impl.kind === "package" && fill.pin?.package && !(fill.impl.module === fill.pin.package || fill.impl.module.startsWith(`${fill.pin.package}/`))) add("K8", fill.slot, "Package module differs from its pinned package");
     if (fill.impl.kind === "package" && (!fill.pin?.package || !/^\d+\.\d+\.\d+$/.test(fill.pin.version ?? "") || !fill.pin.export)) add("K8", fill.slot, "Package fill requires exact package/version/export pin");
     let ownedRule = false;
-    if (fill.impl.kind === "source" && (fill as ComponentCandidate & { origin?: ComponentOrigin }).origin?.kind === "composed") {
+    // A registered rule's output (composed or derived) is proven by its rule, not an upstream pin.
+    const ruleOrigin = (fill as ComponentCandidate & { origin?: ComponentOrigin }).origin?.kind;
+    if (fill.impl.kind === "source" && (ruleOrigin === "composed" || ruleOrigin === "derived")) {
       try {
         if (!input.compositions) throw new Error("consumer rule context unavailable");
         validateInstalledComponentRule(fill as ComponentCandidate & { origin?: ComponentOrigin }, input.compositions);

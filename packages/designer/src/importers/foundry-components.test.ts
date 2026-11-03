@@ -57,7 +57,7 @@ describe("Foundry component package descriptors", () => {
     expect(baselineRows(imported().coverage)).toEqual([...baselineRows(storedCoverage), ...newSourceSlots.map(slot => ({
       slot, status: "unavailable", supported: [], missing: [], notes: ["No package implementation is available."],
     }))].sort((a, b) => a.slot.localeCompare(b.slot)));
-    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger"]);
+    expect(loadComponentCompositionRules().map(rule => rule.slot)).toEqual(["components.date-picker", "components.file-trigger", "components.icon"]);
   });
 
   it("pins real primary and member-dispatched package exports without copied source", () => {

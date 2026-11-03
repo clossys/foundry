@@ -274,9 +274,10 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
       generated.push({ path: glyphs.path, content: `export const glyphs = ${JSON.stringify(glyphData, null, 2)} as const;\n` });
     }
     // Only a leaf that reads an asset needs the registered provider; the Icon adapter passes its glyph directly.
-    if (assets.length) {
+    // A selection of sources only reaches its glyphs through that adapter, so it needs no provider package.
+    const providerModule = components.find(component => component.impl.kind === "package" && component.descriptor.pin?.package === "@clossys/designer")?.descriptor.pin?.package;
+    if (assets.length && (providerModule || components.some(component => component.impl.kind === "package" && component.reads.assets.length))) {
       const glyphs = options.glyphModule!;
-      const providerModule = components.find(component => component.impl.kind === "package" && component.descriptor.pin?.package === "@clossys/designer")?.descriptor.pin?.package;
       if (!providerModule) throw new CatalogError("components: registered glyph provider package is unavailable");
       const module = `${providerModule}/components`;
       if (!profile.packageExports[module]?.includes("GlyphProvider")) throw new CatalogError("components: GlyphProvider export is unavailable");
