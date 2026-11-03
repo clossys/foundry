@@ -9,27 +9,27 @@
     },
     "sections.studio.home": {
       "element": "studio-home",
-      "version": 2,
-      "hash": "sha256:3a8aa87264b75e35f5c566b305375ada8efc8d779e44d541c3ad1f3321c4c9b8",
-      "event": "e13"
+      "version": 3,
+      "hash": "sha256:5aa8d200daf1d9c2340575452e594c377eff80bb6641429109a8aefa341f9c10",
+      "event": "e37"
     },
     "sections.studio.agent-gallery": {
       "element": "studio-agent-gallery",
-      "version": 4,
-      "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
-      "event": "e25"
+      "version": 5,
+      "hash": "sha256:7d43b29743ce91f88cc20b3a1ee8d53415e3567dec263e1440471a00e73bd6aa",
+      "event": "e38"
     },
     "sections.studio.leaf-header": {
       "element": "studio-leaf-header",
-      "version": 1,
-      "hash": "sha256:1b61a0fc138401c99dc6de006a2b62e7d30f3c3ccf4c2c3f753a72e04e3503ab",
-      "event": "e4"
+      "version": 2,
+      "hash": "sha256:899b7f6ace27925f99f0a49f345b23c0bf45ca7eaf628acee27783ae64f2d4a7",
+      "event": "e39"
     },
     "sections.studio.specimen": {
       "element": "studio-specimen",
-      "version": 3,
-      "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab",
-      "event": "e24"
+      "version": 4,
+      "hash": "sha256:8e9590e6c71f05db8553db38dc992d3e93e59112552af8d24144e6ba5b6a637d",
+      "event": "e40"
     },
     "sections.studio.options": {
       "element": "studio-options",
@@ -511,6 +511,54 @@
       "hash": "sha256:324f1c4646837998ff545ef9cc72ce5f1b76ed264dea745752a609053a83c036",
       "from": "option",
       "reason": "Owner-approved pin of studio-shell v7, matching the Studio folder files."
+    },
+    {
+      "id": "e37",
+      "at": "2026-11-02T22:45:00Z",
+      "by": "owner/base-release2",
+      "action": "pin",
+      "slot": "sections.studio.home",
+      "element": "studio-home",
+      "version": 3,
+      "hash": "sha256:5aa8d200daf1d9c2340575452e594c377eff80bb6641429109a8aefa341f9c10",
+      "from": "option",
+      "reason": "Owner-approved pin of studio-home v3, matching the Studio folder files."
+    },
+    {
+      "id": "e38",
+      "at": "2026-11-02T22:45:00Z",
+      "by": "owner/base-release2",
+      "action": "pin",
+      "slot": "sections.studio.agent-gallery",
+      "element": "studio-agent-gallery",
+      "version": 5,
+      "hash": "sha256:7d43b29743ce91f88cc20b3a1ee8d53415e3567dec263e1440471a00e73bd6aa",
+      "from": "option",
+      "reason": "Owner-approved pin of studio-agent-gallery v5, matching the Studio folder files."
+    },
+    {
+      "id": "e39",
+      "at": "2026-11-02T22:45:00Z",
+      "by": "owner/base-release2",
+      "action": "pin",
+      "slot": "sections.studio.leaf-header",
+      "element": "studio-leaf-header",
+      "version": 2,
+      "hash": "sha256:899b7f6ace27925f99f0a49f345b23c0bf45ca7eaf628acee27783ae64f2d4a7",
+      "from": "option",
+      "reason": "Owner-approved pin of studio-leaf-header v2, matching the Studio folder files."
+    },
+    {
+      "id": "e40",
+      "at": "2026-11-02T22:45:00Z",
+      "by": "owner/base-release2",
+      "action": "pin",
+      "slot": "sections.studio.specimen",
+      "element": "studio-specimen",
+      "version": 4,
+      "hash": "sha256:8e9590e6c71f05db8553db38dc992d3e93e59112552af8d24144e6ba5b6a637d",
+      "from": "option",
+      "reason": "Owner-approved pin of studio-specimen v4, matching the Studio folder files."
     }
   ]
 }

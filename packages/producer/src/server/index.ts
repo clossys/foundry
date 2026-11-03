@@ -39,7 +39,7 @@ export interface ProducerServerOptions {
   /** Tests and embedding applications can own process signals themselves. */
   handleSignals?: boolean;
   compilation?: CompileResult[];
-  /** Workspace holding `library/`, `selection.json` and `releases/` for the Designer gallery; defaults to `<root>/clossys`. */
+  /** Consumer `clossys/` root whose Designer slot model (`agents/designer`) feeds the gallery; defaults to `<root>/clossys`. */
   library?: string;
   /** Folder of `clossys publish --install` out dirs read by `/api/publication`; defaults to the install pipeline's own default. */
   installOut?: string;

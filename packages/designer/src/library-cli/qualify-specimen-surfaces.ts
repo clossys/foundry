@@ -87,7 +87,9 @@ export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, 
     measurements.push({ version: 1, slot: fill.slot, scope: "real", identity: surfaceRuntimeIdentity(row), source: certificate.source, compiled: certificate.compiled, compiler: evidence.compiler, command: evidence.command, checks: certificate.checks, runtime: null });
   }
   const qualified = { ...input, surfaceOptions: { ...input.surfaceOptions!, measurements: [...input.surfaceOptions!.measurements.filter(row => !native.includes(row.slot as typeof native[number])), ...measurements] } };
-  const findings = resolve(qualified).surfaces!.check.findings.filter(row => row.code === "S8" && row.severity === "error");
+  // Replay vouches only for the native specimens it measured. A held package pointer's S8 belongs to
+  // its pinned release and stays an authoritative finding for the caller, not a replay failure.
+  const findings = resolve(qualified).surfaces!.check.findings.filter(row => row.code === "S8" && row.severity === "error" && native.includes(row.subject as typeof native[number]));
   if (findings.length) fail(JSON.stringify(findings));
   return qualified;
 }

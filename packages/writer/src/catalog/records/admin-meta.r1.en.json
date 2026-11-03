@@ -10,9 +10,9 @@
   ],
   "activation": "none",
   "sourceFiles": {
-    "packages/writer/src/catalog/records/admin-voice.r1.en.json": "36b3955087f05be4345d6681b4ab969ca102ae15727679865667543a4398ba2c",
-    "packages/publisher/src/web/publisher/publisher-sections.ts": "997ba2ba303fb779b500238a69fb5125e5808d19050b9f664a3d71e508bd91ab",
-    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b37ce94713d9c1bcc7acb5da6437b162fa9078728cfd932c7e99dd722f31b5e8"
+    "packages/writer/src/catalog/records/admin-voice.r1.en.json": "493eb75ddec5d75a5430bbacea2212c346837c554dea8ad3ded9bead404e6e06",
+    "packages/publisher/src/web/publisher/publisher-sections.ts": "0fa778db70effc53426b213058037569fe5583228569b9a038bf8a562f0329be",
+    "packages/publisher/src/web/publisher/ProductionSettingsForm.tsx": "b31967b602b3500216ee76be0cfb888a0018b47ec221eff6bcb30de7ed762b44"
   },
   "records": [
     {
@@ -15133,7 +15133,7 @@
   "coverage": {
     "kind": "planned binding fixture; not rendered-page coverage",
     "productionBound": 0,
-    "proposedBindings": 412,
+    "proposedBindings": 411,
     "draftRecords": 39,
     "reusedExistingRecords": 7
   },
@@ -15458,24 +15458,24 @@
         "st.9bf70w4rjw"
       ],
       "sourceFiles": {
-        "packages/publisher/src/formats/slots/formats.ts": "9ef3af11a3847037d1e465a3a0688f3f0853f633246e5cd2c572683efc68f9d1",
-        "packages/designer/src/catalog/slots/frames.json": "87405cb53f09694f962a01574ca26b24e9fca47849a7fa5d67c4fdefe51c4f09",
-        "packages/publisher/src/layouts/slots/layouts.json": "b4bd5486785f5975a4ea996aad5711a379253be6b1ec8024236367d4f877f15f",
-        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "40c75828b3f6aee0173b436a09d7655efc78f3bb0ada61fdec0501245edd786a",
-        "packages/publisher/src/formats/contract.ts": "3157f9500c0832c45717e0a98d10816551df67fd7934e548b1c67d318075688b",
-        "packages/publisher/src/planning/configuration.ts": "963ff789d7e814de3adf62bca9ad1344463314fdef42a10834d65a5664f9984e",
-        "packages/publisher/src/planning/menu.ts": "cbd5b9bf80a6dcfb8d279e60e72e5e56a82cabbbcb88dc3cb5ed60869ebe4bbb",
-        "packages/publisher/src/web/publisher/PublisherPlanView.tsx": "d5fc7ec7bbc425297d09ea606643f08ae2c4d5d6b4e0bc8916b82ec7e6873162",
+        "packages/publisher/src/formats/slots/formats.ts": "2767f227c2c1cdf96e8d972e53c915e1879c654776e3c17188a92ee9ca2c4a8d",
+        "packages/designer/src/catalog/slots/frames.json": "4afddf0f2ba37dbbd8156a16df3660d618f62d5e29f4e7fe3e2335674ce52db7",
+        "packages/publisher/src/layouts/slots/layouts.json": "426bea89fb7f046ddffdbab34d2265b928e664638c30682060b44a39320983e6",
+        "packages/publisher/src/web/publisher/__fixtures__/standard-website.ts": "3a0c0ade71b7188e2322500e48c551d78442863b533000f9ae96cd3f07cbe48b",
+        "packages/publisher/src/formats/contract.ts": "037ffa3d60f4a8de9dc490d9659b8623be3eebcc80fab2b2f8b00f54890880c5",
+        "packages/publisher/src/planning/configuration.ts": "1d4dbc3177dc80418047770b73d443ca4be7ca4436b65d3a773e9a7a6dab8404",
+        "packages/publisher/src/planning/menu.ts": "cd3af7a990a125c903ac1fbb2d2b26d7f20d96f57195d0fb3b646d200ecffb38",
+        "packages/publisher/src/web/publisher/PublisherPlanView.tsx": "3cfaa66a22a5168bf8e26eb49ca9d0e1c65508cd24411d550b0a8cff3d0be0af",
         "packages/publisher/src/web/publisher/app/pipeline.ts": "2e1745ef009b9a1354443d0807cb505f3dc2fae0e12851ad45cda330d1a2a9ec",
         "packages/publisher/src/content/vocabulary.ts": "8f8fa24835357bb2afcf974f9d61ef8bec66454d137b8c6e0ec69f6c2c87efd9",
         "packages/publisher/src/layouts/ids.ts": "bde2165cbde45266ce6ff6fbfad2a54bb2a1847c1f4e08f13efb827d4330c44f",
         "packages/publisher/src/planning/channel-ids.ts": "44d4c43b906300fc3996ed425ee14c522c1772e559740f08d969dd5f8ad4dcac",
         "packages/publisher/src/web/publisher/app/inventory.ts": "dad5bcb7148edbd3ed43259dffb278349ff9a9eb234ae08f31bdcd2db51a456c",
-        "packages/publisher/src/core/instance-binding.ts": "b89d2814f7a72fba2689576d184a82401c89ce522677b7b432b01ac65b427577",
+        "packages/publisher/src/core/instance-binding.ts": "e81bf33f3f906de6bee518f6df1185a6f7fb3f5d70103e291dd9ccfa628c94fb",
         "packages/publisher/src/web/publisher/pipeline.ts": "b7243d27c10b15d210d67433050602d55ffacea4959f28d48421e0a8b617158e",
-        "packages/designer/src/frames/app-frame-contract.check.tsx": "5d9ae4799720a030153dfd81803b1b88021d3d7124281803c630836192a5186e",
-        "packages/publisher/src/content/composition.ts": "e7852c95c690c3cf59c43adb965543f614a38c005e68ddd84f7ffc8f095ae553",
-        "packages/publisher/src/core/instance-binding.check.ts": "9d3675ac686e9a48cbc99544edb5e477ef889b3ddfe1440bcbf1ffe76fd41634"
+        "packages/designer/src/frames/app-frame-contract.check.tsx": "4814b0fe9f0eeb242e146857f0b25c7e0fb352463e07c2dd8ad8c609b6d52722",
+        "packages/publisher/src/content/composition.ts": "b9be0459790b18b1224c4ddeff6fba7e15473f5e7ae14b0ed326d2bd3045807f",
+        "packages/publisher/src/core/instance-binding.check.ts": "bb88501aa54d81ab7c214d824e0774312cb8fa4ca5847c21b63ed7530fb16138"
       },
       "revisions": [],
       "defaults": [
@@ -15731,6 +15731,96 @@
       "recordId": "st.y4xznsjmw8",
       "source": "common-labels.r1.en.json",
       "sourceContext": "admin.enum.warning"
+    },
+    {
+      "recordId": "st.z5cgvzw0ca",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.9s1q0wnyey",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.nq1kmmfacm",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Designer console"
+    },
+    {
+      "recordId": "st.fck5fxw34e",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.0xv50r43am",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.htywy6hbk2",
+      "source": "admin-voice.r1.en.json",
+      "sourceContext": "Publisher console"
+    },
+    {
+      "recordId": "st.w3ddpdtqay",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.document"
+    },
+    {
+      "recordId": "st.njmrezf88j",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.site-shell"
+    },
+    {
+      "recordId": "st.rtxryd7cfz",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.app-shell"
+    },
+    {
+      "recordId": "st.4wj43903kc",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.site-header"
+    },
+    {
+      "recordId": "st.8hvjvvw83e",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.app-header"
+    },
+    {
+      "recordId": "st.z76k5drqae",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.app-sidebar"
+    },
+    {
+      "recordId": "st.pqyk75vw6x",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.inspector"
+    },
+    {
+      "recordId": "st.b0empz5tp2",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.site-footer"
+    },
+    {
+      "recordId": "st.b0jrfbc3my",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.item.frames.command"
+    },
+    {
+      "recordId": "st.rd1wks5c2n",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.sheet.placement.start"
+    },
+    {
+      "recordId": "st.q8zq27jzn6",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.sheet.placement.end"
+    },
+    {
+      "recordId": "st.v7t7c2pr8y",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.frameOption.frames.site-footer.overlay.off"
     }
   ]
 }

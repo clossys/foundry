@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import * as components from "../components/index.js";
 import * as blocks from "../blocks/index.js";
 import * as frames from "../frames/index.js";
@@ -15,20 +15,17 @@ import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
-import { componentLeaf } from "../runtime/component-leaf.js";
-import { renderNativeSpecimenViewport } from "../../../producer/studio/lib/native-specimen-preview.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { emittedDesignerSpecimenContext } from "./emitted-specimens.js";
-import type { SpecimenSurfaceRenderRequest } from "./specimen-layouts.js";
 import { surfaceSpecimenItems, SpecimenSectionViewports } from "./specimen-viewports.js";
 
 let context: DesignerSpecimenContext;
 const labels = { showAllVariants: (count: number) => `All ${count}` };
 const need = ({ reason }: { leaf: string; reason: string }) => <components.SemanticContent as="p" role="status">{reason}</components.SemanticContent>;
-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); document.querySelectorAll("[data-native-preview-test-style]").forEach(node => node.remove()); document.documentElement.removeAttribute("data-native-preview-test-revision"); });
+afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 beforeAll(async () => {
   const valuesCatalog = loadCatalog();
@@ -76,113 +73,4 @@ it("refuses missing declared parts under the authenticated selected provider wit
   expect(view.container.querySelector("iframe,[data-designer-specimen-frame]")).toBeNull();
 });
 
-const SelectedContent = componentLeaf<typeof components.SemanticContent>("components.semantic-content");
-
-/** Deterministic browser measurement boundary; the real iframe, portal and selected components still mount. */
-function measurementBoundary(initialContainerWidth: number, initialViewportWidth: number) {
-  let containerWidth = initialContainerWidth, viewportWidth = initialViewportWidth;
-  const observers: BoundaryResizeObserver[] = [];
-  class BoundaryResizeObserver implements ResizeObserver {
-    readonly targets = new Set<Element>();
-    readonly disconnect = vi.fn(() => this.targets.clear());
-    constructor(private readonly callback: ResizeObserverCallback) { observers.push(this); }
-    observe(target: Element) { this.targets.add(target); }
-    unobserve(target: Element) { this.targets.delete(target); }
-    notify() { this.callback(Array.from(this.targets, target => ({ target, contentRect: { width: target.clientWidth, height: target.scrollHeight } }) as ResizeObserverEntry), this); }
-  }
-  vi.stubGlobal("ResizeObserver", BoundaryResizeObserver);
-  vi.spyOn(Element.prototype, "clientWidth", "get").mockImplementation(() => containerWidth);
-  const computedStyle = window.getComputedStyle.bind(window);
-  vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) => {
-    const result = computedStyle(element, pseudo);
-    if (!(element instanceof HTMLElement) || element.style.visibility !== "hidden" || element.style.position !== "absolute") return result;
-    return new Proxy(result, { get(target, key) {
-      if (key === "inlineSize") return `${viewportWidth}px`;
-      const value = Reflect.get(target, key, target);
-      return typeof value === "function" ? value.bind(target) : value;
-    } });
-  });
-  const notify = () => act(() => { for (const observer of observers) observer.notify(); });
-  return {
-    observers, notify,
-    resize(container: number, viewport = viewportWidth) { containerWidth = container; viewportWidth = viewport; notify(); },
-    frame(frame: HTMLIFrameElement, documentHeight: () => number) {
-      const document = frame.contentDocument!, view = frame.contentWindow!;
-      Object.defineProperty(view, "ResizeObserver", { configurable: true, value: BoundaryResizeObserver });
-      Object.defineProperty(view, "requestAnimationFrame", { configurable: true, value: (callback: FrameRequestCallback) => view.setTimeout(() => callback(performance.now()), 0) });
-      Object.defineProperty(view, "cancelAnimationFrame", { configurable: true, value: (handle: number) => view.clearTimeout(handle) });
-      Object.defineProperty(document.body, "scrollHeight", { configurable: true, get: documentHeight });
-      return { document, view };
-    },
-  };
-}
-
-it("measures the native iframe scale, live document height and portal revisions and releases observers/listeners", async () => {
-  const boundary = measurementBoundary(480, 1280), widths: number[] = [];
-  const addWindow = vi.spyOn(window, "addEventListener"), removeWindow = vi.spyOn(window, "removeEventListener");
-  const stylesheet = document.createElement("style"); stylesheet.setAttribute("data-native-preview-test-style", ""); document.head.append(stylesheet);
-  document.documentElement.setAttribute("data-native-preview-test-revision", "one");
-  let height = 900;
-  const draw = (revision: string) => selected(renderNativeSpecimenViewport({ Content: SelectedContent, leaf: "sections.content", width: "var(--breakpoint-desktop)", need, children: width => { widths.push(width); return <SelectedContent as="p">{revision}</SelectedContent>; } }));
-  const view = render(draw("Native revision one"));
-  const frame = await waitFor(() => {
-    const frame = view.container.querySelector("iframe");
-    expect(frame).toBeTruthy(); return frame!;
-  });
-  const native = boundary.frame(frame, () => height);
-  const addDocument = vi.spyOn(native.document, "addEventListener"), removeDocument = vi.spyOn(native.document, "removeEventListener");
-  fireEvent.load(frame);
-  await waitFor(() => expect(native.document.body).toHaveTextContent("Native revision one"));
-  await waitFor(() => expect(frame).toHaveAttribute("height", "900"));
-  expect(widths.at(-1)).toBe(1280);
-  expect(frame).toHaveAttribute("width", "1280");
-  expect((frame.parentElement as HTMLElement).style.zoom).toBe(String(480 / 1280));
-  expect(frame).toHaveAttribute("sandbox", "allow-same-origin");
-  expect(frame).toHaveAttribute("tabindex", "-1");
-  expect(frame).toHaveStyle({ pointerEvents: "none", border: "0px" });
-  expect(native.document.querySelector("[data-designer-specimen-frame='sections.content']")).toHaveAttribute("inert");
-  expect(native.document.head.querySelector("[data-native-preview-test-style]")).toBeTruthy();
-  expect(native.document.documentElement).toHaveAttribute("data-native-preview-test-revision", "one");
-  stylesheet.textContent = "/* live selected stylesheet revision */";
-  document.documentElement.setAttribute("data-native-preview-test-revision", "two");
-  await waitFor(() => expect(native.document.head.querySelector("[data-native-preview-test-style]")?.textContent).toBe("/* live selected stylesheet revision */"));
-  expect(native.document.documentElement).toHaveAttribute("data-native-preview-test-revision", "two");
-
-  height = 350; boundary.notify();
-  await waitFor(() => expect(frame).toHaveAttribute("height", "350"));
-  height = 1100; boundary.notify();
-  await waitFor(() => expect(frame).toHaveAttribute("height", "1100"));
-  boundary.resize(640);
-  await waitFor(() => expect((frame.parentElement as HTMLElement).style.zoom).toBe(String(640 / 1280)));
-  view.rerender(draw("Native revision two"));
-  await waitFor(() => expect(native.document.body).toHaveTextContent("Native revision two"));
-  expect(view.container.querySelector("iframe")).toBe(frame);
-
-  const resizeListener = addWindow.mock.calls.find(([name]) => name === "resize")?.[1];
-  const loadListener = addDocument.mock.calls.find(([name, , capture]) => name === "load" && capture === true)?.[1];
-  expect(resizeListener).toBeTypeOf("function"); expect(loadListener).toBeTypeOf("function");
-  expect(boundary.observers.some(observer => observer.targets.has(native.document.body))).toBe(true);
-  view.unmount();
-  expect(boundary.observers.every(observer => observer.disconnect.mock.calls.length > 0)).toBe(true);
-  expect(removeWindow).toHaveBeenCalledWith("resize", resizeListener);
-  expect(removeDocument).toHaveBeenCalledWith("load", loadListener, true);
-  expect(native.document.querySelector("[data-designer-specimen-frame]")).toBeNull();
-});
-
-it("routes measured native widths through the declared surface part to the actual selected fixture", async () => {
-  const boundary = measurementBoundary(480, 1280);
-  const renderSurface = vi.fn(({ leaf, width, state }: SpecimenSurfaceRenderRequest) => context.surfaces![leaf]!.render({ width, state }));
-  const cases = surfaceSpecimenItems(context, "sections.content");
-  const view = render(selected(<SpecimenSectionViewports items={cases.items.slice(0, 1)} context={context} need={need} labels={labels} renderParts={{ "sections.specimen-section-viewports": { renderViewport: renderNativeSpecimenViewport, renderSurface } }} />));
-  const frame = await waitFor(() => {
-    const frame = view.container.querySelector("iframe");
-    expect(frame).toBeTruthy(); return frame!;
-  });
-  const native = boundary.frame(frame, () => 900);
-  fireEvent.load(frame);
-  await waitFor(() => expect(native.document.querySelector("[data-ds-leaf='sections.content']")).toBeTruthy());
-  expect(renderSurface).toHaveBeenLastCalledWith({ leaf: "sections.content", width: 1280, state: "default" });
-  boundary.resize(480, 1440);
-  await waitFor(() => expect(renderSurface).toHaveBeenLastCalledWith({ leaf: "sections.content", width: 1440, state: "default" }));
-  expect(frame).toHaveAttribute("width", "1440");
-});
+// The live iframe measurement and surface-dispatch cases exercised the retired Producer viewport adapter (aa395d885).

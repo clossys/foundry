@@ -16,15 +16,21 @@ const sectionId = value => typeof value === "string" && /^sections\.[a-z][a-z0-9
 const passageId = id => `passages.${id.slice("sections.".length)}`;
 const requireSource = (condition, message) => { if (!condition) throw new Error(message); };
 const canonical = value => `${JSON.stringify(value, null, 2)}\n`;
+// Specimen sections are Studio previews whose labels are host copy; Writer
+// mirrors only content sections, so specimens and their emptied IA groups are
+// left out of the passage catalog.
+const specimenId = id => id.startsWith("sections.specimen-");
 
 /** Pure derivation: copy is an opaque snapshot, never inferred from section slots. */
 export function derivePassages(sourceIa, sourceSlots) {
   requireSource(object(sourceIa) && sourceIa.layer === "sections" && Array.isArray(sourceIa.nodes) && sourceIa.nodes.length > 0, "Source IA requires sections layer and L1 nodes");
   requireSource(Array.isArray(sourceSlots) && sourceSlots.length > 0, "Source section slots must be a nonempty array");
   const sections = new Map();
+  const specimens = new Set();
   for (const row of sourceSlots) {
     requireSource(object(row) && sectionId(row.id) && row.layer === "sections", "Source slot requires a sections id and layer");
-    requireSource(!sections.has(row.id), `Duplicate section slot: ${row.id}`);
+    requireSource(!sections.has(row.id) && !specimens.has(row.id), `Duplicate section slot: ${row.id}`);
+    if (specimenId(row.id)) { specimens.add(row.id); continue; }
     requireSource(object(row.contract) && row.contract.kind === "section", `Missing section contract: ${row.id}`);
     requireSource(row.contract.passageSchema === passageId(row.id), `Source passageSchema must pair with ${row.id}`);
     requireSource(object(row.contract.copy) && typeof row.contract.copy.sourceLocale === "string" && row.contract.copy.sourceLocale.length > 0 && Array.isArray(row.contract.copy.fields), `Missing copy schema: ${row.id}`);
@@ -46,17 +52,20 @@ export function derivePassages(sourceIa, sourceSlots) {
     for (const l2 of l1.children) {
       checkNode(l2);
       requireSource(Array.isArray(l2.leaves) && l2.leaves.length > 0 && !Object.hasOwn(l2, "children"), `Source L2 requires leaves: ${l2.id}`);
-      l2.leaves = l2.leaves.map(id => {
+      l2.leaves = l2.leaves.flatMap(id => {
         requireSource(sectionId(id), `Invalid section placement: ${String(id)}`);
-        requireSource(sections.has(id), `Unknown section placement: ${id}`);
+        requireSource(sections.has(id) || specimens.has(id), `Unknown section placement: ${id}`);
         requireSource(!placements.has(id), `Duplicate section placement: ${id}`);
         placements.add(id);
-        return passageId(id);
+        return specimens.has(id) ? [] : [passageId(id)];
       });
     }
+    l1.children = l1.children.filter(l2 => l2.leaves.length > 0);
   }
+  ia.nodes = ia.nodes.filter(l1 => l1.children.length > 0);
+  for (const id of specimens) requireSource(placements.has(id), `Missing section placement: ${id}`);
   for (const id of sections.keys()) requireSource(placements.has(id), `Missing section placement: ${id}`);
-  const slots = sourceSlots.map(row => ({
+  const slots = sourceSlots.filter(row => !specimenId(row.id)).map(row => ({
     id: row.contract.passageSchema,
     layer: "passages",
     contract: {

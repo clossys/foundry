@@ -290,8 +290,7 @@
           "id": "imagery-patterns",
           "label": "Patterns",
           "slots": [
-            "assets.pattern",
-            "assets.backdrop-graphic"
+            "assets.pattern"
           ]
         }
       ]
@@ -629,6 +628,7 @@
           "slots": [
             "sections.content",
             "sections.article",
+            "sections.sectioned-document",
             "sections.legal-prose"
           ]
         },

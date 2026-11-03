@@ -3,27 +3,31 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { consumerFontFile, consumerGlobals, pinnedFonts } from './designer-globals.js';
+import { sha256Hex } from '../records/hash.js';
+import { candidatesDir, iaPath, jsonBytes, pinFile, slotDir, slotFile, slotPositions, type IaDoc } from '../records/slot-model/index.js';
 
-const HASH = `sha256:${'a'.repeat(64)}`;
 const roots: string[] = [];
 function put(path: string, content: string) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, content); }
 
-/** A consumer whose globals name a hand-picked family and whose selection pins a different font item. */
+/** A consumer whose globals name a hand-picked family and whose Designer slot model pins a different font item. */
 function workspace(): string {
   const root = mkdtempSync(join(tmpdir(), 'designer-globals-'));
   roots.push(root);
   const lib = join(root, 'clossys');
   put(join(lib, 'package.json'), '{"name":"consumer","private":true}');
   put(join(lib, 'agents/designer/globals.css'), '@import "tailwindcss";\n@theme inline {\n  --font-heading: var(--font-display);\n}\n:root { --font-display: "Hand Picked"; }\n');
-  put(join(lib, 'selection.json'), JSON.stringify({
-    schema: 'clossys.selection/1',
-    pins: { 'themes.font-heading': { element: 'font-heading-pinned', version: 1, hash: HASH, event: 'e1' } },
-    history: [{ id: 'e1', at: '2026-10-31T00:00:00Z', by: 'test', action: 'pin', slot: 'themes.font-heading', element: 'font-heading-pinned', version: 1, hash: HASH }],
-  }));
-  put(join(lib, 'library/themes.font-heading/font-heading-pinned/v1/registry-item.json'), JSON.stringify({
-    name: 'font-heading-pinned', type: 'registry:font',
+  const slot = 'themes.font-heading';
+  const ia: IaDoc = { schema: 'clossys.ia/1', source: 'consumer#fixture', extensions: [], nodes: [{ id: 'themes.typography', label: 'Typography', children: [{ id: 'fonts', label: 'Fonts', slots: [slot] }] }] };
+  const position = slotPositions('designer', ia).get(slot)!, dir = slotDir(lib, 'designer', position, slot);
+  put(iaPath(lib, 'designer'), jsonBytes(ia));
+  put(slotFile(dir), jsonBytes({ schema: 'clossys.slot/1', id: slot, agent: 'designer', kind: 'element', ia: position, contract: {}, inputs: [], uses: [] }));
+  const candidate = jsonBytes({
+    name: 'font-heading-pinned', type: 'registry:font', files: [],
     font: { family: "'Pinned Face Variable', sans-serif", variable: '--font-heading', dependency: '@fontsource-variable/pinned-face' },
-  }));
+    meta: { slot, source: { kind: 'registry', ref: ['fontsource:pinned-face'] } },
+  });
+  put(join(candidatesDir(dir), 'font-heading-pinned-v1.json'), candidate);
+  put(pinFile(dir), jsonBytes({ candidate: 'font-heading-pinned-v1.json', sha256: sha256Hex(candidate), pinnedBy: 'owner:fixture', at: '2026-10-31T00:00:00Z' }));
   const pkg = join(lib, 'node_modules/@fontsource-variable/pinned-face');
   put(join(pkg, 'package.json'), '{"name":"@fontsource-variable/pinned-face","version":"5.0.0","main":"index.css"}');
   put(join(pkg, 'index.css'), "@font-face { font-family: 'Pinned Face Variable'; src: url(./files/pinned-face.woff2) format('woff2'); }\n");

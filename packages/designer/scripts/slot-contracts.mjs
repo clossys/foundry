@@ -1,11 +1,17 @@
 #!/usr/bin/env node
-// Slot contracts (clossys.slot-contract/1) for the Home page section and frame L3 slots.
-// Source-only: reads the slot catalog, references/manifest.json and the pinned reference
-// folders, never the network. `--write` regenerates src/catalog/slot-contracts/*.json;
-// `--check` fails when the committed files are stale or a reference does not resolve.
+// Slot contracts (clossys.slot-contract/1) for every canonical Designer L3 slot: themes,
+// assets, components, sections and frames. Source-only: reads the slot catalog
+// (src/catalog/slots/<layer>.json), the IA (src/catalog/ia/<layer>.json),
+// scripts/slot-contract-overrides.json, references/manifest.json and the pinned reference
+// folders, never the network. Each record is derived from the slot's embedded catalog
+// contract; the overrides file supplies hand-written purposes, references and limits, and a
+// slot whose references are listed there is a hand record that stays authoritative.
+// `--write` regenerates src/catalog/slot-contracts/<layer>.json; `--check` fails when a
+// committed file is stale or slotContractFindings reports anything, including a canonical
+// slot without a record.
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import assert from "node:assert/strict";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -15,7 +21,10 @@ assert(args.length === 1 && ["--check", "--write"].includes(args[0]), "usage: sl
 
 const SCHEMA = "clossys.slot-contract/1";
 const PACKAGE = "designer";
+const LAYERS = ["themes", "assets", "components", "sections", "frames"];
 const manifest = json("references/manifest.json");
+const overrides = json("scripts/slot-contract-overrides.json");
+assert.equal(overrides.schema, "clossys.slot-contract-overrides/1");
 const themeLeaves = json("src/catalog/slots/themes.json").map(slot => slot.id);
 
 const ref = (registry, item) => {
@@ -23,23 +32,10 @@ const ref = (registry, item) => {
   assert(row, `references/manifest.json has no ${registry}/${item}`);
   return { registry, item, version: row.version, hash: row.hash };
 };
-const mist = item => ref("tailark-oss", item);
+const named = spec => { const at = spec.indexOf("/"); return ref(spec.slice(0, at), spec.slice(at + 1)); };
+// A slot's derived references: the direct manifest rows fetched for it, in manifest order.
+const derivedRefs = id => manifest.items.filter(row => row.direct && (row.slots ?? []).includes(id)).map(row => ref(row.registry, row.name));
 
-// The Home page L3 slots and the shared section shell they compose. Every other mapped section or frame slot stays mapped with no
-// contract (consumed-only rule). `blocked` names a reference the map requires but this
-// package's references/ does not hold; the contract records it as a limit, never a ref.
-// The shared section shell. Every section whose catalog anatomy names `band` composes
-// `sections.band` (ground, measure, rhythm) and, when it names `header`,
-// `sections.section-header`. The band item is the only place section spacing, container
-// width and the type ramp are defined; it emits them as Tailwind theme variables so a
-// section writes `py-section`, `mt-stack`, `max-w-measure`, `text-heading` and never a number.
-// Token names are the contract; values belong to the consumer's band item.
-const SHELL_TOKENS = {
-  rhythm: ["--spacing-section", "--spacing-section-compact", "--spacing-stack"],
-  gutter: ["--spacing-gutter"],
-  measure: ["--container-measure-prose", "--container-measure", "--container-measure-wide"],
-  type: ["--text-display", "--text-heading", "--text-title", "--text-lead", "--text-figure"],
-};
 // Class-wide section rules, recorded on every contract that composes the band.
 const SECTION_RULES = {
   "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
@@ -47,26 +43,6 @@ const SECTION_RULES = {
   "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
   "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
   "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
-};
-
-const SEED = {
-  sections: [
-    { slot: "sections.band", purpose: "Shared section shell every section composes: ground, measure (container width and gutter) and vertical rhythm, and the single source of the section type ramp.", references: [mist("mist-content-1")], limits: { "measure": "prose|content|wide", "rhythm": "standard|compact", "emits.theme": Object.values(SHELL_TOKENS).flat().join(",") } },
-    { slot: "sections.section-header", purpose: "Shared section header: optional eyebrow, one heading, optional description and up to two actions, sized by density from the band type ramp.", references: [mist("mist-features-1")], limits: { "density": "display|standard|compact", "type.display": "--text-display", "type.standard": "--text-heading", "type.compact": "--text-title", "type.lead": "--text-lead" } },
-    { slot: "sections.hero", purpose: "Opening band of a marketing page: one heading, an optional eyebrow and description, up to two calls to action and optional media.", references: [mist("mist-hero-section-1")] },
-    { slot: "sections.features", purpose: "Grid of product features, each a heading with an optional description and icon, under an optional section header.", references: [mist("mist-features-1")] },
-    { slot: "sections.comparison", purpose: "Plan or product comparison table: rows of capabilities against columns of offers.", references: [mist("mist-comparator-1"), ref("assistant-ui", "elements-comparison-card")] },
-    { slot: "sections.pricing", purpose: "Pricing tiers, each with a name, price, feature list and one call to action.", references: [mist("mist-pricing-1")] },
-    { slot: "sections.call-to-action", purpose: "Closing band that repeats the page's primary and secondary actions under one heading.", references: [mist("mist-call-to-action-1")] },
-    { slot: "sections.form", purpose: "Contact-style form band: labelled fields with descriptions and errors, one submit action, and optional error summary, success and anti-spam regions.", references: [ref("shadcn", "field"), ref("shadcn", "label"), ref("shadcn", "input"), ref("shadcn", "textarea"), ref("shadcn", "button")], limits: { "references.blocked": "@shadcn/form is served empty by the radix-nova registry; @shadcn/field is its successor" } },
-    { slot: "sections.legal-prose", purpose: "Long-form legal document (privacy, terms): one heading, an optional revision line and a typographic prose body.", references: [ref("tailwindcss-typography", "typography")] },
-    { slot: "sections.steps", purpose: "Ordered process steps laid out as one timeline, horizontal where the steps fit side by side and vertical below, each with a heading, optional description and ordinal.", references: [ref("diceui", "timeline")], limits: { orientation: "horizontal|vertical", "orientation.rule": "one timeline whose orientation follows the measure: horizontal from lg, vertical below; never two renderings or a scroll region" } },
-  ],
-  frames: [
-    { slot: "frames.site-header", purpose: "Marketing site header: brand, primary navigation and header actions, collapsing to a menu on small screens.", references: [mist("mist-hero-section-1-header")], limits: { "compose.measure": "sections.band" } },
-    { slot: "frames.site-footer", purpose: "Marketing site footer: link columns, legal line and social links.", references: [mist("mist-footer-1")], limits: { "compose.measure": "sections.band" } },
-    { slot: "frames.site-shell", purpose: "Marketing page shell: skip link, site header, main landmark, site footer and the toast region.", references: [mist("mist-hero-section-1-header"), mist("mist-footer-1"), ref("shadcn", "sonner"), ref("diceui", "skip-nav")], limits: { skipTarget: "main-content" } },
-  ],
 };
 
 // shadcn/Tailwind v4 utilities a reference uses, mapped to the themes leaves that back them.
@@ -97,44 +73,142 @@ function referenceSource(reference) {
   assert(existsSync(dir), `missing reference folder references/${relative(resolve(root, "references"), dir)}`);
   return files(dir).filter(path => /\.(?:tsx?|jsx?)$/.test(path)).sort().map(path => readFileSync(path, "utf8")).join("\n");
 }
+// Theme reads a rendered slot makes: those its references use and the slot allows (required);
+// with no reference to read, every allowed read (optional).
+function themeInputs(definition, references) {
+  const allowed = definition.allowedReads?.themes ?? [];
+  if (!references.length) return allowed.map(id => ({ name: id, kind: "theme", required: false }));
+  return themeReads(references.map(referenceSource).join("\n")).filter(id => allowed.includes(id)).map(id => ({ name: id, kind: "theme", required: true }));
+}
+const assetInputs = definition => (definition.allowedReads?.assets ?? []).map(id => ({ name: id, kind: "asset", required: false }));
 
-function contract(layer, seed, slot) {
-  const definition = slot.contract;
-  const allowedThemes = definition.allowedReads?.themes ?? [];
-  const scanned = themeReads(seed.references.map(referenceSource).join("\n"));
+// Section and frame records: copy keys, regions, theme and asset reads, and the section shell.
+function composed(layer, override, definition, references) {
   const limits = {};
   for (const port of definition.slots ?? []) if (port.max !== undefined) limits[`${port.name ?? port.id}.max`] = port.max;
   for (const field of definition.copy?.fields ?? []) if (field.maxLength?.en !== undefined) limits[`${field.key}.maxLength.en`] = field.maxLength.en;
   const anatomy = definition.anatomy ?? {};
   if (anatomy.band) Object.assign(limits, { "compose.band": anatomy.band, ...SECTION_RULES });
   if (anatomy.header) limits["compose.header"] = anatomy.header;
-  if (seed.limits?.["compose.measure"]) Object.assign(limits, { "rule.spacing": SECTION_RULES["rule.spacing"], "rule.overflow": SECTION_RULES["rule.overflow"] });
-  Object.assign(limits, seed.limits ?? {});
+  if (override.limits?.["compose.measure"]) Object.assign(limits, { "rule.spacing": SECTION_RULES["rule.spacing"], "rule.overflow": SECTION_RULES["rule.overflow"] });
+  const copy = definition.copy?.fields ?? [];
+  // Frames bind their regions as cells; a section with no copy binds its regions instead.
+  const cells = layer === "frames" || !copy.length ? (definition.slots ?? []) : [];
   const inputs = [
-    ...(definition.copy?.fields ?? []).map(field => ({ name: field.key, kind: "copy", required: field.required === true })),
-    ...(layer === "frames" ? (definition.slots ?? []).map(port => ({ name: port.name ?? port.id, kind: "cell", required: port.required === true })) : []),
-    ...scanned.filter(id => allowedThemes.includes(id)).map(id => ({ name: id, kind: "theme", required: true })),
-    ...(definition.allowedReads?.assets ?? []).map(id => ({ name: id, kind: "asset", required: false })),
+    ...copy.map(field => ({ name: field.key, kind: "copy", required: field.required === true })),
+    ...cells.map(port => ({ name: port.name ?? port.id, kind: "cell", required: port.required === true })),
+    ...themeInputs(definition, references),
+    ...assetInputs(definition),
   ];
+  return { inputs, limits };
+}
+
+const MODES = modes => modes.length === 2 ? `${modes[0]} and ${modes[1]} modes` : `${modes.join(", ")} mode`;
+const list = names => names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names.at(-1)}` : names[0];
+const TOKEN = { color: "Color", duration: "Motion", fontFamily: "Font family", dimension: "Dimension", shadow: "Shadow", number: "Number" };
+const VALUE = { svg: "SVG", glyph: "Glyph", rules: "Rules" };
+const title = id => { const name = id.slice(id.indexOf(".") + 1).replace(/-/g, " "); return name[0].toUpperCase() + name.slice(1); };
+
+// Theme tokens: one value per member, emitted as the member's CSS variable in every mode.
+function token(definition, where) {
+  const members = definition.members.names;
+  const vars = members.map(member => definition.emit[member]);
   return {
-    schema: SCHEMA, slot: seed.slot, package: PACKAGE, layer, purpose: seed.purpose, inputs,
-    limits: Object.fromEntries(Object.entries(limits).sort(([a], [b]) => a < b ? -1 : 1)),
-    references: seed.references, checkSuite: `designer.slot-contracts.${layer}`, specimenKind: "visual",
+    purpose: `${TOKEN[definition.$type]} token emitted as ${list(vars)} (${definition.tier} tier; ${MODES(definition.modes)}), under ${where}.`,
+    inputs: members.map(member => ({ name: member, kind: "data", required: true, description: `DTCG ${definition.$type} value for ${definition.emit[member]} in ${MODES(definition.modes)}` })),
+    limits: { "$type": definition.$type, tier: definition.tier, modes: definition.modes.join(","), "members.mode": definition.members.mode, ...Object.fromEntries(members.map(member => [`emit.${member}`, definition.emit[member]])) },
   };
 }
 
+// Assets: one file per closed member (optional members marked), or an open set of named entries.
+function asset(definition, where) {
+  const open = definition.members.mode === "open";
+  const members = open ? [] : definition.members.names;
+  const optional = new Set(definition.optional ?? []);
+  const kindOf = member => definition.memberKinds?.[member] ?? definition.valueKind;
+  const limits = { valueKind: definition.valueKind, modes: definition.modes.join(","), "members.mode": definition.members.mode };
+  if (open) limits["members.pattern"] = definition.members.pattern;
+  if (definition.grid !== undefined) limits.grid = definition.grid;
+  for (const member of members) if (kindOf(member) !== definition.valueKind) limits[`member.${member}.kind`] = kindOf(member);
+  return {
+    purpose: `${VALUE[definition.valueKind]} asset ${open ? "with an open set of named entries" : `with ${members.length === 1 ? "member" : "members"} ${list(members)}`}${definition.grid ? ` on a ${definition.grid}px grid` : ""}, under ${where}.`,
+    inputs: open
+      ? [{ name: "entries", kind: "data", required: true, description: `named ${definition.valueKind} entries whose names match ${definition.members.pattern}` }]
+      : members.map(member => ({ name: member, kind: "data", required: !optional.has(member), description: `${kindOf(member)} file for the ${member} member` })),
+    limits,
+  };
+}
+
+// Components: props and member axes, theme and asset reads, and what the component composes.
+function component(id, definition, where, references) {
+  const axes = new Map();
+  for (const name of definition.members?.names ?? []) { const [axis, value] = name.split("."); axes.set(axis, [...(axes.get(axis) ?? []), ...(value ? [value] : [])]); }
+  const props = definition.props ?? [];
+  const limits = { root: definition.root, "members.mode": definition.members.mode, members: definition.members.names.join(",") };
+  if (definition.apg) limits.apg = definition.apg;
+  if (definition.composes?.length) limits["compose.components"] = definition.composes.join(",");
+  return {
+    purpose: `${title(id)} component (root ${definition.root}${definition.apg ? `; APG ${definition.apg} pattern` : ""}), under ${where}.`,
+    inputs: [
+      ...props.map(name => ({ name, kind: "prop", required: false })),
+      ...[...axes].filter(([axis]) => !props.includes(axis)).map(([axis, values]) => ({ name: axis, kind: "prop", required: false, description: values.length ? `member axis: ${values.join(" | ")}` : "member flag" })),
+      ...themeInputs(definition, references),
+      ...assetInputs(definition),
+    ],
+    limits,
+  };
+}
+
+function record(layer, slot, where) {
+  const override = overrides.slots[slot.id] ?? {};
+  const definition = slot.contract;
+  const references = override.references ? override.references.map(named) : derivedRefs(slot.id);
+  const derived = layer === "themes" ? token(definition, where)
+    : layer === "assets" ? asset(definition, where)
+    : layer === "components" ? component(slot.id, definition, where, references)
+    : composed(layer, override, definition, references);
+  const purpose = override.purpose ?? derived.purpose;
+  assert(purpose, `${slot.id} needs a purpose in scripts/slot-contract-overrides.json`);
+  const limits = { ...derived.limits, ...(slot.requires?.length ? { requires: slot.requires.join(",") } : {}), ...(override.limits ?? {}) };
+  return {
+    schema: SCHEMA, slot: slot.id, package: PACKAGE, layer, purpose, inputs: derived.inputs,
+    limits: Object.fromEntries(Object.entries(limits).sort(([a], [b]) => a < b ? -1 : 1)),
+    references, checkSuite: `designer.slot-contracts.${layer}`, specimenKind: specimen(layer, slot),
+  };
+}
+
+// The checker is TypeScript: Node with type stripping loads the source, older Node the build.
+const checker = await import(pathToFileURL(resolve(root, "src/catalog-core/slot-contracts.ts")).href)
+  .catch(() => import(pathToFileURL(resolve(root, "dist/catalog-core/slot-contracts.js")).href))
+  .catch(() => { throw new Error("slot-contracts: cannot load the checker; use Node 22.18+ or run npm run build first"); });
+const specimen = (layer, slot) => checker.specimenKindFor(layer, slot);
+const referencesRoot = resolve(root, "references");
+const folderExists = dir => existsSync(join(referencesRoot, dir)) && statSync(join(referencesRoot, dir)).isDirectory();
+
 let stale = 0;
-for (const layer of ["sections", "frames"]) {
-  const slots = new Map(json(`src/catalog/slots/${layer}.json`).map(slot => [slot.id, slot]));
-  const contracts = SEED[layer].map(seed => {
-    const slot = slots.get(seed.slot);
-    assert(slot, `${seed.slot} is not a ${layer} slot`);
-    return contract(layer, seed, slot);
-  });
+const findings = [];
+const counts = {};
+for (const layer of LAYERS) {
+  const catalog = json(`src/catalog/slots/${layer}.json`);
+  const where = new Map();
+  for (const l1 of json(`src/catalog/ia/${layer}.json`).nodes) for (const l2 of l1.children ?? []) for (const id of l2.leaves ?? []) where.set(id, `${l1.label} / ${l2.label}`);
+  assert.deepEqual([...where.keys()].sort(), catalog.map(slot => slot.id).sort(), `${layer}: IA leaves and slot catalog differ`);
+  for (const id of Object.keys(overrides.slots)) if (id.startsWith(`${layer}.`)) assert(catalog.some(slot => slot.id === id), `override ${id} is not a ${layer} slot`);
+  // Overridden slots first, in overrides order (the hand records lead), then catalog order.
+  const rank = id => { const at = Object.keys(overrides.slots).indexOf(id); return at < 0 ? Infinity : at; };
+  const ordered = catalog.map((slot, index) => ({ slot, index })).sort((a, b) => rank(a.slot.id) - rank(b.slot.id) || a.index - b.index).map(({ slot }) => slot);
+  const contracts = ordered.map(slot => record(layer, slot, where.get(slot.id)));
   const target = resolve(root, `src/catalog/slot-contracts/${layer}.json`);
   const bytes = JSON.stringify(contracts, null, 2) + "\n";
   if (args[0] === "--write") { mkdirSync(dirname(target), { recursive: true }); writeFileSync(target, bytes); }
   else if (!existsSync(target) || readFileSync(target, "utf8") !== bytes) { console.error(`stale ${relative(root, target)}; run scripts/slot-contracts.mjs --write`); stale++; }
+  // Coverage and findings are measured on the committed file, so a stale file cannot pass.
+  const committed = existsSync(target) ? JSON.parse(readFileSync(target, "utf8")) : [];
+  findings.push(...checker.slotContractFindings(committed, { layer, slots: catalog, manifest, folderExists }));
+  counts[layer] = `${catalog.filter(slot => committed.some(row => row.slot === slot.id)).length}/${catalog.length}`;
 }
-if (stale) process.exit(1);
-console.log(JSON.stringify({ mode: args[0], sections: SEED.sections.length, frames: SEED.frames.length }));
+for (const finding of findings) console.error(`finding ${finding}`);
+const total = Object.values(counts).reduce((sum, count) => sum + Number(count.split("/")[0]), 0);
+const canonical = Object.values(counts).reduce((sum, count) => sum + Number(count.split("/")[1]), 0);
+console.log(JSON.stringify({ mode: args[0], coverage: `${total}/${canonical}`, findings: findings.length, stale, layers: counts }));
+if (stale || findings.length) process.exit(1);

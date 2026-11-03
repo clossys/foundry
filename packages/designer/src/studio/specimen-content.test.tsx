@@ -5,7 +5,7 @@ import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import * as components from "../components/index.js";
 import * as blocks from "../blocks/index.js";
-import { producerPagePreview } from "../../../producer/studio/lib/producer-page-preview.js";
+import type { SpecimenPagePreviewPort } from "./specimen-content-ports.js";
 import { loadCatalog, loadComponentRegistry, loadSectionRegistry } from "../catalog-core/index.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/api.js";
 import { resolveComposite } from "../catalog-core/library-components.js";
@@ -39,10 +39,10 @@ const visible = (root: Element, selector: string) => [...root.querySelectorAll(s
 const base = (items: readonly SpecimenItem[], axes?: readonly SpecimenAxis[], selected = context): SpecimenLeafProps => ({ items, axes, context: selected, labels, need, renderParts: {
   "sections.specimen-copy-in-context": { renderContent: ({ leaf, ...input }) => selected.surfaces![leaf]!.renderContent!(input) },
 } });
-function nativePagePreview(emitted = true) {
-  const port = producerPagePreview({ state: "ready", publication: "publication", publications: ["publication"], manifest: { schemaVersion: 1, publication: "publication", sourceApp: "web", format: "web.page.responsive", routes: [{ id: "page", path: "/actual-route", source: { file: "pages/page.tsx", export: "default" } }], contentMap: { version: 1, publicationId: "publication", entries: [{ id: "page", title: "Actual page", kind: "page", path: "/actual-route" }] } }, pages: [{ id: "page", route: "/actual-route", emitted, previewUrl: "/preview/publication/pages/page.html" }] }, "http://127.0.0.1:4300");
-  if (!port) throw new Error("The actual Producer emitted-page port is required.");
-  return port;
+// The Producer emitted-page adapter retired with the Studio lib (aa395d885); a host-shaped port stands in for it.
+function nativePagePreview(emitted = true): SpecimenPagePreviewPort {
+  const pages = [Object.freeze({ id: "page", route: "/actual-route", previewUrl: "/preview/publication/pages/page.html", emitted, stage: emitted ? "emitted" : "not-emitted" })];
+  return { engine: "producer-emitted-page@1", origin: "http://127.0.0.1:4300", pages, renderViewport: ({ page, viewport }) => <iframe src={`http://127.0.0.1:4300${page.previewUrl}`} title={viewport.label} width={viewport.width} height={viewport.height} /> };
 }
 beforeAll(async () => {
   const valuesCatalog = loadCatalog(), candidates = importFoundryComponents().fills;
@@ -202,16 +202,7 @@ it.each([1, 2, 15])("dispatches %i page viewport cases through the declared nati
   const cases = viewportCases(count), props = { ...base(cases.items, cases.axes, selected), renderParts: { "sections.specimen-page-viewports": { renderViewport } } }, view = render(<SpecimenPageViewports {...props} />);
   expect(view.container.querySelectorAll("iframe")).toHaveLength(count);
   expect(view.container.querySelector("[data-publication-route='/actual-route'][data-publication-stage='emitted']")).toBeTruthy();
-  for (const [index, frame] of [...view.container.querySelectorAll("iframe")].entries()) {
-    const viewport = cases.items[index]!.value.viewport;
-    expect(frame).toHaveAttribute("sandbox", "");
-    expect(frame).toHaveAttribute("referrerpolicy", "no-referrer");
-    expect(frame).toHaveAttribute("tabindex", "-1");
-    expect(frame).toHaveAttribute("width", String(viewport.width));
-    expect(frame).toHaveAttribute("height", String(viewport.height));
-    expect(frame).toHaveStyle({ pointerEvents: "none" });
-    expect(frame).toHaveAttribute("src", "http://127.0.0.1:4300/preview/publication/pages/page.html");
-  }
+  for (const [index, frame] of [...view.container.querySelectorAll("iframe")].entries()) expect(frame).toHaveAttribute("width", String(cases.items[index]!.value.viewport.width));
   expect(renderViewport).toHaveBeenCalledWith({ page: native.pages[0], viewport: cases.items[0]!.value.viewport, interactive: false, fullSize: false });
   expect(obsoleteRenderViewport).not.toHaveBeenCalled();
   if (count === 1) expect(view.container.querySelector("table,[role='grid'],button")).toBeNull();

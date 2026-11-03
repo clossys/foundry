@@ -45,7 +45,7 @@
             "rawAssets": [
               "assets.js"
             ],
-            "sourceSha256": "307d39f31c17415358b8a4cc599717385b08191df44059e7969dfb0d3725e7c8",
+            "sourceSha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
             "specifier": "../landing/internal/assets.js",
             "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
             "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
@@ -86,7 +86,7 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-            "sha256": "307d39f31c17415358b8a4cc599717385b08191df44059e7969dfb0d3725e7c8"
+            "sha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624"
           },
           {
             "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
@@ -102,11 +102,11 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "486cd0391f7ee6ed32c43b1bec780967be6d89972234d7b7fa5f19d43bfaa58d"
+            "sha256": "cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
-            "sha256": "a41d28d970abcc823288f449e5ec0e9a4b6bc3511eddfb65c68d3ff74240c353"
+            "sha256": "9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c"
           },
           {
             "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",

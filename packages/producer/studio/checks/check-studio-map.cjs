@@ -219,7 +219,9 @@ async function checkStudioMap({ studioRoot = STUDIO_ROOT, clossysRoot, outputDir
   const generator = path.resolve(STUDIO_ROOT, '../scripts/generate-studio-map.mjs');
   try {
     const { generateStudioMap } = await import(pathToFileURL(generator).href);
-    await generateStudioMap({ ...(clossysRoot ? { clossysRoot } : {}), outputDir: outputDir ?? path.join(studioRoot, 'generated'), check: true });
+    // A committed Draft projection is checked against the explicit bindings it was built from (FOUNDRY_STUDIO_PREVIEW_BINDINGS).
+    const { previewOptionsFromEnvironment } = await import(pathToFileURL(path.resolve(STUDIO_ROOT, '../scripts/studio-draft-items.mjs')).href);
+    await generateStudioMap({ ...(clossysRoot ? { clossysRoot } : {}), outputDir: outputDir ?? path.join(studioRoot, 'generated'), check: true, ...await previewOptionsFromEnvironment() });
   } catch (error) {
     findings.push({ rule: 'publisher-projection-drift', message: error.message });
   }

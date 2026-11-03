@@ -125,7 +125,7 @@
       "id": "frames.auth-shell",
       "role": "label",
       "cellId": "publisher.frame.frames.auth-shell",
-      "recordId": "st.v3ycrdrpmn",
+      "recordId": "st.0szhqxn9xp",
       "file": "admin-meta.r1.en.json",
       "text": "Sign-in page",
       "source": {
@@ -203,7 +203,7 @@
       "id": "frames.sheet",
       "role": "label",
       "cellId": "publisher.frame.frames.sheet",
-      "recordId": "st.xe1vmezaw2",
+      "recordId": "st.njcj3qqb0e",
       "file": "admin-meta.r1.en.json",
       "text": "Overlay panel",
       "source": {
@@ -2855,7 +2855,7 @@
       "id": "/agents/designer",
       "role": "label",
       "cellId": "publisher.planPage./agents/designer",
-      "recordId": "st.pb0ynfnh58",
+      "recordId": "st.2zj7yrtkfr",
       "file": "admin-meta.r1.en.json",
       "text": "Designer",
       "source": {
@@ -2889,7 +2889,7 @@
       "id": "/agents/publisher",
       "role": "label",
       "cellId": "publisher.planPage./agents/publisher",
-      "recordId": "st.eyyshzcr6r",
+      "recordId": "st.cy7122qr1d",
       "file": "admin-meta.r1.en.json",
       "text": "Publisher",
       "source": {

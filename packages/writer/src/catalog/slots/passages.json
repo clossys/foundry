@@ -1017,6 +1017,96 @@
               "en": 160
             },
             "dir": "auto"
+          },
+          {
+            "key": "records[].image.alt",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.name",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.author.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.date.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.readingTime.label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.tags[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.summary",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "records[].editorial.outcomeStats[].value",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 160
+            },
+            "dir": "auto"
           }
         ]
       }
@@ -1519,6 +1609,24 @@
           },
           {
             "key": "footnote",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 480
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].label",
+            "kind": "plain",
+            "required": false,
+            "maxLength": {
+              "en": 120
+            },
+            "dir": "auto"
+          },
+          {
+            "key": "aside[].value",
             "kind": "plain",
             "required": false,
             "maxLength": {
@@ -3939,6 +4047,22 @@
             "dir": "auto"
           }
         ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "passages.sectioned-document",
+    "layer": "passages",
+    "contract": {
+      "kind": "passage",
+      "source": "writer",
+      "sectionId": "sections.sectioned-document",
+      "passageSchema": "passages.sectioned-document",
+      "copy": {
+        "sourceLocale": "en",
+        "fields": []
       }
     },
     "requires": [],

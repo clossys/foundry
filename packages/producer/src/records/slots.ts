@@ -89,17 +89,25 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
   });
 }
 
-export function readSlot(consumer: string, agent: SlotAgent, id: string): SlotDoc {
+/**
+ * A schema-valid slot document and whether it is the document its IA position names (same id,
+ * agent and position). Malformed documents throw `Invalid <agent> slot <id>`, as in `readSlot`.
+ */
+export function inspectSlot(consumer: string, agent: SlotAgent, id: string): { doc: SlotDoc; placed: boolean } {
   const { position, dir } = locate(consumer, agent, id);
   const path = slotFile(dir);
   const value: unknown = readJson(path);
   if (validateSlotDoc(value, path).length) throw new Error(`Invalid ${agent} slot ${id}`);
   const doc = value as SlotDoc;
-  if (doc.id !== id || doc.agent !== agent
-    || doc.ia.l0 !== position.l0 || doc.ia.l1 !== position.l1
-    || doc.ia.l2 !== position.l2 || doc.ia.order !== position.order) {
-    throw new Error(`Slot ${agent}/${id} does not match its IA position`);
-  }
+  const placed = doc.id === id && doc.agent === agent
+    && doc.ia.l0 === position.l0 && doc.ia.l1 === position.l1
+    && doc.ia.l2 === position.l2 && doc.ia.order === position.order;
+  return { doc, placed };
+}
+
+export function readSlot(consumer: string, agent: SlotAgent, id: string): SlotDoc {
+  const { doc, placed } = inspectSlot(consumer, agent, id);
+  if (!placed) throw new Error(`Slot ${agent}/${id} does not match its IA position`);
   return doc;
 }
 
@@ -142,13 +150,34 @@ export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinE
   return current ? [{ ...current, commit: "working-tree" }] : [];
 }
 
-/** Slots in any agent whose slot.json `uses` names this slot. */
+/** Slots in any agent whose slot.json `uses` names this slot. Every present document must be valid and placed. */
 export function usedBy(consumer: string, slot: string): { agent: SlotAgent; id: string }[] {
+  return scanUsedBy(consumer, slot, (agent, id) => readSlot(consumer, agent, id));
+}
+
+/**
+ * `usedBy` for a projection of one slot: a present document that is schema-invalid or does not
+ * match its IA position vouches for nothing and is skipped (its own detail and its consumers'
+ * readiness report it). Unreadable, aliased or irregular files still throw.
+ */
+export function usedByPlaced(consumer: string, slot: string): { agent: SlotAgent; id: string }[] {
+  return scanUsedBy(consumer, slot, (agent, id) => {
+    try {
+      const { doc, placed } = inspectSlot(consumer, agent, id);
+      return placed ? doc : undefined;
+    } catch (error) {
+      if (error instanceof Error && error.message === `Invalid ${agent} slot ${id}`) return undefined;
+      throw error;
+    }
+  });
+}
+
+function scanUsedBy(consumer: string, slot: string, read: (agent: SlotAgent, id: string) => SlotDoc | undefined): { agent: SlotAgent; id: string }[] {
   const out: { agent: SlotAgent; id: string }[] = [];
   for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) {
     const path = slotFile(entry.dir);
     if (!existsSync(path)) continue;
-    if (readSlot(consumer, agent, entry.id).uses.includes(slot)) out.push({ agent, id: entry.id });
+    if (read(agent, entry.id)?.uses.includes(slot)) out.push({ agent, id: entry.id });
   }
   return out;
 }

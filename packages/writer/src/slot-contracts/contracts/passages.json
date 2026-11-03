@@ -498,6 +498,14 @@
           "footnote": {
             "required": false,
             "maxChars": 480
+          },
+          "aside[].label": {
+            "required": false,
+            "maxChars": 120
+          },
+          "aside[].value": {
+            "required": false,
+            "maxChars": 480
           }
         },
         "designerSection": "sections.content"
@@ -605,6 +613,37 @@
                 ],
                 "toc.label": "Contents"
               }
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
+      "id": "passages.sectioned-document",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "A structured document body rendered from host records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.sectioned-document"
+      },
+      "references": [
+        {
+          "id": "passages.sectioned-document.guide",
+          "kind": "guide",
+          "guide": "The document's headings and text come from its host records; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "Write the document itself as records; the section only lays out what the records hold."
+            },
+            {
+              "note": "If the document needs an intro or heading above it, place a page header section before it."
             }
           ]
         }
@@ -1545,6 +1584,46 @@
             "required": false,
             "maxChars": 160,
             "maxLines": 1
+          },
+          "records[].image.alt": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.author.name": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.author.label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.date.label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.readingTime.value": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.readingTime.label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.tags[].label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.summary": {
+            "required": false,
+            "maxChars": 480
+          },
+          "records[].editorial.outcomeStats[].label": {
+            "required": false,
+            "maxChars": 160
+          },
+          "records[].editorial.outcomeStats[].value": {
+            "required": false,
+            "maxChars": 160
           }
         },
         "designerSection": "sections.cards"

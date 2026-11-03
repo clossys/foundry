@@ -525,6 +525,7 @@
           "slots": [
             "passages.content",
             "passages.article",
+            "passages.sectioned-document",
             "passages.legal-prose"
           ]
         },

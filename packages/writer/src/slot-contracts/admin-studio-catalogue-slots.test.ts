@@ -14,7 +14,7 @@ const catalogue = JSON.parse(sourceBytes);
 const candidate = "admin-studio-draft-v1.md";
 
 describe("Studio catalogue draft Writer specimens", () => {
-  for (const [slot, count] of [["strings.names", 281]] as const) {
+  for (const [slot, count] of [["strings.names", 300]] as const) {
     it(`preserves every ${slot} source record through the canonical specimen reader`, () => {
       const entry = listSlots(consumer, "writer").find(row => row.id === slot)!;
       expect(entry.pin).toBeNull();
