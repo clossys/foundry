@@ -152,7 +152,10 @@ const FRAME = ids => `(() => {
 
 export async function runModulesCheck(origin, { only, full = false } = {}) {
   origin = new URL(origin).origin;
-  const { entries } = await loadStudioMap(origin);
+  const started = Date.now();
+  const { entries, targets, records } = await loadStudioMap(origin, { scope: all => scopeEntries(all, { only, full }) });
+  const mapSeconds = (Date.now() - started) / 1000;
+  console.error(`studio:modules: map loaded in ${mapSeconds}s, ${targets.length} of ${entries.length} entries in scope, ${Object.keys(records).length} leaf record(s)`);
   const findings = [], checked = [];
   const browser = await chrome();
   const { send, evaluate } = browser;
@@ -190,8 +193,8 @@ export async function runModulesCheck(origin, { only, full = false } = {}) {
 
   for (const finding of manifestFindings()) findings.push({ path: '(manifest)', ...finding });
   try {
-    const targets = scopeEntries(entries, { only, full });
     for (const entry of targets) {
+      const pageStarted = Date.now();
       const add = (rule, extra = {}) => findings.push({ rule, path: entry.path, ...extra });
       const manifest = manifestOf(entry);
       if (!manifest) { add('no-manifest'); continue; }
@@ -291,10 +294,11 @@ export async function runModulesCheck(origin, { only, full = false } = {}) {
         } else result(line, false, { reason: 'unknown wiring verb' });
       }
       for (const error of browser.errors.slice(errorsBefore)) add('page-error', { message: error });
-      checked.push({ path: entry.path, lines: lines.length, failed: lines.filter(line => !line.ok).length, na: lines.filter(line => line.na).length });
+      checked.push({ path: entry.path, seconds: (Date.now() - pageStarted) / 1000, lines: lines.length, failed: lines.filter(line => !line.ok).length, na: lines.filter(line => line.na).length });
+      console.error(`studio:modules: ${entry.path} ${checked.at(-1).seconds}s`);
     }
     const lines = checked.reduce((sum, row) => sum + row.lines, 0);
-    return { check: 'studio:modules', status: findings.length ? 'FAIL' : 'PASS', origin, scope: only?.length ? 'only' : full ? 'full' : 'pages', entries: entries.length, checked: checked.length, lines, findings, pages: checked };
+    return { check: 'studio:modules', status: findings.length ? 'FAIL' : 'PASS', origin, scope: only?.length ? 'only' : full ? 'full' : 'pages', timings: { mapSeconds, leafRecords: Object.keys(records).length, totalSeconds: (Date.now() - started) / 1000 }, entries: entries.length, checked: checked.length, lines, findings, pages: checked };
   } finally { await browser.close(); }
 }
 
@@ -311,7 +315,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     if (out) writeFileSync(out, JSON.stringify(report, null, 2) + '\n');
     const rules = {};
     for (const finding of report.findings) rules[finding.rule] = (rules[finding.rule] ?? 0) + 1;
-    console.log(JSON.stringify({ check: report.check, status: report.status, scope: report.scope, entries: report.entries, checked: report.checked, lines: report.lines, rules, sample: report.findings.slice(0, 20) }, null, 2));
+    console.log(JSON.stringify({ check: report.check, status: report.status, scope: report.scope, timings: report.timings, slowest: [...report.pages].sort((a, b) => b.seconds - a.seconds).slice(0, 5).map(row => `${row.path} ${row.seconds}s`), entries: report.entries, checked: report.checked, lines: report.lines, rules, sample: report.findings.slice(0, 20) }, null, 2));
     process.exitCode = report.status === 'PASS' ? 0 : 1;
   }, error => { console.error(error); process.exitCode = error.env ? 2 : 1; });
 }
