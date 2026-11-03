@@ -1,19 +1,19 @@
 ---
 slot: "capability.team.role"
-source: {"kind":"derived","ref":["finding:foundry-public-repo-facts","finding:foundry-public-studio-behavior","finding:foundry-public-studio-delivery"]}
+source: {"kind":"derived","ref":["finding:foundry-public-repo-facts","finding:foundry-owner-answers-2026-11-03"]}
 feeds: []
 functions: ["people"]
-note: "Unpinned initial-fill draft for the public Foundry Studio, derived from the public repository and Studio checklist findings; not approved and not evidence of shipped behavior."
+note: "Unpinned initial-fill draft for the public Foundry Studio, derived from the public repository, Studio checklist findings and owner answers of 2026-11-03; not approved and not evidence of shipped behavior."
 ---
 
 ## Direction
 - Roles: the owner who pins slots and sets direction, and the four agents: Director for direction, Designer for visuals, Writer for copy, Publisher for assembly.
 - Who: the owner is a person; the agent roles are held by coding agents running the agent skills.
-- Next-hire: NEED: no human hire is recorded in this public record.
+- Next-hire: none; agents only until the 5 consumer workspaces are live.
 
 ## Because
 - Pins name `pinnedBy` an owner (finding:foundry-public-repo-facts)
-- Visual, copy and assembly ownership is split between Designer, Writer and Publisher (finding:foundry-public-studio-behavior, finding:foundry-public-studio-delivery)
+- The owner set no hire until the 5 workspaces are live (finding:foundry-owner-answers-2026-11-03)
 
 ## Watch
-- If slots pinned by an agent rather than an owner > 0 in any slot check, then remove the pin and report it.
+- If live consumer workspaces reaches 5, then ask the owner whether to open a human role.
