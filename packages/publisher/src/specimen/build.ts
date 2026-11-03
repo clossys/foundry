@@ -19,7 +19,7 @@ import { installedPath } from "./installed-path.js";
 import type { SpecimenFile, SpecimenRecord, SpecimenRecordSource } from "./types.js";
 
 /** Bumped when the renderer's output for the same record changes. */
-export const SPECIMEN_RENDERER_VERSION = "specimen-5";
+export const SPECIMEN_RENDERER_VERSION = "specimen-6";
 
 export interface SpecimenBuild {
   readonly hash: string;
