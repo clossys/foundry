@@ -1,7 +1,7 @@
 ---
 slot: "passages.sign-in-form"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -12,11 +12,11 @@ Sign in
 
 ### studio.sign-in.header.description
 <!-- {"id":"studio.sign-in.header.description","bindings":[]} -->
-NEED
+Sign in to your workspace.
 
 ### studio.sign-in.providers.0.label
 <!-- {"id":"studio.sign-in.providers.0.label","bindings":[]} -->
-NEED
+Continue with work SSO
 
 ### studio.sign-in.credentials.identifierLabel
 <!-- {"id":"studio.sign-in.credentials.identifierLabel","bindings":[]} -->

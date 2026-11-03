@@ -1,14 +1,14 @@
 ---
 slot: "passages.newsletter"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.lifecycle.acquisition@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:focus.lifecycle.acquisition@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
 
 ### studio.updates.header.heading
 <!-- {"id":"studio.updates.header.heading","bindings":[]} -->
-Release updates
+Release notes by email
 
 ### studio.updates.email.label
 <!-- {"id":"studio.updates.email.label","bindings":[]} -->
@@ -20,7 +20,7 @@ you@example.com
 
 ### studio.updates.consent
 <!-- {"id":"studio.updates.consent","bindings":[]} -->
-NEED
+Send me the Clossys Foundry release notes, about once a month. Unsubscribe any time.
 
 ### studio.updates.submit.label
 <!-- {"id":"studio.updates.submit.label","bindings":[]} -->
@@ -32,8 +32,8 @@ Subscribing
 
 ### studio.updates.submit.sentMessage
 <!-- {"id":"studio.updates.submit.sentMessage","bindings":[]} -->
-NEED
+Subscribed. Release notes arrive about once a month.
 
 ### studio.updates.submit.failedMessage
 <!-- {"id":"studio.updates.submit.failedMessage","bindings":[]} -->
-NEED
+We could not subscribe you. Check the address and try again.

@@ -1,7 +1,7 @@
 ---
 slot: "passages.legal-prose"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.reach.geography@1","director:identity.verbal.voice@1","director:advantage.proposition.proof@1"]}
+source: {"kind":"derived","ref":["director:focus.reach.geography@1","director:identity.verbal.voice@1","director:advantage.proposition.proof@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -16,8 +16,8 @@ Revision
 
 ### studio.license.revision.value
 <!-- {"id":"studio.license.revision.value","bindings":[]} -->
-NEED
+Nov 3, 2026
 
 ### studio.license.body
 <!-- {"id":"studio.license.body","bindings":[]} -->
-Foundry packages are released under the MIT license. The full text is in the LICENSE file of the public repository. NEED: copyright holder line.
+© 2026 Clossys. Clossys Foundry is released under the MIT license. The full text is in the LICENSE file of the public repository.

@@ -1,14 +1,14 @@
 ---
 slot: "passages.task-list"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:focus.offer.included@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:focus.offer.included@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
 
 ### studio.needs.header.heading
 <!-- {"id":"studio.needs.header.heading","bindings":[]} -->
-Open NEEDs
+Open needs
 
 ### studio.needs.tasks.0.title
 <!-- {"id":"studio.needs.tasks.0.title","bindings":[]} -->
@@ -32,11 +32,11 @@ Waiting on the owner
 
 ### studio.needs.states.loading.label
 <!-- {"id":"studio.needs.states.loading.label","bindings":[]} -->
-Loading NEEDs
+Loading needs
 
 ### studio.needs.states.empty.label
 <!-- {"id":"studio.needs.states.empty.label","bindings":[]} -->
-No NEEDs yet
+No needs yet
 
 ### studio.needs.states.empty.description
 <!-- {"id":"studio.needs.states.empty.description","bindings":[]} -->

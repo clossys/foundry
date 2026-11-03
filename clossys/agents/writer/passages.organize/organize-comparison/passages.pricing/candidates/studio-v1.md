@@ -1,7 +1,7 @@
 ---
 slot: "passages.pricing"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:focus.lifecycle.acquisition@1","director:focus.offer.included@1"]}
+source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:focus.lifecycle.acquisition@1","director:focus.offer.included@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -11,21 +11,21 @@ source: {"kind":"derived","ref":["director:advantage.model.pricing@1","director:
 Pricing
 
 ### studio.pricing.header.description
-<!-- {"id":"studio.pricing.header.description","bindings":[]} -->
-NEED: the Director pricing draft records no price or plan.
+<!-- {"id":"studio.pricing.header.description","bindings":[],"evidence":"finding:writer-owner-answers-2026-11-03"} -->
+Clossys Foundry is free and open under the MIT license.
 
 ### studio.pricing.plans.0.name
 <!-- {"id":"studio.pricing.plans.0.name","bindings":[]} -->
-NEED
+Clossys Foundry
 
 ### studio.pricing.plans.0.cta.label
 <!-- {"id":"studio.pricing.plans.0.cta.label","bindings":[]} -->
-NEED
+Read the license
 
 ### studio.pricing.plans.0.priceByInterval.0.amount
 <!-- {"id":"studio.pricing.plans.0.priceByInterval.0.amount","bindings":[]} -->
-NEED
+Free
 
 ### studio.pricing.plans.0.priceByInterval.0.priceText
-<!-- {"id":"studio.pricing.plans.0.priceByInterval.0.priceText","bindings":[]} -->
-NEED
+<!-- {"id":"studio.pricing.plans.0.priceByInterval.0.priceText","bindings":[],"evidence":"finding:writer-owner-answers-2026-11-03"} -->
+Free. MIT licensed.

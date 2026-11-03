@@ -1,7 +1,7 @@
 ---
 slot: "passages.filter-builder"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -24,7 +24,7 @@ Not pinned
 
 ### studio.filter.fields.1.label
 <!-- {"id":"studio.filter.fields.1.label","bindings":[]} -->
-Has NEED
+Has open needs
 
 ### studio.filter.operators.0.label
 <!-- {"id":"studio.filter.operators.0.label","bindings":[]} -->

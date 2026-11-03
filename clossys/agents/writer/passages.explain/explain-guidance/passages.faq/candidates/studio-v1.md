@@ -1,7 +1,7 @@
 ---
 slot: "passages.faq"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:context.customer.buying@1","director:identity.verbal.voice@1","director:context.company.constraint@1"]}
+source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","director:context.customer.buying@1","director:identity.verbal.voice@1","director:context.company.constraint@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -36,8 +36,8 @@ The owner. Agents write candidates; they never pin.
 
 ### studio.faq.items.3.question
 <!-- {"id":"studio.faq.items.3.question","bindings":[]} -->
-What does NEED mean?
+What is a need?
 
 ### studio.faq.items.3.answer
 <!-- {"id":"studio.faq.items.3.answer","bindings":[]} -->
-A fact with no evidence in the repository yet. It stays NEED until someone records the evidence.
+A fact with no evidence in the repository yet. It stays open until someone records the evidence.

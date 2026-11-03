@@ -1,7 +1,7 @@
 ---
 slot: "passages.article"
 locales: ["en"]
-source: {"kind":"derived","ref":["director:identity.verbal.narrative@1","director:identity.verbal.voice@1"]}
+source: {"kind":"derived","ref":["director:identity.verbal.narrative@1","director:identity.verbal.voice@1","finding:writer-owner-answers-2026-11-03"]}
 ---
 
 ## en
@@ -12,7 +12,7 @@ The slot model
 
 ### studio.docs.slot-model.header.description
 <!-- {"id":"studio.docs.slot-model.header.description","bindings":[]} -->
-How Foundry records each choice.
+How Clossys Foundry records each choice.
 
 ### studio.docs.slot-model.body.0.text
 <!-- {"id":"studio.docs.slot-model.body.0.text","bindings":[]} -->
