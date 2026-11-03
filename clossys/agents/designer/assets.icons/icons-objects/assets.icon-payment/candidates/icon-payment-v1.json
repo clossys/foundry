@@ -1,0 +1,57 @@
+{
+  "name": "icon-payment",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "icons/credit-card.svg",
+      "type": "registry:file",
+      "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <rect width=\"20\" height=\"14\" x=\"2\" y=\"5\" rx=\"2\" />\n  <line x1=\"2\" x2=\"22\" y1=\"10\" y2=\"10\" />\n  <path d=\"M6 14h2\" />\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.icon-payment.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"icon-payment\": {\n      \"default\": {\n        \"$type\": \"glyph\",\n        \"$value\": [\n          [\n            \"rect\",\n            {\n              \"width\": \"20\",\n              \"height\": \"14\",\n              \"x\": \"2\",\n              \"y\": \"5\",\n              \"rx\": \"2\",\n              \"key\": \"ynyp8z\"\n            }\n          ],\n          [\n            \"line\",\n            {\n              \"x1\": \"2\",\n              \"x2\": \"22\",\n              \"y1\": \"10\",\n              \"y2\": \"10\",\n              \"key\": \"1b3vmo\"\n            }\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.icon-payment",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/credit-card@1.65.0"
+      ],
+      "hash": "sha256:40eeb0e0dcdd62ca4e0426f12b3ca9cd7349f88bd99d648cf0d65d3e530db925",
+      "license": "ISC"
+    },
+    "element": {
+      "id": "assets.icon-payment/icon-payment",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.icon-payment",
+      "kind": "registry:item",
+      "license": "ISC",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Vendored lucide/credit-card@1.65.0 glyph (the Studio's lucide icon library) adopted unmodified.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

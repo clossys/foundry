@@ -1,0 +1,57 @@
+{
+  "name": "icon-integration",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "icons/plug.svg",
+      "type": "registry:file",
+      "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M12 22v-5\" />\n  <path d=\"M15 8V2\" />\n  <path d=\"M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z\" />\n  <path d=\"M9 8V2\" />\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.icon-integration.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"icon-integration\": {\n      \"default\": {\n        \"$type\": \"glyph\",\n        \"$value\": [\n          [\n            \"path\",\n            {\n              \"d\": \"M12 22v-5\",\n              \"key\": \"1ega77\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"M15 8V2\",\n              \"key\": \"18g5xt\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z\",\n              \"key\": \"1xoxul\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"M9 8V2\",\n              \"key\": \"14iosj\"\n            }\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.icon-integration",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/plug@1.65.0"
+      ],
+      "hash": "sha256:00fc466fe6ff2b75bcb003ac4c9abe6dd53a7fdf0f038b72d6426d319eb07b8f",
+      "license": "ISC"
+    },
+    "element": {
+      "id": "assets.icon-integration/icon-integration",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.icon-integration",
+      "kind": "registry:item",
+      "license": "ISC",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Vendored lucide/plug@1.65.0 glyph (the Studio's lucide icon library) adopted unmodified.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "name": "icon-chevron-down",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "icons/chevron-down.svg",
+      "type": "registry:file",
+      "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"m6 9 6 6 6-6\" />\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.icon-chevron-down.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"icon-chevron-down\": {\n      \"default\": {\n        \"$type\": \"glyph\",\n        \"$value\": [\n          [\n            \"path\",\n            {\n              \"d\": \"m6 9 6 6 6-6\",\n              \"key\": \"qrunsl\"\n            }\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.icon-chevron-down",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/chevron-down@1.65.0"
+      ],
+      "hash": "sha256:cd4acf0e0fa126961c43306d62999c126ec02b6f7c8fd0a00e62b02458ba9136",
+      "license": "ISC"
+    },
+    "element": {
+      "id": "assets.icon-chevron-down/icon-chevron-down",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.icon-chevron-down",
+      "kind": "registry:item",
+      "license": "ISC",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Vendored lucide/chevron-down@1.65.0 glyph (the Studio's lucide icon library) adopted unmodified.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}
