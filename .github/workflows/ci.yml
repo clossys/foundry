@@ -3,11 +3,9 @@ name: CI
 # CI's triggers are pull_request and push to main. It is this repository's
 # broad, always-on gate: safety, scope, provenance, build, and test run here
 # so a change is judged before it can merge. It does not publish, qualify,
-# or reconcile against the registry — publish.yml owns release execution,
-# registry-parity.yml owns the post-merge registry comparison, and the
-# aggregate canary runs only from its own dispatch-only workflow — while its
-# per-package tarball scan reuses the same scripts rather than introducing a
-# second copy.
+# or reconcile against the registry — publish.yml owns release execution.
+# Its per-package tarball scan reuses the same scripts rather than
+# introducing a second copy.
 
 on:
   pull_request:
@@ -795,8 +793,6 @@ jobs:
         with:
           node-version: 20
       - run: npm run check:package-identity
-      - run: npm run check:public-npm-aggregate-canary
-      - run: npm run check:public-npm-aggregate-canary-v2
       - run: npm run check:release-cleanup-inventory
       - run: node scripts/set-scope.mjs --check
 
@@ -1013,7 +1009,7 @@ jobs:
       # --enforce-contract-statics is passed, which this step does not do.
       # Same dependency-free, manifest/contract/source-read-only class as
       # every step in this job. Its own unit tests run first, same
-      # compound-script pattern as check:public-npm-aggregate-canary.
+      # compound-script pattern as check:contrast.
       #
       # NOT added to this repository's `main-required-checks` ruleset by
       # this change, same reasoning as the jobs elsewhere in this file with

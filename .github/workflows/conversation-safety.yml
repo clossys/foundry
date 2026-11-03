@@ -81,9 +81,9 @@ name: Conversation safety
 # request's head.
 #
 # A pull request can edit its own copy of the relay, and so can stop its own
-# review events from being relayed. That gains it no credential, and
-# conversation-safety-sweep.yml, which runs from the default branch and reads
-# every review and comment, remains the backstop for anything not relayed.
+# review events from being relayed. That gains it no credential. Re-scan
+# reviews and comments on demand with
+# `npm run check:conversation -- --all --require-denylist`.
 
 on:
   issues:

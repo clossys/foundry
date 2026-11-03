@@ -42,8 +42,7 @@
 // with an `NPM_PACKAGES_TOKEN`. The owner's decision, made explicitly when
 // this gate was first reworked: "no token, all pkg are public from foundry
 // repo" — that token was never going to be created, and
-// `.github/workflows/package-visibility.yml` had gone permanently red with
-// no token to read.
+// its former scheduled run had gone permanently red with no token to read.
 //
 // Removing the credential requirement is NOT what determines what this gate
 // checks, though — read that distinction carefully, because an earlier
@@ -131,7 +130,7 @@
 //     declaration. Malformed retention JSON entries are errors. No registry
 //     call and no credential — only documents already in the tree.
 //
-//   Live / scheduled (full run in package-visibility.yml): for every package
+//   Live / on demand (`npm run check:package-visibility`): for every package
 //     on the anonymous scope roster that the active release target does not
 //     declare, if lifecycle marks it `deprecated`, require a valid retention
 //     entry (same rules as above). Other undeclared roster packages stay
@@ -149,8 +148,8 @@
 // NEVER WIRED INTO LOCAL `npm run check`, WITH ONE OFFLINE EXCEPTION
 // -----------------------------------------------------------------------
 // The live half calls the live public npm registry over the network, so it
-// stays out of the hermetic `npm run check` chain and runs in CI instead —
-// see .github/workflows/package-visibility.yml's scheduled run — the same
+// stays out of the hermetic `npm run check` chain. Run on demand with
+// `npm run check:package-visibility` — the same
 // reason check:registry-parity is kept out of `check` (see its own comment
 // in package.json). This is a network-access concern, not a credential
 // concern: the live half needs no token at all, it just isn't the kind of
