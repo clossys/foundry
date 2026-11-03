@@ -976,7 +976,7 @@
     "approved": false,
     "referenceQualified": false,
     "releaseQualified": false,
-    "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f"
+    "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af"
   },
   "items": [
     {
@@ -989,81 +989,76 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/frames.studio-shell/studio-shell/v7",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json",
         "record": {
-          "ref": "library/frames.studio-shell/studio-shell/v7/element.json",
-          "sha256": "8c56b74f6cdd41d4771bf2d596a9fffa097ae35406e73ea92cc684d4eeda6b29"
+          "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json",
+          "sha256": "0094c467b5464ada0c6b77e28677c83f44791702d175ae5ecfd51856db0acbc0"
         },
         "preview": {
-          "ref": "library/frames.studio-shell/studio-shell/v7/preview.json",
-          "sha256": "b478cc76942a33f16a21a37bd45627c13b5ed79bb8cf2d1fb33fbe9cc509d3a4"
+          "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#meta.preview",
+          "sha256": "3f008df28e011504b1520b5a8d2032c339d21b9bf17f7a658e01c1739d2a9c4e"
         },
         "payload": [
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/LICENCE.md",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/PageNotice.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#PageNotice.tsx",
             "sha256": "547b57343922608b6dfc814eed4aadb2f1bc421677bab0ce023f95b35453049f"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/app-sidebar.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#app-sidebar.tsx",
             "sha256": "0c83f1c2d1e7163d11a2fec3cc2879c4f65cbdc34f5703520ffb89a9e5d0538c"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/index.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#index.tsx",
             "sha256": "5be9ce35a94d213704fa8c6d29fc1b194704f23351a3a8af3d7f78814b890524"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/nav-main.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#nav-main.tsx",
             "sha256": "6d8c005871576a8023c1454d811f3be6f892bb8320e1f9125f4c13e5bca37f6f"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/nav-user.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#nav-user.tsx",
             "sha256": "5a1b047b342cc23cf6dad8bf2252505285b93667ef594c5422bce69f9c3d0746"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/registry-item.json",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#registry-item.json",
             "sha256": "106d31ce5c107f419332f2c96abd12077506c623452c09ddbd7874979bd1f726"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/stock-chat-sidebar.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#stock-chat-sidebar.tsx",
             "sha256": "717a7ebaa9d296de4eccaacf36ed2a1e4dd39f87a53f07b08749d35099823336"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/stock-frame.provenance.json",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#stock-frame.provenance.json",
             "sha256": "30101e17bf718d021d26acb8b12ea1a10e2854fdc3deb075d5532240c86f3073"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/stock-header-controls.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#stock-header-controls.tsx",
             "sha256": "ab9d5326b4581e777b31eeb6f262e88e759ffed556263cc3d3a53a3f65b02041"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/stock-static-nav-rows.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#stock-static-nav-rows.tsx",
             "sha256": "8c5156da652f6cfd7323b823f6b59b17c03981d1367580e9f1239666744f0233"
           },
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/team-switcher.tsx",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#team-switcher.tsx",
             "sha256": "f61c7f0bf9877e15305a4010a40fb82a16471c9c88fe7c6b63c9a649a98ddbcc"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "parent": {
-            "version": 6,
-            "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc"
-          },
-          "ownerRequest": "studio-current-ui-draft-studio-shell-20261101",
-          "source": {
-            "registry": "foundry",
-            "item": "packages/producer/studio/frames/studio-shell",
-            "version": "902f695cc3720af807baa814508b67a769dcda4c",
-            "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/frames/studio-shell",
-            "hash": "sha256:caca769c5517ddaa80000f5857d47ae6b261bedc76ae203aced1c0e3b1bd233a"
-          },
-          "path": "create"
+          "kind": "derived",
+          "ref": [
+            "create",
+            "studio-current-ui-draft-studio-shell-20261101",
+            "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/frames/studio-shell\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/frames/studio-shell\",\"hash\":\"sha256:caca769c5517ddaa80000f5857d47ae6b261bedc76ae203aced1c0e3b1bd233a\"}",
+            "{\"version\":6,\"hash\":\"sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc\"}"
+          ],
+          "hash": "sha256:324f1c4646837998ff545ef9cc72ce5f1b76ed264dea745752a609053a83c036",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1072,7 +1067,7 @@
         },
         "provenance": [
           {
-            "ref": "library/frames.studio-shell/studio-shell/v7/stock-frame.provenance.json",
+            "ref": "agents/designer/frames.extensions/extensions/frames.studio-shell/candidates/studio-shell-v7.json#stock-frame.provenance.json",
             "sha256": "30101e17bf718d021d26acb8b12ea1a10e2854fdc3deb075d5532240c86f3073",
             "evidence": {
               "sources": [
@@ -1150,14 +1145,13 @@
             }
           }
         ],
-        "selectionClaim": {
-          "element": "studio-shell",
-          "version": 6,
-          "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc",
-          "event": "e27"
+        "pinClaim": {
+          "candidate": "studio-shell-v7.json",
+          "hash": "sha256:0094c467b5464ada0c6b77e28677c83f44791702d175ae5ecfd51856db0acbc0",
+          "at": "2026-11-02T19:30:00Z"
         },
-        "matchesBinding": false,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1174,39 +1168,37 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.module.checks/module-checks/v1",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.module.checks/candidates/module-checks-v1.json",
         "record": {
-          "ref": "library/sections.module.checks/module-checks/v1/element.json",
-          "sha256": "d13e30ca5277d0ed5fbc3fcd04e6847aade40ab12954130536611edfb46f2d63"
+          "ref": "agents/designer/sections.extensions/extensions/sections.module.checks/candidates/module-checks-v1.json",
+          "sha256": "ee6b1831b5db1adb471755b6dec330862619d8464ac93d47094ba53deb11e728"
         },
         "preview": {
-          "ref": "library/sections.module.checks/module-checks/v1/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.module.checks/candidates/module-checks-v1.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.module.checks/module-checks/v1/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.checks/candidates/module-checks-v1.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.module.checks/module-checks/v1/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.checks/candidates/module-checks-v1.json#index.tsx",
             "sha256": "77fa7decdb409771ceb36262eaac458dba2e806ae2762ffdc3c53e4c69c0e8c8"
           },
           {
-            "ref": "library/sections.module.checks/module-checks/v1/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.checks/candidates/module-checks-v1.json#registry-item.json",
             "sha256": "1f8d3b08fce80a7ca91c4d4b8d105c2a6f1d23062709df85a35714f688cf94c7"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "item",
-            "version": "4.23.0",
-            "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/item.json"
-          }
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"item\",\"version\":\"4.23.0\",\"hash\":\"sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/item.json\"}"
+          ],
+          "hash": "sha256:abf76369a04d24fa3c504b5532bd98c1e00a55b792d591960c73c5f1ceebbc2a",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1214,14 +1206,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "module-checks",
-          "version": 1,
-          "hash": "sha256:abf76369a04d24fa3c504b5532bd98c1e00a55b792d591960c73c5f1ceebbc2a",
-          "event": "e21"
+        "pinClaim": {
+          "candidate": "module-checks-v1.json",
+          "hash": "sha256:ee6b1831b5db1adb471755b6dec330862619d8464ac93d47094ba53deb11e728",
+          "at": "2026-10-31T22:00:00Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [
           {
             "id": "lineage.reference",
@@ -1253,43 +1244,38 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.module.explorer/module-explorer/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.module.explorer/candidates/module-explorer-v2.json",
         "record": {
-          "ref": "library/sections.module.explorer/module-explorer/v2/element.json",
-          "sha256": "1bbb436d25ae9021f589c67d8af7f748ca597b39086f6c5e160413245186f6c4"
+          "ref": "agents/designer/sections.extensions/extensions/sections.module.explorer/candidates/module-explorer-v2.json",
+          "sha256": "f2554bfa80abf8f7b75dfd4a7e14c35df60d70d08302a9b9ef495216f697c49e"
         },
         "preview": {
-          "ref": "library/sections.module.explorer/module-explorer/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.module.explorer/candidates/module-explorer-v2.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.module.explorer/module-explorer/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.explorer/candidates/module-explorer-v2.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.module.explorer/module-explorer/v2/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.explorer/candidates/module-explorer-v2.json#index.tsx",
             "sha256": "2bfa37ba94a956438fe5cf40ff3a9add9997e5ba4ec2ac1f4a0ff3200c3b7efe"
           },
           {
-            "ref": "library/sections.module.explorer/module-explorer/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.explorer/candidates/module-explorer-v2.json#registry-item.json",
             "sha256": "547e35d19d042f00651ba43f66a0c7137fcbb154542c2ab0ecd93848fbf2d824"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "command",
-            "version": "4.23.0",
-            "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
-          },
-          "parent": {
-            "version": 1,
-            "hash": "sha256:f0211ba8426ad30640885ceaaf11d312207915d36efb1190ce7aa23f64cb78ae"
-          }
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"command\",\"version\":\"4.23.0\",\"hash\":\"sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/command.json\"}",
+            "{\"version\":1,\"hash\":\"sha256:f0211ba8426ad30640885ceaaf11d312207915d36efb1190ce7aa23f64cb78ae\"}"
+          ],
+          "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1297,14 +1283,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "module-explorer",
-          "version": 2,
-          "hash": "sha256:300440386e553b250dda2bd708fef7f1bff1177ed7ee34768543355231125101",
-          "event": "e30"
+        "pinClaim": {
+          "candidate": "module-explorer-v2.json",
+          "hash": "sha256:f2554bfa80abf8f7b75dfd4a7e14c35df60d70d08302a9b9ef495216f697c49e",
+          "at": "2026-10-31T23:59:30Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [
           {
             "id": "lineage.reference",
@@ -1336,43 +1321,38 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.module.outline/module-outline/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.module.outline/candidates/module-outline-v2.json",
         "record": {
-          "ref": "library/sections.module.outline/module-outline/v2/element.json",
-          "sha256": "89f43d711439b51a39ce95aba58713090069ab8b95aaf177e53d5ea041d49ca3"
+          "ref": "agents/designer/sections.extensions/extensions/sections.module.outline/candidates/module-outline-v2.json",
+          "sha256": "1156f4448884957f4f31956e7c30ab97a84690942bf5e3ae9a50791073054adc"
         },
         "preview": {
-          "ref": "library/sections.module.outline/module-outline/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.module.outline/candidates/module-outline-v2.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.module.outline/module-outline/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.outline/candidates/module-outline-v2.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.module.outline/module-outline/v2/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.outline/candidates/module-outline-v2.json#index.tsx",
             "sha256": "d4cd7035a3d177b89256f53cf85cdccb43be370dc82c6752a69b2541d1ce6033"
           },
           {
-            "ref": "library/sections.module.outline/module-outline/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.module.outline/candidates/module-outline-v2.json#registry-item.json",
             "sha256": "a1f4396f03a649abcde1f2f6fe97e1ca8619b09b4caf45e62edfcaf668c39501"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "command",
-            "version": "4.23.0",
-            "hash": "sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/command.json"
-          },
-          "parent": {
-            "version": 1,
-            "hash": "sha256:01362c221c9f471fb4898d428c92de8a3f9cacf97fdfe7b8c6cb27ddf3e24726"
-          }
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"command\",\"version\":\"4.23.0\",\"hash\":\"sha256:549cd010f34024eea234a587e123b487112262775590c6e9baa82e3a6212545c\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/command.json\"}",
+            "{\"version\":1,\"hash\":\"sha256:01362c221c9f471fb4898d428c92de8a3f9cacf97fdfe7b8c6cb27ddf3e24726\"}"
+          ],
+          "hash": "sha256:b6e8a9d023b153bb3f1e816736446adb33e7fd48d5885bacd26e318ee92735b4",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1380,14 +1360,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "module-outline",
-          "version": 2,
-          "hash": "sha256:b6e8a9d023b153bb3f1e816736446adb33e7fd48d5885bacd26e318ee92735b4",
-          "event": "e29"
+        "pinClaim": {
+          "candidate": "module-outline-v2.json",
+          "hash": "sha256:1156f4448884957f4f31956e7c30ab97a84690942bf5e3ae9a50791073054adc",
+          "at": "2026-10-31T23:59:30Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [
           {
             "id": "lineage.reference",
@@ -1419,65 +1398,60 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.agent-gallery/studio-agent-gallery/v5",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json",
         "record": {
-          "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/element.json",
-          "sha256": "465dc8d23aaed3b3ffd1e7510a6474f4756382a0176f012049a3d4fa262c906d"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json",
+          "sha256": "f5b9d19fb5de86fd2e05bb348c9f04081a48cc6cb4a10dac8c694d562c34006e"
         },
         "preview": {
-          "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/GalleryHeader.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#GalleryHeader.tsx",
             "sha256": "ff2aed4fd9e7dec289e604593f42e47575bf5759aa705c15581cb538c07f30c1"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/GroupSection.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#GroupSection.tsx",
             "sha256": "33e8084bd400bff15df52c229d280750816bab9985c1a40764f5d4058de84810"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/LayerSection.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#LayerSection.tsx",
             "sha256": "29adac5ab913c011221207b5677ecbb186004dd686b67f29b09fd6bfbfef8ce4"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/LeafCard.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#LeafCard.tsx",
             "sha256": "4cd5bcfd2d9af85460dbcaddca077b487c786a3e250df97d30f9dd6e555e632f"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#index.tsx",
             "sha256": "d93e64a3bba1d1286d2a34c1456921e481d6286a7c55f5de60f227e5b0223b2b"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#registry-item.json",
             "sha256": "744f250178a2f77bc5dd7b440c56d23a11778461bc32246d380ababed27c3770"
           },
           {
-            "ref": "library/sections.studio.agent-gallery/studio-agent-gallery/v5/types.ts",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.agent-gallery/candidates/studio-agent-gallery-v5.json#types.ts",
             "sha256": "751954fa7c4698723581d331e9c20c9bcc6f4d549915e7936e57527b9b69f517"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "parent": {
-            "version": 4,
-            "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d"
-          },
-          "ownerRequest": "studio-current-ui-draft-studio-agent-gallery-20261101",
-          "source": {
-            "registry": "foundry",
-            "item": "packages/producer/studio/sections/studio-agent-gallery",
-            "version": "902f695cc3720af807baa814508b67a769dcda4c",
-            "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-agent-gallery",
-            "hash": "sha256:4d1de16f494976370347b3d7dc7db12b3e3bac8b713ca4b56a81fb78126865ca"
-          },
-          "path": "create"
+          "kind": "derived",
+          "ref": [
+            "create",
+            "studio-current-ui-draft-studio-agent-gallery-20261101",
+            "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-agent-gallery\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-agent-gallery\",\"hash\":\"sha256:4d1de16f494976370347b3d7dc7db12b3e3bac8b713ca4b56a81fb78126865ca\"}",
+            "{\"version\":4,\"hash\":\"sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d\"}"
+          ],
+          "hash": "sha256:7d43b29743ce91f88cc20b3a1ee8d53415e3567dec263e1440471a00e73bd6aa",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1485,14 +1459,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-agent-gallery",
-          "version": 4,
-          "hash": "sha256:d2eeb96c478da13e2a14bb9e4b0e4304ccaaea52121115279d921b10df5e899d",
-          "event": "e25"
+        "pinClaim": {
+          "candidate": "studio-agent-gallery-v5.json",
+          "hash": "sha256:f5b9d19fb5de86fd2e05bb348c9f04081a48cc6cb4a10dac8c694d562c34006e",
+          "at": "2026-11-02T22:45:00Z"
         },
-        "matchesBinding": false,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1509,50 +1482,37 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.checks/studio-checks/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.checks/candidates/studio-checks-v2.json",
         "record": {
-          "ref": "library/sections.studio.checks/studio-checks/v2/element.json",
-          "sha256": "3b1b9c60c7df03dc14df67d048c63b80f046aa2b8cdb93ffd673aa740982d803"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.checks/candidates/studio-checks-v2.json",
+          "sha256": "629f942cca7742cc1839b2be265d82aec860a8cfe70e5de1d25f589c6a901a0a"
         },
         "preview": {
-          "ref": "library/sections.studio.checks/studio-checks/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.checks/candidates/studio-checks-v2.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.checks/studio-checks/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.checks/candidates/studio-checks-v2.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.checks/studio-checks/v2/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.checks/candidates/studio-checks-v2.json#index.tsx",
             "sha256": "d0fdbedb3433866780d044d52e7430ec724a65c1775110fd09f17a7e437a9edf"
           },
           {
-            "ref": "library/sections.studio.checks/studio-checks/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.checks/candidates/studio-checks-v2.json#registry-item.json",
             "sha256": "a9102905300891c2973907a810f76e9bdcb156f8abeaa5884d4c30977f625844"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "table",
-            "version": "4.23.0",
-            "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
-          },
-          "parent": {
-            "version": 1,
-            "hash": "sha256:c746dae76f3db9224c906705db343bbe1e3e96c4af4bb089f815ef23c8bf77e8"
-          },
-          "adaptations": [
-            {
-              "kind": "data-binding",
-              "file": "index.tsx",
-              "reason": "Pass existing labels and summary through the checks copy input without changing markup, conditions or styling."
-            }
-          ]
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"table\",\"version\":\"4.23.0\",\"hash\":\"sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/table.json\"}"
+          ],
+          "hash": "sha256:878129fd73106f02b089818fa9b0489aff32eb1b34b17573f24c3c39396f4ec5",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1560,14 +1520,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-checks",
-          "version": 2,
-          "hash": "sha256:878129fd73106f02b089818fa9b0489aff32eb1b34b17573f24c3c39396f4ec5",
-          "event": "e33"
+        "pinClaim": {
+          "candidate": "studio-checks-v2.json",
+          "hash": "sha256:629f942cca7742cc1839b2be265d82aec860a8cfe70e5de1d25f589c6a901a0a",
+          "at": "2026-11-01T16:21:44Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1584,50 +1543,37 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.contract/studio-contract/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.contract/candidates/studio-contract-v2.json",
         "record": {
-          "ref": "library/sections.studio.contract/studio-contract/v2/element.json",
-          "sha256": "a1699a808517181957a8229815da03b3edf56bbde676f21a6b00e3ac7ef10172"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.contract/candidates/studio-contract-v2.json",
+          "sha256": "e3e3a1f7c8fe33f7fe68633f0b8834a301c15c02ddb20232584bd495ed662d50"
         },
         "preview": {
-          "ref": "library/sections.studio.contract/studio-contract/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.contract/candidates/studio-contract-v2.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.contract/studio-contract/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.contract/candidates/studio-contract-v2.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.contract/studio-contract/v2/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.contract/candidates/studio-contract-v2.json#index.tsx",
             "sha256": "7ea556835812a9b4971080afcc530c2776a7a3ca85222108ab30fa66712192fd"
           },
           {
-            "ref": "library/sections.studio.contract/studio-contract/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.contract/candidates/studio-contract-v2.json#registry-item.json",
             "sha256": "ad082996d071f64c9178a4432a7ba334ae87fe762d88821f9c669630f255500e"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "table",
-            "version": "4.23.0",
-            "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
-          },
-          "parent": {
-            "version": 1,
-            "hash": "sha256:4cccd0fd1ae6390804388a6b1a3c709bc23d4aba85835b2d668d3e3e2639741d"
-          },
-          "adaptations": [
-            {
-              "kind": "data-binding",
-              "file": "index.tsx",
-              "reason": "Pass existing labels through the contract copy input without changing markup or styling."
-            }
-          ]
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"table\",\"version\":\"4.23.0\",\"hash\":\"sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/table.json\"}"
+          ],
+          "hash": "sha256:4b19f88c68c98b0555dce70fa4b1cec2fb964eccb6e8bbb2e0112b3abaaa5d19",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1635,14 +1581,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-contract",
-          "version": 2,
-          "hash": "sha256:4b19f88c68c98b0555dce70fa4b1cec2fb964eccb6e8bbb2e0112b3abaaa5d19",
-          "event": "e31"
+        "pinClaim": {
+          "candidate": "studio-contract-v2.json",
+          "hash": "sha256:e3e3a1f7c8fe33f7fe68633f0b8834a301c15c02ddb20232584bd495ed662d50",
+          "at": "2026-11-01T16:09:14Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1659,39 +1604,37 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.history/studio-history/v1",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.history/candidates/studio-history-v1.json",
         "record": {
-          "ref": "library/sections.studio.history/studio-history/v1/element.json",
-          "sha256": "c1b7eefeafb3a4f1df738ae6400d0cb269bb71e80c1d443463ecf9e92d262215"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.history/candidates/studio-history-v1.json",
+          "sha256": "68e17ef1172c3bebc7ef8c45dc2cb59f3c737d88142390ebc2c6f3e7a41cf0f4"
         },
         "preview": {
-          "ref": "library/sections.studio.history/studio-history/v1/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.history/candidates/studio-history-v1.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.history/studio-history/v1/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.history/candidates/studio-history-v1.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.history/studio-history/v1/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.history/candidates/studio-history-v1.json#index.tsx",
             "sha256": "e6cf481178cdbae1511f1b1de9560a2e80525d07dcc8daaf6a900fd0f5d1aa53"
           },
           {
-            "ref": "library/sections.studio.history/studio-history/v1/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.history/candidates/studio-history-v1.json#registry-item.json",
             "sha256": "f99527a1dcb5906b9460b937f05bd50c1bc62a816f444e10c4fd5b4c3bdd6272"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "table",
-            "version": "4.23.0",
-            "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
-          }
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"table\",\"version\":\"4.23.0\",\"hash\":\"sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/table.json\"}"
+          ],
+          "hash": "sha256:afc0fc911775ac565e6df8a88abfd7ece8f5c3545f412355e157d2fd848aeee8",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1699,14 +1642,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-history",
-          "version": 1,
-          "hash": "sha256:afc0fc911775ac565e6df8a88abfd7ece8f5c3545f412355e157d2fd848aeee8",
-          "event": "e9"
+        "pinClaim": {
+          "candidate": "studio-history-v1.json",
+          "hash": "sha256:68e17ef1172c3bebc7ef8c45dc2cb59f3c737d88142390ebc2c6f3e7a41cf0f4",
+          "at": "2026-10-31T12:00:00Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [
           {
             "id": "lineage.reference",
@@ -1738,45 +1680,40 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.home/studio-home/v3",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.home/candidates/studio-home-v3.json",
         "record": {
-          "ref": "library/sections.studio.home/studio-home/v3/element.json",
-          "sha256": "ef3cd0b9b30449260a187225a0020394ad2e5a794eb19f1698fa5c5783e1fbcf"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.home/candidates/studio-home-v3.json",
+          "sha256": "fb075dfd7e0cfde1662c58c4924f8ca47677c499e68ec93e6c79ebf1b2de680e"
         },
         "preview": {
-          "ref": "library/sections.studio.home/studio-home/v3/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.home/candidates/studio-home-v3.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.home/studio-home/v3/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.home/candidates/studio-home-v3.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.home/studio-home/v3/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.home/candidates/studio-home-v3.json#index.tsx",
             "sha256": "70f3f51ba758a5c10262ee2bca16e77d339c72e3ce72c15acc9f010a94c02035"
           },
           {
-            "ref": "library/sections.studio.home/studio-home/v3/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.home/candidates/studio-home-v3.json#registry-item.json",
             "sha256": "341a91114afe68ea49d7fcf5e0eae49f4fe5c7db09ce220a4d421eb0cdbdd30a"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "parent": {
-            "version": 2,
-            "hash": "sha256:3a8aa87264b75e35f5c566b305375ada8efc8d779e44d541c3ad1f3321c4c9b8"
-          },
-          "ownerRequest": "studio-current-ui-draft-studio-home-20261101",
-          "source": {
-            "registry": "foundry",
-            "item": "packages/producer/studio/sections/studio-home",
-            "version": "902f695cc3720af807baa814508b67a769dcda4c",
-            "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-home",
-            "hash": "sha256:bf95a0ac8f841908a945369924813b019862c441d1dca556bc729a1e80b4e71a"
-          },
-          "path": "create"
+          "kind": "derived",
+          "ref": [
+            "create",
+            "studio-current-ui-draft-studio-home-20261101",
+            "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-home\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-home\",\"hash\":\"sha256:bf95a0ac8f841908a945369924813b019862c441d1dca556bc729a1e80b4e71a\"}",
+            "{\"version\":2,\"hash\":\"sha256:3a8aa87264b75e35f5c566b305375ada8efc8d779e44d541c3ad1f3321c4c9b8\"}"
+          ],
+          "hash": "sha256:5aa8d200daf1d9c2340575452e594c377eff80bb6641429109a8aefa341f9c10",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1784,14 +1721,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-home",
-          "version": 2,
-          "hash": "sha256:3a8aa87264b75e35f5c566b305375ada8efc8d779e44d541c3ad1f3321c4c9b8",
-          "event": "e13"
+        "pinClaim": {
+          "candidate": "studio-home-v3.json",
+          "hash": "sha256:fb075dfd7e0cfde1662c58c4924f8ca47677c499e68ec93e6c79ebf1b2de680e",
+          "at": "2026-11-02T22:45:00Z"
         },
-        "matchesBinding": false,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1808,45 +1744,40 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.leaf-header/studio-leaf-header/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.leaf-header/candidates/studio-leaf-header-v2.json",
         "record": {
-          "ref": "library/sections.studio.leaf-header/studio-leaf-header/v2/element.json",
-          "sha256": "43af8a7e79ad57cb6453ff4c2d17524225058818897711f2a62e55ce51f36010"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.leaf-header/candidates/studio-leaf-header-v2.json",
+          "sha256": "c0a5ed11d7dfc48e0ef783246cf92ce784bcb239523c244c976c1ed306fd5931"
         },
         "preview": {
-          "ref": "library/sections.studio.leaf-header/studio-leaf-header/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.leaf-header/candidates/studio-leaf-header-v2.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.leaf-header/studio-leaf-header/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.leaf-header/candidates/studio-leaf-header-v2.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.leaf-header/studio-leaf-header/v2/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.leaf-header/candidates/studio-leaf-header-v2.json#index.tsx",
             "sha256": "424bd02c57727fe7371816c01f899a0cd1f357cc644ee501b599bd73ee8b5b01"
           },
           {
-            "ref": "library/sections.studio.leaf-header/studio-leaf-header/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.leaf-header/candidates/studio-leaf-header-v2.json#registry-item.json",
             "sha256": "de7374ba7d8cb58bfd3267b41bbb4b0d0e8dd0ee83e6dff9dba7f003fc641b71"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "parent": {
-            "version": 1,
-            "hash": "sha256:1b61a0fc138401c99dc6de006a2b62e7d30f3c3ccf4c2c3f753a72e04e3503ab"
-          },
-          "ownerRequest": "studio-current-ui-draft-studio-leaf-header-20261101",
-          "source": {
-            "registry": "foundry",
-            "item": "packages/producer/studio/sections/studio-leaf-header",
-            "version": "902f695cc3720af807baa814508b67a769dcda4c",
-            "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-leaf-header",
-            "hash": "sha256:68cb8785f74760d25a9601e46eed0fabdb6ea54b2796b5b9fa1f9b1d4c984495"
-          },
-          "path": "create"
+          "kind": "derived",
+          "ref": [
+            "create",
+            "studio-current-ui-draft-studio-leaf-header-20261101",
+            "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-leaf-header\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-leaf-header\",\"hash\":\"sha256:68cb8785f74760d25a9601e46eed0fabdb6ea54b2796b5b9fa1f9b1d4c984495\"}",
+            "{\"version\":1,\"hash\":\"sha256:1b61a0fc138401c99dc6de006a2b62e7d30f3c3ccf4c2c3f753a72e04e3503ab\"}"
+          ],
+          "hash": "sha256:899b7f6ace27925f99f0a49f345b23c0bf45ca7eaf628acee27783ae64f2d4a7",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1854,14 +1785,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-leaf-header",
-          "version": 1,
-          "hash": "sha256:1b61a0fc138401c99dc6de006a2b62e7d30f3c3ccf4c2c3f753a72e04e3503ab",
-          "event": "e4"
+        "pinClaim": {
+          "candidate": "studio-leaf-header-v2.json",
+          "hash": "sha256:c0a5ed11d7dfc48e0ef783246cf92ce784bcb239523c244c976c1ed306fd5931",
+          "at": "2026-11-02T22:45:00Z"
         },
-        "matchesBinding": false,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1871,57 +1801,45 @@
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 2,
+      "version": 3,
       "previewEvidence": {
         "target": "preview",
         "status": "DRAFT",
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.options/studio-options/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.options/candidates/studio-options-v3.json",
         "record": {
-          "ref": "library/sections.studio.options/studio-options/v2/element.json",
-          "sha256": "1646b5a2c914db410ad2ad26a043c6344275a075587fe139e38386df3aac8d4f"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.options/candidates/studio-options-v3.json",
+          "sha256": "11b9cfb439c13193e290d6e750211e74e84ff470ffd2d8dc739de6e0125af2a6"
         },
         "preview": {
-          "ref": "library/sections.studio.options/studio-options/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.options/candidates/studio-options-v3.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.options/studio-options/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.options/candidates/studio-options-v3.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.options/studio-options/v2/index.tsx",
-            "sha256": "7177c6cd39656c8818b861d54147036e2392ebcdf85daab2f3c3875d31d70423"
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.options/candidates/studio-options-v3.json#index.tsx",
+            "sha256": "fe4764a9b5f32c17c08f595801bd88d0a8d2a5f3b9e502d56fe369f2a365a0e4"
           },
           {
-            "ref": "library/sections.studio.options/studio-options/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.options/candidates/studio-options-v3.json#registry-item.json",
             "sha256": "41d27b3e1a3ff7298a2f92a9f506142dddfa99582da7bbb69dd14f4ae4595715"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "card",
-            "version": "4.23.0",
-            "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
-          },
-          "parent": {
-            "version": 1,
-            "hash": "sha256:d04264150d45bf0d7ce1caeb0646b6605209d926198483640faf06c7ab2de369"
-          },
-          "adaptations": [
-            {
-              "kind": "data-binding",
-              "file": "index.tsx",
-              "reason": "Bind existing Options labels and preview titles through display-ready Writer copy inputs. The pre-cut Producer source already used BlockViewerIframe with viewport and iframeKey and omitted pinned v1's max-w-(--measure) description class; inherited drift is preserved."
-            }
-          ]
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-options\",\"version\":\"0820a234b7ca299dd11b1c84ada16476674621ac\",\"url\":\"https://github.com/clossys/foundry/tree/0820a234b7ca299dd11b1c84ada16476674621ac/packages/producer/studio/sections/studio-options\"}",
+            "{\"registry\":\"shadcn\",\"item\":\"card\",\"version\":\"4.23.0\",\"hash\":\"sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/card.json\"}",
+            "{\"version\":2,\"hash\":\"sha256:08bc50fefa89c2d134e2569c898b773d3e87632f0113c69fa00a9ab3bc580c17\"}"
+          ],
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -1929,14 +1847,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-options",
-          "version": 2,
-          "hash": "sha256:08bc50fefa89c2d134e2569c898b773d3e87632f0113c69fa00a9ab3bc580c17",
-          "event": "e35"
+        "pinClaim": {
+          "candidate": "studio-options-v3.json",
+          "hash": "sha256:11b9cfb439c13193e290d6e750211e74e84ff470ffd2d8dc739de6e0125af2a6",
+          "at": "2026-11-03T00:21:26Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -1953,50 +1870,38 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.publications/studio-publications/v3",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.publications/candidates/studio-publications-v3.json",
         "record": {
-          "ref": "library/sections.studio.publications/studio-publications/v3/element.json",
-          "sha256": "cdf9bc7b9ac97933e5ba1a5d1625ab682e063c1c05c578408f56001d7a007d0f"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.publications/candidates/studio-publications-v3.json",
+          "sha256": "eca85261d0e836a302aadc87e10c1b9357e50e2b79d5354d715558956d5bc39a"
         },
         "preview": {
-          "ref": "library/sections.studio.publications/studio-publications/v3/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.publications/candidates/studio-publications-v3.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.publications/studio-publications/v3/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.publications/candidates/studio-publications-v3.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.publications/studio-publications/v3/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.publications/candidates/studio-publications-v3.json#index.tsx",
             "sha256": "dd9382e523399d7efda4cac8685edd0ab0a34f9326b52e548f42d4a3be3231d8"
           },
           {
-            "ref": "library/sections.studio.publications/studio-publications/v3/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.publications/candidates/studio-publications-v3.json#registry-item.json",
             "sha256": "aa6f9aac6668e2d87a235503ac82bf23922122cd490e982c9b420d1ae21b8377"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "table",
-            "version": "4.23.0",
-            "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
-          },
-          "parent": {
-            "version": 2,
-            "hash": "sha256:c2945681ba2ebbee6af2ec9d4b0d50ae07311d13ddf56b9cfad792f96c7f5948"
-          },
-          "adaptations": [
-            {
-              "kind": "data-binding",
-              "file": "index.tsx",
-              "reason": "Pass existing labels and route counts through copy inputs without changing route data, markup, links or styling. The pre-cut Producer source already omitted pinned v2's max-w-(--measure) description class; this copy adaptation preserves that running source."
-            }
-          ]
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"table\",\"version\":\"4.23.0\",\"hash\":\"sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/table.json\"}",
+            "{\"version\":1,\"hash\":\"sha256:9a3ea969749f3514da61da6077bdd34c4bd09de31f4a870580fe23d3fd7c4c38\"}"
+          ],
+          "hash": "sha256:8d3fae8ae7058536af902ae4c2f377b54e6cc227018c35f5bb943fedcfaa0056",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -2004,14 +1909,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-publications",
-          "version": 3,
-          "hash": "sha256:8d3fae8ae7058536af902ae4c2f377b54e6cc227018c35f5bb943fedcfaa0056",
-          "event": "e34"
+        "pinClaim": {
+          "candidate": "studio-publications-v3.json",
+          "hash": "sha256:eca85261d0e836a302aadc87e10c1b9357e50e2b79d5354d715558956d5bc39a",
+          "at": "2026-11-01T16:28:21Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -2028,50 +1932,37 @@
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.references/studio-references/v2",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.references/candidates/studio-references-v2.json",
         "record": {
-          "ref": "library/sections.studio.references/studio-references/v2/element.json",
-          "sha256": "31870a4e532a9b97dfe8a84c8d25ce599594353df853484b422fd7e5707805af"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.references/candidates/studio-references-v2.json",
+          "sha256": "bd3a3f7dbeedc8802501c799ba2410b79741d431bf94ff4550dfa9c1d594a315"
         },
         "preview": {
-          "ref": "library/sections.studio.references/studio-references/v2/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.references/candidates/studio-references-v2.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.references/studio-references/v2/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.references/candidates/studio-references-v2.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.references/studio-references/v2/index.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.references/candidates/studio-references-v2.json#index.tsx",
             "sha256": "71b323d665c7e1f7e25a86f77a53756e164d146aed81c1bf645c471e0a31df94"
           },
           {
-            "ref": "library/sections.studio.references/studio-references/v2/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.references/candidates/studio-references-v2.json#registry-item.json",
             "sha256": "2cfe261aec09cc0917c153d297c7c1bfcc4534ac0f129db922580cd74c735c0d"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "source": {
-            "registry": "shadcn",
-            "item": "card",
-            "version": "4.23.0",
-            "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
-            "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
-          },
-          "parent": {
-            "version": 1,
-            "hash": "sha256:4faa7667cf6b9aa220ce982b4d9a502d39762e00ba2fa60906dfea7a98c103e5"
-          },
-          "adaptations": [
-            {
-              "kind": "data-binding",
-              "file": "index.tsx",
-              "reason": "Pass existing labels through the references copy input without changing markup, links or styling."
-            }
-          ]
+          "kind": "derived",
+          "ref": [
+            "{\"registry\":\"shadcn\",\"item\":\"card\",\"version\":\"4.23.0\",\"hash\":\"sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/card.json\"}"
+          ],
+          "hash": "sha256:41cfc00aac448bdc7038a6c5f930f0b0bbc11a746ac3ea03a87a8df506eea333",
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -2079,14 +1970,13 @@
           "file": "LICENCE.md"
         },
         "provenance": [],
-        "selectionClaim": {
-          "element": "studio-references",
-          "version": 2,
-          "hash": "sha256:41cfc00aac448bdc7038a6c5f930f0b0bbc11a746ac3ea03a87a8df506eea333",
-          "event": "e32"
+        "pinClaim": {
+          "candidate": "studio-references-v2.json",
+          "hash": "sha256:bd3a3f7dbeedc8802501c799ba2410b79741d431bf94ff4550dfa9c1d594a315",
+          "at": "2026-11-01T16:15:03Z"
         },
-        "matchesBinding": true,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection."
@@ -2096,60 +1986,54 @@
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 4,
+      "version": 5,
       "previewEvidence": {
         "target": "preview",
         "status": "DRAFT",
         "approved": false,
         "referenceQualified": false,
         "releaseQualified": false,
-        "bindingDigest": "e95c6ca1fc7882d8402d6bb84c01c06c79c4d380954b1d72274a6ea96586093f",
-        "versionRef": "library/sections.studio.specimen/studio-specimen/v4",
+        "bindingDigest": "449cc044293a8b3952e08a1431b9f3dee6948cea7b28f42de0713d38b31d20af",
+        "versionRef": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json",
         "record": {
-          "ref": "library/sections.studio.specimen/studio-specimen/v4/element.json",
-          "sha256": "baab217586c1ec92660613e2da206f4ddcdaca5fab2a396abbddcfa10a0e47e0"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json",
+          "sha256": "e3272565450d22c289c98f8e86ca2a751c148dda9098edd242fbc72fe926e914"
         },
         "preview": {
-          "ref": "library/sections.studio.specimen/studio-specimen/v4/preview.json",
-          "sha256": "3b14094be3cdf99673367640e7d9a3593b827220a8a972efb5fd197aa844c776"
+          "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#meta.preview",
+          "sha256": "a107541737a6f83370de893cfc2568e5521702b34944e9c2e26ece17fe5581bf"
         },
         "payload": [
           {
-            "ref": "library/sections.studio.specimen/studio-specimen/v4/BlockViewerIframe.tsx",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#BlockViewerIframe.tsx",
             "sha256": "ec4733d987deed880cd79d948223039e5aa293b8fbbf89e924aa06446fab51c4"
           },
           {
-            "ref": "library/sections.studio.specimen/studio-specimen/v4/LICENCE.md",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#LICENCE.md",
             "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
           },
           {
-            "ref": "library/sections.studio.specimen/studio-specimen/v4/index.tsx",
-            "sha256": "37612f4425a2ec6172cfed4ca53059766d5140b02866b000769cdb43e5f750eb"
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#index.tsx",
+            "sha256": "7261ba8e3ea2cf5fba2db0addfda023da851b32735d9fd7e6a2017d7b46b0207"
           },
           {
-            "ref": "library/sections.studio.specimen/studio-specimen/v4/registry-item.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#registry-item.json",
             "sha256": "b2f99ba1568095dc95f732e959ad79b2f04527e9a01236c95a0cda960b7c99ac"
           },
           {
-            "ref": "library/sections.studio.specimen/studio-specimen/v4/stock-layout.provenance.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#stock-layout.provenance.json",
             "sha256": "97b2c75de5ce5b4647d63b88fb36343f862274861b9aed19d9902c48cf00fbb8"
           }
         ],
         "lineage": {
-          "mode": "customized",
-          "parent": {
-            "version": 3,
-            "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab"
-          },
-          "ownerRequest": "studio-current-ui-draft-studio-specimen-20261101",
-          "source": {
-            "registry": "foundry",
-            "item": "packages/producer/studio/sections/studio-specimen",
-            "version": "902f695cc3720af807baa814508b67a769dcda4c",
-            "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-specimen",
-            "hash": "sha256:ba06ec67b2c4eb69af6d90cc39fe553df0162e4b4340b78bdd3f94da890ddd44"
-          },
-          "path": "create"
+          "kind": "derived",
+          "ref": [
+            "create",
+            "studio-current-ui-draft-studio-specimen-20261101",
+            "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-specimen\",\"version\":\"e11047164b863a3f77c6ab31c5128ae248917cfc\",\"url\":\"https://github.com/clossys/foundry/tree/e11047164b863a3f77c6ab31c5128ae248917cfc/packages/producer/studio/sections/studio-specimen\"}",
+            "{\"version\":4,\"hash\":\"sha256:8e9590e6c71f05db8553db38dc992d3e93e59112552af8d24144e6ba5b6a637d\"}"
+          ],
+          "license": "MIT"
         },
         "license": {
           "spdx": "MIT",
@@ -2158,7 +2042,7 @@
         },
         "provenance": [
           {
-            "ref": "library/sections.studio.specimen/studio-specimen/v4/stock-layout.provenance.json",
+            "ref": "agents/designer/sections.extensions/extensions/sections.studio.specimen/candidates/studio-specimen-v5.json#stock-layout.provenance.json",
             "sha256": "97b2c75de5ce5b4647d63b88fb36343f862274861b9aed19d9902c48cf00fbb8",
             "evidence": {
               "format": "source-extraction-draft/1",
@@ -2376,14 +2260,13 @@
             }
           }
         ],
-        "selectionClaim": {
-          "element": "studio-specimen",
-          "version": 3,
-          "hash": "sha256:9778983b1ea63e1c1d655a767bdb2e21589d06540b707d51ef6fb5acd87a2fab",
-          "event": "e24"
+        "pinClaim": {
+          "candidate": "studio-specimen-v5.json",
+          "hash": "sha256:e3272565450d22c289c98f8e86ca2a751c148dda9098edd242fbc72fe926e914",
+          "at": "2026-11-03T00:21:26Z"
         },
-        "matchesBinding": false,
-        "selectionGranted": false,
+        "matchesPin": true,
+        "pinGranted": false,
         "recordedChecks": [],
         "remainingNeeds": [
           "Strict reference qualification was not executed or granted by this Draft projection.",

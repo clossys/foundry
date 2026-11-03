@@ -8,11 +8,15 @@ import { createHash } from 'node:crypto';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
 import { HANDLERS, assemblyOf, checkManifest, generateStudioMap } from './generate-studio-map.mjs';
+import { pinnedBindings } from './studio-draft-items.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
+/** Every Designer slot the Studio pages assemble. */
+const STUDIO_SLOTS = ['frames.studio-shell', ...['checks', 'explorer', 'outline'].map(id => `sections.module.${id}`),
+  ...['agent-gallery', 'checks', 'contract', 'history', 'home', 'leaf-header', 'options', 'publications', 'references', 'specimen'].map(id => `sections.studio.${id}`)];
 const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
 
-/** A copy of the Studio records: pinned Publisher candidates, the Designer slot model, and the legacy library the draft preview still reads. */
+/** A copy of the Studio records: pinned Publisher candidates and the Designer slot model. */
 async function fixture(t) {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'studio-map-')));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -25,8 +29,6 @@ async function fixture(t) {
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
     await cp(join(designer, node.id, child.id, slot), join(copy, node.id, child.id, slot), { recursive: true });
   }
-  await cp(join(clossys, 'library'), join(clossysRoot, 'library'), { recursive: true });
-  await cp(join(clossys, 'selection.json'), join(clossysRoot, 'selection.json'));
   return { clossysRoot, outputDir, publisherRoot: join(clossysRoot, 'agents', 'publisher') };
 }
 async function replace(path, before, after) {
@@ -104,20 +106,10 @@ async function writerCallerFixture(t) {
   await writeFile(join(writer, 'ia.json'), JSON.stringify({ nodes: [
     { id: 'strings.interface', children: [{ id: 'interface-field-labels', slots: ['strings.common'] }] },
   ] }));
-  const replacements = {
-    'frames.studio-shell': 7,
-    'sections.studio.home': 3,
-    'sections.studio.agent-gallery': 5,
-    'sections.studio.leaf-header': 2,
-    'sections.studio.specimen': 4,
-  };
-  const selection = JSON.parse(await readFile(join(options.clossysRoot, 'selection.json'), 'utf8'));
-  const previewItems = await Promise.all(Object.entries(selection.pins).map(async ([slot, pin]) => {
-    const version = replacements[slot] ?? pin.version;
-    const record = JSON.parse(await readFile(join(options.clossysRoot, 'library', slot, pin.element, `v${version}`, 'element.json'), 'utf8'));
-    return { slot, element: pin.element, version, hash: record.hash };
-  }));
+  const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, 14);
+  // Draft binds what the slot model pins: the owner-approved options v3 and specimen v5.
+  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 3], ['sections.studio.specimen', 5]]);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
     const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
@@ -135,7 +127,8 @@ async function writerCallerFixture(t) {
       for (const item of projection.items) {
         assert.equal(item.previewEvidence.status, 'DRAFT');
         assert.equal(item.previewEvidence.approved, false);
-        assert.equal(item.previewEvidence.selectionGranted, false);
+        assert.equal(item.previewEvidence.pinGranted, false);
+        assert.equal(item.previewEvidence.matchesPin, true);
       }
     }
     return JSON.parse(await readFile(join(options.outputDir, 'studio-copy.json'), 'utf8'));
