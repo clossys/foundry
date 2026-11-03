@@ -1,0 +1,94 @@
+{
+  "name": "meter",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "meter.tsx",
+      "type": "registry:ui",
+      "content": "import * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Label as LabelPrimitive,\n  Meter as MeterPrimitive,\n  type LabelProps,\n  type MeterProps as MeterPrimitiveProps,\n} from \"react-aria-components\"\n\ntype MeterContextValue = {\n  percentage?: number\n  valueText?: string\n}\n\nconst MeterContext = React.createContext<MeterContextValue | null>(null)\n\nfunction useMeter() {\n  const context = React.useContext(MeterContext)\n  if (!context) {\n    throw new Error(\"useMeter must be used within a Meter.\")\n  }\n\n  return context\n}\n\nfunction MeterContent({\n  children,\n  percentage,\n  valueText,\n}: MeterContextValue & {\n  children?: React.ReactNode\n}) {\n  const context = React.useMemo(\n    () => ({ percentage, valueText }),\n    [percentage, valueText]\n  )\n\n  return (\n    <MeterContext value={context}>\n      {children}\n      <MeterTrack>\n        <MeterIndicator />\n      </MeterTrack>\n    </MeterContext>\n  )\n}\n\nfunction Meter({\n  className,\n  children,\n  ...props\n}: Omit<MeterPrimitiveProps, \"children\" | \"className\"> & {\n  children?: React.ReactNode\n  className?: string\n}) {\n  return (\n    <MeterPrimitive\n      data-slot=\"meter\"\n      className={cn(\"flex flex-wrap gap-3\", className)}\n      {...props}\n    >\n      {({ percentage, valueText }) => (\n        <MeterContent percentage={percentage} valueText={valueText}>\n          {children}\n        </MeterContent>\n      )}\n    </MeterPrimitive>\n  )\n}\n\nfunction MeterTrack({ className, ...props }: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      className={cn(\n        \"relative flex h-1 w-full items-center overflow-x-hidden rounded-full bg-muted\",\n        className\n      )}\n      data-slot=\"meter-track\"\n      {...props}\n    />\n  )\n}\n\nfunction MeterIndicator({\n  className,\n  style,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  const { percentage } = useMeter()\n\n  return (\n    <span\n      data-slot=\"meter-indicator\"\n      className={cn(\"h-full bg-primary transition-all\", className)}\n      style={{\n        ...style,\n        width: `${percentage ?? 0}%`,\n      }}\n      {...props}\n    />\n  )\n}\n\nfunction MeterLabel({ className, ...props }: LabelProps) {\n  return (\n    <LabelPrimitive\n      className={cn(\"text-sm font-medium\", className)}\n      data-slot=\"meter-label\"\n      {...props}\n    />\n  )\n}\n\nfunction MeterValue({\n  className,\n  children,\n  ...props\n}: Omit<React.ComponentProps<\"span\">, \"children\"> & {\n  children?: (value: string) => React.ReactNode\n}) {\n  const { valueText } = useMeter()\n  return (\n    <span\n      className={cn(\n        \"ml-auto text-sm text-muted-foreground tabular-nums\",\n        className\n      )}\n      data-slot=\"meter-value\"\n      {...props}\n    >\n      {children && valueText != null ? children(valueText) : valueText}\n    </span>\n  )\n}\n\nexport { Meter, MeterTrack, MeterIndicator, MeterLabel, MeterValue }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.meter",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/progress@4.23.0"
+      ],
+      "hash": "sha256:2ef007dff770ff504801d9f844baadf008cef0fafafe86b54282d9753ce94a55",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "meter",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.meter",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "DATA-GAPS"
+      },
+      "reason": "v2: built on React Aria Components Meter (a static measurement) in aria-nova style, derived from shadcn-aria/progress@4.23.0 structure and classes; replaces the loose ProgressBar match.",
+      "createdAt": "2026-11-03T10:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "derived: no vendored shadcn-aria meter/toolbar reference; pin gate only"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}
