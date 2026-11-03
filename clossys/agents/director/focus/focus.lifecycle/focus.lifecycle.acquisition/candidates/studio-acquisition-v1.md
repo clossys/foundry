@@ -1,0 +1,20 @@
+---
+slot: "focus.lifecycle.acquisition"
+source: {"kind":"derived","ref":["finding:foundry-public-studio-delivery","finding:foundry-public-studio-mission","finding:foundry-public-repo-facts","finding:foundry-owner-answers-2026-11-03"]}
+feeds: []
+functions: ["gtm"]
+note: "Unpinned initial-fill draft for the public Foundry Studio, derived from the public repository, Studio checklist findings and owner answers of 2026-11-03; not approved and not evidence of shipped behavior."
+---
+
+## Direction
+- Path: find the repository or a package on npm, read the README, install, run the `clossys` CLI on a workspace, open the localhost Studio and see the filled slots.
+- Hook: a filled candidate in every slot on first run, rather than an empty template.
+- Cost: one install and one CLI run (planner default, open to owner change).
+
+## Because
+- Initial fill puts a candidate in each empty slot before the user iterates (finding:foundry-public-studio-delivery, finding:foundry-public-studio-mission)
+- Install is from public npm without authentication (finding:foundry-public-repo-facts)
+- Cost is a planner default recorded with the owner answers (finding:foundry-owner-answers-2026-11-03)
+
+## Watch
+- If first runs that leave slots with zero candidates > 0 in any release check, then fix initial fill before promoting the hook.
