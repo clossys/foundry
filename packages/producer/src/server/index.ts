@@ -268,7 +268,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     }
     if (DEFAULT_AVATAR_PATH.test(pathname)) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Avatars are read-only" }); return; }
-      // Stock blocks' sample avatars (e.g. /avatars/shadcn.jpg) are not shipped: every one is the pinned mark.
+      // Stock blocks' sample avatars (e.g. /avatars/shadcn.jpg) are not shipped: every one is the pinned placeholder image.
       const svg = await defaultAvatarSvg(options.root, library);
       if (!svg) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": BRAND_MARK_CACHE }); response.end(); return; }
       const etag = `"${createHash("sha256").update(svg).digest("base64url")}"`;

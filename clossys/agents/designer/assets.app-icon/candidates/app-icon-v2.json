@@ -1,0 +1,56 @@
+{
+  "name": "app-icon",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "app-icon/maskable.svg",
+      "type": "registry:file",
+      "content": "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"100\" height=\"100\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" fill=\"#0A0A0A\"/><svg x=\"10\" y=\"10\" width=\"80\" height=\"80\" viewBox=\"0 0 100 100\"><rect width=\"100\" height=\"100\" rx=\"21.875\" fill=\"#0A0A0A\"/><g transform=\"translate(50 50)\" fill=\"#FAFAFA\"><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(0.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(72.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(144.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(216.0)\"/><rect x=\"-5.75\" y=\"-32\" width=\"11.5\" height=\"32\" transform=\"rotate(288.0)\"/></g></svg></svg>\n"
+    },
+    {
+      "path": "clossys/assets.app-icon.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"app-icon\": {\n      \"maskable\": {\n        \"$type\": \"svg\",\n        \"$value\": \"<svg xmlns=\\\"http://www.w3.org/2000/svg\\\" width=\\\"100\\\" height=\\\"100\\\" viewBox=\\\"0 0 100 100\\\"><rect width=\\\"100\\\" height=\\\"100\\\" fill=\\\"#0A0A0A\\\"/><svg x=\\\"10\\\" y=\\\"10\\\" width=\\\"80\\\" height=\\\"80\\\" viewBox=\\\"0 0 100 100\\\"><rect width=\\\"100\\\" height=\\\"100\\\" rx=\\\"21.875\\\" fill=\\\"#0A0A0A\\\"/><g transform=\\\"translate(50 50)\\\" fill=\\\"#FAFAFA\\\"><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(0.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(72.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(144.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(216.0)\\\"/><rect x=\\\"-5.75\\\" y=\\\"-32\\\" width=\\\"11.5\\\" height=\\\"32\\\" transform=\\\"rotate(288.0)\\\"/></g></svg></svg>\\n\",\n        \"$extensions\": {\n          \"com.clossys.origin\": {\n            \"kind\": \"authored\",\n            \"license\": \"MIT\",\n            \"note\": \"create (PLACEHOLDER-IMG): the Clossys asterisk mark centred in the 80% maskable safe zone on a full-bleed ground\"\n          }\n        }\n      },\n      \"standard\": {\n        \"$type\": \"svg\",\n        \"$value\": \"{{assets.mark.positive}}\"\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.app-icon",
+    "source": {
+      "kind": "original",
+      "ref": [
+        "packages/producer/studio/public/studio-mark.svg"
+      ],
+      "license": "MIT"
+    },
+    "element": {
+      "id": "app-icon",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.app-icon",
+      "kind": "registry:item",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "PLACEHOLDER-IMG"
+      },
+      "reason": "CREATE: maskable centres the Clossys asterisk in the 80% safe zone on a full-bleed ground; standard aliases the mark.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "exempt",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}
