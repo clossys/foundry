@@ -21,7 +21,6 @@ const ToggleButton = componentLeaf<typeof import("../components/ToggleButton.js"
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
 const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
-const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
 
 const EMBEDDED_HEADER = "frame-header-row";
 const GLASS_SURFACE = "bg-surface-glass";
@@ -280,7 +279,7 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
           aria-current={item.id === header.nav?.activeId ? "page" : undefined}>
           {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}{item.label}
         </Menu.Item>)}
-      </Menu> : <Tooltip trigger={<SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}>{header.title}</Tooltip>}
+      </Menu> : <SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}
     </SemanticContent>
     <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
       className={(overflow.compactNav ? (embedded ? "invisible pointer-events-none " : "invisible pointer-events-none absolute ") : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}
