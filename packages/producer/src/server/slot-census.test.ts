@@ -42,7 +42,7 @@ function fixture(agent: SlotAgent, ids = [`${agent}.empty`, `${agent}.options`],
       expect(validateCandidate(kind, id, name, bytes)).toEqual([]);
       writeFileSync(join(dir, 'candidates', name), bytes);
       if (version === 1 && id.endsWith('.options')) {
-        const pin = { candidate: name, sha256: sha256Hex(bytes), pinnedBy: 'owner:synthetic-test-only:slot-census', at: '2026-01-01T00:00:00Z' };
+        const pin = { candidate: name, sha256: sha256Hex(bytes), decidedBy: 'owner:synthetic-test-only:slot-census', at: '2026-01-01T00:00:00Z' };
         expect(validatePin(pin)).toEqual([]);
         save(join(dir, 'pin.json'), pin);
       }
@@ -69,7 +69,7 @@ describe('authoritative slot census', () => {
     // The options slot pins v1 while v2 exists. Empty inputs never establish readiness.
     expect(agentSlotCensus(root, 'director')).toMatchObject({ state: 'ready', total: 2, withCandidate: 1, pinned: 1 });
     const empty = join(root, 'agents/director/director.empty');
-    save(join(empty, 'pin.json'), { candidate: 'missing-v1.md', sha256: '0'.repeat(64), pinnedBy: 'owner:synthetic-test-only:missing-candidate', at: '2026-01-01T00:00:00Z' });
+    save(join(empty, 'pin.json'), { candidate: 'missing-v1.md', sha256: '0'.repeat(64), decidedBy: 'owner:synthetic-test-only:missing-candidate', at: '2026-01-01T00:00:00Z' });
     expect(agentSlotCensus(root, 'director')).toMatchObject({ state: 'ready', total: 2, withCandidate: 1, pinned: 2 });
     writeFileSync(join(root, 'agents/director/director.options/candidates/sample-v1.md'), 'changed bytes');
     expect(agentSlotCensus(root, 'director')).toMatchObject({ state: 'ready', total: 2, withCandidate: 1, pinned: 2 });
@@ -87,7 +87,7 @@ describe('authoritative slot census', () => {
       writeFileSync(join(dir('bad-slot'), 'slot.json'), '{');
       writeFileSync(join(dir('bad-pin'), 'pin.json'), '{');
       const pin = (name: string, candidate: string, sha256: string) => save(join(dir(name), 'pin.json'), {
-        candidate, sha256, pinnedBy: 'owner:synthetic-test-only:census', at: '2026-01-01T00:00:00Z',
+        candidate, sha256, decidedBy: 'owner:synthetic-test-only:census', at: '2026-01-01T00:00:00Z',
       });
       const extension = agent === 'director' || agent === 'writer' ? 'md' : 'json';
       const candidate = `sample-v1.${extension}`;

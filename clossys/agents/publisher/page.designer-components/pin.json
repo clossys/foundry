@@ -1,6 +1,6 @@
 {
   "candidate": "page-v2.json",
   "sha256": "0f81ad5e07e5830a36b6aa794d5914e0cb7c20e5b7b11a345db32c95e5861b69",
-  "pinnedBy": "owner:2026-11-03 STUDIO-TEMPLATE-FIX go",
+  "decidedBy": "migrated",
   "at": "2026-11-03T15:00:00Z"
 }

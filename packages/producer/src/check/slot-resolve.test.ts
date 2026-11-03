@@ -51,7 +51,7 @@ function fixture() {
     } });
     const name = `sample-v1.${kind === "brief" || kind === "strings" ? "md" : "json"}`;
     writeFileSync(join(dir, "candidates", name), bytes);
-    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" });
+    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" });
   }
   return { root, consumer, dirs };
 }

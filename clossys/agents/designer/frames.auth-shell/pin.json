@@ -1,6 +1,6 @@
 {
   "candidate": "auth-shell-v1.json",
   "sha256": "58509402e91b168301cf6ef35e7cfecf8447da6bf64529d856fc729b901793fb",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "migrated",
   "at": "2026-11-03T08:58:02Z"
 }

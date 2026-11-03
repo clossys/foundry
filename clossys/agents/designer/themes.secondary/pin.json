@@ -1,6 +1,6 @@
 {
   "candidate": "secondary-v1.json",
   "sha256": "db4073448cd2132cc9a832ab74c9a5cc210a0b9f2b53843d3cd577c3c133c1fa",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "migrated",
   "at": "2026-11-03T08:58:02Z"
 }

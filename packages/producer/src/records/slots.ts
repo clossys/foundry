@@ -125,7 +125,7 @@ function readNotNeeded(dir: string): NotNeeded | "invalid" | undefined {
 function decideSlotState(dir: string, pin: PinDoc | null): SlotStateResult {
   const pinPresent = existsSync(pinFile(dir));
   const notNeeded = readNotNeeded(dir);
-  if (notNeeded === "invalid") return { state: "rejected", reason: "invalid-slot", message: "slot.json notNeeded must be {reason, since}." };
+  if (notNeeded === "invalid") return { state: "rejected", reason: "invalid-slot", message: "slot.json notNeeded must be {reason, since, decidedBy}." };
   if (pinPresent && notNeeded) return { state: "rejected", reason: "pinned-and-not-needed", message: "Slot is both pinned and marked not needed." };
   if (pinPresent && !pin) return { state: "rejected", reason: "invalid-pin", message: "pin.json is not a valid pin." };
   if (pin) return { state: "pinned", pin };
@@ -214,7 +214,11 @@ export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinE
       const older = read[index + 1];
       // A pure move (new path, same bytes) is not a pin event.
       if (older && older.at !== entry.at && older.bytes === entry.bytes) continue;
-      try { events.push({ ...JSON.parse(entry.bytes) as PinDoc, commit: entry.commit }); } catch { /* unreadable historical pin */ }
+      try {
+        // Pins written before `clossys pin` named the decider `pinnedBy`.
+        const { pinnedBy, ...pin } = JSON.parse(entry.bytes) as PinDoc & { pinnedBy?: string };
+        events.push({ ...pin, decidedBy: pin.decidedBy ?? pinnedBy ?? "", commit: entry.commit });
+      } catch { /* unreadable historical pin */ }
     }
     if (events.length) return events;
   } catch { /* not a git checkout */ }

@@ -1,6 +1,6 @@
 {
   "candidate": "success-v1.json",
   "sha256": "257d2f037a91f915cc476c984535a0af61eec984e197041e1e2f457b69478071",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "migrated",
   "at": "2026-11-03T08:58:02Z"
 }

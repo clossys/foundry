@@ -1,6 +1,6 @@
 {
   "candidate": "app-header-v1.json",
   "sha256": "df3c738a69792387f91d0ba76312048773ea9bc4817e865ddefeac8c080d4ac5",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "migrated",
   "at": "2026-11-03T08:58:02Z"
 }

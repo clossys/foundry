@@ -1,6 +1,6 @@
 {
   "candidate": "data-grid-v2.json",
   "sha256": "fd065ab086f6ea68c74c8d23d98ead768da84361172431d92d642d796bf3969a",
-  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "decidedBy": "migrated",
   "at": "2026-11-03T14:00:14Z"
 }

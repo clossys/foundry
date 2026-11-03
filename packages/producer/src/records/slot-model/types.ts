@@ -27,9 +27,11 @@ export const SLOT_FILE = "slot.json";
 export const PIN_FILE = "pin.json";
 export const CANDIDATES_DIR = "candidates";
 
-/** Pin provenance for migrated pins (D6) and for the owner-cleared Director brief. */
-export const MIGRATION_PINNED_BY = "migration:SLOT-MODEL";
-export const DIRECTOR_PINNED_BY = "owner:2026-10-31 all-approved";
+/** Decision provenance for migrated pins (D6, and the decidedBy rewrite) and for the owner-cleared Director brief. */
+export const MIGRATION_DECIDED_BY = "migrated";
+export const DIRECTOR_DECIDED_BY = "owner:2026-10-31 all-approved";
+/** Who decided: the owner or the planner (optionally `:<message ref>`), or `migrated`. Written by `clossys pin`. */
+export const DECIDED_BY = /^(?:(?:owner|planner)(?::\S.*)?|migrated)$/;
 
 export interface IaLeafGroup { readonly id: string; readonly label: string; readonly slots: readonly string[] }
 export interface IaNode { readonly id: string; readonly label: string; readonly children: readonly IaLeafGroup[] }
@@ -67,8 +69,8 @@ export interface SlotDoc {
   readonly notNeeded?: NotNeeded;
 }
 
-/** Why a slot is not needed, and since when (ISO date). Set by the owner or planner, never by an agent fill. */
-export interface NotNeeded { readonly reason: string; readonly since: string }
+/** Why a slot is not needed, since when (ISO date) and who decided. Written by `clossys pin --not-needed`, never by an agent fill. */
+export interface NotNeeded { readonly reason: string; readonly since: string; readonly decidedBy: string }
 
 /**
  * Slot state is a closed union: a slot is `pinned` (pin.json exists) or `not-needed`
@@ -88,7 +90,8 @@ export interface PinDoc {
   readonly candidate: string;
   /** Hex sha256 of the candidate bytes. */
   readonly sha256: string;
-  readonly pinnedBy: string;
+  /** Who decided (DECIDED_BY). */
+  readonly decidedBy: string;
   readonly at: string;
 }
 

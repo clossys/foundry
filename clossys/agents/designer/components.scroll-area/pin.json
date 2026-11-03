@@ -1,6 +1,6 @@
 {
   "candidate": "scroll-area-v2.json",
   "sha256": "e1e206e80952fe685cb8f16450a5c9a2bc29e25d2064b4c927cd8dcda73918e3",
-  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "migrated",
   "at": "2026-11-03T12:00:00Z"
 }

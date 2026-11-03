@@ -14,7 +14,7 @@ import { readIa } from "../records/slots.js";
 import { validateSlotContract } from "../records/validate.js";
 import type { SlotContract } from "../records/types.js";
 import {
-  AGENT_KIND, DIRECTOR_PINNED_BY, IA_SCHEMA, MIGRATION_PINNED_BY, PAGE_SCHEMA, PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_SCHEMA,
+  AGENT_KIND, DIRECTOR_DECIDED_BY, IA_SCHEMA, MIGRATION_DECIDED_BY, PAGE_SCHEMA, PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_SCHEMA,
   candidateName, deriveRefs, designerIa, directorIa, feedsIndex, iaPath, jsonBytes, serializeFrontmatter, slotPositions,
   SLOT_FILE, slotDir, slotRel, toSlotId, validateSlotDoc, withExtensions, writerIa,
   type FoundryIa, type FoundrySlot, type IaDoc, type IaLeafGroup, type IaNode, type PinDoc, type RawRefs, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
@@ -97,7 +97,7 @@ function planDirector(consumer: string, store: OldStore | null): { plan: AgentPl
     };
     slot.candidates.push({ name, bytes: serializeFrontmatter(fields, cell.body) });
     if (store!.tree.active[cell.id] === cell.version) {
-      slot.pin = { candidate: name, pinnedBy: DIRECTOR_PINNED_BY, at: atOf(cell.fields.updated) ?? EPOCH };
+      slot.pin = { candidate: name, decidedBy: DIRECTOR_DECIDED_BY, at: atOf(cell.fields.updated) ?? EPOCH };
       feeds.push([cell.id, strings(cell.fields.feeds)]);
     }
   }
@@ -182,7 +182,7 @@ async function planDesigner(consumer: string, store: OldStore | null, library: r
     slot.candidates.push({ name, bytes: await designerCellCandidate(cell) });
     // D2: themes and assets keep their old-cell pins; components, sections, frames come in unpinned.
     if (store!.tree.active[cell.id] === cell.version && PIN_LAYERS.has(cell.id.split(".")[0]!)) {
-      slot.pin = { candidate: name, pinnedBy: MIGRATION_PINNED_BY, at: atOf(cell.fields.updated) ?? EPOCH };
+      slot.pin = { candidate: name, decidedBy: MIGRATION_DECIDED_BY, at: atOf(cell.fields.updated) ?? EPOCH };
     }
   }
   for (const version of library) {
@@ -202,7 +202,7 @@ async function planDesigner(consumer: string, store: OldStore | null, library: r
     if (!slot) { off(id); continue; }
     const name = candidateName(String(pin.element), Number(pin.version), "json");
     if (!slot.candidates.some(candidate => candidate.name === name)) continue;
-    slot.pin = { candidate: name, pinnedBy: MIGRATION_PINNED_BY, at: typeof history.get(pin.event)?.at === "string" ? history.get(pin.event)!.at : EPOCH };
+    slot.pin = { candidate: name, decidedBy: MIGRATION_DECIDED_BY, at: typeof history.get(pin.event)?.at === "string" ? history.get(pin.event)!.at : EPOCH };
   }
   for (const slot of plan.slots.values()) slot.candidates.sort((a, b) => cmp(a.name, b.name));
   return plan;
@@ -279,7 +279,7 @@ function planWriter(consumer: string, store: OldStore | null): AgentPlan {
     const name = candidateName(base, 1, "md");
     const fields = { slot: leaf, locales: group.locales, source: sourceFrom(undefined, group.refs) };
     slot.candidates.push({ name, bytes: serializeFrontmatter(fields, stringsBody(group.locales, group.records)) });
-    if (group.pinned) slot.pin = { candidate: name, pinnedBy: MIGRATION_PINNED_BY, at: atOf([...group.updated].sort(cmp).at(-1)) ?? EPOCH };
+    if (group.pinned) slot.pin = { candidate: name, decidedBy: MIGRATION_DECIDED_BY, at: atOf([...group.updated].sort(cmp).at(-1)) ?? EPOCH };
   }
   return plan;
 }
@@ -378,7 +378,7 @@ function planPublisher(consumer: string, store: OldStore | null): AgentPlan {
     slot.candidates.push({ name, bytes: jsonBytes(candidate) });
     slot.raw.uses = [...new Set([...slot.raw.uses, ...(candidate.frame ? [candidate.frame] : []), ...candidate.sections, ...actionSections, ...Object.values(copy).map(ref => ref.slice(0, ref.indexOf("#")))])];
     if (store!.tree.active[cell.id] === cell.version) {
-      slot.pin = { candidate: name, pinnedBy: MIGRATION_PINNED_BY, at: atOf(f.updated) ?? EPOCH };
+      slot.pin = { candidate: name, decidedBy: MIGRATION_DECIDED_BY, at: atOf(f.updated) ?? EPOCH };
       if (pub && typeof f.updated === "string") pageUpdated.set(pub.id, [...(pageUpdated.get(pub.id) ?? []), f.updated]);
     }
   }
@@ -396,7 +396,7 @@ function planPublisher(consumer: string, store: OldStore | null): AgentPlan {
     slot.candidates.push({ name, bytes: jsonBytes(candidate) });
     slot.raw.uses = pages;
     const updated = [...(pageUpdated.get(top.id) ?? [])].sort(cmp).at(-1);
-    slot.pin = { candidate: name, pinnedBy: MIGRATION_PINNED_BY, at: atOf(updated) ?? gitAt(join(store!.root, "tree.json")) ?? EPOCH };
+    slot.pin = { candidate: name, decidedBy: MIGRATION_DECIDED_BY, at: atOf(updated) ?? gitAt(join(store!.root, "tree.json")) ?? EPOCH };
   }
   return plan;
 }
@@ -450,11 +450,13 @@ export async function planMigration(consumer: string): Promise<MigrationPlan> {
       dropped += derived.dropped.length;
       const doc: SlotDoc = { schema: SLOT_SCHEMA, id, agent, ia: position, kind: slot.kind, contract: slot.contract, inputs: derived.inputs, uses: derived.uses };
       const rel = `agents/${agent}/${slotRel(id)}`;
-      files.set(`${rel}/slot.json`, jsonBytes({ ...doc, ...existingWiring(consumer, rel, doc) }));
+      const wiring = existingWiring(consumer, rel, doc);
+      files.set(`${rel}/slot.json`, jsonBytes({ ...doc, ...wiring }));
       for (const candidate of slot.candidates) files.set(`${rel}/candidates/${candidate.name}`, candidate.bytes);
-      if (slot.pin) {
+      // A slot decided not needed (`clossys pin --not-needed`) never gets an old-store pin back.
+      if (slot.pin && !wiring?.notNeeded) {
         const bytes = slot.candidates.find(candidate => candidate.name === slot.pin!.candidate)!.bytes;
-        const pin: PinDoc = { candidate: slot.pin.candidate, sha256: sha256Hex(bytes), pinnedBy: slot.pin.pinnedBy, at: slot.pin.at };
+        const pin: PinDoc = { candidate: slot.pin.candidate, sha256: sha256Hex(bytes), decidedBy: slot.pin.decidedBy, at: slot.pin.at };
         files.set(`${rel}/pin.json`, jsonBytes(pin));
       }
     }

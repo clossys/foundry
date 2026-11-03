@@ -38,7 +38,7 @@ function writerRecordFixture(body: string, locales: readonly string[] = ['en']) 
   } satisfies SlotDoc));
   const source = serializeFrontmatter({ slot: id, locales, source: { kind: 'original', ref: [] } }, body);
   writeFileSync(join(dir, 'candidates', candidate), source);
-  writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate, sha256: sha256Hex(source), pinnedBy: 'owner:synthetic-test-only:writer-native', at: '2026-01-01T00:00:00Z' }));
+  writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate, sha256: sha256Hex(source), decidedBy: 'owner:synthetic-test-only:writer-native', at: '2026-01-01T00:00:00Z' }));
   return { repo, root, id, candidate, dir, source };
 }
 
@@ -68,7 +68,7 @@ describe('IA-first gallery data', () => {
       };
       const dirs = wanted.map(id => join(root, 'agents', agent, id));
       const docs = wanted.map(id => ({ schema: 'clossys.slot/1', id, agent, ia: slotPositions(agent, ia).get(id)!, kind, contract: {}, inputs: [], uses: [] } satisfies SlotDoc));
-      const pin = (bytes: string) => ({ candidate, sha256: sha256Hex(bytes), pinnedBy: 'owner:synthetic-test-only:gallery-validation', at: '2026-01-01T00:00:00Z' });
+      const pin = (bytes: string) => ({ candidate, sha256: sha256Hex(bytes), decidedBy: 'owner:synthetic-test-only:gallery-validation', at: '2026-01-01T00:00:00Z' });
       const reset = () => wanted.forEach((id, i) => {
         const bytes = content(id);
         expect(validateCandidate(kind, id, candidate, bytes)).toEqual([]);
@@ -198,7 +198,7 @@ describe('IA-first gallery data', () => {
         if (id === 'components.empty') continue;
         const content = id === 'components.bad' ? bytes : JSON.stringify({ name: 'element', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Healthy() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
         writeFileSync(join(dir, 'candidates/element-v1.json'), content);
-        writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'element-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-malformed', at: '2026-01-01T00:00:00Z' }));
+        writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'element-v1.json', sha256: sha256Hex(content), decidedBy: 'owner:synthetic-test-only:gallery-malformed', at: '2026-01-01T00:00:00Z' }));
         if (id === 'components.bad') writeFileSync(join(dir, 'candidates/element-v2.json'), JSON.stringify({ name: 'newer' }));
       }
       const gallery = slotGallery(root, 'designer');
@@ -234,7 +234,7 @@ describe('IA-first gallery data', () => {
       const content = JSON.stringify({ name: 'example', type: 'registry:component', files: [{ path: 'index.tsx', type: 'registry:component', content: 'export default function Example() { return null; }' }], meta: { source: { kind: 'original', ref: [] } } });
       writeFileSync(join(dir, 'candidates/example-v1.json'), content);
       writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('return null;', 'return <div />;'));
-      const pin = { candidate: 'example-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:designer-pin', at: '2026-01-01T00:00:00Z' };
+      const pin = { candidate: 'example-v1.json', sha256: sha256Hex(content), decidedBy: 'owner:synthetic-test-only:designer-pin', at: '2026-01-01T00:00:00Z' };
       const assertNoPreview = (noPin: boolean) => {
         const cards = slotGallery(root, 'designer').sections.flatMap(section => section.cards);
         expect(cards.map(card => card.id)).toEqual(wanted);
@@ -301,7 +301,7 @@ describe('IA-first gallery data', () => {
       expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'No pin' });
       noFrame();
       expect(cards()[0]!.options).toBe(2);
-      const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
+      const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), decidedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       expect(cards()[0]).toMatchObject({ status: 'active', candidate: 'label-v1.md', version: 1 });
       expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows[0]?.text).toBe('Hello <script> & welcome');
@@ -344,7 +344,7 @@ describe('IA-first gallery data', () => {
       const fields = { slot: id, source: { kind: 'original', ref: [] }, feeds: [], functions: [] };
       const body = '## Direction\nPinned demand\n## Because\nEvidence\n## Watch\nSignals';
       const content = serializeFrontmatter(fields, body);
-      const pin = { candidate: name, sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:director-pin', at: '2026-01-01T00:00:00Z' };
+      const pin = { candidate: name, sha256: sha256Hex(content), decidedBy: 'owner:synthetic-test-only:director-pin', at: '2026-01-01T00:00:00Z' };
       writeFileSync(join(dir, 'candidates', name), content);
       writeFileSync(join(dir, 'candidates/record-v2.md'), serializeFrontmatter(fields, body.replace('Pinned demand', 'Newer draft')));
       const served = (slot = id, candidate?: string) => detailRecord(repo, 'director', slot, candidate);
@@ -396,7 +396,7 @@ describe('IA-first gallery data', () => {
           ...(agent === 'director' ? { feeds: [], functions: [] } : { locales: ['en'] }) };
         const content = serializeFrontmatter(fields, body);
         writeFileSync(join(dir, 'candidates/record-v1.md'), content);
-        if (agent === 'director') writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'record-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:specimen', at: '2026-01-01T00:00:00Z' }));
+        if (agent === 'director') writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'record-v1.md', sha256: sha256Hex(content), decidedBy: 'owner:synthetic-test-only:specimen', at: '2026-01-01T00:00:00Z' }));
         const input = recordSpecimenInput(root, agent, id)!;
         const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen: input }));
         expect(html).toContain('<table');

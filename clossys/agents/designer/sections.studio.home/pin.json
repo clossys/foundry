@@ -1,6 +1,6 @@
 {
   "candidate": "studio-home-v5.json",
   "sha256": "31b443bc893993ce0f8d4b8a2fae426fa2d3242a9d76875ea1a9188821069fb2",
-  "pinnedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
+  "decidedBy": "migrated",
   "at": "2026-11-03T12:00:00Z"
 }

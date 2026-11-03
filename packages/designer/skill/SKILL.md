@@ -24,7 +24,7 @@ clossys/agents/designer/<slot>/candidates/<element>-v<N>.json
                                                                 one option: a shadcn registry item
                                                                 (files[] with content; meta.source,
                                                                 meta.element, meta.preview)
-clossys/agents/designer/<slot>/pin.json                         { candidate, sha256, pinnedBy, at }
+clossys/agents/designer/<slot>/pin.json                         { candidate, sha256, decidedBy, at }; written by `clossys pin`
 ```
 
 Slot contracts ship in the installed Designer package at
@@ -106,14 +106,11 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    pin; a non-zero exit means unpin it (restore the previous `pin.json`), then
    re-source the item from a trusted reference, cut the failing hunks, or raise a NEED:
    ```sh
-   node --input-type=module -e '
-   import { writePin } from "@clossys/producer";
-   const [slot, candidate, ref] = process.argv.slice(1);
-   console.log(writePin("clossys", "designer", slot, candidate, { pinnedBy: `owner:${ref}`, at: new Date().toISOString() }));' <slot> <element>-v<N>.json "<owner message ref>"
+   npx clossys pin designer/<slot> <element>-v<N> --by "owner:<owner message ref>"
    npx designer-ref-verbatim --root clossys --pinned
    ```
-   `pinnedBy` names the owner's approval message; never write one yourself
-   without it. To go back, pin the earlier candidate again.
+   `--by` names the owner's approval message; never pin without it, and never
+   hand-edit `pin.json`. To go back, pin the earlier candidate again.
 7. **Check and commit.**
    ```sh
    npx clossys check --suites

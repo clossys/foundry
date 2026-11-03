@@ -1,6 +1,6 @@
 {
   "candidate": "studio-contract-v2.json",
   "sha256": "e3e3a1f7c8fe33f7fe68633f0b8834a301c15c02ddb20232584bd495ed662d50",
-  "pinnedBy": "migration:SLOT-MODEL",
+  "decidedBy": "migrated",
   "at": "2026-11-01T16:09:14Z"
 }

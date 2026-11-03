@@ -5,6 +5,7 @@ import type { PageLintReport } from "../check/page-types.js";
 import type { RecordSuitesReport } from "../check/record-suites.js";
 import { runSpecimenCli } from "./specimen.js";
 import { runMigrateCli } from "./migrate.js";
+import { runDecisionsCli, runPinCli } from "./pin.js";
 import { CliUsageError, parseArgs, USAGE } from "./args.js";
 import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
@@ -36,6 +37,10 @@ export interface CliResult {
   brief?: unknown;
   checks?: unknown;
   compilation?: unknown;
+  /** pin: the decision just written. */
+  decision?: unknown;
+  /** decisions: every slot's state and the counts. */
+  decisions?: unknown;
 }
 
 export async function runCli(argv: readonly string[], cwd = process.cwd()): Promise<CliResult> {
@@ -44,6 +49,9 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     if (argv[0] === "specimen") return await runSpecimenCli(argv.slice(1), cwd);
     // `migrate slots` has its own flags; it never reaches the shared parser.
     if (argv[0] === "migrate") return await runMigrateCli(argv.slice(1), cwd);
+    // Decisions: `pin` writes one, `decisions` lists them all (R-DECISIONS-BY-CLI).
+    if (argv[0] === "pin") return await runPinCli(argv.slice(1), cwd);
+    if (argv[0] === "decisions") return await runDecisionsCli(argv.slice(1), cwd);
     const args = parseArgs(argv);
     if (args.help) return { exitCode: 0, message: USAGE };
     const verb = args.verb!;

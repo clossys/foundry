@@ -1,6 +1,6 @@
 {
   "candidate": "status-list-v2.json",
   "sha256": "1095b0f6cae36f67779ad4bb2b3aef8b16e7a545114eb3c84849508860fba2b1",
-  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "decidedBy": "migrated",
   "at": "2026-11-03T14:00:21Z"
 }

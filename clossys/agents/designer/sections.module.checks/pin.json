@@ -1,6 +1,6 @@
 {
   "candidate": "module-checks-v1.json",
   "sha256": "ee6b1831b5db1adb471755b6dec330862619d8464ac93d47094ba53deb11e728",
-  "pinnedBy": "migration:SLOT-MODEL",
+  "decidedBy": "migrated",
   "at": "2026-10-31T22:00:00Z"
 }

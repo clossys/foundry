@@ -1,6 +1,6 @@
 {
   "candidate": "border-v1.json",
   "sha256": "868ee0bbabfc7459c87a6d8a7fd8c2f85fabe7143489f37e09e12d6117ba84a1",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "migrated",
   "at": "2026-11-03T08:58:02Z"
 }

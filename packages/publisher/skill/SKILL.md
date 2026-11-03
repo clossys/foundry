@@ -25,7 +25,7 @@ clossys/agents/publisher/ia.json                                  the IA: L1/L2 
 clossys/agents/publisher/<page slot>/slot.json                    clossys.slot/1 (kind: page)
 clossys/agents/publisher/<page slot>/candidates/<name>-v<N>.json
                                                                   one option: a page record
-clossys/agents/publisher/<page slot>/pin.json                     { candidate, sha256, pinnedBy, at }; the owner writes it
+clossys/agents/publisher/<page slot>/pin.json                     { candidate, sha256, decidedBy, at }; the owner decides, `clossys pin` writes it
 clossys/agents/designer/<slot>/candidates/                        frames and sections (read only)
 clossys/agents/writer/<slot>/candidates/                          Writer copy keys (read only)
 ```

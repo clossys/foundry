@@ -1,6 +1,6 @@
 {
   "candidate": "avatar-v2.json",
   "sha256": "4ce33df11cbf813362f441eef94237586866f65d163da434139030c184a636ac",
-  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "migrated",
   "at": "2026-11-03T12:00:00Z"
 }

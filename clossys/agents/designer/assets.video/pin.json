@@ -1,6 +1,6 @@
 {
   "candidate": "video-v1.json",
   "sha256": "0262cb2be553ad6efe1c4f1afb4fbbcd6465f72bb7e96fc637543c4bc2db2eaf",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "migrated",
   "at": "2026-11-03T08:58:02Z"
 }

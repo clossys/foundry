@@ -1,11 +1,15 @@
 /**
- * The slot-model writer: a new candidate in a slot's `candidates/`, and the slot's
- * `pin.json` naming one candidate by the sha256 of its bytes. Candidates are
- * immutable (a change is the next version); a pin is replaced, and its history is git.
+ * The slot-model writer: a new candidate in a slot's `candidates/`, and the slot's decision —
+ * `pin.json` naming one candidate by the sha256 of its bytes, or slot.json `notNeeded`.
+ * Candidates are immutable (a change is the next version); a decision is replaced, and its
+ * history is git. Decisions are written through `clossys pin` (rule R-DECISIONS-BY-CLI).
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, validateCandidate, validatePin, type PinDoc, type SlotAgent } from "./slot-model/index.js";
+import {
+  CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
+  type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc,
+} from "./slot-model/index.js";
 import { listSlots, readCandidate, readSlot } from "./slots.js";
 
 function located(consumer: string, agent: SlotAgent, id: string) {
@@ -32,16 +36,34 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   return { name: file, sha256: readCandidate(consumer, agent, id, file).sha256 };
 }
 
-/** Pin one existing, valid candidate. `pinnedBy` is `owner:<message ref>`: the owner's approval. */
-export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { pinnedBy: string; at: string }): PinDoc {
+/**
+ * Pin one existing, valid candidate. `decidedBy` names who decided (owner or planner, optionally
+ * `:<message ref>`, or `migrated`). A `notNeeded` marker on the slot is cleared: the pin replaces it.
+ */
+export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; at: string }): PinDoc {
   const { doc, entry } = located(consumer, agent, id);
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
   const read = readCandidate(consumer, agent, id, candidate);
   const issues = validateCandidate(doc.kind, id, candidate, read.bytes);
   if (issues.length) throw new Error(`pin refused: ${issues.map(issue => issue.message).join("; ")}`);
-  const pin: PinDoc = { candidate, sha256: read.sha256, pinnedBy: input.pinnedBy, at: input.at };
+  const pin: PinDoc = { candidate, sha256: read.sha256, decidedBy: input.decidedBy, at: input.at };
   const pinIssues = validatePin(pin);
   if (pinIssues.length) throw new Error(`pin refused: ${pinIssues.map(issue => issue.message).join("; ")}`);
+  if (doc.notNeeded) {
+    const { notNeeded: _cleared, ...rest } = doc;
+    writeFileSync(slotFile(entry.dir), jsonBytes(rest));
+  }
   writeFileSync(pinFile(entry.dir), jsonBytes(pin));
   return pin;
+}
+
+/** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}`, and any pin.json removed. */
+export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded): SlotDoc {
+  const { doc, entry } = located(consumer, agent, id);
+  const next: SlotDoc = { ...doc, notNeeded: { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy } };
+  const issues = validateSlotDoc(next);
+  if (issues.length) throw new Error(`not-needed refused: ${issues.map(issue => issue.message).join("; ")}`);
+  writeFileSync(slotFile(entry.dir), jsonBytes(next));
+  if (existsSync(pinFile(entry.dir))) unlinkSync(pinFile(entry.dir));
+  return next;
 }

@@ -22,7 +22,7 @@ clossys/agents/writer/ia.json                                  the IA: L1/L2 gro
 clossys/agents/writer/<slot>/slot.json                         clossys.slot/1 (kind: strings)
 clossys/agents/writer/<slot>/candidates/<name>-v<N>.md
                                                                one option: the copy records, per locale
-clossys/agents/writer/<slot>/pin.json                          { candidate, sha256, pinnedBy, at }; the owner writes it
+clossys/agents/writer/<slot>/pin.json                          { candidate, sha256, decidedBy, at }; the owner decides, `clossys pin` writes it
 ```
 
 The slot's leaf rule (length, kind) is in `slot.json` `contract`, copied from
