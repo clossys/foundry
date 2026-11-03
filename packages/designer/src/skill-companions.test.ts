@@ -62,6 +62,7 @@ describe("installed Designer skill contract", () => {
       "scripts/ref-verbatim/baseline.json", "scripts/ref-verbatim/owner-needs.json",
       "references/manifest.json", "scripts/check-section-tokens.mjs",
       "src/catalog/slots/sections.json", "src/catalog/slots/frames.json",
+      "src/catalog/slot-contracts/themes.json", "src/catalog/slot-contracts/assets.json", "src/catalog/slot-contracts/components.json",
       "src/catalog/slot-contracts/sections.json", "src/catalog/slot-contracts/frames.json",
     ]) expect(files.has(path), `runtime inventory missing: ${path}`).toBe(true);
   }, 35_000);

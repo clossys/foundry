@@ -40,7 +40,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
 ## Loop (one slot)
 
 1. **Read the contract.** Find the slot's row in `<layer>.json` under
-   `src/catalog/slot-contracts/` of the installed `@clossys/designer`.
+   `src/catalog/slot-contracts/` of the installed `@clossys/designer` (one file per layer: themes, assets, components, sections, frames; every Designer slot has a row).
    Note every required input: copy keys (`kind: copy`), theme variables
    (`themes.*`) and assets. Read the Director brief:
    `npx strategist-check handoff designer.identity --root clossys/agents/director`.

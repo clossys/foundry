@@ -99,11 +99,12 @@ describe("Designer to Writer passage catalog coverage", () => {
     expect(subjects.some(subject => subject.record.id === "ps.000000002q" && subject.record.leaf === "passages.error-state")).toBe(true);
   });
 
-  it("reports zero schema-pair, record-leaf and dangling findings across all 51 pairs and actual records", () => {
+  it("reports zero schema-pair, record-leaf and dangling findings across all 52 non-specimen pairs and actual records", () => {
     const catalog = loadWriterCatalog();
-    expect(sections).toHaveLength(51);
-    expect(new Set(sections.map(section => section.contract.passageSchema)).size).toBe(51);
-    expect(catalog.slots.filter(slot => slot.layer === "passages")).toHaveLength(51);
+    const paired = sections.filter(section => !section.id.startsWith("sections.specimen-"));
+    expect(paired).toHaveLength(52);
+    expect(new Set(paired.map(section => section.contract.passageSchema)).size).toBe(52);
+    expect(catalog.slots.filter(slot => slot.layer === "passages")).toHaveLength(52);
     expect(recordFiles).toEqual(expect.arrayContaining(["site.en.json", "sign-in.json", "admin-meta.r1.en.json", "admin-studio.r1.en.json", "admin-voice.r1.en.json"]));
     for (const file of recordFiles) expect(subjects.some(subject => subject.file === file), file).toBe(true);
     const report = coverageReport(catalog);

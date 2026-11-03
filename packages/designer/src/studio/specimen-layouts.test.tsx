@@ -10,14 +10,13 @@ import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-
 import componentData from "./default-component-preview-profile.json" with { type: "json" };
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenAxis, type SpecimenItem } from "./specimen-layouts.js";
-import { componentSpecimenItems, SpecimenVariantMatrix } from "./specimen-viewports.js";
+import { componentSpecimenItems } from "./specimen-viewports.js";
 import { NativeSpecimenStateClone } from "./specimen-state-clone.js";
 import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
 import { componentDescriptorHash, componentLibraryHash, resolveComponents, type ComponentCatalog, type ComponentLibrary } from "../catalog-core/resolve-components.js";
 import { applyComponentLibraryChange } from "../catalog-core/changeset-components.js";
 import { loadComponentRegistry } from "../catalog-core/component-registry.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
-import { renderNativeSpecimenComponentState } from "../../../producer/studio/lib/native-specimen-preview.js";
 
 const catalog = loadCatalog();
 const valueLibrary = completedCatalogLibrary(catalog, { id: "layout-consumer", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-29");
@@ -114,16 +113,13 @@ it("rejects empty inputs and real missing native parts before counting any prope
   const broken = { ...selected, modules: { ...selected.modules, "@clossys/designer/components": { ...components, GridList: () => null } } };
   expect(specimenLayoutNeeds({ ...props, items: items(2), context: broken })).toContainEqual(expect.objectContaining({ reason: expect.stringContaining("item part") }));
 });
-it("enumerates the native descriptor's full variant×state×size universe and honors selected overrides", async () => {
+// The selected-override render ran through the retired Producer component-state adapter (aa395d885).
+it("enumerates the native descriptor's full variant×state×size universe", () => {
   const selected = context(), cases = componentSpecimenItems(selected, "components.button");
   const descriptor = selected.profile.components.components["components.button"]!.descriptor;
   const variants = descriptor.members.filter(member => member.startsWith("variant."));
   expect(cases.axes[0]!.values.map(value => value.id)).toEqual(["default", ...variants]);
   expect(cases.items).toHaveLength(cases.axes.reduce((count, axis) => count * axis.values.length, 1));
-  const first = { id: "registered-secondary", label: "Secondary", value: { leaf: "components.button", members: ["variant.secondary"], state: "default" } };
-  const view = await renderSelected(<SpecimenVariantMatrix items={[first]} context={selected} need={need} labels={labels} renderParts={{ "sections.specimen-variant-matrix": { renderComponentState: renderNativeSpecimenComponentState } }} />, selected);
-  expect(screen.getByRole("button")).toHaveClass("border-line-control");
-  expect(view.container.textContent).not.toMatch(/originKinds:|\$extensions|```/);
 });
 it.each(["hover", "focus-visible", "pressed"] as const)("captures a real native %s state into an inert eventless clone", async state => {
   if (state === "hover") {

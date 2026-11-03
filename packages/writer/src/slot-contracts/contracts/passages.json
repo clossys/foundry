@@ -613,6 +613,37 @@
       "specimenKind": "text"
     },
     {
+      "id": "passages.sectioned-document",
+      "package": "writer",
+      "layer": "passages",
+      "purpose": "A structured document body rendered from host records, with no copy of its own.",
+      "inputs": [],
+      "limits": {
+        "translationHeadroom": 0.3,
+        "unique": false,
+        "claims": true,
+        "fields": {},
+        "designerSection": "sections.sectioned-document"
+      },
+      "references": [
+        {
+          "id": "passages.sectioned-document.guide",
+          "kind": "guide",
+          "guide": "The document's headings and text come from its host records; this section adds no copy around them.",
+          "exemplars": [
+            {
+              "note": "Write the document itself as records; the section only lays out what the records hold."
+            },
+            {
+              "note": "If the document needs an intro or heading above it, place a page header section before it."
+            }
+          ]
+        }
+      ],
+      "checkSuiteId": "writer.copy.v1",
+      "specimenKind": "text"
+    },
+    {
       "id": "passages.legal-prose",
       "package": "writer",
       "layer": "passages",
