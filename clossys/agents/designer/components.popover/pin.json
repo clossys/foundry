@@ -1,6 +1,6 @@
 {
   "candidate": "popover-v2.json",
   "sha256": "cc998d763cdb39e5db8032e025f583768122efdb6a8ee19e99b977efeb9fdf5e",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
   "at": "2026-11-03T12:00:00Z"
 }

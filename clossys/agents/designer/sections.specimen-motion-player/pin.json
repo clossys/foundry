@@ -1,6 +1,6 @@
 {
   "candidate": "specimen-motion-player-v2.json",
   "sha256": "a5d0d5ccaaf98207683839d4ea1a0c3192e8e64f518ff53f86cb9808d718ae37",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
   "at": "2026-11-03T14:00:18Z"
 }

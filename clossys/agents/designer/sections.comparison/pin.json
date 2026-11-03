@@ -1,6 +1,6 @@
 {
   "candidate": "comparison-v1.json",
   "sha256": "6149fd11eafe2411382c619a990b8ec6429c3d219a35037fa1fcc3d8678f1431",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

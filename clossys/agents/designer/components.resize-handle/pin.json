@@ -1,6 +1,6 @@
 {
   "candidate": "resize-handle-v2.json",
   "sha256": "3729e27aae94940723a21b45a62e54e1d29a4561a21f5e739e2b3ffd1d82450a",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
   "at": "2026-11-03T12:00:00Z"
 }

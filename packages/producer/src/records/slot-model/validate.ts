@@ -114,7 +114,7 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
   for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "at"].includes(key)) fail(`unknown key ${key}`);
   if (!nonEmpty(value.candidate) || !CANDIDATE_NAME.test(value.candidate)) fail("candidate must be a candidate file name");
   if (typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256)) fail("sha256 must be 64 lowercase hex");
-  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<msg ref>], planner[:<msg ref>] or migrated");
+  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>] or migrated");
   if (typeof value.at !== "string" || Number.isNaN(Date.parse(value.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(value.at)) fail("at must be an ISO timestamp");
   return issues;
 }

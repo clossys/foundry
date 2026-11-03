@@ -1,6 +1,6 @@
 {
   "candidate": "module-outline-v2.json",
   "sha256": "1156f4448884957f4f31956e7c30ab97a84690942bf5e3ae9a50791073054adc",
-  "decidedBy": "migrated",
+  "decidedBy": "migration:SLOT-MODEL",
   "at": "2026-10-31T23:59:30Z"
 }

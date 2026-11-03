@@ -107,7 +107,7 @@ async function pinned(root: string, index: Map<string, Position>, id: string, ki
   keys(pin, ["candidate", "sha256", "decidedBy", "at"], pinPath);
   safeSegment(pin.candidate, CANDIDATE, pinPath);
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
-    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner)(?::\S.*)?|migrated)$/.test(pin.decidedBy)
+    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/.test(pin.decidedBy)
     || typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || Number.isNaN(Date.parse(pin.at))) fail(pinPath, "Invalid pin");
   const path = join(dir, "candidates", pin.candidate), raw = await bytes(root, path);
   if (createHash("sha256").update(raw).digest("hex") !== pin.sha256) fail(path, "Pinned candidate hash drift");

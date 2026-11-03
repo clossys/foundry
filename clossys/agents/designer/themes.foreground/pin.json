@@ -1,6 +1,6 @@
 {
   "candidate": "foreground-v1.json",
   "sha256": "696fb0ae0c1bfe6c0d363962f2159839ed2586751be1b5f437714ec0cfa98479",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

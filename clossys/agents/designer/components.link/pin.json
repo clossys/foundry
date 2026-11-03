@@ -1,6 +1,6 @@
 {
   "candidate": "link-v2.json",
   "sha256": "14726f1f3a88af6576c6cb63b8e80d0ffa713705df04b5271895addb795a03a9",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
   "at": "2026-11-03T12:00:00Z"
 }

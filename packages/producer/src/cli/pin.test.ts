@@ -1,6 +1,8 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
 import { jsonBytes, slotPositions, type IaDoc } from "../records/slot-model/index.js";
@@ -128,5 +130,27 @@ describe("clossys decisions", () => {
     result = await runCli(["decisions"], workspace);
     expect(result.message).toMatch(/decisions: 2 slots, 1 pinned, 1 not-needed, 0 open$/);
     expect(result.message).toMatch(/^not-needed designer\/components\.other \(Unused\.\)$/m);
+  });
+});
+
+describe("migrate-pin-decided-by", () => {
+  it("carries the base pin's pinnedBy into decidedBy verbatim, through clossys pin", async () => {
+    const pinPath = join(slotDir, "pin.json");
+    const pinnedBy = "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)";
+    writeFileSync(pinPath, jsonBytes({ candidate: "example-v1.json", sha256: sha256Hex(good), pinnedBy, at: "2026-11-01T09:00:00Z" }));
+    const git = (...args: string[]) => execFileSync("git", ["-C", workspace, ...args], { stdio: "pipe", encoding: "utf8" }).trim();
+    git("init", "-q");
+    git("add", "-A");
+    git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-q", "-m", "base");
+    const base = git("rev-parse", "HEAD");
+    // The earlier run dropped the provenance; the migration must recover it from the base commit.
+    writeFileSync(pinPath, jsonBytes({ candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: "migrated", at: "2026-11-01T09:00:00Z" }));
+    const script = fileURLToPath(new URL("../../scripts/migrate-pin-decided-by.mjs", import.meta.url));
+    const { migratePins } = await import(script) as { migratePins: (options: object) => Promise<{ migrated: number; failures: string[] }> };
+    const runPin = async (args: string[]) => { const result = await runCli(args, workspace); return { ok: result.exitCode === 0, output: result.message }; };
+    const outcome = await migratePins({ repo: workspace, base, runPin });
+    expect(outcome).toMatchObject({ migrated: 1, failures: [] });
+    expect(load(pinPath)).toEqual({ candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: pinnedBy, at: "2026-11-01T09:00:00Z" });
+    expect(await migratePins({ repo: workspace, base, runPin })).toMatchObject({ migrated: 0, failures: [] });
   });
 });

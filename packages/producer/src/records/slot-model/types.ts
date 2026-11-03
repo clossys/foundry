@@ -30,8 +30,8 @@ export const CANDIDATES_DIR = "candidates";
 /** Decision provenance for migrated pins (D6, and the decidedBy rewrite) and for the owner-cleared Director brief. */
 export const MIGRATION_DECIDED_BY = "migrated";
 export const DIRECTOR_DECIDED_BY = "owner:2026-10-31 all-approved";
-/** Who decided: the owner or the planner (optionally `:<message ref>`), or `migrated`. Written by `clossys pin`. */
-export const DECIDED_BY = /^(?:(?:owner|planner)(?::\S.*)?|migrated)$/;
+/** Who decided: owner, planner or migration (each optionally `:<ref>`), or `migrated`. Written by `clossys pin`. */
+export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/;
 
 export interface IaLeafGroup { readonly id: string; readonly label: string; readonly slots: readonly string[] }
 export interface IaNode { readonly id: string; readonly label: string; readonly children: readonly IaLeafGroup[] }

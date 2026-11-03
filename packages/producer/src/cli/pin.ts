@@ -17,7 +17,7 @@ import { discoverWorkspace } from "./migrate.js";
 export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by <who>] [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "       clossys pin <agent>/<slot> --not-needed --reason <text> [--by <who>] [--at <iso>] [--root <dir>] [--json]\n"
   + "  <candidate-id> is a file in the slot's candidates/ (`hero-v2.json`) or that name without its extension (`hero-v2`).\n"
-  + "  --by: owner[:<message ref>] (default owner), planner[:<message ref>], or migrated.";
+  + "  --by: owner[:<ref>] (default owner), planner[:<ref>], migration[:<ref>], or migrated.";
 export const DECISIONS_USAGE = "Usage: clossys decisions [--root <dir>] [--json]\n"
   + "  every slot as pinned | not-needed | open, with counts";
 

@@ -1,6 +1,6 @@
 {
   "candidate": "tooltip-v2.json",
   "sha256": "5c102a20d1aa2de5b07e88938cf3a688907b553cb41e50d5d83961dfcc1e3d65",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (INTEGRATE-SPECIMENS)",
   "at": "2026-11-03T18:00:00Z"
 }

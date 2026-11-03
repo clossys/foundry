@@ -1,6 +1,6 @@
 {
   "candidate": "accent-foreground-v1.json",
   "sha256": "ecf89f00ebfe5ddf69407058f569b47b8750940e085c46faad4086ddd07ebba1",
-  "decidedBy": "migrated",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }
