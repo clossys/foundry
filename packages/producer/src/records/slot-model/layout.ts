@@ -24,6 +24,14 @@ export const LEGACY_ENTRIES: Readonly<Record<SlotAgent, readonly string[]>> = {
   publisher: ["tree.json", "cells", "compile.json", "content-map", "route-pack", "compiled"],
 };
 
+/** Agent-level files beside ia.json that a current reader owns (never slot folders, never orphans). */
+export const AGENT_FILES: Readonly<Record<SlotAgent, readonly string[]>> = {
+  director: [], designer: [],
+  // Reader: producer/src/publish/site-source.ts readWriter (Writer key declarations).
+  writer: ["declarations.json"],
+  publisher: [],
+};
+
 /** Canonical JSON bytes: two-space indent, trailing newline, insertion key order. */
 export const jsonBytes = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 

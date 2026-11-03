@@ -16,6 +16,8 @@ const fixtureSource = join(import.meta.dirname, "__fixtures__", "install-consume
 let fixture: string;
 const temps: string[] = [];
 let stub: Server, previous: string | undefined;
+/** The fixture consumer's component selection module (`--selection`). */
+const selection = () => join(fixture, "component-selection.ts");
 const temp = (prefix: string) => { const dir = realpathSync(mkdtempSync(join(tmpdir(), prefix))); temps.push(dir); return dir; };
 
 beforeAll(async () => {
@@ -43,20 +45,20 @@ describe("clossys publish --install", () => {
   it("installs the page's pinned items, binds every copy slot, and renders the page", async () => {
     const out = temp("producer-install-");
     rmSync(out, { recursive: true });
-    const result = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out]);
+    const result = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out, "--selection", selection()]);
     expect(result.message).toContain("Findings: 0");
     expect(result.exitCode).toBe(0);
     expect(result.message).toContain("Bound: home (frame frames.plain/plain-frame + 1 sections + 0 parts, 3 copy slots bound)");
     const html = readFileSync(join(out, "site", "home", "index.html"), "utf8");
     for (const text of ["Example Studio", "Pages assembled from records", "Every word here comes from a Writer key."]) expect(html).toContain(text);
-    const again = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out]);
+    const again = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out, "--selection", selection()]);
     expect(again.exitCode).toBe(0);
     expect(again.message.match(/ unchanged: /g)).toHaveLength(2);
   }, 120_000);
 
   it("reads a page id's active Publisher cell, binding `slot = key` bullets and leaving an unbound slot empty", async () => {
     const out = join(temp("producer-install-cell-"), "out");
-    const result = await runCli(["publish", "--install", "--page", "about", "--root", fixture, "--out", out]);
+    const result = await runCli(["publish", "--install", "--page", "about", "--root", fixture, "--out", out, "--selection", selection()]);
     expect(result.message).toContain("Findings: 0 (+1 info)");
     expect(result.message).toContain("unbound-copy-slot");
     expect(result.exitCode).toBe(0);
@@ -76,6 +78,25 @@ describe("clossys publish --install", () => {
     expect(result.message).toContain("unpinned-slot sections.pricing: home: slot sections.pricing has no pinned registry item");
     expect(result.message).not.toContain("Page: ");
   }, 30_000);
+
+  it("renders no page without the consumer's component selection: a NEED finding and exit 1", async () => {
+    const out = join(temp("producer-install-unselected-"), "out");
+    const result = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out]);
+    expect(result.exitCode).toBe(1);
+    expect(result.message).toContain("need-component-selection: NEED component selection: home ");
+    expect(result.message).not.toContain("Page: ");
+  }, 60_000);
+
+  it("mounts every page inside the substrate's Publisher host with the consumer selection", async () => {
+    const out = join(temp("producer-install-host-"), "out");
+    const result = await runCli(["publish", "--install", "--page", join(fixture, "clossys", "publisher", "pages", "home.json"), "--root", fixture, "--out", out, "--selection", selection()]);
+    expect(result.exitCode).toBe(0);
+    const host = readFileSync(join(out, "substrate", "clossys", "publisher-host.tsx"), "utf8");
+    expect(host).toMatch(/^"use client";/);
+    expect(host).toContain('import { PublisherHost } from "@clossys/publisher/web/host"');
+    expect(host).toMatch(/import \{ componentSelection as selection \} from "(\.\.\/)+[^"]*\/component-selection"/);
+    expect(readFileSync(join(out, "substrate", "clossys", "pages", "home.tsx"), "utf8")).toContain('createElement(PageHost, null, mount("frames.plain"))');
+  }, 120_000);
 
   it("requires a page record", async () => {
     const result = await runCli(["publish", "--install", "--root", fixture]);

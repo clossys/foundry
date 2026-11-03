@@ -61,6 +61,14 @@ describe("clossys migrate slots", () => {
     expect(await compareSlotModel(consumer)).toEqual([]);
   });
 
+  it("accepts the Writer key declarations file beside ia.json, while another agent-level file is an orphan", async () => {
+    await migrate();
+    writeFileSync(join(consumer, "agents", "writer", "declarations.json"), jsonBytes({ keys: [] }));
+    expect(checkSlotModel(consumer)).toEqual([]);
+    writeFileSync(join(consumer, "agents", "writer", "stray.json"), jsonBytes({}));
+    expect(checkSlotModel(consumer)).toEqual([expect.objectContaining({ code: "orphan", path: "agents/writer/stray.json" })]);
+  });
+
   it("preserves later declared wiring while refreshing generated metadata on rerun", async () => {
     await migrate();
     const entry = pinnedSlot("publisher");

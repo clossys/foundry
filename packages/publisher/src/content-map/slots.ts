@@ -89,7 +89,7 @@ function candidate(value: JsonObject, kind: "page" | "publication", path: string
     if (!text(value.title) || (typeof value.path === "string") === (typeof value.slug === "string")
       || value.path !== undefined && typeof value.path !== "string" || value.slug !== undefined && typeof value.slug !== "string"
       || value.frame !== null && typeof value.frame !== "string" || !strings(value.sections)
-      || !object(value.copy) || Object.values(value.copy).some(ref => typeof ref !== "string")) fail(path, "Invalid page contract");
+      || !object(value.copy) || Object.values(value.copy).some(ref => typeof ref !== "string" || !/^[^#\s]+#[^#\s]+$/.test(ref))) fail(path, "Invalid page contract");
   }
 }
 async function pinned(root: string, index: Map<string, Position>, id: string, kind: "page" | "publication") {

@@ -11,7 +11,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { hashFiles, sha256Hex } from "../records/hash.js";
 import {
-  AGENT_KIND, CANDIDATES_DIR, IA_FILE, LEGACY_ENTRIES, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath,
+  AGENT_FILES, AGENT_KIND, CANDIDATES_DIR, IA_FILE, LEGACY_ENTRIES, PIN_FILE, SLOT_AGENTS, SLOT_FILE, agentDir, candidatesDir, iaPath,
   parseFrontmatter, sameJson, slotPositions, validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotModelIssue,
 } from "../records/slot-model/index.js";
@@ -86,7 +86,7 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
     // Orphans: folders the IA does not place (legacy stores excepted until F8).
     const l1s = new Map(ia.nodes.map(node => [node.id, new Map(node.children.map(child => [child.id, new Set(child.slots)]))]));
     for (const l1 of list(base)) {
-      if (l1 === IA_FILE || LEGACY_ENTRIES[agent].includes(l1)) continue;
+      if (l1 === IA_FILE || AGENT_FILES[agent].includes(l1) || LEGACY_ENTRIES[agent].includes(l1)) continue;
       const l2s = l1s.get(l1);
       if (!l2s) { issues.push({ code: "orphan", path: `agents/${agent}/${l1}`, message: `${l1} is not an L1 of the ${agent} IA` }); continue; }
       for (const l2 of list(join(base, l1))) {
@@ -238,7 +238,10 @@ async function rebuildPublisher(consumer: string, root: string): Promise<boolean
     if (!publications.some(pub => pub.id === doc.meta?.entry?.publication)) continue;
     active[id] = version;
     const front: Record<string, unknown> = { id, version, status: "active", updated: "2000-01-01", links: [], confirmed: "msg:slot-model-compare#U1", ...doc.meta.entry.fields, title: doc.title, ...(doc.path === undefined ? { slug: doc.slug } : { path: doc.path }), ...(doc.frame ? { frame: doc.frame, sections: doc.sections } : {}) };
-    let body = "## Copy\n" + Object.entries(doc.copy as Record<string, string>).map(([key, target]) => `- ${key}: writer:${target}\n`).join("");
+    let body = "## Copy\n" + Object.entries(doc.copy as Record<string, string>).map(([slot, ref]) => {
+      const cell = ref.slice(0, ref.indexOf("#")), key = ref.slice(ref.indexOf("#") + 1);
+      return `- ${slot === key ? key : `${slot} = ${key}`}: writer:${cell}\n`;
+    }).join("");
     for (const heading of ["Constructs", "Manifest", "Actions", "Route"]) if (doc.meta.entry.blocks?.[heading] !== undefined) body += `\n## ${heading}\n\`\`\`json\n${JSON.stringify(doc.meta.entry.blocks[heading], null, 2)}\n\`\`\`\n`;
     const source = `---\n${Object.entries(front).filter(([, value]) => value !== undefined).map(([key, value]) => `${key}: ${scalar(value, v => store.serializeScalar(v))}`).join("\n")}\n---\n\n${body}`;
     mkdirSync(join(root, "cells", id), { recursive: true });

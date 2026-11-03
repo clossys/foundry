@@ -14,12 +14,12 @@ import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { applySiteNavigation, installAndBind, isBlocking, planSite, siteLinkFindings, substrateDependencies, type BoundPage, type InstallFinding, type InstallPins, type InstallResult, type ShadcnRunner, type SitePlan, type SiteRoutePack } from "@clossys/publisher/install";
+import { applySiteNavigation, installAndBind, isBlocking, needComponentSelection, planSite, siteLinkFindings, substrateDependencies, type BoundPage, type PageHostSelection, type InstallFinding, type InstallPins, type InstallResult, type ShadcnRunner, type SitePlan, type SiteRoutePack } from "@clossys/publisher/install";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
 import { hasSlotModel } from "../records/slots.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
-import { designerPins, ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, shadcnRunner, writerCopy } from "./install.js";
+import { designerPins, ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, selectionModule, shadcnRunner, writeSubstrateHost, writerCopy } from "./install.js";
 import { installOutRoot, INSTALL_MARKER } from "./install-out.js";
 
 export interface PublishSiteOptions {
@@ -37,6 +37,10 @@ export interface PublishSiteOptions {
   readonly build?: boolean;
   /** Runs the substrate's `vite` binary (`["build"]`); never through a shell. */
   readonly vite?: ShadcnRunner;
+  /** The consumer's component selection module every route mounts inside (see `publishInstall`); without it the site is a NEED. */
+  readonly selection?: PageHostSelection;
+  /** Resolves a relative `selection.module`; defaults to process.cwd(). */
+  readonly cwd?: string;
 }
 export interface PublishSiteResult {
   readonly out: string;
@@ -173,7 +177,7 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
     const slots: Parameters<typeof substrateDependencies>[0][number][] = [];
     for (const route of plan.routes) {
       // The cell supplies copy bullets only; the route pack owns the sections, the content map the frame.
-      const cell = await pageRecordFromCell(root, route.id, pins);
+      const cell = await pageRecordFromCell(root, route.id, pins, copy);
       if (cell.frame !== route.frame || JSON.stringify(cell.sections) !== JSON.stringify(route.sections)) {
         findings.push({ code: "site-cell-mismatch", severity: "info", detail: `${route.id}: page cell lists ${cell.frame} [${cell.sections.join(", ")}]; the site mounts ${route.frame} [${route.sections.join(", ")}]` });
       }
@@ -186,12 +190,14 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
       findings.push(...routed.findings, ...siteLinkFindings(routed.page, plan));
       pages.push(routed.page);
     }
+    if (pages.length && !options.selection) findings.push(needComponentSelection(options.site));
     if (pages.length === plan.routes.length && !findings.some(isBlocking)) {
       const failed = await ensureSubstrateDependencies(substrate, substrateDependencies(slots), options.npm ?? npmRunner());
       if (failed) findings.push(failed);
     }
     if (pages.length === plan.routes.length && !findings.some(isBlocking)) {
       await mkdir(join(substrate, "clossys", "pages"), { recursive: true });
+      await writeSubstrateHost(substrate, { ...options.selection!, module: selectionModule(options.selection!.module, options.cwd) }, copy);
       await writeFile(join(substrate, "clossys", "site.json"), `${JSON.stringify(siteTable(plan, copy), null, 2)}\n`);
       await writeFile(join(substrate, "main.tsx"), SITE_MAIN);
       await writeFile(join(substrate, "vite.config.ts"), SITE_VITE_CONFIG);
