@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.decision-inputs/1",
+  "note": "The only consumer files `clossys compile` reads. Paths are relative to the consumer's clossys/ folder; `*` matches one path segment. A `glob` entry names files directly; a `pinned` entry names pin.json files and resolves each to the candidate file it pins (agents/<agent>/<slot>/candidates/<pin.candidate>). Everything else compile reads is package code. A change to the rendered output must trace to a changed file in this list (R-COMPILE-PURE).",
+  "inputs": [
+    {
+      "id": "ia",
+      "decision": "IA shape: L1/L2 grouping and leaves, per agent",
+      "glob": "agents/*/ia.json"
+    },
+    {
+      "id": "slot",
+      "decision": "Slot not needed (slot.json notNeeded), with the slot's contract and IA position",
+      "glob": "agents/*/*/slot.json"
+    },
+    {
+      "id": "pin",
+      "decision": "Which candidate fills a slot",
+      "glob": "agents/*/*/pin.json"
+    },
+    {
+      "id": "content-map",
+      "decision": "The content map: pinned Publisher publication and page records",
+      "pinned": "agents/publisher/*/pin.json"
+    },
+    {
+      "id": "writer-keys",
+      "decision": "Approved Writer keys: key text and status live in the pinned Writer candidate records",
+      "pinned": "agents/writer/*/pin.json"
+    },
+    {
+      "id": "pinned-candidate",
+      "decision": "Pinned candidate files for every other agent slot",
+      "pinned": "agents/*/*/pin.json"
+    }
+  ]
+}

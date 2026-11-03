@@ -5,6 +5,7 @@ import type { PageLintReport } from "../check/page-types.js";
 import type { RecordSuitesReport } from "../check/record-suites.js";
 import { runSpecimenCli } from "./specimen.js";
 import { runMigrateCli } from "./migrate.js";
+import { runCompileCli } from "./compile.js";
 import { CliUsageError, parseArgs, USAGE } from "./args.js";
 import type { Verb } from "./args.js";
 import { discoverRoot } from "./root.js";
@@ -44,6 +45,8 @@ export async function runCli(argv: readonly string[], cwd = process.cwd()): Prom
     if (argv[0] === "specimen") return await runSpecimenCli(argv.slice(1), cwd);
     // `migrate slots` has its own flags; it never reaches the shared parser.
     if (argv[0] === "migrate") return await runMigrateCli(argv.slice(1), cwd);
+    // `compile` renders from decision files only; it has its own flags and never reaches the shared parser.
+    if (argv[0] === "compile") return await runCompileCli(argv.slice(1), cwd);
     const args = parseArgs(argv);
     if (args.help) return { exitCode: 0, message: USAGE };
     const verb = args.verb!;

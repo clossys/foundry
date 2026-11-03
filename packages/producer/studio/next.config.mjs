@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import { checkPayload } from '../scripts/studio-payload.mjs';
@@ -18,12 +19,22 @@ const config = {
   transpilePackages: ['@clossys/designer', '@clossys/designer-ui'],
 };
 
+/** Run the compile verb in place and read back the page projection it wrote. */
+async function compiledProjection() {
+  const { runCompileCli } = await import('../dist/cli/compile.js');
+  const result = await runCompileCli([], fileURLToPath(new URL('../../../', import.meta.url)));
+  if (result.exitCode !== 0) throw new Error(result.message);
+  return JSON.parse(await readFile(new URL('./generated/studio-map.json', import.meta.url), 'utf8'));
+}
+
 /** The redirects the publication's content map projects (agent groups to their first tab, legacy leaf paths to tab leaves). */
 const withRedirects = projection => ({ ...config, redirects: async () => projection.redirects.map(row => ({ ...row })) });
 
 export default async function nextConfig(phase) {
   const preview = await previewOptionsFromEnvironment();
-  if (phase !== PHASE_DEVELOPMENT_SERVER) return withRedirects(await generateStudioMap(preview));
+  // A release build renders through `clossys compile` (decision files only, deterministic);
+  // an explicit draft preview keeps its own unapproved generation path.
+  if (phase !== PHASE_DEVELOPMENT_SERVER) return withRedirects(preview.target ? await generateStudioMap(preview) : await compiledProjection());
   // Keep record, pin, reference, manifest and compiler checks; preview reports
   // every actual file/byte mismatch without claiming release qualification.
   const projection = await generateStudioMap({ payloads: false, ...preview });
