@@ -1,0 +1,104 @@
+{
+  "name": "chart-waterfall",
+  "type": "registry:ui",
+  "registryDependencies": [
+    "chart"
+  ],
+  "dependencies": [
+    "cn",
+    "recharts"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "chart-waterfall.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport { cn } from \"cn\"\nimport { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from \"recharts\"\n\nimport {\n  ChartContainer,\n  ChartTooltip,\n  ChartTooltipContent,\n  type ChartConfig,\n} from \"@/components/ui/chart\"\n\nconst chartConfig = {\n  increase: { label: \"Increase\", color: \"var(--chart-2)\" },\n  decrease: { label: \"Decrease\", color: \"var(--destructive)\" },\n  total: { label: \"Total\", color: \"var(--chart-1)\" },\n} satisfies ChartConfig\n\n/**\n * Waterfall on the shadcn chart primitives: a transparent stacked base bar\n * carries each step to its running total; totals start from zero.\n */\nfunction ChartWaterfall({\n  steps,\n  axes = true,\n  legend = true,\n  tooltip = true,\n  className,\n}: {\n  steps: { label: string; value: number; total?: boolean }[]\n  axes?: boolean\n  legend?: boolean\n  tooltip?: boolean\n  className?: string\n}) {\n  let running = 0\n  const rows = steps.map((s) => {\n    if (s.total) {\n      running = s.value\n      return { label: s.label, base: 0, delta: s.value, kind: \"total\" as const }\n    }\n    const start = running\n    running += s.value\n    return { label: s.label, base: Math.min(start, running), delta: Math.abs(s.value), kind: s.value >= 0 ? (\"increase\" as const) : (\"decrease\" as const) }\n  })\n  return (\n    <figure data-slot=\"chart\" data-chart=\"waterfall\" className={cn(\"flex w-full flex-col gap-2\", className)}>\n    <ChartContainer config={chartConfig}>\n      <BarChart accessibilityLayer data={rows} margin={{ left: 12, right: 12 }}>\n        {axes && <CartesianGrid vertical={false} />}\n        {axes && <XAxis dataKey=\"label\" tickLine={false} axisLine={false} tickMargin={8} />}\n        {axes && <YAxis tickLine={false} axisLine={false} tickMargin={8} width={40} />}\n        {tooltip && <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel={false} />} />}\n        <Bar dataKey=\"base\" stackId=\"w\" fill=\"transparent\" isAnimationActive={false} legendType=\"none\" />\n        <Bar dataKey=\"delta\" stackId=\"w\" radius={4}>\n          {rows.map((r, i) => (\n            <Cell key={i} fill={`var(--color-${r.kind})`} />\n          ))}\n        </Bar>\n      </BarChart>\n    </ChartContainer>\n    {legend && (\n      <figcaption className=\"flex flex-wrap justify-center gap-4 text-xs text-muted-foreground\">\n        {(Object.keys(chartConfig) as (keyof typeof chartConfig)[]).map((k) => (\n          <span key={k} className=\"flex items-center gap-1.5\">\n            <span aria-hidden=\"true\" className=\"size-2 rounded-xs\" style={{ background: chartConfig[k].color }} />\n            {chartConfig[k].label}\n          </span>\n        ))}\n      </figcaption>\n    )}\n    </figure>\n  )\n}\n\nexport { ChartWaterfall }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.chart-waterfall",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/chart@4.23.0",
+        "npm:recharts@3.8.0#BarChart"
+      ],
+      "hash": "sha256:c70a1e3d399eb15cb24e8c19c4e92568c111b93f8922804f7788a73c1ce21ee4",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "chart-waterfall",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.chart-waterfall",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "Waterfall as a stacked Recharts BarChart (transparent base + signed delta cells) in the shadcn ChartContainer with a manual legend.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "recharts": "*"
+        },
+        "registry": [
+          "chart"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--chart-1",
+          "--chart-2",
+          "--chart-3",
+          "--chart-4",
+          "--chart-5",
+          "--radius",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}
