@@ -26,7 +26,7 @@ import { explorerIndex, explorerNodes } from "../rail/explorer-tree.js";
 import { StudioRail } from "../rail/StudioRail.js";
 import { SystemCanvas, type SystemCanvasData, type SystemCanvasHandle, type SystemCanvasView } from "./SystemCanvas.js";
 import { systemLayout } from "./layout.js";
-import type { SystemTarget } from "./navigation.js";
+import { sameTarget, type SystemTarget } from "./navigation.js";
 import { SYSTEM_STOPS } from "./stops.js";
 import { normaliseStudioUrl, normaliseWindowLocation, replaceStudioLocation, resolverFromPlacements, type StudioUrl } from "./url.js";
 import type { DesignerAgentData } from "../types.js";
@@ -88,23 +88,26 @@ export function DesignerPage({data:supplied,labels:hostLabels,copy,graph:hostGra
   const requested=useRef<SystemTarget|undefined>(undefined);
   const handle=useRef<SystemCanvasHandle>(null),latest=useRef(session); latest.current=session;
   const usage=useStudioUsageData(hostGraph),graph=usage?.graph;
+  // The camera move is keyed on the held target object: an equal target keeps it, so the canvas echoing the leaf it
+  // centred (onSelect -> goToLeaf -> navigate) cannot start another move.
+  const hold=useCallback((next:SystemTarget|undefined)=>setTarget(current=>sameTarget(current,next)?current:next),[]);
   // View-only: a leaf is a camera target and a URL, never a selection.
   const navigate=useCallback((next:SystemTarget)=>{
     if(next.leaf&&!layout.cells.has(next.leaf))return;
-    setActiveLayer(next.layer);setTarget(canvasTarget(next));latest.current?.onNavigate(next);
+    setActiveLayer(next.layer);hold(canvasTarget(next));latest.current?.onNavigate(next);
     replaceStudioLocation({layer:next.layer,node:next.leaf??((next.l2??next.l1)?next.layer+"/"+(canvasTarget(next).l2??canvasTarget(next).l1):undefined)});
-  },[layout,canvasTarget]);
+  },[layout,canvasTarget,hold]);
   const goToLeaf=useCallback((leaf:string)=>{const layer=resolver.layerOf(leaf);if(layer)navigate({layer,leaf});},[resolver,navigate]);
   useEffect(()=>{
     const read=()=>{
       const location=initialUrl?normaliseStudioUrl(initialUrl,resolver).location:normaliseWindowLocation(resolver);
       const next=location.node?index.get(location.node)?.target:location.layer?{layer:location.layer}:undefined;
-      if(next)setActiveLayer(next.layer);setTarget(next?canvasTarget(next):undefined);
+      if(next)setActiveLayer(next.layer);hold(next?canvasTarget(next):undefined);
       if(!next)handle.current?.fit("system");
     };
     read();window.addEventListener("popstate",read);window.addEventListener("hashchange",read);
     return()=>{window.removeEventListener("popstate",read);window.removeEventListener("hashchange",read);};
-  },[resolver,index,initialUrl,canvasTarget]);
+  },[resolver,index,initialUrl,canvasTarget,hold]);
   useEffect(()=>{if(target&&camera&&requested.current!==target){requested.current=target;handle.current?.navigateTo(target);}},[target,camera?.size.width,camera?.size.height]);
   const report=useCallback((next:SystemCanvasView)=>setCamera(current=>current&&current.viewport.x===next.viewport.x&&current.viewport.y===next.viewport.y&&current.viewport.zoom===next.viewport.zoom&&current.size.width===next.size.width&&current.size.height===next.size.height&&current.layer===next.layer&&current.board===next.board&&current.line===next.line&&current.range.min===next.range.min&&current.range.max===next.range.max?current:next),[]);
   const profile=whole?.evaluated?.value?.profile;

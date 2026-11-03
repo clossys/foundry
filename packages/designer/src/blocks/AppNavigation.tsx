@@ -27,7 +27,6 @@ const Link = componentLeaf<typeof import("../components/Link.js").Link>("compone
 const NavigationTree = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTree>("components.navigation-tree");
 const NavigationTreeItem = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTreeItem>("components.navigation-tree", "NavigationTreeItem");
 const NavigationTreeItemContent = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTreeItemContent>("components.navigation-tree", "NavigationTreeItemContent");
-const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
 
 export interface AppNavigationProps {
   tree: readonly AppNavigationNode[];
@@ -87,35 +86,6 @@ function smallIcon(icon: ReactNode): ReactNode {
   return isValidElement(icon) && icon.type === Icon ? cloneElement(icon as ReactElement<{ size?: string }>, { size: "sm" }) : icon;
 }
 
-/** Keep the overlay absent until the browser has completed focus-induced scrolling. */
-function CornerTooltip({ trigger, label, requests }: { trigger: ReactNode; label: string; requests: { current: number } }) {
-  const [open, setOpen] = useState(false);
-  const frame = useRef<number | undefined>(undefined);
-  const cancel = () => {
-    if (frame.current !== undefined) cancelAnimationFrame(frame.current);
-    frame.current = undefined;
-  };
-  const close = () => { cancel(); setOpen(false); };
-  const change = (next: boolean) => {
-    cancel();
-    if (!next) { setOpen(false); return; }
-    const ticket = ++requests.current;
-    frame.current = requestAnimationFrame(() => {
-      frame.current = requestAnimationFrame(() => {
-        frame.current = undefined;
-        if (ticket === requests.current) setOpen(true);
-      });
-    });
-  };
-  useEffect(() => () => cancel(), []);
-  useEffect(() => { ++requests.current; cancel(); setOpen(false); }, [label, requests]);
-  return <SemanticContent as="span" className="contents" onBlurCapture={close} onPointerDownCapture={close}
-    onPointerOutCapture={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) cancel(); }}
-    onKeyDownCapture={event => { if (["Escape", "Enter", " "].includes(event.key)) close(); }}>
-    <Tooltip trigger={trigger} delay={0} placement="end" isOpen={open} onOpenChange={change}>{label}</Tooltip>
-  </SemanticContent>;
-}
-
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */
 export function AppNavigation({ onNavigate, fullViewport = false, retainMounted = false,
   tree, activeId, activeHref, label: suppliedLabel, header, footer, trigger, triggerContainer, emptyMessage: suppliedEmptyMessage,
@@ -165,7 +135,6 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
   }, [narrow, requested, customTrigger, trigger, triggerContainer, direction]);
   const focusedId = useRef<string | undefined>(undefined);
   const handoff = useRef(false);
-  const tooltipRequests = useRef(0);
   const latest = useRef({ onDrawerOpenChange, active, requested });
   latest.current = { onDrawerOpenChange, active, requested };
   const instance = useId();
@@ -264,13 +233,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
   const measuredControl = <SemanticContent as="span" ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
     ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
         aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
-    : collapsed
-      ? expandLabel === undefined
-        ? <CornerTooltip trigger={wideControl} label={openLabel} requests={tooltipRequests} />
-        : <CornerTooltip trigger={wideControl} label={expandLabel} requests={tooltipRequests} />
-      : collapseLabel === undefined
-        ? <CornerTooltip trigger={wideControl} label={closeLabel} requests={tooltipRequests} />
-        : <CornerTooltip trigger={wideControl} label={collapseLabel} requests={tooltipRequests} />)}</SemanticContent>;
+    : wideControl)}</SemanticContent>;
   const control = triggerContainer ? createPortal(measuredControl, triggerContainer) : measuredControl;
   if (narrow) return <Drawer fullViewport={fullViewport} trigger={control}
     heading={<SemanticContent as="span" className="sr-only">{label}</SemanticContent>} closeLabel={closeLabel} closeButtonStyle={getAppNavigationCloseStyle(cornerMeasurement)} navigationKey={route} dismissAt={dismissAt}

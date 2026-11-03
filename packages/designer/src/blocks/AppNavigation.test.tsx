@@ -94,13 +94,15 @@ describe("AppNavigation", () => {
     } finally { measured.mockRestore(); }
   });
 
-  it.each([true, false])("matches the corner tooltip to the host alias when collapsed is %s", async collapsed => {
+  it.each([true, false])("renders the corner control with the host alias and no tooltip when collapsed is %s", async collapsed => {
     render(<AppNavigation tree={tree} collapsed={collapsed} openLabel="Show destinations" closeLabel="Hide destinations" expandLabel="Expand destinations" collapseLabel="Collapse destinations" />);
     const label = collapsed ? "Expand destinations" : "Collapse destinations";
     const trigger = screen.getByRole("button", { name: label });
     fireEvent.mouseMove(document.body);
     await userEvent.hover(trigger);
-    expect(await screen.findByRole("tooltip")).toHaveTextContent(label);
+    // The selected tooltip's timing is not placed yet (owner decision): the trigger renders and no tooltip is invented.
+    expect(trigger).toBeVisible();
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("uses host copy for panel toggles and both disclosure states", async () => {
@@ -340,7 +342,7 @@ describe("AppNavigation", () => {
     await waitFor(() => expect(screen.getByRole("link", { name: "Blocks" })).toHaveFocus());
     fireEvent.mouseMove(document.body);
     await userEvent.hover(screen.getByRole("button", { name: "Close navigation" }));
-    expect(await screen.findByRole("tooltip")).toHaveTextContent("Close navigation");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   });
 
   it("places the plain footer outside the independently scrolling links", () => {
@@ -417,7 +419,7 @@ describe("AppNavigation", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  it.each(["Escape", "Enter", "blur", "leave", "switch"])("does not resurrect a corner tooltip after %s", async how => {
+  it.each(["Escape", "Enter", "blur", "leave", "switch"])("shows no corner tooltip after %s", async how => {
     const view = render(<AppNavigation tree={tree} collapsed />);
     const trigger = screen.getByRole("button", { name: "Open navigation" });
     if (how === "leave" || how === "switch") { fireEvent.mouseMove(document.body); await userEvent.hover(trigger); }
