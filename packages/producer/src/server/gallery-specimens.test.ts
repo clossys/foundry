@@ -47,8 +47,8 @@ describe('slot-first gallery specimen collection', () => {
     expect.soft(actual).toMatchObject({ kind: 'record', title: 'Candidate', rows: [{ text: detail.candidates.find(row => row.name === detail.shown)!.content }] });
     if (actual) expect(renderToStaticMarkup(createElement(SpecimenContent, { specimen: actual }))).toContain('clossys.publication/1');
     const layers = agentGalleryLayers({ state: 'ready', ...gallery } as never, links, previews);
-    expect(layers.flatMap(layer => layer.groups.flatMap(group => group.cards.map(row => row.key)))).toEqual(cards.map(row => row.id));
-    expect(layers.flatMap(layer => layer.groups.flatMap(group => group.cards)).filter(row => row.key === 'publication.studio')).toHaveLength(1);
+    expect(layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards).map(row => row.key)))).toEqual(cards.map(row => row.id));
+    expect(layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards))).filter(row => row.key === 'publication.studio')).toHaveLength(1);
   });
 
   it('falls back only on an explicit legacy response and preserves its contract', async () => {
@@ -81,7 +81,7 @@ describe('slot-first gallery specimen collection', () => {
     expect(fetch).toHaveBeenCalledTimes(1);
     expect([...rows.keys()]).toEqual([detail.id]);
     expect(galleryLeafInputs(rows.get(detail.id)!, links, 'light').specimen).toEqual(slotDetailInputs(detail, links, 'light').specimen);
-    expect(agentGalleryLayers({ state: 'ready', agent: 'publisher', count: cards.length, sections: [{ id: 'group', label: 'Group', level: 1, cards }] }, links)[0]!.groups[0]!.cards.map(row => row.statusLabel)).toEqual(['No pin', 'Missing', 'Failing', 'Active']);
+    expect(agentGalleryLayers({ state: 'ready', agent: 'publisher', count: cards.length, sections: [{ id: 'group', label: 'Group', level: 1, cards }] }, links)[0]!.groups[0]!.sections[0]!.cards.map(row => row.statusLabel)).toEqual(['Options 1', 'No candidate', 'Failing', 'Pinned']);
   });
 
   it('preserves canonical contracts and does not use a raw URL as native preview evidence', () => {

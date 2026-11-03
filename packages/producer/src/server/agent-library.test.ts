@@ -35,7 +35,7 @@ describe("agent library templates", () => {
     expect(publisher.sections.flatMap(section => section.cards).map(card => card.id)).toEqual(["page.about"]);
     const map = studioRuntimeMap({ writer: [{ slug: "site.about", title: "About" }], director: [{ slug: "identity.brand.essence", title: "Essence" }] });
     const links: StudioLinks = { gallery: agent => studioHref(map, agent), leaf: (agent, slug) => studioLeafHref(map, agent, slug) };
-    expect(agentGalleryLayers({ state: "ready", ...writer } as never, links)[0]!.groups[0]!.cards[0]!.href).toBe("/writer/site.about");
+    expect(agentGalleryLayers({ state: "ready", ...writer } as never, links)[0]!.groups[0]!.sections[0]!.cards[0]!.href).toBe("/writer/site.about");
 
     const copy = (await agentLeaf(root, "writer", "site.about"))!;
     expect(copy.card.version).toBe(1);

@@ -38,7 +38,14 @@ export interface IaDoc {
   readonly extensions: readonly string[];
   /** L1 nodes (Designer and Writer ids carry their L0 prefix: `themes.colors`). */
   readonly nodes: readonly IaNode[];
+  /**
+   * Optional display grouping (Studio tabs). Each layer lists L1 refs: `<l1>`
+   * shows that L1 with its L2 groups; `<l1>/<l2>` shows one L2 group as its
+   * own L1. Display only: folders and slot.json positions never change.
+   */
+  readonly layers?: readonly IaLayer[];
 }
+export interface IaLayer { readonly id: string; readonly label: string; readonly nodes: readonly string[] }
 
 export interface SlotPosition { readonly l0?: string; readonly l1: string; readonly l2: string; readonly order: number }
 export interface SlotDoc {

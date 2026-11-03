@@ -43,7 +43,39 @@ export function validateIa(value: unknown, path = "ia.json"): SlotModelIssue[] {
     }
   }
   if (strings(value.extensions)) for (const id of value.extensions) if (!seen.has(id)) fail(`extension ${id} is not placed in the IA`);
+  if (value.layers !== undefined) validateLayers(value.layers, value.nodes, fail);
   return issues;
+}
+
+/** Layers must cover every L1 exactly once, either whole or as all of its L2 groups. */
+function validateLayers(layers: unknown, nodes: unknown[], fail: (message: string) => void): void {
+  if (!Array.isArray(layers)) { fail("layers must be a list"); return; }
+  const groups = new Map<string, Set<string>>();
+  for (const node of nodes) if (object(node) && nonEmpty(node.id) && Array.isArray(node.children)) groups.set(node.id, new Set(node.children.filter(object).map(child => String(child.id))));
+  const ids = new Set<string>(), whole = new Set<string>(), parts = new Map<string, Set<string>>();
+  for (const layer of layers) {
+    if (!object(layer) || !nonEmpty(layer.id) || !NODE_ID.test(layer.id) || !nonEmpty(layer.label) || !strings(layer.nodes) || !layer.nodes.length) { fail("invalid layer"); continue; }
+    if (ids.has(layer.id)) fail(`duplicate layer ${layer.id}`);
+    ids.add(layer.id);
+    for (const ref of layer.nodes) {
+      const [l1 = "", l2, extra] = ref.split("/");
+      const children = groups.get(l1);
+      if (!children || extra !== undefined || (l2 !== undefined && !children.has(l2))) { fail(`layer ${layer.id} names unknown node ${ref}`); continue; }
+      if (l2 === undefined) {
+        if (whole.has(l1) || parts.has(l1)) fail(`layer node ${l1} appears twice`);
+        whole.add(l1);
+      } else {
+        const seenParts = parts.get(l1) ?? new Set<string>();
+        if (whole.has(l1) || seenParts.has(l2)) fail(`layer node ${ref} appears twice`);
+        seenParts.add(l2); parts.set(l1, seenParts);
+      }
+    }
+  }
+  for (const [l1, children] of groups) {
+    const seenParts = parts.get(l1);
+    if (!whole.has(l1) && !seenParts) fail(`L1 ${l1} is in no layer`);
+    else if (seenParts) for (const l2 of children) if (!seenParts.has(l2)) fail(`L2 ${l1}/${l2} is in no layer`);
+  }
 }
 
 export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIssue[] {

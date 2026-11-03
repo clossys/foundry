@@ -19,7 +19,8 @@ import type { ReferenceLink, ReferencesInput } from '../sections/studio-referenc
 import type { SpecimenInput, ViewportSpecimen } from '../sections/studio-specimen';
 import type { PageNoticeData } from '../frames/studio-shell/PageNotice';
 import { optionsDescription } from './designer-library';
-import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, LEAF_UNIT, leafCountLabel, type LeafStatus } from './leaf-status';
+import { LEAF_STATUS_LABEL as STATUS_LABEL, LEAF_STATUS_TONE as STATUS_TONE, type LeafStatus } from './leaf-status';
+import { cardState, galleryLayers, pinnedSummary, slotLabel } from './gallery-layout';
 
 export const LIBRARY_AGENTS = ['director', 'writer', 'publisher'] as const;
 export type LibraryAgent = typeof LIBRARY_AGENTS[number];
@@ -30,7 +31,7 @@ export interface StudioLinks { gallery: (agent: string) => string | undefined; l
 
 export type AgentLeafStatus = 'active' | 'draft' | 'retired' | 'missing' | 'failing';
 export interface AgentRef { label: string; agent?: string; slug?: string }
-export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[]; records?: number; emptyState?: 'No candidate' | 'No pin'; specimenUrl?: string }
+export interface AgentCard { id: string; slug: string; name: string; version: number; status: AgentLeafStatus; excerpt: string[]; records?: number; emptyState?: 'No candidate' | 'No pin'; specimenUrl?: string; options?: number }
 export interface AgentSpecimenTable { id: string; label: string; columns: string[]; prose?: number; rows: { key: string; cells: { text: string; ref?: AgentRef; status?: string }[] }[] }
 export interface AgentSection { id: string; label: string; level: 0 | 1 | 2; cards: AgentCard[] }
 export interface AgentGalleryRecords { state: 'ready' | 'missing'; agent: LibraryAgent; grouping?: 'ia' | 'kind'; sections: AgentSection[]; count: number }
@@ -106,49 +107,44 @@ export function agentGalleryPreview(leaf: AgentLeafRecords, links: StudioLinks, 
   return agentRecordSpecimen(leaf, links);
 }
 
-/** Records -> display data: L0 sections open a layer; L1/L2 sections become its groups. */
-export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLinks, previews: GalleryPreviews = new Map()): GalleryLayerData[] {
-  const layers: { id: string; label: string; groups: GalleryLayerData['groups'][number][] }[] = [];
-  for (const section of records.sections) {
-    if (section.level === 0) { layers.push({ id: section.id, label: section.label, groups: [] }); continue; }
-    if (!layers.length) layers.push({ id: `${section.id}-layer`, label: section.label, groups: [] });
-    layers.at(-1)!.groups.push({
-      id: section.id, label: section.label, level: section.level,
-      cards: section.cards.flatMap(card => {
-        const href = links.leaf(records.agent, card.slug);
-        const empty = emptyStatus(card);
-        return [{
-          key: card.id, name: card.name, ...(card.version ? { version: card.version } : {}),
-          statusLabel: card.emptyState ?? STATUS_LABEL[card.status], statusTone: STATUS_TONE[card.status],
-          href: href ?? '', ...previewFields(card, empty, previews),
-        }];
-      }),
-    });
-  }
-  return layers.filter(layer => layer.groups.length);
+/** Records -> display data: L0 sections are tabs, L1 sections list entries, L2 sections headings over cards. */
+/** A record card's state: failing, pinned, an unpinned slot with its options, or an empty slot. */
+function agentCardState(card: AgentCard): { failing: boolean; pinned: boolean; options: number } {
+  const empty = card.status === 'missing' || card.emptyState === 'No candidate';
+  const pinned = card.status === 'active' && !card.emptyState;
+  return { failing: card.status === 'failing', pinned, options: empty || pinned ? 0 : Math.max(1, card.options ?? 1) };
 }
 
-function previewFields(card: AgentCard, empty: LeafStatus | undefined, previews: GalleryPreviews): Pick<GalleryCardData, 'specimen' | 'specimenStatus'> {
+export function agentGalleryLayers(records: AgentGalleryRecords, links: StudioLinks, previews: GalleryPreviews = new Map()): GalleryLayerData[] {
+  return galleryLayers(records.sections, card => ({
+    key: card.id, name: records.grouping === 'kind' ? card.name : slotLabel(card.id), href: links.leaf(records.agent, card.slug) ?? '',
+    ...cardState(agentCardState(card)),
+    ...previewFields(card, previews),
+  }));
+}
+
+function previewFields(card: AgentCard, previews: GalleryPreviews): Pick<GalleryCardData, 'specimen' | 'specimenStatus'> {
   if (card.specimenUrl && card.records !== 0) return { specimen: { kind: 'viewports', name: card.name, title: card.name, description: '', empty: card.emptyState ?? '', specimens: [{ viewport: 1280, light: card.specimenUrl, interactive: false }] } };
-  if (card.emptyState && card.records === 0) return { specimenStatus: { label: card.emptyState, tone: 'outline' } };
-  if (empty) return { specimenStatus: status(empty) };
+  // An empty or unpinned slot: the card's one state badge already says so.
+  if (card.status === 'missing' || card.emptyState) return {};
+  // A pinned slot whose record is missing keeps the shared missing status.
+  if (emptyStatus(card)) return { specimenStatus: status(emptyStatus(card)!) };
   const preview = previews.get(card.id);
   if (preview) return { specimen: preview };
   return { specimenStatus: preview === null ? UNAVAILABLE : LOADING };
 }
 
-/** The `gallery` input for one agent, or a notice when it has nothing to show. `count` is the gallery's leaf entries in the Studio map. */
-export function agentGalleryInput(records: AgentGalleryRecords, links: StudioLinks, count: number, previews: GalleryPreviews = new Map()): AgentGalleryInput | PageNoticeData {
+/** The `gallery` input for one agent (the page adds the selection), or a notice when it has nothing to show. */
+export function agentGalleryInput(records: AgentGalleryRecords, links: StudioLinks, purpose: string, previews: GalleryPreviews = new Map()): Omit<AgentGalleryInput, 'selection'> | PageNoticeData {
   const adapter = ADAPTERS[records.agent];
   const layers = agentGalleryLayers(records, links, previews);
   if (records.state === 'missing' || !layers.length) return agentNotice(records.agent, 'missing');
   return {
     header: {
-      title: studioCopy("studio.agent-library-title", { value0: String(adapter.label) }),
-      description: studioCopy("studio.from-the-record-store", { value0: String(leafCountLabel(count)), value1: String(adapter.description) }),
+      title: adapter.label, description: purpose, pinned: pinnedSummary(layers),
       ...(records.grouping === 'kind' ? { notice: studioCopy("studio.grouped-by-record-kind-this-agent-has") } : {}),
     },
-    unit: LEAF_UNIT, layers,
+    layers,
   };
 }
 

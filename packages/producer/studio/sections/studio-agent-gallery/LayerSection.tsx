@@ -1,15 +1,26 @@
-import { CardContent, CardTitle, Separator } from '@clossys/designer-ui';
+import { Badge, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Tabs, TabsContent, TabsList, TabsTrigger } from '@clossys/designer-ui';
 import { GroupSection } from './GroupSection';
 import type { GalleryLayerData } from './types';
 
-/** An L0 layer: an anchored heading over its groups. */
-export function LayerSection({ layer, unit }: { layer: GalleryLayerData; unit: readonly [string, string] }) {
-  const heading = `${layer.id}-heading`;
-  return <section id={layer.id} aria-labelledby={heading}>
-    <CardTitle id={heading} role="heading" aria-level={2} className="text-lg">{layer.label}</CardTitle>
-    <Separator className="my-3" />
-    <CardContent className="flex flex-col gap-8 px-0">
-      {layer.groups.map(group => <GroupSection key={group.id} group={group} unit={unit} />)}
-    </CardContent>
-  </section>;
+/**
+ * One L0 tab's body: the L1 groups as a vertical tab list with slot counts beside the selected
+ * group's cards; below `lg` the list collapses to a select above the content. Only the selected
+ * group's panel renders. The list uses the default variant: nested in the L0 tabs, the line
+ * variant's indicator also matches the outer horizontal group and collapses to a dot.
+ */
+export function LayerSection({ layer, group, onGroup }: { layer: GalleryLayerData; group: string; onGroup: (group: string) => void }) {
+  return <Tabs orientation="vertical" selectedKey={group} onSelectionChange={key => onGroup(String(key))} className="flex-col gap-4 lg:flex-row lg:gap-6">
+    <Select aria-label={layer.label} selectedKey={group} onSelectionChange={key => key !== null && onGroup(String(key))} className="w-full lg:hidden">
+      <SelectTrigger><SelectValue /></SelectTrigger>
+      <SelectContent>
+        {layer.groups.map(row => <SelectItem key={row.id} id={row.id} textValue={row.label}>{row.label}<Badge variant="secondary" className="ml-auto">{row.count}</Badge></SelectItem>)}
+      </SelectContent>
+    </Select>
+    <TabsList aria-label={layer.label} className="hidden w-56 shrink-0 items-stretch self-start lg:flex">
+      {layer.groups.map(row => <TabsTrigger key={row.id} id={row.id}>{row.label}<Badge variant="secondary" className="ml-auto">{row.count}</Badge></TabsTrigger>)}
+    </TabsList>
+    {layer.groups.map(row => <TabsContent key={row.id} id={row.id} className="flex min-w-0 flex-1 flex-col gap-8">
+      {row.sections.map(section => <GroupSection key={section.id} section={section} />)}
+    </TabsContent>)}
+  </Tabs>;
 }

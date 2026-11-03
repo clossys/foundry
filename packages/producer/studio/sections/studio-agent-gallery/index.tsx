@@ -1,21 +1,30 @@
-import { CardContent } from '@clossys/designer-ui';
+import { ScrollArea, Tabs, TabsContent, TabsList, TabsTrigger } from '@clossys/designer-ui';
 import { GalleryHeader } from './GalleryHeader';
 import { LayerSection } from './LayerSection';
 import type { AgentGalleryInput } from './types';
 
-export type { AgentGalleryInput, GalleryCardData, GalleryGroupData, GalleryHeaderData, GalleryLayerData, GalleryTone } from './types';
+export type { AgentGalleryInput, GalleryCardData, GalleryCardState, GalleryGroupData, GalleryHeaderData, GalleryLayerData, GallerySectionData, GallerySelection, GalleryTone } from './types';
 
 /**
- * `sections.studio.agent-gallery`: any agent's gallery. L0-L2 anchored sections in one vertical
- * scroll, L3 leaves as a vertical list of full cards, one per row, each showing the full live preview
- * of its active state through the specimen section's body. The page body is the frame's column, so
- * the section adds no outer card. Reads only its `gallery` input.
+ * `sections.studio.agent-gallery`: the one layout every agent page shares. The header names the
+ * agent, its purpose and its pinned count; L0 layers are line tabs (scrolling sideways on narrow
+ * screens); each tab lists its L1 groups beside the selected group's L2 headings and slot cards.
+ * The page holds the selection (in the URL); the section only lays it out.
  */
 export default function AgentGallerySection({ gallery }: { gallery: AgentGalleryInput }) {
+  const { layers, selection, onSelect } = gallery;
+  const firstGroup = (layer: string) => layers.find(row => row.id === layer)?.groups[0]?.id ?? '';
   return <section data-studio-section="agent-gallery" aria-label={gallery.header.title}>
     <GalleryHeader header={gallery.header} />
-    <CardContent className="flex flex-col gap-10 px-0 pt-6">
-      {gallery.layers.map(layer => <LayerSection key={layer.id} layer={layer} unit={gallery.unit} />)}
-    </CardContent>
+    <Tabs selectedKey={selection.layer} onSelectionChange={key => onSelect?.({ layer: String(key), group: firstGroup(String(key)) })} className="gap-6 pt-2">
+      <ScrollArea className="-mx-1 px-1 pb-2">
+        <TabsList variant="line" aria-label={gallery.header.title}>
+          {layers.map(layer => <TabsTrigger key={layer.id} id={layer.id}>{layer.label}</TabsTrigger>)}
+        </TabsList>
+      </ScrollArea>
+      {layers.map(layer => <TabsContent key={layer.id} id={layer.id}>
+        <LayerSection layer={layer} group={layer.id === selection.layer ? selection.group : firstGroup(layer.id)} onGroup={group => onSelect?.({ layer: layer.id, group })} />
+      </TabsContent>)}
+    </Tabs>
   </section>;
 }

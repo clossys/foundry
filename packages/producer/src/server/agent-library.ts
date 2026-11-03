@@ -32,6 +32,8 @@ export interface AgentCard {
   readonly specimenUrl?: string;
   /** Records the shown version holds, when the agent counts them; 0 means there is nothing to preview. */
   readonly records?: number;
+  /** Candidate files of an IA slot (shown as "N options" while nothing is pinned). */
+  readonly options?: number;
 }
 export interface AgentSection { readonly id: string; readonly label: string; readonly level: 0 | 1 | 2; readonly cards: readonly AgentCard[] }
 export interface AgentGallery {
