@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "a6f2d9e689b1674ff36b5a613f61214544edcfde3aaaa4872d1831ac59fd63ac",
+  "revision": "7fe9196657658af27ee8bdcb0b01114651a1aa2a46b681a71082be62259a1b14",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -1271,6 +1271,72 @@
       "id": "studio.slots-pinned",
       "text": "{pinned} of {total} slots pinned",
       "context": "lib/gallery-layout.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-label",
+      "text": "Sample tabs",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-overview",
+      "text": "Overview",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-activity",
+      "text": "Activity",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-settings",
+      "text": "Settings",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-overview-panel",
+      "text": "A summary of the project at a glance.",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-activity-panel",
+      "text": "Recent changes, newest first.",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.tabs-settings-panel",
+      "text": "Preferences for this project.",
+      "context": "agents/designer/components.tabs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-title",
+      "text": "Launch checklist",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-description",
+      "text": "Four of six steps complete",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-content",
+      "text": "Review the remaining steps before the site goes live.",
+      "context": "agents/designer/components.card",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen.card-footer",
+      "text": "Updated today",
+      "context": "agents/designer/components.card",
       "status": "draft"
     },
     {
