@@ -1,0 +1,100 @@
+{
+  "name": "empty-state",
+  "type": "registry:block",
+  "title": "Empty",
+  "registryDependencies": [
+    "button",
+    "empty",
+    "input-group",
+    "kbd",
+    "example"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "empty-example.tsx",
+      "type": "registry:example",
+      "content": "import {\n  Example,\n  ExampleWrapper,\n} from \"@/components/example\"\nimport { Button, LinkButton } from \"@/components/ui/button\"\nimport {\n  Empty,\n  EmptyContent,\n  EmptyDescription,\n  EmptyHeader,\n  EmptyMedia,\n  EmptyTitle,\n} from \"@/components/ui/empty\"\nimport {\n  InputGroup,\n  InputGroupAddon,\n  InputGroupInput,\n} from \"@/components/ui/input-group\"\nimport { Kbd } from \"@/components/ui/kbd\"\nimport { ArrowUpRightIcon, CircleDashedIcon, FolderIcon, PlusIcon } from \"lucide-react\"\n\nexport default function EmptyExample() {\n  return (\n    <ExampleWrapper>\n      <EmptyBasic />\n      <EmptyWithMutedBackground />\n      <EmptyWithBorder />\n      <EmptyWithIcon />\n      <EmptyWithMutedBackgroundAlt />\n      <EmptyInCard />\n    </ExampleWrapper>\n  )\n}\n\nfunction EmptyBasic() {\n  return (\n    <Example title=\"Basic\">\n      <Empty>\n        <EmptyHeader>\n          <EmptyTitle>No projects yet</EmptyTitle>\n          <EmptyDescription>\n            You haven&apos;t created any projects yet. Get started by creating\n            your first project.\n          </EmptyDescription>\n        </EmptyHeader>\n        <EmptyContent>\n          <div className=\"flex gap-2\">\n            <LinkButton href=\"#\">Create project</LinkButton>\n            <Button variant=\"outline\">Import project</Button>\n          </div>\n          <LinkButton variant=\"link\" href=\"#\" className=\"text-muted-foreground\">\n            Learn more{\" \"}\n            <ArrowUpRightIcon\n            />\n          </LinkButton>\n        </EmptyContent>\n      </Empty>\n    </Example>\n  )\n}\n\nfunction EmptyWithMutedBackground() {\n  return (\n    <Example title=\"With Muted Background\">\n      <Empty className=\"bg-muted\">\n        <EmptyHeader>\n          <EmptyTitle>No results found</EmptyTitle>\n          <EmptyDescription>\n            No results found for your search. Try adjusting your search terms.\n          </EmptyDescription>\n        </EmptyHeader>\n        <EmptyContent>\n          <Button>Try again</Button>\n          <LinkButton variant=\"link\" href=\"#\" className=\"text-muted-foreground\">\n            Learn more{\" \"}\n            <ArrowUpRightIcon\n            />\n          </LinkButton>\n        </EmptyContent>\n      </Empty>\n    </Example>\n  )\n}\n\nfunction EmptyWithBorder() {\n  return (\n    <Example title=\"With Border\">\n      <Empty className=\"border\">\n        <EmptyHeader>\n          <EmptyTitle>404 - Not Found</EmptyTitle>\n          <EmptyDescription>\n            The page you&apos;re looking for doesn&apos;t exist. Try searching\n            for what you need below.\n          </EmptyDescription>\n        </EmptyHeader>\n        <EmptyContent>\n          <InputGroup className=\"w-3/4\">\n            <InputGroupInput placeholder=\"Try searching for pages...\" />\n            <InputGroupAddon>\n              <CircleDashedIcon\n              />\n            </InputGroupAddon>\n            <InputGroupAddon align=\"inline-end\">\n              <Kbd>/</Kbd>\n            </InputGroupAddon>\n          </InputGroup>\n          <EmptyDescription>\n            Need help? <a href=\"#\">Contact support</a>\n          </EmptyDescription>\n        </EmptyContent>\n      </Empty>\n    </Example>\n  )\n}\n\nfunction EmptyWithIcon() {\n  return (\n    <Example title=\"With Icon\">\n      <Empty className=\"border\">\n        <EmptyHeader>\n          <EmptyMedia variant=\"icon\">\n            <FolderIcon\n            />\n          </EmptyMedia>\n          <EmptyTitle>Nothing to see here</EmptyTitle>\n          <EmptyDescription>\n            No posts have been created yet. Get started by{\" \"}\n            <a href=\"#\">creating your first post</a>.\n          </EmptyDescription>\n        </EmptyHeader>\n        <EmptyContent>\n          <Button variant=\"outline\">\n            <PlusIcon\n              data-icon=\"inline-start\"\n            />\n            New Post\n          </Button>\n        </EmptyContent>\n      </Empty>\n    </Example>\n  )\n}\n\nfunction EmptyWithMutedBackgroundAlt() {\n  return (\n    <Example title=\"With Muted Background Alt\">\n      <Empty className=\"bg-muted/50\">\n        <EmptyHeader>\n          <EmptyTitle>404 - Not Found</EmptyTitle>\n          <EmptyDescription>\n            The page you&apos;re looking for doesn&apos;t exist. Try searching\n            for what you need below.\n          </EmptyDescription>\n        </EmptyHeader>\n        <EmptyContent>\n          <InputGroup className=\"w-3/4\">\n            <InputGroupInput placeholder=\"Try searching for pages...\" />\n            <InputGroupAddon>\n              <CircleDashedIcon\n              />\n            </InputGroupAddon>\n            <InputGroupAddon align=\"inline-end\">\n              <Kbd>/</Kbd>\n            </InputGroupAddon>\n          </InputGroup>\n          <EmptyDescription>\n            Need help? <a href=\"#\">Contact support</a>\n          </EmptyDescription>\n        </EmptyContent>\n      </Empty>\n    </Example>\n  )\n}\n\nfunction EmptyInCard() {\n  return (\n    <Example title=\"In Card\">\n      <Empty>\n        <EmptyHeader>\n          <EmptyMedia variant=\"icon\">\n            <FolderIcon\n            />\n          </EmptyMedia>\n          <EmptyTitle>No projects yet</EmptyTitle>\n          <EmptyDescription>\n            You haven&apos;t created any projects yet. Get started by creating\n            your first project.\n          </EmptyDescription>\n        </EmptyHeader>\n        <EmptyContent>\n          <div className=\"flex gap-2\">\n            <LinkButton href=\"#\">Create project</LinkButton>\n            <Button variant=\"outline\">Import project</Button>\n          </div>\n          <LinkButton variant=\"link\" href=\"#\" className=\"text-muted-foreground\">\n            Learn more{\" \"}\n            <ArrowUpRightIcon\n            />\n          </LinkButton>\n        </EmptyContent>\n      </Empty>\n    </Example>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.empty-state",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/empty-example@4.23.0"
+      ],
+      "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "empty-example.tsx": "registry/aria-nova/examples/empty-example.tsx"
+      }
+    },
+    "element": {
+      "id": "sections.empty-state/empty-state",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.empty-state",
+      "kind": "registry:example",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/empty-example@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.empty-state.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "button",
+          "empty",
+          "input-group",
+          "kbd",
+          "example"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}
