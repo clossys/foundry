@@ -1,6 +1,6 @@
 {
-  "candidate": "specimen-copy-in-context-v1.json",
-  "sha256": "f91eab47e3622725e4084797099821430347bd3bcbdc4f0b2cdf6f85c3bd3219",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "specimen-copy-in-context-v2.json",
+  "sha256": "c08958a477e5efac96eeffb87f70dd982b88558f11ea6d30c1c94d0caea303c6",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:17Z"
 }

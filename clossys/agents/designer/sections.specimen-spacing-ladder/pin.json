@@ -1,6 +1,6 @@
 {
-  "candidate": "specimen-spacing-ladder-v1.json",
-  "sha256": "a668602636f8cfcbf2d58619ba622c506a8cfa2a5e742be0c190e8ddf30d6953",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "specimen-spacing-ladder-v2.json",
+  "sha256": "318633c543cdbccaede808bb0cc9b4d94336e61dc663e6c8673c2846e3353a38",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:19Z"
 }

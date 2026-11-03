@@ -1,6 +1,6 @@
 {
-  "candidate": "specimen-variant-matrix-v1.json",
-  "sha256": "c6c54755e3c869d6a2ff7aa1ff013dfa84b332177a75139aea18eb99431c8507",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "specimen-variant-matrix-v2.json",
+  "sha256": "4534e83bd0caae86bdd93791d45f9431cc14e6eb27c0d17d60d12a81cf39fa05",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:20Z"
 }

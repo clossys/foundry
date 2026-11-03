@@ -1,6 +1,6 @@
 {
-  "candidate": "specimen-icon-grid-v1.json",
-  "sha256": "0e1f8823cb5617b396c0e8ffe62c848cf53e6220aaa03a0969fe4b6840c6b89a",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "specimen-icon-grid-v2.json",
+  "sha256": "d6d080e87fe58714e67b5253348084f21365ddb2872f5bee47d824c8b5decffa",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:18Z"
 }

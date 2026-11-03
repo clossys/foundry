@@ -1,6 +1,6 @@
 {
-  "candidate": "link-index-v1.json",
-  "sha256": "a26afb223a9eba104691ee20d2e97f4fd4226370be27e3ad4c6d2b051a125668",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "link-index-v2.json",
+  "sha256": "d99b842cdffb3a8b28693604b750288f9231748b210c9b7bc75cff027bfaaf49",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:15Z"
 }
