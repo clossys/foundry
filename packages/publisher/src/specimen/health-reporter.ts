@@ -28,6 +28,7 @@ export interface SpecimenReporterConfig {
 function specimenHealthReporter(config: SpecimenReporterConfig, types: { message: string; request: string; version: number }): void {
   const w = window as any;
   const MAX_ITEMS = 20;
+  const BENIGN_BROWSER_WARNING = /^(?:Uncaught )?(?:Error: )?ResizeObserver loop (?:completed with undelivered notifications|limit exceeded)\.?$/;
   const state = {
     errors: [] as { source: string; message: string; atMs: number }[], errorCount: 0,
     loadMs: null as number | null, lcpMs: null as number | null, cls: 0,
@@ -81,6 +82,10 @@ function specimenHealthReporter(config: SpecimenReporterConfig, types: { message
       return;
     }
     const error = event as ErrorEvent;
+    // The browser's own ResizeObserver loop notice is not an error of the element: it says only that
+    // some observations were delivered on the next frame (any observer that resizes what it watches
+    // raises it). It is the one message skipped; every other error still counts.
+    if (!error.error && typeof error.message === "string" && BENIGN_BROWSER_WARNING.test(error.message)) return;
     report("error", error.error ?? error.message);
   }, true);
   window.addEventListener("unhandledrejection", (event: PromiseRejectionEvent) => report("unhandledrejection", event.reason));

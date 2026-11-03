@@ -1,6 +1,6 @@
 {
-  "candidate": "chart-bar-v2.json",
-  "sha256": "451bcf861228dffb4ebf3611c4125bc858ee74cc0ab381a05c9775696a7eb98c",
-  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
-  "at": "2026-11-03T12:00:00Z"
+  "candidate": "chart-bar-v3.json",
+  "sha256": "624a58da80a782fbd71d6583c8d87a5d8beddf2f0303d9fb74ed25a61e94474d",
+  "pinnedBy": "owner:2026-11-03 planner-pin SPECIMEN-THEME",
+  "at": "2026-11-03T18:00:00Z"
 }

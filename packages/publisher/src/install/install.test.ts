@@ -13,7 +13,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { directoryRecordSource } from "../specimen/source.js";
+import { directoryRecordSource, recordStoreSource } from "../specimen/source.js";
 import { bindPage, installAndBind, installPage, isBlocking, resolvePage, substrateDependencies, type BoundPage, type ResolvedSlot, type InstallPageRecord, type InstallPins, type ShadcnRunner } from "./index.js";
 
 const fixtures = join(import.meta.dirname, "__fixtures__");
@@ -157,5 +157,31 @@ describe("substrate dependencies", () => {
     const slot = (dependencies: string[]) => ({ dependencies }) as unknown as ResolvedSlot;
     expect(substrateDependencies([slot(["lucide-react", "@base-ui/react@^1.2.0"]), slot(["lucide-react", "sonner"])]))
       .toEqual({ "@base-ui/react": "^1.2.0", "lucide-react": "latest", sonner: "latest" });
+  });
+});
+
+describe("registry files without an install path", () => {
+  const item = (files: { path: string; type: string; target?: string }[]) => ({
+    name: "card", type: "registry:ui", files: files.map(file => ({ ...file, content: file.path.endsWith(".tsx") ? "export function Card() { return null; }\n" : "# notes\n" })),
+  });
+  const sourceOf = (value: unknown) => recordStoreSource({
+    async load(id, version) {
+      if (id !== "components.card/card" || version !== 1) return undefined;
+      return { id, version: 1, kind: "visual", files: [{ path: "card.json", content: JSON.stringify(value) }], preview: {}, contentHash: "" };
+    },
+  });
+  const cardPage: InstallPageRecord = { id: "p", frame: "components.card", sections: [] };
+  const cardPins: InstallPins = { "components.card": { element: "card", version: 1 } };
+
+  it("skips a non-code registry file with no target (a LICENCE.md) and installs the code", async () => {
+    const { slots, findings } = await resolvePage(cardPage, cardPins, sourceOf(item([{ path: "LICENCE.md", type: "registry:file" }, { path: "card.tsx", type: "registry:ui" }])));
+    expect(findings).toEqual([]);
+    expect(slots.map(slot => slot.files)).toEqual([["components/ui/card.tsx"]]);
+    expect(JSON.parse(slots[0]!.item).files.map((file: { path: string }) => file.path)).toEqual(["card.tsx"]);
+  });
+
+  it("still fails a code file with no target or known type", async () => {
+    const { findings } = await resolvePage(cardPage, cardPins, sourceOf(item([{ path: "card.tsx", type: "registry:file" }])));
+    expect(findings).toEqual([{ code: "not-a-registry-item", slot: "components.card", detail: "components.card/card: a registry file has no target or known type" }]);
   });
 });

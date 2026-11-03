@@ -6,6 +6,7 @@ import { createServer, type Server } from "node:http";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { captureSpecimen, createSpecimenHandler, directoryRecordSource, findChrome, specimenUrl, SPECIMEN_HEALTH_MESSAGE_TYPE } from "./index.js";
+import { SPECIMEN_SIZE_SCRIPT } from "./render.js";
 
 const records = fileURLToPath(new URL("./__fixtures__/records/", import.meta.url));
 const workspace = fileURLToPath(new URL("../../../../", import.meta.url));
@@ -20,13 +21,24 @@ beforeAll(async () => {
   const handle = createSpecimenHandler({ source: directoryRecordSource({ roots: [records], defaultTheme: "neutral" }), workspace });
   server = createServer((request, response) => {
     const url = new URL(request.url ?? "/", "http://localhost");
+    if (url.pathname === "/portal") {
+      // A specimen whose open overlay is portalled to the body, outside the stage: a popover in the
+      // page flow below the stage, or (toast=1) a toast fixed to the bottom of the viewport.
+      const toast = url.searchParams.get("toast") === "1";
+      response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
+      response.end(`<!doctype html><title>portal</title><link rel="icon" href="data:,"><style>body{margin:0}</style><div id="specimen-stage" style="height:100px"><button>Open</button></div>`
+        + (toast ? "" : `<div id="popover" style="position:absolute;top:300px;left:8px;width:200px;height:120px;max-height:120px;overflow:hidden;background:#fff;border:1px solid #ccc"><div style="height:240px">menu</div></div>`)
+        + (toast ? `<ol style="position:fixed;bottom:24px;right:24px;margin:0;padding:0;height:0;width:240px"><li style="position:absolute;bottom:0;right:0;list-style:none;height:60px;width:240px;background:#fff;border:1px solid #ccc">Saved</li></ol>` : "")
+        + `<script>${SPECIMEN_SIZE_SCRIPT}</script>`);
+      return;
+    }
     if (url.pathname === "/harness") {
       // A stand-in for the Studio card: frames the specimen and keeps what it posts.
       const src = url.searchParams.get("src") ?? "";
       response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
       response.end(`<!doctype html><title>harness</title><link rel="icon" href="data:,"><iframe id="frame" width="${url.searchParams.get("width") ?? 480}" height="400"></iframe><script>
         window.__framed = [];
-        addEventListener("message", event => { if (event.source === document.getElementById("frame").contentWindow) window.__framed.push(event.data); });
+        addEventListener("message", event => { if (event.source !== document.getElementById("frame").contentWindow) return; window.__framed.push(event.data); if (${url.searchParams.get("fit") === "1"} && event.data && event.data.type === "clossys:specimen-size") document.getElementById("frame").height = String(event.data.height); });
         document.getElementById("frame").src = ${JSON.stringify(src)};
       </script>`);
       return;
@@ -98,6 +110,25 @@ describe.skipIf(!chrome)("specimen in Chrome", () => {
     expect(framed.length).toBeGreaterThanOrEqual(1);
     expectHealthShape(framed[framed.length - 1], "sample-button");
     expect(framed[0]!.sequence).toBe(1);
+  }, 90_000);
+
+  it("measures overlays portalled outside the stage, and a fixed toast without growing the frame", async () => {
+    const sizes = async (src: string) => {
+      const capture = await captureSpecimen(`${base}/harness?width=320&fit=1&src=${encodeURIComponent(src)}`, { width: 400, height: 900, settleMs: 3200, probe: `window.__framed` });
+      expect(capture.consoleErrors).toEqual([]);
+      return (capture.probe as Record<string, any>[]).filter(message => message.type === "clossys:specimen-size");
+    };
+    const popover = await sizes(`${base}/portal`);
+    expect(popover.length).toBeGreaterThanOrEqual(1);
+    // The popover content (240px, inside a 1px border) counts, not its squeezed 120px box: 301 + 240 + 16.
+    expect(popover[popover.length - 1]).toMatchObject({ layout: "reflow", height: 557, empty: false });
+    const toast = await sizes(`${base}/portal?toast=1`);
+    const heights = toast.map(message => message.height as number);
+    // The toast list is a zero-height fixed box (as sonner renders it) whose toast hangs above its
+    // bottom edge: the toast (60px + 1px border each side) needs its height plus its 24px gap each side, and
+    // fitting the frame to that does not grow it again.
+    expect(heights[heights.length - 1]).toBe(110);
+    expect(new Set(heights.slice(-2)).size).toBe(1);
   }, 90_000);
 
   it("mutation: an element that throws reports errors >= 1", async () => {

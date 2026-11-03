@@ -9,7 +9,7 @@ import { candidatesDir, jsonBytes, pinFile, slotFile } from "../records/slot-mod
 import { sha256Hex } from "../records/hash.js";
 import { canonicalLibrary } from "./__fixtures__/canonical-library.js";
 import { createSpecimenBuilder } from "@clossys/publisher/specimen";
-import { aliasProvider, libraryRecordSource, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
+import { aliasProvider, libraryRecordSource, PINNED_THEME_ID, pinnedLibraryTheme, SPECIMEN_STATE_FILE, libraryRecordStore, listLibraryElements, locateLibraryElement, pinnedLibraryVersion } from "./library-source.js";
 
 let root: string;
 beforeEach(async () => { root = await canonicalLibrary(mkdtempSync(join(tmpdir(), "producer-slot-source-"))); });
@@ -41,6 +41,37 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(record!.contentHash).toBe(sha256Hex(readFileSync(candidate())));
     expect(await source.read("sample-card", 2)).toBeUndefined();
     expect(await source.theme()).toMatchObject({ id: "themes.preset/neutral" });
+  });
+
+  it("answers a specimen that names no theme with every pinned theme variable, light and dark", async () => {
+    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const theme = await libraryRecordSource({ roots: [consumer] }).theme();
+    expect(theme).toEqual(pinnedLibraryTheme([consumer]));
+    expect(theme!.id).toBe(PINNED_THEME_ID);
+    // The base shadcn variables every component reads, not only the first `themes.*` leaf.
+    for (const name of ["background", "foreground", "card", "popover", "muted", "muted-foreground", "border", "input", "ring", "primary", "accent", "radius"]) expect(theme!.light, name).toHaveProperty(name);
+    for (const name of ["background", "foreground", "muted", "border", "popover"]) expect(theme!.dark, name).toHaveProperty(name);
+    expect(theme!.light.background).not.toBe(theme!.dark!.background);
+    // An explicit theme id still reads that one record.
+    expect(await libraryRecordSource({ roots: [consumer] }).theme("themes.accent/accent")).toMatchObject({ id: "themes.accent/accent", light: { accent: expect.any(String) } });
+  });
+
+  it("mounts an item of a slot with a declared specimen state through the state module, its own bytes unchanged", async () => {
+    const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
+    const row = await libraryRecordStore([consumer]).load("components.toast/toast");
+    expect(row).toBeDefined();
+    const pin = listSlots(consumer, "designer").find(entry => entry.id === "components.toast")!.pin!;
+    expect(row!.files[0]!.content).toBe(readCandidate(consumer, "designer", "components.toast", pin.candidate).bytes);
+    const state = row!.files.find(file => file.path === SPECIMEN_STATE_FILE)!;
+    expect(state.content).toContain('import { toast as openSpecimen } from "sonner";');
+    expect(state.content).toContain('import * as Item from "../sonner";');
+    expect(state.content).toContain('openSpecimen("Changes saved", { duration: Infinity })');
+    expect(row!.preview).toMatchObject({ entry: SPECIMEN_STATE_FILE, export: "SpecimenState" });
+    const record = await libraryRecordSource({ roots: [consumer] }).read("components.toast/toast");
+    expect(record!.preview).toMatchObject({ entry: SPECIMEN_STATE_FILE, export: "SpecimenState" });
+    // A slot with no declared state keeps its own preview.
+    const card = await libraryRecordStore([consumer]).load("components.card/card");
+    expect(card?.files.some(file => file.path === SPECIMEN_STATE_FILE)).toBe(false);
   });
 
   it.each(["frames.studio-shell/studio-shell", "sections.studio.agent-gallery/studio-agent-gallery", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {

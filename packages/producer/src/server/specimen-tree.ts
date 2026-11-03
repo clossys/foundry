@@ -9,9 +9,11 @@
  *   node     = text | { "$copy": "<writer key>" } | { "$component": "<export>", "props"?: {…}, "children"?: node | node[] }
  *   text     = string | number
  *
- * `$component` names only an export of the candidate's own mounted module, and `$copy` only a
- * Writer key the specimen copy holds; anything else is rejected before the page is written, so a
- * specimen never imports a name its candidate does not export. The page module renders the tree
+ * `$component` names an export of the candidate's own mounted module, or `<package>.<Export>`,
+ * an export of an npm package the candidate itself depends on (a chart container's recharts
+ * `BarChart` and `Bar`, which the shadcn chart module does not re-export); `$copy` names only a
+ * Writer key the specimen copy holds. Anything else is rejected before the page is written, so a
+ * specimen never imports a name outside its candidate and the candidate's own dependencies. The page module renders the tree
  * (`resolve`/`part` in publish/install.ts) with the same module the item mounts from.
  */
 
@@ -42,6 +44,42 @@ export function moduleExports(source: string): Set<string> {
 
 const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
 
+const PACKAGE = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
+
+/** A `<package>.<Export>` element name split at its last dot, or undefined for a plain export name. */
+export function dependencyPart(name: string): { readonly module: string; readonly export: string } | undefined {
+  const dot = name.lastIndexOf(".");
+  if (dot < 1) return undefined;
+  const module = name.slice(0, dot), exported = name.slice(dot + 1);
+  return PACKAGE.test(module) && IDENT.test(exported) ? { module, export: exported } : undefined;
+}
+
+/** The npm package names a registry item depends on (`dependencies`, versions stripped). */
+export function itemDependencies(item: unknown): Set<string> {
+  const names = new Set<string>();
+  const list = isRecord(item) && Array.isArray(item.dependencies) ? item.dependencies : [];
+  for (const raw of list) {
+    if (typeof raw !== "string") continue;
+    const at = raw.indexOf("@", raw.startsWith("@") ? 1 : 0);
+    const name = at > 0 ? raw.slice(0, at) : raw;
+    if (PACKAGE.test(name)) names.add(name);
+  }
+  return names;
+}
+
+/** Every `<package>.<Export>` element name a fixture tree uses, in first-use order. */
+export function treeDependencyParts(tree: unknown): string[] {
+  const found = new Set<string>();
+  const walk = (value: unknown): void => {
+    if (Array.isArray(value)) { value.forEach(walk); return; }
+    if (!isRecord(value)) return;
+    if (typeof value.$component === "string" && dependencyPart(value.$component)) found.add(value.$component);
+    for (const item of Object.values(value)) walk(item);
+  };
+  walk(tree);
+  return [...found];
+}
+
 /** The sample children a preview fixture declares, if any. */
 export function fixtureChildren(fixtures: unknown): unknown {
   if (!isRecord(fixtures)) return undefined;
@@ -50,10 +88,11 @@ export function fixtureChildren(fixtures: unknown): unknown {
 }
 
 /**
- * Why a fixture tree cannot render: `$component` names that `exports` lacks, `$copy` keys that
- * `copy` lacks, and values that are not text, copy or element nodes in a child position.
+ * Why a fixture tree cannot render: `$component` names that `exports` lacks, `<package>.<Export>`
+ * names whose package is not in `dependencies`, `$copy` keys that `copy` lacks, and values that
+ * are not text, copy or element nodes in a child position.
  */
-export function specimenTreeIssues(tree: unknown, exports: ReadonlySet<string>, copy: Readonly<Record<string, string>>): string[] {
+export function specimenTreeIssues(tree: unknown, exports: ReadonlySet<string>, copy: Readonly<Record<string, string>>, dependencies: ReadonlySet<string> = new Set()): string[] {
   const issues: string[] = [];
   const copyRef = (node: Record<string, unknown>, at: string): void => {
     if (typeof node.$copy !== "string" || Object.keys(node).length !== 1) issues.push(`${at}: a copy node is exactly { "$copy": "<writer key>" }`);
@@ -76,8 +115,10 @@ export function specimenTreeIssues(tree: unknown, exports: ReadonlySet<string>, 
   };
   const element = (node: Record<string, unknown>, at: string): void => {
     const name = node.$component;
-    if (typeof name !== "string" || !IDENT.test(name)) { issues.push(`${at}: $component is an export name`); return; }
-    if (!exports.has(name)) issues.push(`${at}: the candidate exports no component ${name}`);
+    const external = typeof name === "string" ? dependencyPart(name) : undefined;
+    if (typeof name !== "string" || (!IDENT.test(name) && !external)) { issues.push(`${at}: $component is an export name or <package>.<Export>`); return; }
+    if (external) { if (!dependencies.has(external.module)) issues.push(`${at}: the candidate depends on no package ${external.module}`); }
+    else if (!exports.has(name)) issues.push(`${at}: the candidate exports no component ${name}`);
     for (const key of Object.keys(node)) if (!NODE_KEYS.has(key)) issues.push(`${at}: unknown element field ${key}`);
     if (node.props !== undefined) {
       if (!isRecord(node.props)) issues.push(`${at}.props: props is an object`);
