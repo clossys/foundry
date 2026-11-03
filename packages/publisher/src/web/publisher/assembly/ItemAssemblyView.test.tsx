@@ -1,7 +1,7 @@
 import { publisherCopyFixtureResolver } from "../__fixtures__/writer-copy.js";
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render as renderBare, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { AppFrame } from "@clossys/designer/frames";
 import { PublisherPage } from "../PublisherPage.js";
@@ -15,6 +15,8 @@ import { productionSettingsFromBinding } from "../production-settings.js";
 import { instanceFixture } from "../../../core/__fixtures__/instance-binding/fixtures.js";
 import { acceptedExampleStore } from "../__fixtures__/example-plan.js";
 import type { PublisherPlanStore } from "../../../planning/change-set.js";
+import { hostedRender } from "../../__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
 
 let planStore: PublisherPlanStore;
 beforeEach(async () => { installFrameTestEnvironment(); planStore = await acceptedExampleStore(); });

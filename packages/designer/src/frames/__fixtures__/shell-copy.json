@@ -23,5 +23,12 @@
   "st.m9qh4b8zhn": "Page modules",
   "st.322g37gnhz": "Collapse page modules",
   "st.a2bvn2ep38": "Expand page modules",
-  "st.ev3xsrhrwe": "Dismiss"
+  "st.ev3xsrhrwe": "Dismiss",
+  "st.s13b3hwkta": "Pagination",
+  "st.96qkp2bzpm": "Previous page",
+  "st.kb8ve83tjp": "Next page",
+  "st.asj8g1mcjn": "No results",
+  "st.pzmpksy76x": "Showing {start}–{end} of {total}",
+  "st.vxwx1e3xwq": "Page {page} of {pageCount}",
+  "st.bhhba11w6f": "Rows per page"
 }
