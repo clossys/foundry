@@ -795,6 +795,10 @@ jobs:
       - run: npm run check:package-identity
       - run: npm run check:release-cleanup-inventory
       - run: node scripts/set-scope.mjs --check
+      # Offline half of probe:package-visibility: the active release target
+      # resolves and every deprecated package declares valid retention.
+      # Reads governance/** and docs/contracts/*.json only; no network.
+      - run: npm run check:visibility-declarations
 
   # package-scope.json.registry is the single declared source for which
   # registry every published package's publishConfig.registry must point

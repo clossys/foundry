@@ -130,7 +130,7 @@
 //     declaration. Malformed retention JSON entries are errors. No registry
 //     call and no credential — only documents already in the tree.
 //
-//   Live / on demand (`npm run check:package-visibility`): for every package
+//   Live / on demand (`npm run probe:package-visibility`): for every package
 //     on the anonymous scope roster that the active release target does not
 //     declare, if lifecycle marks it `deprecated`, require a valid retention
 //     entry (same rules as above). Other undeclared roster packages stay
@@ -149,7 +149,7 @@
 // -----------------------------------------------------------------------
 // The live half calls the live public npm registry over the network, so it
 // stays out of the hermetic `npm run check` chain. Run on demand with
-// `npm run check:package-visibility` — the same
+// `npm run probe:package-visibility` — the same
 // reason check:registry-parity is kept out of `check` (see its own comment
 // in package.json). This is a network-access concern, not a credential
 // concern: the live half needs no token at all, it just isn't the kind of

@@ -105,6 +105,7 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   // ---- Dependency-free structural/governance gates: NOT prose ------------
   "node:scripts/check-package-identity-transition.mjs": { prose: false, reason: "reads governance/package-identity-transition.json and package manifests only" },
   "node:scripts/check-release-cleanup-inventory.mjs": { prose: false, reason: "reads governance/** release-cleanup records only" },
+  "node:scripts/check-package-visibility.mjs": { prose: false, reason: "--declarations-only reads governance/release-catalog.json, package-scope.json and docs/contracts/package-retention.json (JSON, not prose); no network" },
   "node:scripts/set-scope.mjs": { prose: false, reason: "writes package-scope.json and derived manifest fields, reads no docs/ or .changesets/ path" },
   "node:scripts/set-registry.mjs": { prose: false, reason: "writes registry fields into package manifests only" },
   "node:scripts/set-prepublish-hook.mjs": { prose: false, reason: "writes/validates package.json lifecycle hooks only" },

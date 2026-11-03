@@ -83,8 +83,9 @@ That workflow also judges each item exactly once, against the denylist CI
 holds at the moment the text is posted — so a term added to the denylist
 after the fact is never applied to anything already public.
 After a denylist change, re-scan the conversation surface on demand with
-`npm run check:conversation -- --all --require-denylist` using the current
-denylist. This catches findings the event gate cannot revisit. The issue templates
+`npm run check:conversation -- --require-denylist` using the current
+denylist (`PUBLIC_SAFETY_DENYLIST` or `--denylist <file>`, plus an
+authenticated `gh`). This catches findings the event gate cannot revisit. The issue templates
 under `.github/ISSUE_TEMPLATE/` and `.github/PULL_REQUEST_TEMPLATE.md`
 carry the same "never post this" list up front, before a contributor has
 typed anything, because that is the only point where prevention is

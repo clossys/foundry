@@ -42,8 +42,8 @@
 // discipline elsewhere in this repository). Resolving an issue's live state
 // needs the GitHub API and a token, which that job does not have and should
 // not be given just for this. This script is the "networked companion" #1136
-// asks for, run on demand with `npm run check:qualification-deferral-issues`.
-// Like check:package-visibility, this networked check stays out of
+// asks for, run on demand with `npm run probe:qualification-deferral-issues`.
+// Like probe:package-visibility, this networked probe stays out of
 // `check:gates` and `check` and never runs in CI.
 //
 // WHY THIS NEEDS AN ON-DEMAND RE-CHECK
@@ -51,7 +51,7 @@
 // A deferral's cited issue can close days or weeks after the pull request
 // that added the deferral has already merged with every check green — an
 // event-time check cannot re-ask a question whose answer changed later.
-// Run on demand with `npm run check:qualification-deferral-issues` to
+// Run on demand with `npm run probe:qualification-deferral-issues` to
 // re-check the issue half against the live forge.
 //
 // DERIVED FROM THE FILE, NEVER A LITERAL LIST (#907)

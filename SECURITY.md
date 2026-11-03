@@ -31,7 +31,7 @@ forward; there are no long-term support branches.
 | `conversation-safety` (issues, comments, pull request descriptions) | Runs after the text is already posted — labels a finding and fails the check, never echoing the matched text and never commenting. Detects; does not prevent. See below |
 | `check-commit-messages` | Required check on every pull request. Scans commit message text against the same identity denylist — a surface neither the tree scan nor the tarball scan has ever read. See below |
 | `check-merge-policy` | Weekly on a schedule. Compares the merge methods the forge offers for the default branch against `governance/merge-policy.json` and fails on drift. Observes; it cannot apply the declaration, because merge methods live in GitHub's settings store rather than in this tree. See below |
-| `check-package-visibility` | Run on demand with `npm run check:package-visibility`; never runs in CI. No credential is used in either direction it checks -- every request, declared-package reads and the scope roster read alike, is anonymous. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a declared package is not anonymously installable right now (it deliberately does not try to tell "never published" apart from "private" -- both are the same failure of this repository's invariant that every declared package is already public) AND when a package live under the scope is not accounted for by the declaration. See the script's own header for both directions and issue #844 for the one piece (a deprecated-package retention cross-check) cut as a separate scope decision. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
+| `probe:package-visibility` | Run on demand with `npm run probe:package-visibility`; never runs in CI. No credential is used in either direction it checks -- every request, declared-package reads and the scope roster read alike, is anonymous. A scoped npm package defaults to restricted access unless published with `--access public`; this gate fails when a declared package is not anonymously installable right now (it deliberately does not try to tell "never published" apart from "private" -- both are the same failure of this repository's invariant that every declared package is already public) AND when a package live under the scope is not accounted for by the declaration. See the script's own header for both directions and issue #844 for the one piece (a deprecated-package retention cross-check) cut as a separate scope decision. Detects; there is no API to fix it. See [scripts/check-package-visibility.mjs](scripts/check-package-visibility.mjs) and [docs/PUBLISHING.md](docs/PUBLISHING.md#public-access-and-parity) |
 
 ## The publish-safety gate
 
@@ -259,7 +259,7 @@ and neither checks out code nor sees the denylist. A finding on review text
 shows as the label on the pull request and a failed run on the default
 branch. A pull request can edit its own copy of the relay and so stop its
 own review events being relayed; that gains it no credential. Re-scan that
-text on demand with `npm run check:conversation -- --all --require-denylist`
+text on demand with `npm run check:conversation -- --require-denylist`
 as described below.
 
 **This is detection, not prevention, and the workflow says so in its own
@@ -300,8 +300,9 @@ missed items and the caught ones differ by *which term matched*, not by who
 wrote them.
 
 After a denylist change, re-scan all conversation text on demand with
-`npm run check:conversation -- --all --require-denylist` using the current
-denylist. This also covers text posted before the event workflow existed,
+`npm run check:conversation -- --require-denylist` using the current
+denylist. It needs that denylist in `PUBLIC_SAFETY_DENYLIST` (or passed as
+`--denylist <file>`) and an authenticated `gh`. This also covers text posted before the event workflow existed,
 a run that was cancelled or expired, and an event GitHub never delivered.
 The command reports findings; remediation must not echo matched text in a
 public comment.

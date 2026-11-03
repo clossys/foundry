@@ -83,7 +83,8 @@ name: Conversation safety
 # A pull request can edit its own copy of the relay, and so can stop its own
 # review events from being relayed. That gains it no credential. Re-scan
 # reviews and comments on demand with
-# `npm run check:conversation -- --all --require-denylist`.
+# `npm run check:conversation -- --require-denylist` (needs
+# PUBLIC_SAFETY_DENYLIST or --denylist <file>, and an authenticated gh).
 
 on:
   issues:
