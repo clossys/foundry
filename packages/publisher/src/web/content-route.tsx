@@ -5,7 +5,9 @@ import { bindContentAppFrame, ContentCopyBindingError } from "./content-route-co
 import { renderContentSection } from "./content-route-runtime.js";
 import { Fragment, createElement } from "react";
 import { createCopyResolver } from "@clossys/writer/resolve";
-import type { ReactElement } from "react";
+import type { ReactElement, ReactNode } from "react";
+import type { CopyResolver } from "@clossys/writer";
+import { PublisherHost, writerShellCopyResolver } from "./publisher-host.js";
 import { canonicalLocale, directionFor } from "@clossys/writer/locale";
 import { AppFrame, AuthFrame, DocumentFrame, SiteFrame } from "@clossys/designer/frames";
 import type { SiteFrameProps } from "@clossys/designer/frames";
@@ -21,6 +23,8 @@ import { selectContentRoute } from "./content-route-binding.js";
 import type { ContentRouteInput, ContentRouteMetadata, ContentRouteNeed, PreparedContentRoute } from "./content-route-types.js";
 
 export { adminRobotsPolicy } from "./headMetadata.js";
+export { PublisherHost, PublisherHostNeedError, writerShellCopyResolver } from "./publisher-host.js";
+export type { PublisherHostProps } from "./publisher-host.js";
 export { bindContentRoute } from "./content-route-binding.js";
 export type * from "./content-route-types.js";
 export { resolveContentRouteRequest } from "./content-route-request.js";
@@ -45,6 +49,33 @@ export function requireContentRoutePublishing(input: ContentRouteInput): Content
     detail: "Serving content requires publishing document and locale-route evidence", raisedAt: input.raisedAt,
   }]);
   return input;
+}
+
+const validWriterContext = (writer: ContentRouteInput["writer"]): boolean => writer === undefined || isContentJson(writer) && writer !== null && typeof writer === "object" && !Array.isArray(writer)
+  && Object.keys(writer).every(key => ["registry", "registries", "manifest", "timeZone"].includes(key)) && Object.hasOwn(writer, "registry");
+const writerCopyResolver = (writer: NonNullable<ContentRouteInput["writer"]>, raisedAt: string): CopyResolver => createCopyResolver(writer.registry, {
+  ...(writer.registries === undefined ? {} : { registries: writer.registries }),
+  ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
+  timeZone: writer.timeZone ?? "UTC", now: new Date(raisedAt),
+});
+
+/** The route's Writer port: the server-owned resolver, else the finite Writer context at raisedAt. */
+export function contentRouteCopyResolver(input: ContentRouteInput): CopyResolver | undefined {
+  if (input.resolveCopy) return input.resolveCopy;
+  return input.writer !== undefined && validWriterContext(input.writer) ? writerCopyResolver(input.writer, input.raisedAt) : undefined;
+}
+
+/**
+ * Publisher's host for an emitted content route: the loader-supplied consumer component
+ * selection and the route's Writer resolver as Designer shell copy. Missing either is a NEED.
+ */
+export function ContentRouteHost({ input, children }: { readonly input: ContentRouteInput; readonly children?: ReactNode }): ReactElement {
+  const resolver = contentRouteCopyResolver(input);
+  return createElement(PublisherHost, {
+    ...(input.components ? { components: input.components } : {}),
+    ...(resolver ? { shellCopy: writerShellCopyResolver(resolver, input.locale) } : {}),
+    children,
+  });
 }
 
 /** Resolve one active content route using closed adapters for actual Designer exports. */
@@ -75,16 +106,9 @@ export function prepareContentRoute(input: ContentRouteInput): PreparedContentRo
     return validateCopy(report);
   };
   const writer = input.writer;
-  const writerValid = writer === undefined || isContentJson(writer) && writer !== null && typeof writer === "object" && !Array.isArray(writer)
-    && Object.keys(writer).every(key => ["registry", "registries", "manifest", "timeZone"].includes(key)) && Object.hasOwn(writer, "registry");
-  if (!writerValid) add("copy", "writer", "writer", "Writer context requires finite registry, registries, manifest, and timeZone values");
-  const copyOptions: ResolveCopyOptions = { requireWriterCopy, ...(input.resolveCopy ? { resolver: input.resolveCopy } : writerValid && writer !== undefined ? {
-    resolver: createCopyResolver(writer.registry, {
-      ...(writer.registries === undefined ? {} : { registries: writer.registries }),
-      ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
-      timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),
-    }),
-  } : {}) };
+  if (!validWriterContext(writer)) add("copy", "writer", "writer", "Writer context requires finite registry, registries, manifest, and timeZone values");
+  const resolver = contentRouteCopyResolver(input);
+  const copyOptions: ResolveCopyOptions = { requireWriterCopy, ...(resolver ? { resolver } : {}) };
   const pageCopy = recordCopy(resolveCopy({ pageMeta: candidate.pageMeta }, locale, { ...copyOptions, requirePageMeta: true }), "pageMeta")[PAGE_META_KEY] ?? {};
   const canonicalPolicy = slot.meta?.canonical;
   const canonical = typeof canonicalPolicy === "string"
@@ -311,15 +335,11 @@ export function ContentRoutePage({ input }: { readonly input: ContentRouteInput 
     {candidate.pageMetaAssets?.["og-image"] === undefined ? null : <meta property="og:image" content={candidate.pageMetaAssets["og-image"]} />}
     {prepared.node}
   </DocumentFrame>;
-  const writer = input.writer;
+  const resolver = input.resolveCopy ?? (input.writer === undefined ? undefined : writerCopyResolver(input.writer, input.raisedAt));
   const pageCopy = resolveCopy({ pageMeta: candidate.pageMeta }, locale, {
     requirePageMeta: true,
     requireWriterCopy: isAdminContentRoute(prepared.slot, input.registry.workspace),
-    ...(input.resolveCopy ? { resolver: input.resolveCopy } : writer === undefined ? {} : { resolver: createCopyResolver(writer.registry, {
-      ...(writer.registries === undefined ? {} : { registries: writer.registries }),
-      ...(writer.manifest === undefined ? {} : { manifest: writer.manifest }),
-      timeZone: writer.timeZone ?? "UTC", now: new Date(input.raisedAt),
-    }) }),
+    ...(resolver ? { resolver } : {}),
   }).copy[PAGE_META_KEY] ?? {};
   return <Fragment>
     {metadata.title === undefined ? null : <title>{metadata.title}</title>}

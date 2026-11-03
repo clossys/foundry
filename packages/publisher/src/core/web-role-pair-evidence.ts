@@ -26,8 +26,8 @@ function freeze<T>(value: T): T {
   }
   return value;
 }
-const revision = "8bd1db89f8f2d0a195e0e87412dec4bb2d7f9075";
-const measuredAt = "2026-10-29";
+const revision = "c67a98616b85bc6f52fd82932ec4cd83b0c84498";
+const measuredAt = "2026-11-03";
 const frame: InstanceBlockBinding["frameBlockRef"] = {
   blockId: "site-frame", role: "frame", medium: "web",
   adapter: { owner: "@clossys/designer", subpath: "frames", export: "SiteFrame", config: {} },
@@ -48,20 +48,20 @@ export const WEB_ROLE_PAIR_BINDINGS: readonly InstanceBlockBinding[] = freeze(ca
 })));
 const known = WEB_ROLE_PAIR_BINDINGS.flatMap(binding => [binding.frameBlockRef, binding.viewBlockRef]);
 const sources = {
-  "src/web/index.ts": "sha256:29f32f3eb6414c9477e543600d42d458a26c4af274e287655b00e2bb601f6efc",
+  "src/web/index.ts": "sha256:714cc84da8d3ec69a905265260e3a7b8cd4ee89eb9b79348be7a1ff2cc009337",
   "src/web/frame/index.ts": "sha256:433ec11ad4135d0c9a827921d751e5fdde03fcf75b248a86e5e92d1207e9b9d8",
-  "src/web/server.ts": "sha256:a6b51fbc58205b8dca29235f81806c58866f4588a40fdb679caf4cbe34cbfabb",
-  "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:44f7a4f9b6ea8ba04abd355313921a16d2d0c285c0bafc91a10473cec6134416",
+  "src/web/server.ts": "sha256:9e2c36529f517b133eb15f44e71b18e5607b3c6ee977edfe14188d5cb987b868",
+  "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:2ab7ee65d528d172ea5e96c96b37d492ec9bc2e08263c33d841baa736516367b",
   "../designer/src/frames/site-frame/NavLinks.tsx": "sha256:f08cb4cfe847ee67cfb7031422df5e9aa8f963b514de8180a44f935013bd00ae",
   "../designer/src/frames/site-frame/NavDisclosure.client.tsx": "sha256:e62dd1650d0b9a4964bc72f6ce48ee7c1a41b07c6b1656c4c43ab57d7241e311",
   "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:a67e16466fdd82b7ddd154e743b7a4af0614a21991d39d206e2a4a74462ba4cc",
   "../designer/src/frames/site-frame/NavDisclosure.boundary.client.tsx": "sha256:32e1550ce3d62a04d33874e677b5b32e32684d1561ceb994c6020cc57930c05a",
-  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:3d67ddfa17aa29c1fcdf01d11b4289448fe3483ba276235a9e9542ce62ff413a",
-  "../designer/src/frames/site-frame/types.ts": "sha256:5082a75480ef118eda6c17d091d966bceb23e0b42555fe20930cd5c24437359b",
+  "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c",
+  "../designer/src/frames/site-frame/types.ts": "sha256:9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c",
   "../designer/src/frames/site-frame/SkipLink.client.tsx": "sha256:4cd4ff41cd290b09f10d6c1079f7fe3ad788c25722c9d023bb740b659148aa01",
-  "../designer/src/frames/site-frame/internal/resolveShell.ts": "sha256:3ede6936935916b747b8cf8e1271e11a1f36caa94360a57f98064c924bdcdd29",
-  "src/web/views/index.ts": "sha256:48aaf88a5efc78ea7274fe4f309c8cf4f3a6d53a7e68ae9255fe381c96e24aab",
-  "src/web/views/SectionedViewContent.tsx": "sha256:fc040d165b0b5fc6f00d850e554c736152434b94cbfd04649b21b30b615a7dab",
+  "../designer/src/frames/site-frame/internal/resolveShell.ts": "sha256:7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
+  "src/web/views/index.ts": "sha256:b4b88f4f650e6d281600775a859aedffdb13ec35ad99da0554e7e6611bbf53cd",
+  "src/web/views/SectionedViewContent.tsx": "sha256:6ef68cfbc785b17b6d82357d32ee7025425aaf5a9310c4659473677ac6022109",
   "src/web/views/SectionedViewBlocks.tsx": "sha256:29e9280b60b2bb082f3a9a0321557ba69b6771da5c4b9be2d4d93edfc1af1282",
   "src/web/views/LegalView.tsx": "sha256:8c1d7ae576511f93a73390bbd3efd2e56bcd3944854d06637e6d299e84bb50ac",
   "src/web/views/CaptureView.tsx": "sha256:c74d71e24f6f7aa985d281524101004f759271a81bb3f123c4667e8cb78ac949",
@@ -69,7 +69,7 @@ const sources = {
   "src/web/internal/PageLayout.tsx": "sha256:a9969b13774fb0227f08c1554c5df86fd15db5e3657a4c52d030075a180784e6",
   "src/document/legal.ts": "sha256:3b9b19cb843964875b1f5fd89be78ea9b851a059d2f8a9d904ca84adf9a74ee3",
   "src/document/render.ts": "sha256:2564a403881a2c43f70e9aaffb679878d2351413a556af4c57e0f433016737e0",
-  "../designer/src/frames/index.ts": "sha256:9b64226701237b59c28bc01165bd233b68923d7f7ebdf3fdf1845e6b468c1f0f",
+  "../designer/src/frames/index.ts": "sha256:534f1e6d9ddbc19c201db2ebc529d259fa81055e88545212bcb14931e9001bfe",
   "../designer/src/frames/server.ts": "sha256:07c7b46ee590a56b8087b8515d9cedec1e5ebca57b45bf7025be59a95cb56883",
   "../designer/src/frames/site-frame/copy-contract.ts": "sha256:d25eeb44e89f6cd94cca46cf1b5fcaa03ffeee31389b2190f1e44a5099256f75",
   "../designer/src/frames/site-frame/landing/core/content-asset.ts": "sha256:3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3",

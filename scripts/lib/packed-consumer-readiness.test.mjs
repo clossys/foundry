@@ -278,8 +278,8 @@ test("optional-peer policy is closed in both directions against packed metadata"
 
 // #533/#949: adding an export subpath to a package with an optional peer must
 // land here — a mutable record that describes today's source — rather than in
-// the frozen aggregate canary plan, which measures already-published tarballs
-// and cannot be edited at all. The finding a new subpath raises has to be
+// the retired frozen aggregate canary plan, which measured already-published
+// tarballs and could not be edited at all. The finding a new subpath raises has to be
 // clearable by editing the policy, or the gate is a constraint on package
 // design rather than a check.
 test("a new export subpath is a clearable optional-peer policy finding, not an unclearable one", () => {

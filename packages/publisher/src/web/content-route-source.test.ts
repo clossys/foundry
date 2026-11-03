@@ -127,6 +127,7 @@ describe("content route v2 selection and deterministic source", () => {
     const route = manifest().routes[0]!, source = emitContentRoutePage(route);
     expect(source).toContain("@clossys/publisher/web/content-route");
     expect(source).toContain("ContentRoutePage"); expect(source).toContain("bindContentRoute"); expect(source).toContain("loadContentRoute");
+    expect(source).toContain("<ContentRouteHost input={input}><ContentRoutePage input={input} /></ContentRouteHost>");
     expect(source).toMatch(/export default/); expect(source).toMatch(/await\s+/);
     expect(source).not.toMatch(/use client|useRuntime|useRegisteredRoute|RegisteredRoutePage|\.\.\/core\/|<main|<section|<h[1-6]/);
     expect(emitContentRoutePage(structuredClone(route))).toBe(source);

@@ -185,6 +185,9 @@ export type { PublisherSectionCommand, PublisherSectionData, PublisherSectionsIn
 export { ProductionSettingsFields, useProductionDraft } from "./publisher/ProductionSettingsForm.js";
 export type { ProductionSettingsFieldsProps } from "./publisher/ProductionSettingsForm.js";
 export { ContentRoutePage, prepareContentRoute, ContentRouteNeedsError, bindContentRoute } from "./content-route.js";
+export { ContentRouteHost, contentRouteCopyResolver } from "./content-route.js";
+export { PublisherHost, PublisherHostNeedError, writerShellCopyResolver } from "./publisher-host.js";
+export type { PublisherHostProps } from "./publisher-host.js";
 export { selectContentRoute } from "./content-route-binding.js";
 export { createContentRouteManifest, emitContentRoutePage } from "./content-route-source.js";
 export type { CreateContentRouteManifestInput } from "./content-route-manifest.js";

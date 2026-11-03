@@ -35,11 +35,8 @@
 // registry-versus-manifest discovery branch in its discover job is
 // unreachable under that trigger (see .github/workflows/publish.yml). A
 // missed publish stays missed until someone dispatches publish, or until
-// this gate reports the gap. .github/workflows/registry-parity.yml runs
-// this check on a daily schedule (`cron: "43 7 * * *"`) and on
-// workflow_dispatch only. It does not run on push. Either invocation
-// re-derives the gap from nothing but `main`'s current manifests and the
-// registry.
+// this gate reports the gap. Run on demand with `npm run check:registry-parity`
+// to re-derive it from the current manifests and the registry.
 //
 // THE SAME LOOKUP DISCIPLINE, NOT A SECOND ONE
 // ------------------------------------------------
@@ -66,11 +63,8 @@
 // -----------------------------------
 // This calls a live registry, so it remains outside ordinary repository
 // checks. Public npmjs verification is anonymous; the historical GitHub
-// Packages lane still requires read:packages. It is wired into
-// .github/workflows/registry-parity.yml's scheduled run instead, where the
-// credential already exists for a narrower reason, and is deliberately NOT
-// a required status context (see that workflow's own header for why that
-// promotion is left to a human).
+// Packages lane still requires read:packages. Run on demand with
+// `npm run check:registry-parity`; it is not a required status context.
 
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";

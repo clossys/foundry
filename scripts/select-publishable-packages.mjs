@@ -31,8 +31,8 @@
 // selected, regardless of which push introduced that version or whether an
 // earlier run for it was evicted, timed out, or simply failed. This makes
 // publishing idempotent and self-healing WHEREVER THIS RUNS — a later run
-// (or a scheduled run of scripts/check-registry-parity.mjs finding the same
-// gap) recovers instead of requiring anyone to notice a cancelled run in a
+// (or scripts/check-registry-parity.mjs, run per package in publish.yml or
+// on demand with `npm run check:registry-parity`, finding the same gap) recovers instead of requiring anyone to notice a cancelled run in a
 // list. With publish.yml dispatch-only, that "later run" is a person
 // dispatching it, so the recovery is designed-for but not automatic; see
 // the note at the top of this file and issue #757.
@@ -271,7 +271,7 @@ async function main() {
   for (const item of inconclusive) {
     console.error(
       `::warning title=Registry lookup inconclusive::"${item.name}" returned "${item.kind}" and was excluded from this run's ` +
-        "publish selection. If it is genuinely unpublished, scripts/check-registry-parity.mjs's scheduled run will report it.",
+        "publish selection. If it is genuinely unpublished, scripts/check-registry-parity.mjs reports it: per package in publish.yml, or on demand with `npm run check:registry-parity`.",
     );
   }
 
