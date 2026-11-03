@@ -22,7 +22,7 @@ const lineage = files => ({ mode: "verbatim", source: { registry: STOCK.registry
 // The self-declared claim the lint must never trust.
 const CLAIM = { source: { kind: "registry", ref: ["shadcn-aria/example@4.23.0"] }, refVerbatim: { files: { "hero.tsx": STOCK_PATH, "extra.tsx": STOCK_PATH } } };
 
-function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell", "@acme/section-header"], emits = bandTokens, heroMeta, heroFiles, heroRecord } = {}) {
+function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell", "@acme/section-header"], emits = bandTokens, heroMeta, heroFiles, heroRecord, componentsJson = components } = {}) {
   const root = mkdtempSync(join(tmpdir(), "section-tokens-"));
   const pins = {};
   const add = (slot, element, item, files = {}) => {
@@ -38,7 +38,7 @@ function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell",
   if (heroRecord) {
     const dir = join(root, "library", "sections.hero", "hero", "v1");
     writeFileSync(join(dir, "element.json"), JSON.stringify({ schema: "clossys.element/1", id: "hero", slot: "sections.hero", version: 1, hash: pins["sections.hero"].hash, reads: { copyKeys: [], themeVars: [] }, ...heroRecord }));
-    writeFileSync(join(root, "components.json"), components);
+    writeFileSync(join(root, "components.json"), componentsJson);
   }
   writeFileSync(join(root, "selection.json"), JSON.stringify({ pins }));
   return root;
@@ -128,6 +128,29 @@ test("stock bytes still need a strict ref-verbatim pass", () => {
   const findings = sectionShellFindings(root, catalog);
   for (const row of SHELL) assert.ok(findings.includes(row), row);
   assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", code]]));
+});
+
+test("a components.json alias that is not a plain module specifier fails closed", () => {
+  const ref = JSON.parse(readFileSync(join(pkg, "references/manifest.json"), "utf8")).items.find(row => row.registry === "shadcn-aria" && row.name === "dashboard-01" && row.version === "4.23.0");
+  const path = "registry/aria-nova/blocks/dashboard-01/components/nav-main.tsx";
+  const raw = readFileSync(join(pkg, "references", ref.dir, path), "utf8");
+  const comps = JSON.parse(components);
+  const evil = `export const Evil = () => <div className="${NOT_STOCK}" />`;
+  const alias = `${comps.aliases.ui}"\n${evil}\nimport {} from "${comps.aliases.ui}`;
+  const injected = { ...comps, aliases: { ...comps.aliases, ui: alias } };
+  assert.throws(() => normalizeReference(raw, path, configFromComponents(injected)), /not a plain module specifier/);
+  // The bytes the unchecked rewrite would have produced: stock plus smuggled code.
+  const code = normalizeReference(raw, path, configFromComponents(comps)).replaceAll(`"${comps.aliases.ui}/`, `"${alias}/`);
+  assert.ok(code.includes("export const Evil"));
+  const findings = sectionShellFindings(consumer({ heroDeps: ["button"], heroMeta: CLAIM, componentsJson: JSON.stringify(injected), heroFiles: { "hero.tsx": code }, heroRecord: { lineage: { mode: "verbatim", source: { registry: ref.registry, item: ref.name, version: ref.version, hash: ref.hash, files: { "hero.tsx": path } } }, payload: ["hero.tsx"] } }), catalog);
+  for (const row of SHELL) assert.ok(findings.includes(row), row);
+  for (const token of NOT_STOCK.split(" ")) assert.ok(findings.some(row => row.includes(`: ${token} is`)), `${token} is linted`);
+});
+
+test("every ref-verbatim code extension is linted: stock hero.tsx beside a non-stock evil.mts", () => {
+  const findings = sectionShellFindings(consumer({ heroDeps: ["example"], heroMeta: CLAIM, heroFiles: { "hero.tsx": STOCK_CODE, "evil.mts": `export const cls: string = "${NOT_STOCK}";\n` }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: ["hero.tsx"] } }), catalog);
+  for (const row of SHELL) assert.ok(findings.includes(row), row);
+  for (const token of NOT_STOCK.split(" ")) assert.ok(findings.some(row => row.includes(` evil.mts: ${token} is`)), `evil.mts ${token} is linted`);
 });
 
 test("class tokens drop variants, important marks and opacity modifiers", () => {

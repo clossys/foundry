@@ -33,7 +33,7 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { checkElement, defaults as refDefaults } from "./check-ref-verbatim.mjs";
+import { CODE_FILE, checkElement, defaults as refDefaults } from "./check-ref-verbatim.mjs";
 import { configFromComponents, normalizeReference } from "./ref-verbatim/normalize.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -84,9 +84,8 @@ export function tokenFindings(element, files) {
   return findings;
 }
 
-const CODE = /\.(?:tsx?|jsx?)$/;
 const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
-const codeFiles = item => (item.files ?? []).filter(file => CODE.test(file.path ?? ""));
+const codeFiles = item => (item.files ?? []).filter(file => CODE_FILE.test(file.path ?? ""));
 
 /**
  * Code files of one library version that are byte-identical stock: the strict
