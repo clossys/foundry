@@ -7,16 +7,16 @@ export const PUBLISHER_COPY_REFS = {
     "id": "st.rj9yqfds7j"
   },
   "applyFailure": {
-    "id": "st.kxgbwzxkgr"
+    "id": "st.aamt9c6zdr"
   },
   "title": {
-    "id": "st.q5mh8a135f"
+    "id": "st.cy7122qr1d"
   },
   "channels": {
     "id": "st.2wnzrnm0nf"
   },
   "apply": {
-    "id": "st.mw6mn99de1"
+    "id": "st.rdsa1ky831"
   },
   "applying": {
     "id": "st.hd56mn615e"
@@ -52,7 +52,7 @@ export const PUBLISHER_COPY_REFS = {
     "id": "st.fck5fxw34e"
   },
   "configure": {
-    "id": "st.byav18dham"
+    "id": "st.hcah39v2sh"
   },
   "plannedDescription": {
     "id": "st.hwtsvpxxnz"
@@ -61,7 +61,7 @@ export const PUBLISHER_COPY_REFS = {
     "id": "st.gcs82nsqdt"
   },
   "outputFormat": {
-    "id": "st.4b1m5gh2fx"
+    "id": "st.j7paney0ax"
   },
   "assetRequirements": {
     "id": "st.q7z53xdq7t"
@@ -91,7 +91,7 @@ export const PUBLISHER_COPY_REFS = {
     "id": "st.74p81v194s"
   },
   "publishEvidence": {
-    "id": "st.z9zp4r228j"
+    "id": "st.xfj92exnr7"
   },
   "unconfiguredDescription": {
     "id": "st.4kht66qmws"

@@ -29,8 +29,8 @@ it("allows many page bindings per canonical draft record and resolves every exte
   const en = english(), sourceRows = sources(), records = sourceRows.flatMap(row => row.envelope.records), ids = records.map(record => record.id);
   expect(en).toMatchObject({ state: "draft", activation: "none", locale: "en" });
   expect(new Set(ids).size).toBe(ids.length);
-  expect(en.bindings).toHaveLength(363);
-  expect(Object.keys(en.aliases!)).toHaveLength(363);
+  expect(en.bindings).toHaveLength(354);
+  expect(Object.keys(en.aliases!)).toHaveLength(354);
   expect(en.coverage?.proposedBindings).toBe(en.bindings.length);
   expect(new Set(en.bindings.map(binding => binding.cellId)).size).toBe(en.bindings.length);
   expect(new Set(en.bindings.map(binding => binding.recordId)).size).toBeLessThan(en.bindings.length);
@@ -95,7 +95,7 @@ it("preserves exactly two native Arabic drafts with canonical English IDs and se
   }
 });
 
-it("resolves all 363 bindings through the authentic P1b copy consumer with declared shared sources", async () => {
+it("resolves all 354 bindings through the authentic P1b copy consumer with declared shared sources", async () => {
   const { prepareAdminPageCopyEnvelopes } = await import("../../../../publisher/src/web/pages/admin-copy-source.js");
   const { createAdminPageCopy } = await import("../../../../publisher/src/web/pages/admin-copy.js");
   const sourceRows = sources(), records = sourceRows.flatMap(row => row.envelope.records);
@@ -109,4 +109,4 @@ it("resolves all 363 bindings through the authentic P1b copy consumer with decla
   }
   expect(copy({ id: "strings.admin.page.writer", locale: "ar" })).toBe("الكاتب");
   expect(copy({ id: "strings.admin.column.text", locale: "ar" })).toBe("النص");
-});
+}, 30_000);

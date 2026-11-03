@@ -63,7 +63,7 @@ describe("Writer-backed admin page copy", () => {
     expect(copy({id:"strings.admin.page.writer"})).toBe("Writer");
     expect(()=>copy({id:"strings.admin.page.writer",locale:"ar",values:{name:"bad"}})).toThrow(/Writer/);
   });
-  it("resolves all 363 W1 aliases through authentic Writer records and declared cells", () => {
+  it("resolves all 354 W1 aliases through authentic Writer records and declared cells", () => {
     const copy = adminCopyFixture(), records = [...source.records,...studio.records,...chat.records];
     for (const [alias,id] of Object.entries(source.aliases)) {
       const record = records.find(record=>record.id===id)!;
@@ -72,7 +72,7 @@ describe("Writer-backed admin page copy", () => {
       expect(resolved.provenance.cellId,alias).toBe(alias);
       expect(resolved.text.trim(),alias).not.toBe("");
     }
-    expect(Object.keys(source.aliases)).toHaveLength(363);
+    expect(Object.keys(source.aliases)).toHaveLength(354);
   });
   it("refuses an unbound row returned by a consumer loader before caching or rendering", async () => {
     const value=[{id:"technical-id",text:"Unbound row text"}];

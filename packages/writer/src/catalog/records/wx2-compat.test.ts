@@ -121,12 +121,13 @@ it("refuses wrong common source, source context, and source locale through the r
 it("preserves all original common records and usage evidence through the frozen facade and safe resolver", () => {
   expect(ADMIN_COMMON_COPY_EN).toBe(commonFacade);
   expect(ADMIN_COMMON_COPY_EN.records).toHaveLength(177);
-  expect(read("common-labels.r1.en.json").usages).toHaveLength(444);
-  // Exact held-984 canonical content/provenance, independent of record ownership.
+  expect(read("common-labels.r1.en.json").usages).toHaveLength(442);
+  // Exact canonical content/provenance, independent of record ownership; re-pinned
+  // after the tokens-to-themes rename retired two usages and renamed their copy.
   expect(digest([...ADMIN_COMMON_COPY_EN.records].sort((a, b) => a.id.localeCompare(b.id))))
-    .toBe("412c4754f6dbed6739e6155ec681ede6357847f1d149083a2329b3383825dd3f");
+    .toBe("9889bcc47e14f46c6f9633c602ea9f2f7fce7b96e8b7ae2948e322016a3d6f6a");
   expect(digest(read("common-labels.r1.en.json").usages))
-    .toBe("c70a90fc3503cbfe373089cdf7ac73fd389476c1bbfd046ee00a41d250b1ca85");
+    .toBe("6a0deb69923d5947ac14a50b4989ab8c770520bdddf95696b8d79cd3d40522eb");
   for (const record of ADMIN_COMMON_COPY_EN.records) {
     expect(getAdminCopyRecord(record.id)).toEqual(record);
     expect(Object.isFrozen(record)).toBe(true);

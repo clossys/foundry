@@ -231,34 +231,25 @@
     "strings.admin.ia.publisher.videos.clips": "st.zh59g89x8w",
     "strings.admin.ia.publisher.messages.email": "st.5bvvjt22m9",
     "strings.admin.ia.publisher.social.posts": "st.g3t2t9dxdz",
-    "strings.admin.ia.designer.tokens.color": "st.k2hbf8chyb",
-    "strings.admin.ia.designer.tokens.color-engine": "st.bw8n6df3hn",
-    "strings.admin.ia.designer.tokens.color-palettes": "st.gf4vyxz6js",
-    "strings.admin.ia.designer.tokens.color-surfaces": "st.yp9jcda42g",
-    "strings.admin.ia.designer.tokens.color-foregrounds": "st.m7t4wh56ev",
-    "strings.admin.ia.designer.tokens.color-controls": "st.hfsb4xz44v",
-    "strings.admin.ia.designer.tokens.color-charts": "st.g8cdn1vmr7",
-    "strings.admin.ia.designer.tokens.type": "st.753hsc4ym2",
-    "strings.admin.ia.designer.tokens.type-fonts": "st.xx87k8vc06",
-    "strings.admin.ia.designer.tokens.type-sizes": "st.0dmzmb7tpe",
-    "strings.admin.ia.designer.tokens.type-spacing": "st.mn2v0dgaj8",
-    "strings.admin.ia.designer.tokens.space": "st.5r9jd8zqt1",
-    "strings.admin.ia.designer.tokens.space-layout": "st.ekd4wtwz4t",
-    "strings.admin.ia.designer.tokens.space-rhythm": "st.qnqy2cwr23",
-    "strings.admin.ia.designer.tokens.shape": "st.9fpt6f67wx",
-    "strings.admin.ia.designer.tokens.shape-corners": "st.a1qp1vcmyr",
-    "strings.admin.ia.designer.tokens.shape-borders": "st.7e7dwaz8k5",
-    "strings.admin.ia.designer.tokens.shape-symbols": "st.jefpgjv0gp",
-    "strings.admin.ia.designer.tokens.depth": "st.h0xys4q2y0",
-    "strings.admin.ia.designer.tokens.depth-effects": "st.t6thy09ja9",
-    "strings.admin.ia.designer.tokens.depth-stacking": "st.ykp69n1ht3",
-    "strings.admin.ia.designer.tokens.motion": "st.ykrqq0590w",
-    "strings.admin.ia.designer.tokens.motion-timing": "st.92yqd0xz4g",
-    "strings.admin.ia.designer.tokens.motion-curves": "st.r80mste1t3",
-    "strings.admin.ia.designer.tokens.motion-travel": "st.a0cr4wtghk",
-    "strings.admin.ia.designer.tokens.interaction": "st.cpkf5zm4zm",
-    "strings.admin.ia.designer.tokens.interaction-controls": "st.9wy8met97b",
-    "strings.admin.ia.designer.tokens.interaction-states": "st.31tdz2e8k4",
+    "strings.admin.ia.designer.themes.colors": "st.5yek8n4s5c",
+    "strings.admin.ia.designer.themes.colors-surfaces": "st.yp9jcda42g",
+    "strings.admin.ia.designer.themes.colors-actions": "st.v86sk0562z",
+    "strings.admin.ia.designer.themes.colors-neutrals": "st.4mej8yd6f9",
+    "strings.admin.ia.designer.themes.colors-charts": "st.g8cdn1vmr7",
+    "strings.admin.ia.designer.themes.colors-sidebar": "st.keg4f392be",
+    "strings.admin.ia.designer.themes.shape": "st.9fpt6f67wx",
+    "strings.admin.ia.designer.themes.shape-corners": "st.a1qp1vcmyr",
+    "strings.admin.ia.designer.themes.typography": "st.pgrhk4wxb1",
+    "strings.admin.ia.designer.themes.typography-fonts": "st.xx87k8vc06",
+    "strings.admin.ia.designer.themes.typography-tracking": "st.rb1vjspk1s",
+    "strings.admin.ia.designer.themes.space": "st.5r9jd8zqt1",
+    "strings.admin.ia.designer.themes.space-rhythm": "st.vr8ynzq99d",
+    "strings.admin.ia.designer.themes.depth": "st.h0xys4q2y0",
+    "strings.admin.ia.designer.themes.depth-effects": "st.t6thy09ja9",
+    "strings.admin.ia.designer.themes.motion": "st.ykrqq0590w",
+    "strings.admin.ia.designer.themes.motion-animations": "st.844m83dfmb",
+    "strings.admin.ia.designer.sections.specimens": "st.nevhwv4t5n",
+    "strings.admin.ia.designer.sections.specimens-content": "st.xh7spvvaer",
     "strings.admin.ia.designer.assets.logo": "st.dgdbty02r2",
     "strings.admin.ia.designer.assets.logo-artwork": "st.gqzt107c6n",
     "strings.admin.ia.designer.assets.app-identity": "st.ns0mdw4gx1",
@@ -2797,170 +2788,116 @@
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.color",
-      "recordId": "st.k2hbf8chyb",
+      "cellId": "strings.admin.ia.designer.themes.colors",
+      "recordId": "st.5yek8n4s5c",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.color-engine",
-      "recordId": "st.bw8n6df3hn",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.color-palettes",
-      "recordId": "st.gf4vyxz6js",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.color-surfaces",
+      "cellId": "strings.admin.ia.designer.themes.colors-surfaces",
       "recordId": "st.yp9jcda42g",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.color-foregrounds",
-      "recordId": "st.m7t4wh56ev",
+      "cellId": "strings.admin.ia.designer.themes.colors-actions",
+      "recordId": "st.v86sk0562z",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.color-controls",
-      "recordId": "st.hfsb4xz44v",
+      "cellId": "strings.admin.ia.designer.themes.colors-neutrals",
+      "recordId": "st.4mej8yd6f9",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.color-charts",
+      "cellId": "strings.admin.ia.designer.themes.colors-charts",
       "recordId": "st.g8cdn1vmr7",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.type",
-      "recordId": "st.753hsc4ym2",
-      "target": "sections.section-header.heading",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.type-fonts",
-      "recordId": "st.xx87k8vc06",
+      "cellId": "strings.admin.ia.designer.themes.colors-sidebar",
+      "recordId": "st.keg4f392be",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.type-sizes",
-      "recordId": "st.0dmzmb7tpe",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.type-spacing",
-      "recordId": "st.mn2v0dgaj8",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.space",
-      "recordId": "st.5r9jd8zqt1",
-      "target": "sections.section-header.heading",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.space-layout",
-      "recordId": "st.ekd4wtwz4t",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.space-rhythm",
-      "recordId": "st.qnqy2cwr23",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.shape",
+      "cellId": "strings.admin.ia.designer.themes.shape",
       "recordId": "st.9fpt6f67wx",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.shape-corners",
+      "cellId": "strings.admin.ia.designer.themes.shape-corners",
       "recordId": "st.a1qp1vcmyr",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.shape-borders",
-      "recordId": "st.7e7dwaz8k5",
+      "cellId": "strings.admin.ia.designer.themes.typography",
+      "recordId": "st.pgrhk4wxb1",
+      "target": "sections.section-header.heading",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.designer.themes.typography-fonts",
+      "recordId": "st.xx87k8vc06",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.shape-symbols",
-      "recordId": "st.jefpgjv0gp",
+      "cellId": "strings.admin.ia.designer.themes.typography-tracking",
+      "recordId": "st.rb1vjspk1s",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.depth",
+      "cellId": "strings.admin.ia.designer.themes.space",
+      "recordId": "st.5r9jd8zqt1",
+      "target": "sections.section-header.heading",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.designer.themes.space-rhythm",
+      "recordId": "st.vr8ynzq99d",
+      "target": "sections.data-table.header",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "strings.admin.ia.designer.themes.depth",
       "recordId": "st.h0xys4q2y0",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.depth-effects",
+      "cellId": "strings.admin.ia.designer.themes.depth-effects",
       "recordId": "st.t6thy09ja9",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.depth-stacking",
-      "recordId": "st.ykp69n1ht3",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.motion",
+      "cellId": "strings.admin.ia.designer.themes.motion",
       "recordId": "st.ykrqq0590w",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.motion-timing",
-      "recordId": "st.92yqd0xz4g",
+      "cellId": "strings.admin.ia.designer.themes.motion-animations",
+      "recordId": "st.844m83dfmb",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.motion-curves",
-      "recordId": "st.r80mste1t3",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.motion-travel",
-      "recordId": "st.a0cr4wtghk",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.interaction",
-      "recordId": "st.cpkf5zm4zm",
+      "cellId": "strings.admin.ia.designer.sections.specimens",
+      "recordId": "st.nevhwv4t5n",
       "target": "sections.section-header.heading",
       "kind": "CopyRef"
     },
     {
-      "cellId": "strings.admin.ia.designer.tokens.interaction-controls",
-      "recordId": "st.9wy8met97b",
-      "target": "sections.data-table.header",
-      "kind": "CopyRef"
-    },
-    {
-      "cellId": "strings.admin.ia.designer.tokens.interaction-states",
-      "recordId": "st.31tdz2e8k4",
+      "cellId": "strings.admin.ia.designer.sections.specimens-content",
+      "recordId": "st.xh7spvvaer",
       "target": "sections.data-table.header",
       "kind": "CopyRef"
     },
@@ -3634,7 +3571,7 @@
   "coverage": {
     "kind": "proposed D1/P1b bindings",
     "productionBound": 0,
-    "proposedBindings": 363
+    "proposedBindings": 354
   },
   "externalRecords": [
     {
@@ -3643,64 +3580,24 @@
       "sourceContext": "designer.ia.themes.color"
     },
     {
-      "recordId": "st.bw8n6df3hn",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.color-engine"
-    },
-    {
-      "recordId": "st.gf4vyxz6js",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.color-palettes"
-    },
-    {
       "recordId": "st.yp9jcda42g",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.color-surfaces"
-    },
-    {
-      "recordId": "st.m7t4wh56ev",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.color-foregrounds"
-    },
-    {
-      "recordId": "st.hfsb4xz44v",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.color-controls"
+      "sourceContext": "designer.ia.themes.colors-surfaces"
     },
     {
       "recordId": "st.g8cdn1vmr7",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.color-charts"
-    },
-    {
-      "recordId": "st.753hsc4ym2",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.type"
+      "sourceContext": "designer.ia.themes.colors-charts"
     },
     {
       "recordId": "st.xx87k8vc06",
       "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.type-fonts"
-    },
-    {
-      "recordId": "st.0dmzmb7tpe",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.type-sizes"
-    },
-    {
-      "recordId": "st.mn2v0dgaj8",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.item.themes.spacing"
+      "sourceContext": "designer.ia.themes.typography-fonts"
     },
     {
       "recordId": "st.5r9jd8zqt1",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.themes.space"
-    },
-    {
-      "recordId": "st.ekd4wtwz4t",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.space-layout"
     },
     {
       "recordId": "st.qnqy2cwr23",
@@ -3718,16 +3615,6 @@
       "sourceContext": "designer.ia.themes.shape-corners"
     },
     {
-      "recordId": "st.7e7dwaz8k5",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.shape-borders"
-    },
-    {
-      "recordId": "st.jefpgjv0gp",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.shape-symbols"
-    },
-    {
       "recordId": "st.h0xys4q2y0",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.themes.depth"
@@ -3738,39 +3625,9 @@
       "sourceContext": "designer.ia.themes.depth-effects"
     },
     {
-      "recordId": "st.ykp69n1ht3",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.depth-stacking"
-    },
-    {
       "recordId": "st.ykrqq0590w",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.themes.motion"
-    },
-    {
-      "recordId": "st.92yqd0xz4g",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.motion-timing"
-    },
-    {
-      "recordId": "st.r80mste1t3",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.motion-curves"
-    },
-    {
-      "recordId": "st.a0cr4wtghk",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.motion-travel"
-    },
-    {
-      "recordId": "st.cpkf5zm4zm",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.interaction"
-    },
-    {
-      "recordId": "st.9wy8met97b",
-      "source": "admin-studio.r1.en.json",
-      "sourceContext": "designer.ia.themes.interaction-controls"
     },
     {
       "recordId": "st.31tdz2e8k4",
@@ -3848,11 +3705,6 @@
       "sourceContext": "designer.ia.assets.imagery-patterns"
     },
     {
-      "recordId": "st.3fyz884ab8",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.assets.icons-actions"
-    },
-    {
       "recordId": "st.0ksqg9ytc4",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.components.actions-buttons"
@@ -3903,11 +3755,6 @@
       "sourceContext": "designer.item.assets.icon-date"
     },
     {
-      "recordId": "st.k2hbf8chyb",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.themes.color"
-    },
-    {
       "recordId": "st.0d1qng8cf7",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.components.inputs-files"
@@ -3926,11 +3773,6 @@
       "recordId": "st.xwf7j0j70c",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.components.display-labels"
-    },
-    {
-      "recordId": "st.2c9722yrzg",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.assets.imagery"
     },
     {
       "recordId": "st.qxaxqewq3p",
@@ -3978,11 +3820,6 @@
       "sourceContext": "designer.ia.components.feedback-progress"
     },
     {
-      "recordId": "st.041fh8t2aw",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.assets.icons-navigation"
-    },
-    {
       "recordId": "st.qpwzxv0zxj",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.components.navigation-links"
@@ -4018,16 +3855,6 @@
       "sourceContext": "designer.ia.sections.parts"
     },
     {
-      "recordId": "st.1f0sc4veew",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.sections.parts-structure"
-    },
-    {
-      "recordId": "st.041fh8t2aw",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.assets.icons-navigation"
-    },
-    {
       "recordId": "st.9sjbpt05v6",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain"
@@ -4051,11 +3878,6 @@
       "recordId": "st.m2r7rb9mhm",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.explain-social-proof"
-    },
-    {
-      "recordId": "st.2c9722yrzg",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.assets.imagery"
     },
     {
       "recordId": "st.gm2gyz20jx",
@@ -4123,11 +3945,6 @@
       "sourceContext": "designer.ia.sections.collect-conversation"
     },
     {
-      "recordId": "st.ehnm0c7e08",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.inspector.fields.historyInputs"
-    },
-    {
       "recordId": "st.2rrmfet0fn",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.navigate"
@@ -4146,16 +3963,6 @@
       "recordId": "st.m7gtk6hcw8",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.ia.sections.respond"
-    },
-    {
-      "recordId": "st.31tdz2e8k4",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.sections.respond-states"
-    },
-    {
-      "recordId": "st.ceegez6aff",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "publisher.channel.messages"
     },
     {
       "recordId": "st.s7hnkgzy0j",
@@ -4188,11 +3995,6 @@
       "sourceContext": "designer.ia.frames.headers"
     },
     {
-      "recordId": "st.041fh8t2aw",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.assets.icons-navigation"
-    },
-    {
       "recordId": "st.dg3e6jc56v",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.frames.panels"
@@ -4216,11 +4018,6 @@
       "recordId": "st.yq46yb2vxy",
       "source": "admin-studio.r1.en.json",
       "sourceContext": "designer.ia.frames.overlay-shells-commands"
-    },
-    {
-      "recordId": "st.91bq2h08er",
-      "source": "common-labels.r1.en.json",
-      "sourceContext": "designer.ia.sections.collect-conversation"
     },
     {
       "recordId": "st.fc3agfvrnf",
@@ -4551,6 +4348,56 @@
       "recordId": "st.zxh419w2k5",
       "source": "common-labels.r1.en.json",
       "sourceContext": "designer.item.sections.chat"
+    },
+    {
+      "recordId": "st.5yek8n4s5c",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.colors"
+    },
+    {
+      "recordId": "st.v86sk0562z",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.colors-actions"
+    },
+    {
+      "recordId": "st.4mej8yd6f9",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.colors-neutrals"
+    },
+    {
+      "recordId": "st.keg4f392be",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.colors-sidebar"
+    },
+    {
+      "recordId": "st.pgrhk4wxb1",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.typography"
+    },
+    {
+      "recordId": "st.rb1vjspk1s",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.typography-tracking"
+    },
+    {
+      "recordId": "st.vr8ynzq99d",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.space-rhythm"
+    },
+    {
+      "recordId": "st.844m83dfmb",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.themes.motion-animations"
+    },
+    {
+      "recordId": "st.nevhwv4t5n",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.sections.specimens"
+    },
+    {
+      "recordId": "st.xh7spvvaer",
+      "source": "admin-studio.r1.en.json",
+      "sourceContext": "designer.ia.sections.specimens-content"
     }
   ]
 }
