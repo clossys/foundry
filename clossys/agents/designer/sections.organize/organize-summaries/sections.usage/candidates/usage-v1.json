@@ -1,0 +1,104 @@
+{
+  "name": "usage",
+  "type": "registry:block",
+  "title": "Progress",
+  "registryDependencies": [
+    "field",
+    "item",
+    "progress",
+    "slider",
+    "example"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "progress-example.tsx",
+      "type": "registry:example",
+      "content": "\n\nimport * as React from \"react\"\n\nimport {\n  Example,\n  ExampleWrapper,\n} from \"@/components/example\"\nimport {\n  Item,\n  ItemActions,\n  ItemContent,\n  ItemGroup,\n  ItemMedia,\n  ItemTitle,\n} from \"@/components/ui/item\"\nimport {\n  Progress,\n  ProgressLabel,\n  ProgressValue,\n} from \"@/components/ui/progress\"\nimport { Slider } from \"@/components/ui/slider\"\nimport { FileIcon } from \"lucide-react\"\n\nexport default function ProgressExample() {\n  return (\n    <ExampleWrapper>\n      <ProgressValues />\n      <ProgressWithLabel />\n      <ProgressControlled />\n      <FileUploadList />\n    </ExampleWrapper>\n  )\n}\n\nfunction ProgressValues() {\n  return (\n    <Example title=\"Progress Bar\">\n      <div className=\"flex w-full flex-col gap-4\">\n        <Progress value={0} />\n        <Progress value={25} className=\"w-full\" />\n        <Progress value={50} />\n        <Progress value={75} />\n        <Progress value={100} />\n      </div>\n    </Example>\n  )\n}\n\nfunction ProgressWithLabel() {\n  return (\n    <Example title=\"With Label\">\n      <Progress value={56}>\n        <ProgressLabel>Upload progress</ProgressLabel>\n        <ProgressValue />\n      </Progress>\n    </Example>\n  )\n}\n\nfunction ProgressControlled() {\n  const [value, setValue] = React.useState(50)\n\n  return (\n    <Example title=\"Controlled\">\n      <div className=\"flex w-full flex-col gap-4\">\n        <Progress value={value} className=\"w-full\" />\n        <Slider\n          value={value}\n          onChange={setValue}\n          minValue={0}\n          maxValue={100}\n          step={1}\n        />\n      </div>\n    </Example>\n  )\n}\n\nfunction FileUploadList() {\n  const files = React.useMemo(\n    () => [\n      {\n        id: \"1\",\n        name: \"document.pdf\",\n        progress: 45,\n        timeRemaining: \"2m 30s\",\n      },\n      {\n        id: \"2\",\n        name: \"presentation.pptx\",\n        progress: 78,\n        timeRemaining: \"45s\",\n      },\n      {\n        id: \"3\",\n        name: \"spreadsheet.xlsx\",\n        progress: 12,\n        timeRemaining: \"5m 12s\",\n      },\n      {\n        id: \"4\",\n        name: \"image.jpg\",\n        progress: 100,\n        timeRemaining: \"Complete\",\n      },\n    ],\n    []\n  )\n\n  return (\n    <Example title=\"File Upload List\">\n      <ItemGroup>\n        {files.map((file) => (\n          <Item key={file.id} size=\"xs\" className=\"px-0\">\n            <ItemMedia variant=\"icon\">\n              <FileIcon\n                className=\"size-5\"\n              />\n            </ItemMedia>\n            <ItemContent className=\"inline-block truncate\">\n              <ItemTitle className=\"inline\">{file.name}</ItemTitle>\n            </ItemContent>\n            <ItemContent>\n              <Progress value={file.progress} className=\"w-32\" />\n            </ItemContent>\n            <ItemActions className=\"w-16 justify-end\">\n              <span className=\"text-sm text-muted-foreground\">\n                {file.timeRemaining}\n              </span>\n            </ItemActions>\n          </Item>\n        ))}\n      </ItemGroup>\n    </Example>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.usage",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/progress-example@4.23.0"
+      ],
+      "hash": "sha256:644e55e1efbcaa96af93eb5c4ce2b66718533f91e9798e295f81e519e1375cdd",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "progress-example.tsx": "registry/aria-nova/examples/progress-example.tsx"
+      }
+    },
+    "element": {
+      "id": "sections.usage/usage",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.usage",
+      "kind": "registry:example",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-2"
+      },
+      "reason": "Stock shadcn-aria/progress-example@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.usage.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "field",
+          "item",
+          "progress",
+          "slider",
+          "example"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--destructive",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

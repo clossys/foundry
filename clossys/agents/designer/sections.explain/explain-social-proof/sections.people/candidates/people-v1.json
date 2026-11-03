@@ -1,0 +1,93 @@
+{
+  "name": "people",
+  "type": "registry:block",
+  "registryDependencies": [],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2025 Irung\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    },
+    {
+      "path": "one.tsx",
+      "type": "registry:block",
+      "content": "import Image from 'next/image'\n\nconst members = [\n    {\n        avatar: 'https://avatars.githubusercontent.com/u/47919550?v=4',\n        name: 'Meschac Irung',\n        role: 'Frontend Engineer at Acme',\n        bio: 'Passionate about intuitive UIs and web performance. Specializes in React and TypeScript with 5+ years of experience.',\n    },\n    {\n        avatar: 'https://avatars.githubusercontent.com/u/68236786?v=4',\n        name: 'Theo Balick',\n        role: 'Founder, CEO - Acme',\n        bio: 'Serial entrepreneur transforming team collaboration. Previously led product at two successful startups.',\n    },\n]\n\nexport default function Team() {\n    return (\n        <section className=\"bg-background @container py-24\">\n            <div className=\"mx-auto max-w-2xl px-6\">\n                <div className=\"space-y-4\">\n                    <h2 className=\"text-balance font-serif text-4xl font-medium\">Meet Our Founders</h2>\n                    <p className=\"text-muted-foreground text-balance\">The visionary leaders behind our mission to transform how teams work and collaborate.</p>\n                </div>\n                <div className=\"mt-12 grid gap-12 text-sm\">\n                    {members.map((member, index) => (\n                        <div\n                            key={index}\n                            className=\"relative grid grid-cols-[auto_1fr] gap-4\"\n                        >\n                            <div\n                                aria-hidden\n                                className=\"max-h-26 absolute -inset-x-6 inset-y-1 border-y\"\n                            />\n                            <div\n                                aria-hidden\n                                className=\"w-26 absolute -inset-y-6 inset-x-1 border-x\"\n                            />\n                            <div className=\"before:border-foreground/10 shadow-foreground/6.5 dark:shadow-black/6.5 relative size-28 shrink-0 rounded-xl shadow-md before:absolute before:inset-0 before:rounded-xl before:border\">\n                                <Image\n                                    src={member.avatar}\n                                    alt={member.name}\n                                    className=\"rounded-xl object-cover\"\n                                    width={120}\n                                    height={120}\n                                />\n                            </div>\n\n                            <div className=\"flex flex-col justify-between gap-6 py-1\">\n                                <div className=\"space-y-0.5\">\n                                    <p className=\"text-foreground text-base font-medium\">{member.name}</p>\n                                    <p className=\"text-muted-foreground text-sm\">{member.role}</p>\n                                </div>\n\n                                <p className=\"text-muted-foreground text-balance text-sm\">{member.bio}</p>\n                            </div>\n                        </div>\n                    ))}\n                </div>\n            </div>\n        </section>\n    )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.people",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "tailark-oss/veil-team-1@8139698"
+      ],
+      "hash": "sha256:1577dbd45fca49a6e075db84fae989ea94af4d3b184c61a920c81a4f28191eec",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "one.tsx": "veil/blocks/team/one.tsx"
+      }
+    },
+    "element": {
+      "id": "sections.people/people",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.people",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-2"
+      },
+      "reason": "Stock tailark-oss/veil-team-1@8139698 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.people.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--destructive",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

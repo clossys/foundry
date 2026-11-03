@@ -1,0 +1,97 @@
+{
+  "name": "gallery",
+  "type": "registry:block",
+  "title": "Carousel",
+  "registryDependencies": [
+    "card",
+    "carousel",
+    "example"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "carousel-example.tsx",
+      "type": "registry:example",
+      "content": "import {\n  Example,\n  ExampleWrapper,\n} from \"@/components/example\"\nimport { Card, CardContent } from \"@/components/ui/card\"\nimport {\n  Carousel,\n  CarouselContent,\n  CarouselItem,\n  CarouselNext,\n  CarouselPrevious,\n} from \"@/components/ui/carousel\"\n\nexport default function CarouselExample() {\n  return (\n    <ExampleWrapper className=\"lg:grid-cols-1\">\n      <CarouselBasic />\n      <CarouselMultiple />\n      <CarouselWithGap />\n    </ExampleWrapper>\n  )\n}\n\nfunction CarouselBasic() {\n  return (\n    <Example title=\"Basic\">\n      <Carousel className=\"mx-auto max-w-xs sm:max-w-sm\">\n        <CarouselContent>\n          {Array.from({ length: 5 }).map((_, index) => (\n            <CarouselItem key={index}>\n              <div className=\"p-1 style-luma:p-2.5\">\n                <Card>\n                  <CardContent className=\"flex aspect-square items-center justify-center p-6\">\n                    <span className=\"text-4xl font-semibold\">{index + 1}</span>\n                  </CardContent>\n                </Card>\n              </div>\n            </CarouselItem>\n          ))}\n        </CarouselContent>\n        <CarouselPrevious className=\"hidden sm:inline-flex\" />\n        <CarouselNext className=\"hidden sm:inline-flex\" />\n      </Carousel>\n    </Example>\n  )\n}\n\nfunction CarouselMultiple() {\n  return (\n    <Example title=\"Multiple\">\n      <Carousel\n        className=\"mx-auto max-w-xs sm:max-w-sm\"\n        opts={{\n          align: \"start\",\n        }}\n      >\n        <CarouselContent>\n          {Array.from({ length: 5 }).map((_, index) => (\n            <CarouselItem key={index} className=\"sm:basis-1/2 lg:basis-1/3\">\n              <div className=\"p-1 style-luma:p-2.5\">\n                <Card>\n                  <CardContent className=\"flex aspect-square items-center justify-center p-6\">\n                    <span className=\"text-3xl font-semibold\">{index + 1}</span>\n                  </CardContent>\n                </Card>\n              </div>\n            </CarouselItem>\n          ))}\n        </CarouselContent>\n        <CarouselPrevious className=\"hidden sm:inline-flex\" />\n        <CarouselNext className=\"hidden sm:inline-flex\" />\n      </Carousel>\n    </Example>\n  )\n}\n\nfunction CarouselWithGap() {\n  return (\n    <Example title=\"With Gap\">\n      <Carousel className=\"mx-auto max-w-xs sm:max-w-sm\">\n        <CarouselContent className=\"-ml-1\">\n          {Array.from({ length: 5 }).map((_, index) => (\n            <CarouselItem key={index} className=\"pl-1 md:basis-1/2\">\n              <div className=\"p-1 style-luma:p-2.5\">\n                <Card>\n                  <CardContent className=\"flex aspect-square items-center justify-center p-6\">\n                    <span className=\"text-2xl font-semibold\">{index + 1}</span>\n                  </CardContent>\n                </Card>\n              </div>\n            </CarouselItem>\n          ))}\n        </CarouselContent>\n        <CarouselPrevious className=\"hidden sm:inline-flex\" />\n        <CarouselNext className=\"hidden sm:inline-flex\" />\n      </Carousel>\n    </Example>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.gallery",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/carousel-example@4.23.0"
+      ],
+      "hash": "sha256:8a19e1586aac1583d3cec777f65231da9105d1b3085d01c3c5e6a92d2bb275d3",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "carousel-example.tsx": "registry/aria-nova/examples/carousel-example.tsx"
+      }
+    },
+    "element": {
+      "id": "sections.gallery/gallery",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.gallery",
+      "kind": "registry:example",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-2"
+      },
+      "reason": "Stock shadcn-aria/carousel-example@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.gallery.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "card",
+          "carousel",
+          "example"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--radius",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}
