@@ -2086,6 +2086,12 @@
     },
     "references": [
       {
+        "registry": "shadcn-aria",
+        "item": "separator-example",
+        "version": "4.23.0",
+        "hash": "sha256:97218ea1efec2fd0c3cfb26b9634da5536e80cd613cd6b0b15eff2e0d596d20d"
+      },
+      {
         "registry": "tailark-oss",
         "item": "mist-content-1",
         "version": "8139698",

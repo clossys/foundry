@@ -21,7 +21,10 @@
  * through `cssVars.theme`.
  *
  * Verbatim vendored files (`meta.verbatim`) and `registry:ui|hook|lib` files are
- * reference primitives and are not linted. Exit 1 on any finding.
+ * reference primitives and are not linted. A verbatim stock pick (`meta.source.kind:
+ * registry`, every code file mapped in `meta.refVerbatim.files`) keeps the reference's own
+ * markup and classes, which designer-ref-verbatim gates; its mapped files are not linted
+ * and it is not required to compose the band. Exit 1 on any finding.
  */
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -76,8 +79,22 @@ export function tokenFindings(element, files) {
 }
 
 /** Item files the lint reads: code that is neither verbatim vendored nor a ui/hook/lib primitive. */
+/** Code files of a verbatim stock pick: a `registry` source whose files are mapped to the reference. */
+export function verbatimPickFiles(item) {
+  if (item.meta?.source?.kind !== "registry") return new Set();
+  const mapped = item.meta?.refVerbatim?.files;
+  return new Set(mapped && typeof mapped === "object" ? Object.keys(mapped) : []);
+}
+
+/** True when every code file of the item is a mapped verbatim reference file. */
+export function isVerbatimPick(item) {
+  const mapped = verbatimPickFiles(item);
+  const code = (item.files ?? []).filter(file => /\.(?:tsx?|jsx?)$/.test(file.path));
+  return code.length > 0 && code.every(file => mapped.has(file.path));
+}
+
 export function lintableFiles(item, dir) {
-  const verbatim = new Set((item.meta?.verbatim ?? []).map(row => row.file));
+  const verbatim = new Set([...(item.meta?.verbatim ?? []).map(row => row.file), ...verbatimPickFiles(item)]);
   return (item.files ?? [])
     .filter(file => /\.(?:tsx?|jsx?)$/.test(file.path) && !verbatim.has(file.path) && !/^registry:(?:ui|hook|lib)$/.test(file.type))
     .map(file => [file.path, readFileSync(join(dir, file.path), "utf8")]);
@@ -111,6 +128,7 @@ export function sectionShellFindings(root, catalog = loadCatalog()) {
     if (!anatomy?.band && !measure) continue;
     const entry = itemOf(slot);
     if (!entry) { findings.push(`shell: ${slot} pin has no library item`); continue; }
+    if (isVerbatimPick(entry.item)) continue;
     const deps = new Set(entry.item.registryDependencies ?? []);
     const named = target => [...deps].some(dep => new RegExp(`^@[a-z0-9-]+/${target.pin.element}$`).test(dep));
     if (band && !named(band)) findings.push(`shell: ${entry.pin.element} (${slot}) does not depend on the band ${band.pin.element}`);

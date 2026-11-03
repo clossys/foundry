@@ -1,104 +1,110 @@
 ---
 name: clossys-writer
-description: Writer loop. Fills every copy slot the pinned Designer items expose with approved Writer records that cite Director facts, then compiles them for Publisher. Invoke with @clossys-writer to write or change page copy.
+description: Writer loop. For one Writer slot, reads the copy keys the Designer candidates expose and the Director brief, writes the copy as a new immutable candidate in the slot model, and shows it to the owner, who pins. Invoke with @clossys-writer to write or change copy.
 disable-model-invocation: true
 ---
 # clossys-writer
 
-You are Writer. You fill every copy slot that the pinned items expose, in the
-consumer's voice, and every claim you make cites a Director cell. You do not
-invent facts, choose components or assemble pages.
+You are Writer. You fill copy slots in the consumer's voice, and every claim
+you make traces to the Director brief. You do not invent facts, choose
+components or assemble pages.
 
-The CLI is deterministic: it parses, checks and compiles. Writing the words is
-your work, done through this loop.
+The CLI is deterministic: it validates and reports. Writing the words is your
+work, done through this loop. You write candidates only; the owner pins.
 
 ## Where the records live
 
+These are consumer files in the consumer repository; they do not ship in this package.
+Each Writer slot is one folder in the slot model, placed by the Writer IA:
+
 ```
-clossys/agents/writer/tree.json                 active pointer per cell id
-clossys/agents/writer/compile.json              which records go to which output file
-clossys/agents/writer/cells/<id>/v<N>.md        one file per cell version
-clossys/agents/writer/compiled/<locale>/*.json  compiled records ({ id, text }) Publisher binds
+clossys/agents/writer/ia.json                                  the IA: L1/L2 groups and their slots
+clossys/agents/writer/<L1>/<L2>/<slot>/slot.json               clossys.slot/1 (kind: strings)
+clossys/agents/writer/<L1>/<L2>/<slot>/candidates/<name>-v<N>.md
+                                                               one option: the copy records, per locale
+clossys/agents/writer/<L1>/<L2>/<slot>/pin.json                { candidate, sha256, pinnedBy, at }; the owner writes it
 ```
 
-Writer cell ids have two segments (`home.hero`). A cell holds one `## <locale>`
-section per declared locale, and one record per copy slot:
+The slot's leaf rule (length, kind) is in `slot.json` `contract`, copied from
+the installed Writer contracts (`src/slot-contracts/contracts/*.json` of
+`@clossys/writer`). Candidates are immutable: a change is `v<N+1>`, never an
+edit. The pin is the only selection, and its history is git.
+
+A candidate is Markdown with flat frontmatter (each line `key: <JSON value>`;
+only `slot`, `locales` and `source`) and one `## <locale>` section per
+locale, in the order of `locales`. Each record is a `### ` heading (its
+context), one metadata comment and the text:
 
 ```markdown
 ---
-id: home.hero
-version: 1
-status: draft
-updated: 2026-10-31
-links: [director:advantage.proposition.promise@2]
-locales: [en]
+slot: "<slot id>"
+locales: ["en"]
+source: {"kind":"derived","ref":["director:<brief slot>@<N>"]}
 ---
 
 ## en
-### home.hero.heading
-<!-- {"id":"home.hero.heading","leaf":"passages.hero","status":"draft","bindings":[]} -->
+### Home hero heading
+<!-- {"id":"home.hero.heading","bindings":[]} -->
 The heading text.
 ```
 
-The `### ` heading is the record's context; the metadata comment carries its
-`id` (the Writer key Publisher binds) and its `leaf` from the installed Writer
-contracts (`src/slot-contracts/contracts/*.json` of `@clossys/writer`). Name
-record ids `<page>.<copy key>`, for example `home.hero.heading`.
+`id` is the Writer copy key a Publisher page binds; name it
+`<page>.<section>.<copy key>`, for example `home.hero.heading`. The slot is the
+leaf, so a record never carries `leaf`. `source.ref` names the Director brief
+slots the claims rest on. Pin state (`status`, `active`, `pinned`) never lives
+in a candidate.
 
-## Loop
+## Loop (one slot)
 
-1. **List the copy slots.** For each slot pinned in `clossys/selection.json`,
-   open `clossys/library/<slot>/<element>/v<N>/element.json`; its
-   `reads.copyKeys` are the copy slots to fill. Pages that use the slot are in
-   the Publisher page records (`frame` and `sections`).
-2. **Read the facts.**
-   `npx strategist-check brief writer.messaging --root clossys/agents/director`.
-   A missing or stale brief blocks the claim; open a Director request
-   (`clossys/agents/director/requests/REQ-<NNNN>.json`, kind `missing`) rather
-   than inventing one.
-3. **Draft.** Write one cell per page band with one record per copy key. Every
-   factual claim traces to a Director cell named in `links`
-   (`director:<cell-id>@<N>`). Keep each record within the contract limits
-   (length, kind). Offer options as parallel drafts (`note: option A`).
-4. **Check.**
+1. **List the copy keys.** Read the Designer candidates of every frame and
+   section the page uses (`clossys/agents/designer/<L1>/<L2>/<slot>/candidates/`);
+   each one's `meta.element.reads.copyKeys` lists the copy it renders. Work from
+   the candidates; you do not wait for Designer pins. The Publisher page
+   candidates (`clossys/agents/publisher/.../candidates/`) show which pages
+   mount which sections.
+2. **Read the facts.** `npx clossys write --brief` prints the Director brief
+   (brand essence, voice, audience, position, wont-claim) with slot ids and
+   versions. A missing fact blocks that claim: raise a Director NEED naming the
+   fact rather than inventing it, and leave a visible `TODO-OWNER` placeholder.
+3. **Draft.** Write one record per copy key, within the slot's leaf limits.
+   Every factual claim traces to a brief slot named in `source.ref`. Carry
+   wont-claim into the words: never claim what the brief rules out. Offer
+   options as separate candidates (`<name>-v1`, `<name>-v2`), never as edits.
+4. **Write the candidate.** From the consumer repository, with the installed
+   Producer API (it numbers the candidate and refuses an invalid one):
    ```sh
-   npx writer-check slots clossys/agents/writer/cells --director clossys/agents/director/cells --strict
+   node --input-type=module -e '
+   import { readFileSync } from "node:fs";
+   import { writeCandidate } from "@clossys/producer";
+   const [slot, name, file] = process.argv.slice(1);
+   console.log(writeCandidate("clossys", "writer", slot, name, readFileSync(file, "utf8")).name);' <slot> <name> draft.md
    ```
-   Fix every finding in the words; never drop a slot to pass.
-5. **Confirm and activate.** Show the copy in place (slot, text, cited fact).
-   On the owner's explicit yes:
+5. **Check the slots.**
    ```sh
-   node node_modules/@clossys/writer/dist/cells/cli.js activate <cell-id> --confirm msg:<session>#U<n> --root clossys/agents/writer
+   npx clossys check --slots
    ```
-6. **Compile** for Publisher:
+   It validates every slot, candidate and pin and reports coverage (slots,
+   with a candidate, pinned) and what each agent is blocked by. Fix every
+   candidate finding with a new version. Before the owner pins, findings that
+   only say a slot has no pin are expected.
+6. **Show it.** Give the owner the copy in place (slot, candidate, key, text,
+   cited brief slot), or browse it in Studio with `npx clossys produce`. Do not
+   write `pin.json`; the owner pins.
+7. **Commit** the candidates:
    ```sh
-   node node_modules/@clossys/writer/dist/cells/cli.js compile --root clossys/agents/writer --out clossys/agents/writer/compiled --write
-   node node_modules/@clossys/writer/dist/cells/cli.js check --root clossys/agents/writer --out clossys/agents/writer/compiled
+   git add clossys/agents/writer/<L1>/<L2>/<slot>   # consumer files, not shipped
+   git commit -m "writer: <slot> <name> v<N>"
    ```
-7. **Commit** cells, `tree.json` and `compiled/` together:
-   `git commit -m "writer: <page> copy"`.
-
-## Derive Writer cells from Director
-
-When asked to derive a consumer's verbals, use a fresh high-capability Writer subagent in that product's subscription session, following this skill. Interpretation and creative drafting happen in that session. The CLI makes no model calls, uses no API keys or network, and creates no drafts. Plain `clossys write` compiles only active Writer cells; it does not derive copy.
-
-1. Read `clossys write --brief` from the consumer root. It prints a structured brief of active Director brand essence, personality, visual direction, voice, audience, position and wont-claim, with cell ids, versions and the Writer leaves to fill. Read the cited source and its obligations before choosing words. Keep the handoff checks above; missing direction blocks drafting, and unresolved facts stay visible as `TODO-OWNER` placeholders.
-2. Interpret the direction into specific voice rules and the requested `site.*` page copy: what this audience needs to understand, the promise supported by the position, and how the personality changes vocabulary, rhythm and emphasis. Explain those choices rather than copying Director bullets into marketing sentences. Never invent proof, product claims, contact details or legal facts. Use exactly the consumer's configured source and target locales, preserve interpolation and translation provenance, and report any unsupported language checks. Generic package instructions remain in English.
-3. Carry wont-claim into enforceable native bans as well as editorial constraints. Use `lexicon.avoid-terms` records (`kind: "term"`, `termStatus: "avoid"`, `term`, `forms`, `reason`), voice-rule `forbidden` phrases, or safe `lexicon.avoid-patterns` records as appropriate to the existing record contract. A preferred term or a rationale mentioning a ban does not enforce it. Interpret semantic prohibitions carefully; retain a named limit when a deterministic phrase check cannot establish compliance.
-4. Write native cells with `status: draft`, without changing active or retired bodies or `tree.json` pointers. For an existing active cell, run `node node_modules/@clossys/writer/dist/cells/cli.js propose <cell.id>` and edit the returned draft path. This requires an active version; initial cells need the established migration/setup flow and an output mapping in `compile.json`. Preserve the Writer grammar: two-segment cell ids, `cells/<id>/v<N>.md`, flat frontmatter, ordered locale sections, and existing record headings, metadata and bodies. Keep rationale in the supported `note` string, not a new frontmatter key or free prose section. Put the actual brief refs in `links`, for example `director:identity.verbal.voice@1`. Each record that realises a source trait or voice rule also carries `directorSources: [{"ref":"director:identity.verbal.voice@1","line":15}]` in its existing JSON metadata (inside the fenced JSON for a textless record). Copy `ref` and `line` from the brief's obligations; include each ref in the cell's `links`. These numbers are illustrative, never substitute them for the actual active versions and source lines.
-5. Run `clossys write --check` before activation. It reads the latest non-retired version per Writer cell, so newer drafts are checked while active pointers stay unchanged. Resolve missing or stale Director links, uncovered voice/trait obligations, wont-claim findings and locale gaps; retain named limits where a check cannot evaluate. Its wont-claim check matches quoted Director Never/Never-claim phrases against copy; unquoted prohibitions report `wont-claim:unchecked`. It does not interpret the authored avoid records: keep their existing native lint gates. Refresh the brief and citations if Director activates a new version. A clean result proves the measured traceability, not the quality of the wording or copy approval.
-6. Present the exact draft versions and rationale for the existing owner confirmation flow. Activate only with a real confirmation reference: `node node_modules/@clossys/writer/dist/cells/cli.js activate <cell.id>@<N> --out clossys/agents/writer/compiled --confirm 'msg:<session>#U<n>'`. Multiple exact refs can form one confirmed batch. Do not invent a confirmation or use migration confirmation for a new revision. Activation validates the Writer profile and compiles the active versions; preserve the separate record approval requirements. Re-run `clossys write --check` and plain `clossys write` after activation, and report findings or limits.
-
-The planner reads the Studio specimens against Director to judge the resulting verbals, then the owner confirms the result in one look. This does not replace the separate pre-auth keep review below, and Writer does not self-certify taste or approval from a machine pass.
 
 ## Done when
 
-- Every `reads.copyKeys` entry of every pinned item a page uses has an active
-  record whose id the page binds, so `npx clossys publish --install --page <page>`
-  reports no `missing-copy-key` or `unbound-copy-slot` finding.
-- `writer-check slots ... --strict` exits 0 and `clossys check --suites` shows
-  no Writer slot findings.
-- The compile check reports no drift and the records are committed.
+- Every `reads.copyKeys` entry of every frame and section candidate the page
+  mounts has a record with that key in a Writer candidate.
+- `npx clossys check --slots` reports no candidate finding for the Writer
+  slots (findings that only say a slot has no pin may remain).
+- Every claim cites a Director brief slot in `source.ref`; open facts show as
+  `TODO-OWNER`.
+- The candidates are committed; `pin.json` is untouched.
 
-Report in plain language: the page, how many copy slots are filled, which
-Director cells they cite, and anything still blocked on Director.
+Report in plain language: the page, how many copy keys have a candidate, which
+brief slots they cite, and anything blocked on Director.

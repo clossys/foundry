@@ -2772,7 +2772,9 @@
         "@shadcn-aria/item-example",
         "@shadcn-aria/message-example",
         "@shadcn-aria/message-scroller-example",
-        "@shadcn-aria/questionnaire-example"
+        "@shadcn-aria/questionnaire-example",
+        "@shadcn-aria/separator-example",
+        "@shadcn-aria/sonner-example"
       ]
     },
     {
@@ -3378,6 +3380,38 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "separator-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/separator-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/separator-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.content"
+      ],
+      "registryDependencies": [
+        "separator",
+        "example"
+      ],
+      "hash": "sha256:97218ea1efec2fd0c3cfb26b9634da5536e80cd613cd6b0b15eff2e0d596d20d",
+      "files": [
+        {
+          "path": "registry/aria-nova/examples/separator-example.tsx",
+          "sha256": "da9d63f9366ea1914a0b8b6f52049f4b7135eb22ded11146a05c2958107a20ea",
+          "bytes": 2974,
+          "origin": "separator-example.json#files[0].content"
+        },
+        {
+          "path": "separator-example.json",
+          "sha256": "314c7c1e9c46e3b209b99cf9539e757e54a6a9a555c51fbd5cd6f501230b7c96",
+          "bytes": 3504,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/separator-example.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "separator",
       "version": "4.23.0",
       "dir": "shadcn-aria/separator@4.23.0",
@@ -3408,6 +3442,7 @@
         "@shadcn-aria/dashboard-01",
         "@shadcn-aria/field",
         "@shadcn-aria/item",
+        "@shadcn-aria/separator-example",
         "@shadcn-aria/sidebar",
         "@shadcn-aria/sidebar-07",
         "@shadcn-aria/sidebar-11",
@@ -3726,6 +3761,38 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "sonner-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sonner-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sonner-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-shell"
+      ],
+      "registryDependencies": [
+        "sonner",
+        "example"
+      ],
+      "hash": "sha256:b069c050ee5f375277b81697beb6820232e04513d8b23d813b284133d8dd0fc1",
+      "files": [
+        {
+          "path": "registry/aria-nova/examples/sonner-example.tsx",
+          "sha256": "753be3162810310c1fce2754e07d462c0156d008d304cfce25b89d3fbddb1b5f",
+          "bytes": 1041,
+          "origin": "sonner-example.json#files[0].content"
+        },
+        {
+          "path": "sonner-example.json",
+          "sha256": "3c8c5701e0526d5123201187abd047a549bc99bee1b1d5aedb8386b31ac694ff",
+          "bytes": 1475,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sonner-example.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "sonner",
       "version": "4.23.0",
       "dir": "shadcn-aria/sonner@4.23.0",
@@ -3755,7 +3822,8 @@
       ],
       "requiredBy": [
         "@shadcn-aria/dashboard-01",
-        "@shadcn-aria/questionnaire-example"
+        "@shadcn-aria/questionnaire-example",
+        "@shadcn-aria/sonner-example"
       ]
     },
     {

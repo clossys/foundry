@@ -149,6 +149,15 @@ owner's yes.
 The slot contracts carry these as `limits` (`compose.band`, `compose.header`,
 `compose.measure`, `rule.*`); they hold for every consumer, not one page.
 
+- **A verbatim stock pick is exempt.** A pick (`meta.source.kind: registry`)
+  whose every code file is mapped in `meta.refVerbatim.files` keeps the
+  reference's own markup, classes and layout. The rules below govern code an
+  adopt or create writes; they never ask you to edit a pick, because any edit
+  beyond the allowed hunks fails `designer-ref-verbatim`. To bring a pick onto
+  the band and its tokens, adopt it (`derived`) and swap utilities with
+  H-TOKEN hunks. `designer-section-check` skips the mapped files of a pick and
+  does not require it to compose the band.
+
 - **One shell.** A section whose contract names `compose.band` lists the pinned
   `sections.band` item, and the pinned `sections.section-header` item when it
   names `compose.header`, in `registryDependencies` (`@<ns>/<element>`), and
@@ -164,8 +173,9 @@ The slot contracts carry these as `limits` (`compose.band`, `compose.header`,
   up, an arbitrary length, `min-w-max` or a negative horizontal offset. Stock
   shadcn component padding (Card, Button, Table) stays as shipped.
 - **No empty decoration.** Decorative UI renders only inside a bound `media`,
-  `backdrop` or records slot that has content. A reference block's empty
-  illustration card is dropped at adopt time, never kept as a box.
+  `backdrop` or records slot that has content. An adopt drops a reference
+  block's empty illustration card, never keeps it as a box; a pick that needs
+  it dropped is an adopt, not a pick.
 - **No deleted UI for missing copy.** When a reference cell, label or header has
   no Writer key, bind it to the contract copy field (for a comparison corner,
   `labels.feature`) and open a Writer request; never delete the cell or move its

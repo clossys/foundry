@@ -265,6 +265,12 @@
     },
     "references": [
       {
+        "registry": "shadcn-aria",
+        "item": "sonner-example",
+        "version": "4.23.0",
+        "hash": "sha256:b069c050ee5f375277b81697beb6820232e04513d8b23d813b284133d8dd0fc1"
+      },
+      {
         "registry": "tailark-oss",
         "item": "mist-hero-section-1-header",
         "version": "8139698",

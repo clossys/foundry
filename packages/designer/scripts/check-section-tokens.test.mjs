@@ -9,7 +9,7 @@ import { pageFindings } from "./check-page-overflow.mjs";
 const catalog = loadCatalog();
 const bandTokens = String(catalog.contracts.get("sections.band").limits["emits.theme"]).split(",");
 
-function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell", "@acme/section-header"], emits = bandTokens } = {}) {
+function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell", "@acme/section-header"], emits = bandTokens, heroMeta } = {}) {
   const root = mkdtempSync(join(tmpdir(), "section-tokens-"));
   const pins = {};
   const add = (slot, element, item, files = {}) => {
@@ -21,7 +21,7 @@ function consumer({ heroClass = "py-section", heroDeps = ["@acme/section-shell",
   };
   add("sections.band", "section-shell", { cssVars: { theme: Object.fromEntries(emits.map(name => [name.slice(2), "1rem"])) } }, { "section-shell.tsx": `export const S = () => <section className="py-section mx-auto max-w-measure px-gutter" />` });
   add("sections.section-header", "section-header", { registryDependencies: ["@acme/section-shell"] }, { "section-header.tsx": `export const H = () => <h2 className="text-heading" />` });
-  add("sections.hero", "hero", { registryDependencies: heroDeps }, { "hero.tsx": `export const Hero = () => <div className="${heroClass}" />` });
+  add("sections.hero", "hero", { registryDependencies: heroDeps, ...(heroMeta ? { meta: heroMeta } : {}) }, { "hero.tsx": `export const Hero = () => <div className="${heroClass}" />` });
   writeFileSync(join(root, "selection.json"), JSON.stringify({ pins }));
   return root;
 }
@@ -47,6 +47,18 @@ test("a section that skips the shell, or a band that does not emit its tokens, f
     "shell: hero (sections.hero) does not depend on the section header section-header",
   ]);
   assert.deepEqual(sectionShellFindings(consumer({ emits: bandTokens.filter(name => name !== "--text-display") }), catalog), ["shell: section-shell does not emit --text-display in cssVars.theme"]);
+});
+
+test("a verbatim stock pick keeps its reference classes and need not compose the band", () => {
+  const stock = "py-24 max-w-5xl text-5xl";
+  const pick = { source: { kind: "registry", ref: ["shadcn-aria/separator-example@4.23.0"] }, refVerbatim: { files: { "hero.tsx": "registry/aria-nova/examples/separator-example.tsx" } } };
+  assert.deepEqual(sectionShellFindings(consumer({ heroClass: stock, heroDeps: ["separator"], heroMeta: pick }), catalog), []);
+  // Mutation: the same code as an adopt (derived), or with the file unmapped, is linted again.
+  const derived = sectionShellFindings(consumer({ heroClass: stock, heroDeps: ["separator"], heroMeta: { ...pick, source: { ...pick.source, kind: "derived" } } }), catalog);
+  assert.equal(derived.filter(row => row.startsWith("shell:")).length, 2);
+  assert.equal(derived.filter(row => /^(spacing|type):/.test(row)).length, 3);
+  const unmapped = sectionShellFindings(consumer({ heroClass: stock, heroDeps: ["separator"], heroMeta: { ...pick, refVerbatim: { files: {} } } }), catalog);
+  assert.equal(unmapped.length, 5);
 });
 
 test("class tokens drop variants, important marks and opacity modifiers", () => {
