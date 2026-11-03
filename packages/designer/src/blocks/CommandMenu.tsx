@@ -10,7 +10,6 @@ const SemanticContent = componentLeaf<typeof import("../components/SemanticConte
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const Dialog = componentLeaf<(props: Omit<ModalOverlayProps, "children" | "className"> & { children: DialogProps["children"]; className?: string; showCloseButton?: boolean }) => ReactElement>("components.dialog");
 const DialogTitle = componentLeaf<(props: Omit<HeadingProps, "slot">) => ReactElement>("components.dialog", "DialogTitle");
-const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const Command = componentLeaf<typeof import("../components/command/index.js").Command>("components.command");
 const CommandInput = componentLeaf<typeof import("../components/command/index.js").CommandInput>("components.command", "CommandInput");
@@ -46,7 +45,12 @@ export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuSh
   }, [enabled, onOpen]);
 }
 
-/** Selected command collection owns virtual focus, active descendants and keyboard activation. */
+/**
+ * Selected command collection owns virtual focus, active descendants and keyboard activation.
+ * Collection keys are namespaced because the stock menu keys groups and items in one collection,
+ * so a host group id equal to an item id would otherwise drop a row. Rows are named by their label;
+ * descriptions and shortcut hints stay visible text.
+ */
 export function CommandMenu({
   heading, searchLabel, closeLabel, emptyMessage, groups, isOpen, onOpenChange,
   query, onQueryChange, filter, dir, resultCountMessage: suppliedResultCountMessage,
@@ -67,12 +71,12 @@ export function CommandMenu({
       <Command dir={dir} inputValue={query} onInputChange={onQueryChange} filter={() => true}>
         <SemanticContent as="div" className="flex items-start justify-between gap-md">
           <DialogTitle>{heading}</DialogTitle>
-          <Tooltip trigger={<Button aria-label={closeLabel} variant="ghost" size="sm" className="icon-control-sm rounded-control p-0" onPress={() => onOpenChange(false)}><Icon glyph={X} decorative size="sm" /></Button>}>{closeLabel}</Tooltip>
+          <Button aria-label={closeLabel} variant="ghost" size="sm" className="icon-control-sm rounded-control p-0" onPress={() => onOpenChange(false)}><Icon glyph={X} decorative size="sm" /></Button>
         </SemanticContent>
         <CommandInput aria-label={searchLabel} placeholder={searchLabel} />
         <CommandList aria-label={searchLabel} selectionMode="none" shouldFocusWrap>
-          {visibleGroups.map(group => <CommandGroup key={group.id} id={group.id} heading={group.label}>
-            {group.items.map(item => <CommandItem key={item.id} id={item.id} textValue={item.label} href={item.href} isDisabled={item.disabled}
+          {visibleGroups.map(group => <CommandGroup key={group.id} id={JSON.stringify(["group", group.id])} heading={group.label}>
+            {group.items.map(item => <CommandItem key={item.id} id={JSON.stringify(["item", group.id, item.id])} aria-label={item.label} textValue={item.label} href={item.href} isDisabled={item.disabled}
               onAction={() => { item.onAction?.(); onOpenChange(false); }}>
               {item.icon ? <Icon glyph={item.icon} decorative size="sm" /> : null}
               <SemanticContent as="span" className="min-w-0 flex-1 break-words">

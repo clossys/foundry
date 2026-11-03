@@ -1,0 +1,77 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.icon",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "derived"
+      ],
+      "relation": "same-contract",
+      "slot": "components.icon",
+      "source": "shadcn@aria",
+      "sourceAddress": "rules/components.icon.json#derive:icon@1",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "icon": {
+      "composes": [],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        }
+      ],
+      "impl": {
+        "entry": "components/icon/icon.tsx",
+        "export": "Icon",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "size.lg",
+        "size.md",
+        "size.sm"
+      ],
+      "notice": "notices/icon.md",
+      "outputSha256": [
+        {
+          "path": "components/icon/icon.tsx",
+          "sha256": "7cf07f9abdb241070486f452beb22405e6327bae8a8e4976f734d57e6a36962c"
+        },
+        {
+          "path": "notices/icon.md",
+          "sha256": "a53f8eedf5d88896fb98f9e0ec3cc269f613ed026ba4548550a413f2175afa22"
+        }
+      ],
+      "propMap": {
+        "size.lg": "Icon.size=lg",
+        "size.md": "Icon.size=md",
+        "size.sm": "Icon.size=sm"
+      },
+      "props": [
+        "children",
+        "className",
+        "decorative",
+        "glyph",
+        "label",
+        "size"
+      ],
+      "reads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "root": "presentational",
+      "slot": "components.icon",
+      "source": "shadcn@aria"
+    }
+  }
+}

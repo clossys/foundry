@@ -44,7 +44,7 @@ function fixture() {
     let bytes: string;
     if (kind === "brief") bytes = serializeFrontmatter({ slot: id, source, feeds: [], functions: [] }, "## Direction\n- example: A direction\n\n## Because\n- example: A reason\n\n## Watch\n- example: A constraint\n");
     else if (kind === "strings") bytes = serializeFrontmatter({ slot: id, locales: ["en"], source }, '## en\n### site.synthetic.title\n<!-- {"id":"synthetic-title","bindings":[]} -->\nA synthetic title\n');
-    else if (kind === "page") bytes = JSON.stringify({ schema: "clossys.page/1", path: "/", title: "site.synthetic.title", frame: null, sections: ["components.synthetic"], copy: { "site.synthetic.title": "strings.synthetic" }, meta: { source } });
+    else if (kind === "page") bytes = JSON.stringify({ schema: "clossys.page/1", path: "/", title: "site.synthetic.title", frame: null, sections: ["components.synthetic"], copy: { "site.synthetic.title": "strings.synthetic#site.synthetic.title" }, meta: { source } });
     else bytes = JSON.stringify({ name: "button", type: "registry:ui", files: [{ path: "button.tsx", type: "registry:ui", content: readFileSync(join(designer, "ui/src/components/ui/button.tsx"), "utf8") }], meta: {
       source: { kind: "registry", ref: [button.dir], hash: button.hash },
       refVerbatim: { files: { "button.tsx": "registry/aria-nova/ui/button.tsx" } },

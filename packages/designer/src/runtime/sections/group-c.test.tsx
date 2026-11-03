@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { createElement as h, type ReactNode } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
-import { cleanup, render, within } from "@testing-library/react";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
+import { cleanup, render as renderBare, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { copyPortsFor } from "./__fixtures__/copy-ports.js";
 import * as blocks from "../../blocks/index.js";
@@ -14,6 +14,9 @@ import { checkWiring } from "../../catalog-core/wiring.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { ANATOMY_CONTENT_KEY } from "./group-c-content.js";
 import { GROUP_C_LEAVES, sectionDatasetC, sectionInputsC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
+import { hostedRender, hostedMarkup } from "../../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 // Each group-c Section renders from its generated fill with shared-dataset content, through its package-owned
 // runtime renderer: real component roles in the DOM, a sections stamp with no WL1 chrome outside it, and a

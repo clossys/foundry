@@ -1,7 +1,7 @@
 import { parseFrontmatter } from "./frontmatter.js";
 import {
   AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
-  PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS,
+  PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
 
@@ -160,7 +160,11 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
     if ((typeof value.path === "string") === (typeof value.slug === "string")) fail("exactly one of path or slug is required");
     if (value.frame !== null && (typeof value.frame !== "string" || !SLOT_ID.test(value.frame))) fail("frame must be a slot id or null");
     if (!strings(value.sections) || value.sections.some(target => !SLOT_ID.test(target))) fail("sections must be a list of slot ids");
-    if (!object(value.copy) || Object.values(value.copy).some(target => typeof target !== "string" || !SLOT_ID.test(target))) fail("copy must map copy keys to Writer slots");
+    const refs = (copy: unknown) => object(copy) && Object.values(copy).every(target => typeof target === "string" && WRITER_KEY_REF.test(target));
+    if (!refs(value.copy)) fail("copy must map copy slots to Writer keys (<writer slot>#<key>)");
+    if (value.bindings !== undefined && (!object(value.bindings) || Object.entries(value.bindings).some(([key, binding]) => !INSTANCE_KEY.test(key) || !object(binding) || binding.copy !== undefined && !refs(binding.copy)))) {
+      fail("bindings must map section instance keys (<slot>[#n]) to copy slot to Writer key bindings");
+    }
   } else if (kind === "publication") {
     if (value.schema !== PUBLICATION_SCHEMA) fail(`schema must be ${PUBLICATION_SCHEMA}`);
     if (typeof value.format !== "string" || !value.format) fail("format is required");

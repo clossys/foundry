@@ -43,17 +43,18 @@ describe("slot model schema (F1)", () => {
   });
 
   it.each([null, "frames.studio-shell"])("accepts page slot references with frame %j", frame => {
-    const candidate = { ...page, frame, sections: ["sections.studio.home", "sections.studio.agent-gallery"], copy: { "home.link": "patterns.inline-link" } };
+    const candidate = { ...page, frame, sections: ["sections.studio.home", "sections.studio.agent-gallery"], copy: { "home.link": "patterns.inline-link#home.link" },
+      bindings: { "sections.studio.home#2": { copy: { "home.link": "patterns.inline-link#second-link" } } } };
     expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(candidate))).toEqual([]);
   });
 
   it("accepts well-formed page references without requiring their targets to exist", () => {
-    const candidate = { ...page, frame: "frames.not-in-ia", sections: ["sections.not-in-ia"], copy: { heading: "custom.future.copy.target" } };
+    const candidate = { ...page, frame: "frames.not-in-ia", sections: ["sections.not-in-ia"], copy: { heading: "custom.future.copy.target#heading" } };
     expect(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify(candidate))).toEqual([]);
   });
 
   it.each(["", "frames", "../frames.studio-shell", "frames.studio-shell/extra", "frames..shell", "writer:patterns.inline-link", "frames.shell@1", "frames.studio.shell.extra.nested"])("rejects malformed page target %j in each reference field", target => {
-    for (const fields of [{ frame: target }, { sections: ["sections.studio.home", target] }, { copy: { link: "patterns.inline-link", heading: target } }]) {
+    for (const fields of [{ frame: target }, { sections: ["sections.studio.home", target] }, { copy: { link: "patterns.inline-link#link", heading: `${target}#heading` } }]) {
       expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, ...fields })))).toEqual(["candidate-invalid"]);
     }
   });
@@ -64,6 +65,9 @@ describe("slot model schema (F1)", () => {
     { sections: ["sections.studio.home", null] }, { sections: [1] },
     { copy: undefined }, { copy: null }, { copy: [] }, { copy: "patterns.inline-link" },
     { copy: { link: null } }, { copy: { link: 1 } }, { copy: { link: false } }, { copy: { link: {} } }, { copy: { link: [] } },
+    // One direction only: copy slot to `<writer slot>#<key>`, never Writer key to Writer slot.
+    { copy: { link: "patterns.inline-link" } }, { copy: { "patterns.inline-link": "link" } },
+    { bindings: [] }, { bindings: { "sections.studio.home#0": { copy: {} } } }, { bindings: { "sections.studio.home": { copy: { link: "patterns.inline-link" } } } },
   ])("rejects incorrectly typed page references %j", fields => {
     expect(codes(validateCandidate("page", "page.home", "page-v1.json", JSON.stringify({ ...page, ...fields })))).toEqual(["candidate-invalid"]);
   });

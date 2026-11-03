@@ -1530,6 +1530,27 @@
       "slots": []
     },
     {
+      "registry": "shadcn",
+      "name": "navigation-menu-example",
+      "slots": [
+        "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sonner-example",
+      "slots": [
+        "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "separator-example",
+      "slots": [
+        "sections.content"
+      ]
+    },
+    {
       "registry": "assistant-ui",
       "name": "elements-comparison-card",
       "slots": [

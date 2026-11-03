@@ -2772,7 +2772,9 @@
         "@shadcn-aria/item-example",
         "@shadcn-aria/message-example",
         "@shadcn-aria/message-scroller-example",
-        "@shadcn-aria/questionnaire-example"
+        "@shadcn-aria/questionnaire-example",
+        "@shadcn-aria/separator-example",
+        "@shadcn-aria/sonner-example"
       ]
     },
     {
@@ -3378,6 +3380,38 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "separator-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/separator-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/separator-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "sections.content"
+      ],
+      "registryDependencies": [
+        "separator",
+        "example"
+      ],
+      "hash": "sha256:97218ea1efec2fd0c3cfb26b9634da5536e80cd613cd6b0b15eff2e0d596d20d",
+      "files": [
+        {
+          "path": "registry/aria-nova/examples/separator-example.tsx",
+          "sha256": "da9d63f9366ea1914a0b8b6f52049f4b7135eb22ded11146a05c2958107a20ea",
+          "bytes": 2974,
+          "origin": "separator-example.json#files[0].content"
+        },
+        {
+          "path": "separator-example.json",
+          "sha256": "314c7c1e9c46e3b209b99cf9539e757e54a6a9a555c51fbd5cd6f501230b7c96",
+          "bytes": 3504,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/separator-example.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "separator",
       "version": "4.23.0",
       "dir": "shadcn-aria/separator@4.23.0",
@@ -3408,6 +3442,7 @@
         "@shadcn-aria/dashboard-01",
         "@shadcn-aria/field",
         "@shadcn-aria/item",
+        "@shadcn-aria/separator-example",
         "@shadcn-aria/sidebar",
         "@shadcn-aria/sidebar-07",
         "@shadcn-aria/sidebar-11",
@@ -3726,6 +3761,38 @@
     },
     {
       "registry": "shadcn-aria",
+      "name": "sonner-example",
+      "version": "4.23.0",
+      "dir": "shadcn-aria/sonner-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/aria-nova/sonner-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-shell"
+      ],
+      "registryDependencies": [
+        "sonner",
+        "example"
+      ],
+      "hash": "sha256:b069c050ee5f375277b81697beb6820232e04513d8b23d813b284133d8dd0fc1",
+      "files": [
+        {
+          "path": "registry/aria-nova/examples/sonner-example.tsx",
+          "sha256": "753be3162810310c1fce2754e07d462c0156d008d304cfce25b89d3fbddb1b5f",
+          "bytes": 1041,
+          "origin": "sonner-example.json#files[0].content"
+        },
+        {
+          "path": "sonner-example.json",
+          "sha256": "3c8c5701e0526d5123201187abd047a549bc99bee1b1d5aedb8386b31ac694ff",
+          "bytes": 1475,
+          "origin": "https://ui.shadcn.com/r/styles/aria-nova/sonner-example.json"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
       "name": "sonner",
       "version": "4.23.0",
       "dir": "shadcn-aria/sonner@4.23.0",
@@ -3755,7 +3822,8 @@
       ],
       "requiredBy": [
         "@shadcn-aria/dashboard-01",
-        "@shadcn-aria/questionnaire-example"
+        "@shadcn-aria/questionnaire-example",
+        "@shadcn-aria/sonner-example"
       ]
     },
     {
@@ -4311,6 +4379,7 @@
         "@shadcn/dialog",
         "@shadcn/input-group",
         "@shadcn/login-03",
+        "@shadcn/navigation-menu-example",
         "@shadcn/pagination",
         "@shadcn/sheet",
         "@shadcn/sidebar"
@@ -4630,7 +4699,8 @@
         }
       ],
       "requiredBy": [
-        "@shadcn/command"
+        "@shadcn/command",
+        "@shadcn/navigation-menu-example"
       ]
     },
     {
@@ -4699,6 +4769,38 @@
           "bytes": 2390,
           "origin": "empty.json#files[0].content"
         }
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "example",
+      "version": "4.23.0",
+      "dir": "shadcn/example@4.23.0",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/example.json",
+      "license": "MIT",
+      "direct": false,
+      "slots": [],
+      "dependencies": [
+        "cn"
+      ],
+      "hash": "sha256:4d8381bd317c75bae7c377b20b79919896b153eee4a607296881191eca10e3bd",
+      "files": [
+        {
+          "path": "example.json",
+          "sha256": "647ff9649112e22cee868b09d2d701fa2f13e4af34ce2b12f2cc89b869fdcc8b",
+          "bytes": 1792,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/example.json"
+        },
+        {
+          "path": "registry/radix-nova/components/example.tsx",
+          "sha256": "f68769304c8698f44e8dfc5b5a883b953ce6b31b04b3e0fb466ca4d759bf4a18",
+          "bytes": 1394,
+          "origin": "example.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@shadcn/navigation-menu-example"
       ]
     },
     {
@@ -5041,6 +5143,40 @@
     },
     {
       "registry": "shadcn",
+      "name": "navigation-menu-example",
+      "version": "4.23.0",
+      "dir": "shadcn/navigation-menu-example@4.23.0",
+      "type": "registry:example",
+      "sourceUrl": "https://ui.shadcn.com/r/styles/radix-nova/navigation-menu-example.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "frames.site-shell"
+      ],
+      "registryDependencies": [
+        "button",
+        "dialog",
+        "navigation-menu",
+        "example"
+      ],
+      "hash": "sha256:d38b9d6f324ee8083e7e15b1f1361a01472294f2889d1833c576e9e139a03fd3",
+      "files": [
+        {
+          "path": "navigation-menu-example.json",
+          "sha256": "2a86ae7874a58f45ac77d153fa1bcadd1c0ee94326518f59eb9e84e231aa011b",
+          "bytes": 10673,
+          "origin": "https://ui.shadcn.com/r/styles/radix-nova/navigation-menu-example.json"
+        },
+        {
+          "path": "registry/radix-nova/examples/navigation-menu-example.tsx",
+          "sha256": "d0bf129fd682787c792d8d2cb688676f9ad38445718d0181b65a44a59b966030",
+          "bytes": 9830,
+          "origin": "navigation-menu-example.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "shadcn",
       "name": "navigation-menu",
       "version": "4.23.0",
       "dir": "shadcn/navigation-menu@4.23.0",
@@ -5068,6 +5204,9 @@
           "bytes": 6739,
           "origin": "navigation-menu.json#files[0].content"
         }
+      ],
+      "requiredBy": [
+        "@shadcn/navigation-menu-example"
       ]
     },
     {

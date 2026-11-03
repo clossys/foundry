@@ -4,14 +4,13 @@ import { Fragment } from "react";
 
 import { ChevronUp } from "../icons/ChevronUp.js";
 import type { AccountMenuProps, AccountMenuSection } from "./account-menu-types.js";
+import { avatarInitials } from "../components/Avatar.server.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { Avatar, AvatarFallback, AvatarImage, MenuGroup, MenuItem, MenuLabel, MenuSeparator, ShellMenu } from "./shell-menu.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Avatar = componentLeaf<typeof import("../components/Avatar.js").Avatar>("components.avatar");
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
-const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
-const Tooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
 
 export type { AccountMenuProps } from "./account-menu-types.js";
 
@@ -49,7 +48,10 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
   const keyFor = (sectionId: string, entryId: string) => JSON.stringify([sectionId, entryId]);
   const trigger = <Button variant="ghost" aria-label={collapsed ? label : actor.name}
     className={collapsed ? "icon-control-md border-0 bg-transparent p-0 forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid" : "control-h-lg border-0 bg-transparent w-full min-w-0 justify-start gap-sm py-sm whitespace-normal text-start forced-colors:focus-visible:outline forced-colors:focus-visible:outline-solid"}>
-    <SemanticContent as="span" aria-hidden="true" className="shrink-0"><Avatar alt={actor.name} src={actor.image} /></SemanticContent>
+    <SemanticContent as="span" aria-hidden="true" className="shrink-0"><Avatar>
+      {actor.image ? <AvatarImage src={actor.image} alt="" /> : null}
+      <AvatarFallback>{avatarInitials(actor.name)}</AvatarFallback>
+    </Avatar></SemanticContent>
     {!collapsed && <>
       <SemanticContent as="span" className="flex min-w-0 flex-1 flex-col text-start">
         <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
@@ -58,39 +60,39 @@ export function AccountMenu({ actor, sections, contextLabel, triggerLabel, colla
       <Icon glyph={ChevronUp} decorative size="sm" className="shrink-0" />
     </>}
   </Button>;
-  const entriesFor = (section: AccountMenuSection, close?: () => void) => section.entries.map(entry => <Menu.Item key={keyFor(section.id, entry.id)} id={keyFor(section.id, entry.id)}
-    textValue={entry.label} isDisabled={entry.isDisabled} isDestructive={entry.kind === "destructive"}
+  const entriesFor = (section: AccountMenuSection) => section.entries.map(entry => <MenuItem key={keyFor(section.id, entry.id)} id={keyFor(section.id, entry.id)}
+    textValue={entry.label} isDisabled={entry.isDisabled} variant={entry.kind === "destructive" ? "destructive" : "default"}
     href={entry.kind === "link" ? entry.href : undefined}
-    onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); close?.(); }}>
+    onAction={entry.kind === "preference" ? undefined : () => { if (entry.kind === "link") onRoute?.(entry); else entry.onAction(); }}>
     {entry.label}
-  </Menu.Item>);
-  const content = (close?: () => void) => <>
+  </MenuItem>);
+  const identity = (section: AccountMenuSection) => <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"
+    style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w), calc(100vw - 2 * var(--spacing-2xl)))" }}>
+    <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
+    {actor.secondaryText && <SemanticContent as="span" className="truncate">{actor.secondaryText}</SemanticContent>}
+    {contextLabel && <SemanticContent as="span" className="truncate">{contextLabel}</SemanticContent>}
+    {section.label?.trim() && <SemanticContent as="span" className="truncate">{section.label}</SemanticContent>}
+  </SemanticContent>;
+  const content = <>
     {menuContent}
     {populated.map((section, index) => index > 0 && !section.label?.trim()
-      ? <Fragment key={section.id}><Menu.Separator />{entriesFor(section, close)}</Fragment>
-      : <Menu.Section key={section.id}
-      aria-label={section.label?.trim() ? section.label : index === 0 ? actor.name : undefined}
-      heading={index === 0 ? <SemanticContent as="span" className="flex min-w-0 flex-col gap-xs"
-        style={{ maxInlineSize: "min(var(--ui-layout-sidebar-w), calc(100vw - 2 * var(--spacing-2xl)))" }}>
-        <SemanticContent as="span" className="break-words whitespace-normal">{actor.name}</SemanticContent>
-        {actor.secondaryText && <SemanticContent as="span" className="truncate">{actor.secondaryText}</SemanticContent>}
-        {contextLabel && <SemanticContent as="span" className="truncate">{contextLabel}</SemanticContent>}
-        {section.label && <SemanticContent as="span" className="truncate">{section.label}</SemanticContent>}
-      </SemanticContent> : section.label}
-      selectionMode={section.kind === "preferences" ? "multiple" : "none"}
-      selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => keyFor(section.id, entry.id)) : undefined}
-      shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
-      onSelectionChange={section.kind === "preferences" ? keys => {
-        for (const entry of section.entries) {
-          const checked = keys === "all" || keys.has(keyFor(section.id, entry.id));
-          if (checked !== entry.checked) entry.onCheckedChange(checked);
-        }
-      } : undefined}>
-      {entriesFor(section, close)}
-    </Menu.Section>)}
+      ? <Fragment key={section.id}><MenuSeparator />{entriesFor(section)}</Fragment>
+      : <MenuGroup key={section.id}
+        aria-label={section.label?.trim() ? section.label : index === 0 ? actor.name : undefined}
+        selectionMode={section.kind === "preferences" ? "multiple" : "none"}
+        selectedKeys={section.kind === "preferences" ? section.entries.filter(entry => entry.checked).map(entry => keyFor(section.id, entry.id)) : undefined}
+        shouldCloseOnSelect={section.kind === "preferences" ? false : undefined}
+        onSelectionChange={section.kind === "preferences" ? keys => {
+          for (const entry of section.entries) {
+            const checked = keys === "all" || keys.has(keyFor(section.id, entry.id));
+            if (checked !== entry.checked) entry.onCheckedChange(checked);
+          }
+        } : undefined}>
+        {index === 0 ? <MenuLabel>{identity(section)}</MenuLabel> : <MenuLabel>{section.label}</MenuLabel>}
+        {entriesFor(section)}
+      </MenuGroup>)}
   </>;
-  const menuTrigger = collapsed ? <Tooltip trigger={trigger} delay={0}>{label}</Tooltip> : trigger;
   const onOpenChange = (open: boolean) => { if (!open) onClose?.(); };
-  return <Menu className="min-w-0" popoverClassName="box-border max-w-full mb-lg" trigger={menuTrigger}
-    controls={controls} controlsLabel={actor.name} onOpenChange={onOpenChange}>{content()}</Menu>;
+  // The collapsed trigger keeps its accessible name; its hover tooltip waits on an owner tooltip-timing placement.
+  return <ShellMenu trigger={trigger} label={actor.name} controls={controls} onOpenChange={onOpenChange}>{content}</ShellMenu>;
 }

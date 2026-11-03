@@ -1,9 +1,11 @@
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
 import { AppFrame, type AppFrameProps } from "@clossys/designer/frames";
 import { describe, expect, it } from "vitest";
 import type { CopyField } from "../../content/composition.js";
 import { FramedContentPreview, type FramedContentPreviewProps } from "./framed.js";
 import { ContentPreviewRefusal } from "./selection.js";
+import { hostedMarkup } from "../__fixtures__/shell-copy.js";
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 function chromeFixture(): Omit<AppFrameProps, "children"> {
   return {

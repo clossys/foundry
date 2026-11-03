@@ -12,6 +12,14 @@ export interface SystemTarget {
   readonly leaf?: string;
 }
 
+/**
+ * The same rail target by value. A target is page state that keys the camera move, so re-asking for the target
+ * already held (the canvas reporting the leaf it just centred) must keep the held object, not issue another move.
+ */
+export function sameTarget(a: SystemTarget | undefined, b: SystemTarget | undefined): boolean {
+  return a === b || (a !== undefined && b !== undefined && a.layer === b.layer && a.l1 === b.l1 && a.l2 === b.l2 && a.leaf === b.leaf);
+}
+
 export interface NavigationPlan {
   readonly stop: SystemStop;
   /** The world rectangle the move frames and the arrival ring marks. */

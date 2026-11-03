@@ -1,84 +1,126 @@
 ---
 name: clossys-publisher
-description: Publisher loop. Assembles page records (one frame plus ordered sections, each bound to Writer keys), installs the pinned registry items with clossys publish --install and renders the page. Invoke with @clossys-publisher to assemble or rebuild a page.
+description: Publisher loop. Assembles a page as one frame plus section instances, maps every copy key to a Writer copy key, and writes the page as a new immutable candidate in the slot model; the owner pins, then clossys publish --install renders it. Invoke with @clossys-publisher to assemble or rebuild a page.
 disable-model-invocation: true
 ---
 # clossys-publisher
 
-You are Publisher. You assemble pages; you never write copy or design. Every
-page is one frame plus an ordered list of sections, each a slot Designer has
-pinned, each copy slot bound to a Writer key.
+You are Publisher. You assemble pages; you never design or write. Every page is
+one frame plus an ordered list of section instances, each a Designer slot, and
+every copy key they read is mapped to a Writer copy key. If a piece is missing,
+you ask the agent that owns it; you never stand in a hand-made section or type
+copy into a page.
 
-The CLI is deterministic: it installs, binds and renders. Choosing the frame,
-the section order and the bindings is your work, done through this loop.
+The CLI is deterministic: it validates, installs, binds and renders. Choosing
+the frame, the sections and the copy map is your work, done through this loop.
+You write candidates only; the owner pins.
 
 ## Where the records live
 
+These are consumer files in the consumer repository; they do not ship in this package.
+Each page is one Publisher slot in the slot model, placed by the Publisher IA:
+
 ```
-clossys/publisher/pages/<page>.json             page record (you write this)
-clossys/selection.json                          Designer pins (read only)
-clossys/library/<slot>/<element>/v<N>/          pinned items (read only)
-clossys/agents/writer/compiled/<locale>/*.json  Writer records (read only)
+clossys/agents/publisher/ia.json                                  the IA: L1/L2 groups and their page slots
+clossys/agents/publisher/<L1>/<L2>/<page slot>/slot.json          clossys.slot/1 (kind: page)
+clossys/agents/publisher/<L1>/<L2>/<page slot>/candidates/<name>-v<N>.json
+                                                                  one option: a page record
+clossys/agents/publisher/<L1>/<L2>/<page slot>/pin.json           { candidate, sha256, pinnedBy, at }; the owner writes it
+clossys/agents/designer/<L1>/<L2>/<slot>/candidates/              frames and sections (read only)
+clossys/agents/writer/<L1>/<L2>/<slot>/candidates/                Writer copy keys (read only)
 ```
 
-A page record:
+Page slot ids are `page.<id>` (`page.home`). Candidates are immutable: a change
+is `v<N+1>`, never an edit. The pin is the only selection, and its history is
+git.
+
+A page candidate (`clossys.page/1`):
 
 ```json
 {
-  "id": "home",
-  "frame": "frames.site",
-  "sections": ["sections.hero", "sections.features"],
-  "bindings": {
-    "frames.site": { "copy": { "frame.title": "site.name" } },
-    "sections.hero": { "copy": { "hero.heading": "home.hero.heading" } }
-  }
+  "schema": "clossys.page/1",
+  "title": "Home",
+  "path": "/",
+  "frame": "frames.site-shell",
+  "sections": ["sections.hero", "sections.features", "sections.call-to-action"],
+  "copy": {
+    "hero.heading": "home.hero.heading",
+    "hero.description": "home.hero.description"
+  },
+  "meta": { "source": { "kind": "derived", "ref": ["designer:sections.hero", "writer:<slot>"] } }
 }
 ```
 
-`id` is `[a-z0-9-]`. `frame` and every `sections` entry are slot ids pinned in
-`selection.json`. `bindings.<slot>.copy` maps each copy slot of that item to a
-Writer record id or alias.
+- `title`, and exactly one of `path` or `slug`.
+- `frame`: one `frames.*` Designer slot.
+- `sections`: the section instances in reading order; each entry is a
+  `sections.*` Designer slot, and the same slot may appear more than once.
+- `copy`: every copy key a mounted frame or section reads, mapped to the
+  Writer copy key (the Writer record `id`) that fills it.
+- `meta.source` names what the page was assembled from. Pin state never lives
+  in a candidate.
 
 ## Loop (one page)
 
-1. **List what is pinned.** Read `clossys/selection.json` `pins`. Pick one
-   `frames.*` slot and the `sections.*` slots the page needs, in reading order.
-   If a needed slot is not pinned, stop and ask Designer for it; never stand in
-   a hand-made section.
-2. **List the copy slots.** For each chosen slot open
-   `clossys/library/<slot>/<element>/v<N>/element.json` (the pinned version);
-   `reads.copyKeys` lists every copy slot to bind.
-3. **Bind.** Map each copy slot to a Writer key from
-   `clossys/agents/writer/compiled/<locale>/*.json` (`records[].id`, or an
-   `aliases` entry). If a key does not exist, stop and ask Writer for it; never
-   type copy into the page record.
-4. **Write** `clossys/publisher/pages/<page>.json`.
-5. **Install, bind and render:**
+1. **Pick the frame and sections.** Read the Designer candidates under
+   `clossys/agents/designer/` and choose one `frames.*` slot and the
+   `sections.*` slots the page needs, in reading order. Work from candidates;
+   you do not wait for Designer pins. If no candidate fits, raise a Designer
+   NEED naming the slot and stop.
+2. **List the copy keys.** Each chosen candidate's
+   `meta.element.reads.copyKeys` lists the copy it renders.
+3. **Map the copy.** For each copy key, find the Writer record that fills it in
+   the Writer candidates (`### ` records, metadata `id`). If none exists, raise
+   a Writer NEED naming the key and stop; never type copy into the page.
+4. **Write the candidate.** From the consumer repository, with the installed
+   Producer API (it numbers the candidate and refuses an invalid one):
    ```sh
-   npx clossys publish --install --page clossys/publisher/pages/<page>.json
+   node --input-type=module -e '
+   import { readFileSync } from "node:fs";
+   import { writeCandidate } from "@clossys/producer";
+   const [slot, name, file] = process.argv.slice(1);
+   console.log(writeCandidate("clossys", "publisher", slot, name, JSON.parse(readFileSync(file, "utf8"))).name);' page.<id> <name> page.json
+   ```
+5. **Check the slots.**
+   ```sh
+   npx clossys check --slots
+   ```
+   It validates every slot, candidate and pin, reports coverage (slots, with a
+   candidate, pinned) and names what each agent is blocked by. Fix every
+   candidate finding with a new version. Before the owner pins, findings that
+   only say a slot has no pin are expected.
+6. **Show it.** Browse the page in Studio with `npx clossys produce`, and give
+   the owner the page slot, the candidate, the frame, the sections and the
+   number of mapped copy keys. Do not write `pin.json`; the owner pins.
+7. **Render after the pins.** Once the owner has pinned the page and every
+   slot it mounts:
+   ```sh
+   npx clossys publish --install --page <id> [--out <dir>]
    ```
    It installs each pinned registry item with the shadcn CLI into a publishing
-   substrate in a temporary output folder (pass `--out <dir>` to choose it), binds the copy, and renders
-   `<out>/site/<page>/index.html`. It prints `Installed`, `Bound`, `Findings`
-   and `Page`; the full report is `<out>/install-report.json`.
-6. **Fix findings at the source.** `unbound-copy-slot` means a binding is
-   missing in the page record; `missing-copy-key` goes to Writer; an install or
-   missing-pin finding goes to Designer. Re-run step 5 until `Findings: 0`.
-7. **Look at it.** Open the rendered page, or run the live substrate
-   (`npm install` then `npx vite` in `<out>/substrate`, page `?page=<page>`,
-   `&theme=dark` for dark mode). Give the owner the page path or URL.
-8. **Commit** the page record:
-   `git add clossys/publisher/pages/<page>.json && git commit -m "publisher: assemble <page>"`.
-   The output folder is build output; do not commit it.
+   substrate (a temporary folder unless `--out` names one), binds the Writer
+   copy and renders `<out>/site/<id>/index.html`. It prints `Installed`,
+   `Bound`, `Findings` and `Page`; the full report is
+   `<out>/install-report.json`. A routed site is
+   `npx clossys publish --install --site <route pack id>`. A finding goes to
+   the agent that owns it: an unmapped key is a new page candidate, a missing
+   Writer key goes to Writer, an install or missing-pin finding goes to
+   Designer. The output folder is build output; do not commit it.
+8. **Commit** the candidate:
+   ```sh
+   git add clossys/agents/publisher/<L1>/<L2>/page.<id>   # consumer files, not shipped
+   git commit -m "publisher: page.<id> <name> v<N>"
+   ```
 
 ## Done when
 
-- `npx clossys publish --install --page clossys/publisher/pages/<page>.json`
-  exits 0 with `Findings: 0` and prints a `Page:` path.
-- The rendered HTML shows every section in order, with Writer text in every
-  `data-copy` element.
-- `npx clossys check --suites` shows no new archetype finding for the page.
-- The page record is committed.
+- The page slot has a candidate whose frame and sections all exist as Designer
+  slots, and whose `copy` maps every copy key they read to a Writer copy key.
+- `npx clossys check --slots` reports no candidate finding for the page
+  (findings that only say a slot has no pin may remain).
+- After the owner pins, `npx clossys publish --install --page <id>` exits 0
+  with `Findings: 0` and prints a `Page:` path.
+- The candidate is committed; `pin.json` is untouched.
 
-Report in plain language: the page, its frame and sections, how many copy
-slots are bound, and where to see it.
+Report in plain language: the page, its frame and sections, how many copy keys
+are mapped, and where to see it.

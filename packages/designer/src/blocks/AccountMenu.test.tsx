@@ -3,7 +3,9 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { I18nProvider } from "react-aria-components";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Menu } from "../components/Menu.js";
+import * as stockMenu from "../components/preview-runtime/components/menu/dropdown-menu.js";
+import { ConsumerComponentProvider } from "../runtime/component-leaf.client.js";
+import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
 import { AccountMenu, type AccountMenuProps } from "./AccountMenu.js";
 
 const actor = { name: "Jordan Vale", secondaryText: "jordan@example.test" };
@@ -52,16 +54,16 @@ it("sizes the expanded trigger from the control-height set without inline sizing
   expect(trigger().style.blockSize).toBe("");
 });
 
-it("keeps the collapsed avatar trigger named and described on keyboard focus", async () => {
+it("keeps the collapsed avatar trigger named on keyboard focus and opens the stock menu", async () => {
   render(<AccountMenu {...props()} collapsed />);
   expect(trigger()).toHaveAccessibleName(actor.name);
   // Actor initials are decorative inside the explicitly named button.
   expect(trigger()).not.toHaveTextContent(actor.name);
   const user = userEvent.setup();
   await user.tab();
-  const tooltip = await screen.findByRole("tooltip");
-  expect(tooltip).toHaveTextContent(actor.name);
-  expect(trigger()).toHaveAttribute("aria-describedby", tooltip.id);
+  expect(trigger()).toHaveFocus();
+  // The selected tooltip's timing is not placed yet (owner decision), so no tooltip is invented here.
+  expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
   await user.keyboard("{ArrowDown}");
   expect(await screen.findByRole("menu", { name: actor.name })).toBeInTheDocument();
 });
@@ -92,14 +94,13 @@ it("renders real labelled groups and links, with distinct destructive emphasis",
   expect(screen.getByRole("menuitem", { name: "Profile" })).toHaveAttribute("href", "/profile");
   const ordinary = screen.getByRole("menuitem", { name: "Settings" });
   const destructive = screen.getByRole("menuitem", { name: "Sign out" });
-  expect(destructive).toHaveClass("text-status-danger-text");
-  expect(ordinary).not.toHaveClass("text-status-danger-text");
-  expect(screen.getByRole("menuitem", { name: "Profile" })).not.toHaveClass("text-status-danger-text");
+  // Stock DropdownMenuItem carries destructive emphasis as its own variant.
+  expect(destructive).toHaveAttribute("data-variant", "destructive");
+  expect(ordinary).toHaveAttribute("data-variant", "default");
+  expect(screen.getByRole("menuitem", { name: "Profile" })).toHaveAttribute("data-variant", "default");
   const preference = screen.getByRole("menuitemcheckbox", { name: "Compact view" });
-  expect(preference).not.toHaveClass("text-status-danger-text");
-  expect(preference.querySelector("svg[aria-hidden=true] path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
-  destructive.focus();
-  await waitFor(() => expect(destructive).toHaveClass("bg-status-danger-tint"));
+  expect(preference).toHaveAttribute("data-variant", "default");
+  expect(preference.querySelector('[data-slot="dropdown-menu-checkbox-item-indicator"] svg')).not.toBeNull();
   expect(screen.getByRole("menuitemcheckbox", { name: "Compact view" })).toHaveAttribute("aria-checked", "true");
 });
 
@@ -284,26 +285,28 @@ it("leaves later unnamed commands ungrouped instead of repeating the actor", asy
 
 it("reports only changed preferences, including the peer select-all callback, with visible check marks", async () => {
   const unchanged = vi.fn(), changed = vi.fn(), all = vi.fn();
-  const section = Menu.Section;
   let selectAll: ((keys: "all") => void) | undefined;
-  vi.spyOn(Menu, "Section").mockImplementation(props => {
-    if (props.selectionMode === "multiple") selectAll = props.onSelectionChange;
-    return section(props);
-  });
-  render(<AccountMenu actor={actor} sections={[{ id: "prefs", kind: "preferences", label: "Preferences", entries: [
+  // Observe the stock group's typed callback through the consumer selection seam, not a Foundry spy.
+  const ambient = marketingComponentSelection();
+  const DropdownMenuGroup: typeof stockMenu.DropdownMenuGroup = groupProps => {
+    if (groupProps.selectionMode === "multiple") selectAll = groupProps.onSelectionChange as (keys: "all") => void;
+    return stockMenu.DropdownMenuGroup(groupProps);
+  };
+  const observed = { ...ambient, modules: { ...ambient.modules, "components/menu/dropdown-menu.tsx": { ...stockMenu, DropdownMenuGroup } } };
+  render(<ConsumerComponentProvider value={observed}><AccountMenu actor={actor} sections={[{ id: "prefs", kind: "preferences", label: "Preferences", entries: [
     { id: "on", kind: "preference", label: "Already enabled", checked: true, onCheckedChange: unchanged },
     { id: "off", kind: "preference", label: "Enable this", checked: false, onCheckedChange: changed },
     { id: "other", kind: "preference", label: "Another", checked: false, onCheckedChange: all },
-  ] }]} />);
+  ] }]} /></ConsumerComponentProvider>);
   const user = await open();
+  const indicator = (item: HTMLElement) => item.querySelector('[data-slot="dropdown-menu-checkbox-item-indicator"]');
   const on = screen.getByRole("menuitemcheckbox", { name: "Already enabled" });
-  expect(on.querySelector("svg path")).toHaveAttribute("d", "M20 6 9 17l-5-5");
-  // Menu draws the one leading check slot for a selection-mode item since 8a9fd5344; it is hidden while unchecked.
-  expect(on.querySelectorAll("svg")).toHaveLength(1);
-  expect(on.querySelector("[data-menu-check]")).not.toHaveClass("invisible");
+  // The stock item keeps one indicator slot per selection-mode item and draws the check only while selected.
+  expect(indicator(on)).not.toBeNull();
+  expect(indicator(on)!.querySelectorAll("svg")).toHaveLength(1);
   const off = screen.getByRole("menuitemcheckbox", { name: "Enable this" });
-  expect(off.querySelectorAll("svg")).toHaveLength(1);
-  expect(off.querySelector("[data-menu-check]")).toHaveClass("invisible");
+  expect(indicator(off)).not.toBeNull();
+  expect(indicator(off)!.querySelectorAll("svg")).toHaveLength(0);
   await user.click(off);
   expect(changed).toHaveBeenCalledExactlyOnceWith(true);
   expect(unchanged).not.toHaveBeenCalled(); expect(all).not.toHaveBeenCalled();

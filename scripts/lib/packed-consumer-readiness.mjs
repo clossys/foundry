@@ -147,11 +147,6 @@ const publisherExports = [
  * plays no part in it. Everywhere else `refuses` is an invalid outcome. A
  * failure that happens only when a peer is omitted is not a by-design
  * refusal: it stays `rejects`, and it must name the omitted peer.
- *
- * `governance/public-npm-aggregate-canary.json` carries rows of the same shape
- * and is NOT the file to edit -- it is frozen measurement of already-published
- * tarballs, and it stopped asking anything of this tree in #533. See
- * `validateAggregateCanary`'s header in `public-npm-aggregate-canary.mjs`.
  */
 export const OPTIONAL_PEER_POLICY = {
   "@clossys/bouncer": {
@@ -716,11 +711,10 @@ function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions
     // so one string is a claim about two unmeasured things rather than a
     // shorthand for one measured thing. The object branch below is checked for
     // exact condition coverage; this branch used to return before reaching it,
-    // which is how a string could silently opt out of that check. The frozen
+    // which is how a string could silently opt out of that check. The retired
     // aggregate plan carried its own copy of this rule against the source
     // tree; #533 moved it here, where it runs against the manifest each caller
-    // actually measured -- packed source for `check:packed-consumer`, the
-    // installed frozen tarball for the aggregate canary's own execution join.
+    // actually measured -- packed source for `check:packed-consumer`.
     if (expected.length !== 1 || expected[0] !== "default") {
       return [`${prefix} collapses its ${expected.join("/")} outcomes into one string`];
     }

@@ -170,9 +170,9 @@ describe("AppFrame composition", () => {
     const props = fixture(); render(<AppFrame {...props} />);
     const opener = screen.getByRole("button", { name: "Find a command" });
     await userEvent.click(opener);
-    const search = await screen.findByRole("combobox", { name: "Search commands" });
+    const search = await screen.findByRole("searchbox", { name: "Search commands" });
     await userEvent.type(search, "Create");
-    expect(screen.queryByRole("option", { name: "Archive document" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Archive document" })).not.toBeInTheDocument();
     await userEvent.keyboard("{Enter}");
     expect(props.commands.groups[0]!.items[0]!.onAction).toHaveBeenCalledOnce();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -184,7 +184,7 @@ describe("AppFrame composition", () => {
     render(<AppFrame {...fixture()} />);
     const opener = screen.getByRole("button", { name: "Host opener" }); opener.focus();
     fireEvent.keyDown(window, { key: "k", ctrlKey: platform === "Win32", metaKey: platform === "MacIntel" });
-    expect(await screen.findByRole("combobox", { name: "Search commands" })).toBeInTheDocument();
+    expect(await screen.findByRole("searchbox", { name: "Search commands" })).toBeInTheDocument();
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(opener).toHaveFocus());
   });
@@ -271,7 +271,7 @@ describe("AppFrame composition", () => {
     expect(screen.queryByRole("link", { name: "Atlas workspace" })).toBeNull();
     const profile = screen.getByRole("button", { name: "Sam River" });
     expect(profile.querySelector("img")).toBeNull();
-    expect(profile.querySelector('[role="img"][aria-label="Sam River"]')).toHaveTextContent("SR");
+    expect(profile.querySelector('[data-slot="avatar-fallback"]')).toHaveTextContent("SR");
     expect(profile.closest('[data-application-navigation-region="footer"]')).not.toBeNull();
   });
 
@@ -292,10 +292,10 @@ describe("AppFrame composition", () => {
     expect(screen.getByRole("link", { name: "Go to route" })).toHaveAttribute("href", "#host-route");
     await userEvent.click(screen.getByRole("button", { name: "Open launcher" }));
     expect(await screen.findByRole("dialog", { name: "Host launcher" })).toBeInTheDocument();
-    const search = screen.getByRole("combobox", { name: "Host search" });
+    const search = screen.getByRole("searchbox", { name: "Host search" });
     await userEvent.type(search, "archive");
-    expect(screen.getByRole("option", { name: "Archive document" })).toBeInTheDocument();
-    expect(screen.queryByRole("option", { name: "Create document" })).not.toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Archive document" })).toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Create document" })).not.toBeInTheDocument();
     expect(screen.getByText("Found 1")).toBeInTheDocument();
     await userEvent.type(search, "missing");
     expect(screen.getByText("Host has no matches")).toBeInTheDocument();
@@ -503,7 +503,7 @@ describe("AppFrame composition", () => {
     render(<AppFrame {...fixture()} />);
     screen.getByRole("button", { name: "Inspector action" }).focus();
     await userEvent.click(screen.getByRole("button", { name: "Find a command" }));
-    const search = await screen.findByRole("combobox", { name: "Search commands" });
+    const search = await screen.findByRole("searchbox", { name: "Search commands" });
     expect(search).toHaveFocus();
     const focuses = vi.spyOn(HTMLElement.prototype, "focus");
     resizeFrame(false);

@@ -84,6 +84,8 @@ name: Conversation safety
 # review events from being relayed. That gains it no credential, and
 # conversation-safety-sweep.yml, which runs from the default branch and reads
 # every review and comment, remains the backstop for anything not relayed.
+# A local re-scan is `npm run check:conversation -- --require-denylist`
+# (needs PUBLIC_SAFETY_DENYLIST or --denylist <file>, and an authenticated gh).
 
 on:
   issues:

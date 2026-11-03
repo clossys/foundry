@@ -14,7 +14,6 @@ const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const IconButton = componentLeaf<typeof import("../../components/IconButton.js").IconButton>("components.button", "IconButton");
 const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
-const Tooltip = componentLeaf<typeof import("../../components/Tooltip.js").Tooltip>("components.tooltip");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -23,7 +22,7 @@ const SECTION_STAMP = dsAttrs("sections", "sections.chat", "foundry/sections.cha
 const PROGRESS_ROW_CLASSES = "flex flex-wrap items-center gap-sm text-body-s text-ink-secondary";
 
 function MessageAction({ label, icon, onPress }: { label: string; icon: IconNode; onPress: () => void }) {
-  return <Tooltip trigger={<IconButton label={label} icon={icon} size="sm" onPress={onPress} />}>{label}</Tooltip>;
+  return <IconButton label={label} icon={icon} size="sm" onPress={onPress} />;
 }
 
 interface MessageActionsProps extends ChatLabels { message: ChatMessage; actions: ChatActions }

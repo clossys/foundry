@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as renderBare, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { GlyphProvider } from "./glyph-context.js";
@@ -17,6 +17,8 @@ import { Banner } from "./Banner.js";
 import { Chip } from "./Chip.js";
 import { SearchField } from "./SearchField.js";
 import { StatusMark } from "./StatusMark.js";
+import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
 
 const consumers = ["Select", "ComboBox", "Disclosure", "Banner", "Chip", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
 const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), `${name}.tsx`), "utf8");

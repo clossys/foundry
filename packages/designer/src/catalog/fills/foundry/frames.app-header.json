@@ -47,7 +47,7 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "1e8c53bf7bfd59e9d40c61d60e7807471cb840b956cf5155bbcf20609f7097d5"
+            "sha256": "3509338db32d1fe369e025cf74a05838fdc801d52392a7db8909b67366b409f1"
           },
           {
             "path": "packages/designer/src/catalog-core/frame-header-options.ts",
@@ -67,7 +67,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
           }
         ],
         "unresolved": [
@@ -93,7 +93,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 3
+            "line": 4
           }
         ]
       },

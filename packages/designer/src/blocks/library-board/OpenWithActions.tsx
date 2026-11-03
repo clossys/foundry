@@ -8,7 +8,6 @@ import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
-const Tooltip = componentLeaf<typeof import("../../components/Tooltip.js").Tooltip>("components.tooltip");
 const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -67,6 +66,6 @@ export function OpenWithActions({ promptContext, projectPath, taskPrompt, viewHr
   </Menu>;
   return <SemanticContent as="div" className="flex shrink-0 items-center gap-xs" data-studio-actions="">
     {!compact ? <Button variant="secondary" onPress={() => { if (selected) void open(selected); else void copy(context().prompt, { kind: "copied" }); }}>{selected?.icon}{labels.openIn}{selected ? ` ${selected.label}` : ""}</Button> : null}
-    {compact ? <Tooltip trigger={menu}>{labels.openIn}</Tooltip> : menu}
+    {menu}
   </SemanticContent>;
 }

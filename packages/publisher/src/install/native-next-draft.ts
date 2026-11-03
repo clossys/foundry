@@ -2,6 +2,7 @@ import { posix } from "node:path";
 import ts from "typescript";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
 import { bindPage, isBlocking, resolvePage } from "./index.js";
+import { needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, type PageHostSelection } from "./host.js";
 import type { BindOptions, BoundPage, InstallFinding, InstallOptions, InstallPin, InstallPins, ResolvedSlot } from "./index.js";
 
 /** A current record admitted by the consumer, independently of production pins. */
@@ -13,7 +14,11 @@ export interface NativeNextDraftOptions {
   readonly source: SpecimenRecordSource;
   readonly copy: BindOptions["copy"];
   readonly assets?: BindOptions["assets"];
+  /** The consumer's component selection module; the page mounts inside `PublisherHost` with it. Required. */
+  readonly selection?: PageHostSelection;
 }
+/** Where the draft's client host module goes, beside app/page.tsx. */
+export const NATIVE_NEXT_HOST_FILE = "app/publisher-host.tsx";
 type DraftInstall = Omit<InstallOptions, "substrate" | "runner"> & Pick<BindOptions, "copy" | "assets">;
 export interface NativeNextDraftResult {
   readonly status: "DRAFT";
@@ -22,6 +27,8 @@ export interface NativeNextDraftResult {
   readonly page?: BoundPage;
   /** A Server Component for app/page.tsx; installed modules retain their native client boundaries. */
   readonly module?: string;
+  /** The client host module app/page.tsx imports, to write at `file` (NATIVE_NEXT_HOST_FILE). */
+  readonly host?: { readonly file: string; readonly module: string };
   /** Pass to installAndBind with the consumer's substrate and real shadcn runner. */
   readonly install?: DraftInstall;
 }
@@ -63,10 +70,11 @@ export async function resolveNativeNextDraft(options: NativeNextDraftOptions): P
   const failure = (findings: readonly InstallFinding[]): NativeNextDraftResult => ({ status: "DRAFT", approved: false, findings });
   if (verification.length) return failure(verification);
   if (resolved.findings.some(isBlocking)) return failure(resolved.findings);
+  if (!options.selection) return failure([...resolved.findings, needComponentSelection(page.id)]);
   const bound = bindPage({ page, slots: resolved.slots, copy, ...(assets ? { assets } : {}) });
   if (!bound.page || bound.findings.some(isBlocking)) return failure(bound.findings);
-  let module: string;
-  try { module = nextModule(bound.page, resolved.slots); }
+  let module: string, host: string;
+  try { module = nextModule(bound.page, resolved.slots); host = await pageHostModule({ selection: options.selection, copy, file: NATIVE_NEXT_HOST_FILE }); }
   catch (error) { return failure([...bound.findings, { code: "render-failed", detail: String(error) }]); }
   const source: SpecimenRecordSource = {
     theme: async () => undefined,
@@ -79,7 +87,7 @@ export async function resolveNativeNextDraft(options: NativeNextDraftOptions): P
   };
   return {
     status: "DRAFT", approved: false, findings: bound.findings, page: bound.page,
-    module, install: { page, pins, source, copy, ...(assets ? { assets } : {}) },
+    module, host: { file: NATIVE_NEXT_HOST_FILE, module: host }, install: { page, pins, source, copy, ...(assets ? { assets } : {}) },
   };
 }
 
@@ -171,12 +179,13 @@ function nextModule(page: BoundPage, resolved: readonly ResolvedSlot[]): string 
     const path = posix.relative("app", file).replace(/\.[cm]?[jt]sx?$/, "");
     return path.startsWith(".") ? path : `./${path}`;
   };
-  const table = Object.fromEntries(slots.map((slot, index) => [slot.slot, { props: slot.props, ...(bindings[index]!.copy !== undefined ? { copy: bindCopy(bindings[index]!.copy, slot.text) } : {}) }]));
+  const table = Object.fromEntries(slots.map((slot, index) => [slot.key, { props: slot.props, ...(bindings[index]!.copy !== undefined ? { copy: bindCopy(bindings[index]!.copy, slot.text) } : {}) }]));
   return [
     "// DRAFT — unapproved. Generated from admitted native records; install the verified items before use.",
     'import { createElement, type ElementType, type ReactNode } from "react";',
+    `import { ${PAGE_HOST_EXPORT} } from ${JSON.stringify(relativeSpecifier("app/page.tsx", NATIVE_NEXT_HOST_FILE))};`,
     ...slots.map((slot, index) => `import { ${bindings[index]!.name} as c${index} } from ${JSON.stringify(specifier(slot.entry.file))};`),
-    `const components: Record<string, ElementType> = { ${slots.map((slot, index) => `${JSON.stringify(slot.slot)}: c${index}`).join(", ")} };`,
+    `const components: Record<string, ElementType> = { ${slots.map((slot, index) => `${JSON.stringify(slot.key)}: c${index}`).join(", ")} };`,
     `const slots: Record<string, { copy?: unknown; props: Record<string, unknown> }> = ${JSON.stringify(table, null, 2)};`,
     "function resolve(value: unknown, keyed = false): unknown {",
     "  if (Array.isArray(value)) return value.map(item => resolve(item, true));",
@@ -192,7 +201,7 @@ function nextModule(page: BoundPage, resolved: readonly ResolvedSlot[]): string 
     "  if (slot.copy !== undefined) props.copy = slot.copy;",
     "  return createElement(component, keyed ? { ...props, key: name } : props);",
     "}",
-    `export default function Page(): ReactNode { return mount(${JSON.stringify(page.frame.slot)}); }`,
+    `export default function Page(): ReactNode { return createElement(${PAGE_HOST_EXPORT}, null, mount(${JSON.stringify(page.frame.key)})); }`,
     "",
   ].join("\n");
 }

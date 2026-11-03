@@ -215,6 +215,11 @@
         "required": true
       },
       {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.foreground",
         "kind": "theme",
         "required": true
@@ -265,6 +270,12 @@
     },
     "references": [
       {
+        "registry": "shadcn",
+        "item": "navigation-menu-example",
+        "version": "4.23.0",
+        "hash": "sha256:d38b9d6f324ee8083e7e15b1f1361a01472294f2889d1833c576e9e139a03fd3"
+      },
+      {
         "registry": "tailark-oss",
         "item": "mist-hero-section-1-header",
         "version": "8139698",
@@ -277,16 +288,22 @@
         "hash": "sha256:1896969884e97bae5407bcd6f54838c22e4c608b503de954af02e4e75fdc82de"
       },
       {
-        "registry": "shadcn",
-        "item": "sonner",
-        "version": "4.23.0",
-        "hash": "sha256:72d9868323fe1deaaef319b195daf83dc6c0367511cea992859ac0c2766c6935"
-      },
-      {
         "registry": "diceui",
         "item": "skip-nav",
         "version": "04aad54",
         "hash": "sha256:984a8afc0a8a84c180377b9c01c3c3b062510597480fe001367226e592c2e212"
+      },
+      {
+        "registry": "shadcn-aria",
+        "item": "sonner-example",
+        "version": "4.23.0",
+        "hash": "sha256:b069c050ee5f375277b81697beb6820232e04513d8b23d813b284133d8dd0fc1"
+      },
+      {
+        "registry": "shadcn",
+        "item": "sonner",
+        "version": "4.23.0",
+        "hash": "sha256:72d9868323fe1deaaef319b195daf83dc6c0367511cea992859ac0c2766c6935"
       }
     ],
     "checkSuite": "designer.slot-contracts.frames",

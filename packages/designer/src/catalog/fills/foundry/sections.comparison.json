@@ -79,7 +79,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "sha256": "4694fe4e01b8f5d29f02fa9397332ef3d40a429e502a4801c8f9ccc04e505c97"
+            "sha256": "38f242e651591a9dfeb638fbac237781b931a60f4f4c94caeb4f1e3e09a324d3"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
@@ -135,7 +135,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
           }
         ],
         "unresolved": [
@@ -173,7 +173,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 3
+            "line": 4
           }
         ]
       },

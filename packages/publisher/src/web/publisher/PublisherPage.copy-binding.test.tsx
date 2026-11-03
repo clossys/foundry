@@ -25,11 +25,14 @@ it("renders the empty Publisher page and leased header using only resolved Write
   while (walker.nextNode()) if (walker.currentNode.textContent?.trim()) expect(walker.currentNode.textContent).toMatch(/^(?:\[\[[^\]]+\]\])+$/);
   expect(view.container.textContent).toContain("[[st.pee5f35tpk]]");
 });
-it("uses only the packet's 32 existing draft references and does not activate them", () => {
-  const packet = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../../writer/src/catalog/records/admin-voice.r1.en.json"), "utf8"));
+it("uses only the packet's 31 existing draft references and does not activate them", () => {
+  const records = (name: string) => JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../../writer/src/catalog/records", name), "utf8"));
+  const packet = records("admin-voice.r1.en.json");
+  // Shared labels moved to common-labels (and its paging owner); evidence and publishEvidence now share one canonical record.
+  const drafts = [...packet.records, ...records("common-labels.r1.en.json").records, ...records("admin-writer-paging.r1.en.json").records];
   const refs = Object.values(PUBLISHER_COPY_REFS);
-  expect(new Set(refs.map(ref => ref.id)).size).toBe(32);
-  for (const ref of refs) expect(packet.records.find((record: { id: string }) => record.id === ref.id)).toMatchObject({ status: "draft" });
+  expect(new Set(refs.map(ref => ref.id)).size).toBe(31);
+  for (const ref of refs) expect(drafts.find((record: { id: string }) => record.id === ref.id)).toMatchObject({ status: "draft" });
   expect(packet.activation).toBe("none");
   expect(() => publisherCopy(undefined, PUBLISHER_COPY_REFS.title)).toThrow(/resolver/);
   expect(() => publisherCopy(() => undefined, PUBLISHER_COPY_REFS.title)).toThrow(/unresolved/);

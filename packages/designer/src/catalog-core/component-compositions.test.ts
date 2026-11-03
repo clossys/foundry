@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { loadComponentCompositionRules } from "./component-compositions.js";
 import { productionCompositionFixture } from "./__fixtures__/date-picker-composition.js";
@@ -33,7 +33,10 @@ describe("composition rule templates", () => {
         }
         writeFileSync(path, bytes);
       }
-      const committed = JSON.parse(readFileSync(resolve(import.meta.dirname, `../catalog/fills/${rule.template.source}/${rule.slot}.json`), "utf8")).components[rule.slot.slice(11)].outputSha256;
+      // An imported template lives with its source's fills; a Foundry-authored opt-in template lives beside its rule.
+      const fillPath = resolve(import.meta.dirname, `../catalog/fills/${rule.template.source}/${rule.slot}.json`);
+      const committedPath = existsSync(fillPath) ? fillPath : resolve(import.meta.dirname, `../catalog/rules/${rule.slot}.template.json`);
+      const committed = JSON.parse(readFileSync(committedPath, "utf8")).components[rule.slot.slice(11)].outputSha256;
       expect(committed, rule.id).toEqual(receipts);
     }
   });
@@ -41,7 +44,7 @@ describe("composition rule templates", () => {
 describe("production date-picker composition", () => {
   it("registers one fresh materialized source template with exact direct inputs", () => {
     const rules = loadComponentCompositionRules();
-    expect(rules.map(rule => rule.id)).toEqual(["compose:date-picker@1", "compose:file-trigger@1"]);
+    expect(rules.map(rule => rule.id)).toEqual(["compose:date-picker@1", "compose:file-trigger@1", "derive:icon@1"]);
     expect(rules[0]).toMatchObject({ id: "compose:date-picker@1", kind: "compose", slot: "components.date-picker", inputs: direct });
     expect(rules[0]!.template.impl).toEqual({ kind: "source", entry: "components/date-picker/date-picker.tsx", export: "DatePicker" });
     expect(rules[0]!.template).not.toHaveProperty("origin");
