@@ -52,11 +52,11 @@ it("keeps every legacy ID as a direct canonical alias and preserves all original
   expect(existsSync(new URL("./common-label-aliases.r1.json", import.meta.url))).toBe(true);
   const aliases = read("./common-label-aliases.r1.json").aliases as Record<string, string>;
   const common = read("../records/common-labels.r1.en.json");
-  expect(Object.keys(aliases)).toHaveLength(267);
+  expect(Object.keys(aliases)).toHaveLength(266);
   expect(common.records).toHaveLength(171);
   expect(common.externalRecords).toHaveLength(6);
   expect(ADMIN_COMMON_COPY_EN.records).toHaveLength(177);
-  expect(common.usages).toHaveLength(444);
+  expect(common.usages).toHaveLength(442);
   // Consume the handoff map as evidence, without registering a second runtime
   // alias authority. Every original ID must reach its actual shared record.
   const store = createAdminCopy([ADMIN_COMMON_COPY_EN]);

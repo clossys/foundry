@@ -10,7 +10,8 @@ const source = JSON.parse(readFileSync(recordPath, "utf8")) as {
 // Newly bound metadata uses explicit pseudo text in old interaction fixtures.
 // Real binding proofs render the same refs against the complete draft set.
 const metadata = JSON.parse(readFileSync(resolve(recordPath, "../admin-studio.r1.en.json"), "utf8")) as { records: { id: string }[] };
-const metadataIds = new Set(metadata.records.map(record => record.id));
+const common = JSON.parse(readFileSync(resolve(recordPath, "../common-labels.r1.en.json"), "utf8")) as { records: { id: string }[]; externalRecords: { recordId: string }[] };
+const metadataIds = new Set([...metadata.records.map(record => record.id), ...common.records.map(record => record.id), ...common.externalRecords.map(row => row.recordId)]);
 export const studioTestCopy: StudioCopyBinding = {
   locale: "en",
   resolver(ref) {

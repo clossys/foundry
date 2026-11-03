@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { SemanticContent } from "../../../../designer/src/components/SemanticContent.js";
 import voice from "./admin-voice.r1.en.json" with { type: "json" };
+import commonLabels from "./common-labels.r1.en.json" with { type: "json" };
 import terminology from "../admin-terminology.json" with { type: "json" };
 import { validateWriterRecord } from "../../model/validate.js";
 import type { StringRecord, WriterLibrary, WriterRecord } from "../../model/types.js";
@@ -35,6 +36,8 @@ const root = new URL("../../../../../", import.meta.url);
 const read = (path: string) => readFileSync(new URL(path, root), "utf8");
 const draft = (name: string): Envelope => JSON.parse(readFileSync(new URL(name, import.meta.url), "utf8"));
 const files = ["admin-meta.r1.en.json", "admin-studio.r1.en.json"] as const;
+// Removed with no shim in c0430c85d; the review evidence stands at its source commit.
+const retiredSources = new Set(["packages/designer/src/studio/system-canvas/inspector/Inspector.tsx"]);
 const library = (records: WriterRecord[]): WriterLibrary => ({
   manifest: { consumer: "admin-meta-draft-review", messageSyntax: "icu-mf1", defaultLocale: "en",
     locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategy: { root: "strategy", contract: "writer.messaging" },
@@ -70,8 +73,15 @@ for (const file of files) describe(file, () => {
     expect(envelope).toMatchObject({ version: 1, revision: 1, state: "draft", locale: "en", activation: "none",
       sourceCommit: "cf91e48ecf01ebc20c00b1e00c2fe887acd537ae" });
     expect(envelope.records.length).toBeGreaterThan(0);
-    expect(envelope.reviews).toHaveLength(envelope.records.length);
-    expect(new Set(envelope.reviews.map(row => row.cellId)).size).toBe(envelope.records.length);
+    // Reviews for records later shared into common-labels stay here as evidence;
+    // each must resolve to a common-labels usage that names this envelope.
+    const local = new Set(envelope.records.map(record => record.id));
+    const own = envelope.reviews.filter(row => local.has(row.recordId));
+    expect(own).toHaveLength(envelope.records.length);
+    expect(new Set(own.map(row => row.cellId)).size).toBe(envelope.records.length);
+    for (const row of envelope.reviews.filter(row => !local.has(row.recordId)))
+      expect(commonLabels.usages.some(usage => usage.source === `records/${file}` &&
+        (usage.recordId === row.recordId || usage.legacyRecordId === row.recordId)), row.recordId).toBe(true);
     for (const record of envelope.records) {
       expect(record.status).toBe("draft"); expect(record).not.toHaveProperty("approval");
       expect(known.has(record.leaf), record.leaf).toBe(true);
@@ -83,7 +93,8 @@ for (const file of files) describe(file, () => {
       const batch = envelope.sourceBatches?.find(batch => batch.recordIds.includes(record.id));
       expect(review.source.commit).toBe(batch?.sourceCommit ?? envelope.sourceCommit);
       expect(review.source.line).toBeGreaterThan(0);
-      expect(review.source.line).toBeLessThanOrEqual(read(review.source.path).split("\n").length);
+      if (!retiredSources.has(review.source.path))
+        expect(review.source.line).toBeLessThanOrEqual(read(review.source.path).split("\n").length);
       expect(envelope.needs).toContainEqual(expect.objectContaining({ recordId: record.id, status: "Need" }));
     }
     for (const [path, digest] of Object.entries(envelope.sourceFiles))
