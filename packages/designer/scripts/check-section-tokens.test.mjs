@@ -101,17 +101,25 @@ test("a self-claimed or unproven stock pick is linted in full", () => {
   refused("unlisted", { heroFiles: { "hero.tsx": STOCK_CODE, "extra.tsx": notStock }, heroRecord: { lineage: lineage({ "hero.tsx": STOCK_PATH }), payload: ["hero.tsx"] } });
 });
 
-test("a recorded adaptation passes ref-verbatim but is not stock bytes, so it is linted", () => {
+test("an adapted file passes ref-verbatim but is not stock bytes: it is linted and the shell rule holds", () => {
   const adapted = STOCK_CODE.replace('from "cn"', 'from "@/lib/utils"');
-  const options = adaptations => ({ heroDeps: ["example"], heroMeta: CLAIM, heroFiles: { "hero.tsx": adapted }, heroRecord: { lineage: { ...lineage({ "hero.tsx": STOCK_PATH }), adaptations }, payload: ["hero.tsx"] } });
+  const files = { "hero.tsx": STOCK_CODE, "extra.tsx": adapted };
+  const options = adaptations => ({ heroDeps: ["example"], heroMeta: CLAIM, heroFiles: files, heroRecord: { lineage: { ...lineage({ "hero.tsx": STOCK_PATH, "extra.tsx": STOCK_PATH }), adaptations }, payload: Object.keys(files) } });
   const target = { slot: "sections.hero", element: "hero", version: 1 };
   const hashes = checkElement(consumer(options([])), target, { strict: true }).findings.map(row => /unrecorded adaptation (sha256:[a-f0-9]{64})/.exec(row.detail)?.[1]).filter(Boolean);
   assert.ok(hashes.length > 0);
-  const root = consumer(options(hashes.map(hash => ({ kind: "import-paths", file: "hero.tsx", hash, reason: "consumer utils alias" }))));
+  const root = consumer(options(hashes.map(hash => ({ kind: "import-paths", file: "extra.tsx", hash, reason: "consumer utils alias" }))));
   assert.equal(checkElement(root, target, { strict: true }).status, "pass");
   const findings = sectionShellFindings(root, catalog);
   for (const row of SHELL) assert.ok(findings.includes(row), row);
-  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", adapted]]));
+  // Only the stock file is exempt; the adapted one is linted in full.
+  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["extra.tsx", adapted]]));
+});
+
+test("stock bytes still need a strict ref-verbatim pass", () => {
+  const findings = sectionShellFindings(consumer({ heroDeps: ["example"], heroMeta: CLAIM, heroFiles: { "hero.tsx": STOCK_CODE }, heroRecord: { lineage: { ...lineage({ "hero.tsx": STOCK_PATH }), mode: "original" }, payload: ["hero.tsx"] } }), catalog);
+  for (const row of SHELL) assert.ok(findings.includes(row), row);
+  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", STOCK_CODE]]));
 });
 
 test("class tokens drop variants, important marks and opacity modifiers", () => {
