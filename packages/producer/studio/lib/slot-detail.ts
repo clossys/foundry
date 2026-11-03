@@ -6,11 +6,20 @@ import { contractCopy } from './contract-copy';
 import { studioCopy } from './studio-copy';
 /** Detail inputs only; gallery rendering has its own projection. */
 import type { SlotDetail, DetailCandidate } from '../../src/server/slot-detail';
-import type { StudioLinks } from './agent-library';
 import type { SpecimenInput } from '../sections/studio-specimen';
 import type { OptionsInput } from '../sections/studio-options';
-import { specimenHref } from './designer-library';
 import { publisherFrameUrl, safePreviewUrl, type PublicationResponse } from './publisher-preview';
+
+/** Map-backed links a detail page needs: a slot's leaf route, and the tab the leaf sits in. */
+export interface StudioLinks { leaf: (agent: string, slug: string) => string | undefined; back: { href: string; label: string } }
+
+/** A Designer specimen route for one pinned element, at one theme and width. */
+export function specimenHref(card: { specimen?: string; version?: number }, theme: 'light' | 'dark', width: number): string | undefined {
+  if (!card.specimen) return undefined;
+  const params = new URLSearchParams({ element: card.specimen, theme, width: String(width) });
+  if (card.version) params.set('v', String(card.version));
+  return `/__specimen?${params}`;
+}
 
 const text = (value: unknown): string => typeof value === 'string' ? value : JSON.stringify(value) ?? '';
 
@@ -36,49 +45,38 @@ export function detailStrings(content: string): { key: string; text: string }[] 
   return rows;
 }
 
-function candidateRows(candidate: DetailCandidate, writer: boolean) {
-  const strings = writer ? detailStrings(candidate.content) : [];
+function candidateRows(candidate: DetailCandidate) {
+  const strings = detailStrings(candidate.content);
   return strings.length ? strings : [{ key: candidate.name, text: candidate.content }];
 }
 
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
-  const recordAgent = detail.agent === 'director' || detail.agent === 'writer';
   const statusLabel = !shown ? studioCopy("studio.no-candidate") : pinned ? studioCopy("studio.pinned") : detail.pin ? studioCopy("studio.pin-unavailable") : studioCopy("studio.no-pin");
-  let specimen: SpecimenInput = shown?.specimen || shown?.specimenUrl ? {
-    kind: 'viewports', name: detail.id, title: studioCopy("studio.specimen"), description: shown.name,
-    specimens: ([375, 768, 1280] as const).map(viewport => ({ viewport,
-      light: shown.specimenUrl ? `${shown.specimenUrl}&${new URLSearchParams({ theme: 'light', width: String(viewport) })}` : specimenHref({ specimen: shown.specimen, version: shown.version }, 'light', viewport)!,
-      dark: shown.specimenUrl ? `${shown.specimenUrl}&${new URLSearchParams({ theme: 'dark', width: String(viewport) })}` : specimenHref({ specimen: shown.specimen, version: shown.version }, 'dark', viewport)!,
-    })), empty: studioCopy("studio.no-candidate"),
-  } : {
-    kind: 'record', name: detail.id, title: detail.agent === 'writer' ? studioCopy("studio.strings") : studioCopy("studio.candidate"),
-    description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
-    rows: shown && !recordAgent ? candidateRows(shown, detail.agent === 'writer').map(row => ({ ...row, label: row.key })) : [],
-    empty: recordAgent ? detail.pin ? studioCopy("studio.pin-unavailable") : statusLabel : studioCopy("studio.no-candidate"),
-  };
-  if (detail.agent === 'publisher' && detail.kind === 'page' && shown) {
-    let path: unknown;
-    const validPin = shown.pinned && !shown.issues.length && shown.sha256 === detail.pin?.sha256;
-    if (validPin) {
-      try { path = JSON.parse(shown.content).path; } catch { /* A malformed record cannot identify a published page. */ }
-    }
-    const page = validPin && publication?.state === 'ready' ? publication.pages.find(page => page.cellId !== undefined ? page.cellId === detail.id : typeof path === 'string' && page.route === path) : undefined;
-    specimen = {
-      kind: 'viewports', name: detail.id, title: 'Rendered page', description: '',
-      specimens: page?.emitted && safePreviewUrl(page.previewUrl) ? ([375, 768, 1280] as const).map(viewport => ({
-        viewport, light: publisherFrameUrl(page, viewport, 'light'), dark: publisherFrameUrl(page, viewport, 'dark'),
-      })) : [], empty: 'Publish this page to preview it.',
-    };
-  }
+  // The page this slot's pin published, when the publication emitted one: the specimen is the page itself.
+  const page = shown?.pinned && !shown.issues.length && shown.sha256 === detail.pin?.sha256 && publication?.state === 'ready'
+    ? publication.pages.find(row => row.cellId === detail.id && row.emitted && safePreviewUrl(row.previewUrl)) : undefined;
+  const viewports = (src: (viewport: 375 | 768 | 1280, theme: 'light' | 'dark') => string) => ([375, 768, 1280] as const).map(viewport => ({ viewport, light: src(viewport, 'light'), dark: src(viewport, 'dark') }));
+  const specimen: SpecimenInput = page
+    ? { kind: 'viewports', name: detail.id, title: studioCopy("studio.specimen"), description: shown!.name, specimens: viewports((viewport, mode) => publisherFrameUrl(page, viewport, mode)), empty: studioCopy("studio.no-candidate") }
+    : shown?.specimen
+      ? { kind: 'viewports', name: detail.id, title: studioCopy("studio.specimen"), description: shown.name, specimens: viewports((viewport, mode) => specimenHref({ specimen: shown.specimen, version: shown.version }, mode, viewport)!), empty: studioCopy("studio.no-candidate") }
+      : shown?.record
+        ? shown.record
+        : {
+          kind: 'record', name: detail.id, title: studioCopy("studio.candidate"),
+          description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
+          rows: shown ? candidateRows(shown).map(row => ({ ...row, label: row.key })) : [],
+          empty: detail.pin ? studioCopy("studio.pin-unavailable") : statusLabel,
+        };
   const options: OptionsInput = {
     copy: optionsCopy(),
     name: detail.id, description: detail.pin ? studioCopy("studio.recorded-candidates-beside-the-pin") : studioCopy("studio.no-pin-candidates-await-approval"),
     rows: [...detail.candidates].sort((a, b) => Number(b.pinned) - Number(a.pinned) || a.version - b.version).map(candidate => ({
       version: candidate.version, pinned: candidate.pinned, copy: optionCopy(detail.id, candidate), label: candidate.name, reason: candidate.pinned ? studioCopy("studio.pinned") : studioCopy("studio.unpinned"),
       preview: candidate.specimen ? { kind: 'frame' as const, viewport: 1280 as const, src: specimenHref({ specimen: candidate.specimen, version: candidate.version }, theme, 1280)! }
-        : { kind: 'strings' as const, rows: candidateRows(candidate, detail.agent === 'writer').map(row => ({ ...row, change: 'same' as const })) },
+        : { kind: 'strings' as const, rows: candidateRows(candidate).map(row => ({ ...row, change: 'same' as const })) },
     })),
   };
   const reference = (id: string, agent?: string) => {
@@ -90,7 +88,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   return {
     header: { name: detail.id, id: detail.id, ...(shown ? { version: shown.version } : {}), statusLabel,
       statusTone: pinned ? 'secondary' : 'outline', statusDetail: [!detail.pin ? studioCopy("studio.no-pin-87eb19") : studioCopy("studio.pinned-candidate", { value0: String(detail.pin.candidate) })],
-      trail: detail.trail, galleryHref: links.gallery(detail.agent) ?? '', galleryLabel: detail.agent },
+      trail: detail.trail, galleryHref: links.back.href, galleryLabel: links.back.label },
     specimen, options,
     references: { copy: referencesCopy(), uses: detail.uses.map(id => reference(id)), usedBy: detail.usedBy.map(ref => reference(ref.id, ref.agent)),
       lineage: detail.candidates.map(candidate => ({ key: candidate.name, version: candidate.name, mode: studioCopy("studio.recorded-source"), source: candidate.source === undefined ? studioCopy("studio.no-source-recorded") : text(candidate.source) })) },

@@ -89,6 +89,6 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
   const data = useMemo(() => ({ cells, revision, reports, brand, ...(census ? { census } : {}) }), [cells, revision, reports, brand, census]);
   const theme = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
   return <RouterProvider navigate={href => router.push(href)}>
-    <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider revision={revision} initial={seed?.galleries}>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>
+    <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>
   </RouterProvider>;
 }

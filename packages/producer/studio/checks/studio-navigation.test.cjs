@@ -36,13 +36,15 @@ const { default: Frame } = compile(path.join(studio, 'frames/studio-shell/index.
   '../../components/StudioProviders': `export const useStudioData=()=>({reports:[],brand:{name:'Fixture'}}); export const useThemeMode=()=>({mode:'light',setMode(){}});`,
 });
 const routes = compile(path.join(studio, 'lib/studio-route-map.ts'));
-const { studioPages } = compile(path.join(studio, 'generated/studio-map.ts'));
+const { studioPages, studioLeaves } = compile(path.join(studio, 'generated/studio-map.ts'));
 
-/** A map with one fixture leaf per gallery, the way the record stores fill it at runtime. */
-const leaves = Object.fromEntries(routes.studioLeafPages.map(page => [page.id, [{ slug: 'fixture-leaf', title: 'Fixture leaf' }]]));
-const map = routes.studioRuntimeMap(leaves);
+/** The runtime map: the compiled publication (home, agent groups, tab pages) plus one page entry per installed leaf. */
+const map = routes.studioRuntimeMap;
 const entries = routes.studioPageEntries(map);
 const paths = new Set(entries.map(entry => entry.path));
+const tabs = studioPages.filter(page => page.leaf);
+/** Every compiled page and the first leaf of each tab: one of each shape the frame renders. */
+const sampled = entries.filter(entry => !studioLeaves.some(leaf => leaf.path === entry.path) || tabs.some(tab => studioLeaves.find(leaf => leaf.page === tab.id)?.path === entry.path));
 
 function render(entry) {
   globalThis.__studioPath = entry.path;
@@ -53,17 +55,21 @@ function render(entry) {
 }
 const hrefs = html => [...html.matchAll(/<a\b[^>]*?\shref="([^"]*)"/g)].map(match => match[1].replace(/&amp;/g, '&'));
 
-test('the runtime map holds home, the galleries and every leaf, each at its served path', () => {
+test('the runtime map holds home, every tab page and every leaf, each at its served path', () => {
   assert.equal(entries.find(entry => entry.id === 'home')?.path, '/');
-  for (const page of routes.studioLeafPages) {
-    assert.ok(paths.has(page.path), page.id);
-    assert.ok(paths.has(`${page.path}/fixture-leaf`), `${page.id} leaf`);
+  assert.ok(tabs.length > 0 && studioLeaves.length > 0);
+  for (const page of studioPages) assert.ok(paths.has(page.path), page.id);
+  for (const leaf of studioLeaves) {
+    const tab = studioPages.find(page => page.id === leaf.page);
+    assert.ok(tab?.leaf, `${leaf.page} serves leaves`);
+    assert.equal(leaf.path, `${tab.path}/${leaf.slug}`);
+    assert.ok(paths.has(leaf.path), `${leaf.page} leaf ${leaf.slug}`);
   }
   assert.equal(new Set(entries.map(entry => entry.path)).size, entries.length, 'no two entries share a path');
 });
 
-test('every link the frame renders, on every map entry, is a map path', () => {
-  for (const entry of entries) {
+test('every link the frame renders, on every page and a leaf of every tab, is a map path', () => {
+  for (const entry of sampled) {
     const { html } = render(entry);
     const links = hrefs(html);
     assert.ok(links.length > 0, entry.id);
@@ -72,7 +78,7 @@ test('every link the frame renders, on every map entry, is a map path', () => {
 });
 
 test('frame navigation, commands and breadcrumbs are the Publisher projections of the one map', () => {
-  for (const entry of entries) {
+  for (const entry of sampled) {
     const { projection } = render(entry);
     const commands = projection.commands.flatMap(group => group.items.filter(item => item.href).map(item => item.href));
     for (const href of commands) assert.ok(paths.has(href), href);
@@ -83,9 +89,9 @@ test('frame navigation, commands and breadcrumbs are the Publisher projections o
   for (const entry of entries) assert.ok(commandHrefs.has(entry.path), `the command menu lists ${entry.path}`);
 });
 
-test('every page manifest declares its navigator, popovers and header actions (agent pages: explorer; L3 pages: outline and versions)', () => {
+test('every page manifest declares its navigator, popovers and header actions (pages: outline; leaves: outline and versions)', () => {
   for (const page of studioPages) {
-    const specs = [['page', page, page.id === 'home' ? 'outline' : 'explorer'], ...(page.leaf ? [['leaf', page.leaf, 'outline']] : [])];
+    const specs = [['page', page, 'outline'], ...(page.leaf ? [['leaf', page.leaf, 'outline']] : [])];
     for (const [where, spec, navigator] of specs) {
       const manifest = spec.manifest;
       assert.ok(manifest, `${page.id} ${where} has a manifest`);

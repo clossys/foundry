@@ -8,7 +8,7 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { agentModule, agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
 import { createServer, type Server } from "node:http";
-import { publication, previewRoot, servePreview, themePage, type ServedApp } from "./publication.js";
+import { publication, previewRoot, servePreview, staticPage, themePage, type ServedApp } from "./publication.js";
 import { publishNext } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
@@ -184,27 +184,27 @@ async function editNative(publisher: string, id: string, change: (value: any) =>
 
 it("uses pinned native publication identity, configured paths, titles and order without legacy stores", async () => {
   const publisher = await nativePublisherFixture(), outs = join(root, "outs");
-  await editNative(publisher, "page.designer", value => { value.title = "Visual design"; value.path = "/work/design"; });
+  await editNative(publisher, "page.designer-themes", value => { value.title = "Visual design"; value.path = "/work/design"; });
   await editNative(publisher, "page.home", value => { value.title = "Configured home"; value.path = "/start-here"; });
   await editNative(publisher, "publication.studio", value => {
-    value.entryOrder = ["designer", ...value.entryOrder.filter((id: string) => id !== "designer")];
+    value.entryOrder = ["designer-themes", ...value.entryOrder.filter((id: string) => id !== "designer-themes")];
     value.routePack.app = "apps/configured-studio";
   });
-  await installFixture(join(outs, "design"), "designer");
+  await installFixture(join(outs, "design"), "designer-themes");
   await installFixture(join(outs, "home"), "home", [{ code: "render-failed", severity: "error" }]);
   await installFixture(join(outs, "unowned"), "unowned");
   await launch(outs);
   const metadata = JSON.parse((await get("/api/publication?publication=studio")).text);
   expect(metadata).toMatchObject({ state: "ready", publication: "studio", manifest: { publication: "studio", sourceApp: "apps/configured-studio", format: "web.page.responsive" }, pages: [
-    { id: "designer", cellId: "page.designer", route: "/work/design", title: "Visual design", emitted: true, previewUrl: "/preview/studio/pages/designer.html" },
+    { id: "designer-themes", cellId: "page.designer-themes", route: "/work/design", title: "Visual design", emitted: true, previewUrl: "/preview/studio/pages/designer-themes.html" },
     { id: "home", cellId: "page.home", route: "/start-here", title: "Configured home", emitted: false },
   ] });
   expect(metadata.pages).toHaveLength(2);
-  const card = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).find(card => card.id === "page.designer")!;
-  expect(metadata.pages.find((page: any) => page.cellId === card.id)).toMatchObject({ id: "designer", emitted: true, frameUrl: "/preview/studio/frame/designer.html" });
-  expect(metadata.manifest.routes).toEqual([{ id: "designer", path: "/work/design", source: { file: "design/site/designer/index.html", export: "default" } }]);
-  expect((await get("/preview/studio/pages/designer.html")).status).toBe(200);
-  expect((await get("/preview/studio/pages/designer.html", "HEAD")).text).toBe("");
+  const card = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).find(card => card.id === "page.designer-themes")!;
+  expect(metadata.pages.find((page: any) => page.cellId === card.id)).toMatchObject({ id: "designer-themes", emitted: true, frameUrl: "/preview/studio/frame/designer-themes.html" });
+  expect(metadata.manifest.routes).toEqual([{ id: "designer-themes", path: "/work/design", source: { file: "design/site/designer-themes/index.html", export: "default" } }]);
+  expect((await get("/preview/studio/pages/designer-themes.html")).status).toBe(200);
+  expect((await get("/preview/studio/pages/designer-themes.html", "HEAD")).text).toBe("");
   expect((await get("/preview/studio/pages/home.html")).status).toBe(404);
   expect(JSON.parse((await get("/api/publication?publication=other")).text).state).toBe("missing");
 });
@@ -245,7 +245,8 @@ it("leaves ambiguous native ownership unavailable even when a publication is req
   const node = ia.nodes.find((node: any) => node.id === "studio"), group = node.children.find((child: any) => child.slots.includes("publication.studio"));
   const order = ia.nodes.flatMap((node: any) => node.children.flatMap((child: any) => child.slots)).length;
   group.slots.push(id); await writeFile(iaPath, JSON.stringify(ia));
-  const dir = join(publisher, node.id, group.id, id);
+  // Slot folders are flat: agents/<agent>/<slot-id>/.
+  const dir = join(publisher, id);
   await cp(selected.dir, dir, { recursive: true });
   const slotPath = join(dir, "slot.json"), slot = JSON.parse(await readFile(slotPath, "utf8"));
   slot.id = id; slot.ia.order = order; await writeFile(slotPath, JSON.stringify(slot));
@@ -264,21 +265,30 @@ it("applies the preview theme on <html> without dropping the page's own classes"
   expect(themePage('<!doctype html><html lang="en" class="font-sans dark"><body></body></html>', "light")).toBe('<!doctype html><html lang="en" class="font-sans" style="color-scheme:light"><body></body></html>');
   expect(themePage("<html class='font-sans' style=\"--x:1\"><body></body></html>", "dark")).toBe('<html class="font-sans dark" style="color-scheme:dark;--x:1"><body></body></html>');
   expect(themePage("<HTML><body></body></HTML>", "dark")).toBe('<html class="dark" style="color-scheme:dark"><body></body></HTML>');
+  expect(staticPage('<html><head><link rel="stylesheet" href="/a.css"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/a.js"/><link rel="modulepreload" href="/m.js"/><link rel="preload" as="image" href="/i.svg"/><script src="/_next/static/chunks/b.js" async=""></script></head><body><h1>x</h1><script>self.__next_f.push([1,"</div>"])</script><SCRIPT id="_R_">$RC()</SCRIPT></body></html>'))
+    .toBe('<html><head><link rel="stylesheet" href="/a.css"/><link rel="preload" as="image" href="/i.svg"/></head><body><h1>x</h1></body></html>');
 });
 
 it("lists the Studio publication's installed pages as ready with frame previews once publish --install --next put them in the app Producer serves", async () => {
   await nativePublisherFixture();
+  // Parameterized page records expand through each agent's IA, so the fixture carries those too.
+  for (const agent of ["director", "designer", "writer"] as const) await cp(fileURLToPath(new URL(`../../../../clossys/agents/${agent}/ia.json`, import.meta.url)), join(agentRoot(root, agent), "ia.json"));
   const app = join(root, "studio", "app"), outs = join(root, "outs");
-  const leaves = { director: [], designer: [{ slug: "sections.hero", title: "Hero" }], writer: [], publisher: [] };
-  const install = await publishNext({ root, publication: "studio", app, assembly: "../components/StudioInstalledPage.tsx", live: true, out: join(outs, "next-studio"), leaves });
+  const install = await publishNext({ root, publication: "studio", app, assembly: "../components/StudioInstalledPage.tsx", live: true, out: join(outs, "next-studio") });
   expect(install.findings).toEqual([]);
   const rendered: string[] = [];
-  const served: ServedApp = { app, render: async path => { rendered.push(path); return `<!doctype html><html><head><title>${path}</title></head><body><h1>Rendered ${path}</h1></body></html>`; } };
-  const ids = ["home", "director", "designer", "writer", "publisher"];
+  const served: ServedApp = { app, render: async path => { rendered.push(path); return `<!doctype html><html><head><title>${path}</title></head><body><h1>Rendered ${path}</h1><script src="/_next/static/chunks/app.js" async=""></script></body></html>`; } };
+  // Home plus one parameterized record per agent top group; the tabs they expand to carry no page slot.
+  const ids = ["home",
+    ...["context", "aspiration", "focus", "advantage", "identity", "capability", "execution"].map(group => `director-${group}`),
+    ...["themes", "assets", "components", "sections", "frames"].map(group => `designer-${group}`),
+    ...["lexicon", "strings", "patterns", "passages", "narratives"].map(group => `writer-${group}`),
+    "publisher-studio"];
   for (const requested of ["studio", undefined]) {
     const metadata = await publication(root, requested, outs, served);
     expect(metadata).toMatchObject({ state: "ready", publication: "studio", pages: ids.map(id => ({ id, cellId: `page.${id}`, emitted: true, previewUrl: `/preview/studio/pages/${id}.html`, frameUrl: `/preview/studio/frame/${id}.html` })) });
-    expect(metadata.manifest?.routes.find(route => route.id === "designer")?.source.file).toBe("designer/page.tsx");
+    expect(metadata.pages).toHaveLength(ids.length);
+    expect(metadata.manifest?.routes.find(route => route.id === "designer-themes")?.source.file).toBe("designer/themes/page.tsx");
   }
   // Every /publisher page card is a Publisher page slot, and each one now has its frame preview.
   const cards = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).filter(card => ids.includes(card.id.replace(/^page\./, "")));
@@ -298,15 +308,17 @@ it("lists the Studio publication's installed pages as ready with frame previews 
       const req = request({ hostname: "127.0.0.1", port, path }, response => { let text = ""; response.setEncoding("utf8"); response.on("data", chunk => { text += chunk; }); response.on("end", () => accept({ status: response.statusCode!, text, headers: response.headers })); });
       req.on("error", reject); req.end();
     });
-    const page = await fetchText("/preview/studio/pages/designer.html");
+    const page = await fetchText("/preview/studio/pages/designer-themes.html");
     expect(page.status).toBe(200);
-    expect(page.text).toContain("<h1>Rendered /designer</h1>");
+    expect(page.text).toContain("<h1>Rendered /designer/themes</h1>");
+    // Static output: the app's client chunks are not emitted into the page the sandbox would block.
+    expect(page.text).not.toContain("/_next/");
     expect(page.headers["content-security-policy"]).not.toContain("allow-scripts");
-    expect(rendered).toContain("/designer");
-    expect((await fetchText("/preview/studio/frame/designer.html")).text).toContain("/preview/studio/pages/designer.html");
+    expect(rendered).toContain("/designer/themes");
+    expect((await fetchText("/preview/studio/frame/designer-themes.html")).text).toContain("/preview/studio/pages/designer-themes.html");
     // A hand-edited route file is no longer Publisher's install, so it is not previewed.
-    await writeFile(join(app, "writer", "page.tsx"), "export default function Page() { return null; }\n");
-    expect((await publication(root, "studio", outs, served)).pages?.find(row => row.id === "writer")?.emitted).toBe(false);
-    expect((await fetchText("/preview/studio/pages/writer.html")).status).toBe(404);
+    await writeFile(join(app, "writer", "lexicon", "page.tsx"), "export default function Page() { return null; }\n");
+    expect((await publication(root, "studio", outs, served)).pages?.find(row => row.id === "writer-lexicon")?.emitted).toBe(false);
+    expect((await fetchText("/preview/studio/pages/writer-lexicon.html")).status).toBe(404);
   } finally { await new Promise(accept => host.close(accept)); }
 });

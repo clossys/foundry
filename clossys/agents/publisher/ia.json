@@ -15,13 +15,45 @@
           ]
         },
         {
-          "id": "agents",
-          "label": "Agents",
+          "id": "director",
+          "label": "Director",
           "slots": [
-            "page.director",
-            "page.designer",
-            "page.writer",
-            "page.publisher"
+            "page.director-context",
+            "page.director-aspiration",
+            "page.director-focus",
+            "page.director-advantage",
+            "page.director-identity",
+            "page.director-capability",
+            "page.director-execution"
+          ]
+        },
+        {
+          "id": "designer",
+          "label": "Designer",
+          "slots": [
+            "page.designer-themes",
+            "page.designer-assets",
+            "page.designer-components",
+            "page.designer-sections",
+            "page.designer-frames"
+          ]
+        },
+        {
+          "id": "writer",
+          "label": "Writer",
+          "slots": [
+            "page.writer-lexicon",
+            "page.writer-strings",
+            "page.writer-patterns",
+            "page.writer-passages",
+            "page.writer-narratives"
+          ]
+        },
+        {
+          "id": "publisher",
+          "label": "Publisher",
+          "slots": [
+            "page.publisher-studio"
           ]
         },
         {
@@ -31,17 +63,6 @@
             "publication.studio"
           ]
         }
-      ]
-    }
-  ],
-  "layers": [
-    {
-      "id": "studio",
-      "label": "Studio",
-      "nodes": [
-        "studio/studio.pages",
-        "studio/agents",
-        "studio/publication"
       ]
     }
   ]

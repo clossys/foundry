@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -153,7 +154,8 @@ describe('Studio sections are ds-only', () => {
     expect(lineageReferences(['[{"registry":"shadcn","item":"sidebar-07","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}]', 'not JSON', '{"version":5,"hash":"parent"}', '{"registry":"shadcn","item":"../escape","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}']))
       .toEqual([{ registry: 'shadcn', item: 'sidebar-07', version: '4.23.0', hash: `sha256:${'a'.repeat(64)}` }]);
     expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
-    expect(declaredSections('studio-agent-gallery')).toEqual(new Set(['../studio-specimen']));
+    // No placed Studio section composes another today; the positive case is a probe re-pin below.
+    expect(FOLDERS.flatMap(folder => [...declaredSections(folder)])).toEqual([]);
     const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-canonical-')));
     try {
       cpSync(join(CLOSSYS, 'agents/designer'), join(probe, 'agents/designer'), { recursive: true });
@@ -162,14 +164,25 @@ describe('Studio sections are ds-only', () => {
       const pin = join(frame.dir, 'pin.json');
       writeFileSync(pin, JSON.stringify({ ...frame.pin, sha256: '0'.repeat(64) }));
       expect(frameBlockMarkup('studio-shell', probe)).toEqual(new Set());
-      const section = listSlots(probe, 'designer').find(entry => entry.id === 'sections.studio.specimen')!;
+      // Re-pin studio-home to declare the pinned studio-specimen; only that exact pin authorizes the import.
+      const slots = listSlots(probe, 'designer');
+      const home = slots.find(entry => entry.id === 'sections.studio.home')!, section = slots.find(entry => entry.id === 'sections.studio.specimen')!;
+      const target = JSON.parse(readCandidate(probe, 'designer', section.id, section.pin!.candidate).bytes);
+      const item = JSON.parse(readCandidate(probe, 'designer', home.id, home.pin!.candidate).bytes);
+      item.meta.element.deps = { ...item.meta.element.deps, elements: [{ slot: section.id, element: 'studio-specimen', version: Number(CANDIDATE_NAME.exec(section.pin!.candidate)![2]), hash: target.meta.source.hash }] };
+      const bytes = JSON.stringify(item, null, 2) + '\n';
+      writeFileSync(join(home.dir, 'candidates', home.pin!.candidate), bytes);
+      writeFileSync(join(home.dir, 'pin.json'), JSON.stringify({ ...home.pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
+      const slotDoc = JSON.parse(readFileSync(join(home.dir, 'slot.json'), 'utf8'));
+      writeFileSync(join(home.dir, 'slot.json'), JSON.stringify({ ...slotDoc, uses: [...slotDoc.uses, section.id] }, null, 2) + '\n');
+      expect(declaredSections('studio-home', probe)).toEqual(new Set(['../studio-specimen']));
       writeFileSync(join(section.dir, 'pin.json'), JSON.stringify({ ...section.pin, candidate: 'studio-specimen-v999.json' }));
-      expect(declaredSections('studio-agent-gallery', probe)).toEqual(new Set());
+      expect(declaredSections('studio-home', probe)).toEqual(new Set());
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 
   it('covers every placed Studio section', () => {
-    expect(FOLDERS).toEqual(['module-checks', 'module-explorer', 'module-outline', 'studio-agent-gallery', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-publications', 'studio-references', 'studio-specimen']);
+    expect(FOLDERS).toEqual(['module-checks', 'module-outline', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-page-header', 'studio-page-tabs', 'studio-references', 'studio-slot-groups', 'studio-specimen']);
   });
 
   it.each(FOLDERS)('%s imports only the Designer component layer and carries no raw styled markup', folder => {

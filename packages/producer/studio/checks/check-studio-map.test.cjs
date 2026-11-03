@@ -118,7 +118,7 @@ test('changing a pinned Publisher page without regenerating fails projection dri
   const generator = await import(pathToFileURL(path.resolve(studioRoot, '../scripts/generate-studio-map.mjs')).href);
   await generator.generateStudioMap({ clossysRoot, outputDir, check: true });
   // A published page title is map input, so re-pinning a changed title must change projected bytes.
-  const slot = path.join(clossysRoot, 'agents/publisher/page.designer');
+  const slot = path.join(clossysRoot, 'agents/publisher/page.designer-themes');
   const pin = JSON.parse(fs.readFileSync(path.join(slot, 'pin.json'), 'utf8'));
   const candidate = path.join(slot, 'candidates', pin.candidate);
   const record = JSON.parse(fs.readFileSync(candidate, 'utf8'));

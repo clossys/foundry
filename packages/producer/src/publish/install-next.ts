@@ -3,8 +3,9 @@
  * whole pinned publication into a Next App Router app.
  *
  * Publisher plans one route file per content-map page and one dynamic `[slug]` route per leaf
- * template (`planNextRoutes`); the leaves come from the record store, the same galleries Producer's
- * library API serves. Installed files carry Publisher's marker: a file without it is never
+ * template (`planNextRoutes`). Parameterized page records expand through the content map
+ * (`expandPublication`): one tab page per IA group of the record's namespace, and one leaf template
+ * per tab over that group's slots. Installed files carry Publisher's marker: a file without it is never
  * overwritten, and a marked file no page installs any more is removed. The install is recorded in
  * the install out root like every other `publish --install`, so `/api/publication` lists the
  * publication's pages as installed.
@@ -12,10 +13,9 @@
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding, type NextRouteLeaf, type NextRouteLeafTemplate } from "@clossys/publisher/install";
+import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding } from "@clossys/publisher/install";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
-import { agentGallery, LIBRARY_AGENTS, type LibraryAgent } from "../server/agent-library.js";
-import { designerGallery } from "../server/designer-library.js";
+import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "./install-out.js";
 
 export const NEXT_INSTALL_REPORT = "install-report.json";
@@ -35,8 +35,6 @@ export interface PublishNextOptions {
   readonly check?: boolean;
   /** The install record dir; defaults to `next-<publication>` in the install out root. */
   readonly out?: string;
-  /** Leaves per agent, instead of reading the record store. */
-  readonly leaves?: Readonly<Record<string, readonly NextRouteLeaf[]>>;
 }
 export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift" }
 export interface PublishNextResult { readonly app: string; readonly out?: string; readonly files: readonly PublishNextFile[]; readonly findings: readonly InstallFinding[] }
@@ -50,15 +48,6 @@ export interface NextInstallReport {
 
 const ROUTE_FILE = /^(?:page|layout|template|route|default|loading|error|not-found)\.[cm]?[jt]sx?$/;
 const marked = (content: string) => content.split("\n", 1)[0] === NEXT_ROUTE_MARKER;
-const isLibraryAgent = (agent: string): agent is LibraryAgent => (LIBRARY_AGENTS as readonly string[]).includes(agent);
-
-/** The leaves an agent's record store holds, as its library gallery lists them. */
-export async function recordLeaves(root: string, agent: string): Promise<NextRouteLeaf[]> {
-  const sections: readonly { cards: readonly { slug: string; name: string }[] }[] = agent === "designer"
-    ? designerGallery(join(root, "clossys")).sections
-    : isLibraryAgent(agent) ? (await agentGallery(root, agent))?.sections ?? [] : [];
-  return sections.flatMap(section => section.cards.map(card => ({ slug: card.slug, title: card.name })));
-}
 
 /** Every route file under an app directory, relative and `/`-separated. */
 async function routeFiles(app: string, dir = app): Promise<string[]> {
@@ -89,14 +78,9 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const root = resolve(options.root);
   if (!/^[a-z0-9][a-z0-9-]*$/.test(options.publication)) throw new Error(`publish --install --next: ${options.publication} needs a publication id ([a-z0-9-])`);
   const app = resolve(options.app);
-  const { map, routePack } = await readPinnedPublication(join(root, "clossys", "agents", "publisher"), options.publication);
-  if (!routePack) throw new Error(`publish --install --next: publication ${options.publication} has no route pack`);
-  const leafTemplates: NextRouteLeafTemplate[] = [];
-  for (const route of routePack.routes as readonly { instanceId: string; leaf?: { param?: string; data?: { agent?: string } } }[]) {
-    if (!route.leaf) continue;
-    const agent = route.leaf.data?.agent ?? route.instanceId;
-    leafTemplates.push({ pageId: route.instanceId, param: route.leaf.param as "slug", leaves: options.leaves?.[agent] ?? await recordLeaves(root, agent) });
-  }
+  const pinned = await readPinnedPublication(join(root, "clossys", "agents", "publisher"), options.publication);
+  if (!pinned.routePack) throw new Error(`publish --install --next: publication ${options.publication} has no route pack`);
+  const { map, leafTemplates } = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
   const plan = planNextRoutes({ map, leafTemplates, assembly: options.assembly, live: options.live === true });
   const findings: InstallFinding[] = [...plan.findings];
   const files: PublishNextFile[] = [];

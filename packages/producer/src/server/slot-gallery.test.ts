@@ -4,26 +4,29 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, unlinkSync,
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { describe, expect, it } from 'vitest';
 import { agentGallery } from './agent-library.js';
 import { designerGallery } from './designer-library.js';
-import { recordSpecimens } from './record-specimens.js';
 import { recordLead, recordSpecimenInput, slotGallery } from './slot-gallery.js';
+import { slotDetail } from './slot-detail.js';
 import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { sha256Hex } from '../records/hash.js';
-import { agentGalleryLayers } from '../../studio/lib/agent-library';
-import { designerGalleryLayers } from '../../studio/lib/designer-library';
+import { specimenHref } from '../../studio/lib/slot-detail';
 import { SpecimenContent } from '../../studio/sections/studio-specimen';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const consumer = join(repo, 'clossys');
-const noRoutes = { gallery: () => undefined, leaf: () => undefined };
 const ids = (sections: readonly { cards: readonly { id?: string; slot?: string }[] }[]) => sections.flatMap(section => section.cards.map(card => card.id ?? card.slot));
+/** The record specimen the detail route renders inline for a slot's candidate (only an intact pin carries one). */
+const detailRecord = (repo: string, agent: SlotAgent, id: string, candidate?: string) => {
+  const detail = slotDetail(repo, agent, id);
+  return detail?.candidates.find(row => row.name === (candidate ?? detail.pin?.candidate))?.record;
+};
 const expected = (root: string, agent: string) => (JSON.parse(readFileSync(join(root, 'agents', agent, 'ia.json'), 'utf8')) as IaDoc).nodes.flatMap(node => node.children.flatMap(child => child.slots));
 
 function writerRecordFixture(body: string, locales: readonly string[] = ['en']) {
-  const root = realpathSync(mkdtempSync(join(tmpdir(), 'writer-native-specimen-')));
+  const repo = realpathSync(mkdtempSync(join(tmpdir(), 'writer-native-specimen-')));
+  const root = join(repo, 'clossys');
   const id = 'strings.label', candidate = 'record-v1.md';
   const ia: IaDoc = { schema: 'clossys.ia/1', source: 'synthetic-test-only#native-writer-projection', extensions: [],
     nodes: [{ id: 'strings.copy', label: 'Copy', children: [{ id: 'copy', label: 'Labels', slots: [id] }] }] };
@@ -35,7 +38,8 @@ function writerRecordFixture(body: string, locales: readonly string[] = ['en']) 
   } satisfies SlotDoc));
   const source = serializeFrontmatter({ slot: id, locales, source: { kind: 'original', ref: [] } }, body);
   writeFileSync(join(dir, 'candidates', candidate), source);
-  return { root, id, candidate, dir, source };
+  writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate, sha256: sha256Hex(source), pinnedBy: 'owner:synthetic-test-only:writer-native', at: '2026-01-01T00:00:00Z' }));
+  return { repo, root, id, candidate, dir, source };
 }
 
 describe('IA-first gallery data', () => {
@@ -106,14 +110,10 @@ describe('IA-first gallery data', () => {
         const gallery = slotGallery(root, agent), cards = gallery.sections.flatMap(section => section.cards);
         expect(gallery.count).toBe(2); expect(ids(gallery.sections)).toEqual(wanted);
         expect(cards[0]).toMatchObject({ status: 'failing', records: 0 });
-        for (const field of ['element', 'specimen', 'specimenUrl', 'emptyState'] as const) expect(cards[0]![field]).toBeUndefined();
+        for (const field of ['element', 'specimen', 'emptyState'] as const) expect(cards[0]![field]).toBeUndefined();
         expect(cards[1]).toMatchObject({ status: 'active', records: 1 });
-        const layers = agent === 'designer'
-          ? designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes)
-          : agentGalleryLayers({ state: 'ready', ...(await agentGallery(repo, agent))! }, noRoutes);
-        const projected = layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
-        expect(projected.map(card => card.key)).toEqual(wanted);
-        expect(projected[0]!.specimen).toBeUndefined();
+        const server = agent === 'designer' ? designerGallery(root) : (await agentGallery(repo, agent))!;
+        expect(ids(server.sections)).toEqual(wanted);
       }
     } finally { rmSync(repo, { recursive: true, force: true }); }
   });
@@ -140,32 +140,18 @@ describe('IA-first gallery data', () => {
         { key: '3', label: 'ar: arabic.context', text: 'لغة' },
       ]);
       expect(JSON.parse(input.rows[2]!.text)).not.toHaveProperty('text');
-      const render = (value: NonNullable<ReturnType<typeof recordSpecimenInput>>) => renderToStaticMarkup(createElement(SpecimenContent, { specimen: value }));
-      const mount = recordSpecimens({ consumer: f.root, render });
-      let code = 0, html = '';
-      const response = { writeHead(status: number) { code = status; }, end(value?: string) { html = value ?? ''; } } as ServerResponse;
-      expect(await mount.handle({ method: 'GET', url: `/__specimen?agent=writer&slot=${f.id}&candidate=${f.candidate}` } as IncomingMessage, response, '/__specimen')).toBe(true);
-      expect(code).toBe(200);
-      expect(html).toBe(render(input));
+      expect(detailRecord(f.repo, 'writer', f.id)).toEqual(input);
       expect(readFileSync(join(f.dir, 'candidates', f.candidate), 'utf8')).toBe(f.source);
-    } finally { rmSync(f.root, { recursive: true, force: true }); }
+    } finally { rmSync(f.repo, { recursive: true, force: true }); }
   });
 
-  it('returns 404 without rendering explicit Writer drafts with invalid native source or slot identity', async () => {
+  it('gives the detail no record specimen for Writer records with invalid native source or slot identity', () => {
     const body = '## en\r\n### greeting\r\n<!-- {"id":"greeting","bindings":[]} -->\r\nExact text\r\n';
     const f = writerRecordFixture(body);
     try {
-      let renders = 0;
-      const mount = recordSpecimens({ consumer: f.root, render: () => { renders++; return 'rendered'; } });
       const docPath = join(f.dir, 'slot.json'), doc = readFileSync(docPath, 'utf8');
-      const request = async () => {
-        let code = 0;
-        const response = { writeHead(status: number) { code = status; }, end() {} } as ServerResponse;
-        await mount.handle({ method: 'GET', url: `/__specimen?agent=writer&slot=${f.id}&candidate=${f.candidate}` } as IncomingMessage, response, '/__specimen');
-        return code;
-      };
-      expect(await request()).toBe(200);
-      expect(renders).toBe(1);
+      const record = () => detailRecord(f.repo, 'writer', f.id, f.candidate);
+      expect(record()?.rows[0]?.text).toBe('Exact text');
       const fields = { slot: f.id, locales: ['en'], source: { kind: 'original', ref: [] } };
       for (const mutate of [
         () => writeFileSync(join(f.dir, 'candidates', f.candidate), serializeFrontmatter({ ...fields, source: { kind: 'derived', ref: [] } }, body)),
@@ -176,10 +162,9 @@ describe('IA-first gallery data', () => {
         writeFileSync(docPath, doc);
         writeFileSync(join(f.dir, 'candidates', f.candidate), f.source);
         mutate();
-        expect(await request()).toBe(404);
-        expect(renders).toBe(1);
+        expect(record()).toBeUndefined();
       }
-    } finally { rmSync(f.root, { recursive: true, force: true }); }
+    } finally { rmSync(f.repo, { recursive: true, force: true }); }
   });
 
   it.each([
@@ -193,7 +178,7 @@ describe('IA-first gallery data', () => {
       else expect(() => { projected = recordSpecimenInput(f.root, 'writer', f.id, f.candidate); }).toThrow(/Writer slot body/);
       expect(slotGallery(f.root, 'writer').sections.flatMap(section => section.cards)[0]).toMatchObject({ status: 'failing', records: 0 });
       expect(projected).toBeUndefined();
-    } finally { rmSync(f.root, { recursive: true, force: true }); }
+    } finally { rmSync(f.repo, { recursive: true, force: true }); }
   });
 
   it.each(['{ malformed JSON', 'null'])('keeps every Designer row when the pinned candidate is %s', bytes => {
@@ -224,7 +209,6 @@ describe('IA-first gallery data', () => {
       expect(cards[1]).toMatchObject({ id: wanted[1], status: 'failing', candidate: 'element-v1.json', version: 1, records: 0 });
       expect(cards[1]!.element).toBeUndefined();
       expect(cards[1]!.specimen).toBeUndefined();
-      expect(cards[1]!.specimenUrl).toBeUndefined();
       expect(cards[2]).toMatchObject({ id: wanted[2], status: 'active', element: 'element', specimen: 'components.healthy/element', records: 1 });
       expect(cards[3]).toMatchObject({ id: wanted[3], status: 'failing', records: 0 });
       const designer = designerGallery(root);
@@ -251,7 +235,6 @@ describe('IA-first gallery data', () => {
       writeFileSync(join(dir, 'candidates/example-v1.json'), content);
       writeFileSync(join(dir, 'candidates/example-v2.json'), content.replace('return null;', 'return <div />;'));
       const pin = { candidate: 'example-v1.json', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:designer-pin', at: '2026-01-01T00:00:00Z' };
-      const layers = () => designerGalleryLayers({ state: 'ready', ...designerGallery(root) }, 'light', noRoutes);
       const assertNoPreview = (noPin: boolean) => {
         const cards = slotGallery(root, 'designer').sections.flatMap(section => section.cards);
         expect(cards.map(card => card.id)).toEqual(wanted);
@@ -259,19 +242,13 @@ describe('IA-first gallery data', () => {
         if (noPin) expect(cards[1]).toMatchObject({ emptyState: 'No pin', status: 'draft', records: 1 });
         expect(cards[1]!.element).toBeUndefined();
         expect(cards[1]!.specimen).toBeUndefined();
-        expect(cards[1]!.specimenUrl).toBeUndefined();
-        const projected = layers().flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
-        expect(projected.map(card => card.key)).toEqual(wanted);
-        expect(projected[1]!.specimen).toBeUndefined();
-        if (noPin) expect(projected[1]!.statusLabel).toMatch(/^\d+ options?$/);
+        if (noPin) expect(cards[1]!.options).toBe(2);
       };
       assertNoPreview(true);
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       const pinned = slotGallery(root, 'designer').sections.flatMap(section => section.cards)[1]!;
       expect(pinned).toMatchObject({ candidate: 'example-v1.json', version: 1, status: 'active', element: 'example', specimen: 'components.example/example' });
-      const specimen = layers().flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)))[1]!.specimen!;
-      expect(specimen).toMatchObject({ kind: 'viewports', specimens: [{ light: '/__specimen?element=components.example%2Fexample&theme=light&width=1280&v=1' }] });
-      expect(renderToStaticMarkup(createElement(SpecimenContent, { specimen }))).toContain('components.example%2Fexample');
+      expect(specimenHref(pinned, 'light', 1280)).toBe('/__specimen?element=components.example%2Fexample&theme=light&width=1280&v=1');
       unlinkSync(join(dir, 'pin.json'));
       assertNoPreview(true);
       for (const invalid of [{}, { ...pin, sha256: '0'.repeat(64) }, { ...pin, candidate: 'absent-v1.json' }]) {
@@ -282,7 +259,7 @@ describe('IA-first gallery data', () => {
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 
-  it('projects all source IA entries, in exact order, through the real server and client adapters', async () => {
+  it('projects all source IA entries, in exact order, through the real server galleries', async () => {
     let total = 0;
     for (const agent of ['director', 'designer', 'writer', 'publisher'] as const) {
       const wanted = expected(consumer, agent);
@@ -290,17 +267,15 @@ describe('IA-first gallery data', () => {
       expect(gallery).toBeDefined();
       expect(ids(gallery!.sections)).toEqual(wanted);
       expect(gallery!.count).toBe(wanted.length);
-      const layers = agent === 'designer'
-        ? designerGalleryLayers({ state: 'ready', ...gallery! } as never, 'light', noRoutes)
-        : agentGalleryLayers({ state: 'ready', ...gallery! } as never, noRoutes);
-      expect(layers.flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards).map(card => card.key)))).toEqual(wanted);
+      expect(ids(slotGallery(consumer, agent).sections)).toEqual(wanted);
       total += gallery!.count;
     }
     expect(total).toBe(['director', 'designer', 'writer', 'publisher'].reduce((sum, agent) => sum + expected(consumer, agent).length, 0));
   });
 
-  it('keeps Writer slots in IA order but advertises a record iframe only for the intact pin', () => {
-    const root = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-slots-')));
+  it('keeps Writer slots in IA order but gives the detail a record specimen only for the intact pin', () => {
+    const repo = realpathSync(mkdtempSync(join(tmpdir(), 'gallery-slots-')));
+    const root = join(repo, 'clossys');
     try {
       const dir = join(root, 'agents/writer/strings.label');
       mkdirSync(dir, { recursive: true });
@@ -311,12 +286,9 @@ describe('IA-first gallery data', () => {
         ia: slotPositions('writer', ia).get('strings.label')!, kind: 'strings', contract: {}, inputs: [], uses: [],
       } satisfies SlotDoc));
       const cards = () => slotGallery(root, 'writer').sections.flatMap(section => section.cards);
-      const projected = () => agentGalleryLayers({ state: 'ready', agent: 'writer', ...slotGallery(root, 'writer') }, noRoutes).flatMap(layer => layer.groups.flatMap(group => group.sections.flatMap(section => section.cards)));
       const noFrame = () => {
         expect(cards().map(card => card.id)).toEqual(expected(root, 'writer'));
-        expect(projected().map(card => card.key)).toEqual(expected(root, 'writer'));
-        expect(cards()[0]!.specimenUrl).toBeUndefined();
-        expect(projected()[0]!.specimen).toBeUndefined();
+        expect(detailRecord(repo, 'writer', 'strings.label')).toBeUndefined();
       };
       expect(cards()).toMatchObject([{ id: 'strings.label', emptyState: 'No candidate', records: 0 }]);
       noFrame();
@@ -328,18 +300,17 @@ describe('IA-first gallery data', () => {
       writeFileSync(join(dir, 'candidates/label-v2.md'), content.replace('Hello <script> & welcome', 'Newer draft'));
       expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'No pin' });
       noFrame();
-      expect(projected()[0]!.statusLabel).toMatch(/^\d+ options?$/);
+      expect(cards()[0]!.options).toBe(2);
       const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       expect(cards()[0]).toMatchObject({ status: 'active', candidate: 'label-v1.md', version: 1 });
       expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows[0]?.text).toBe('Hello <script> & welcome');
       expect(cards()[0]!.emptyState).toBeUndefined();
-      expect(cards()[0]!.specimenUrl).toBe('/__specimen?agent=writer&slot=strings.label&candidate=label-v1.md');
-      const specimen = projected()[0]!.specimen!;
-      // The card shows the pinned record's lead text at card size, not a downscaled full-width frame.
-      expect(specimen).toEqual({ kind: 'record', name: 'Strings label', title: 'Strings label', description: '', lead: ['Hello <script> & welcome'], empty: '' });
+      // The card carries the pinned record's lead text; the detail renders the record inline, no frame.
+      expect(cards()[0]!.excerpt).toEqual(['Hello <script> & welcome']);
+      const specimen = detailRecord(repo, 'writer', 'strings.label')!;
+      expect(specimen).toEqual(recordSpecimenInput(root, 'writer', 'strings.label', 'label-v1.md'));
       const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen }));
-      expect(html).toContain('data-specimen-lead');
       expect(html).toContain('Hello &lt;script&gt; &amp; welcome');
       expect(html).not.toContain('<iframe');
       for (const invalid of [{}, { ...pin, candidate: 'absent-v1.md' }]) {
@@ -356,11 +327,12 @@ describe('IA-first gallery data', () => {
       expect(cards()[0]).toMatchObject({ status: 'failing', records: 0 });
       noFrame();
       expect(() => recordSpecimenInput(root, 'writer', 'strings.label')).toThrow('hash mismatch');
-    } finally { rmSync(root, { recursive: true, force: true }); }
+    } finally { rmSync(repo, { recursive: true, force: true }); }
   });
 
-  it('serves only the valid pinned Director brief, rejecting drafts, foreign slots and invalid native records', async () => {
-    const root = realpathSync(mkdtempSync(join(tmpdir(), 'director-specimen-pin-')));
+  it('gives the detail only the valid pinned Director brief, rejecting drafts, foreign slots and invalid native records', () => {
+    const repo = realpathSync(mkdtempSync(join(tmpdir(), 'director-specimen-pin-')));
+    const root = join(repo, 'clossys');
     try {
       const id = 'context.market.size', name = 'record-v1.md';
       const dir = join(root, `agents/director/${id}`);
@@ -375,24 +347,16 @@ describe('IA-first gallery data', () => {
       const pin = { candidate: name, sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:director-pin', at: '2026-01-01T00:00:00Z' };
       writeFileSync(join(dir, 'candidates', name), content);
       writeFileSync(join(dir, 'candidates/record-v2.md'), serializeFrontmatter(fields, body.replace('Pinned demand', 'Newer draft')));
-      const render = (input: NonNullable<ReturnType<typeof recordSpecimenInput>>) => renderToStaticMarkup(createElement(SpecimenContent, { specimen: input }));
-      const mount = recordSpecimens({ consumer: root, render });
-      const request = async (query = `slot=${id}`) => {
-        let code = 0, html = '';
-        const response = { writeHead(status: number) { code = status; }, end(value?: string) { html = value ?? ''; } } as ServerResponse;
-        expect(await mount.handle({ method: 'GET', url: `/__specimen?agent=director&${query}` } as IncomingMessage, response, '/__specimen')).toBe(true);
-        return { code, html };
-      };
-      expect((await request()).code).toBe(404);
+      const served = (slot = id, candidate?: string) => detailRecord(repo, 'director', slot, candidate);
+      expect(served()).toBeUndefined();
       const card = () => slotGallery(root, 'director').sections.flatMap(section => section.cards)[0]!;
       expect(card()).toMatchObject({ emptyState: 'No pin', records: 1 });
-      expect(card().specimenUrl).toBeUndefined();
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
-      expect(await request()).toEqual({ code: 200, html: render(recordSpecimenInput(root, 'director', id)!) });
-      expect((await request()).html).toContain('Pinned demand');
-      expect((await request()).html).not.toContain('Newer draft');
-      expect(card().specimenUrl).toContain('candidate=record-v1.md');
-      for (const query of [`slot=${id}&candidate=record-v2.md`, `slot=${id}&candidate=absent-v1.md`, 'slot=foreign.slot']) expect((await request(query)).code).toBe(404);
+      expect(served()).toEqual(recordSpecimenInput(root, 'director', id));
+      expect(JSON.stringify(served())).toContain('Pinned demand');
+      expect(JSON.stringify(served())).not.toContain('Newer draft');
+      expect(card()).toMatchObject({ status: 'active', candidate: 'record-v1.md' });
+      for (const [slot, candidate] of [[id, 'record-v2.md'], [id, 'absent-v1.md'], ['foreign.slot', undefined]] as const) expect(served(slot, candidate)).toBeUndefined();
       for (const change of [
         () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, candidate: 'absent-v1.md' })),
         () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: '0'.repeat(64) })),
@@ -408,13 +372,12 @@ describe('IA-first gallery data', () => {
         writeFileSync(join(dir, 'candidates', name), content);
         writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
         change();
-        expect((await request()).code).toBe(404);
-        expect(card().specimenUrl).toBeUndefined();
+        expect(served()).toBeUndefined();
       }
-    } finally { rmSync(root, { recursive: true, force: true }); }
+    } finally { rmSync(repo, { recursive: true, force: true }); }
   });
 
-  it('binds Director and Writer fixtures to the existing shared record specimen renderer', async () => {
+  it('binds Director and Writer fixtures to the existing shared record specimen renderer', () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'record-specimens-')));
     try {
       for (const [agent, id, body] of [
@@ -438,14 +401,7 @@ describe('IA-first gallery data', () => {
         const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen: input }));
         expect(html).toContain('<table');
         expect(html).toContain(agent === 'director' ? 'Measure demand' : 'Hello &lt;script&gt;');
-        const mount = recordSpecimens({ consumer: root, render: value => renderToStaticMarkup(createElement(SpecimenContent, { specimen: value })) });
-        let code = 0; let output = '';
-        const response = { writeHead(status: number) { code = status; }, end(value?: string) { output = value ?? ''; } } as ServerResponse;
-        expect(await mount.handle({ method: 'GET', url: `/__specimen?agent=${agent}&slot=${id}` } as IncomingMessage, response, '/__specimen')).toBe(true);
-        expect(code).toBe(200); expect(output).toBe(html);
-        expect(await mount.handle({ method: 'GET', url: '/__specimen?element=sample' } as IncomingMessage, response, '/__specimen')).toBe(false);
-        expect(await mount.handle({ method: 'GET', url: `/__specimen?agent=${agent}&slot=${id}&candidate=absent-v1.md` } as IncomingMessage, response, '/__specimen')).toBe(true);
-        expect(code).toBe(404);
+        expect(recordSpecimenInput(root, agent, id, 'absent-v1.md')).toBeUndefined();
       }
     } finally { rmSync(root, { recursive: true, force: true }); }
   });

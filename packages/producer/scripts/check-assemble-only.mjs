@@ -11,7 +11,7 @@
  *                    draws its own DOM blocks between the frame and the sections
  *   explorer         a page renders the retired page-level explorer
  *   hard-coded-route nav, tab or API routes are string literals instead of content-map projections
- *   tabs-projected   a record page has no tab routes projected from the agent's ia.json
+ *   tabs-projected   a record page has no group-tab page routes projected from the agent's ia.json
  *   page-header      a pinned page record does not declare the page-header section first
  *
  * Usage: node scripts/check-assemble-only.mjs [--json]. Exit 1 on any finding.
@@ -211,7 +211,8 @@ function checkTabs(studioRoot) {
     const records = map.entries.filter(entry => entry.parentId === group.id && entry.kind === 'page');
     if (!records.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${group.id}: no top-group record pages under the agent` });
     for (const record of records) {
-      const tabs = map.entries.filter(entry => entry.parentId === record.id && entry.kind === 'section');
+      // A tab is a content-map entry under the record whose path extends the record's path (a group-tab route).
+      const tabs = map.entries.filter(entry => entry.parentId === record.id && entry.kind === 'page' && typeof entry.path === 'string' && entry.path.startsWith(`${record.path}/`));
       if (record.source?.sectionIds?.includes(PAGE_TABS) && !tabs.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${record.id}: places page-tabs but projects no tab routes` });
       if (!record.source?.sectionIds?.includes(PAGE_TABS)) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${record.id}: places no page-tabs section` });
     }

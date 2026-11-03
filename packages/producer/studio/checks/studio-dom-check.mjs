@@ -39,13 +39,13 @@ import { overflowFindings } from './studio-overflow.mjs';
 const studio = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-/** Studio's own map and record loaders, bundled for node with relative requests sent to `origin`. */
+/** Studio's own map and leaf loader, bundled for node with relative requests sent to `origin`. */
 export async function loadStudioMap(origin) {
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'studio-dom-')));
   try {
-    const entry = `export { studioLeafPages, studioRuntimeMap, studioPageEntries } from './lib/studio-route-map';
-      export { loadDesignerGallery, loadDesignerLeaf } from './lib/designer-library';
-      export { loadAgentGallery, loadAgentLeaf, agentOptionVersions, isLibraryAgent } from './lib/agent-library';`;
+    const entry = `export { studioRuntimeMap, studioPageEntries } from './lib/studio-route-map';
+      export { studioLeaves, studioPages } from './generated/studio-map';
+      export { loadLeaf } from './lib/studio-seed';`;
     const file = join(scratch, 'map.mjs');
     buildSync({ stdin: { contents: entry, resolveDir: studio, loader: 'ts' }, bundle: true, platform: 'node', format: 'esm', outfile: file, external: ['react', 'react-dom'], loader: { '.css': 'empty' }, logLevel: 'silent' });
     const native = globalThis.fetch;
@@ -53,35 +53,28 @@ export async function loadStudioMap(origin) {
     try {
       const lib = await import(pathToFileURL(file).href);
       const signal = new AbortController().signal;
-      const leaves = {}, records = {};
-      for (const page of lib.studioLeafPages) {
-        const agent = page.leaf.data.agent ?? page.id;
-        const gallery = agent === 'designer' ? await lib.loadDesignerGallery(signal) : await lib.loadAgentGallery(agent, signal);
-        leaves[page.id] = gallery.sections.flatMap(section => section.cards.map(card => ({ slug: card.slug, title: card.name })));
-        for (const { slug } of leaves[page.id]) {
-          const leaf = agent === 'designer' ? await lib.loadDesignerLeaf(slug, signal) : await lib.loadAgentLeaf(agent, slug, signal);
-          if (leaf) records[`${page.id}:${slug}`] = { agent, leaf };
-        }
+      const pages = new Map(lib.studioPages.map(page => [page.id, page]));
+      const records = {};
+      // Every leaf the compiled map holds: its tab record names the agent whose slot it reads.
+      for (const leaf of lib.studioLeaves) {
+        const agent = pages.get(leaf.page)?.leaf?.data.agent;
+        if (typeof agent !== 'string') continue;
+        const record = await lib.loadLeaf(agent, leaf.slug, signal);
+        if (record) records[`${leaf.page}:${leaf.slug}`] = record.detail;
       }
-      const map = lib.studioRuntimeMap(leaves);
-      return { map, entries: lib.studioPageEntries(map), records, expect: id => expectations(lib, records[id]) };
+      const map = lib.studioRuntimeMap;
+      return { map, entries: lib.studioPageEntries(map), records, expect: id => expectations(records[id]) };
     } finally { globalThis.fetch = native; }
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 }
 
-/** The sections a leaf must show because its records hold the data they present. */
-function expectations(lib, record) {
-  if (!record) return [];
-  const { agent, leaf } = record;
+/** The sections a leaf must show because its records hold the data they present (the same for every agent). */
+function expectations(detail) {
+  if (!detail) return [];
   const sections = ['leaf-header', 'specimen', 'references'];
-  if (agent === 'designer') {
-    if (leaf.card.options.length) sections.push('options');
-    if (leaf.versions.length) sections.push('history');
-  } else {
-    if (lib.agentOptionVersions(leaf).length) sections.push('options');
-    if (leaf.history.length) sections.push('history');
-    if (leaf.checks.length) sections.push('checks');
-  }
+  if (detail.candidates.length) sections.push('options');
+  if (detail.history.length) sections.push('history');
+  if (detail.checks.length) sections.push('checks');
   return sections;
 }
 
@@ -220,7 +213,10 @@ export async function runDomCheck(origin, { only } = {}) {
     for (const entry of targets) {
       const add = (rule, extra = {}) => findings.push({ rule, path: entry.path, id: entry.id, ...extra });
       const response = await fetch(new URL(entry.path, origin), { redirect: 'manual' });
-      if (response.status !== 200) add('http-status', { status: response.status });
+      // A record page opens on its first tab: its redirect is the map's own landing, not a finding.
+      const landing = response.status >= 300 && response.status < 400 && map.entries.some(row => row.parentId === entry.id && row.kind === 'page' && !row.id.includes(':'));
+      if (response.status !== 200 && !landing) add('http-status', { status: response.status });
+      if (landing) continue;
       const errorsBefore = browser.errors.length;
       await browser.send('Page.navigate', { url: new URL(entry.path, origin).href });
       await sleep(300);

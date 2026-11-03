@@ -31,8 +31,8 @@ test('a copy of the tree passes before it is mutated', t => {
 });
 
 test('mutation: a page rendered inline in an installed route fails', t => {
-  const root = fixture(t), page = path.join(root, 'app/designer/page.tsx');
-  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('return createElement(PublishedPage, { page: "designer" });', 'return <main><h1>Designer</h1></main>;'));
+  const root = fixture(t), page = path.join(root, 'app/designer/themes/page.tsx');
+  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('return createElement(PublishedPage, { page: "designer-themes" });', 'return <main><h1>Themes</h1></main>;'));
   assert.deepEqual([...new Set(rules(checkNoPageJsx({ studioRoot: root })))], ['page-jsx']);
 });
 
@@ -51,14 +51,21 @@ test('mutation: importing a section, frame or old view into app/ fails', () => {
 });
 
 test('mutation: an installed route that stops mounting the assembly, or an assembly that stops using the renderer, fails', t => {
-  const root = fixture(t), page = path.join(root, 'app/designer/[slug]/page.tsx');
-  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('"../../../components/StudioInstalledPage"', '"../../../components/OtherPage"'));
+  const root = fixture(t), page = path.join(root, 'app/designer/themes/colors/[slug]/page.tsx');
+  fs.writeFileSync(page, fs.readFileSync(page, 'utf8').replace('"../../../../../components/StudioInstalledPage"', '"../../../../../components/OtherPage"'));
   assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })), ['installed-route-not-generic-renderer']);
   const assembly = path.join(root, 'components/StudioInstalledPage.tsx');
   fs.writeFileSync(assembly, fs.readFileSync(assembly, 'utf8').replace("from './StudioPage'", "from './OtherPage'"));
   assert.ok(rules(checkNoPageJsx({ studioRoot: root })).includes('assembly-not-generic-renderer'));
   fs.rmSync(path.join(root, 'components/StudioPage.tsx'));
   assert.ok(rules(checkNoPageJsx({ studioRoot: root })).includes('missing-generic-renderer'));
+});
+
+test('mutation: a hand-made specimen frame page fails: /__specimen is a Producer server route', t => {
+  const root = fixture(t);
+  fs.mkdirSync(path.join(root, 'app/%5F_specimen'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'app/%5F_specimen/page.tsx'), 'export default function Page() { return null; }');
+  assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })), ['extra-app-route-file']);
 });
 
 test('mutation: a parked views/ folder fails', t => {

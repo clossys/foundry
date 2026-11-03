@@ -1,6 +1,6 @@
 {
-  "candidate": "publication-v1.json",
-  "sha256": "a6b4b79c25124f9785bc801acd506ae2bdce9051da3c34818a816cb40860821d",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T00:00:00Z"
+  "candidate": "publication-v2.json",
+  "sha256": "853e65360df858f2e35dda8357fed6ab361b1d781dc33c98835ff57e0a59bc05",
+  "pinnedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
+  "at": "2026-11-03T12:00:00Z"
 }

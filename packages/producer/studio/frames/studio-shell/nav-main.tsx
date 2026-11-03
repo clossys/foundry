@@ -6,6 +6,7 @@ import {
   Collapsible,
   CollapsibleContent,
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -16,12 +17,14 @@ import {
 
 /**
  * shadcn sidebar-07 `NavMain`, fed from the Studio map. A map page without children (Home) is the
- * block's menu button without the collapsible; a map group (Agents) is the block's collapsible item.
- * The block's "Platform" group label is left out: the map has no label for this group (NEED).
+ * block's menu button without the collapsible; a map group (an agent) is the block's collapsible
+ * item. `label` is the block's "Platform" group label, given only for the map's group rows.
  */
 export function NavMain({
+  label,
   items,
 }: {
+  label?: string
   items: {
     title: string
     url?: string
@@ -36,6 +39,7 @@ export function NavMain({
 }) {
   return (
     <SidebarGroup>
+      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
       <SidebarMenu>
         {items.map((item) =>
           item.items?.length ? (

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { slotCensus } from '../server/slot-census.js';
 import { listSlots } from '../records/slots.js';
-import { loadAgentGallery } from '../../studio/lib/agent-library';
+import { loadSlotGroups } from '../../studio/lib/studio-seed';
 import { AGENTS } from '../../studio/lib/agents';
 import { loadSlotCensus, useSlotCensus } from '../../studio/lib/slot-census';
 
@@ -30,7 +30,7 @@ describe('Home census data channel', () => {
       return new Response(JSON.stringify(native), { status: 200 });
     });
     vi.stubGlobal('fetch', fetcher);
-    const [gallery, census] = await Promise.allSettled([loadAgentGallery('writer', signal()), loadSlotCensus(signal())]);
+    const [gallery, census] = await Promise.allSettled([loadSlotGroups('writer', signal()), loadSlotCensus(signal())]);
     expect(gallery.status).toBe('rejected');
     expect(census.status).toBe('fulfilled');
     if (census.status !== 'fulfilled') throw new Error('Missing census');

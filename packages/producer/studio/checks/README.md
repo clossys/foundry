@@ -54,8 +54,7 @@ node packages/producer/studio/checks/check-no-page-jsx.cjs
 
 Every Studio page is a Publisher assembly (frame + ordered sections + bindings)
 rendered by the one generic renderer, `components/StudioPage.tsx`. `app/` may
-hold only `layout.tsx`, `globals.css`, the specimen frame `%5F_specimen/page.tsx`
-and the route files Publisher installs (they mount
+hold only `layout.tsx`, `globals.css` and the route files Publisher installs (they mount
 `components/StudioInstalledPage.tsx`, which hands the page to the renderer).
 Those files may render only the document shell, `StudioProviders` and
 `StudioPage`. Any other app file, page JSX (fragments included), an import of a
@@ -72,15 +71,16 @@ node packages/producer/studio/checks/check-studio-routes.cjs
 ```
 
 Studio is published by Foundry's own Publisher: every page entry of the
-`publication.studio` content map is a `page.tsx` under `app/`, and every page
-whose route-pack row has a leaf template is a dynamic `[slug]/page.tsx`, both
+`publication.studio` content map, expanded through each agent's `ia.json` into
+one tab page per IA group, is a `page.tsx` under `app/`, and every tab with a
+leaf template is a dynamic `[slug]/page.tsx`, both
 installed by `clossys publish --install --next` (first line is Publisher's
 route marker). The installed files are committed; the producer build
 (`scripts/generate-studio-map.mjs`) reinstalls them the same way it
 regenerates `generated/`, and the Studio Next build serves the committed files. The
 check fails when a map page or leaf template has no installed file, when its
-file lost the marker, or when `app/` holds any other route file. The one named
-exemption is the internal record-specimen frame `app/%5F_specimen/page.tsx`.
+file lost the marker, or when `app/` holds any other route file. There is no
+exemption: the Producer server serves `/__specimen` itself.
 The tests mutate a copy of the tree and the publication for each rule.
 
 ## Rendered map and sections (DOM)

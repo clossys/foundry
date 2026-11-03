@@ -65,16 +65,13 @@ test('Writer input preserves exact Checks markup across all conditional branches
     if (rows.some(row => row.ok)) assert.ok(changed.includes('writer-pass'));
     if (rows.some(row => !row.ok)) assert.ok(changed.includes('writer-finding'));
   }
-  // Section callers retain their existing zero-row section visibility decisions.
+  // The slot detail caller (the agent leaf caller was removed with the gallery) projects every check row.
   const callersBundle = join(dir, 'callers.mjs');
-  await build({ stdin: { contents: `export { agentLeafInputs } from './packages/producer/studio/lib/agent-library.ts'; export { slotDetailInputs } from './packages/producer/studio/lib/slot-detail.ts';`, resolveDir: root },
+  await build({ stdin: { contents: `export { slotDetailInputs } from './packages/producer/studio/lib/slot-detail.ts';`, resolveDir: root },
     outfile: callersBundle, bundle: true, platform: 'node', format: 'esm', packages: 'external', nodePaths: [join(root, 'node_modules')] });
-  const { agentLeafInputs, slotDetailInputs } = await import(callersBundle);
-  const links = { gallery: () => '/', leaf: () => '/leaf' };
-  const leaf = { agent: 'writer', card: { id: 'leaf', slug: 'leaf', name: 'Leaf', version: 1, status: 'draft', excerpt: [] }, trail: [], statusDetail: [],
-    specimen: { summary: '', rows: [] }, checks: [], contract: { facts: [], lists: [] }, history: [], uses: [], usedBy: [] };
-  assert.equal(agentLeafInputs(leaf, links).checks, undefined);
-  assert.deepEqual(agentLeafInputs({ ...leaf, checks: [passing] }, links).checks, { rows: [{ ...passing, key: '0' }], copy: checksCopy([passing]) });
+  const { slotDetailInputs } = await import(callersBundle);
+  const links = { leaf: () => '/leaf', back: { href: '/writer', label: 'Writer' } };
   const detail = { agent: 'writer', id: 'strings.example', kind: 'strings', trail: [], contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, history: [], checks: [], candidates: [], shown: null };
   assert.deepEqual(slotDetailInputs(detail, links, 'light').checks, { rows: [], copy: checksCopy([]) });
+  assert.deepEqual(slotDetailInputs({ ...detail, checks: [passing] }, links, 'light').checks, { rows: [{ key: '0', ...passing }], copy: checksCopy([passing]) });
 });

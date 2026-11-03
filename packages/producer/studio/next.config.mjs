@@ -18,12 +18,12 @@ const config = {
   transpilePackages: ['@clossys/designer', '@clossys/designer-ui'],
 };
 
+/** The redirects the publication's content map projects (agent groups to their first tab, legacy leaf paths to tab leaves). */
+const withRedirects = projection => ({ ...config, redirects: async () => projection.redirects.map(row => ({ ...row })) });
+
 export default async function nextConfig(phase) {
   const preview = await previewOptionsFromEnvironment();
-  if (phase !== PHASE_DEVELOPMENT_SERVER) {
-    await generateStudioMap(preview);
-    return config;
-  }
+  if (phase !== PHASE_DEVELOPMENT_SERVER) return withRedirects(await generateStudioMap(preview));
   // Keep record, pin, reference, manifest and compiler checks; preview reports
   // every actual file/byte mismatch without claiming release qualification.
   const projection = await generateStudioMap({ payloads: false, ...preview });
@@ -37,5 +37,5 @@ export default async function nextConfig(phase) {
     try { await checkPayload({ ...item, files, studioDir, payload: [...files.keys()], ...(item.previewEvidence ? { bound: true } : {}) }); }
     catch (error) { reportPreviewPayloadMismatch(error); }
   }
-  return config;
+  return withRedirects(projection);
 }

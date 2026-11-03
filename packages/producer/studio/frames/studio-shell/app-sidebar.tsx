@@ -30,8 +30,9 @@ function BrandMark({ ground }: { ground: "light" | "dark" }) {
  */
 export function AppSidebar({
   navigation,
+  navigationLabel,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { navigation: ContentMapNavigation }) {
+}: React.ComponentProps<typeof Sidebar> & { navigation: ContentMapNavigation; navigationLabel?: string }) {
   const { brand } = useStudioData()
   const { resolved } = useThemeMode()
   const name = brand.state === "ready" ? brand.value.name : undefined
@@ -51,7 +52,7 @@ export function AppSidebar({
       },
     ],
     navMain: navigation.tree.flatMap((node) => {
-      const Icon = studioIcon(node.icon, node.id)
+      const Icon = studioIcon(node.icon)
       const items = (node.children ?? []).flatMap((child) =>
         child.href ? [{ title: child.label, url: child.href, isActive: navigation.activeId === child.id }] : []
       )
@@ -65,7 +66,8 @@ export function AppSidebar({
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={data.navMain.filter((item) => !item.items.length)} />
+        <NavMain label={navigationLabel} items={data.navMain.filter((item) => item.items.length)} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

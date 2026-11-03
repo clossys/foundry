@@ -28,7 +28,7 @@ const MAP = {
       { id: 'home', kind: 'page', path: '/', parentId: null },
       { id: 'designer', kind: 'group', path: '/designer', parentId: null },
       { id: 'designer-themes', kind: 'page', path: '/designer/themes', parentId: 'designer', source: { sectionIds: [PAGE_HEADER, PAGE_TABS] } },
-      { id: 'designer-themes:colors', kind: 'section', path: '/designer/themes/colors', parentId: 'designer-themes' },
+      { id: 'designer-themes.colors', kind: 'page', path: '/designer/themes/colors', parentId: 'designer-themes' },
     ],
   },
 };
@@ -92,7 +92,7 @@ test('mutation: a record without the page header first fails page-header', () =>
 });
 
 test('mutation: a record page without projected tab routes fails tabs-projected', () => {
-  const map = { map: { entries: MAP.map.entries.filter(entry => entry.kind !== 'section') } };
+  const map = { map: { entries: MAP.map.entries.filter(entry => entry.id !== 'designer-themes.colors') } };
   assert.deepEqual(rules(fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(map) })), ['tabs-projected']);
   const flat = { map: { entries: [...MAP.map.entries, { id: 'agents', kind: 'group', parentId: null }, { id: 'writer', kind: 'page', parentId: 'agents', source: { sectionIds: [PAGE_HEADER, PAGE_TABS] } }] } };
   assert.ok(fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(flat) }).some(row => /agent accordions/.test(row.detail)));

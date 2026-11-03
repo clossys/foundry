@@ -14,7 +14,6 @@ export interface SlotGalleryCard {
   id: string; slug: string; name: string; version: number; kind: SlotKind;
   status: 'active' | 'draft' | 'missing' | 'failing'; records: number;
   candidate?: string; element?: string; specimen?: string; emptyState?: SlotEmptyState; excerpt: string[];
-  specimenUrl?: string;
   /** Candidate files on disk (the "N options" state of an unpinned slot). */
   options: number;
 }
@@ -101,10 +100,6 @@ export function recordLead(input: RecordSpecimenInput | undefined, rows = 2, len
   }).filter(Boolean);
 }
 
-export function recordSpecimenHref(agent: 'director' | 'writer', id: string, candidate?: string): string {
-  return `/__specimen?${new URLSearchParams({ agent, slot: id, ...(candidate ? { candidate } : {}) })}`;
-}
-
 /**
  * L1/L2 display order. Without `layers` it is the IA order with L0 from the
  * slot position; with `layers` each layer is a tab and an `<l1>/<l2>` ref
@@ -183,7 +178,6 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
       excerpt: recordLead(record), options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
-      ...(!failing && ((agent === 'writer' && candidate && entry.pin?.candidate === candidate) || (agent === 'director' && record)) ? { specimenUrl: recordSpecimenHref(agent as 'director' | 'writer', id, candidate) } : {}),
     });
   }
   return { sections, count: sections.reduce((n, row) => n + row.cards.length, 0) };

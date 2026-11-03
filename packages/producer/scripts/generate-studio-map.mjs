@@ -3,10 +3,12 @@ import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
+import { projectRedirects } from '@clossys/publisher/content-map';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
+import { expandPublication } from '../dist/publish/expand-tabs.js';
 import { checkPayload } from './studio-payload.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
@@ -21,13 +23,13 @@ const object = value => typeof value === 'object' && value !== null && !Array.is
 const nonEmpty = value => typeof value === 'string' && value.length > 0;
 
 /** The page manifest vocabulary: navigators, module sources, action handlers and wiring verbs. */
-export const NAVIGATORS = ['explorer', 'outline'];
-export const MODULE_SOURCES = ['page.explorer', 'page.outline', 'page.checks', 'page.versions'];
+export const NAVIGATORS = ['outline'];
+export const MODULE_SOURCES = ['page.outline', 'page.checks', 'page.versions'];
 export const HANDLERS = ['copy-prompt'];
 const WIRING_EXPECT = { 'copy-prompt': 'clipboard prompt' };
 
 /**
- * A page manifest (app-frame-target "Page manifest"): the navigator (explorer or outline), the
+ * A page manifest (app-frame-target "Page manifest"): the navigator (the page outline), the
  * modules and the actions, each one header icon that opens a popover (a module popover places a
  * pinned module section fed from a named source; an action popover copies a prompt), each with
  * a shortcut and a command menu entry, and one wiring line per interaction.
@@ -36,7 +38,7 @@ const WIRING_EXPECT = { 'copy-prompt': 'clipboard prompt' };
 export function checkManifest(owner, manifest, contracts) {
   if (!object(manifest)) fail(`${owner} declares no page manifest`);
   for (const retired of ['frame', 'defaultOpen']) if (retired in manifest) fail(`${owner} manifest names ${retired}; popovers have no module frame or default open state`);
-  if (!NAVIGATORS.includes(manifest.navigator)) fail(`${owner} manifest needs an explorer or an outline`);
+  if (!NAVIGATORS.includes(manifest.navigator)) fail(`${owner} manifest needs an outline navigator`);
   if (!Array.isArray(manifest.modules) || !manifest.modules.length) fail(`${owner} manifest declares no modules`);
   if (!Array.isArray(manifest.actions)) fail(`${owner} manifest needs an actions array (which may be empty)`);
   if (!Array.isArray(manifest.wiring) || !manifest.wiring.length) fail(`${owner} manifest declares no wiring checks`);
@@ -250,12 +252,16 @@ export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, ap
 export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), appDir = join(outputDir, '..', 'app'), installOut, check = false, payloads = true, target, previewItems } = {}) {
   if ((target !== undefined && target !== 'preview') || (target !== 'preview' && previewItems !== undefined)) fail('Draft bindings require an explicit preview target');
   const publisherRoot = join(clossysRoot, 'agents', 'publisher');
-  const { map, routePack } = await readPinnedPublication(publisherRoot, 'studio');
+  const pinned = await readPinnedPublication(publisherRoot, 'studio');
+  const routePack = pinned.routePack;
   if (!routePack) fail('the studio publication has no route metadata');
+  // Parameterized records expand through the content map: one tab page per IA group, one leaf template per tab.
+  const expansion = expandPublication(clossysRoot, pinned.map, routePack.routes);
+  const map = expansion.map;
   const root = routePack.root;
   if (!object(root) || typeof root.kind !== 'string' || typeof root.note !== 'string') fail('the studio publication config names no root');
   const contracts = designerContracts(clossysRoot);
-  const routes = new Map(routePack.routes.map(route => [route.instanceId, route]));
+  const routes = new Map(expansion.routes.map(route => [route.instanceId, route]));
   const pages = map.entries.filter(entry => entry.kind === 'page').map(entry => {
     const route = routes.get(entry.id);
     if (!route) fail(`${entry.id} has no Route metadata`);
@@ -278,6 +284,12 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
   const sections = items.filter(item => item.slot.startsWith('sections.'));
   const projection = {
     publicationId: map.publicationId, homeId: routePack.homeRouteId, root, map, pages,
+    // Every leaf a tab serves (`<tab path>/<slot id>`), and the redirects the expanded map declares.
+    leaves: expansion.leafTemplates.flatMap(template => {
+      const tab = expansion.tabs.find(row => row.id === template.pageId);
+      return template.leaves.map(leaf => ({ page: template.pageId, slug: leaf.slug, path: `${tab.path}/${leaf.slug}` }));
+    }),
+    redirects: projectRedirects(map),
     ...(target === 'preview' ? { assembly: previewDescriptor(previewItems) } : {}),
     items: items.map(item => ({ slot: item.slot, element: item.element, version: item.version, ...(item.previewEvidence ? { previewEvidence: item.previewEvidence } : {}) })),
     // Page module actions per page, for the selected-runtime module census.
@@ -298,9 +310,9 @@ export interface StudioManifestModule { id: string; icon: string; label: string;
 /** One header action: a header icon whose popover copies a prompt naming the page. */
 export interface StudioManifestAction { id: string; icon: string; label: string; shortcut: string; handler: { kind: 'copy-prompt'; prompt: string } }
 /** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
-export interface StudioPageManifest { navigator: 'explorer' | 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
+export interface StudioPageManifest { navigator: 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
-export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
+export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string; description?: string; groups?: readonly string[] }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
 /** A Publisher page record: frame + ordered sections + bindings; \`leaf\` assembles every leaf beneath the page. */
 export interface StudioPageRecord extends StudioAssemblySpec { id: string; path: string; title: string; frameId: string; leaf?: StudioAssemblySpec & { param: 'slug' } }
 
@@ -315,7 +327,11 @@ export const studioPageActions = projection.pageActions as unknown as Readonly<R
 /** The route files Publisher installed under app/ (\`publish --install --next\`): each page, and each gallery's leaf template. */
 export interface StudioInstalledRoute { instanceId: string; path: string; label: string; entry: { file: string; export: string }; leaf?: { path: string; entry: { file: string; export: string } } }
 export const studioRoutes = projection.routes as readonly StudioInstalledRoute[];
-export const studioAgents = studioMap.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
+/** One leaf a tab page serves: the tab's page id, the slot slug and its served path. */
+export interface StudioLeaf { page: string; slug: string; path: string }
+export const studioLeaves = projection.leaves as readonly StudioLeaf[];
+/** The top-level groups of the content map: the agents, in map order. */
+export const studioAgents = studioMap.entries.filter(row => row.kind === 'group' && !row.parentId).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
 `;
   const bindings = `${assemblyBanner}import type { ComponentType } from 'react';
 import type { StudioShellProps } from '../frames/studio-shell';
