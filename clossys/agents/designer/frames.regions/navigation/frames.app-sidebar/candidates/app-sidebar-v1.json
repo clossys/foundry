@@ -1,0 +1,137 @@
+{
+  "name": "app-sidebar",
+  "type": "registry:block",
+  "title": "Sidebar 07",
+  "description": "A sidebar that collapses to icons.",
+  "registryDependencies": [
+    "sidebar",
+    "breadcrumb",
+    "separator",
+    "collapsible",
+    "dropdown-menu",
+    "avatar"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "components/app-sidebar.tsx",
+      "type": "registry:component",
+      "content": "\n\nimport * as React from \"react\"\n\nimport { NavMain } from \"@/components/nav-main\"\nimport { NavProjects } from \"@/components/nav-projects\"\nimport { NavUser } from \"@/components/nav-user\"\nimport { TeamSwitcher } from \"@/components/team-switcher\"\nimport {\n  Sidebar,\n  SidebarContent,\n  SidebarFooter,\n  SidebarHeader,\n  SidebarRail,\n} from \"@/components/ui/sidebar\"\nimport { GalleryVerticalEndIcon, AudioLinesIcon, TerminalIcon, TerminalSquareIcon, BotIcon, BookOpenIcon, Settings2Icon, FrameIcon, PieChartIcon, MapIcon } from \"lucide-react\"\n\n// This is sample data.\nconst data = {\n  user: {\n    name: \"shadcn\",\n    email: \"m@example.com\",\n    avatar: \"/avatars/shadcn.jpg\",\n  },\n  teams: [\n    {\n      name: \"Acme Inc\",\n      logo: (\n        <GalleryVerticalEndIcon\n        />\n      ),\n      plan: \"Enterprise\",\n    },\n    {\n      name: \"Acme Corp.\",\n      logo: (\n        <AudioLinesIcon\n        />\n      ),\n      plan: \"Startup\",\n    },\n    {\n      name: \"Evil Corp.\",\n      logo: (\n        <TerminalIcon\n        />\n      ),\n      plan: \"Free\",\n    },\n  ],\n  navMain: [\n    {\n      title: \"Playground\",\n      url: \"#\",\n      icon: (\n        <TerminalSquareIcon\n        />\n      ),\n      isActive: true,\n      items: [\n        {\n          title: \"History\",\n          url: \"#\",\n        },\n        {\n          title: \"Starred\",\n          url: \"#\",\n        },\n        {\n          title: \"Settings\",\n          url: \"#\",\n        },\n      ],\n    },\n    {\n      title: \"Models\",\n      url: \"#\",\n      icon: (\n        <BotIcon\n        />\n      ),\n      items: [\n        {\n          title: \"Genesis\",\n          url: \"#\",\n        },\n        {\n          title: \"Explorer\",\n          url: \"#\",\n        },\n        {\n          title: \"Quantum\",\n          url: \"#\",\n        },\n      ],\n    },\n    {\n      title: \"Documentation\",\n      url: \"#\",\n      icon: (\n        <BookOpenIcon\n        />\n      ),\n      items: [\n        {\n          title: \"Introduction\",\n          url: \"#\",\n        },\n        {\n          title: \"Get Started\",\n          url: \"#\",\n        },\n        {\n          title: \"Tutorials\",\n          url: \"#\",\n        },\n        {\n          title: \"Changelog\",\n          url: \"#\",\n        },\n      ],\n    },\n    {\n      title: \"Settings\",\n      url: \"#\",\n      icon: (\n        <Settings2Icon\n        />\n      ),\n      items: [\n        {\n          title: \"General\",\n          url: \"#\",\n        },\n        {\n          title: \"Team\",\n          url: \"#\",\n        },\n        {\n          title: \"Billing\",\n          url: \"#\",\n        },\n        {\n          title: \"Limits\",\n          url: \"#\",\n        },\n      ],\n    },\n  ],\n  projects: [\n    {\n      name: \"Design Engineering\",\n      url: \"#\",\n      icon: (\n        <FrameIcon\n        />\n      ),\n    },\n    {\n      name: \"Sales & Marketing\",\n      url: \"#\",\n      icon: (\n        <PieChartIcon\n        />\n      ),\n    },\n    {\n      name: \"Travel\",\n      url: \"#\",\n      icon: (\n        <MapIcon\n        />\n      ),\n    },\n  ],\n}\n\nexport function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {\n  return (\n    <Sidebar collapsible=\"icon\" {...props}>\n      <SidebarHeader>\n        <TeamSwitcher teams={data.teams} />\n      </SidebarHeader>\n      <SidebarContent>\n        <NavMain items={data.navMain} />\n        <NavProjects projects={data.projects} />\n      </SidebarContent>\n      <SidebarFooter>\n        <NavUser user={data.user} />\n      </SidebarFooter>\n      <SidebarRail />\n    </Sidebar>\n  )\n}\n"
+    },
+    {
+      "path": "components/nav-main.tsx",
+      "type": "registry:component",
+      "content": "\n\nimport {\n  Collapsible,\n  CollapsibleContent,\n} from \"@/components/ui/collapsible\"\nimport {\n  SidebarGroup,\n  SidebarGroupLabel,\n  SidebarMenu,\n  SidebarMenuButton,\n  SidebarMenuItem,\n  SidebarMenuSub,\n  SidebarMenuSubButton,\n  SidebarMenuSubItem,\n} from \"@/components/ui/sidebar\"\nimport { ChevronRightIcon } from \"lucide-react\"\n\nexport function NavMain({\n  items,\n}: {\n  items: {\n    title: string\n    url: string\n    icon?: React.ReactNode\n    isActive?: boolean\n    items?: {\n      title: string\n      url: string\n    }[]\n  }[]\n}) {\n  return (\n    <SidebarGroup>\n      <SidebarGroupLabel>Platform</SidebarGroupLabel>\n      <SidebarMenu>\n        {items.map((item) => (\n          <Collapsible\n            key={item.title}\n            defaultExpanded={item.isActive}\n            className=\"group/collapsible\"\n            render={(props) => <SidebarMenuItem {...props} />}\n          >\n            <SidebarMenuButton slot=\"trigger\" tooltip={item.title}>\n              {item.icon}\n              <span>{item.title}</span>\n              <ChevronRightIcon\n                className=\"ml-auto transition-transform duration-200 group-data-expanded/collapsible:rotate-90\"\n              />\n            </SidebarMenuButton>\n            <CollapsibleContent>\n              <SidebarMenuSub>\n                {item.items?.map((subItem) => (\n                  <SidebarMenuSubItem key={subItem.title}>\n                    <SidebarMenuSubButton href={subItem.url}>\n                      <span>{subItem.title}</span>\n                    </SidebarMenuSubButton>\n                  </SidebarMenuSubItem>\n                ))}\n              </SidebarMenuSub>\n            </CollapsibleContent>\n          </Collapsible>\n        ))}\n      </SidebarMenu>\n    </SidebarGroup>\n  )\n}\n"
+    },
+    {
+      "path": "components/nav-projects.tsx",
+      "type": "registry:component",
+      "content": "\n\nimport {\n  DropdownMenu,\n  DropdownMenuItem,\n  DropdownMenuSeparator,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\"\nimport {\n  SidebarGroup,\n  SidebarGroupLabel,\n  SidebarMenu,\n  SidebarMenuAction,\n  SidebarMenuButton,\n  SidebarMenuItem,\n  useSidebar,\n} from \"@/components/ui/sidebar\"\nimport { MoreHorizontalIcon, FolderIcon, ArrowRightIcon, Trash2Icon } from \"lucide-react\"\n\nexport function NavProjects({\n  projects,\n}: {\n  projects: {\n    name: string\n    url: string\n    icon: React.ReactNode\n  }[]\n}) {\n  const { isMobile } = useSidebar()\n  return (\n    <SidebarGroup className=\"group-data-[collapsible=icon]:hidden\">\n      <SidebarGroupLabel>Projects</SidebarGroupLabel>\n      <SidebarMenu>\n        {projects.map((item) => (\n          <SidebarMenuItem key={item.name}>\n            <SidebarMenuButton href={item.url}>\n              {item.icon}\n              <span>{item.name}</span>\n            </SidebarMenuButton>\n\n            <DropdownMenuTrigger>\n              <SidebarMenuAction showOnHover className=\"aria-expanded:bg-muted\">\n                <MoreHorizontalIcon\n                />\n                <span className=\"sr-only\">More</span>\n              </SidebarMenuAction>\n              <DropdownMenu\n                className=\"w-fit\"\n                placement={isMobile ? \"bottom end\" : \"right top\"}\n              >\n                <DropdownMenuItem>\n                  <FolderIcon\n                  />\n                  <span>View Project</span>\n                </DropdownMenuItem>\n                <DropdownMenuItem>\n                  <ArrowRightIcon\n                  />\n                  <span>Share Project</span>\n                </DropdownMenuItem>\n                <DropdownMenuSeparator />\n                <DropdownMenuItem variant=\"destructive\">\n                  <Trash2Icon\n                  />\n                  <span>Delete Project</span>\n                </DropdownMenuItem>\n              </DropdownMenu>\n            </DropdownMenuTrigger>\n          </SidebarMenuItem>\n        ))}\n        <SidebarMenuItem>\n          <SidebarMenuButton className=\"text-sidebar-foreground/70\">\n            <MoreHorizontalIcon\n              className=\"text-sidebar-foreground/70\"\n            />\n            <span>More</span>\n          </SidebarMenuButton>\n        </SidebarMenuItem>\n      </SidebarMenu>\n    </SidebarGroup>\n  )\n}\n"
+    },
+    {
+      "path": "components/nav-user.tsx",
+      "type": "registry:component",
+      "content": "\n\nimport {\n  Avatar,\n  AvatarFallback,\n  AvatarImage,\n} from \"@/components/ui/avatar\"\nimport {\n  DropdownMenu,\n  DropdownMenuGroup,\n  DropdownMenuItem,\n  DropdownMenuLabel,\n  DropdownMenuSeparator,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\"\nimport {\n  SidebarMenu,\n  SidebarMenuButton,\n  SidebarMenuItem,\n  useSidebar,\n} from \"@/components/ui/sidebar\"\nimport { ChevronsUpDownIcon, SparklesIcon, BadgeCheckIcon, CreditCardIcon, BellIcon, LogOutIcon } from \"lucide-react\"\n\nexport function NavUser({\n  user,\n}: {\n  user: {\n    name: string\n    email: string\n    avatar: string\n  }\n}) {\n  const { isMobile } = useSidebar()\n  return (\n    <SidebarMenu>\n      <SidebarMenuItem>\n        <DropdownMenuTrigger>\n          <SidebarMenuButton size=\"lg\" className=\"aria-expanded:bg-muted\">\n            <Avatar>\n              <AvatarImage src={user.avatar} alt={user.name} />\n              <AvatarFallback>CN</AvatarFallback>\n            </Avatar>\n            <div className=\"grid flex-1 text-left text-sm leading-tight\">\n              <span className=\"truncate font-medium\">{user.name}</span>\n              <span className=\"truncate text-xs\">{user.email}</span>\n            </div>\n            <ChevronsUpDownIcon\n              className=\"ml-auto size-4\"\n            />\n          </SidebarMenuButton>\n          <DropdownMenu\n            className=\"w-fit\"\n            placement={isMobile ? \"bottom end\" : \"right bottom\"}\n            offset={4}\n          >\n            <DropdownMenuGroup>\n              <DropdownMenuLabel className=\"p-0 font-normal\">\n                <div className=\"flex items-center gap-2 px-1 py-1.5 text-left text-sm\">\n                  <Avatar>\n                    <AvatarImage src={user.avatar} alt={user.name} />\n                    <AvatarFallback>CN</AvatarFallback>\n                  </Avatar>\n                  <div className=\"grid flex-1 text-left text-sm leading-tight\">\n                    <span className=\"truncate font-medium\">{user.name}</span>\n                    <span className=\"truncate text-xs\">{user.email}</span>\n                  </div>\n                </div>\n              </DropdownMenuLabel>\n            </DropdownMenuGroup>\n            <DropdownMenuSeparator />\n            <DropdownMenuGroup>\n              <DropdownMenuItem>\n                <SparklesIcon\n                />\n                Upgrade to Pro\n              </DropdownMenuItem>\n            </DropdownMenuGroup>\n            <DropdownMenuSeparator />\n            <DropdownMenuGroup>\n              <DropdownMenuItem>\n                <BadgeCheckIcon\n                />\n                Account\n              </DropdownMenuItem>\n              <DropdownMenuItem>\n                <CreditCardIcon\n                />\n                Billing\n              </DropdownMenuItem>\n              <DropdownMenuItem>\n                <BellIcon\n                />\n                Notifications\n              </DropdownMenuItem>\n            </DropdownMenuGroup>\n            <DropdownMenuSeparator />\n            <DropdownMenuItem>\n              <LogOutIcon\n              />\n              Log out\n            </DropdownMenuItem>\n          </DropdownMenu>\n        </DropdownMenuTrigger>\n      </SidebarMenuItem>\n    </SidebarMenu>\n  )\n}\n"
+    },
+    {
+      "path": "components/team-switcher.tsx",
+      "type": "registry:component",
+      "content": "\n\nimport * as React from \"react\"\n\nimport {\n  DropdownMenu,\n  DropdownMenuGroup,\n  DropdownMenuItem,\n  DropdownMenuLabel,\n  DropdownMenuSeparator,\n  DropdownMenuShortcut,\n  DropdownMenuTrigger,\n} from \"@/components/ui/dropdown-menu\"\nimport {\n  SidebarMenu,\n  SidebarMenuButton,\n  SidebarMenuItem,\n  useSidebar,\n} from \"@/components/ui/sidebar\"\nimport { ChevronsUpDownIcon, PlusIcon } from \"lucide-react\"\n\nexport function TeamSwitcher({\n  teams,\n}: {\n  teams: {\n    name: string\n    logo: React.ReactNode\n    plan: string\n  }[]\n}) {\n  const { isMobile } = useSidebar()\n  const [activeTeam, setActiveTeam] = React.useState(teams[0])\n  if (!activeTeam) {\n    return null\n  }\n  return (\n    <SidebarMenu>\n      <SidebarMenuItem>\n        <DropdownMenuTrigger>\n          <SidebarMenuButton\n            size=\"lg\"\n            className=\"aria-expanded:bg-sidebar-accent aria-expanded:text-sidebar-accent-foreground\"\n          >\n            <div className=\"flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground\">\n              {activeTeam.logo}\n            </div>\n            <div className=\"grid flex-1 text-left text-sm leading-tight\">\n              <span className=\"truncate font-medium\">{activeTeam.name}</span>\n              <span className=\"truncate text-xs\">{activeTeam.plan}</span>\n            </div>\n            <ChevronsUpDownIcon\n              className=\"ml-auto\"\n            />\n          </SidebarMenuButton>\n          <DropdownMenu\n            className=\"w-fit\"\n            placement={isMobile ? \"bottom start\" : \"right top\"}\n            offset={4}\n          >\n            <DropdownMenuGroup>\n              <DropdownMenuLabel className=\"text-xs text-muted-foreground\">\n                Teams\n              </DropdownMenuLabel>\n              {teams.map((team, index) => (\n                <DropdownMenuItem\n                  key={team.name}\n                  onAction={() => setActiveTeam(team)}\n                  className=\"gap-2 p-2\"\n                >\n                  <div className=\"flex size-6 items-center justify-center rounded-md border\">\n                    {team.logo}\n                  </div>\n                  {team.name}\n                  <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>\n                </DropdownMenuItem>\n              ))}\n            </DropdownMenuGroup>\n            <DropdownMenuSeparator />\n            <DropdownMenuGroup>\n              <DropdownMenuItem className=\"gap-2 p-2\">\n                <div className=\"flex size-6 items-center justify-center rounded-md border bg-transparent\">\n                  <PlusIcon\n                    className=\"size-4\"\n                  />\n                </div>\n                <div className=\"font-medium text-muted-foreground\">\n                  Add team\n                </div>\n              </DropdownMenuItem>\n            </DropdownMenuGroup>\n          </DropdownMenu>\n        </DropdownMenuTrigger>\n      </SidebarMenuItem>\n    </SidebarMenu>\n  )\n}\n"
+    },
+    {
+      "path": "page.tsx",
+      "type": "registry:page",
+      "content": "import { AppSidebar } from \"@/components/app-sidebar\"\nimport {\n  Breadcrumb,\n  BreadcrumbItem,\n  BreadcrumbLink,\n  BreadcrumbList,\n  BreadcrumbPage,\n} from \"@/components/ui/breadcrumb\"\nimport { Separator } from \"@/components/ui/separator\"\nimport {\n  SidebarInset,\n  SidebarProvider,\n  SidebarTrigger,\n} from \"@/components/ui/sidebar\"\n\nexport default function Page() {\n  return (\n    <SidebarProvider>\n      <AppSidebar />\n      <SidebarInset>\n        <header className=\"flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12\">\n          <div className=\"flex items-center gap-2 px-4\">\n            <SidebarTrigger className=\"-ml-1\" />\n            <Separator\n              orientation=\"vertical\"\n              className=\"mr-2 data-vertical:h-4 data-vertical:self-auto\"\n            />\n            <Breadcrumb>\n              <BreadcrumbList>\n                <BreadcrumbItem className=\"hidden md:inline-flex\">\n                  <BreadcrumbLink href=\"#\">\n                    Build Your Application\n                  </BreadcrumbLink>\n                </BreadcrumbItem>\n\n                <BreadcrumbItem>\n                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>\n                </BreadcrumbItem>\n              </BreadcrumbList>\n            </Breadcrumb>\n          </div>\n        </header>\n        <div className=\"flex flex-1 flex-col gap-4 p-4 pt-0\">\n          <div className=\"grid auto-rows-min gap-4 md:grid-cols-3\">\n            <div className=\"aspect-video rounded-xl bg-muted/50\" />\n            <div className=\"aspect-video rounded-xl bg-muted/50\" />\n            <div className=\"aspect-video rounded-xl bg-muted/50\" />\n          </div>\n          <div className=\"min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min\" />\n        </div>\n      </SidebarInset>\n    </SidebarProvider>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "frames.app-sidebar",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/sidebar-07@4.23.0"
+      ],
+      "hash": "sha256:c5ffd395ad9418b12731dfabf9e9fc873f2fe6b231c9de5690ea7d09917048b1",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "components/app-sidebar.tsx": "registry/aria-nova/blocks/sidebar-07/components/app-sidebar.tsx",
+        "components/nav-main.tsx": "registry/aria-nova/blocks/sidebar-07/components/nav-main.tsx",
+        "components/nav-projects.tsx": "registry/aria-nova/blocks/sidebar-07/components/nav-projects.tsx",
+        "components/nav-user.tsx": "registry/aria-nova/blocks/sidebar-07/components/nav-user.tsx",
+        "components/team-switcher.tsx": "registry/aria-nova/blocks/sidebar-07/components/team-switcher.tsx",
+        "page.tsx": "registry/aria-nova/blocks/sidebar-07/page.tsx"
+      }
+    },
+    "element": {
+      "id": "frames.app-sidebar/app-sidebar",
+      "package": "designer",
+      "layer": "frames",
+      "slot": "frames.app-sidebar",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/sidebar-07@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for frames.app-sidebar.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "sidebar",
+          "breadcrumb",
+          "separator",
+          "collapsible",
+          "dropdown-menu",
+          "avatar"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--spacing",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--ring",
+          "--sidebar-ring",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius"
+        ]
+      }
+    }
+  }
+}

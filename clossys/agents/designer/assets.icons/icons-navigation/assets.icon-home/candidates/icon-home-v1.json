@@ -1,0 +1,57 @@
+{
+  "name": "icon-home",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "icons/house.svg",
+      "type": "registry:file",
+      "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <path d=\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\" />\n  <path d=\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\" />\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.icon-home.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"icon-home\": {\n      \"default\": {\n        \"$type\": \"glyph\",\n        \"$value\": [\n          [\n            \"path\",\n            {\n              \"d\": \"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\",\n              \"key\": \"5wwlr5\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\",\n              \"key\": \"r6nss1\"\n            }\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.icon-home",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/house@1.65.0"
+      ],
+      "hash": "sha256:df50d4861dd56ea5eac865c7329d45bb89f3fcf0206c2f2d8fb9c7dc0f2ccb84",
+      "license": "ISC"
+    },
+    "element": {
+      "id": "assets.icon-home/icon-home",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.icon-home",
+      "kind": "registry:item",
+      "license": "ISC",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Vendored lucide/house@1.65.0 glyph (the Studio's lucide icon library) adopted unmodified.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

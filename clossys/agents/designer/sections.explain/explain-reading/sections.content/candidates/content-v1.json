@@ -1,0 +1,103 @@
+{
+  "name": "content",
+  "type": "registry:block",
+  "title": "Separator",
+  "registryDependencies": [
+    "separator",
+    "example"
+  ],
+  "dependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "separator-example.tsx",
+      "type": "registry:example",
+      "content": "import {\n  Example,\n  ExampleWrapper,\n} from \"@/components/example\"\nimport { Separator } from \"@/components/ui/separator\"\n\nexport default function SeparatorExample() {\n  return (\n    <ExampleWrapper>\n      <SeparatorHorizontal />\n      <SeparatorVertical />\n      <SeparatorVerticalMenu />\n      <SeparatorInList />\n    </ExampleWrapper>\n  )\n}\n\nfunction SeparatorHorizontal() {\n  return (\n    <Example title=\"Horizontal\">\n      <div className=\"flex flex-col gap-4 text-sm style-lyra:text-xs/relaxed\">\n        <div className=\"flex flex-col gap-1\">\n          <div className=\"leading-none font-medium\">shadcn/ui</div>\n          <div className=\"text-muted-foreground\">\n            The Foundation for your Design System\n          </div>\n        </div>\n        <Separator />\n        <div>\n          A set of beautifully designed components that you can customize,\n          extend, and build on.\n        </div>\n      </div>\n    </Example>\n  )\n}\n\nfunction SeparatorVertical() {\n  return (\n    <Example title=\"Vertical\">\n      <div className=\"flex h-5 items-center gap-4 text-sm style-lyra:text-xs/relaxed\">\n        <div>Blog</div>\n        <Separator orientation=\"vertical\" />\n        <div>Docs</div>\n        <Separator orientation=\"vertical\" />\n        <div>Source</div>\n      </div>\n    </Example>\n  )\n}\n\nfunction SeparatorVerticalMenu() {\n  return (\n    <Example title=\"Vertical Menu\">\n      <div className=\"flex items-center gap-2 text-sm md:gap-4 style-lyra:text-xs/relaxed\">\n        <div className=\"flex flex-col gap-1\">\n          <span className=\"font-medium\">Settings</span>\n          <span className=\"text-xs text-muted-foreground\">\n            Manage preferences\n          </span>\n        </div>\n        <Separator orientation=\"vertical\" />\n        <div className=\"flex flex-col gap-1\">\n          <span className=\"font-medium\">Account</span>\n          <span className=\"text-xs text-muted-foreground\">\n            Profile & security\n          </span>\n        </div>\n        <Separator orientation=\"vertical\" />\n        <div className=\"flex flex-col gap-1\">\n          <span className=\"font-medium\">Help</span>\n          <span className=\"text-xs text-muted-foreground\">Support & docs</span>\n        </div>\n      </div>\n    </Example>\n  )\n}\n\nfunction SeparatorInList() {\n  return (\n    <Example title=\"In List\">\n      <div className=\"flex flex-col gap-2 text-sm style-lyra:text-xs/relaxed\">\n        <dl className=\"flex items-center justify-between\">\n          <dt>Item 1</dt>\n          <dd className=\"text-muted-foreground\">Value 1</dd>\n        </dl>\n        <Separator />\n        <dl className=\"flex items-center justify-between\">\n          <dt>Item 2</dt>\n          <dd className=\"text-muted-foreground\">Value 2</dd>\n        </dl>\n        <Separator />\n        <dl className=\"flex items-center justify-between\">\n          <dt>Item 3</dt>\n          <dd className=\"text-muted-foreground\">Value 3</dd>\n        </dl>\n      </div>\n    </Example>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.content",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/separator-example@4.23.0"
+      ],
+      "hash": "sha256:97218ea1efec2fd0c3cfb26b9634da5536e80cd613cd6b0b15eff2e0d596d20d",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "separator-example.tsx": "registry/aria-nova/examples/separator-example.tsx"
+      }
+    },
+    "element": {
+      "id": "sections.content/content",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.content",
+      "kind": "registry:example",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/separator-example@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for sections.content.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "separator",
+          "example"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--tracking-tight",
+          "--destructive",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,58 @@
+{
+  "name": "spacing",
+  "type": "registry:theme",
+  "cssVars": {
+    "theme": {
+      "spacing": "0.25rem"
+    }
+  },
+  "files": [
+    {
+      "path": "clossys/themes.spacing.json",
+      "type": "registry:file",
+      "content": "{\n  \"themes\": {\n    \"spacing\": {\n      \"default\": {\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"0.25rem\"\n          }\n        },\n        \"$type\": \"dimension\",\n        \"$value\": {\n          \"unit\": \"rem\",\n          \"value\": 0.25\n        }\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "themes.spacing",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "packages/designer/src/catalog/fills/tailwind-default/themes.spacing.json",
+        "tailwindcss@4.3.3/theme.css"
+      ],
+      "hash": "sha256:443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "themes.spacing/spacing",
+      "package": "designer",
+      "layer": "themes",
+      "slot": "themes.spacing",
+      "kind": "registry:theme",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-2"
+      },
+      "reason": "shadcn v4 default --spacing: shadcn v4 ships no override, so the value is Tailwind v4's default theme (tailwindcss@4.3.3 theme.css), taken unchanged from the pinned tailwind-default fill.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code theme payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

@@ -783,6 +783,12 @@
     "limits": {},
     "references": [
       {
+        "registry": "shadcn-aria",
+        "item": "sheet-example",
+        "version": "4.23.0",
+        "hash": "sha256:4adf6955838a2ea628ad3ca6bf4cd5892690bde7ee6e7796d24802e07ab9f8e4"
+      },
+      {
         "registry": "shadcn",
         "item": "sheet",
         "version": "4.23.0",
@@ -837,6 +843,12 @@
     ],
     "limits": {},
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "sheet-example",
+        "version": "4.23.0",
+        "hash": "sha256:4adf6955838a2ea628ad3ca6bf4cd5892690bde7ee6e7796d24802e07ab9f8e4"
+      },
       {
         "registry": "shadcn",
         "item": "sheet",
@@ -927,6 +939,12 @@
     ],
     "limits": {},
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "command-example",
+        "version": "4.23.0",
+        "hash": "sha256:46357c0ab3410253773513718349312e87d6f770604ed29dbe9782fbc04ee76e"
+      },
       {
         "registry": "shadcn",
         "item": "command",

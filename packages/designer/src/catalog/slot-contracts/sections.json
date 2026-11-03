@@ -1065,17 +1065,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1090,17 +1092,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1115,17 +1119,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1140,17 +1146,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1165,17 +1173,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1190,17 +1200,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1215,17 +1227,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1240,17 +1254,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1269,13 +1285,20 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1294,13 +1317,20 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1319,13 +1349,20 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1340,17 +1377,19 @@
         "name": "labels.showAllVariants",
         "kind": "copy",
         "required": true
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1369,13 +1408,20 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1394,13 +1440,20 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
       "labels.showAllVariants.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -1483,6 +1536,12 @@
       "total.rangeText.maxLength.en": 120
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "pagination-example",
+        "version": "4.23.0",
+        "hash": "sha256:612ffa3486e6247b68a086d515842c422edee42811c8fcfb59afa8ffd45825ea"
+      },
       {
         "registry": "shadcn",
         "item": "pagination",
@@ -2142,151 +2201,6 @@
         "name": "toc.items[].label",
         "kind": "copy",
         "required": false
-      },
-      {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.radius",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
       }
     ],
     "limits": {
@@ -2305,7 +2219,14 @@
       "toc.items[].label.maxLength.en": 120,
       "toc.label.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "tailwindcss-typography",
+        "item": "typography",
+        "version": "0.5.20",
+        "hash": "sha256:3db9d6b777a0e6d630effed7b9b13eed549194a559eaa0f50ed31347022d2cd5"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -2323,7 +2244,14 @@
       }
     ],
     "limits": {},
-    "references": [],
+    "references": [
+      {
+        "registry": "tailwindcss-typography",
+        "item": "typography",
+        "version": "0.5.20",
+        "hash": "sha256:3db9d6b777a0e6d630effed7b9b13eed549194a559eaa0f50ed31347022d2cd5"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -2531,6 +2459,11 @@
         "required": true
       },
       {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.border",
         "kind": "theme",
         "required": true
@@ -2547,6 +2480,11 @@
       },
       {
         "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
         "kind": "theme",
         "required": true
       },
@@ -2582,6 +2520,12 @@
         "item": "mist-team-1",
         "version": "8139698",
         "hash": "sha256:efcb7fffd7681de678cb115ae5571031adb13c4181e5091c7d9a4c6120234252"
+      },
+      {
+        "registry": "tailark-oss",
+        "item": "veil-team-1",
+        "version": "8139698",
+        "hash": "sha256:1577dbd45fca49a6e075db84fae989ea94af4d3b184c61a920c81a4f28191eec"
       }
     ],
     "checkSuite": "designer.slot-contracts.sections",
@@ -2640,6 +2584,16 @@
         "required": false
       },
       {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.spacing",
         "kind": "theme",
         "required": true
@@ -2679,6 +2633,12 @@
         "item": "safari",
         "version": "efe76fc",
         "hash": "sha256:fea2b9b1c9a74525b181b3818a0eecac645983498ecddd7c637743cfb75f9c93"
+      },
+      {
+        "registry": "shadcn-aria",
+        "item": "aspect-ratio-example",
+        "version": "4.23.0",
+        "hash": "sha256:4767e956af6d431d89969799bc6ff0e49f85f3d85b1588e01aafb211d7f86c67"
       }
     ],
     "checkSuite": "designer.slot-contracts.sections",
@@ -2759,6 +2719,12 @@
       "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "carousel-example",
+        "version": "4.23.0",
+        "hash": "sha256:8a19e1586aac1583d3cec777f65231da9105d1b3085d01c3c5e6a92d2bb275d3"
+      },
       {
         "registry": "shadcn",
         "item": "carousel",
@@ -3713,154 +3679,9 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.destructive",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.radius",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "assets.icon-*",
@@ -3896,7 +3717,14 @@
       "states.loading.description.maxLength.en": 480,
       "states.loading.label.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -3988,134 +3816,14 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.destructive",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.sidebar-foreground",
+        "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -4143,7 +3851,14 @@
       "states.loading.description.maxLength.en": 480,
       "states.loading.label.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "progress-example",
+        "version": "4.23.0",
+        "hash": "sha256:644e55e1efbcaa96af93eb5c4ce2b66718533f91e9798e295f81e519e1375cdd"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -4453,6 +4168,11 @@
         "required": true
       },
       {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.spacing",
         "kind": "theme",
         "required": true
@@ -4503,6 +4223,12 @@
       "toolbar.search.placeholder.maxLength.en": 120
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      },
       {
         "registry": "shadcn",
         "item": "table",
@@ -4591,159 +4317,14 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.radius",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.tracking-tight",
+        "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "assets.icon-chevron-down",
@@ -4784,7 +4365,14 @@
       "states.loading.description.maxLength.en": 480,
       "states.loading.label.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -5133,154 +4721,9 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.radius",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -5315,7 +4758,14 @@
       "states.loading.description.maxLength.en": 480,
       "states.loading.label.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -5434,62 +4884,7 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -5522,7 +4917,14 @@
       "states.loading.description.maxLength.en": 480,
       "states.loading.label.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -5934,147 +5336,7 @@
       {
         "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.radius",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -6099,7 +5361,14 @@
       "save-bar.save.maxLength.en": 120,
       "save-bar.unsaved.maxLength.en": 120
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "field-example",
+        "version": "4.23.0",
+        "hash": "sha256:a9190bd125764398d1bdaad5dcfd07a08ea3c0d79791e16b600804f14196a3df"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -6371,134 +5640,14 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.radius",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.foreground",
+        "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -6525,7 +5674,14 @@
       "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
       "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "table-example",
+        "version": "4.23.0",
+        "hash": "sha256:8c44bc07b38ec55da8731ae1ad629f3267547856a3e36a926468367c656ec7de"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -6840,164 +5996,9 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.input",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-border",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.radius",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.tracking-tight",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.destructive",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-sans",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-heading",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.font-mono",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -7016,7 +6017,14 @@
       "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
       "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "item-example",
+        "version": "4.23.0",
+        "hash": "sha256:f862713e192039a265bb2bfe090ee43f3f542a4a598436e0d6c06001b50ff97c"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -7627,114 +6635,19 @@
         "required": false
       },
       {
-        "name": "themes.spacing",
+        "name": "themes.muted",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent-foreground",
-        "kind": "theme",
-        "required": false
+        "required": true
       },
       {
         "name": "themes.muted-foreground",
         "kind": "theme",
-        "required": false
+        "required": true
       },
       {
-        "name": "themes.sidebar-foreground",
+        "name": "themes.spacing",
         "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-primary-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent-foreground",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.background",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.card",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.popover",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.secondary",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.muted",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.sidebar-accent",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-marquee-vertical",
-        "kind": "theme",
-        "required": false
-      },
-      {
-        "name": "themes.animate-shiny-text",
-        "kind": "theme",
-        "required": false
+        "required": true
       }
     ],
     "limits": {
@@ -7745,7 +6658,14 @@
       "status.maxLength.en": 80,
       "title.maxLength.en": 160
     },
-    "references": [],
+    "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "empty-example",
+        "version": "4.23.0",
+        "hash": "sha256:9755d227c33050c789d3050c03a0e272436aa47a7e891c7b8d0839f01aeb3623"
+      }
+    ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
   },
@@ -7824,6 +6744,12 @@
       "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
     },
     "references": [
+      {
+        "registry": "shadcn-aria",
+        "item": "alert-example",
+        "version": "4.23.0",
+        "hash": "sha256:ec7983fabfd62fd4d9679623f5833b4a41ee0ce5144cbf1aee05b4c6686e6a61"
+      },
       {
         "registry": "shadcn",
         "item": "alert",

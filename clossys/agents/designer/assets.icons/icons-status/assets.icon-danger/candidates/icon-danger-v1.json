@@ -1,0 +1,57 @@
+{
+  "name": "icon-danger",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "icons/circle-x.svg",
+      "type": "registry:file",
+      "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <circle cx=\"12\" cy=\"12\" r=\"10\" />\n  <path d=\"m15 9-6 6\" />\n  <path d=\"m9 9 6 6\" />\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.icon-danger.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"icon-danger\": {\n      \"default\": {\n        \"$type\": \"glyph\",\n        \"$value\": [\n          [\n            \"circle\",\n            {\n              \"cx\": \"12\",\n              \"cy\": \"12\",\n              \"r\": \"10\",\n              \"key\": \"1mglay\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"m15 9-6 6\",\n              \"key\": \"1uzhvr\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"m9 9 6 6\",\n              \"key\": \"z0biqf\"\n            }\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.icon-danger",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/circle-x@1.65.0"
+      ],
+      "hash": "sha256:dbb24d07e9cc14264ea8a3a0e50b4cda2deeeab96683924f272e728b029e89a6",
+      "license": "ISC"
+    },
+    "element": {
+      "id": "assets.icon-danger/icon-danger",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.icon-danger",
+      "kind": "registry:item",
+      "license": "ISC",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Vendored lucide/circle-x@1.65.0 glyph (the Studio's lucide icon library) adopted unmodified.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}
