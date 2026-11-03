@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
+import { isBuiltin } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
@@ -117,37 +118,69 @@ export function declaredSections(folder: string, clossys = CLOSSYS): Set<string>
   }));
 }
 
-export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set()): string[] {
-  const violations: string[] = [];
-  for (const name of readdirSync(folder)) {
-    if (!/\.tsx?$/.test(name) || /\.test\.tsx?$/.test(name)) continue;
-    const file = join(folder, name);
-    const label = relative(STUDIO, file);
-    const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, name.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-    const visit = (node: ts.Node) => {
-      const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
-      if (specifier !== undefined) {
-        const inside = specifier.startsWith('./') && !resolve(folder, specifier).slice(folder.length + 1).includes(sep);
-        const typeOnly = ts.isImportDeclaration(node) && !!node.importClause?.isTypeOnly;
-        const runtime = kind === 'frame' && (FRAME_RUNTIME.has(specifier) || typeOnly);
-        if (specifier !== COMPONENT_LAYER && !inside && !runtime && !composes.has(specifier)) violations.push(`${label}: imports ${specifier}`);
-      }
-      if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
-        const tag = node.tagName.getText(source);
-        const value = classAttribute(node)?.initializer;
-        const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
-        if (/^[a-z]/.test(tag) && !(kind === 'frame' && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
-          if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
-          const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
-          if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
-        }
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(source);
+/**
+ * The Studio app outside its sections and frames is held to the same rule. A renderer
+ * (`studio/components`, `studio/lib`) runs the app and loads data, so it may import React, the Next
+ * router, lucide icons, Node builtins, type-only modules, other `@clossys/*` engine packages as data and
+ * anything inside the producer package; every component it renders comes from the Designer layer and
+ * it renders no raw styled markup. A Studio frame inside `@clossys/designer-ui` (StudioAppFrame,
+ * StudioPageFrame, the layout primitives, BlockViewerIframe) imports only React, lucide icons, type-only
+ * modules and its own package's source, and styles only its page landmarks.
+ */
+type Kind = 'section' | 'frame' | 'renderer' | 'ui-frame';
+const PRODUCER = resolve(STUDIO, '..');
+const UI_SRC = resolve(STUDIO, '../../designer/ui/src');
+const RENDERER_DIRS = ['components', 'lib'];
+const RENDERER_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react']);
+const UI_FRAME_RUNTIME = new Set(['react', 'lucide-react']);
+const UI_FRAMES = ['foundry/block-viewer-iframe.tsx', 'foundry/layout.tsx', 'foundry/studio-frames.tsx'];
+const sourceFiles = (folder: string) => readdirSync(folder).filter(name => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name)).map(name => join(folder, name));
+const within = (file: string, specifier: string, root: string) => specifier.startsWith('.') && resolve(dirname(file), specifier).startsWith(root + sep);
+
+function importAllowed(kind: Kind, file: string, folder: string, specifier: string, typeOnly: boolean, composes: ReadonlySet<string>): boolean {
+  if (specifier === COMPONENT_LAYER || composes.has(specifier)) return true;
+  if (kind === 'section' || kind === 'frame') {
+    const inside = specifier.startsWith('./') && !resolve(folder, specifier).slice(folder.length + 1).includes(sep);
+    return inside || (kind === 'frame' && (FRAME_RUNTIME.has(specifier) || typeOnly));
   }
+  if (typeOnly) return true;
+  if (kind === 'renderer') return RENDERER_RUNTIME.has(specifier) || isBuiltin(specifier) || (specifier.startsWith('@clossys/') && !specifier.startsWith(`${COMPONENT_LAYER}/`)) || within(file, specifier, PRODUCER);
+  return UI_FRAME_RUNTIME.has(specifier) || within(file, specifier, UI_SRC);
+}
+
+/** Violations in one source file; `folder` bounds a section or frame's own imports. */
+export function fileViolations(file: string, kind: Kind = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set(), folder = dirname(file), base = STUDIO): string[] {
+  const violations: string[] = [];
+  const label = relative(base, file);
+  const landmarks = kind === 'frame' || kind === 'ui-frame';
+  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const visit = (node: ts.Node) => {
+    const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
+    if (specifier !== undefined) {
+      const typeOnly = ts.isImportDeclaration(node) && !!node.importClause?.isTypeOnly;
+      if (!importAllowed(kind, file, folder, specifier, typeOnly, composes)) violations.push(`${label}: imports ${specifier}`);
+    }
+    if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
+      const tag = node.tagName.getText(source);
+      const value = classAttribute(node)?.initializer;
+      const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
+      if (/^[a-z]/.test(tag) && !(landmarks && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
+        if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
+        const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
+        if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
   return violations;
 }
+
+export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set()): string[] {
+  return sourceFiles(folder).flatMap(file => fileViolations(file, kind, composes, blockMarkup, folder));
+}
+
+const RENDERER_FILES = RENDERER_DIRS.flatMap(dir => sourceFiles(join(STUDIO, dir))).map(file => relative(STUDIO, file)).sort();
 
 describe('Studio sections are ds-only', () => {
   it('reads canonical pin lineage arrays and exact declared section dependencies without retired stores', () => {
@@ -228,6 +261,31 @@ describe('Studio sections are ds-only', () => {
     try {
       writeFileSync(join(probe, 'Probe.tsx'), "import { X } from 'other-ui';\nimport { Y } from '../elsewhere';\nimport { Card } from '@clossys/designer-ui';\nexport const A = () => <div className=\"p-4\"><Card className=\"gap-2\"><X /><Y /></Card></div>;\n");
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', 'imports ../elsewhere', '<div className>']);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+  it('covers every Studio renderer and every Studio frame in the component layer', () => {
+    expect(RENDERER_FILES).toEqual(['components/StudioInstalledPage.tsx', 'components/StudioPage.tsx', 'components/StudioProviders.tsx', 'components/StudioRouteMap.tsx',
+      'lib/agents.ts', 'lib/cell-events.ts', 'lib/cells-client.ts', 'lib/checks-copy.ts', 'lib/contract-copy.ts', 'lib/options-copy.ts', 'lib/producer-url.ts', 'lib/publisher-preview.ts',
+      'lib/references-copy.ts', 'lib/slot-census-load.ts', 'lib/slot-census.ts', 'lib/slot-detail.ts', 'lib/studio-copy.ts', 'lib/studio-icons.tsx', 'lib/studio-report.ts',
+      'lib/studio-route-map.ts', 'lib/studio-seed.ts']);
+    for (const file of UI_FRAMES) expect(existsSync(join(UI_SRC, file)), file).toBe(true);
+  });
+
+  it.each(RENDERER_FILES)('renderer %s renders only Designer components and imports no outside UI', file => {
+    expect(fileViolations(join(STUDIO, file), 'renderer')).toEqual([]);
+  });
+
+  it.each(UI_FRAMES)('component-layer frame %s styles only its page landmarks', file => {
+    expect(fileViolations(join(UI_SRC, file), 'ui-frame', new Set(), new Set(), undefined, UI_SRC)).toEqual([]);
+  });
+
+  it('holds renderers and component-layer frames to their import and markup rules', () => {
+    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-renderer-')));
+    try {
+      const file = join(probe, 'Probe.tsx');
+      writeFileSync(file, "import { useState } from 'react';\nimport { readFileSync } from 'node:fs';\nimport type { T } from 'other-types';\nimport { RouterProvider } from 'react-aria-components';\nimport { map } from '@clossys/publisher/content-map';\nimport { cn } from './utils';\nexport const A = () => <main className=\"p-4\"><div style={{}} /><RouterProvider /></main>;\n");
+      expect(fileViolations(file, 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Probe.tsx: imports react-aria-components', 'Probe.tsx: imports ./utils', 'Probe.tsx: <main className>', 'Probe.tsx: <div style>']);
+      expect(fileViolations(file, 'ui-frame', new Set(), new Set(), undefined, probe)).toEqual(['Probe.tsx: imports node:fs', 'Probe.tsx: imports react-aria-components', 'Probe.tsx: imports @clossys/publisher/content-map', 'Probe.tsx: imports ./utils', 'Probe.tsx: <div style>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 });
