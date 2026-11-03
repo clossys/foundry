@@ -13,7 +13,7 @@ import { sha256Hex } from "./hash.js";
 import {
   CANDIDATE_NAME, SLOT_AGENTS, candidatesDir, iaPath, pinFile, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
-  type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition,
+  type IaDoc, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 
 export interface SlotEntry {
@@ -25,6 +25,8 @@ export interface SlotEntry {
   /** Candidate file names in version order (empty slot = []). */
   readonly candidates: readonly string[];
   readonly pin: PinDoc | null;
+  /** The slot's state as the one loader decides it: pinned, not-needed, or rejected. */
+  readonly state: SlotStateResult;
 }
 export interface Candidate { readonly name: string; readonly bytes: string; readonly sha256: string }
 export interface PinEvent extends PinDoc { readonly commit: string }
@@ -85,7 +87,8 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
   if (!ia) return [];
   return [...slotPositions(agent, ia)].map(([id, position]) => {
     const dir = slotDir(consumer, agent, id);
-    return { id, agent, position, dir, candidates: listCandidateNames(dir), pin: readPinAt(dir) };
+    const pin = readPinAt(dir);
+    return { id, agent, position, dir, candidates: listCandidateNames(dir), pin, state: decideSlotState(dir, pin) };
   });
 }
 
@@ -98,7 +101,51 @@ export function readSlotEntry(consumer: string, agent: SlotAgent, id: string): S
   const position = ia ? slotPositions(agent, ia).get(id) : undefined;
   if (!position) return undefined;
   const dir = slotDir(consumer, agent, id);
-  return { id, agent, position, dir, candidates: listCandidateNames(dir), pin: readPinAt(dir) };
+  const pin = readPinAt(dir);
+  return { id, agent, position, dir, candidates: listCandidateNames(dir), pin, state: decideSlotState(dir, pin) };
+}
+
+/** The `notNeeded` marker in a slot's slot.json; `invalid` when the marker is present but malformed. */
+function readNotNeeded(dir: string): NotNeeded | "invalid" | undefined {
+  const path = slotFile(dir);
+  assertModelPath(path);
+  if (!existsSync(path)) return undefined;
+  let value: unknown;
+  try { value = readJson(path); } catch { return undefined; /* the model check reports unreadable slot.json */ }
+  if (!value || typeof value !== "object" || !Object.hasOwn(value, "notNeeded")) return undefined;
+  if (validateSlotDoc(value, path).some(issue => issue.message.startsWith("notNeeded"))) return "invalid";
+  return (value as SlotDoc).notNeeded;
+}
+
+/**
+ * The one place that decides slot state (closed union: `pinned` or `not-needed`). A slot in
+ * neither state, in both, or with a malformed pin or marker is `rejected`; callers render the
+ * rejection as an error and `check-slot-state` fails on it.
+ */
+function decideSlotState(dir: string, pin: PinDoc | null): SlotStateResult {
+  const pinPresent = existsSync(pinFile(dir));
+  const notNeeded = readNotNeeded(dir);
+  if (notNeeded === "invalid") return { state: "rejected", reason: "invalid-slot", message: "slot.json notNeeded must be {reason, since}." };
+  if (pinPresent && notNeeded) return { state: "rejected", reason: "pinned-and-not-needed", message: "Slot is both pinned and marked not needed." };
+  if (pinPresent && !pin) return { state: "rejected", reason: "invalid-pin", message: "pin.json is not a valid pin." };
+  if (pin) return { state: "pinned", pin };
+  if (notNeeded) return { state: "not-needed", notNeeded };
+  return { state: "rejected", reason: "no-pin", message: "Slot is neither pinned nor marked not needed." };
+}
+
+export function readSlotState(consumer: string, agent: SlotAgent, id: string): SlotStateResult {
+  const dir = locate(consumer, agent, id).dir;
+  return decideSlotState(dir, readPinAt(dir));
+}
+
+export interface RejectedSlot { readonly agent: SlotAgent; readonly id: string; readonly reason: string; readonly message: string; readonly candidates: number }
+/** Every IA slot, across agents, that the loader rejects (neither pinned nor not-needed). */
+export function rejectedSlots(consumer: string): RejectedSlot[] {
+  const out: RejectedSlot[] = [];
+  for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) {
+    if (entry.state.state === "rejected") out.push({ agent, id: entry.id, reason: entry.state.reason, message: entry.state.message, candidates: entry.candidates.length });
+  }
+  return out;
 }
 
 /**

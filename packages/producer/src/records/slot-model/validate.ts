@@ -10,7 +10,7 @@ export type SlotModelCode =
   | "ia-invalid" | "slot-invalid" | "slot-mismatch" | "slot-missing" | "ia-path" | "orphan"
   | "pin-invalid" | "pin-candidate" | "pin-hash"
   | "candidate-name" | "candidate-invalid" | "candidate-source" | "candidate-status"
-  | "ref-unknown";
+  | "ref-unknown" | "slot-state";
 export interface SlotModelIssue { readonly code: SlotModelCode; readonly path: string; readonly message: string }
 
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -82,7 +82,7 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "slot-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses"]);
+  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses", "notNeeded"]);
   for (const key of Object.keys(value)) if (!allowed.has(key)) fail(`unknown key ${key}${key === "usedBy" ? " (usedBy is computed, never stored)" : ""}`);
   if (value.schema !== SLOT_SCHEMA) fail(`schema must be ${SLOT_SCHEMA}`);
   if (!nonEmpty(value.id) || !SLOT_ID.test(value.id)) fail("id must be a slot id");
@@ -95,6 +95,13 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   for (const key of ["inputs", "uses"] as const) {
     if (!strings(value[key])) fail(`${key} must be a list of slot ids`);
     else for (const id of value[key] as string[]) if (!SLOT_ID.test(id)) fail(`${key} names an invalid slot id ${id}`);
+  }
+  if (value.notNeeded !== undefined) {
+    const marker = value.notNeeded;
+    if (!object(marker) || Object.keys(marker).some(key => key !== "reason" && key !== "since") || !nonEmpty(marker.reason)
+      || typeof marker.since !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(marker.since) || Number.isNaN(Date.parse(marker.since))) {
+      fail("notNeeded must be {reason, since} with a non-empty reason and an ISO date");
+    }
   }
   return issues;
 }

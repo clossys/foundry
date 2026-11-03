@@ -413,7 +413,7 @@ export async function readOldStores(consumer: string): Promise<OldStores> {
 }
 
 /** Slot declarations become authored data after migration; refresh only their generated metadata. */
-function existingWiring(consumer: string, rel: string, generated: SlotDoc): Pick<SlotDoc, "inputs" | "uses"> | undefined {
+function existingWiring(consumer: string, rel: string, generated: SlotDoc): Pick<SlotDoc, "inputs" | "uses" | "notNeeded"> | undefined {
   let existing: SlotDoc;
   try { existing = readJsonFile(join(consumer, rel, "slot.json")) as SlotDoc; }
   catch { return undefined; }
@@ -421,7 +421,8 @@ function existingWiring(consumer: string, rel: string, generated: SlotDoc): Pick
     || existing.ia.l0 !== generated.ia.l0 || existing.ia.l1 !== generated.ia.l1 || existing.ia.l2 !== generated.ia.l2) return undefined;
   // Order and contract are generated. Unresolved refs remain visible to the
   // model checks rather than being replaced with guesses from legacy stores.
-  return { inputs: existing.inputs, uses: existing.uses };
+  // The owner's not-needed decision is authored state, never regenerated away.
+  return { inputs: existing.inputs, uses: existing.uses, ...(existing.notNeeded ? { notNeeded: existing.notNeeded } : {}) };
 }
 
 /** Build the full, deterministic migration plan. Pure apart from reads. */
