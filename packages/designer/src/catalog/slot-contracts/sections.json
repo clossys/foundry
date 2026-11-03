@@ -1053,5 +1053,6994 @@
     ],
     "checkSuite": "designer.slot-contracts.sections",
     "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-swatch",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders color tokens as swatches, one per item across the host-supplied axes.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-color-ramp",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that lays color tokens out as ordered ramps so neighbouring steps read side by side.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-type-ladder",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders font and type tokens as a ladder of sample lines.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-spacing-ladder",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders spacing tokens as a ladder of measured bars.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-radius-ladder",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders radius tokens as a ladder of rounded samples.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-motion-player",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that plays motion tokens (animations and durations) with replay controls.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-asset-grid",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that lays brand and media assets out as a grid of labelled tiles.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-icon-grid",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that lays glyph assets out as a grid of icons on their design grid.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-variant-matrix",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders a component across its member axes as a matrix of variants.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-section-viewports",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders one section at several viewport widths side by side.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-frame-viewports",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders one frame at several viewport widths side by side.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-rich-passage",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders a rich-text passage with its typographic styles.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-copy-in-context",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that shows Writer copy placed in the section or component that renders it.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.specimen-page-viewports",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Studio specimen that renders a whole page at several viewport widths side by side.",
+    "inputs": [
+      {
+        "name": "labels.showAllVariants",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "labels.showAllVariants.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.pagination",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Pagination control for a list or table: previous and next, page position and total, in pages, load-more or cursor mode.",
+    "inputs": [
+      {
+        "name": "page.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.previousLabel",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.nextLabel",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.pageText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "total.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.noResultsLabel",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "page.pageSizeLabel",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "total.rangeText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-*",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-left",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "page.label.maxLength.en": 120,
+      "page.nextLabel.maxLength.en": 120,
+      "page.noResultsLabel.maxLength.en": 120,
+      "page.pageSizeLabel.maxLength.en": 120,
+      "page.pageText.maxLength.en": 120,
+      "page.previousLabel.maxLength.en": 120,
+      "total.label.maxLength.en": 120,
+      "total.rangeText.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "pagination",
+        "version": "4.23.0",
+        "hash": "sha256:c2de58282863e744c8127d1e7f3e9d9917462a46cf17a9ae093bba0dc56faa7d"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.logo-hero",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Brand band that shows the logo mark large beside the product or company name.",
+    "inputs": [
+      {
+        "name": "name",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.mark",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "name.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.page-header",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Top of an inner page: title, optional eyebrow and description, breadcrumbs, up to two actions and meta label-value pairs.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "breadcrumbs.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "breadcrumbs.items[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meta[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meta[].value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions[].label.maxLength.en": 120,
+      "breadcrumbs.items[].label.maxLength.en": 120,
+      "breadcrumbs.label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "description.maxLength.en": 480,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "meta[].label.maxLength.en": 120,
+      "meta[].value.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "title.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.logo-mark",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Band that shows the brand mark alone on the section ground.",
+    "inputs": [
+      {
+        "name": "mark",
+        "kind": "cell",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.mark",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.content",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "General content band: optional header, a body of paragraphs and lists, optional media, a footnote and an aside of label-value pairs, stacked or split.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.actions[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "body[].text",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "body[].items[]",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "media.title",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "media.series[].name",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "footnote",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "aside[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "aside[].value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "aside[].label.maxLength.en": 120,
+      "aside[].value.maxLength.en": 480,
+      "body[].items[].maxLength.en": 8000,
+      "body[].text.maxLength.en": 8000,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "footnote.maxLength.en": 480,
+      "header.actions[].label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "media.series[].name.maxLength.en": 160,
+      "media.title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-content-1",
+        "version": "8139698",
+        "hash": "sha256:0cf80a2d54e12d33e43610eb0bd50703a9964a4be0b27a76a97e8ee6104b0aca"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.article",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Long-form article: header, a typographic body of text blocks and an optional table of contents.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "body[].text",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "body[].items[]",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toc.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toc.items[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "body[].items[].maxLength.en": 8000,
+      "body[].text.maxLength.en": 8000,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "toc.items[].label.maxLength.en": 120,
+      "toc.label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.sectioned-document",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Document body made of headed sections (for example a policy or a guide) rendered as one continuous column without its own landmark.",
+    "inputs": [
+      {
+        "name": "document",
+        "kind": "cell",
+        "required": true
+      }
+    ],
+    "limits": {},
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.testimonials",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Customer quotes, each with the quote and the attributor's name and role, as a single quote or a grid.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "quotes[].quote",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "quotes[].attributorName",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "quotes[].attributorRole",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "quotes[].attributorName.maxLength.en": 120,
+      "quotes[].attributorRole.maxLength.en": 120,
+      "quotes[].quote.maxLength.en": 2400,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-testimonials-1",
+        "version": "8139698",
+        "hash": "sha256:c0b6f1b9e5bae8f4b5a27e92d08f43d198611a08d05a06cd77400359bee01053"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.logo-cloud",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Row or grid of customer or partner logos under an optional header, optionally monochrome.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "logos[].name",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image-ratio",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "logos[].name.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-logo-cloud-1",
+        "version": "8139698",
+        "hash": "sha256:405568b809e3c20c96355097e5cd7e804578377303cef96150b9f8c965b3e443"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.people",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Team or people grid: each person with a name, a role and initials or a photo.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "people[].name",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "people[].role",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "people[].initials",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "people[].initials.maxLength.en": 120,
+      "people[].name.maxLength.en": 160,
+      "people[].role.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-team-1",
+        "version": "8139698",
+        "hash": "sha256:efcb7fffd7681de678cb115ae5571031adb13c4181e5091c7d9a4c6120234252"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.media",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Featured media figure (image, video or chart) in browser, device or bare chrome, with a caption and optional callouts.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "figure.caption",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "figure.media.title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "figure.media.series[].name",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "figure.chromeLabel",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "callouts.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "callouts.items[].body",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image-ratio",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "callouts.items[].body.maxLength.en": 480,
+      "callouts.label.maxLength.en": 160,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "figure.caption.maxLength.en": 480,
+      "figure.chromeLabel.maxLength.en": 160,
+      "figure.media.series[].name.maxLength.en": 160,
+      "figure.media.title.maxLength.en": 160,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "magicui",
+        "item": "safari",
+        "version": "efe76fc",
+        "hash": "sha256:fea2b9b1c9a74525b181b3818a0eecac645983498ecddd7c637743cfb75f9c93"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.gallery",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Image gallery: captioned images in a grid with an optional lightbox.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "images.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "images.items[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "images.items[].caption",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "images.items[].media.title",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image-ratio",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "images.items[].caption.maxLength.en": 480,
+      "images.items[].label.maxLength.en": 120,
+      "images.items[].media.title.maxLength.en": 160,
+      "images.label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "carousel",
+        "version": "4.23.0",
+        "hash": "sha256:85afbe330be3dcb1f5770cf8f1becd5d0337aa9aab8700d9d01fbff95f920d91"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.faq",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Frequently asked questions: question and answer pairs under a section header, as a list or in two columns.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].question",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "items[].answer",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "items[].answer.maxLength.en": 2400,
+      "items[].question.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-faqs-1",
+        "version": "8139698",
+        "hash": "sha256:0d341f5eb4d4e8799d83e9f52cb8ab007e05c2aa12195083067b238836c9b4c8"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.timeline",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Dated events in order, each with a heading, a date and a description.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "events[].heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "events[].dateText",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "events[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "events[].dateText.maxLength.en": 120,
+      "events[].description.maxLength.en": 480,
+      "events[].heading.maxLength.en": 160,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "timeline",
+        "version": "04aad54",
+        "hash": "sha256:0b3e5d2e13f9940f69aaf723e51358844797e092fe4af2243aa979f830c2a059"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.cards",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Grid of record cards, each with a title, description and meta and an optional image, badge and editorial byline, with loading, empty and error states.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "records[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].meta",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].badge.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].image.alt",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.author.name",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.author.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.date.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.readingTime.value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.readingTime.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.tags[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.summary",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.outcomeStats[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].editorial.outcomeStats[].value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.image",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "records[].badge.label.maxLength.en": 160,
+      "records[].description.maxLength.en": 480,
+      "records[].editorial.author.label.maxLength.en": 160,
+      "records[].editorial.author.name.maxLength.en": 160,
+      "records[].editorial.date.label.maxLength.en": 160,
+      "records[].editorial.outcomeStats[].label.maxLength.en": 160,
+      "records[].editorial.outcomeStats[].value.maxLength.en": 160,
+      "records[].editorial.readingTime.label.maxLength.en": 160,
+      "records[].editorial.readingTime.value.maxLength.en": 160,
+      "records[].editorial.summary.maxLength.en": 480,
+      "records[].editorial.tags[].label.maxLength.en": 160,
+      "records[].image.alt.maxLength.en": 160,
+      "records[].meta.maxLength.en": 120,
+      "records[].title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.resource-list",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "List of records with title, description and meta, plus selection, a search toolbar, pagination and loading, empty and error states.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "records[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "records[].meta",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toolbar.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toolbar.search.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toolbar.search.placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "pagination.pageText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "pagination.totalText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "pagination.pageText.maxLength.en": 120,
+      "pagination.totalText.maxLength.en": 120,
+      "records[].description.maxLength.en": 480,
+      "records[].meta.maxLength.en": 120,
+      "records[].title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120,
+      "toolbar.label.maxLength.en": 120,
+      "toolbar.search.label.maxLength.en": 120,
+      "toolbar.search.placeholder.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.task-list",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Checklist of tasks, each with a title, description and status (to do, in progress, blocked, done), and the overall progress.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "tasks[].title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "tasks[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "tasks[].meta",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.progress",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.done",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.todo",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.in-progress",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.blocked",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.blocked.maxLength.en": 160,
+      "labels.done.maxLength.en": 120,
+      "labels.in-progress.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "labels.progress.maxLength.en": 120,
+      "labels.todo.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120,
+      "tasks[].description.maxLength.en": 480,
+      "tasks[].meta.maxLength.en": 120,
+      "tasks[].title.maxLength.en": 160
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.stats",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Key figures: each stat a value and label with an optional description and delta, in a grid or a row.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "stats[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "stats[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "stats[].value",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "stats[].delta",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120,
+      "stats[].delta.maxLength.en": 120,
+      "stats[].description.maxLength.en": 480,
+      "stats[].label.maxLength.en": 120,
+      "stats[].value.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "tailark-oss",
+        "item": "mist-stats-1",
+        "version": "8139698",
+        "hash": "sha256:232e3332b04959e4e5a7bddc3b5c454d5104e658b9137ad2ec4eead41ebc64c7"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.status-list",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Capability or service status list: grouped items marked available, partial, planned or not offered, with a legend.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].items[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "legend",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.available",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.partial",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.planned",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.notOffered",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].detail",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "items[].items[].detail",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.icon-*",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "items[].detail.maxLength.en": 480,
+      "items[].heading.maxLength.en": 160,
+      "items[].items[].detail.maxLength.en": 480,
+      "items[].items[].label.maxLength.en": 120,
+      "items[].label.maxLength.en": 160,
+      "labels.available.maxLength.en": 120,
+      "labels.notOffered.maxLength.en": 120,
+      "labels.partial.maxLength.en": 120,
+      "labels.planned.maxLength.en": 120,
+      "legend.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.usage",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Usage meters: each meter shows use against its limit for a period, with a projection and threshold messages.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meters[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "meters[].usedText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meters[].limitText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meters[].periodText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meters[].projectedText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "meters[].thresholds[].message",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "meters[].label.maxLength.en": 120,
+      "meters[].limitText.maxLength.en": 120,
+      "meters[].periodText.maxLength.en": 120,
+      "meters[].projectedText.maxLength.en": 160,
+      "meters[].thresholds[].message.maxLength.en": 160,
+      "meters[].usedText.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.account-summary",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Signed-in account summary: identity (name and email), label-value rows and account actions.",
+    "inputs": [
+      {
+        "name": "heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "identity.name",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "identity.nameLabel",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "identity.email",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "identity.emailLabel",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "rows[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "rows[].value",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "actions[].label.maxLength.en": 160,
+      "compose.band": "sections.band",
+      "heading.maxLength.en": 160,
+      "identity.email.maxLength.en": 320,
+      "identity.emailLabel.maxLength.en": 120,
+      "identity.name.maxLength.en": 160,
+      "identity.nameLabel.maxLength.en": 120,
+      "rows[].label.maxLength.en": 120,
+      "rows[].value.maxLength.en": 1000,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.data-table",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Data table: columns and rows with sort, selection and grouping, a search and action toolbar, pagination and loading, empty and error states.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "columns[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "rows[].cells[].text",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toolbar.search.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toolbar.search.placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "toolbar.actions[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "pagination.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "pagination.pageText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "pagination.totalText",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.selection",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.sort",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "columns[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "labels.selection.maxLength.en": 120,
+      "labels.sort.maxLength.en": 120,
+      "pagination.label.maxLength.en": 120,
+      "pagination.pageText.maxLength.en": 120,
+      "pagination.totalText.maxLength.en": 120,
+      "rows[].cells[].text.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120,
+      "toolbar.actions[].label.maxLength.en": 120,
+      "toolbar.search.label.maxLength.en": 120,
+      "toolbar.search.placeholder.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.data-grid",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Data grid: rows of cells with selection, sort and pinned columns, and loading, empty and error states.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "cells[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "rows[].cells[].text",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.selection",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.sort",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.tracking-tight",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-down",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-chevron-right",
+        "kind": "asset",
+        "required": false
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
+      }
+    ],
+    "limits": {
+      "cells[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "labels.selection.maxLength.en": 120,
+      "labels.sort.maxLength.en": 120,
+      "rows[].cells[].text.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.record-detail",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Detail view of one record: labelled fields in groups, a status and up to two actions.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "fields[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "fields[].value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "groups[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "status",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.title",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "fields[].label.maxLength.en": 120,
+      "fields[].value.maxLength.en": 120,
+      "groups[].label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120,
+      "status.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.activity-feed",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Feed of activity events, each with an actor, summary, time and field changes, grouped and filterable.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "grouping[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "filters.links[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "events[].actor.name",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "events[].summary",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "events[].timeText",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "events[].changes[].field",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "events[].changes[].from",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "events[].changes[].to",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "events[].detail",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.unread",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.changedFrom",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.changedTo",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.cleared",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "events[].actor.name.maxLength.en": 160,
+      "events[].changes[].field.maxLength.en": 160,
+      "events[].changes[].from.maxLength.en": 160,
+      "events[].changes[].to.maxLength.en": 160,
+      "events[].detail.maxLength.en": 480,
+      "events[].summary.maxLength.en": 480,
+      "events[].timeText.maxLength.en": 160,
+      "filters.links[].label.maxLength.en": 120,
+      "grouping[].label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.changedFrom.maxLength.en": 160,
+      "labels.changedTo.maxLength.en": 160,
+      "labels.cleared.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "labels.unread.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.audit-log",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Audit log of entries (time, actor, action, target) with a search filter and export.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "entries[].actor",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "entries[].action",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "entries[].target",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "filter.search.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "filter.search.placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "export.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.time",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.actor",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.action",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.target",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.loading.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.loading.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.empty.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.empty.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "states.error.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "states.error.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "entries[].timeText",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "entries[].action.maxLength.en": 120,
+      "entries[].actor.maxLength.en": 120,
+      "entries[].target.maxLength.en": 120,
+      "entries[].timeText.maxLength.en": 160,
+      "export.label.maxLength.en": 120,
+      "filter.search.label.maxLength.en": 120,
+      "filter.search.placeholder.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.action.maxLength.en": 120,
+      "labels.actor.maxLength.en": 120,
+      "labels.label.maxLength.en": 120,
+      "labels.target.maxLength.en": 120,
+      "labels.time.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "states.empty.description.maxLength.en": 480,
+      "states.empty.label.maxLength.en": 120,
+      "states.error.description.maxLength.en": 480,
+      "states.error.label.maxLength.en": 120,
+      "states.loading.description.maxLength.en": 480,
+      "states.loading.label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.newsletter",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Newsletter sign-up band: an email field, a consent line and a submit action with pending, sent and failed messages.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "email.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "email.placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "consent",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "submit.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "submit.pendingLabel",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "submit.sentMessage",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "submit.failedMessage",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "consent.maxLength.en": 120,
+      "email.label.maxLength.en": 120,
+      "email.placeholder.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "submit.failedMessage.maxLength.en": 120,
+      "submit.label.maxLength.en": 120,
+      "submit.pendingLabel.maxLength.en": 120,
+      "submit.sentMessage.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.wizard",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Multi-step flow: step list, progress, back and next actions and a final review step.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "steps[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "progress.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "back.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "next.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "next.finish",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "review.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "back.label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "next.finish.maxLength.en": 120,
+      "next.label.maxLength.en": 120,
+      "progress.label.maxLength.en": 120,
+      "review.label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "steps[].label.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "stepper",
+        "version": "04aad54",
+        "hash": "sha256:36059d7c6d4c9644f8c80a0efe317d4cfd561d1d1ba0eb6e250a325768dccbba"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.settings",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Settings form: grouped controls with legends and descriptions, and a save bar that tracks unsaved changes.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "groups[].legend",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "groups[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "groups[].controls[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "groups[].controls[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "groups[].controls[].placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "groups[].controls[].options[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "save-bar.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "save-bar.save",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "save-bar.discard",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "save-bar.unsaved",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "groups[].controls[].description.maxLength.en": 480,
+      "groups[].controls[].label.maxLength.en": 120,
+      "groups[].controls[].options[].label.maxLength.en": 120,
+      "groups[].controls[].placeholder.maxLength.en": 120,
+      "groups[].description.maxLength.en": 480,
+      "groups[].legend.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "save-bar.discard.maxLength.en": 120,
+      "save-bar.label.maxLength.en": 120,
+      "save-bar.save.maxLength.en": 120,
+      "save-bar.unsaved.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.column-mapper",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Import column mapper: pairs source columns with target fields and flags the unmapped ones.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "source-columns[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "target-fields[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "target-fields[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.source",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.target",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.unmapped",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.source.maxLength.en": 120,
+      "labels.target.maxLength.en": 120,
+      "labels.unmapped.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "source-columns[].label.maxLength.en": 120,
+      "target-fields[].description.maxLength.en": 480,
+      "target-fields[].label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.access-matrix",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Roles by permissions matrix: grouped permission rows against role columns, with inherited and locked cells and a change summary.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "roles[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "permissions[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "permissions[].permissions[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "permissions[].permissions[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "roles[].lockedReason",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.permissionHeader",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.cell",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.groupAll",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.inherited",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.locked",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.changeSummary",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.cell.maxLength.en": 160,
+      "labels.changeSummary.maxLength.en": 160,
+      "labels.groupAll.maxLength.en": 160,
+      "labels.inherited.maxLength.en": 160,
+      "labels.label.maxLength.en": 120,
+      "labels.locked.maxLength.en": 160,
+      "labels.permissionHeader.maxLength.en": 160,
+      "permissions[].label.maxLength.en": 120,
+      "permissions[].permissions[].description.maxLength.en": 480,
+      "permissions[].permissions[].label.maxLength.en": 120,
+      "roles[].label.maxLength.en": 120,
+      "roles[].lockedReason.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.chat",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Conversation thread: message parts (messages, attachments, traces, questionnaires) and a composer.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "parts[].content",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "composer.placeholder",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "composer.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.status",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "parts[].timestamp",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "composer.label.maxLength.en": 120,
+      "composer.placeholder.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.status.maxLength.en": 120,
+      "parts[].content.maxLength.en": 2400,
+      "parts[].timestamp.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "message",
+        "version": "4.23.0",
+        "hash": "sha256:7db615d68aabf885c3056200c6eb936fc69068376a71a64166b27b3641e05fd8"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.sign-in-form",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Sign-in form: heading, up to four providers, identifier and password fields, a verification code step, actions and error messages.",
+    "inputs": [
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "providers[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "credentials.identifierLabel",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "credentials.identifierPlaceholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "credentials.passwordLabel",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "credentials.passwordPlaceholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "verification.codeLabel",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "verification.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "verification.placeholder",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions.submit",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions.verify",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions.pending",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions.back",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions.resend",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions.divider",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "error.message",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "error.identifier",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "error.password",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "error.code",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "actions.back.maxLength.en": 120,
+      "actions.divider.maxLength.en": 160,
+      "actions.pending.maxLength.en": 120,
+      "actions.resend.maxLength.en": 120,
+      "actions.submit.maxLength.en": 120,
+      "actions.verify.maxLength.en": 120,
+      "credentials.identifierLabel.maxLength.en": 120,
+      "credentials.identifierPlaceholder.maxLength.en": 120,
+      "credentials.passwordLabel.maxLength.en": 120,
+      "credentials.passwordPlaceholder.maxLength.en": 120,
+      "error.code.maxLength.en": 240,
+      "error.identifier.maxLength.en": 240,
+      "error.message.maxLength.en": 480,
+      "error.password.maxLength.en": 240,
+      "header.description.maxLength.en": 480,
+      "header.heading.maxLength.en": 160,
+      "providers.max": 4,
+      "providers[].label.maxLength.en": 120,
+      "verification.codeLabel.maxLength.en": 120,
+      "verification.description.maxLength.en": 480,
+      "verification.placeholder.maxLength.en": 120
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "login-03",
+        "version": "4.23.0",
+        "hash": "sha256:5ec4f2e1397fc999153a27f5d3a4fa3808acbe20e6a0805385545d0508126708"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.link-index",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Index of links, each with a title, description, label and optional badge, as a list, grid or cards.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "links[].title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "links[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "links[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "links[].badge",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.tracking-tight",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "links[].badge.maxLength.en": 120,
+      "links[].description.maxLength.en": 480,
+      "links[].label.maxLength.en": 120,
+      "links[].title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.table-of-contents",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Table of contents for a long page: links to its headings with the active heading tracked.",
+    "inputs": [
+      {
+        "name": "headings[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "labels.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "headings[].label.maxLength.en": 120,
+      "label.maxLength.en": 120,
+      "labels.label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "scroll-spy",
+        "version": "04aad54",
+        "hash": "sha256:98899863b32bb9a73309ab0d21b839ed011ee582dfcf172686b3e5ceff309458"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.explorer",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Explorer: a tree of nodes beside a list of items, with the selected item's details.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "tree.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "tree.nodes[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "tree.nodes[].description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "list.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "list.items[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "labels.details",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.details.maxLength.en": 120,
+      "list.items[].label.maxLength.en": 120,
+      "list.label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
+      "tree.label.maxLength.en": 120,
+      "tree.nodes[].description.maxLength.en": 480,
+      "tree.nodes[].label.maxLength.en": 120
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.filter-builder",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Filter builder: rules of field, operator and value, nested in match-all or match-any groups.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "fields[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "fields[].options[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "operators[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "groups[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.addRule",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.addGroup",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.remove",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.matchAll",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.matchAny",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "labels.value",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "fields[].label.maxLength.en": 120,
+      "fields[].options[].label.maxLength.en": 120,
+      "groups[].label.maxLength.en": 120,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "labels.addGroup.maxLength.en": 120,
+      "labels.addRule.maxLength.en": 120,
+      "labels.matchAll.maxLength.en": 120,
+      "labels.matchAny.maxLength.en": 120,
+      "labels.remove.maxLength.en": 120,
+      "labels.value.maxLength.en": 120,
+      "operators[].label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "diceui",
+        "item": "faceted",
+        "version": "04aad54",
+        "hash": "sha256:7065c62ef703257b5ee4ae11db4570d9157c4d1f4a84c224ca925f0e371b64b2"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.empty-state",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Empty state for a region or page (empty, no results, first use): heading, description, illustration and up to two actions.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "illustration.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "illustration.label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "empty",
+        "version": "4.23.0",
+        "hash": "sha256:fc6a8c64f6c422c0ab8ed46e6e832f7b5536d06c787206dc54c56bfa1c841d23"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.error-state",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Error state (not found, failure, forbidden, offline): heading, description, error code and retry and report actions.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "code",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "retry.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "report.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "code.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "report.label.maxLength.en": 120,
+      "retry.label.maxLength.en": 120,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "empty",
+        "version": "4.23.0",
+        "hash": "sha256:fc6a8c64f6c422c0ab8ed46e6e832f7b5536d06c787206dc54c56bfa1c841d23"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.boundary-message",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Full-page boundary message (sign-in unavailable, not authorized, service unavailable, sign-out confirmation): status, title, description, up to two actions and notes.",
+    "inputs": [
+      {
+        "name": "status",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "notes",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions[].label.maxLength.en": 120,
+      "description.maxLength.en": 480,
+      "notes.maxLength.en": 480,
+      "status.maxLength.en": 80,
+      "title.maxLength.en": 160
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.notices",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Stack of notices, each with a title, body, optional action and dismiss control.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "notices[].title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "notices[].body",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "notices[].action.label",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "notices[].dismissLabel",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": true
+      }
+    ],
+    "limits": {
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "notices[].action.label.maxLength.en": 120,
+      "notices[].body.maxLength.en": 2400,
+      "notices[].dismissLabel.maxLength.en": 120,
+      "notices[].title.maxLength.en": 160,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "alert",
+        "version": "4.23.0",
+        "hash": "sha256:95a396b53c8c797b22ad5f7d00e281ef867e94723c7f3b21ae61b15c7a72a4ac"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.consent",
+    "package": "designer",
+    "layer": "sections",
+    "purpose": "Consent band for cookies or tracking: title, body, up to two actions and a policy link.",
+    "inputs": [
+      {
+        "name": "header.eyebrow",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.heading",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "header.description",
+        "kind": "copy",
+        "required": false
+      },
+      {
+        "name": "copy.title",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "copy.body",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "actions[].label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "policy.label",
+        "kind": "copy",
+        "required": true
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.destructive",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-marquee-vertical",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.animate-shiny-text",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.input",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.popover-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.secondary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-primary-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.sidebar-accent-foreground",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-sans",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-heading",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.font-mono",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "actions.max": 2,
+      "actions[].label.maxLength.en": 120,
+      "compose.band": "sections.band",
+      "compose.header": "sections.section-header",
+      "copy.body.maxLength.en": 2400,
+      "copy.title.maxLength.en": 160,
+      "header.description.maxLength.en": 480,
+      "header.eyebrow.maxLength.en": 120,
+      "header.heading.maxLength.en": 160,
+      "policy.label.maxLength.en": 120,
+      "policy.max": 1,
+      "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
+      "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
+      "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
+      "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
+      "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.sections",
+    "specimenKind": "visual"
   }
 ]

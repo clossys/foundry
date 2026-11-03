@@ -1,0 +1,1402 @@
+[
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.accent",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --accent (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --accent in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--accent",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.accent-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --accent-foreground (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --accent-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--accent-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.animate-marquee",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Motion token emitted as --animate-marquee (scale tier; light mode), under Motion / Animations.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG duration value for --animate-marquee in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "duration",
+      "emit.default": "--animate-marquee",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "magicui",
+        "item": "marquee",
+        "version": "efe76fc",
+        "hash": "sha256:42e1105f44b0a0dd7be3a3b871952e487541a6db0af2ab62af879e5cedcb1f14"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.animate-marquee-vertical",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Motion token emitted as --animate-marquee-vertical (scale tier; light mode), under Motion / Animations.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG duration value for --animate-marquee-vertical in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "duration",
+      "emit.default": "--animate-marquee-vertical",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "magicui",
+        "item": "marquee",
+        "version": "efe76fc",
+        "hash": "sha256:42e1105f44b0a0dd7be3a3b871952e487541a6db0af2ab62af879e5cedcb1f14"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.animate-shiny-text",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Motion token emitted as --animate-shiny-text (scale tier; light mode), under Motion / Animations.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG duration value for --animate-shiny-text in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "duration",
+      "emit.default": "--animate-shiny-text",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "magicui",
+        "item": "animated-shiny-text",
+        "version": "efe76fc",
+        "hash": "sha256:f0a36548e04a7c53a6d694ffbb06ee960038425b70ee50a851b212c1d002c998"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "flow"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.background",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --background (role tier; light and dark modes), under Colors / Surfaces.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --background in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--background",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.border",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --border (role tier; light and dark modes), under Colors / Neutrals.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --border in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--border",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.card",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --card (role tier; light and dark modes), under Colors / Surfaces.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --card in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--card",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.card-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --card-foreground (role tier; light and dark modes), under Colors / Surfaces.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --card-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--card-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.chart-1",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --chart-1 (role tier; light and dark modes), under Colors / Charts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --chart-1 in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--chart-1",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.chart-2",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --chart-2 (role tier; light and dark modes), under Colors / Charts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --chart-2 in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--chart-2",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.chart-3",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --chart-3 (role tier; light and dark modes), under Colors / Charts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --chart-3 in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--chart-3",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.chart-4",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --chart-4 (role tier; light and dark modes), under Colors / Charts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --chart-4 in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--chart-4",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.chart-5",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --chart-5 (role tier; light and dark modes), under Colors / Charts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --chart-5 in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--chart-5",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.destructive",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --destructive (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --destructive in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--destructive",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.font-heading",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Font family token emitted as --font-heading (scale tier; light mode), under Typography / Fonts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG fontFamily value for --font-heading in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "fontFamily",
+      "emit.default": "--font-heading",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "fontsource",
+        "item": "inter-tight",
+        "version": "5.3.0",
+        "hash": "sha256:80d4fc0510f8d4c78877dd383ea2b33efdce109668036f02cc46b56bdd7f1ddf"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "text"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.font-mono",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Font family token emitted as --font-mono (scale tier; light mode), under Typography / Fonts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG fontFamily value for --font-mono in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "fontFamily",
+      "emit.default": "--font-mono",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "font-jetbrains-mono",
+        "version": "4.23.0",
+        "hash": "sha256:7f3159be218751270e584bdd63bade09b51f68c777503d49f808dad4777299c4"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "text"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.font-sans",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Font family token emitted as --font-sans (scale tier; light mode), under Typography / Fonts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG fontFamily value for --font-sans in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "fontFamily",
+      "emit.default": "--font-sans",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "font-inter",
+        "version": "4.23.0",
+        "hash": "sha256:5b9befd619243d601a5bc4306ebe0cc7a921caefd38fe12f30f745c636707d6f"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "text"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.font-serif",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Font family token emitted as --font-serif (scale tier; light mode), under Typography / Fonts.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG fontFamily value for --font-serif in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "fontFamily",
+      "emit.default": "--font-serif",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "text"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --foreground (role tier; light and dark modes), under Colors / Surfaces.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.input",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --input (role tier; light and dark modes), under Colors / Neutrals.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --input in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--input",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.muted",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --muted (role tier; light and dark modes), under Colors / Neutrals.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --muted in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--muted",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.muted-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --muted-foreground (role tier; light and dark modes), under Colors / Neutrals.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --muted-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--muted-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.popover",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --popover (role tier; light and dark modes), under Colors / Surfaces.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --popover in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--popover",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.popover-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --popover-foreground (role tier; light and dark modes), under Colors / Surfaces.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --popover-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--popover-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.primary",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --primary (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --primary in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--primary",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.primary-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --primary-foreground (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --primary-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--primary-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.radius",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Dimension token emitted as --radius (scale tier; light mode), under Shape / Corners.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG dimension value for --radius in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "dimension",
+      "emit.default": "--radius",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.ring",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --ring (role tier; light and dark modes), under Colors / Neutrals.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --ring in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--ring",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.secondary",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --secondary (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --secondary in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--secondary",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.secondary-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --secondary-foreground (role tier; light and dark modes), under Colors / Actions.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --secondary-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--secondary-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.shadow",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Shadow token emitted as --shadow-2xs, --shadow-xs, --shadow-sm, --shadow-md, --shadow-lg, --shadow-xl and --shadow-2xl (scale tier; light mode), under Depth / Effects.",
+    "inputs": [
+      {
+        "name": "2xs",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-2xs in light mode"
+      },
+      {
+        "name": "xs",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-xs in light mode"
+      },
+      {
+        "name": "sm",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-sm in light mode"
+      },
+      {
+        "name": "md",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-md in light mode"
+      },
+      {
+        "name": "lg",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-lg in light mode"
+      },
+      {
+        "name": "xl",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-xl in light mode"
+      },
+      {
+        "name": "2xl",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG shadow value for --shadow-2xl in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "shadow",
+      "emit.2xl": "--shadow-2xl",
+      "emit.2xs": "--shadow-2xs",
+      "emit.lg": "--shadow-lg",
+      "emit.md": "--shadow-md",
+      "emit.sm": "--shadow-sm",
+      "emit.xl": "--shadow-xl",
+      "emit.xs": "--shadow-xs",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-accent",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-accent (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-accent in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-accent",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-accent-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-accent-foreground (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-accent-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-accent-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-border",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-border (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-border in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-border",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-foreground (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-primary",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-primary (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-primary in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-primary",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-primary-foreground",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-primary-foreground (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-primary-foreground in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-primary-foreground",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.sidebar-ring",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Color token emitted as --sidebar-ring (role tier; light and dark modes), under Colors / Sidebar.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG color value for --sidebar-ring in light and dark modes"
+      }
+    ],
+    "limits": {
+      "$type": "color",
+      "emit.default": "--sidebar-ring",
+      "members.mode": "closed",
+      "modes": "light,dark",
+      "requires": "dtcg#format,dtcg#alias,wcag-2.2#1.4.3",
+      "tier": "role"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "neutral",
+        "version": "4.23.0",
+        "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161"
+      }
+    ],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.spacing",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Dimension token emitted as --spacing (scale tier; light mode), under Space / Rhythm.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG dimension value for --spacing in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "dimension",
+      "emit.default": "--spacing",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "themes.tracking-tight",
+    "package": "designer",
+    "layer": "themes",
+    "purpose": "Number token emitted as --tracking-tight (scale tier; light mode), under Typography / Tracking.",
+    "inputs": [
+      {
+        "name": "default",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG number value for --tracking-tight in light mode"
+      }
+    ],
+    "limits": {
+      "$type": "number",
+      "emit.default": "--tracking-tight",
+      "members.mode": "closed",
+      "modes": "light",
+      "requires": "dtcg#format,dtcg#alias",
+      "tier": "scale"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.themes",
+    "specimenKind": "text"
+  }
+]
