@@ -44,5 +44,8 @@
     "specimenKind": "text"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.scroll-area",
+    "components.tabs"
+  ]
 }

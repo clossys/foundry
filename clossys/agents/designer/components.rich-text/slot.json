@@ -77,7 +77,7 @@
     "components.table"
   ],
   "notNeeded": {
-    "reason": "no approved-registry source; composition lineage pending (W6). No vendored item in the approved set maps to this slot (Plate is not vendored; manifest skipped @plate/editor-basic); candidate v1 fails ref-verbatim.",
+    "reason": "no approved-registry source; W6 composition check (strict, rich-text-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 1 styled raw element attribute(s); imports outside the stock parts: react, cn, react-aria-components. No vendored item in the approved set maps to this slot (Plate is not vendored; manifest skipped @plate/editor-basic); candidate v1 fails ref-verbatim.",
     "since": "2026-11-03"
   }
 }

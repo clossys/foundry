@@ -13,7 +13,13 @@ export type RefVerbatimCode =
   | "REF-NORMALIZE"
   | "REF-ADAPTATION"
   | "REF-PART-PROOF"
-  | "REF-PART-CLOSURE";
+  | "REF-PART-CLOSURE"
+  | "REF-SELF-CITE"
+  | "REF-COMP-PART"
+  | "REF-COMP-IMPORT"
+  | "REF-COMP-UNUSED"
+  | "REF-COMP-MARKUP"
+  | "REF-COMP-USES";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };
@@ -40,7 +46,7 @@ export type RefVerbatimFile = {
   readonly file: string;
   readonly status: "pass" | "fail" | "skipped";
   readonly reference?: string;
-  readonly mapping?: "recorded" | "inferred";
+  readonly mapping?: "recorded" | "inferred" | "composition";
   readonly hunks?: readonly RefVerbatimHunk[];
   readonly codes?: readonly string[];
 };
@@ -70,7 +76,24 @@ export type RefVerbatimOptions = {
   readonly ceiling?: readonly string[];
   readonly linkComponents?: readonly string[];
   readonly strict?: boolean;
+  /** The component layer package (@clossys/designer-ui) a composition's imports resolve through; default the components.json folder, then the package's ui/. */
+  readonly ui?: string;
+  /** The slot document whose `uses` a composition is checked against; default the slot's own slot.json. */
+  readonly slotDoc?: { readonly uses?: readonly string[] };
 };
+
+/** One ds-only scan event of a source file, in source order. */
+export type DsOnlyEvent =
+  | { readonly type: "import"; readonly specifier: string; readonly typeOnly: boolean; readonly names: readonly string[] }
+  | { readonly type: "dynamic"; readonly specifier: string }
+  | { readonly type: "markup"; readonly tag: string; readonly attr: string };
+
+export declare const DS_COMPONENT_LAYER: "@clossys/designer-ui";
+export declare const DS_FRAME_LANDMARKS: ReadonlySet<string>;
+/** The ds-only scan shared by the Studio ds-only test and the composition rule. */
+export declare function dsOnlyEvents(text: string, fileName: string, options?: { readonly kind?: "section" | "frame"; readonly blockMarkup?: ReadonlySet<string> }): readonly DsOnlyEvent[];
+/** True when a lineage reference points into Foundry's own package folders or the `foundry` registry. */
+export declare function selfCitation(ref: string): boolean;
 
 export type BaselineRow = { readonly slot: string; readonly element: string; readonly version: number; readonly hash: string; readonly codes?: readonly string[] };
 

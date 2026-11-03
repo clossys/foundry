@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-contract-v2.json",
-  "sha256": "e3e3a1f7c8fe33f7fe68633f0b8834a301c15c02ddb20232584bd495ed662d50",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-11-01T16:09:14Z"
+  "candidate": "studio-contract-v3.json",
+  "sha256": "3c0783278bf9a52a95305a1fda2f6a5a981159d8eccb2abd6b5726e24a3dabba",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the strict composition gate (W6-COMPOSITION-LINEAGE)",
+  "at": "2026-11-03T12:00:00Z"
 }

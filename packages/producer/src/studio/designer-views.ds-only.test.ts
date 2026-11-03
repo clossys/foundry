@@ -7,6 +7,7 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { listSlots, readCandidate, readSlot } from '../records/slots.js';
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from '../records/slot-model/index.js';
+import { DS_COMPONENT_LAYER, dsOnlyEvents } from '@clossys/designer/ref-verbatim';
 
 /**
  * AMEND-1 ds-only check for every Studio section and frame the page records place: each folder
@@ -31,9 +32,8 @@ const FRAMES = join(STUDIO, 'frames');
 const folders = (root: string) => readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
 const FOLDERS = folders(VIEWS);
 const FRAME_FOLDERS = folders(FRAMES);
-const COMPONENT_LAYER = '@clossys/designer-ui';
+const COMPONENT_LAYER = DS_COMPONENT_LAYER;
 const FRAME_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react', '../../components/StudioProviders', '../../lib/studio-icons']);
-const FRAME_LANDMARKS = new Set(['header', 'main', 'aside']);
 const CLOSSYS = resolve(STUDIO, '../../../clossys');
 const REFERENCES = resolve(STUDIO, '../../designer/references/shadcn');
 
@@ -123,28 +123,15 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
     if (!/\.tsx?$/.test(name) || /\.test\.tsx?$/.test(name)) continue;
     const file = join(folder, name);
     const label = relative(STUDIO, file);
-    const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, name.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
-    const visit = (node: ts.Node) => {
-      const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
-      if (specifier !== undefined) {
+    // The scan (imports and raw styled markup, in source order) is shared with ref-verbatim's composition rule.
+    for (const event of dsOnlyEvents(readFileSync(file, 'utf8'), file, { kind, blockMarkup })) {
+      if (event.type === 'import') {
+        const { specifier, typeOnly } = event;
         const inside = specifier.startsWith('./') && !resolve(folder, specifier).slice(folder.length + 1).includes(sep);
-        const typeOnly = ts.isImportDeclaration(node) && !!node.importClause?.isTypeOnly;
         const runtime = kind === 'frame' && (FRAME_RUNTIME.has(specifier) || typeOnly);
         if (specifier !== COMPONENT_LAYER && !inside && !runtime && !composes.has(specifier)) violations.push(`${label}: imports ${specifier}`);
-      }
-      if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
-        const tag = node.tagName.getText(source);
-        const value = classAttribute(node)?.initializer;
-        const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
-        if (/^[a-z]/.test(tag) && !(kind === 'frame' && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
-          if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
-          const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
-          if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
-        }
-      }
-      ts.forEachChild(node, visit);
-    };
-    visit(source);
+      } else if (event.type === 'markup') violations.push(`${label}: <${event.tag} ${event.attr}>`);
+    }
   }
   return violations;
 }

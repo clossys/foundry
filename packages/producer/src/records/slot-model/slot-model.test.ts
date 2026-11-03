@@ -81,6 +81,22 @@ describe("slot model schema (F1)", () => {
   });
 });
 
+describe("composition lineage (W6)", () => {
+  const withSource = (source: unknown) => JSON.stringify({ ...page, meta: { source } });
+  const part = { slot: "components.card", files: ["registry/aria-nova/ui/card.tsx"] };
+  it("accepts a composition of declared parts and refuses one without parts", () => {
+    expect(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "composition", ref: [], parts: [part] }))).toEqual([]);
+    for (const parts of [undefined, [], [{ slot: "components.card", files: [] }], [{ slot: "Card", files: ["card.tsx"] }], [part, part], [{ ...part, extra: true }]]) {
+      expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "composition", ref: [], ...(parts ? { parts } : {}) }))), JSON.stringify(parts)).toEqual(["candidate-source"]);
+    }
+  });
+  it("keeps parts to compositions and a ref on registry and derived lineage", () => {
+    expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "registry", ref: ["shadcn-aria/card@4.23.0"], parts: [part] })))).toEqual(["candidate-source"]);
+    expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "derived", ref: [] })))).toEqual(["candidate-source"]);
+    expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "hand-drawn", ref: [] })))).toEqual(["candidate-source"]);
+  });
+});
+
 describe("derived inputs and uses (F10)", () => {
   const known = new Set(["identity.brand.essence", "strings.common", "components.button", "sections.hero", "page.home"]);
 

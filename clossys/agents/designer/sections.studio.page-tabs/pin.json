@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-page-tabs-v2.json",
-  "sha256": "7a552df3e87c368aec1f2a7aa79a5a0eb5afefdee188590cd7e440dff8e1d309",
-  "pinnedBy": "owner:2026-11-03 STUDIO-TEMPLATE-FIX go",
-  "at": "2026-11-03T15:00:00Z"
+  "candidate": "studio-page-tabs-v3.json",
+  "sha256": "ffbe54273e7446434a16d3d367590f55bb77898b378bfe574caf285fad310b38",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the strict composition gate (W6-COMPOSITION-LINEAGE)",
+  "at": "2026-11-03T12:00:00Z"
 }

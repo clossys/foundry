@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-page-header-v1.json",
-  "sha256": "fe2fbae4c45d557585481883a8cd84cda52eccb4570528d49396cb24c5fec693",
-  "pinnedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
+  "candidate": "studio-page-header-v2.json",
+  "sha256": "8bc6bcd307f126836fdd3c9ffe0779be254f4652859eefd2e619acc73dc9bb0a",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the strict composition gate (W6-COMPOSITION-LINEAGE)",
   "at": "2026-11-03T12:00:00Z"
 }

@@ -61,7 +61,7 @@
   "inputs": [],
   "uses": [],
   "notNeeded": {
-    "reason": "no approved-registry source; composition lineage pending (W6). No vendored item in the approved set maps to this slot (Recharts is not vendored; shadcn chart maps to chart-area/bar/line/sparkline only; manifest gap row); candidate v1 fails ref-verbatim.",
+    "reason": "no approved-registry source; W6 composition check (strict, chart-range-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-PART: a primitive slot with no stock parts in uses; imports outside the stock parts: recharts, @/components/ui/chart (absent from the component layer). No vendored item in the approved set maps to this slot (Recharts is not vendored; shadcn chart maps to chart-area/bar/line/sparkline only; manifest gap row); candidate v1 fails ref-verbatim.",
     "since": "2026-11-03"
   }
 }

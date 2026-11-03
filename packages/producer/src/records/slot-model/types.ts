@@ -92,10 +92,17 @@ export interface PinDoc {
   readonly at: string;
 }
 
-export const SOURCE_KINDS = ["registry", "derived", "original"] as const;
+export const SOURCE_KINDS = ["registry", "derived", "original", "composition"] as const;
+/** One stock part of a `composition` source: a pinned slot and the exact vendored reference paths its pin maps. */
+export interface CompositionPart {
+  readonly slot: string;
+  readonly files: readonly string[];
+}
 export interface SourceDoc {
   readonly kind: typeof SOURCE_KINDS[number];
   readonly ref: readonly string[];
+  /** Only for kind `composition` (and required there): the pinned registry slots the code places. */
+  readonly parts?: readonly CompositionPart[];
   readonly hash?: string;
   readonly license?: string;
 }

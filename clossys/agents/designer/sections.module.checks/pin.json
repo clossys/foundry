@@ -1,6 +1,6 @@
 {
-  "candidate": "module-checks-v1.json",
-  "sha256": "ee6b1831b5db1adb471755b6dec330862619d8464ac93d47094ba53deb11e728",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T22:00:00Z"
+  "candidate": "module-checks-v2.json",
+  "sha256": "3fef713401e52a3e89788ce7fb276523a73a6b9e485abd571817bd87bd62b280",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the strict composition gate (W6-COMPOSITION-LINEAGE)",
+  "at": "2026-11-03T12:00:00Z"
 }

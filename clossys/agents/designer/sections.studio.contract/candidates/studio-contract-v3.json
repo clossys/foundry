@@ -1,0 +1,107 @@
+{
+  "name": "studio-contract",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\nexport interface ContractCopy {\n  title: string;\n  description: string;\n  factsLabel: string;\n  inputsLabel: string;\n  fact: string;\n  value: string;\n  input: string;\n  type: string;\n  required: string;\n  yes: string;\n  no: string;\n  none: string;\n}\n\n/** The `contract` input of `sections.studio.contract`. */\nexport interface ContractInput {\n  copy: ContractCopy;\n  facts: readonly { label: string; value: string }[];\n  inputs?: readonly { name: string; type: string; required: boolean }[];\n  lists: readonly { label: string; items: readonly string[] }[];\n}\n\n/** `sections.studio.contract`: the leaf's recorded facts, inputs and the lists it reads, binds and depends on. */\nexport default function ContractSection({ contract }: { contract: ContractInput }) {\n  return <Card size=\"sm\" data-studio-section=\"contract\">\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{contract.copy.title}</CardTitle>\n      <CardDescription>{contract.copy.description}</CardDescription>\n    </CardHeader>\n    <CardContent className=\"flex flex-col gap-4\">\n      {contract.facts.length > 0 && <Table aria-label={contract.copy.factsLabel}>\n        <TableHeader>\n          <TableHead isRowHeader>{contract.copy.fact}</TableHead>\n          <TableHead>{contract.copy.value}</TableHead>\n        </TableHeader>\n        <TableBody>\n          {contract.facts.map(fact => <TableRow key={fact.label} id={fact.label}>\n            <TableCell>{fact.label}</TableCell>\n            <TableCell className=\"whitespace-normal\">{fact.value}</TableCell>\n          </TableRow>)}\n        </TableBody>\n      </Table>}\n      {contract.inputs && contract.inputs.length > 0 && <Table aria-label={contract.copy.inputsLabel}>\n        <TableHeader>\n          <TableHead isRowHeader>{contract.copy.input}</TableHead>\n          <TableHead>{contract.copy.type}</TableHead>\n          <TableHead>{contract.copy.required}</TableHead>\n        </TableHeader>\n        <TableBody>\n          {contract.inputs.map(input => <TableRow key={input.name} id={input.name}>\n            <TableCell>{input.name}</TableCell>\n            <TableCell>{input.type}</TableCell>\n            <TableCell>{input.required ? contract.copy.yes : contract.copy.no}</TableCell>\n          </TableRow>)}\n        </TableBody>\n      </Table>}\n      {contract.lists.map(list => <CardDescription key={list.label} className=\"flex flex-wrap items-center gap-1\">\n        {list.label}\n        {list.items.length ? list.items.map(item => <Badge key={item} variant=\"outline\">{item}</Badge>) : <Badge variant=\"ghost\">{contract.copy.none}</Badge>}\n      </CardDescription>)}\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-contract\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Contract\",\n  \"description\": \"A leaf's recorded facts, inputs and the lists it reads, binds and depends on.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"table\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-contract/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.contract",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.table",
+          "files": [
+            "registry/aria-nova/ui/table.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:4b19f88c68c98b0555dce70fa4b1cec2fb964eccb6e8bbb2e0112b3abaaa5d19",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-contract",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.contract",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "writer",
+        "model": "UNKNOWN",
+        "by": "studio-contract-copy"
+      },
+      "reason": "Bind the existing Contract section labels through display-ready Writer copy input.",
+      "createdAt": "2026-11-01T16:09:14Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.contract-title",
+          "studio.contract-description",
+          "studio.contract-facts-label",
+          "studio.contract-inputs-label",
+          "studio.contract-fact",
+          "studio.contract-value",
+          "studio.contract-input",
+          "studio.contract-type",
+          "studio.contract-required",
+          "studio.contract-yes",
+          "studio.contract-no",
+          "studio.contract-none"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}
