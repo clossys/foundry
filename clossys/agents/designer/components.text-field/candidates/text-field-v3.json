@@ -1,0 +1,128 @@
+{
+  "name": "text-field",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "input.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  composeRenderProps,\n  Input as InputPrimitive,\n} from \"react-aria-components\"\n\nfunction Input({\n  className,\n  type,\n  ...props\n}: React.ComponentProps<typeof InputPrimitive>) {\n  return (\n    <InputPrimitive\n      type={type}\n      data-slot=\"input\"\n      className={composeRenderProps(className, (className) =>\n        cn(\n          \"h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none file:inline-flex file:h-6 file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40\",\n          className\n        )\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Input }\n"
+    },
+    {
+      "path": "textarea.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  composeRenderProps,\n  TextArea as TextareaPrimitive,\n} from \"react-aria-components\"\n\nfunction Textarea({\n  className,\n  ...props\n}: React.ComponentProps<typeof TextareaPrimitive>) {\n  return (\n    <TextareaPrimitive\n      data-slot=\"textarea\"\n      className={composeRenderProps(className, (className) =>\n        cn(\n          \"flex field-sizing-content min-h-16 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-base transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:bg-input/50 disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30 dark:disabled:bg-input/80 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40\",\n          className\n        )\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Textarea }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.text-field",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/input@4.23.0",
+        "shadcn-aria/textarea@4.23.0"
+      ],
+      "hash": "sha256:6866498415f95ef30d92f1040678545fd18e63b4588bfcc16f389d35a0345bb6",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "input.tsx": "registry/aria-nova/ui/input.tsx"
+      },
+      "parts": [
+        {
+          "registry": "shadcn-aria",
+          "item": "textarea",
+          "version": "4.23.0",
+          "hash": "sha256:7a3de966679c36f1ff35a29f67b844abf00887e607e8d3eb3537d83efefeeb99",
+          "files": {
+            "textarea.tsx": "registry/aria-nova/ui/textarea.tsx"
+          }
+        }
+      ]
+    },
+    "element": {
+      "id": "text-field",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.text-field",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "SECTION-DEPS"
+      },
+      "reason": "SECTION-DEPS: text-field-v2 code unchanged; adds the stock shadcn aria-nova textarea verbatim as the line.multiline member (catalog alias components.textarea -> components.text-field), so sections that import @/components/ui/textarea resolve it from the pinned library.",
+      "createdAt": "2026-11-03T16:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--ring"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "input.tsx",
+        "export": "Input",
+        "props": {
+          "type": "email",
+          "placeholder": "name@example.com",
+          "aria-label": "Email",
+          "className": "max-w-sm"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

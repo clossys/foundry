@@ -1,4 +1,6 @@
 import { JSDOM } from 'jsdom';
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { BlockViewerCardIframe, BlockViewerIframe, observeSpecimenSize, specimenContentHeight, specimenSource } from './BlockViewerIframe';
@@ -131,6 +133,9 @@ describe('BlockViewer iframe extraction and bounded data fit', () => {
     expect(specimenContentHeight(reflow, 1280, 312, 480)).toBe(180);
     expect(specimenContentHeight({ ...reflow, height: 5000 }, 1280, 312, 480)).toBe(480);
     expect(specimenContentHeight({ ...reflow, height: 0 }, 1280, 312, 480)).toBeUndefined();
+    // A failed page specimen (no canvas host) measures 0 and must still reach its card.
+    expect(specimenContentHeight({ ...reflow, height: 0, failed: true }, 1280, 312, 480)).toBe(1);
+    expect(specimenContentHeight({ ...reflow, height: -1, failed: true }, 1280, 312, 480)).toBeUndefined();
   });
 
   it('holds a card frame behind the stock skeleton at the card aspect until it reports a size', () => {
@@ -146,5 +151,41 @@ describe('BlockViewer iframe extraction and bounded data fit', () => {
     expect(frame.className).toContain('opacity-0');
     expect(frame.getAttribute('height')).toBe('480');
     expect(frame.hasAttribute('inert')).toBe(true);
+  });
+  it('shows the unavailable badge, never a blank ready box, when a specimen reports a failure', async () => {
+    const dom = new JSDOM('<div id="host"></div>', { url: 'https://example.com/' });
+    Object.defineProperty(dom.window.HTMLIFrameElement.prototype, 'clientWidth', { configurable: true, get: () => 640 });
+    vi.stubGlobal('window', dom.window); vi.stubGlobal('document', dom.window.document); vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+    try {
+      const render = async (failed: boolean, height = 64) => {
+        const container = dom.window.document.createElement('section');
+        dom.window.document.body.append(container);
+        const root = createRoot(container);
+        await act(async () => root.render(<BlockViewerCardIframe src="/__specimen?element=sample&width=1280" title="Sample" viewport={1280} iframeKey={`sample-${failed}-${height}`}
+          loadingLabel="Loading sample" failedLabel="Preview unavailable" wrap={frame => <div data-card-body>{frame}</div>} />));
+        const frame = container.querySelector('iframe')!;
+        await act(async () => {
+          frame.dispatchEvent(new dom.window.Event('load'));
+          // Build errors leave the canvas host painting a short box: not empty, but failed.
+          dom.window.dispatchEvent(new dom.window.MessageEvent('message', { source: frame.contentWindow, origin: 'https://example.com',
+            data: { type: 'clossys:specimen-size', layout: 'reflow', width: 1280, height, empty: height === 0, failed } }));
+        });
+        return { container, root };
+      };
+      const broken = await render(true);
+      const badge = broken.container.querySelector('[data-preview-status="unavailable"]');
+      expect(badge?.textContent).toBe('Preview unavailable');
+      expect(badge?.closest('[data-card-body]')).not.toBeNull();
+      expect(broken.container.querySelector('iframe')).toBeNull();
+      expect(broken.container.querySelector('[data-specimen-state="ready"]')).toBeNull();
+      // A failed page specimen with no canvas host paints nothing and measures 0.
+      const bare = await render(true, 0);
+      expect(bare.container.querySelector('[data-preview-status="unavailable"]')?.textContent).toBe('Preview unavailable');
+      expect(bare.container.querySelector('iframe')).toBeNull();
+      const healthy = await render(false);
+      expect(healthy.container.querySelector('[data-specimen-state="ready"] iframe')?.getAttribute('height')).toBe('64');
+      expect(healthy.container.querySelector('[data-preview-status]')).toBeNull();
+      await act(async () => { broken.root.unmount(); bare.root.unmount(); healthy.root.unmount(); });
+    } finally { vi.unstubAllGlobals(); dom.window.close(); }
   });
 });

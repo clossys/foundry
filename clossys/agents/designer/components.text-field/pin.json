@@ -1,6 +1,6 @@
 {
-  "candidate": "text-field-v2.json",
-  "sha256": "a08fa92e4070deec1866e1868df7bfa6c642f3598c727a5b531bc7ece6d128e9",
-  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
-  "at": "2026-11-03T12:00:00Z"
+  "candidate": "text-field-v3.json",
+  "sha256": "8a18220abf0a05d5ac272d240b55241c3a795d826f983a0cb204b928575128bf",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-DEPS)",
+  "at": "2026-11-03T15:57:07.598Z"
 }
