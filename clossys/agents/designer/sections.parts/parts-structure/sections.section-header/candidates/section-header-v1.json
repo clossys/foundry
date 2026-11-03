@@ -1,0 +1,109 @@
+{
+  "name": "section-header",
+  "type": "registry:block",
+  "registryDependencies": [
+    "badge",
+    "button",
+    "semantic-content",
+    "status-mark"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "section-header/section-header.tsx",
+      "type": "registry:block",
+      "content": "import { Badge } from \"@/components/ui/badge\"\nimport { LinkButton } from \"@/components/ui/button\"\nimport { SemanticContent } from \"@/components/ui/semantic-content\"\nimport { StatusMark } from \"@/components/ui/status-mark\"\n\ntype Action = { label: string; href: string }\ntype Stat = { label: string; value: string; tone?: \"neutral\" | \"success\" | \"warning\" | \"danger\" | \"info\" }\n\nconst headingSize = {\n  display: \"text-4xl md:text-5xl\",\n  standard: \"text-3xl md:text-4xl\",\n  compact: \"text-xl md:text-2xl\",\n} as const\n\n/**\n * Section header: optional eyebrow badge, heading, description, up to two\n * actions and an optional stats row. align.start | align.center and\n * density.display | standard | compact are the closed members.\n */\nexport default function SectionHeader({\n  align = \"start\",\n  density = \"standard\",\n  eyebrow,\n  heading = \"Built for every team\",\n  description = \"Everything you need to plan, ship and measure in one place.\",\n  actions = [],\n  stats = [],\n}: {\n  align?: \"start\" | \"center\"\n  density?: \"display\" | \"standard\" | \"compact\"\n  eyebrow?: string\n  heading?: string\n  description?: string\n  actions?: Action[]\n  stats?: Stat[]\n}) {\n  const centered = align === \"center\"\n  return (\n    <header\n      data-slot=\"section-header\"\n      data-align={align}\n      data-density={density}\n      className={centered ? \"mx-auto flex max-w-2xl flex-col items-center gap-4 text-center\" : \"flex max-w-3xl flex-col items-start gap-4\"}\n    >\n      {eyebrow && <Badge variant=\"secondary\">{eyebrow}</Badge>}\n      <h2 className={`font-heading font-semibold tracking-tight text-balance text-foreground ${headingSize[density]}`}>{heading}</h2>\n      {description && (\n        <SemanticContent as=\"p\" className=\"max-w-2xl text-muted-foreground\">\n          {description}\n        </SemanticContent>\n      )}\n      {actions.length > 0 && (\n        <div className=\"flex flex-wrap gap-2\">\n          {actions.slice(0, 2).map((a, i) => (\n            <LinkButton key={a.label} href={a.href} variant={i === 0 ? \"default\" : \"outline\"}>\n              {a.label}\n            </LinkButton>\n          ))}\n        </div>\n      )}\n      {stats.length > 0 && (\n        <SemanticContent as=\"dl\" className={centered ? \"flex flex-wrap justify-center gap-6\" : \"flex flex-wrap gap-6\"}>\n          {stats.map((s) => (\n            <div key={s.label} className=\"flex flex-col gap-1\">\n              <SemanticContent as=\"dt\">{s.label}</SemanticContent>\n              <SemanticContent as=\"dd\">\n                <StatusMark tone={s.tone ?? \"neutral\"}>{s.value}</StatusMark>\n              </SemanticContent>\n            </div>\n          ))}\n        </SemanticContent>\n      )}\n    </header>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.section-header",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/badge@4.23.0",
+        "shadcn-aria/button@4.23.0"
+      ],
+      "hash": "sha256:4a0720dd79df4c98c849bc20cb809246b2f668673eea2e6aa7d94af74350580f",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "section-header",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.section-header",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-LAST4"
+      },
+      "reason": "Section header composed of the filled Badge (eyebrow), SemanticContent, LinkButton actions (max two) and StatusMark stats; align start|center and density display|standard|compact.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-PRIMITIVE-AS-REF",
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; findings recorded, not pinned"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "badge",
+          "button",
+          "semantic-content",
+          "status-mark"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--font-heading",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--primary",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--tracking-tight",
+          "--destructive",
+          "--font-sans",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}
