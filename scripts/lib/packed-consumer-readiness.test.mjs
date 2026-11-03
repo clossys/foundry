@@ -468,9 +468,11 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/specimen", "@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview",
     "@clossys/publisher/web/publisher-v2",
   ];
-  const landed = (rejected, contentRoute) => ({
+  // `./web/host` (PublisherHost) reaches Designer's frames: it rejects without the React/Aria peers.
+  const landed = (rejected, contentRoute, host = "rejects") => ({
     ...Object.fromEntries(landedSpecifiers.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"])),
     "@clossys/publisher/web/content-route": contentRoute,
+    "@clossys/publisher/web/host": host,
   });
   const views = ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"];
 
@@ -507,14 +509,14 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/web/registered-route": "imports",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
-    ...landed(["@clossys/publisher/web/admin-pages"], { default: "imports", "react-server": "imports" }),
+    ...landed(["@clossys/publisher/web/admin-pages"], { default: "imports", "react-server": "imports" }, "imports"),
   });
   assert.deepEqual(rows.tailwindcss, {
     ...expected(),
     "@clossys/publisher/web/registered-route": "imports",
     "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
     "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
-    ...landed([], { default: "imports", "react-server": "imports" }),
+    ...landed([], { default: "imports", "react-server": "imports" }, "imports"),
   });
 });
 
