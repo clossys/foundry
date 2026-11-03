@@ -157,7 +157,8 @@ A consumer that vendors all six packages (`producer`, `strategist`,
 clean checkout, including an integration branch:
 
 ```sh
-node scripts/pack-cohort.mjs --out <dir>          # build, pack, write manifest
+node scripts/pack-cohort.mjs --out <dir>          # release: pinned Studio only
+node scripts/pack-cohort.mjs --out <dir> --draft  # DRAFT, not release-qualified
 node scripts/pack-cohort.mjs --check <dir> [--expected-sha <sha>]
 ```
 
@@ -173,6 +174,16 @@ missing file, any digest, identity or `private` mismatch, and a
 `overlay-manifest.mjs assert-public --cohort` checks the six source
 `package.json` files. The pack is not scanned with the identity denylist;
 run the artifact-safety scan before the tarballs leave the machine.
+
+A release pack needs every Studio frame, section and Writer copy slot pinned.
+`--draft` builds Studio from explicit native bindings instead (pack-five's
+`--preview-bindings`; by default the bindings the committed
+`packages/producer/studio/generated/studio-map.json` names, checked against
+its `bindingDigest`), with unpinned copy taken from the newest draft. The
+overlay manifest keeps its exact schema; the draft marker is the `preview`
+descriptor (`status: "DRAFT"`, `approved: false`, `releaseQualified: false`)
+in `producer.tgz`'s `dist/studio/manifest.json`, and `--check` prints it. A
+draft pack is for integration branches only, never a release.
 
 ## Limits
 
