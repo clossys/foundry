@@ -1,6 +1,6 @@
 {
-  "candidate": "progress-bar-v1.json",
-  "sha256": "1ea5cc03c2eb14cfd94b4b97a20e8b133276fc167c15530bc2ee524558ac5593",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "progress-bar-v2.json",
+  "sha256": "e2894a42a879fdd2523b732b0212544d36d39808e358fefb8ebc076cf368d2e3",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

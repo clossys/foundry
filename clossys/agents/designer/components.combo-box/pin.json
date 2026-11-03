@@ -1,6 +1,6 @@
 {
-  "candidate": "combo-box-v1.json",
-  "sha256": "068e68791bde2a03c511d6165cd5bdedb4415cd2d4d6b01a152edf14360e0983",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "combo-box-v2.json",
+  "sha256": "b2eadda0ae385e67a3c26838ad2f7b0a2a65e29d9318e6ba3d31bcfce870bd03",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }

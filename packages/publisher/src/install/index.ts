@@ -211,6 +211,10 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       const registryFiles: RegistryFile[] = [];
       for (const file of found.item.files as unknown[]) {
         if (!isRecord(file) || typeof file.path !== "string") continue;
+        // A non-code file with nowhere to land (a LICENCE.md, a theme's token data) is the item's
+        // documentation, not part of the app: shadcn could not place it, so it is not installed.
+        // A code file without a target stays a finding below.
+        if (!CODE.test(file.path) && !installedPath({ path: file.path, ...(typeof file.type === "string" ? { type: file.type } : {}), ...(typeof file.target === "string" ? { target: file.target } : {}) })) continue;
         const content = typeof file.content === "string" ? file.content : sources.get(file.path);
         if (content === undefined) { findings.push({ code: "not-a-registry-item", slot, detail: `${id}: registry file ${file.path} has no content and is not in the record payload` }); return; }
         registryFiles.push({ ...(file as RegistryFile), content });

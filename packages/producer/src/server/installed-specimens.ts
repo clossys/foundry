@@ -23,7 +23,7 @@ import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node
 import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { resolveSampleCopy, specimenStateOf, VISIBLE_STATE_CSS, type SpecimenState } from "./specimen-state.js";
-import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
+import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
 import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -31,7 +31,7 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 
 /** Bumped when the generated specimen pages change shape. */
-const SPECIMEN_FORMAT = "studio-specimens/5";
+const SPECIMEN_FORMAT = "studio-specimens/6";
 const SITE_PREFIX = "/__specimen-site/";
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -172,7 +172,10 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   for (const slot of [...options.slots].sort((a, b) => Number(!a.startsWith("themes.")) - Number(!b.startsWith("themes.")) || a.localeCompare(b))) {
     const pin = pins[slot]!, page = specimenPageId(slot, pin.version);
     if (slot.startsWith("themes.")) {
-      const item = await readJson(join(library, "library", slot, pin.element, `v${pin.version}`, "registry-item.json")).catch(() => undefined);
+      // The pinned candidate itself, through the same slot reader every other page installs from.
+      const record = await source.read(`${slot}/${pin.element}`, pin.version).catch(() => undefined);
+      let item: any;
+      try { item = record ? JSON.parse(record.payload.raw) : undefined; } catch { item = undefined; }
       if (!item) { findings.push({ code: "missing-record", slot, detail: `${slot}: no registry item for ${pin.element}@v${pin.version}` }); continue; }
       // The item itself installs through the `include` of every other page in the pass; this page only reads its variables.
       if (item.type === "registry:font" && item.font?.variable) await writeFile(join(pagesDir, `${page}.tsx`), fontPage(item.font.variable, String(item.title ?? item.font.family ?? pin.element)));
@@ -190,11 +193,14 @@ async function buildPass(options: { library: string; substrate: string; pins: In
       delete props.children;
       // Every other item renders the sample children its candidate's preview fixture declares:
       // text, Writer copy and elements of the candidate's own module (specimen-tree.ts).
-      const sample = fixtureChildren(result.slots.find(row => row.slot === slot && row.mounted)?.record.preview.fixtures);
+      const mounted = result.slots.find(row => row.slot === slot && row.mounted)?.record;
+      const sample = fixtureChildren(mounted?.preview.fixtures);
       if (sample !== undefined) {
         const text = { ...copy, ...result.page.frame.text };
         const source = await readFile(join(substrate, result.page.frame.entry.file), "utf8").catch(() => "");
-        const issues = specimenTreeIssues(sample, moduleExports(source), text);
+        let item: unknown;
+        try { item = JSON.parse(mounted?.payload.raw ?? ""); } catch { item = undefined; }
+        const issues = specimenTreeIssues(sample, moduleExports(source), text, itemDependencies(item));
         if (issues.length) { findings.push({ code: "invalid-page", slot, detail: `${slot}/${pin.element}@v${pin.version} preview children: ${issues.join("; ")}` }); continue; }
         props.children = resolveSampleCopy(sample, text);
       }

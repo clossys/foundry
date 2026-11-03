@@ -1,6 +1,6 @@
 {
-  "candidate": "grid-list-v1.json",
-  "sha256": "d4464aca30e00101283884aa521adb61a43a6bf34e517125d7a169aef923bb24",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "grid-list-v2.json",
+  "sha256": "eb92e69c5c43b8ae2b46103526600194f65004937663c4d48300d6ea8b3303be",
+  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "at": "2026-11-03T12:00:00Z"
 }
