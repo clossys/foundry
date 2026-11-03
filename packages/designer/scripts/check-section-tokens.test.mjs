@@ -117,9 +117,17 @@ test("an adapted file passes ref-verbatim but is not stock bytes: it is linted a
 });
 
 test("stock bytes still need a strict ref-verbatim pass", () => {
-  const findings = sectionShellFindings(consumer({ heroDeps: ["example"], heroMeta: CLAIM, heroFiles: { "hero.tsx": STOCK_CODE }, heroRecord: { lineage: { ...lineage({ "hero.tsx": STOCK_PATH }), mode: "original" }, payload: ["hero.tsx"] } }), catalog);
+  // Byte-identical stock of a registry:ui primitive: every file row passes, but a
+  // section citing a primitive fails the strict check (REF-PRIMITIVE-AS-REF).
+  const ui = JSON.parse(readFileSync(join(pkg, "references/manifest.json"), "utf8")).items.find(row => row.registry === "shadcn-aria" && row.name === "separator" && row.version === "4.23.0");
+  const path = "registry/aria-nova/ui/separator.tsx";
+  const code = normalizeReference(readFileSync(join(pkg, "references", ui.dir, path), "utf8"), path, configFromComponents(JSON.parse(components)));
+  const root = consumer({ heroDeps: ["separator"], heroMeta: CLAIM, heroFiles: { "hero.tsx": code }, heroRecord: { lineage: { mode: "verbatim", source: { registry: ui.registry, item: ui.name, version: ui.version, hash: ui.hash, files: { "hero.tsx": path } } }, payload: ["hero.tsx"] } });
+  const strict = checkElement(root, { slot: "sections.hero", element: "hero", version: 1 }, { strict: true });
+  assert.deepEqual([strict.status, strict.files.map(row => row.status), strict.findings.map(row => row.code)], ["fail", ["pass"], ["REF-PRIMITIVE-AS-REF"]]);
+  const findings = sectionShellFindings(root, catalog);
   for (const row of SHELL) assert.ok(findings.includes(row), row);
-  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", STOCK_CODE]]));
+  assert.deepEqual(findings.filter(row => !row.startsWith("shell:")), tokenFindings("hero", [["hero.tsx", code]]));
 });
 
 test("class tokens drop variants, important marks and opacity modifiers", () => {
