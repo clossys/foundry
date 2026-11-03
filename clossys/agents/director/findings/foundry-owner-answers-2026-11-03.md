@@ -15,3 +15,4 @@ by: director
 - Next hire: none; agents only until the 5 workspaces are live.
 - Market size: the segment stated in words (founders building with coding agents) with no count; the method is qualitative, and a count is added only once a dated source exists.
 - Planner defaults, open to owner change and not owner words: market timing is now; company strength claims the practice, not uniqueness; acquisition trigger is a missing capability that a free, trusted registry already covers, limited to free or open-licence sources with no paid acquisitions; competency gap size is the count of failing checklist rows at the last browser check; acquisition cost is one install and one CLI run.
+- Naming architecture: branded house. Clossys is the master brand; product names describe what each thing is: Clossys Foundry (the engine) and Clossys Studio (the app). The agents keep plain role names: Director, Designer, Writer and Publisher.
