@@ -119,7 +119,7 @@ export function stockFiles(root, entry, options = {}) {
     for (const file of code) {
       const path = mapped[file.path];
       const manifestFile = typeof path === "string" ? ref.files.find(row => row.path === path) : undefined;
-      if (!manifestFile || checked.get(file.path).reference !== path) continue;
+      if (!manifestFile || checked.get(file.path)?.reference !== path) continue;
       const rawBytes = readFileSync(join(opts.referencesDir, ref.dir, path));
       if (sha256(rawBytes) !== manifestFile.sha256) continue;
       const stockHashes = new Set([manifestFile.sha256]);

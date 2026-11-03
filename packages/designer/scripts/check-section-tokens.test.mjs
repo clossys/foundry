@@ -81,6 +81,8 @@ const refused = (name, options) => {
   const findings = sectionShellFindings(consumer({ heroDeps: ["example"], heroMeta: CLAIM, ...options }), catalog);
   for (const row of SHELL) assert.ok(findings.includes(row), `${name}: ${row}`);
   for (const token of NOT_STOCK.split(" ")) assert.ok(findings.some(row => row.includes(`: ${token} is`)), `${name}: ${token} is linted`);
+  // All or nothing: a stock file beside unproven code is linted too.
+  if (options.heroFiles["hero.tsx"] === STOCK_CODE) assert.ok(findings.some(row => row.includes(" hero.tsx: ")), `${name}: stock hero.tsx is linted`);
   return findings;
 };
 
