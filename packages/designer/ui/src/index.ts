@@ -137,6 +137,8 @@ export * from "./foundry/layout"
 
 export * from "./foundry/studio-home-stock"
 export * from "./foundry/header-edge-toggle"
+export * from "./foundry/sidebar-static"
+export * from "./foundry/block-viewer-iframe"
 export * from "./foundry/studio-frames"
 
 // Explicit stock Radix picks for the frame's shared asChild tooltip/popover composition.

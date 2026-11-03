@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, within } from "@testing-library/react";
+import { cleanup, render as renderBare, within } from "@testing-library/react";
 import { DS_ATTR } from "../../catalog-core/provenance-attrs.js";
 import { scanProvenance } from "../../catalog-core/provenance-scan.js";
 import { runtimeHash, runtimeSnapshot, type RuntimeContent, type RuntimeContentRef, type RuntimeFillDescriptor } from "../../catalog-core/runtime-ports.js";
@@ -14,6 +14,8 @@ import { GROUP_B_SECTIONS, groupBRenderers } from "./group-b.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { groupBDataset } from "./group-b-dataset.js";
 import type { SectionRenderInput } from "./group-b-support.js";
+import { hostedRender } from "../../frames/__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fillsDir = resolve(here, "../../catalog/fills/foundry");

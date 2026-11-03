@@ -20,13 +20,16 @@ function state(): HarnessState {
   return (scope[KEY] ??= { pending: [], facade: false });
 }
 
-// Server entries keep client modules behind `React.lazy` boundaries (the
-// component-leaf facade, Frames' AppFrame/ShellCopyProvider/FrameStage, the
-// surface runtime). A streaming or RSC renderer resolves those boundaries; the
+// Server entries keep client modules behind `React.lazy` boundaries (Frames'
+// AppFrame/ShellCopyProvider/FrameStage and i18n providers, the surface
+// runtime). A streaming or RSC renderer resolves those boundaries; the
 // synchronous renderers most tests use (renderToStaticMarkup, renderToString,
 // a first `render`) would instead see a suspension. Start every boundary's
-// import as it is declared and settle them before any test runs, so a test
-// renders the same resolved client module production streams.
+// import as it is declared and settle them before each test, so a test renders
+// the same resolved client module production streams, including boundaries
+// declared by modules a previous test or mock factory imported late. The
+// component-leaf facade needs none of this: it resolves its client boundary
+// while it evaluates, so consumer hosts render it synchronously too.
 export function preloadingReact(actual: typeof ReactModule): typeof ReactModule {
   const lazy: typeof actual.lazy = factory => {
     const type = actual.lazy(factory) as ReturnType<typeof actual.lazy> & { _init?: (payload: unknown) => unknown; _payload?: unknown };
@@ -91,10 +94,14 @@ export async function ambientFacade(actual: FacadeModule): Promise<FacadeModule>
   return { ...actual, componentLeaf: ((leaf: `components.${string}`, part?: string) => wrap(actual.componentLeaf(leaf, part))) as FacadeModule["componentLeaf"] };
 }
 
-/** Settle pending lazy boundaries and load the ambient selection once a facade was mocked. */
+/**
+ * Settle pending lazy boundaries and load the ambient selection once a facade was mocked. Cheap when nothing is pending.
+ * A selection that cannot load under a test's own module mocks (an absent optional peer, say) stays unloaded, and the
+ * next settle retries it; a leaf rendered without it reports that through SelectedComponentLeaf.
+ */
 export async function settleHarness(loadSelection: () => Promise<{ marketingComponentSelection(): ConsumerComponentSelection }>): Promise<void> {
   const harness = state();
   while (harness.pending.length) await Promise.all(harness.pending.splice(0));
-  if (harness.facade && !harness.selection) harness.selection = (await loadSelection()).marketingComponentSelection();
+  if (harness.facade && !harness.selection) harness.selection = await loadSelection().then(module => module.marketingComponentSelection(), () => undefined);
   while (harness.pending.length) await Promise.all(harness.pending.splice(0));
 }

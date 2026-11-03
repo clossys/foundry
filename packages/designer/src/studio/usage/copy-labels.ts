@@ -4,11 +4,11 @@ import { readStudioCopy, type StudioCopyBinding } from '../copy-binding.js';
 /** Registered usage copy; the host supplies Writer and the requested locale. */
 export function createStudioUsageLabels(binding: StudioCopyBinding): UsagePanelLabels {
   return {
-    title: readStudioCopy(binding, { id: 'st.c4a87fn3bk' }),
-    using: readStudioCopy(binding, { id: 'st.5wb5mte3br' }),
+    title: readStudioCopy(binding, { id: 'st.nbe9kckxef' }),
+    using: readStudioCopy(binding, { id: 'st.37fjmkt06h' }),
     usedWhere: readStudioCopy(binding, { id: 'st.7pxepx20q1' }),
     reads: readStudioCopy(binding, { id: 'st.pavb1ytaa6' }),
-    composes: readStudioCopy(binding, { id: 'st.5bmmq4jy68' }),
+    composes: readStudioCopy(binding, { id: 'st.43k2vndngq' }),
     options: readStudioCopy(binding, { id: 'st.p24ypyt9sb' }),
     owns: readStudioCopy(binding, { id: 'st.w4kjq0eysq' }),
     exceptions: readStudioCopy(binding, { id: 'st.7pe3p3k88p' }),
@@ -17,12 +17,12 @@ export function createStudioUsageLabels(binding: StudioCopyBinding): UsagePanelL
     usedNowhere: readStudioCopy(binding, { id: 'st.111p0y7vyt' }),
     notLinked: readStudioCopy(binding, { id: 'st.3g545xa0gy' }),
     loading: readStudioCopy(binding, { id: 'st.h0jcz83wh7' }),
-    none: readStudioCopy(binding, { id: 'st.6vygykgwag' }),
+    none: readStudioCopy(binding, { id: 'st.qcry3z237f' }),
     layer: {
     themes: readStudioCopy(binding, { id: 'st.c331pzvwey' }),
-    assets: readStudioCopy(binding, { id: 'st.7fsbf7m1ak' }),
+    assets: readStudioCopy(binding, { id: 'st.qxaxqewq3p' }),
     components: readStudioCopy(binding, { id: 'st.jht60wz8e1' }),
-    sections: readStudioCopy(binding, { id: 'st.pvbdyf5y7k' }),
+    sections: readStudioCopy(binding, { id: 'st.ata62btvcq' }),
     frames: readStudioCopy(binding, { id: 'st.7rv315vzjm' }),
     pages: readStudioCopy(binding, { id: 'st.bgkzpf1ec0' }),
   },

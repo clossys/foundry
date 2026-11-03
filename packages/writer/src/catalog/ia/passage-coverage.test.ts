@@ -12,7 +12,10 @@ const additions = ["account-summary", "boundary-message", "error-state", "legal-
 const read = <T>(path: string): T => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8")) as T;
 type Section = { id: string; contract: { passageSchema: string; copy: unknown } };
 type Subject = { file: string; locale: string; record: WriterRecord };
-const sections = read<Section[]>("../../../../designer/src/catalog/slots/sections.json");
+// Specimen sections are Studio previews and are excluded from the Writer mirror.
+const specimen = (id: string) => id.startsWith("sections.specimen-");
+const allSections = read<Section[]>("../../../../designer/src/catalog/slots/sections.json");
+const sections = allSections.filter(section => !specimen(section.id));
 const sectionIA = read<{ layer: string; nodes: WriterNode[] }>("../../../../designer/src/catalog/ia/sections.json");
 const opaqueId = /^(?:lx|st|pt|ps|nr)\.[0123456789abcdefghjkmnpqrstvwxyz]{10}$/;
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -52,7 +55,8 @@ const library: WriterLibrary = {
 function mapNodes(nodes: WriterNode[]): WriterNode[] {
   return nodes.map(node => "children" in node
     ? { ...node, children: mapNodes(node.children) }
-    : { ...node, leaves: node.leaves.map(id => id.replace(/^sections\./, "passages.")) });
+    : { ...node, leaves: node.leaves.filter(id => !specimen(id)).map(id => id.replace(/^sections\./, "passages.")) })
+    .filter(node => "children" in node ? node.children.length > 0 : node.leaves.length > 0);
 }
 
 /** Test-local report: no production checker or CLI behavior is changed. */
@@ -101,7 +105,7 @@ describe("Designer to Writer passage catalog coverage", () => {
 
   it("reports zero schema-pair, record-leaf and dangling findings across all 52 non-specimen pairs and actual records", () => {
     const catalog = loadWriterCatalog();
-    const paired = sections.filter(section => !section.id.startsWith("sections.specimen-"));
+    const paired = allSections.filter(section => !specimen(section.id));
     expect(paired).toHaveLength(52);
     expect(new Set(paired.map(section => section.contract.passageSchema)).size).toBe(52);
     expect(catalog.slots.filter(slot => slot.layer === "passages")).toHaveLength(52);

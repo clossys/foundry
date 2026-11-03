@@ -2347,7 +2347,7 @@
         "key": "routeStudioLabels.layers.themes"
       },
       "before": "Tokens",
-      "after": "Tokens",
+      "after": "Themes",
       "rationale": "Retain “Tokens” as a familiar sentence-case label.",
       "role": "label",
       "budget": 40
@@ -4421,7 +4421,7 @@
         "key": "DEFAULT_USAGE_LABELS.layer.tokens"
       },
       "before": "Tokens",
-      "after": "Tokens",
+      "after": "Themes",
       "rationale": "Keep this concise, sentence-case category or control label; its meaning is already clear.",
       "role": "label",
       "budget": 32

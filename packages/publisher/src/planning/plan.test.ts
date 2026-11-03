@@ -29,9 +29,9 @@ describe("planning display references", () => {
     const item = plan.milestones[0]!.packs[0]!.items[0]!;
     const before = JSON.stringify(plan);
     expect(publisherPlanItemDisplay(item)).toMatchObject({ labelRef: { id: "st.9pds3yfrp5" }, needsInput: [] });
-    expect(publisherPlanItemDisplay(item, "/agents/designer").labelRef).toEqual({ id: "st.pb0ynfnh58" });
+    expect(publisherPlanItemDisplay(item, "/agents/designer").labelRef).toEqual({ id: "st.2zj7yrtkfr" });
     expect(publisherPlanItemDisplay(item, "/agents/writer").labelRef).toEqual({ id: "st.m22sa9p9y4" });
-    expect(publisherPlanItemDisplay(item, "/agents/publisher").labelRef).toEqual({ id: "st.eyyshzcr6r" });
+    expect(publisherPlanItemDisplay(item, "/agents/publisher").labelRef).toEqual({ id: "st.cy7122qr1d" });
     const unknown = publisherPlanItemDisplay(item, "/unknown-route");
     expect(unknown.labelRef).toBeUndefined();
     expect(unknown.needsInput).toEqual([{ path: "label", parent: "publisher.planPage", id: "/unknown-route" }]);

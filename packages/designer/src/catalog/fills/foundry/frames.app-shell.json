@@ -45,7 +45,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/AccountMenu.tsx",
-            "sha256": "5a297bacb790e09542aafa14416d86e847f1e1c15c7a0790b5a39badd371fbf2"
+            "sha256": "72c31cc1c2c3c7a32d017edc0f2242b86c0e32ba27b6bafe116932d51e5f1b3c"
           },
           {
             "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -53,7 +53,7 @@
           },
           {
             "path": "packages/designer/src/blocks/CommandMenu.tsx",
-            "sha256": "0c2a9838f06fae066ecbfa7087445664c595f5c299a526068b1da3d8d7b022da"
+            "sha256": "fc6af3399546a5f2522abe69cc5216770d2647d9ee01729f146ecfd24961f2dc"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
@@ -64,8 +64,16 @@
             "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
           },
           {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
+          },
+          {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Avatar.server.tsx",
+            "sha256": "ab46302d1b6d63c4e1380433f6c37035677e1f10e28fe2b234322216d2901c04"
           },
           {
             "path": "packages/designer/src/components/Banner.copy-context.tsx",
@@ -89,7 +97,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "41b44789318df5f61e3c55d62086dd8d1b4ea1f5f28c42600d39518f1ed69971"
+            "sha256": "2e681bf48e0e1dd67724c5e5b09451eeb83044f992742cebe716650f25879a99"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -97,7 +105,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "sha256": "c3a929cab0785f2840c5362ae2cbd2202bc8c81683d0fe3f92e328ac5cd0118a"
+            "sha256": "01b0102600681af1e7bde548135447de7cb9e6cb0060e7a746dc3b2e7c19da27"
           },
           {
             "path": "packages/designer/src/frames/frame-dock-layout.ts",
@@ -145,7 +153,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "938d82d06816df3518a7e788e393585903a83d107677eb522fbd72ae3f574594"
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
           },
           {
             "path": "packages/designer/src/shell/FrameSlots.tsx",
@@ -239,7 +247,7 @@
             "code": "DF2",
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
-            "line": 3
+            "line": 4
           },
           {
             "code": "DF2",

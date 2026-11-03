@@ -12,9 +12,11 @@ import { instanceFixture } from "../../core/__fixtures__/instance-binding/fixtur
 import inventory from "../../../../writer/src/catalog/__fixtures__/admin-name-inventory.json" with { type: "json" };
 import meta from "../../../../writer/src/catalog/records/admin-meta.r1.en.json" with { type: "json" };
 import studio from "../../../../writer/src/catalog/records/admin-studio.r1.en.json" with { type: "json" };
+import common from "../../../../writer/src/catalog/records/common-labels.r1.en.json" with { type: "json" };
+import paging from "../../../../writer/src/catalog/records/admin-writer-paging.r1.en.json" with { type: "json" };
 
 // Explicit draft-review host: this does not approve records or use them on production.
-const records = [...meta.records, ...studio.records];
+const records = [...meta.records, ...studio.records, ...common.records, ...paging.records];
 const previewResolver: PublisherCopyResolver = ref => {
   const record = records.find(record => record.id === ref.id);
   return record ? { ref, text: record.text } : undefined;

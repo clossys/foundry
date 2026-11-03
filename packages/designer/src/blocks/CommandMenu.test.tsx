@@ -43,7 +43,7 @@ async function open(props = {}) {
   const view = render(<Host {...props} />);
   const opener = screen.getByRole("button", { name: "Open commands" });
   await userEvent.click(opener);
-  const input = await screen.findByRole("combobox", { name: "Search commands" });
+  const input = await screen.findByRole("searchbox", { name: "Search commands" });
   return { ...view, input, opener };
 }
 function modKey(extra: KeyboardEventInit = {}) {
@@ -84,15 +84,15 @@ describe("CommandMenu", () => {
     expect(opener).toHaveFocus();
   });
 
-  it("puts the combobox relationships on the actual input and announces the visible count", async () => {
+  it("puts the autocomplete relationships on the actual search input and announces the visible count", async () => {
     const { input } = await open();
     expect(input.tagName).toBe("INPUT");
-    expect(screen.getAllByRole("combobox")).toHaveLength(1);
-    expect(input).toHaveAttribute("aria-expanded", "true");
-    expect(input).toHaveAttribute("aria-controls", screen.getByRole("listbox").id);
+    expect(screen.getAllByRole("searchbox")).toHaveLength(1);
+    expect(input).toHaveAttribute("aria-controls", screen.getByRole("menu").id);
     expect(input).toHaveAttribute("aria-autocomplete", "list");
     expect(screen.queryByText(copy.emptyMessage)).not.toBeInTheDocument();
-    expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Alpha");
+    // Stock autocomplete: no row is active until the user types or arrows into the list.
+    expect(input).not.toHaveAttribute("aria-activedescendant");
     expect(screen.getByRole("status")).toHaveTextContent(/^4 results$/);
     expect(screen.getByRole("status")).toHaveAttribute("aria-live", "polite");
     await userEvent.type(input, "BRAV");
@@ -124,16 +124,19 @@ describe("CommandMenu", () => {
       expect(group).toContainElement(heading);
       expect(heading).toHaveTextContent(label);
     }
-    const ids = Array.from(screen.getByRole("listbox").querySelectorAll("[id]"), element => element.id);
+    const ids = Array.from(screen.getByRole("menu").querySelectorAll("[id]"), element => element.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("wraps arrows across groups, skips disabled items and activates the current result", async () => {
     const { input } = await open();
     await userEvent.keyboard("{ArrowDown}");
+    expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Alpha");
+    await userEvent.keyboard("{ArrowDown}");
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Bravo");
-    for (const option of screen.getAllByRole("option")) {
-      expect(option).toHaveAttribute("aria-selected", option.id === input.getAttribute("aria-activedescendant") ? "true" : "false");
+    for (const option of screen.getAllByRole("menuitem")) {
+      if (option.id === input.getAttribute("aria-activedescendant")) expect(option).toHaveAttribute("data-focused", "true");
+      else expect(option).not.toHaveAttribute("data-focused");
     }
     await userEvent.keyboard("{ArrowUp}{ArrowUp}");
     expect(document.getElementById(input.getAttribute("aria-activedescendant")!)).toHaveAccessibleName("Gamma");
@@ -148,7 +151,7 @@ describe("CommandMenu", () => {
   it("Enter after filtering runs the filtered item rather than the original first item", async () => {
     const { input } = await open();
     await userEvent.type(input, "brav");
-    expect(screen.getAllByRole("option")).toHaveLength(1);
+    expect(screen.getAllByRole("menuitem")).toHaveLength(1);
     await userEvent.keyboard("{Enter}");
     expect(bravo).toHaveBeenCalledOnce();
     expect(alpha).not.toHaveBeenCalled();
@@ -170,9 +173,9 @@ describe("CommandMenu", () => {
     const { input } = await open();
     const revealAlpha = vi.fn();
     const revealBravo = vi.fn();
-    Object.defineProperty(screen.getByRole("option", { name: "Alpha" }), "scrollIntoView", { value: revealAlpha, configurable: true });
-    Object.defineProperty(screen.getByRole("option", { name: "Bravo" }), "scrollIntoView", { value: revealBravo, configurable: true });
-    await userEvent.keyboard("{ArrowDown}");
+    Object.defineProperty(screen.getByRole("menuitem", { name: "Alpha" }), "scrollIntoView", { value: revealAlpha, configurable: true });
+    Object.defineProperty(screen.getByRole("menuitem", { name: "Bravo" }), "scrollIntoView", { value: revealBravo, configurable: true });
+    await userEvent.keyboard("{ArrowDown}{ArrowDown}");
     expect(revealBravo).toHaveBeenCalled();
     expect(input).toHaveFocus();
     await userEvent.keyboard("{ArrowUp}");
@@ -185,14 +188,14 @@ describe("CommandMenu", () => {
 
   it("supports host filtering and renders supplied descriptions and shortcut hints", async () => {
     await open({ query: "drafts", filter: (item: any, query: string) => item.description?.includes(query) });
-    expect(screen.getAllByRole("option")).toHaveLength(1);
-    expect(screen.getByRole("option", { name: "Bravo" })).toHaveTextContent("Open drafts");
-    expect(screen.getByRole("option", { name: "Bravo" })).toHaveTextContent("B");
+    expect(screen.getAllByRole("menuitem")).toHaveLength(1);
+    expect(screen.getByRole("menuitem", { name: "Bravo" })).toHaveTextContent("Open drafts");
+    expect(screen.getByRole("menuitem", { name: "Bravo" })).toHaveTextContent("B");
   });
 
   it("never activates disabled options by pointer or Enter, and pointer activation closes", async () => {
     const { input } = await open();
-    const unavailable = screen.getByRole("option", { name: "Unavailable" });
+    const unavailable = screen.getByRole("menuitem", { name: "Unavailable" });
     expect(unavailable).toHaveAttribute("aria-disabled", "true");
     await userEvent.click(unavailable);
     expect(disabled).not.toHaveBeenCalled();
@@ -202,19 +205,19 @@ describe("CommandMenu", () => {
     await userEvent.keyboard("{Enter}");
     expect(disabled).not.toHaveBeenCalled();
     await userEvent.clear(input);
-    await userEvent.click(screen.getByRole("option", { name: "Bravo" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Bravo" }));
     expect(bravo).toHaveBeenCalledOnce();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
   it.each(["pointer", "Enter"])("preserves the supplied native href on %s activation", async how => {
     const { input } = await open({ items: [{ id: "links", label: "Links", items: [{ id: "destination", label: "Destination", href: "#command-target" }] }] });
-    const destination = screen.getByRole("option", { name: "Destination" });
+    const destination = screen.getByRole("menuitem", { name: "Destination" });
     expect(destination.tagName).toBe("A");
     expect(destination).toHaveAttribute("href", "#command-target");
     const click = vi.fn();
     destination.addEventListener("click", click);
-    if (how === "Enter") { await userEvent.click(input); await userEvent.keyboard("{Enter}"); }
+    if (how === "Enter") { await userEvent.click(input); await userEvent.keyboard("{ArrowDown}{Enter}"); }
     else await userEvent.click(destination);
     expect(click).toHaveBeenCalledOnce();
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -223,7 +226,7 @@ describe("CommandMenu", () => {
   it("shows only the host empty-results message without an invented option", async () => {
     await open({ items: [] });
     expect(screen.getByText("No matching commands")).toBeInTheDocument();
-    expect(screen.queryAllByRole("option")).toHaveLength(0);
+    expect(screen.queryAllByRole("menuitem")).toHaveLength(0);
     expect(screen.getByRole("status")).toHaveTextContent("0");
     await userEvent.keyboard("{ArrowDown}{ArrowUp}{Enter}");
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -233,7 +236,7 @@ describe("CommandMenu", () => {
 
   it("uses logical layout in RTL and adds no motion or forced-color suppression", async () => {
     await open({ dir: "rtl" });
-    const content = screen.getByRole("listbox").closest('[dir="rtl"]')!;
+    const content = screen.getByRole("menu").closest('[dir="rtl"]')!;
     expect(content).toBeInTheDocument();
     expect(content.className).not.toMatch(/animate-|transition-/);
     expect(content.outerHTML).not.toMatch(/forced-color-adjust-none|\b(?:left|right)-/);
@@ -241,7 +244,6 @@ describe("CommandMenu", () => {
       const classes = node.getAttribute("class") ?? "";
       if (classes.includes("transition-")) expect(classes).toContain("motion-reduce:transition-none");
     }
-    expect(screen.getByRole("option", { name: "Alpha" }).className).toContain("forced-colors:border-current");
   });
 
   it.each(["MacIntel", "Linux x86_64"])("handles only platform Mod+K on %s, ignores its own modal, then reopens after Escape", async platform => {
@@ -250,13 +252,13 @@ describe("CommandMenu", () => {
     const opener = screen.getByRole("button", { name: "Open commands" });
     opener.focus();
     expect(modKey().defaultPrevented).toBe(true);
-    await screen.findByRole("combobox");
+    await screen.findByRole("searchbox");
     expect(modKey().defaultPrevented).toBe(false);
     expect(screen.getAllByRole("dialog")).toHaveLength(1);
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(opener).toHaveFocus());
     expect(modKey().defaultPrevented).toBe(true);
-    await screen.findByRole("combobox");
+    await screen.findByRole("searchbox");
   });
 
   it("does not open over another existing modal", async () => {
@@ -348,28 +350,29 @@ describe("CommandMenu", () => {
   });
 });
 
-describe("CommandMenu visual pass (VF-1 shell-12/13)", () => {
-  it("marks the active option with the accent tint and an inline-start accent edge, never an underline", async () => {
+describe("CommandMenu visual pass (VF-1 shell-12/13, stock command anatomy)", () => {
+  it("marks only the active option with the stock focused tint, never an underline", async () => {
     const { input } = await open();
     await userEvent.keyboard("{ArrowDown}");
-    const active = screen.getAllByRole("option").find((option) => option.getAttribute("aria-selected") === "true")!;
-    expect(active).toHaveClass("bg-accent-tint", "border-s-accent", "no-underline");
-    expect(active).not.toHaveClass("underline");
-    const rest = screen.getAllByRole("option").filter((option) => option !== active);
-    for (const option of rest) expect(option).toHaveClass("border-s-transparent", "no-underline");
-    expect(input).toHaveClass("outline-none");
+    const items = screen.getAllByRole("menuitem");
+    const active = items.filter(option => option.getAttribute("data-focused") === "true");
+    expect(active).toHaveLength(1);
+    expect(active[0]!.id).toBe(input.getAttribute("aria-activedescendant"));
+    for (const option of items) {
+      expect(option.getAttribute("class")).toContain("data-focused:bg-(--color-surface-sunken)");
+      expect(option).not.toHaveClass("underline");
+    }
   });
 
-  it("draws one offset token outline on keyboard focus and none on pointer focus", async () => {
+  it("draws one offset token outline only on keyboard focus (focus-visible), never inline", async () => {
     const { input } = await open();
     await userEvent.click(input);
     expect(input).toHaveFocus();
     expect(input.style.outline).toBe("");
     expect(input.style.boxShadow).toBe("");
-    await userEvent.tab();
-    await userEvent.tab({ shift: true });
-    expect(input).toHaveFocus();
-    expect(input.style.outline).toContain("--color-focus-ring");
-    expect(input.style.outlineOffset).toContain("--ui-focus-offset");
+    const classes = input.getAttribute("class") ?? "";
+    expect(classes).toContain("focus-visible:outline-(--color-focus-ring)");
+    expect(classes).toContain("focus-visible:outline-offset-(--ui-focus-offset)");
+    expect(classes).not.toMatch(/(?:^|\s)outline-(?!none)[^\s]*/);
   });
 });
