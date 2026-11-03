@@ -21,17 +21,18 @@ function moduleJson(value: unknown): string {
     .replace(/&/g, "\\u0026").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 }
 
-/** Emit the server entry only; the active candidate remains the sole page-body authority. */
+/** Emit the server entry only; the active candidate remains the sole page-body authority.
+ * The page renders inside Publisher's host: the loader's component selection and Writer shell copy. */
 export function emitContentRoutePage(route: ContentRouteRegistration): string {
   assertContentRouteRegistration(route);
   return [
-    'import { ContentRoutePage, bindContentRoute, requireContentRoutePublishing } from "@clossys/publisher/web/content-route";',
+    'import { ContentRouteHost, ContentRoutePage, bindContentRoute, requireContentRoutePublishing } from "@clossys/publisher/web/content-route";',
     'import type { ContentRouteInput, ContentRouteRegistration } from "@clossys/publisher/web/content-route";',
     `import { ${route.loader.export} as loadContentRoute } from ${moduleJson(modulePath(route.source.file, route.loader.file))};`,
     `const route: ContentRouteRegistration = ${moduleJson(route)};`,
     "export default async function ContentPage() {",
-    "  const input: ContentRouteInput = await loadContentRoute();",
-    "  return <ContentRoutePage input={requireContentRoutePublishing(bindContentRoute(input, route))} />;",
+    "  const input: ContentRouteInput = requireContentRoutePublishing(bindContentRoute(await loadContentRoute(), route));",
+    "  return <ContentRouteHost input={input}><ContentRoutePage input={input} /></ContentRouteHost>;",
     "}", "",
   ].join("\n");
 }

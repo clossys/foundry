@@ -8,11 +8,12 @@ import { promisify } from "node:util";
 import { build } from "esbuild";
 import { expect, it } from "vitest";
 import { createContentRouteManifest, emitContentRoutePage } from "./content-route-source.js";
-import { contentRouteFixture, writerField } from "./__fixtures__/content-route.js";
+import { contentRouteFixture, withApprovedRouteCopy, writerField } from "./__fixtures__/content-route.js";
+import { contentRouteLoaderSource } from "./__fixtures__/content-route-components.js";
 
-it("compiles and executes the emitted async page against the public isolated package entry", async () => {
+it("compiles and executes the emitted async page inside the Publisher host against the public isolated package entry", async () => {
   const legacy = contentRouteFixture({ pageMeta: [writerField("title", "Sign in"), writerField("description", "Continue to your account.")] });
-  const input = {
+  const input = withApprovedRouteCopy({
     ...legacy,
     registry: { ...legacy.registry, workspace: { ...legacy.registry.workspace,
       deployTargets: legacy.registry.workspace.deployTargets.map(target => ({ ...target, origin: "https://example.test" })),
@@ -22,7 +23,7 @@ it("compiles and executes the emitted async page against the public isolated pac
       manifest: { defaultLocale: "en", locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }], fallback: {} },
       bodyServedLocales: { en: ["en"] }, existingUrls: ["https://example.test/sign-in"],
     },
-  };
+  });
   const loader = { file: "src/content-loader.ts", export: "loadContentRoute" };
   const route = createContentRouteManifest({ registry: input.registry, locale: input.locale, loader }).routes[0]!;
   const testDirectory = dirname(fileURLToPath(import.meta.url));
@@ -35,7 +36,7 @@ it("compiles and executes the emitted async page against the public isolated pac
     await mkdir(dirname(loaderFile), { recursive: true });
     await symlink(resolve(testDirectory, "../../../../node_modules"), join(consumer, "node_modules"), "dir");
     await writeFile(pageFile, emitContentRoutePage(route));
-    await writeFile(loaderFile, `export async function loadContentRoute() { return ${JSON.stringify(input)}; }`);
+    await writeFile(loaderFile, contentRouteLoaderSource(input));
     const bundleFile = join(consumer, "content-route.mjs");
     const result = await build({
       entryPoints: [pageFile], absWorkingDir: consumer, outfile: bundleFile,
