@@ -42,12 +42,16 @@ A page candidate (`clossys.page/1`):
   "title": "Home",
   "path": "/",
   "frame": "frames.site-shell",
-  "sections": ["sections.hero", "sections.features", "sections.call-to-action"],
+  "sections": ["sections.hero", "sections.features", "sections.call-to-action", "sections.call-to-action"],
   "copy": {
-    "hero.heading": "home.hero.heading",
-    "hero.description": "home.hero.description"
+    "hero.heading": "home.hero#heading",
+    "hero.description": "home.hero#description",
+    "cta.label": "home.call-to-action#label"
   },
-  "meta": { "source": { "kind": "derived", "ref": ["designer:sections.hero", "writer:<slot>"] } }
+  "bindings": {
+    "sections.call-to-action#2": { "copy": { "cta.label": "home.call-to-action#closing-label" } }
+  },
+  "meta": { "source": { "kind": "derived", "ref": ["designer:sections.hero", "writer:home.hero"] } }
 }
 ```
 
@@ -56,7 +60,14 @@ A page candidate (`clossys.page/1`):
 - `sections`: the section instances in reading order; each entry is a
   `sections.*` Designer slot, and the same slot may appear more than once.
 - `copy`: every copy key a mounted frame or section reads, mapped to the
-  Writer copy key (the Writer record `id`) that fills it.
+  Writer copy key that fills it, written `<writer slot>#<key>`: the Writer
+  slot id, `#`, then the Writer record `id` (`home.hero#heading`). A bare
+  Writer id (`home.hero.heading`) or a reversed entry (Writer key on the left)
+  is refused by `clossys check --slots`.
+- `bindings` (optional): per section instance overrides. The first mount of a
+  slot is `<slot>`, later mounts are `<slot>#2`, `<slot>#3`, ...; each may carry
+  its own `copy` map in the same `<writer slot>#<key>` form; a key it does not
+  list falls back to the `<slot>` binding, then to the page-wide `copy`.
 - `meta.source` names what the page was assembled from. Pin state never lives
   in a candidate.
 
@@ -70,7 +81,8 @@ A page candidate (`clossys.page/1`):
 2. **List the copy keys.** Each chosen candidate's
    `meta.element.reads.copyKeys` lists the copy it renders.
 3. **Map the copy.** For each copy key, find the Writer record that fills it in
-   the Writer candidates (`### ` records, metadata `id`). If none exists, raise
+   the Writer candidates (`### ` records, metadata `id`) and write it as
+   `<writer slot>#<id>`, the Writer slot that holds the record. If none exists, raise
    a Writer NEED naming the key and stop; never type copy into the page.
 4. **Write the candidate.** From the consumer repository, with the installed
    Producer API (it numbers the candidate and refuses an invalid one):
@@ -115,7 +127,8 @@ A page candidate (`clossys.page/1`):
 ## Done when
 
 - The page slot has a candidate whose frame and sections all exist as Designer
-  slots, and whose `copy` maps every copy key they read to a Writer copy key.
+  slots, and whose `copy` maps every copy key they read to a Writer copy key
+  (`<writer slot>#<key>`).
 - `npx clossys check --slots` reports no candidate finding for the page
   (findings that only say a slot has no pin may remain).
 - After the owner pins, `npx clossys publish --install --page <id>` exits 0

@@ -287,12 +287,15 @@ export const OPTIONAL_PEER_POLICY = {
     // `./web/consent/preview`, the preview's `default` (its real entry sits
     // under `development`, measured as `imports`) and `browser` on
     // `./consent-copy` (its server entry is `default`, measured as `imports`).
+    // `./web/host` (PublisherHost) reaches Designer's frames, so it rejects without the
+    // React/Aria peers and imports without tailwind-merge or tailwindcss (measured per peer).
     "@internationalized/date": {
       ...publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
       "@clossys/publisher/web/registered-route": "rejects",
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "imports"),
+      "@clossys/publisher/web/host": "rejects",
       ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
     },
     react: {
@@ -301,6 +304,7 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "rejects"),
+      "@clossys/publisher/web/host": "rejects",
       ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
     },
     "react-aria-components": {
@@ -309,6 +313,7 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "imports"),
+      "@clossys/publisher/web/host": "rejects",
       ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
     },
     "react-dom": {
@@ -317,6 +322,7 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "imports"),
+      "@clossys/publisher/web/host": "rejects",
       ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
     },
     // #749/#878: publisher/web reaches designer's cx() transitively
@@ -334,6 +340,7 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/content-route": conditionOutcomes("imports", "imports"),
+      "@clossys/publisher/web/host": "imports",
       ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages"]),
     },
     tailwindcss: {
@@ -342,6 +349,7 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
       "@clossys/publisher/web/content-route": conditionOutcomes("imports", "imports"),
+      "@clossys/publisher/web/host": "imports",
       ...omissionRow(publisherLandedExports),
     },
   },
