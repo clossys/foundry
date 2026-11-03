@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import { agentGallery } from './agent-library.js';
 import { designerGallery } from './designer-library.js';
 import { recordSpecimens } from './record-specimens.js';
-import { recordSpecimenInput, slotGallery } from './slot-gallery.js';
+import { recordLead, recordSpecimenInput, slotGallery } from './slot-gallery.js';
 import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { sha256Hex } from '../records/hash.js';
 import { agentGalleryLayers } from '../../studio/lib/agent-library';
@@ -336,8 +336,12 @@ describe('IA-first gallery data', () => {
       expect(cards()[0]!.emptyState).toBeUndefined();
       expect(cards()[0]!.specimenUrl).toBe('/__specimen?agent=writer&slot=strings.label&candidate=label-v1.md');
       const specimen = projected()[0]!.specimen!;
-      expect(specimen).toMatchObject({ kind: 'viewports', specimens: [{ light: cards()[0]!.specimenUrl }] });
-      expect(renderToStaticMarkup(createElement(SpecimenContent, { specimen }))).toContain('candidate=label-v1.md');
+      // The card shows the pinned record's lead text at card size, not a downscaled full-width frame.
+      expect(specimen).toEqual({ kind: 'record', name: 'Strings label', title: 'Strings label', description: '', lead: ['Hello <script> & welcome'], empty: '' });
+      const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen }));
+      expect(html).toContain('data-specimen-lead');
+      expect(html).toContain('Hello &lt;script&gt; &amp; welcome');
+      expect(html).not.toContain('<iframe');
       for (const invalid of [{}, { ...pin, candidate: 'absent-v1.md' }]) {
         writeFileSync(join(dir, 'pin.json'), JSON.stringify(invalid));
         noFrame();
@@ -444,5 +448,14 @@ describe('IA-first gallery data', () => {
         expect(code).toBe(404);
       }
     } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+});
+
+describe('record card lead text', () => {
+  it('reads the first rows as plain card text: markers and emphasis stripped, JSON rows as their value, long rows cut', () => {
+    const rows = (...texts: string[]) => ({ rows: texts.map((text, index) => ({ key: String(index), label: String(index), text })) });
+    expect(recordLead(rows('- **Unit:** teams that ship', '{"id":"x","kind":"voice-rule","value":"neutral: plain words"}', 'third row'))).toEqual(['Unit: teams that ship', 'neutral: plain words']);
+    expect(recordLead(rows('{not json', 'x'.repeat(300)))).toEqual(['{not json', `${'x'.repeat(219)}…`]);
+    expect(recordLead(undefined)).toEqual([]);
   });
 });

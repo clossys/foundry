@@ -10,7 +10,7 @@ import type { SpecimenInput } from '../sections/studio-specimen';
 /** Whether a specimen has anything to render: a framed viewport, or a record table, row or status. */
 export function hasPreviewData(specimen: SpecimenInput): boolean {
   if (specimen.kind === 'viewports') return specimen.specimens.some(row => row.light.length > 0);
-  return Boolean(specimen.tables?.some(table => table.rows.length) || specimen.rows?.length || specimen.status);
+  return Boolean(specimen.lead?.length || specimen.tables?.some(table => table.rows.length) || specimen.rows?.length || specimen.status);
 }
 
 /** A card without preview data has no body, the same as an empty slot: its state badge reads once. */

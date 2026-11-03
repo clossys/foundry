@@ -1,6 +1,6 @@
 import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
 
-import { BlockViewerIframe } from './BlockViewerIframe';
+import { BlockViewerCardIframe, BlockViewerIframe } from './BlockViewerIframe';
 
 export type SpecimenTone = 'secondary' | 'outline' | 'destructive';
 
@@ -27,8 +27,12 @@ export interface SpecimenTable {
  * and, when the source has one, dark; `record` lays out a record's own content as tables or rows.
  */
 export type SpecimenInput = { name: string; title: string; description: string } & (
-  | { kind: 'viewports'; specimens: readonly ViewportSpecimen[]; empty: string }
-  | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }
+  | { kind: 'viewports'; specimens: readonly ViewportSpecimen[]; empty: string;
+    /** A gallery card's text while its frame loads, and for a frame whose specimen failed to render. */
+    loading?: string; unavailable?: string }
+  | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[];
+    /** A gallery card's lead: the record's first lines as text that reads at card size. */
+    lead?: readonly string[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }
 );
 
 /**
@@ -37,9 +41,13 @@ export type SpecimenInput = { name: string; title: string; description: string }
  * The extracted stock iframe uses the projected viewport and bounded local content-size binding.
  * The surrounding light/dark comparison layout remains pending a verified stock composition.
  */
-function Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {
+function Viewports({ name, specimens, empty, loading, unavailable }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string; loading?: string; unavailable?: string }) {
   if (!specimens.length) return <CardContent><Badge variant="outline" data-preview-status="empty">{empty}</Badge></CardContent>;
   const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);
+  // A gallery card's single view-only frame: skeleton until sized, no body when it paints nothing.
+  const card = rows.length === 1 && rows[0]!.interactive === false && !rows[0]!.dark ? rows[0]! : undefined;
+  if (card) return <BlockViewerCardIframe iframeKey={`${name}:${card.viewport}:card`} viewport={card.viewport} title={`${name} at ${card.viewport} px`} src={card.light}
+    loadingLabel={loading ?? name} failedLabel={unavailable} wrap={frame => <CardContent data-specimen-viewport={card.viewport}>{frame}</CardContent>} />;
   return <CardContent className="flex flex-col gap-4">
     {rows.map(row => <CardContent key={row.viewport} className="flex flex-col gap-2 px-0" data-specimen-viewport={row.viewport}>
       {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.viewport} px</CardDescription>}
@@ -72,7 +80,10 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
 
 /** The specimen body without its card: what the leaf produces. A gallery card places it under its own header. */
 export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
-  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;
+  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} loading={specimen.loading} unavailable={specimen.unavailable} />;
+  if (specimen.lead?.length) return <CardContent className="flex min-w-0 flex-col gap-2" data-specimen-lead>
+    {specimen.lead.map((text, index) => <CardDescription key={index} className="line-clamp-3" style={{ overflowWrap: 'anywhere' }}>{text}</CardDescription>)}
+  </CardContent>;
   if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;
   if (specimen.rows?.length) return <CardContent className="min-w-0">
     <Table aria-label={`${specimen.name} specimen`}>

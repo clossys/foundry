@@ -49,6 +49,13 @@ export interface SpecimenFile {
   readonly path: string;
   readonly content: string;
   readonly type?: string;
+  /** The registry file's install target, when it names one (see installed-path.ts). */
+  readonly target?: string;
+}
+
+/** What an `@/` import resolution may consult: the shadcn registry dependencies the importing items declare. */
+export interface SpecimenAliasContext {
+  readonly registryDependencies: readonly string[];
 }
 
 /** The renderer's minimal element record: id, version, kind, payload, preview. */
@@ -80,6 +87,12 @@ export interface SpecimenRecordSource {
   read(id: string, version?: number): Promise<SpecimenRecord | undefined>;
   /** A theme by id; the source's default theme when `id` is omitted. */
   theme(id?: string): Promise<SpecimenTheme | undefined>;
+  /**
+   * The item whose registry files install `@/<path>` in the consumer app (the consumer's pinned
+   * item, by the install mapping in installed-path.ts). Optional: a source without it resolves
+   * `@/` imports by sibling record name only.
+   */
+  alias?(path: string, context: SpecimenAliasContext): Promise<SpecimenRecord | undefined>;
 }
 
 /** Parsed `/__specimen` query. */

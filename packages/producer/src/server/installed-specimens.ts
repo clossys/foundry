@@ -23,6 +23,7 @@ import { dirname, extname, join, relative, resolve, sep, isAbsolute } from "node
 import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { resolveSampleCopy, specimenStateOf, VISIBLE_STATE_CSS, type SpecimenState } from "./specimen-state.js";
+import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
 import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
@@ -30,7 +31,7 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 
 /** Bumped when the generated specimen pages change shape. */
-const SPECIMEN_FORMAT = "studio-specimens/4";
+const SPECIMEN_FORMAT = "studio-specimens/5";
 const SITE_PREFIX = "/__specimen-site/";
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -185,12 +186,18 @@ async function buildPass(options: { library: string; substrate: string; pins: In
     if (!result.page || blocking.length) { findings.push(...blocking); continue; }
     // A specimen frames one item: only a frame composes the (empty) section list as children.
     const state = specimenStateOf(slot), props = result.page.frame.props as Record<string, unknown>;
-    if (!slot.startsWith("frames.")) delete props.children;
-    if (state?.state === "children") {
-      // The slot's specimen state: render the sample children the item's preview fixture declares.
-      const preview = await readJson(join(library, "library", slot, pin.element, `v${pin.version}`, "preview.json")).catch(() => undefined);
-      const sample = preview?.fixtures?.props?.children;
-      if (sample !== undefined) props.children = resolveSampleCopy(sample, { ...copy, ...result.page.frame.text });
+    if (!slot.startsWith("frames.")) {
+      delete props.children;
+      // Every other item renders the sample children its candidate's preview fixture declares:
+      // text, Writer copy and elements of the candidate's own module (specimen-tree.ts).
+      const sample = fixtureChildren(result.slots.find(row => row.slot === slot && row.mounted)?.record.preview.fixtures);
+      if (sample !== undefined) {
+        const text = { ...copy, ...result.page.frame.text };
+        const source = await readFile(join(substrate, result.page.frame.entry.file), "utf8").catch(() => "");
+        const issues = specimenTreeIssues(sample, moduleExports(source), text);
+        if (issues.length) { findings.push({ code: "invalid-page", slot, detail: `${slot}/${pin.element}@v${pin.version} preview children: ${issues.join("; ")}` }); continue; }
+        props.children = resolveSampleCopy(sample, text);
+      }
     }
     dependencies = { ...dependencies, ...substrateDependencies(result.slots) };
     if (slot.startsWith("components.")) {
@@ -214,7 +221,8 @@ async function buildSite(root: string, library: string): Promise<InstalledSpecim
   if (!inputs) return undefined;
   const { pins, options, unpinned } = inputs;
   const passes = Math.max(Object.keys(unpinned).length ? 1 : 0, ...[...options.values()].map(list => list.length));
-  const copy = await writerCopy(root).catch(() => ({} as Record<string, string>));
+  // Compiled Writer copy wins; the pinned Writer slots fill a consumer that has not compiled yet.
+  const copy = { ...pinnedWriterCopy(library), ...await writerCopy(root).catch(() => ({} as Record<string, string>)) };
   const records = await pageRecords(root, pins);
   const key = hash(SPECIMEN_FORMAT, root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records)).slice(0, 16);
   const substrate = specimenSubstrate(root), base = dirname(substrate), manifest = join(base, `site-${key}.json`);

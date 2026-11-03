@@ -79,6 +79,28 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   return out;
 }
 
+/**
+ * A record card's lead: the first rows' text as plain sentences, so a gallery card reads at card
+ * size without framing the record page (the L3 route keeps the full-width render).
+ */
+/** A structured row (a JSON rule or entry) reads as its value, not as its serialization. */
+function readable(text: string): string {
+  if (!/^\s*\{/.test(text)) return text;
+  try {
+    const value = JSON.parse(text) as Record<string, unknown>;
+    for (const key of ['value', 'text', 'description', 'rule']) if (typeof value[key] === 'string' && value[key]) return value[key] as string;
+  } catch { /* plain text that starts with a brace */ }
+  return text;
+}
+
+export function recordLead(input: RecordSpecimenInput | undefined, rows = 2, length = 220): string[] {
+  return (input?.rows ?? []).slice(0, rows).map(row => {
+    const text = readable(row.text).split('\n').map(line => line.replace(/^\s*(?:[-*+]|\d+[.)])\s+/, '').trim()).filter(Boolean).join(' ')
+      .replace(/\*\*|__|`/g, '').replace(/\s+/g, ' ').trim();
+    return text.length > length ? `${text.slice(0, length - 1).trimEnd()}…` : text;
+  }).filter(Boolean);
+}
+
 export function recordSpecimenHref(agent: 'director' | 'writer', id: string, candidate?: string): string {
   return `/__specimen?${new URLSearchParams({ agent, slot: id, ...(candidate ? { candidate } : {}) })}`;
 }
@@ -154,10 +176,14 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
         if (typeof item.name === 'string') element = item.name;
       }
     } catch { failing = true; }
+    let record: RecordSpecimenInput | undefined;
+    if (!failing && (agent === 'director' || (agent === 'writer' && candidate && entry.pin?.candidate === candidate))) {
+      try { record = recordSpecimenInput(consumer, agent, id, candidate); } catch { record = undefined; }
+    }
     target.cards.push({ id, slug: id, name: label(id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
-      excerpt: [], options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
-      ...(!failing && ((agent === 'writer' && candidate && entry.pin?.candidate === candidate) || (agent === 'director' && recordSpecimenInput(consumer, agent, id, candidate))) ? { specimenUrl: recordSpecimenHref(agent, id, candidate) } : {}),
+      excerpt: recordLead(record), options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'No candidate' as const : 'No pin' as const } : {}),
+      ...(!failing && ((agent === 'writer' && candidate && entry.pin?.candidate === candidate) || (agent === 'director' && record)) ? { specimenUrl: recordSpecimenHref(agent as 'director' | 'writer', id, candidate) } : {}),
     });
   }
   return { sections, count: sections.reduce((n, row) => n + row.cards.length, 0) };

@@ -1,0 +1,157 @@
+{
+  "name": "tabs",
+  "type": "registry:ui",
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "tabs.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"cn\"\nimport {\n  TabList as TabListPrimitive,\n  TabPanel as TabPanelPrimitive,\n  Tab as TabPrimitive,\n  Tabs as TabsPrimitive,\n} from \"react-aria-components\"\n\nfunction Tabs({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabsPrimitive>) {\n  return (\n    <TabsPrimitive\n      data-slot=\"tabs\"\n      className={cn(\n        \"group/tabs flex gap-2 data-horizontal:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst tabsListVariants = cva(\n  \"group/tabs-list inline-flex w-fit items-center justify-center rounded-lg p-[3px] text-muted-foreground group-data-horizontal/tabs:h-8 group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col data-[variant=line]:rounded-none\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-muted\",\n        line: \"gap-1 bg-transparent\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction TabsList({\n  className,\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<typeof TabListPrimitive> &\n  VariantProps<typeof tabsListVariants>) {\n  return (\n    <TabListPrimitive\n      data-slot=\"tabs-list\"\n      data-variant={variant}\n      className={cn(tabsListVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction TabsTrigger({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPrimitive>) {\n  return (\n    <TabPrimitive\n      data-slot=\"tabs-trigger\"\n      className={cn(\n        \"relative inline-flex h-[calc(100%-1px)] flex-1 cursor-default items-center justify-center gap-1.5 rounded-md border border-transparent px-1.5 py-0.5 text-sm font-medium whitespace-nowrap text-foreground/60 transition-all group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1 focus-visible:outline-ring disabled:pointer-events-none disabled:opacity-50 has-data-[icon=inline-end]:pr-1 has-data-[icon=inline-start]:pl-1 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 dark:text-muted-foreground dark:hover:text-foreground group-data-[variant=default]/tabs-list:data-selected:shadow-sm group-data-[variant=line]/tabs-list:data-selected:shadow-none group-data-[variant=default]/tabs-list:data-active:shadow-sm group-data-[variant=line]/tabs-list:data-active:shadow-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4\",\n        \"group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-selected:bg-transparent dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent dark:group-data-[variant=line]/tabs-list:data-selected:bg-transparent\",\n        \"data-selected:bg-background data-selected:text-foreground dark:data-selected:border-input dark:data-selected:bg-input/30 dark:data-selected:text-foreground\",\n        \"after:absolute after:bg-foreground after:opacity-0 after:transition-opacity group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[-5px] group-data-horizontal/tabs:after:h-0.5 group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-1 group-data-vertical/tabs:after:w-0.5 group-data-[variant=line]/tabs-list:data-selected:after:opacity-100\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TabsContent({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPanelPrimitive>) {\n  return (\n    <TabPanelPrimitive\n      data-slot=\"tabs-content\"\n      className={cn(\"flex-1 text-sm outline-none\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.tabs",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/tabs@4.23.0"
+      ],
+      "hash": "sha256:f2c16d8f43bd38331b719843e01954019fbbc5f23323d2eba5328e3a5a27649d",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "tabs.tsx": "registry/aria-nova/ui/tabs.tsx"
+      }
+    },
+    "element": {
+      "id": "tabs",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.tabs",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "AGENT-PAGES"
+      },
+      "reason": "FIX-ALL: v1 code unchanged (v1 sha256:2683976897e5c101f4532c9883de6013a940e928e42e64cf2ff5c11a45cc46f8); adds a preview fixture whose element tree renders the component's parts with Writer sample copy (studio.specimen.*), so the Studio specimen is not empty.",
+      "createdAt": "2026-11-03T09:30:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.specimen.tabs-label",
+          "studio.specimen.tabs-overview",
+          "studio.specimen.tabs-activity",
+          "studio.specimen.tabs-settings",
+          "studio.specimen.tabs-overview-panel",
+          "studio.specimen.tabs-activity-panel",
+          "studio.specimen.tabs-settings-panel"
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "tabs.tsx",
+        "export": "Tabs",
+        "props": {
+          "defaultSelectedKey": "overview",
+          "className": "w-full max-w-80",
+          "children": [
+            {
+              "$component": "TabsList",
+              "props": {
+                "aria-label": {
+                  "$copy": "studio.specimen.tabs-label"
+                }
+              },
+              "children": [
+                {
+                  "$component": "TabsTrigger",
+                  "props": {
+                    "id": "overview"
+                  },
+                  "children": {
+                    "$copy": "studio.specimen.tabs-overview"
+                  }
+                },
+                {
+                  "$component": "TabsTrigger",
+                  "props": {
+                    "id": "activity"
+                  },
+                  "children": {
+                    "$copy": "studio.specimen.tabs-activity"
+                  }
+                },
+                {
+                  "$component": "TabsTrigger",
+                  "props": {
+                    "id": "settings"
+                  },
+                  "children": {
+                    "$copy": "studio.specimen.tabs-settings"
+                  }
+                }
+              ]
+            },
+            {
+              "$component": "TabsContent",
+              "props": {
+                "id": "overview",
+                "className": "text-muted-foreground"
+              },
+              "children": {
+                "$copy": "studio.specimen.tabs-overview-panel"
+              }
+            },
+            {
+              "$component": "TabsContent",
+              "props": {
+                "id": "activity",
+                "className": "text-muted-foreground"
+              },
+              "children": {
+                "$copy": "studio.specimen.tabs-activity-panel"
+              }
+            },
+            {
+              "$component": "TabsContent",
+              "props": {
+                "id": "settings",
+                "className": "text-muted-foreground"
+              },
+              "children": {
+                "$copy": "studio.specimen.tabs-settings-panel"
+              }
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

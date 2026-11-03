@@ -93,6 +93,7 @@ export function designerGalleryLayers(records: DesignerGallery, theme: 'light' |
     const specimen: SpecimenInput | undefined = src ? {
       kind: 'viewports', name: card.name, title: studioCopy("studio.specimen"), description: specimenDescription(card.status),
       specimens: [{ viewport: GALLERY_WIDTH, light: src, interactive: false }], empty: studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"),
+      loading: studioCopy("studio.loading-preview"), unavailable: studioCopy("studio.preview-unavailable"),
     } : undefined;
     return {
       key: card.slot, name: slotLabel(card.slot), href: links.leaf('designer', card.slug) ?? '',

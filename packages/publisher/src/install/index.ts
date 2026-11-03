@@ -18,8 +18,9 @@
 import { createHash } from "node:crypto";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { isAbsolute, join, posix, relative, resolve } from "node:path";
+import { join, relative, resolve } from "node:path";
 import type { SpecimenRecord, SpecimenRecordSource } from "../specimen/types.js";
+import { installedPath } from "../specimen/installed-path.js";
 
 export const INSTALL_MANIFEST = ".clossys/install.json";
 const MANIFEST_SCHEMA = "clossys.install/1";
@@ -120,19 +121,6 @@ const CODE = /\.(?:[cm]?[jt]sx?)$/;
 const NAMESPACED = /^@[^/\s]+\/([^/\s]+)$/;
 const sha256 = (value: string | Uint8Array) => createHash("sha256").update(value).digest("hex");
 const MOUNTED: ReadonlySet<SlotRole> = new Set(["frame", "section", "part"]);
-
-/** Where shadcn writes a registry file without a `target`, by registry file type. */
-const DEFAULT_DIRS: Readonly<Record<string, string>> = {
-  "registry:ui": "components/ui", "registry:component": "components", "registry:block": "components",
-  "registry:hook": "hooks", "registry:lib": "lib",
-};
-
-function installedPath(file: RegistryFile): string | undefined {
-  const target = file.target ?? (file.type && DEFAULT_DIRS[file.type] ? `${DEFAULT_DIRS[file.type]}/${posix.basename(file.path)}` : undefined);
-  if (!target) return undefined;
-  const normal = posix.normalize(target.replace(/^~\//, ""));
-  return isAbsolute(normal) || normal.startsWith("..") ? undefined : normal;
-}
 
 /** Every object node under a value, depth first. */
 function eachNode(value: unknown, visit: (node: Record<string, any>) => void): void {

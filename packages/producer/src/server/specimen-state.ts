@@ -2,9 +2,8 @@
  * Specimen states: how a slot shows its items when their resting render is empty or hidden.
  *
  * A slot declares one state and the specimen renderer applies it to every item pinned or
- * recorded in that slot, so no item needs a per-item specimen tweak:
- * - `children`: the item renders the sample children its preview fixture declares
- *   (a section shell renders sample content instead of an empty band);
+ * recorded in that slot, so no item needs a per-item specimen tweak. (Sample children need no
+ * state: every item renders the children its preview fixture declares, see specimen-tree.ts.)
  * - `open`: the item's surface is opened on mount through the slot's opener
  *   (a toast region shows one toast instead of nothing);
  * - `visible`: content hidden until focus (`sr-only` with a focus-visible reveal) renders
@@ -12,12 +11,10 @@
  * A slot with no declaration renders the item at rest.
  */
 export type SpecimenState =
-  | { readonly state: "children" }
   | { readonly state: "open"; readonly opener: { readonly module: string; readonly export: string }; readonly sample: string }
   | { readonly state: "visible" };
 
 export const SLOT_SPECIMEN_STATES: Readonly<Record<string, SpecimenState>> = {
-  "sections.band": { state: "children" },
   "components.toast": { state: "open", opener: { module: "sonner", export: "toast" }, sample: "Changes saved" },
   "components.skip-nav": { state: "visible" },
 };

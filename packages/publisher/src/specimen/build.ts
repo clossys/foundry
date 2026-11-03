@@ -8,22 +8,26 @@
  * pass its own `esbuild` module instead.
  */
 import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { dirname, extname, join, posix } from "node:path";
+import { basename, dirname, extname, join, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { SHADCN_THEME_INLINE } from "./theme.js";
 import { SPECIMEN_CHROME_CSS } from "./chrome.js";
+import { installedPath } from "./installed-path.js";
 import type { SpecimenFile, SpecimenRecord, SpecimenRecordSource } from "./types.js";
 
 /** Bumped when the renderer's output for the same record changes. */
-export const SPECIMEN_RENDERER_VERSION = "specimen-2";
+export const SPECIMEN_RENDERER_VERSION = "specimen-4";
 
 export interface SpecimenBuild {
   readonly hash: string;
   /** Present for visual records: the bundle mounting the element. */
   readonly js?: string;
   readonly css: string;
+  /** The entry export the specimen mounts (see specimenExport). */
+  readonly export?: string;
   /** Build problems; the page still renders and reports them. */
   readonly errors: readonly string[];
 }
@@ -52,9 +56,11 @@ import { createRoot } from "react-dom/client";
 import * as Element from "specimen-entry";
 const report = (error, source) => { try { window.__clossysSpecimen && window.__clossysSpecimen.error(error, source); } catch {} };
 const config = JSON.parse(document.getElementById("specimen-props").textContent || "{}");
+// Function components and forwardRef/memo objects ($$typeof) mount by the same rule, at the root and in fixture trees.
+const isComponent = value => typeof value === "function" || (!!value && typeof value === "object" && "$$typeof" in value);
 const pick = () => {
   const name = config.export || "default";
-  if (typeof Element[name] === "function") return Element[name];
+  if (isComponent(Element[name])) return Element[name];
   report(new Error("payload has no component export " + name), "build");
 };
 class Boundary extends React.Component {
@@ -66,9 +72,24 @@ class Boundary extends React.Component {
     return React.createElement("div", { "data-specimen-error": "", role: "alert", className: "specimen-error" }, "This element did not render: " + (this.state.error && this.state.error.message || String(this.state.error)));
   }
 }
+// A fixture element tree: { $component, props?, children? } names another export of this payload.
+const tree = (value, key) => {
+  if (Array.isArray(value)) return value.map((item, index) => tree(item, String(index)));
+  if (!value || typeof value !== "object") return value;
+  if (typeof value.$component === "string") {
+    const name = value.$component;
+    const part = Object.prototype.hasOwnProperty.call(Element, name) ? Element[name] : undefined;
+    if (!isComponent(part)) throw new Error("payload has no component export " + name);
+    const props = tree(value.props || {});
+    const children = value.children === undefined ? [] : Array.isArray(value.children) ? value.children.map(item => tree(item)) : [tree(value.children)];
+    return React.createElement(part, key === undefined ? props : { ...props, key }, ...children);
+  }
+  return Object.fromEntries(Object.entries(value).map(([name, item]) => [name, tree(item)]));
+};
 const Component = pick();
+const Mount = () => React.createElement(Component, tree(config.props || {}));
 const root = createRoot(document.getElementById("specimen-root"), { onCaughtError() {}, onRecoverableError(error) { report(error, "recoverable"); } });
-if (Component) root.render(React.createElement(Boundary, null, React.createElement(Component, config.props || {})));
+if (Component) root.render(React.createElement(Boundary, null, React.createElement(Mount)));
 `;
 
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
@@ -79,6 +100,40 @@ export function specimenEntry(record: SpecimenRecord): SpecimenFile | undefined 
   const files = record.payload.files.filter(file => CODE.test(file.path));
   if (record.preview.entry) return files.find(file => file.path === record.preview.entry);
   return files.find(file => /registry:(?:ui|component|block|page)/.test(file.type ?? "")) ?? files[0];
+}
+
+/** Value export names of a module source, in source order; `default` when it has a default export. */
+function exportNames(source: string): string[] {
+  const code = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:\\])\/\/.*$/gm, "$1");
+  const found: [number, string][] = [];
+  for (const match of code.matchAll(/\bexport\s+default\b/g)) found.push([match.index!, "default"]);
+  for (const match of code.matchAll(/\bexport\s+(?:async\s+)?function\s*\*?\s*([A-Za-z_$][\w$]*)|\bexport\s+(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)/g)) found.push([match.index!, (match[1] ?? match[2])!]);
+  for (const match of code.matchAll(/\bexport\s+(type\s+)?\{([^}]*)\}/g)) {
+    if (match[1]) continue;
+    for (const raw of match[2]!.split(",")) {
+      const spec = raw.trim();
+      if (!spec || spec.startsWith("type ")) continue;
+      found.push([match.index!, spec.split(/\s+as\s+/).at(-1)!.trim()]);
+    }
+  }
+  return [...new Set(found.sort((a, b) => a[0] - b[0]).map(([, name]) => name))];
+}
+
+const pascal = (value: string) => value.replace(/\.[^.]+$/, "").split(/[^A-Za-z0-9]+/).filter(Boolean).map(part => part[0]!.toUpperCase() + part.slice(1)).join("");
+
+/**
+ * The entry export a specimen mounts, the same rule for every component: the preview's named
+ * export, else the default export, else the export named after the element or its entry file
+ * (`scroll-area` -> `ScrollArea`, `breadcrumb.tsx` -> `Breadcrumb`), else the first component
+ * (capitalised) export in source order — shadcn modules list the root part first.
+ */
+export function specimenExport(record: SpecimenRecord, entry: SpecimenFile | undefined = specimenEntry(record)): string | undefined {
+  if (record.preview.export) return record.preview.export;
+  if (!entry) return undefined;
+  const names = exportNames(entry.content);
+  if (names.includes("default")) return "default";
+  for (const wanted of [pascal(record.id.split("/").at(-1)!), pascal(basename(entry.path))]) if (wanted && names.includes(wanted)) return wanted;
+  return names.find(name => /^[A-Z]/.test(name));
 }
 
 /** Candidate class names in the given sources: Tailwind's own scanner, else a plain split. */
@@ -98,6 +153,34 @@ function resolveFrom(id: string, workspace: string): string {
   return requireHere.resolve(id);
 }
 
+/**
+ * The layers the app stylesheet (designer-ui `index.css`) imports after Tailwind: tw-animate's
+ * enter/exit utilities and shadcn's own layer (its `data-open`, `data-selected`,
+ * `data-horizontal`, ... variants). Each is included when the workspace has it.
+ */
+const APP_LAYERS = ["tw-animate-css", "shadcn/tailwind.css"];
+
+/** A stylesheet id as Tailwind resolves it: a file export, else the package's `style` export condition. */
+function resolveStyle(id: string, workspace: string): string {
+  try { return resolveFrom(id, workspace); } catch (error) {
+    if (id.split("/").length !== (id.startsWith("@") ? 2 : 1)) throw error;
+    for (const base of [workspace, publisherDir]) {
+      for (const dir of createRequire(join(base, "noop.js")).resolve.paths(id) ?? []) {
+        const manifest = join(dir, id, "package.json");
+        if (!existsSync(manifest)) continue;
+        const exported = (JSON.parse(readFileSync(manifest, "utf8")) as { exports?: { ".": { style?: unknown } }; style?: unknown });
+        const style = exported.exports?.["."]?.style ?? exported.style;
+        if (typeof style === "string") return join(dir, id, style);
+      }
+    }
+    throw error;
+  }
+}
+
+function resolvable(id: string, workspace: string): boolean {
+  try { resolveStyle(id, workspace); return true; } catch { return false; }
+}
+
 async function compileCss(sources: readonly { content: string; extension: string }[], workspace: string): Promise<string> {
   const tailwind = await import("tailwindcss") as { compile: (css: string, options: Record<string, unknown>) => Promise<{ build(candidates: string[]): string }> };
   const entry = [
@@ -105,12 +188,14 @@ async function compileCss(sources: readonly { content: string; extension: string
     '@import "tailwindcss/theme.css" layer(theme);',
     '@import "tailwindcss/preflight.css" layer(base);',
     '@import "tailwindcss/utilities.css" layer(utilities);',
+    // The app build imports shadcn's layer; without it a React Aria `data-orientation` never meets `data-horizontal:`.
+    ...APP_LAYERS.filter(id => resolvable(id, workspace)).map(id => `@import "${id}";`),
     SHADCN_THEME_INLINE,
   ].join("\n");
   const compiled = await tailwind.compile(entry, {
     base: workspace,
     loadStylesheet: async (id: string) => {
-      const path = resolveFrom(id, workspace);
+      const path = resolveStyle(id, workspace);
       return { path, base: dirname(path), content: await readFile(path, "utf8") };
     },
   });
@@ -118,17 +203,62 @@ async function compileCss(sources: readonly { content: string; extension: string
   return `${compiled.build(candidates)}\n${SPECIMEN_CHROME_CSS}`;
 }
 
-/** Files the element imports through the `@/` alias, found in its own payload or a sibling record. */
-async function closure(record: SpecimenRecord, source: SpecimenRecordSource | undefined, errors: string[]): Promise<Map<string, string>> {
-  const files = new Map<string, string>();
-  for (const file of record.payload.files) files.set(posix.normalize(file.path), file.content);
+const isRecord = (value: unknown): value is Record<string, unknown> => !!value && typeof value === "object" && !Array.isArray(value);
+
+/** The unnamespaced shadcn registry dependencies an item declares (`registryDependencies` of its registry item). */
+function registryDependenciesOf(record: SpecimenRecord): string[] {
+  try {
+    const item = JSON.parse(record.payload.raw) as unknown;
+    return isRecord(item) && Array.isArray(item.registryDependencies) ? item.registryDependencies.filter((name): name is string => typeof name === "string") : [];
+  } catch { return []; }
+}
+
+interface Closure {
+  readonly files: Map<string, string>;
+  /** `@/` alias (no extension) -> the file key it names, by the install mapping (installed-path.ts). */
+  readonly aliases: Map<string, string>;
+}
+
+/**
+ * Files the element imports through the `@/` alias. The record's own files keep their payload
+ * paths and answer the alias of their install path; any other alias resolves through the source
+ * to the item that installs it (the consumer's pinned candidate), whose files join the bundle at
+ * their install paths, exactly where the real app build has them. A source without `alias`
+ * falls back to a sibling record of the alias's last segment.
+ */
+async function closure(record: SpecimenRecord, source: SpecimenRecordSource | undefined, errors: string[]): Promise<Closure> {
+  const files = new Map<string, string>(), aliases = new Map<string, string>(), dependencies = new Set<string>();
+  const addItem = (item: SpecimenRecord, own: boolean): string[] => {
+    for (const name of registryDependenciesOf(item)) dependencies.add(name);
+    const added: string[] = [];
+    for (const file of item.payload.files) {
+      const installed = installedPath(file);
+      const key = own || !installed ? posix.normalize(file.path) : installed;
+      if (!own && !CODE.test(key)) continue;
+      if (!files.has(key)) { files.set(key, file.content); added.push(key); }
+      if (installed && CODE.test(installed) && !aliases.has(stripExt(installed))) aliases.set(stripExt(installed), key);
+    }
+    return added;
+  };
+  const pending = addItem(record, true).filter(path => CODE.test(path));
   const seen = new Set<string>([record.id]);
-  const pending = [...files.keys()].filter(path => CODE.test(path));
   while (pending.length) {
     const path = pending.pop()!;
     for (const match of files.get(path)!.matchAll(/from\s+["']@\/([^"']+)["']|import\s+["']@\/([^"']+)["']/g)) {
       const alias = (match[1] ?? match[2])!;
-      if (alias === ALIAS_UTILS || aliasTarget(files, alias)) continue;
+      if (aliasTarget({ files, aliases }, alias)) continue;
+      if (source?.alias) {
+        if (alias === ALIAS_UTILS || seen.has(`@/${alias}`)) continue;
+        seen.add(`@/${alias}`);
+        let item: SpecimenRecord | undefined;
+        try { item = await source.alias(alias, { registryDependencies: [...dependencies].sort() }); }
+        catch (error) { errors.push(`import @/${alias}: ${error instanceof Error ? error.message : String(error)}`); continue; }
+        if (!item) { errors.push(`import @/${alias}: no pinned item installs it`); continue; }
+        pending.push(...addItem(item, false));
+        if (!aliasTarget({ files, aliases }, alias)) errors.push(`import @/${alias}: ${item.id} does not install it`);
+        continue;
+      }
+      if (alias === ALIAS_UTILS) continue;
       const name = alias.split("/").pop()!;
       if (!source || seen.has(name)) continue;
       seen.add(name);
@@ -142,11 +272,13 @@ async function closure(record: SpecimenRecord, source: SpecimenRecordSource | un
       }
     }
   }
-  return files;
+  return { files, aliases };
 }
 
-function aliasTarget(files: ReadonlyMap<string, string>, alias: string): string | undefined {
+function aliasTarget({ files, aliases }: Closure, alias: string): string | undefined {
   if (alias.startsWith("/") || alias.split("/").some(part => part === ".." || part === ".")) return undefined;
+  const mapped = aliases.get(stripExt(alias)) ?? aliases.get(`${stripExt(alias)}/index`);
+  if (mapped) return mapped;
   const paths = [...files.keys()].filter(path => CODE.test(path));
   const targets = paths.filter(path => stripExt(path) === alias || stripExt(path).endsWith(`/${alias}`) || stripExt(path) === `${alias}/index`);
   return targets.length === 1 ? targets[0] : undefined;
@@ -159,14 +291,15 @@ function relativeTarget(files: ReadonlyMap<string, string>, importer: string, sp
 
 const loaderOf = (path: string) => ({ ".tsx": "tsx", ".ts": "ts", ".jsx": "jsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".css": "css" } as Record<string, string>)[extname(path)] ?? "tsx";
 
-async function bundle(esbuild: SpecimenEsbuild, files: ReadonlyMap<string, string>, entry: string, workspace: string): Promise<{ js?: string; css: string; errors: string[] }> {
+async function bundle(esbuild: SpecimenEsbuild, graph: Closure, entry: string, workspace: string): Promise<{ js?: string; css: string; errors: string[] }> {
+  const { files } = graph;
   const plugin = {
     name: "specimen-records",
     setup(build: any) {
       build.onResolve({ filter: /^specimen-entry$/ }, () => ({ path: entry, namespace: "specimen" }));
       build.onResolve({ filter: /^@\//, namespace: "specimen" }, (args: any) => {
         const alias = args.path.slice(2);
-        const target = aliasTarget(files, alias);
+        const target = aliasTarget(graph, alias);
         if (target) return { path: target, namespace: "specimen" };
         if (alias === ALIAS_UTILS) return { path: "@/lib/utils", namespace: "specimen-utils" };
         return { errors: [{ text: `unresolved element import ${args.path}` }] };
@@ -215,19 +348,25 @@ export function createSpecimenBuilder(options: SpecimenBuilderOptions = {}) {
     async build(record: SpecimenRecord, source?: SpecimenRecordSource): Promise<SpecimenBuild> {
       const errors: string[] = [];
       const visual = record.kind === "visual";
-      const files = visual ? await closure(record, source, errors) : new Map<string, string>();
+      const graph: Closure = visual ? await closure(record, source, errors) : { files: new Map(), aliases: new Map() };
+      const files = graph.files;
       const entry = visual ? specimenEntry(record) : undefined;
       if (visual && !entry) errors.push(`${record.id}: payload has no code file to mount`);
-      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, record.kind, entry?.path ?? null, [...files].sort(), errors])).slice(0, 24);
+      const mounted = visual ? specimenExport(record, entry) : undefined;
+      if (visual && entry && !mounted) errors.push(`${record.id}: ${entry.path} exports no component to mount`);
+      // Fixture props (an element tree's class names included) are styled like the payload's own sources.
+      const fixtures = visual && record.preview.fixtures ? JSON.stringify(record.preview.fixtures) : "";
+      const hash = sha256(JSON.stringify([SPECIMEN_RENDERER_VERSION, BOOTSTRAP, record.kind, entry?.path ?? null, mounted ?? null, [...files].sort(), errors, fixtures])).slice(0, 24);
       let pending = builds.get(hash);
       if (!pending) {
         pending = (async () => {
           const sources = [...files].filter(([path]) => CODE.test(path)).map(([path, content]) => ({ content, extension: extname(path).slice(1) }));
-          const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }], workspace);
-          if (!visual || !entry) return { hash, css, errors };
+          const css = await compileCss([...sources, { content: BOOTSTRAP, extension: "js" }, ...(fixtures ? [{ content: fixtures, extension: "json" }] : [])], workspace);
+          const exported = mounted ? { export: mounted } : {};
+          if (!visual || !entry) return { hash, css, errors, ...exported };
           const esbuild = options.esbuild ?? await import("esbuild" as string) as SpecimenEsbuild;
-          const built = await bundle(esbuild, files, posix.normalize(entry.path), workspace);
-          return { hash, css: built.css ? `${css}\n${built.css}` : css, errors: [...errors, ...built.errors], ...(built.js ? { js: built.js } : {}) };
+          const built = await bundle(esbuild, graph, posix.normalize(entry.path), workspace);
+          return { hash, css: built.css ? `${css}\n${built.css}` : css, errors: [...errors, ...built.errors], ...exported, ...(built.js ? { js: built.js } : {}) };
         })();
         builds.set(hash, pending);
         pending.catch(() => builds.delete(hash));
