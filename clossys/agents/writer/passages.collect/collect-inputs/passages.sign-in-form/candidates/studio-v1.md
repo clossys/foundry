@@ -1,0 +1,55 @@
+---
+slot: "passages.sign-in-form"
+locales: ["en"]
+source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
+---
+
+## en
+
+### studio.sign-in.header.heading
+<!-- {"id":"studio.sign-in.header.heading","bindings":[]} -->
+Sign in
+
+### studio.sign-in.header.description
+<!-- {"id":"studio.sign-in.header.description","bindings":[]} -->
+NEED
+
+### studio.sign-in.providers.0.label
+<!-- {"id":"studio.sign-in.providers.0.label","bindings":[]} -->
+NEED
+
+### studio.sign-in.credentials.identifierLabel
+<!-- {"id":"studio.sign-in.credentials.identifierLabel","bindings":[]} -->
+Email
+
+### studio.sign-in.credentials.passwordLabel
+<!-- {"id":"studio.sign-in.credentials.passwordLabel","bindings":[]} -->
+Password
+
+### studio.sign-in.verification.codeLabel
+<!-- {"id":"studio.sign-in.verification.codeLabel","bindings":[]} -->
+Code
+
+### studio.sign-in.actions.submit
+<!-- {"id":"studio.sign-in.actions.submit","bindings":[]} -->
+Sign in
+
+### studio.sign-in.actions.verify
+<!-- {"id":"studio.sign-in.actions.verify","bindings":[]} -->
+Verify
+
+### studio.sign-in.actions.pending
+<!-- {"id":"studio.sign-in.actions.pending","bindings":[]} -->
+Signing in
+
+### studio.sign-in.actions.back
+<!-- {"id":"studio.sign-in.actions.back","bindings":[]} -->
+Back
+
+### studio.sign-in.actions.resend
+<!-- {"id":"studio.sign-in.actions.resend","bindings":[]} -->
+Send a new code
+
+### studio.sign-in.actions.divider
+<!-- {"id":"studio.sign-in.actions.divider","bindings":[]} -->
+or
