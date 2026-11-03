@@ -19,7 +19,7 @@ import { installedPath } from "./installed-path.js";
 import type { SpecimenFile, SpecimenRecord, SpecimenRecordSource } from "./types.js";
 
 /** Bumped when the renderer's output for the same record changes. */
-export const SPECIMEN_RENDERER_VERSION = "specimen-4";
+export const SPECIMEN_RENDERER_VERSION = "specimen-5";
 
 export interface SpecimenBuild {
   readonly hash: string;
@@ -95,10 +95,18 @@ if (Component) root.render(React.createElement(Boundary, null, React.createEleme
 const sha256 = (value: string) => createHash("sha256").update(value).digest("hex");
 const stripExt = (path: string) => path.replace(/\.(?:[cm]?[jt]sx?)$/, "");
 
-/** The payload file the specimen mounts. */
+/**
+ * The payload file the specimen mounts: the preview's entry, else the item's outermost surface.
+ * A block's `registry:page` composes its `registry:component` parts (sidebar-07's page wraps
+ * AppSidebar in SidebarProvider), so a page wins over a block, and a block over a part.
+ */
 export function specimenEntry(record: SpecimenRecord): SpecimenFile | undefined {
   const files = record.payload.files.filter(file => CODE.test(file.path));
   if (record.preview.entry) return files.find(file => file.path === record.preview.entry);
+  for (const type of ["registry:page", "registry:block"]) {
+    const found = files.find(file => file.type === type);
+    if (found) return found;
+  }
   return files.find(file => /registry:(?:ui|component|block|page)/.test(file.type ?? "")) ?? files[0];
 }
 
@@ -291,6 +299,21 @@ function relativeTarget(files: ReadonlyMap<string, string>, importer: string, sp
 
 const loaderOf = (path: string) => ({ ".tsx": "tsx", ".ts": "ts", ".jsx": "jsx", ".js": "js", ".mjs": "js", ".cjs": "js", ".css": "css" } as Record<string, string>)[extname(path)] ?? "tsx";
 
+/**
+ * A specimen page has no Next server: `next/image` would request `/_next/image`, which nothing
+ * serves. When the preview workspace has Next, its default image config is built in unoptimized,
+ * so images load from their own URLs. Without Next there is nothing to configure.
+ */
+function nextImageDefine(workspace: string): Record<string, string> {
+  for (const base of [workspace, publisherDir]) {
+    try {
+      const { imageConfigDefault } = createRequire(join(base, "noop.js"))("next/dist/shared/lib/image-config.js") as { imageConfigDefault?: object };
+      if (imageConfigDefault) return { "process.env.__NEXT_IMAGE_OPTS": JSON.stringify({ ...imageConfigDefault, unoptimized: true }) };
+    } catch { /* no next here */ }
+  }
+  return {};
+}
+
 async function bundle(esbuild: SpecimenEsbuild, graph: Closure, entry: string, workspace: string): Promise<{ js?: string; css: string; errors: string[] }> {
   const { files } = graph;
   const plugin = {
@@ -327,7 +350,8 @@ async function bundle(esbuild: SpecimenEsbuild, graph: Closure, entry: string, w
     const result = await esbuild.build({
       stdin: { contents: BOOTSTRAP, loader: "js", resolveDir: workspace, sourcefile: "specimen-bootstrap.js" },
       bundle: true, write: false, format: "esm", platform: "browser", target: "es2022", minify: true,
-      jsx: "automatic", define: { "process.env.NODE_ENV": '"production"' }, outdir: "specimen-out", entryNames: "specimen",
+      // A browser has no `process`: npm code reading `process.env.X` (next/image, next/link) sees an empty env.
+      jsx: "automatic", define: { "process.env.NODE_ENV": '"production"', ...nextImageDefine(workspace), "process.env": "{}" }, outdir: "specimen-out", entryNames: "specimen",
       logLevel: "silent", legalComments: "none", plugins: [plugin],
     });
     const output = result.outputFiles ?? [];

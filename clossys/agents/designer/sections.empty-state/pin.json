@@ -1,6 +1,6 @@
 {
-  "candidate": "empty-state-v1.json",
-  "sha256": "fcca94776b4567cffa31c33d176d11e7af8d542be06935b95a2e8bc4ed366d0b",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "empty-state-v2.json",
+  "sha256": "0e1cf366801198b4da39d0e41d9b930bd60372fff960cc0eabf205fa0be815b2",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:14Z"
 }

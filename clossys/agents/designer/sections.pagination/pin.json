@@ -1,6 +1,6 @@
 {
-  "candidate": "pagination-v1.json",
-  "sha256": "73ffb84748a95ca566ee06588484790c9cbca103bb65e099cd876ab575151d24",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "pagination-v2.json",
+  "sha256": "351050b7705a3d908a31f8b93c9e957ceda1fea6b57ba323a5af2bedf34cfd70",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:16Z"
 }

@@ -1,6 +1,6 @@
 {
-  "candidate": "data-table-v1.json",
-  "sha256": "6626d7d9fba7835fdc9317c1034d60975488e537dded0693bb2c24cefbda66ea",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "data-table-v2.json",
+  "sha256": "a176c55286678de1ae136258d307e68c9f054105a29d37181e241fd69d934fd9",
+  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "at": "2026-11-03T14:00:14Z"
 }
