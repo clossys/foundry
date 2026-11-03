@@ -12,7 +12,7 @@ import { HANDLERS, assemblyOf, checkManifest, generateStudioMap } from './genera
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 const GENERIC_PAGE = { file: 'studio/app/[[...route]]/page.tsx', export: 'default' };
 
-/** A copy of the Studio library: pinned Publisher candidates, Designer slot contracts, library records and the selection. */
+/** A copy of the Studio records: pinned Publisher candidates, the Designer slot model, and the legacy library the draft preview still reads. */
 async function fixture(t) {
   const dir = await realpath(await mkdtemp(join(tmpdir(), 'studio-map-')));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -23,9 +23,7 @@ async function fixture(t) {
   const ia = JSON.parse(await readFile(join(designer, 'ia.json'), 'utf8'));
   await cp(join(designer, 'ia.json'), join(copy, 'ia.json'));
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
-    const path = join(node.id, child.id, slot, 'slot.json');
-    await mkdir(join(copy, node.id, child.id, slot), { recursive: true });
-    await cp(join(designer, path), join(copy, path));
+    await cp(join(designer, node.id, child.id, slot), join(copy, node.id, child.id, slot), { recursive: true });
   }
   await cp(join(clossys, 'library'), join(clossysRoot, 'library'), { recursive: true });
   await cp(join(clossys, 'selection.json'), join(clossysRoot, 'selection.json'));
@@ -367,15 +365,34 @@ test('a section bound to anything but its contract input fails closed', async t 
   await assert.rejects(run(options), /contract input is "gallery"/);
 });
 
-test('a slot with no pin, or an item with no trusted reference, fails closed', async t => {
-  const options = await fixture(t), path = join(options.clossysRoot, 'selection.json');
-  const selection = JSON.parse(await readFile(path, 'utf8'));
-  const { element, version } = selection.pins['sections.studio.history'];
-  const record = join(options.clossysRoot, 'library/sections.studio.history', element, `v${version}`, 'element.json');
-  await replace(record, '"mode": "customized"', '"mode": "original"');
-  await assert.rejects(run(options), /pin hash|trusted reference/);
-  delete selection.pins['sections.studio.history'];
-  await writeFile(path, JSON.stringify(selection));
+/** The fixture folder of one Designer slot, with its pin and the pinned candidate's path. */
+async function pinnedDesignerSlot(options, id) {
+  const copy = join(options.clossysRoot, 'agents', 'designer');
+  const ia = JSON.parse(await readFile(join(copy, 'ia.json'), 'utf8'));
+  for (const node of ia.nodes) for (const child of node.children) if (child.slots.includes(id)) {
+    const dir = join(copy, node.id, child.id, id), pin = JSON.parse(await readFile(join(dir, 'pin.json'), 'utf8'));
+    return { dir, pin, candidate: join(dir, 'candidates', pin.candidate) };
+  }
+  throw new Error(`no Designer slot ${id}`);
+}
+/** Rewrite a pinned candidate and re-pin its new bytes, as an owner pin of an edited candidate would. */
+async function editCandidate(options, id, edit) {
+  const slot = await pinnedDesignerSlot(options, id), item = JSON.parse(await readFile(slot.candidate, 'utf8'));
+  edit(item);
+  const bytes = `${JSON.stringify(item, null, 2)}\n`;
+  await writeFile(slot.candidate, bytes);
+  await writeFile(join(slot.dir, 'pin.json'), JSON.stringify({ ...slot.pin, sha256: createHash('sha256').update(bytes).digest('hex') }));
+  return slot;
+}
+
+test('a slot with no pin, a tampered candidate, or an item with no trusted reference fails closed', async t => {
+  const options = await fixture(t);
+  const slot = await pinnedDesignerSlot(options, 'sections.studio.history');
+  await replace(slot.candidate, '"kind": "derived"', '"kind": "original"');
+  await assert.rejects(run(options), /pin hash/);
+  await editCandidate(options, 'sections.studio.history', item => { item.meta.source = { kind: 'original', ref: [] }; });
+  await assert.rejects(run(options), /trusted reference/);
+  await rm(join(slot.dir, 'pin.json'));
   await assert.rejects(run(options), /no pin/);
 });
 
@@ -416,12 +433,15 @@ test('checkManifest names what a manifest lacks', () => {
   assert.throws(() => checkManifest('page.x', { navigator: 'explorer', modules: [], actions: [], wiring: [] }, {}), /declares no modules/);
 });
 
-test('Studio runs exactly the pinned payload: code that drifts from the library record fails', async t => {
-  const options = await fixture(t), selection = JSON.parse(await readFile(join(options.clossysRoot, 'selection.json'), 'utf8'));
+test('Studio runs exactly the pinned payload: code that drifts from the pinned candidate fails', async t => {
+  const options = await fixture(t);
   await run(options);
-  const { element, version } = selection.pins['sections.studio.checks'];
-  await replace(join(options.clossysRoot, 'library/sections.studio.checks', element, `v${version}`, 'index.tsx'), 'data-studio-section="checks"', 'data-studio-section="drifted"');
-  await assert.rejects(run(options), /differs from studio-checks/);
+  await editCandidate(options, 'sections.studio.checks', item => {
+    const file = item.files.find(entry => entry.path === 'index.tsx');
+    assert.ok(file.content.includes('data-studio-section="checks"'));
+    file.content = file.content.replace('data-studio-section="checks"', 'data-studio-section="drifted"');
+  });
+  await assert.rejects(run(options), /index.tsx differs from studio-checks v2 as pinned/);
 });
 
 test('stale generated products and unexpected files fail closed', async t => {

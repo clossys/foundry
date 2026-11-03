@@ -1,6 +1,6 @@
 ---
 name: clossys-designer
-description: Designer loop. For one L3 slot, reads its contract and references, picks, adopts or creates a shadcn-format registry item, shows the options, and pins the owner-approved one in selection.json. Invoke with @clossys-designer to fill or change a slot.
+description: Designer loop. For one L3 slot, reads its contract and references, picks, adopts or creates a shadcn-format registry item, shows the options, and pins the owner-approved one in the slot's pin.json. Invoke with @clossys-designer to fill or change a slot.
 disable-model-invocation: true
 ---
 # clossys-designer
@@ -15,19 +15,23 @@ building the item is your work, done through this loop.
 ## Where the records live
 
 These are consumer files in the consumer repository; they do not ship in this package.
+Each Designer slot is one folder in the slot model, placed by the Designer IA:
 
 ```
-clossys/selection.json                                 pins + append-only history (not shipped)
-clossys/library/<slot>/<element>/v<N>/element.json     clossys.element/1 record
-clossys/library/<slot>/<element>/v<N>/preview.json     clossys.preview/1 fixtures
-clossys/library/<slot>/<element>/v<N>/<element>.json   the registry item (payload)
+clossys/agents/designer/ia.json                                 the IA: L1/L2 groups and their slots
+clossys/agents/designer/<L1>/<L2>/<slot>/slot.json              clossys.slot/1 (kind: element)
+clossys/agents/designer/<L1>/<L2>/<slot>/candidates/<element>-v<N>.json
+                                                                one option: a shadcn registry item
+                                                                (files[] with content; meta.source,
+                                                                meta.element, meta.preview)
+clossys/agents/designer/<L1>/<L2>/<slot>/pin.json               { candidate, sha256, pinnedBy, at }
 ```
 
 Slot contracts ship in the installed Designer package at
 `src/catalog/slot-contracts/<layer>.json` (`clossys.slot-contract/1`: purpose,
 inputs, limits, references). The slot catalog (anatomy, allowed composes,
-copy fields) is `src/catalog/slots/<layer>.json`. Versions are immutable; a
-change is `v<N+1>`.
+copy fields) is `src/catalog/slots/<layer>.json`. Candidates are immutable; a
+change is `v<N+1>`. The pin is the only selection; its history is git.
 
 ## Director derivation
 
@@ -45,11 +49,11 @@ change is `v<N+1>`.
    version (shadcn, Magic UI, Tailark and other trusted free registries). Read
    that item before building anything.
 3. **Choose a path** for each option:
-   - **pick**: the reference item as is (`lineage.mode: verbatim`, with
-     `lineage.source` = the reference row);
-   - **adopt**: the reference item with edits (`customized`, same source);
+   - **pick**: the reference item as is (`meta.source.kind: registry`, with
+     `meta.source.ref` = the reference row);
+   - **adopt**: the reference item with edits (`derived`, same ref);
    - **create**: copy the closest trusted reference verbatim (as `shadcn add`
-     writes it) into a new item (`customized`, `lineage.source` = that
+     writes it) into a new item (`derived`, `meta.source.ref` = that
      reference). Create never starts from nothing and never rewrites the code.
    Every path ships the reference's code files unchanged except for the
    allowed hunks: imports (H-IMPORT), a utility swapped for a theme-variable
@@ -69,54 +73,51 @@ change is `v<N+1>`.
    never invent an item. Stock shadcn first. Read every copy input from props, never hard-coded
    text; mark each copy element with `data-copy="<key>"`; use only the
    contract's theme variables.
-4. **Write each option as a version.** From `clossys/`, with the installed
-   Producer API (it computes `version` and `hash` and refuses invalid records):
+4. **Write each option as a candidate.** From the consumer repository, with the
+   installed Producer API (it numbers the candidate and refuses an invalid one):
    ```sh
    node --input-type=module -e '
    import { readFileSync } from "node:fs";
-   import { writeElementVersion } from "@clossys/producer";
-   const input = JSON.parse(readFileSync(process.argv[1], "utf8"));
-   console.log(writeElementVersion("library", input).dir);' option.json
+   import { writeCandidate } from "@clossys/producer";
+   const [slot, file] = process.argv.slice(1);
+   const item = JSON.parse(readFileSync(file, "utf8"));
+   console.log(writeCandidate("clossys", "designer", slot, item.name, item).name);' <slot> option.json
    ```
-   `option.json` holds `{ element, preview, files }`: the element record
-   without `version`/`hash` (`schema`, `id`, `package: "designer"`, `layer`,
-   `slot`, `kind: "registry:block"`, `lineage`, `license`, `creator`, `reason`,
-   `createdAt`, `checks`, `deps`, `reads.copyKeys`, `reads.themeVars`), a
-   preview (`fixtures`, sample `copy`, `container`, `theme`, `width`) and
-   `files: { "<element>.json": "<registry item JSON>", "<file>.tsx": "<code>" }`.
-   Record where each code file came from in `lineage.source.files`
-   (`{ "<file>.tsx": "<path inside the vendored reference item>" }`); the pin
-   gate refuses a code file without that entry.
+   `option.json` is the registry item: `name` (the element id), `type`
+   (`registry:block` for a frame or section), `files[]` (`path`, `type`,
+   `content`: every code file in full) and `meta`: `source` (`kind`
+   `registry` for a pick, `derived` for an adopt or create, `original` only in a
+   consumer-asset slot; `ref[]` names the reference row, and for a derived item
+   the candidate version it starts from), `refVerbatim.files`
+   (`{ "<file>.tsx": "<path inside the vendored reference item>" }`; the gate
+   refuses a code file without that entry), `element` (`id`, `slot`, `license`,
+   `creator`, `reason`, `createdAt`, `checks`, `deps`, `reads.copyKeys`,
+   `reads.themeVars`) and `preview` (`fixtures`, sample `copy`, `container`,
+   `theme`, `width`).
 5. **Show the options.** Snapshot each one at desktop and narrow widths:
    ```sh
-   npx clossys specimen snapshot --records clossys/library --element <id> --v <N> --width 1280,390
+   npx clossys specimen snapshot --records clossys --element <id> --v <N> --width 1280,390
    ```
    or browse them all in Studio with `npx clossys produce`
-   (`/__specimen`). Give the owner the image paths, the path taken (pick,
+   (`/designer/<slot>`). Give the owner the image paths, the path taken (pick,
    adopt or create) and one line on each trade-off. Do not pin anything yet.
 6. **Pin the approved option** only after the owner's explicit yes, and only
-   when its provenance and its code pass. Run both gates first; a non-zero exit
-   means do not pin (re-source the item from a trusted reference, cut the
-   failing hunks, or raise a NEED):
-   ```sh
-   npx designer-provenance-check --root clossys --element <slot>/<element>/v<N>
-   npx designer-ref-verbatim --root clossys --element <slot>/<element>/v<N>
-   ```
-   Then pin (pin() runs the ref-verbatim gate again and refuses a failing version):
+   when its provenance and its code pass. Pin it, then run the gate over every
+   pin; a non-zero exit means unpin it (restore the previous `pin.json`), then
+   re-source the item from a trusted reference, cut the failing hunks, or raise a NEED:
    ```sh
    node --input-type=module -e '
-   import { existsSync } from "node:fs";
-   import { emptySelection, loadSelection, pin, readElementVersion, writeSelection } from "@clossys/producer";
-   const [slot, id, v, by] = process.argv.slice(1);
-   const { element } = readElementVersion("library", slot, id, Number(v));
-   const current = existsSync("selection.json") ? loadSelection("selection.json") : emptySelection();
-   writeSelection(".", pin(current, { root: ".", element, at: new Date().toISOString(), by, from: "option" }));' <slot> <element> <N> <owner>
+   import { writePin } from "@clossys/producer";
+   const [slot, candidate, ref] = process.argv.slice(1);
+   console.log(writePin("clossys", "designer", slot, candidate, { pinnedBy: `owner:${ref}`, at: new Date().toISOString() }));' <slot> <element>-v<N>.json "<owner message ref>"
+   npx designer-ref-verbatim --root clossys --pinned
    ```
-   History only grows; to go back, pin the earlier version again.
+   `pinnedBy` names the owner's approval message; never write one yourself
+   without it. To go back, pin the earlier candidate again.
 7. **Check and commit.**
    ```sh
    npx clossys check --suites
-   git add clossys/library/<slot> clossys/selection.json   # consumer files, not shipped
+   git add clossys/agents/designer/<L1>/<L2>/<slot>   # consumer files, not shipped
    git commit -m "designer: pin <slot> <element> v<N>"
    ```
 
@@ -127,7 +128,7 @@ registries are the `registries` of the package's `references/manifest.json`
 (shadcn, Magic UI, Dice UI, Tailark OSS, lucide, Tailwind Typography and the
 Fontsource font provider). The rule is `src/catalog/rules/provenance.json`.
 
-- Every item version records `lineage.source` with `registry`, `item`,
+- Every candidate records `meta.source.ref` naming a `registry`, `item`,
   `version` and `hash`, and that row exists in the manifest with the same hash.
 - A font (`themes.font-*`) comes from a `registry:font` reference: a shadcn
   font item or the Fontsource package of the Google Fonts family, so the
@@ -137,11 +138,11 @@ Fontsource font provider). The rule is `src/catalog/rules/provenance.json`.
 - `original` only in a consumer-asset slot.
 
 ```sh
-npx designer-provenance-check --root clossys   # pins and pending options; exit 1 on a violation
+npx designer-ref-verbatim --root clossys --pinned   # every pinned candidate; exit 1 on a violation
 ```
 
-A pinned violator whose slot has a passing option is listed as pending
-replacement; the owner's pin of the option clears it.
+A pinned violator is replaced by pinning a passing candidate after the
+owner's yes.
 
 ## Section rules (every section and site frame)
 
@@ -195,19 +196,17 @@ stays draft. For the older consumer-library commands see
 
 ## Done when
 
-- The consumer's `clossys/selection.json` (not shipped) pins the slot to an existing version whose
-  `element.json` hash verifies (`npx clossys check --suites` shows no
-  selection finding for it).
+- The slot's `pin.json` (not shipped) names an existing candidate whose bytes
+  match its `sha256` (`npx clossys check --suites` shows no slot finding for it).
 - The snapshot of the pinned version renders with its preview copy.
-- `designer-provenance-check --element` and `designer-ref-verbatim --element`
-  passed for the pinned version.
+- `designer-ref-verbatim --pinned` passed for the pinned candidate.
 - Every required copy input of the contract appears in `reads.copyKeys`, so
   Writer can fill it.
 - `check-section-tokens.mjs` reports nothing for the consumer, and every page
   that mounts the slot passes `check-page-overflow.mjs` at 375, 768 and 1280.
-- The library version and selection are committed.
+- The candidate and pin are committed.
 
-Report in plain language: the slot, the pinned element and version, the path
+Report in plain language: the slot, the pinned candidate, the path
 taken, and the snapshot paths.
 
 ## Reference (generated)

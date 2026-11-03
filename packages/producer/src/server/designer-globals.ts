@@ -1,11 +1,10 @@
 import { createHash } from "node:crypto";
-import { constants, existsSync, readFileSync } from "node:fs";
+import { constants } from "node:fs";
 import { open, readFile, realpath } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { compile } from "tailwindcss";
-import { SELECTION_FILE } from "../records/selection.js";
-import { loadSelection } from "../records/validate.js";
+import { listSlots, readCandidate } from "../records/slots.js";
 import { agentRoot, readCells } from "./cells.js";
 import { specimenSubstrate } from "./specimen-substrate.js";
 
@@ -57,22 +56,24 @@ const CSS_VARIABLE = /^--[a-z][a-z0-9-]*$/;
 const FONT_FAMILY = /^[\w\s'",.-]+$/;
 const PACKAGE = /^(?:@[a-z0-9][\w.-]*\/)?[a-z0-9][\w.-]*$/;
 
-/** The workspace's pinned font items, read from selection.json and their registry items. */
+/** The workspace's pinned font items: Designer `themes.font*` pins and the registry items they name. */
 export function pinnedFonts(root: string): PinnedFont[] {
   const library = join(root, "clossys");
-  const selectionPath = join(library, SELECTION_FILE);
-  if (!existsSync(selectionPath)) return [];
-  const pins = loadSelection(selectionPath).pins;
   const fonts: PinnedFont[] = [];
-  for (const slot of Object.keys(pins).filter(name => name.startsWith("themes.font")).sort()) {
-    const pin = pins[slot]!;
-    let font: Record<string, unknown> | undefined;
-    try { font = JSON.parse(readFileSync(join(library, "library", slot, pin.element, `v${pin.version}`, "registry-item.json"), "utf8")).font; } catch { continue; }
-    const { family, variable, dependency } = font ?? {};
-    if (typeof family !== "string" || !FONT_FAMILY.test(family) || typeof variable !== "string" || !CSS_VARIABLE.test(variable) || typeof dependency !== "string" || !PACKAGE.test(dependency)) continue;
-    fonts.push({ slot, element: pin.element, version: pin.version, family, variable, dependency });
+  for (const entry of listSlots(library, "designer").filter(row => row.id.startsWith("themes.font") && row.pin)) {
+    const pin = entry.pin!;
+    let item: Record<string, any> | undefined;
+    try {
+      const candidate = readCandidate(library, "designer", entry.id, pin.candidate);
+      if (candidate.sha256 !== pin.sha256) continue;
+      item = JSON.parse(candidate.bytes);
+    } catch { continue; }
+    const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
+    const { family, variable, dependency } = item?.font ?? {};
+    if (typeof item?.name !== "string" || !version || typeof family !== "string" || !FONT_FAMILY.test(family) || typeof variable !== "string" || !CSS_VARIABLE.test(variable) || typeof dependency !== "string" || !PACKAGE.test(dependency)) continue;
+    fonts.push({ slot: entry.id, element: item.name, version, family, variable, dependency });
   }
-  return fonts;
+  return fonts.sort((a, b) => a.slot < b.slot ? -1 : a.slot > b.slot ? 1 : 0);
 }
 
 /** Source text added around the consumer globals: the pinned font packages first, their theme variables last. */

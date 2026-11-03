@@ -16,11 +16,10 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { applySiteNavigation, installAndBind, isBlocking, planSite, siteLinkFindings, substrateDependencies, type BoundPage, type InstallFinding, type InstallPins, type InstallResult, type ShadcnRunner, type SitePlan, type SiteRoutePack } from "@clossys/publisher/install";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
-import { loadSelection, SELECTION_FILE } from "../records/index.js";
 import { hasSlotModel } from "../records/slots.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
-import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, shadcnRunner, writerCopy } from "./install.js";
+import { designerPins, ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageRecordFromCell, renderBoundPage, shadcnRunner, writerCopy } from "./install.js";
 import { installOutRoot, INSTALL_MARKER } from "./install-out.js";
 
 export interface PublishSiteOptions {
@@ -167,8 +166,7 @@ export async function publishSite(options: PublishSiteOptions): Promise<PublishS
   const plan = planned.plan;
   if (plan) {
     await ensureSubstrate(substrate);
-    const selection = loadSelection(join(root, "clossys", SELECTION_FILE));
-    const pins: InstallPins = Object.fromEntries(Object.entries(selection.pins).map(([slot, pin]) => [slot, { element: pin.element, version: pin.version }]));
+    const pins: InstallPins = designerPins(root);
     const source = libraryRecordSource({ roots: specimenRoots(root, options.records) });
     const copy = await writerCopy(root);
     const runner = options.runner ?? shadcnRunner();

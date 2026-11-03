@@ -39,9 +39,9 @@ const tagline = (text: string, page = "home", meta?: Record<string, unknown>) =>
 
 describe("Writer slot contracts", () => {
   it("declares one contract per Writer L3 slot, with the catalog's limits", () => {
-    expect(contracts.slots).toHaveLength(136);
+    expect(contracts.slots).toHaveLength(137);
     const counts = Object.fromEntries(WRITER_SLOT_LAYERS.map(l => [l, contracts.slots.filter(s => s.layer === l).length]));
-    expect(counts).toEqual({ lexicon: 27, strings: 22, patterns: 24, passages: 51, narratives: 12 });
+    expect(counts).toEqual({ lexicon: 27, strings: 22, patterns: 24, passages: 52, narratives: 12 });
     for (const layer of WRITER_SLOT_LAYERS) {
       const catalog = catalogSlots(layer);
       expect(contracts.slots.filter(s => s.layer === layer).map(s => s.id).sort()).toEqual(catalog.map(s => s.id).sort());
@@ -71,7 +71,7 @@ describe("Writer slot contracts", () => {
         if (limit!.maxWords !== undefined) expect(t.split(/\s+/).length, `${slot.id}:${key}`).toBeLessThanOrEqual(limit!.maxWords);
       }
     }
-    expect(exemplars).toBe(277);
+    expect(exemplars).toBe(279);
   });
 
   it("cites only Director cells whose contracts list the slot as a feed", () => {
@@ -201,7 +201,7 @@ describe("writer slots CLI", () => {
       const write = (t: string) => { out += t; };
       expect(mainWriterSlotCheck([join(dir, "bad")], write)).toBe(0);
       const report = JSON.parse(out) as { command: string; suite: string; findings: WriterFinding[]; counts: { slots: number; byCheck: Record<string, number> } };
-      expect([report.command, report.suite, report.counts.slots]).toEqual(["slots", "writer.copy.v1", 136]);
+      expect([report.command, report.suite, report.counts.slots]).toEqual(["slots", "writer.copy.v1", 137]);
       expect(report.counts.byCheck["W-LEN"]).toBeGreaterThan(0);
       out = ""; expect(mainWriterSlotCheck([join(dir, "bad"), "--strict"], write)).toBe(1);
       out = ""; expect(mainWriterSlotCheck([join(dir, "good"), "--strict"], write)).toBe(0);

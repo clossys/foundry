@@ -1,0 +1,78 @@
+{
+  "name": "studio-leaf-header",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, CardDescription, CardHeader, CardTitle, LinkButton } from '@clossys/designer-ui';\n\nexport type LeafTone = 'secondary' | 'outline' | 'destructive';\n\n/** The `header` input of `sections.studio.leaf-header`: display-ready. */\nexport interface LeafHeaderInput {\n  name: string;\n  id: string;\n  version?: number;\n  statusLabel: string;\n  statusTone: LeafTone;\n  statusDetail: readonly string[];\n  trail: readonly string[];\n  galleryHref: string;\n  galleryLabel: string;\n}\n\n/** `sections.studio.leaf-header`: the leaf name, id, shown version, status and where it sits in the IA. */\nexport default function LeafHeaderSection({ header }: { header: LeafHeaderInput }) {\n  return <CardHeader data-studio-section=\"leaf-header\">\n    <CardDescription><LinkButton href={header.galleryHref} variant=\"link\" size=\"sm\" className=\"h-auto px-0\">{header.galleryLabel}</LinkButton></CardDescription>\n    <CardTitle role=\"heading\" aria-level={1} className=\"flex flex-wrap items-center gap-2 text-xl\">\n      {header.name}\n      {header.version !== undefined && <Badge variant=\"ghost\">v{header.version}</Badge>}\n      <Badge variant={header.statusTone}>{header.statusLabel}</Badge>\n    </CardTitle>\n    <CardDescription>{[header.id, ...header.trail].join(' · ')}</CardDescription>\n    {header.statusDetail.map(line => <CardDescription key={line}>{line}</CardDescription>)}\n  </CardHeader>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-leaf-header\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Header\",\n  \"description\": \"The head of a leaf page: back link to its library, name, shown version, status, id and IA trail, and status notes.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-leaf-header/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.leaf-header",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "create",
+        "studio-current-ui-draft-studio-leaf-header-20261101",
+        "{\"registry\":\"foundry\",\"item\":\"packages/producer/studio/sections/studio-leaf-header\",\"version\":\"902f695cc3720af807baa814508b67a769dcda4c\",\"url\":\"https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-leaf-header\",\"hash\":\"sha256:68cb8785f74760d25a9601e46eed0fabdb6ea54b2796b5b9fa1f9b1d4c984495\"}",
+        "{\"version\":1,\"hash\":\"sha256:1b61a0fc138401c99dc6de006a2b62e7d30f3c3ccf4c2c3f753a72e04e3503ab\"}"
+      ],
+      "hash": "sha256:899b7f6ace27925f99f0a49f345b23c0bf45ca7eaf628acee27783ae64f2d4a7",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-leaf-header",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.leaf-header",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "codex",
+        "model": "unknown",
+        "by": "current-source payload draft preparation"
+      },
+      "reason": "DRAFT only: preserve current owner-authoritative Studio UI bytes as a new immutable payload. NEED: actual current trusted-reference lineage and whole-file or exact-part proof remain unresolved; no production qualification, selection or pin approval is claimed.",
+      "createdAt": "2026-11-02T00:02:40.226Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card-foreground",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

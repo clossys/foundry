@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-shell-v6.json",
-  "sha256": "77c7a7b508a24cbb4b2ede3592f7d7cf3b15f0a47edb7f7779a64b6d98437cbd",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T23:59:00Z"
+  "candidate": "studio-shell-v7.json",
+  "sha256": "0094c467b5464ada0c6b77e28677c83f44791702d175ae5ecfd51856db0acbc0",
+  "pinnedBy": "owner:base-release2 e36",
+  "at": "2026-11-02T19:30:00Z"
 }
