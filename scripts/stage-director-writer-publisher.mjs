@@ -55,7 +55,16 @@ function run(label, cli, args, expectedStatus, requiredOutput) {
 }
 
 try {
-  // @clossys/director has no bin: `clossys director check` runs it with the clossys CLI's store.
+  // `clossys director check` runs Director with the clossys CLI's store; Director's one bin,
+  // director-rate-check, reads only the caller-named assessment file.
+  const directorRateCli = join(repoRoot, "packages/director/dist/strategy-traceability-rate-cli.js");
+  const rateDir = fixtureDir("director-rate");
+  const observation = (approved) => ({ claimId: "claim-one", independent: true, currentEvidence: true, derived: true, approved, observerRef: "observer-a", evidence: [{ id: "evidence-one", description: "Independent observation evidence." }] });
+  const rateRed = writeJson(rateDir, "violated.json", { asOf: "2026-09-18T12:00:00Z", declaredClaims: [{ id: "claim-one" }], observations: [observation(false)] });
+  const rateControl = writeJson(rateDir, "satisfied.json", { asOf: "2026-09-18T12:00:00Z", declaredClaims: [{ id: "claim-one" }], observations: [observation(true)] });
+  run("director rate red", directorRateCli, [rateRed], 1, '"state": "violated"');
+  run("director rate control", directorRateCli, [rateControl], 0, '"state": "satisfied"');
+
   const directorCli = join(repoRoot, "packages/producer/dist/cli/index.js");
   const directorStrategy = fixtureDir("director-strategy");
   writeJson(directorStrategy, "facts.json", [{ key: "active-customers", label: "Active customers", value: 3, source: "catalogue", lastUpdatedAt: "2026-08-22", aliases: ["3 customers"] }]);

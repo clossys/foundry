@@ -25,6 +25,9 @@
       "import": "./dist/cell-format/schema.js"
     }
   },
+  "bin": {
+    "director-rate-check": "dist/strategy-traceability-rate-cli.js"
+  },
   "files": [
     "dist",
     "src",
@@ -45,6 +48,10 @@
   ],
   "sideEffects": false,
   "foundry": {
+    "assessment": {
+      "bin": "director-rate-check",
+      "invocation": "single-json-input"
+    },
     "outputs": [
       "clossys/agents/director/tree.json",
       "clossys/agents/director/cells/",

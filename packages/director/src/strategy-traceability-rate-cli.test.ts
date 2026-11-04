@@ -1,12 +1,14 @@
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { spawn } from "node:child_process";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DirectorRateCliInputError, main, runDirectorRateCli } from "./strategy-traceability-rate-cli.js";
+import { fileURLToPath } from "node:url";
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { DirectorRateCliInputError, isDirectInvocation, main, runDirectorRateCli } from "./strategy-traceability-rate-cli.js";
 
-// `clossys director rate-check` (producer) runs runDirectorRateCli; the compiled path is
-// exercised end to end in packages/producer/src/cli/director-verb.test.ts.
 let root: string;
+let binPath: string;
+let workDir: string;
 
 function evidence(id: string) {
   return [{ id, description: "Independent observation evidence." }];
@@ -56,11 +58,83 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  vi.restoreAllMocks();
   if (root) rmSync(root, { recursive: true, force: true });
 });
 
-describe("clossys director rate-check", () => {
+beforeAll(() => {
+  const packageRoot = fileURLToPath(new URL("..", import.meta.url));
+  // dist/ was built once, before any test file started, by the package's
+  // vitest globalSetup (scripts/lib/vitest-build-package.mjs). Never rebuild
+  // it here: a sibling test file may be executing or packing it (#1385).
+
+  workDir = mkdtempSync(join(tmpdir(), "director-rate-check-bin-"));
+  const dotBin = join(workDir, "node_modules", ".bin");
+  mkdirSync(dotBin, { recursive: true });
+  const installedDistDir = join(workDir, "dist");
+  mkdirSync(installedDistDir, { recursive: true });
+  for (const file of ["strategy-traceability-rate-cli.js", "strategy-traceability-rate.js"]) {
+    cpSync(join(packageRoot, "dist", file), join(installedDistDir, file));
+  }
+  const installedCliPath = join(installedDistDir, "strategy-traceability-rate-cli.js");
+  chmodSync(installedCliPath, 0o755);
+  binPath = join(dotBin, "director-rate-check");
+  symlinkSync(installedCliPath, binPath);
+}, 60_000);
+
+afterAll(() => {
+  if (workDir) rmSync(workDir, { recursive: true, force: true });
+});
+
+/**
+ * Runs the installed CLI bin and resolves once its stdout/stderr have fully
+ * ended AND the process has exited -- never before.
+ *
+ * #1333/#1341: the equivalent `spawnSync` call flaked in CI under load with
+ * `result.status` set (the child really did exit) but `result.stdout`
+ * empty -- a report the exit code says exists but the capture missed.
+ * `spawnSync`'s synchronous capture is its own internal poll loop outside
+ * Node's normal stream machinery, and that loop is what a heavily loaded CI
+ * runner's scheduling can starve. `spawn()`'s stdout/stderr are ordinary
+ * `Readable` streams, whose contract guarantees every byte written is
+ * delivered via `data` events before `end` fires, and the `close` handler
+ * below -- which Node fires only after the process has exited AND both
+ * stdio streams have ended -- cannot observe an exit code before the output
+ * that produced it has been fully read.
+ */
+function spawnCapture(
+  command: string,
+  args: string[],
+  options: { timeout: number },
+): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  return new Promise((resolvePromise, rejectPromise) => {
+    const child = spawn(command, args, options);
+    let stdout = "";
+    let stderr = "";
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (chunk: string) => {
+      stdout += chunk;
+    });
+    child.stderr.on("data", (chunk: string) => {
+      stderr += chunk;
+    });
+    child.on("error", rejectPromise);
+    child.on("close", (status) => {
+      resolvePromise({ status, stdout, stderr });
+    });
+  });
+}
+
+async function runBin(args: string[]) {
+  const options = { timeout: 8_000 };
+  try {
+    return await spawnCapture(binPath, args, options);
+  } catch {
+    return await spawnCapture(process.execPath, [binPath, ...args], options);
+  }
+}
+
+describe("director-rate-check", () => {
   it("maps satisfied, violated, and indeterminate reports to 0, 1, and 2", () => {
     expect(main([write("satisfied.json", satisfied())])).toBe(0);
     expect(main([write("violated.json", violated())])).toBe(1);
@@ -74,10 +148,34 @@ describe("clossys director rate-check", () => {
     expect(console.log).toHaveBeenCalledWith(expect.stringContaining("0 = satisfied, 1 = violated, 2 = indeterminate"));
   });
 
+  it("recognizes invocation through an installed-style POSIX bin symlink", () => {
+    const sourceUrl = new URL("./strategy-traceability-rate-cli.ts", import.meta.url);
+    const linked = join(root, "director-rate-check");
+    symlinkSync(fileURLToPath(sourceUrl), linked);
+    expect(isDirectInvocation(sourceUrl.href, linked)).toBe(true);
+  });
+
+  // `clossys director rate-check` (producer) runs runDirectorRateCli; the compiled alias is
+  // exercised end to end in packages/producer/src/cli/director-verb.test.ts.
   it("prints the report and maps input errors to exit 2 at the error boundary", () => {
     expect(runDirectorRateCli([write("satisfied.json", satisfied())])).toBe(0);
     expect(JSON.parse(String(vi.mocked(console.log).mock.calls.at(-1)?.[0]))).toMatchObject({ state: "satisfied", metric: "strategy traceability rate", rate: 1 });
     expect(runDirectorRateCli([join(root, "missing.json")])).toBe(2);
     expect(vi.mocked(console.error).mock.calls.some(([line]) => String(line).startsWith("clossys director rate-check: ") && String(line).includes("does not exist"))).toBe(true);
+  });
+});
+
+describe("director-rate-check, invoked through a node_modules/.bin-shaped symlink", () => {
+  it("exits 0 with a satisfied report", async () => {
+    const result = await runBin([write("satisfied.json", satisfied())]);
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout)).toMatchObject({ state: "satisfied", metric: "strategy traceability rate", rate: 1 });
+  });
+
+  it("exits 2 for a missing file without computing a rate of 1", async () => {
+    const result = await runBin([join(root, "missing.json")]);
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("does not exist");
+    expect(result.stdout).not.toMatch(/"rate": 1/);
   });
 });

@@ -3,7 +3,7 @@
  * Foundry's real director facts subject: clossys/evidence/director/findings/
  * checked against docs/PUBLISHING.md only. Runs `clossys director check`
  * through the compiled clossys CLI (packages/producer/dist/cli/index.js):
- * @clossys/director is a library with no bin, and the clossys CLI injects
+ * @clossys/director ships no store-reading bin, and the clossys CLI injects
  * its single slot-model store reader and writer.
  */
 

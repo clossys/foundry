@@ -1,13 +1,15 @@
+#!/usr/bin/env node
 /**
- * The strategy traceability rate command. Director ships no executable: the clossys
- * CLI runs it as `clossys director rate-check`. The assessment file is caller-owned
- * evidence named on the command line, not the strategy store.
+ * The strategy traceability rate command, shipped as the `director-rate-check` bin and
+ * aliased by the clossys CLI as `clossys director rate-check`. It reads only the
+ * caller-named assessment file, never the strategy store.
  */
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { assessStrategyTraceabilityRate } from "./strategy-traceability-rate.js";
 
-const USAGE = `Usage: clossys director rate-check <assessment.json>\n\nAssess strategy traceability rate from consumer-supplied independent observations.\nExit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or unreadable.\nclossys director check remains the multi-mode command and is not this assessment.`;
+const USAGE = `Usage: director-rate-check <assessment.json>\n   or: clossys director rate-check <assessment.json>\n\nAssess strategy traceability rate from consumer-supplied independent observations.\nExit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or unreadable.\nclossys director check remains the multi-mode command and is not this assessment.`;
 
 export class DirectorRateCliInputError extends Error {}
 
@@ -37,11 +39,23 @@ export function main(argv: readonly string[]): number {
 }
 
 /** The argv-to-exit-code contract: argument and input errors print and map to 2. */
-export function runDirectorRateCli(argv: readonly string[]): number {
+export function runDirectorRateCli(argv: readonly string[], name = "clossys director rate-check"): number {
   try {
     return main(argv);
   } catch (cause) {
-    console.error(`clossys director rate-check: ${cause instanceof Error ? cause.message : String(cause)}`);
+    console.error(`${name}: ${cause instanceof Error ? cause.message : String(cause)}`);
     return 2;
   }
 }
+
+/** Resolves an npm/POSIX bin symlink before deciding whether this module is the entrypoint. */
+export function isDirectInvocation(moduleUrl: string, argvPath: string | undefined): boolean {
+  if (argvPath === undefined) return false;
+  try {
+    return realpathSync(fileURLToPath(moduleUrl)) === realpathSync(resolve(argvPath));
+  } catch {
+    return false;
+  }
+}
+
+if (isDirectInvocation(import.meta.url, process.argv[1])) process.exitCode = runDirectorRateCli(process.argv.slice(2), "director-rate-check");

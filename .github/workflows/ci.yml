@@ -1498,12 +1498,13 @@ jobs:
       # prose-tier paths. `build` is skipped on the pure 'prose' tier, so a
       # docs/PUBLISHING.md-only change would have merged with this gate
       # silently skipped. Unlike the three gates above, this one needs the
-      # BUILT director CLI (packages/director/dist/cli.js) -- so, unlike
-      # them, this job pays a real `npm ci` and a single-workspace build for
-      # it, the same minimal-build shape `contrast`/`designer-contrast` use
-      # for packages/designer below.
+      # BUILT clossys CLI (packages/producer/dist/cli/index.js, which runs
+      # `clossys director check`) -- so, unlike them, this job pays a real
+      # `npm ci` and a build. Producer imports director, designer, writer and
+      # publisher, so the root build (every workspace, dependencies first)
+      # replaces the single-workspace director build.
       - run: npm ci
-      - run: npm run build --workspace=packages/director
+      - run: npm run build
       - name: Director facts subject (PUBLISHING.md)
         run: npm run check:director-subject
 

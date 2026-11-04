@@ -1,6 +1,6 @@
 /**
  * Command layer for strategy cells, grounding and active prohibitions. Exit 0 clean,
- * 1 findings, 2 could not run. Director ships no executable: the clossys CLI
+ * 1 findings, 2 could not run. The store commands ship no executable: the clossys CLI
  * (`clossys director check`) calls runDirectorCli with its store reader and writer.
  */
 import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
