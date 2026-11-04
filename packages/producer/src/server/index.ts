@@ -221,7 +221,8 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers);
     headers.host = `127.0.0.1:${child.port}`;
-    const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers }, upstreamResponse => {
+    // A fresh loopback connection per request: the shared keep-alive agent can hand out a socket the child already closed (ECONNRESET, served as 502).
+    const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers, agent: false }, upstreamResponse => {
       response.writeHead(upstreamResponse.statusCode ?? 502, cleanHeaders(upstreamResponse.headers)); upstreamResponse.pipe(response);
     });
     upstream.on("error", () => { if (!response.headersSent) json(response, 502, { error: "Studio child is unavailable" }); else response.destroy(); });

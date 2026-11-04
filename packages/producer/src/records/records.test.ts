@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -125,7 +125,8 @@ function fullElement(): ElementRecord {
 
 let root: string;
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "producer-records-"));
+  // The slot model refuses symlinked paths; macOS TMPDIR sits under the /var symlink, so use the real path.
+  root = realpathSync(mkdtempSync(join(tmpdir(), "producer-records-")));
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 

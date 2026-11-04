@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { listSlots, readCandidate, readSlot } from "../../../producer/src/records/slots.js";
@@ -16,12 +16,19 @@ const sourcePath = "packages/writer/src/catalog/records/admin-studio.r1.en.json"
 const sourceBytes = readFileSync(new URL("../catalog/records/admin-studio.r1.en.json", import.meta.url), "utf8");
 const catalogue = JSON.parse(sourceBytes);
 const candidate = "admin-studio-draft-v1.md";
+/** The slot's pin as the file records it: the owner may pin the draft, and the test follows the file. */
+const pinOf = (slot: string) => {
+  const path = fileURLToPath(new URL(`agents/writer/${slot}/pin.json`, `file://${consumer}`));
+  return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) as { candidate: string; sha256: string } : null;
+};
 
 describe("Studio catalogue draft Writer specimens", () => {
   for (const [slot, count] of [["strings.names", 300]] as const) {
     it(`preserves every ${slot} source record through the canonical specimen reader`, () => {
       const entry = listSlots(consumer, "writer").find(row => row.id === slot)!;
-      expect(entry.pin).toBeNull();
+      const pin = pinOf(slot);
+      if (pin) expect(entry.pin).toMatchObject({ candidate: pin.candidate });
+      else expect(entry.pin).toBeNull();
       const source = readCandidate(consumer, "writer", slot, candidate);
       expect(validateCandidate("strings", slot, candidate, source.bytes)).toEqual([]);
       const parsed = parseFrontmatter(source.bytes);
@@ -46,9 +53,14 @@ describe("Studio catalogue draft Writer specimens", () => {
       }
       const specimen = recordSpecimenInput(consumer, "writer", slot)!;
       expect(specimen.rows.map(row => row.text)).toEqual(expected.map((row: { text: string }) => row.text));
-      expect(specimen.empty).toBe("No pin");
-      expect(slotGallery(consumer, "writer").sections.flatMap(section => section.cards).find(card => card.id === slot))
-        .toMatchObject({ status: "draft", candidate, emptyState: "No pin" });
+      // The empty-state words are a Writer copy reference, resolved by Studio.
+      expect(specimen.empty).toEqual({ copy: "studio.no-pin" });
+      const card = slotGallery(consumer, "writer").sections.flatMap(section => section.cards).find(card => card.id === slot);
+      if (pin) {
+        expect(pin.candidate).toBe(candidate);
+        expect(card).toMatchObject({ status: "active", candidate, state: { state: "pinned" } });
+        expect(card).not.toHaveProperty("emptyState");
+      } else expect(card).toMatchObject({ status: "draft", candidate, emptyState: "no-pin" });
     });
   }
 

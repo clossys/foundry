@@ -83,11 +83,25 @@ export async function startStudio(entry: string, origin: string, signal: AbortSi
 /** The Studio app source Producer builds and serves; Publisher installs Studio's own routes into it. */
 export const STUDIO_APP = fileURLToPath(new URL("../../studio/app/", import.meta.url));
 
-/** One served Studio route's HTML, as the child renders it for a GET; undefined unless it answers 200. */
-export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000): Promise<string | undefined> {
+/**
+ * One served Studio route's HTML, as the child renders it for a GET; undefined unless it answers 200.
+ * A page with group tabs lands on its first tab (a same-origin redirect), so the render follows
+ * up to `MAX_ROUTE_REDIRECTS` redirects to a path on the same child; any other redirect is undefined.
+ */
+export const MAX_ROUTE_REDIRECTS = 3;
+export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000, redirects = MAX_ROUTE_REDIRECTS): Promise<string | undefined> {
   return new Promise(resolve => {
+    const origin = `http://127.0.0.1:${port}`;
     const request = get({ hostname: "127.0.0.1", port, path, timeout: timeoutMs, headers: { Accept: "text/html", Host: `127.0.0.1:${port}` } }, response => {
-      if (response.statusCode !== 200 || !String(response.headers["content-type"] ?? "").startsWith("text/html")) { response.resume(); resolve(undefined); return; }
+      const status = response.statusCode ?? 0;
+      if ([301, 302, 303, 307, 308].includes(status) && redirects > 0 && response.headers.location) {
+        response.resume();
+        let next: URL | undefined;
+        try { next = new URL(response.headers.location, origin + path); } catch { next = undefined; }
+        resolve(next && next.origin === origin ? renderStudioRoute(port, next.pathname + next.search, timeoutMs, redirects - 1) : undefined);
+        return;
+      }
+      if (status !== 200 || !String(response.headers["content-type"] ?? "").startsWith("text/html")) { response.resume(); resolve(undefined); return; }
       const chunks: Buffer[] = [];
       response.on("data", chunk => chunks.push(chunk));
       response.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
