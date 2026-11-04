@@ -18,14 +18,19 @@
  *              font size times the React Flow viewport scale;
  *   fill       the canvas reaches the bottom of the 1440x900 window (it fills the remaining content
  *              height) and sits fully inside it;
- *   legend     the pipeline legend is fully inside the 1440x900 viewport without scrolling.
+ *   legend     the pipeline legend is fully inside the 1440x900 viewport without scrolling;
+ *   contain    every step's kind badge and title lie inside that step's node box (none overflows
+ *              the card at any title length);
+ *   sheet      a click on a step node away from its title opens the step sheet, and Enter on the
+ *              focused step node opens it too (browser runs only).
  *
  * `--rendered <file>` compares a recorded rendering (`{ nodes: [...], edges: [...] }`, optionally
- * `boxes`, `legend`, `titlePx` and `canvas`) instead of opening a browser: the same comparison, for the rule fixture.
+ * `boxes`, `parts`, `legend`, `titlePx` and `canvas`; `parts` are `{ id, part: "badge" | "title", x, y,
+ * width, height }` screen boxes inside step `id`) instead of opening a browser: the same comparison, for the rule fixture.
  *
  * Usage: node scripts/check-pipeline-canvas.mjs [--root CLOSSYS_DIR] [--graph FILE] [--port N]
  *        [--screenshot FILE] [--sheet-screenshot FILE] [--color-scheme light|dark] [--rendered FILE] [--json]
- * `--sheet-screenshot` also clicks the first step title and captures the open step sheet;
+ * `--sheet-screenshot` also captures the step sheet the sheet test opened by a click on the first step;
  * `--color-scheme` emulates prefers-color-scheme for the run (default light).
  * Exit 0 when every condition holds, 1 on any finding, 2 when Producer, Studio or a browser is missing.
  */
@@ -65,6 +70,8 @@ export function compareRendering(expected, rendered) {
 }
 
 const intersects = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+/** A part lies inside a box (half a pixel of subpixel rounding allowed). */
+const inside = (part, box) => part.x >= box.x - 0.5 && part.y >= box.y - 0.5 && part.x + part.width <= box.x + box.width + 0.5 && part.y + part.height <= box.y + box.height + 0.5;
 
 /**
  * Findings for the drawn geometry against graph.json. `boxes` are screen boxes
@@ -95,7 +102,7 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
     }
     for (const a of graph.nodes ?? []) for (const b of graph.nodes ?? []) {
       const boxA = steps.get(a.id), boxB = steps.get(b.id);
-      if (boxA && boxB && a.layout.rank < b.layout.rank && !(boxA.x < boxB.x)) findings.push({ rule: "layout", message: `step ${a.id} (rank ${a.layout.rank}) is not left of ${b.id} (rank ${b.layout.rank})` });
+      if (boxA && boxB && a.layout?.rank < b.layout?.rank && !(boxA.x < boxB.x)) findings.push({ rule: "layout", message: `step ${a.id} (rank ${a.layout.rank}) is not left of ${b.id} (rank ${b.layout.rank})` });
     }
   }
   if (rendered.titlePx !== undefined) {
@@ -105,6 +112,19 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
   if (canvas !== undefined) {
     if (!canvas || canvas.x < 0 || canvas.y < 0 || canvas.x + canvas.width > viewport.width || canvas.y + canvas.height > viewport.height) findings.push({ rule: "fill", message: canvas ? `the canvas (${Math.round(canvas.y)}-${Math.round(canvas.y + canvas.height)}px) is not inside the ${viewport.width}x${viewport.height} viewport` : "the canvas is not on the page" });
     else if (canvas.y + canvas.height < viewport.height - FILL_SLACK_PX) findings.push({ rule: "fill", message: `the canvas stops at ${Math.round(canvas.y + canvas.height)}px, more than ${FILL_SLACK_PX}px above the ${viewport.height}px window bottom` });
+  }
+  if (Array.isArray(rendered.parts)) {
+    const steps = new Map((rendered.boxes ?? []).filter(box => box.kind === "step").map(box => [box.id, box]));
+    for (const part of rendered.parts) {
+      const node = steps.get(part.id);
+      if (!node) findings.push({ rule: "contain", message: `the ${part.part} of ${part.id} has no step node box` });
+      else if (!inside(part, node)) findings.push({ rule: "contain", message: `the ${part.part} of step ${part.id} (${Math.round(part.x)},${Math.round(part.y)} ${Math.round(part.width)}x${Math.round(part.height)}) overflows its node (${Math.round(node.x)},${Math.round(node.y)} ${Math.round(node.width)}x${Math.round(node.height)})` });
+    }
+    for (const id of steps.keys()) if (!rendered.parts.some(part => part.id === id && part.part === "badge")) findings.push({ rule: "contain", message: `step ${id} draws no kind badge` });
+  }
+  if (rendered.sheet !== undefined) {
+    if (!rendered.sheet?.click) findings.push({ rule: "sheet", message: "a click on a step node away from its title does not open the step sheet" });
+    if (!rendered.sheet?.enter) findings.push({ rule: "sheet", message: "Enter on the focused step node does not open the step sheet" });
   }
   const legend = rendered.legend;
   if (legend !== undefined && (!legend || legend.x < 0 || legend.y < 0 || legend.x + legend.width > viewport.width || legend.y + legend.height > viewport.height)) {
@@ -189,7 +209,7 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
       // The viewport transform is translate(x, y) scale(k); a title's on-screen size is its font size times k.
       const transform = document.querySelector(".react-flow__viewport");
       const scale = transform ? new DOMMatrixReadOnly(getComputedStyle(transform).transform).a : NaN;
-      const titles = [...document.querySelectorAll('.react-flow__node-step [data-slot="base-node-title"] button')];
+      const titles = [...document.querySelectorAll('.react-flow__node-step [data-slot="item-title"]')];
       const titlePx = titles.length ? Math.min(...titles.map(title => parseFloat(getComputedStyle(title).fontSize) * scale)) : null;
       return {
         nodes: ids('.react-flow__node-step[data-testid^="rf__node-"]', "rf__node-"), edges: ids('[data-testid^="rf__edge-"]', "rf__edge-"),
@@ -197,6 +217,11 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
           const id = element.getAttribute("data-testid").slice("rf__node-".length);
           const lane = element.classList.contains("react-flow__node-lane");
           return { id: lane ? id.replace(/^lane:/, "") : id, kind: lane ? "lane" : "step", ...box(element) };
+        }),
+        parts: [...document.querySelectorAll('.react-flow__node-step[data-testid^="rf__node-"]')].flatMap(element => {
+          const id = element.getAttribute("data-testid").slice("rf__node-".length);
+          return [...element.querySelectorAll('[data-slot="badge"]')].map(part => ({ id, part: "badge", ...box(part) }))
+            .concat([...element.querySelectorAll('[data-slot="item-title"]')].map(part => ({ id, part: "title", ...box(part) })));
         }),
         legend: legend ? box(legend) : null,
         canvas: canvas ? box(canvas) : null,
@@ -220,14 +245,26 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
     await page.waitForTimeout(500);
     drawn = await read();
     if (screenshot) { mkdirSync(dirname(screenshot), { recursive: true }); await page.screenshot({ path: screenshot }); }
-    if (sheetScreenshot) {
-      await page.locator('.react-flow__node-step [data-slot="base-node-title"] button').first().click();
-      await page.locator('[role="dialog"]').first().waitFor({ state: "visible", timeout: 10_000 });
-      await page.waitForTimeout(500);
-      mkdirSync(dirname(sheetScreenshot), { recursive: true });
-      await page.screenshot({ path: sheetScreenshot });
+    // The sheet test: Enter on the focused first step, then a click near the step's bottom edge (away from its title).
+    const sheet = { enter: false, click: false };
+    const dialog = page.locator('[role="dialog"]').first();
+    const opens = async () => dialog.waitFor({ state: "visible", timeout: 5_000 }).then(() => true, () => false);
+    const step = page.locator('.react-flow__node-step').first();
+    if (drawn.nodes.length) {
+      await step.focus();
+      await page.keyboard.press("Enter");
+      sheet.enter = await opens();
+      if (sheet.enter) { await page.keyboard.press("Escape"); await dialog.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {}); }
+      const size = await step.boundingBox();
+      if (size) await step.click({ position: { x: size.width / 2, y: size.height - 6 } });
+      sheet.click = await opens();
+      if (sheet.click && sheetScreenshot) {
+        await page.waitForTimeout(500);
+        mkdirSync(dirname(sheetScreenshot), { recursive: true });
+        await page.screenshot({ path: sheetScreenshot });
+      }
     }
-    return { status, errors, ...drawn };
+    return { status, errors, ...drawn, sheet };
   } finally {
     await browser.close();
   }

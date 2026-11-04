@@ -16,6 +16,8 @@
   --xy-controls-button-color-hover: var(--accent-foreground); /* themes.accent-foreground accent-foreground-v1.json */
   --xy-controls-button-border-color: var(--border); /* themes.border border-v1.json */
   --xy-minimap-background-color: var(--card); /* themes.card card-v1.json */
-  --xy-minimap-node-background-color: var(--muted); /* themes.muted muted-v1.json */
-  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background) 60%, transparent); /* themes.background background-v1.json */
+  --xy-minimap-node-background-color: var(--muted-foreground); /* themes.muted-foreground muted-foreground-v1.json */
+  --xy-minimap-node-stroke-color: var(--card); /* themes.card card-v1.json */
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--muted-foreground) 18%, transparent); /* themes.muted-foreground muted-foreground-v1.json */
+  --xy-minimap-mask-stroke-color: var(--ring); /* themes.ring ring-v1.json */
 }

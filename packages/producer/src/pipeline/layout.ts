@@ -16,8 +16,8 @@
  *   crossings  pairs of edges whose straight segments (source right middle to target left middle)
  *         cross, counted with id order (`before`) and with the kept order (`after`)
  *
- * The constants are sized for the canvas's compact step node (title, kind, one labeled handle per
- * side), so no two node boxes intersect: rowGap > nodeHeight, columnGap > nodeWidth and
+ * The constants are sized for the canvas's step node at its tallest (the stock Item header wraps
+ * the kind badge under a long title; one labeled handle per side), so no two node boxes intersect: rowGap > nodeHeight, columnGap > nodeWidth and
  * rankGap > nodeWidth.
  *
  * The same steps and edges always give byte-identical output: every iteration is over sorted ids.
@@ -26,11 +26,11 @@ import type { Step } from "./define.js";
 
 export const LAYOUT_CONSTANTS = Object.freeze({
   nodeWidth: 240,
-  nodeHeight: 120,
+  nodeHeight: 148,
   /** Horizontal distance between rank columns. */
   rankGap: 320,
   /** Vertical distance between stacked steps in one lane/rank cell. */
-  rowGap: 144,
+  rowGap: 172,
   /** Vertical space between two lanes. */
   laneGap: 48,
   /** Width of the lane label column left of rank 0. */

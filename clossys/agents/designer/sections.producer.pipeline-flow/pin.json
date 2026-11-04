@@ -1,6 +1,6 @@
 {
-  "candidate": "producer-pipeline-flow-v5.json",
-  "sha256": "244b9377df351b15658d14d30a81b2d1b19fe8aa95fb5688fd5d0897595055fb",
+  "candidate": "producer-pipeline-flow-v7.json",
+  "sha256": "1a6f55ea12fcbfa2dcfa3683c3fb87398b8edb99d76c6cc10a1046918afa3638",
   "decidedBy": "planner:PIPELINE-CANVAS",
-  "at": "2026-11-04T06:25:33.850Z"
+  "at": "2026-11-04T06:51:26.964Z"
 }

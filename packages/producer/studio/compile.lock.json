@@ -894,12 +894,12 @@
       "sha256": "1a0618874ec0442bca934a2270c59f9bc81ff1a9c3ab6bc7d0df80e5078db1ab"
     },
     {
-      "path": "clossys/agents/designer/components.flow.canvas/candidates/canvas-v3.json",
-      "sha256": "b2464bdc4ed0e904ccad14b5c8d6d193a802839a1dba1a53101d2633d1278e25"
+      "path": "clossys/agents/designer/components.flow.canvas/candidates/canvas-v4.json",
+      "sha256": "63808ff83484f6846fec46432aa1cac7325f204c8f90dce60558b6d28433e099"
     },
     {
       "path": "clossys/agents/designer/components.flow.canvas/pin.json",
-      "sha256": "cb10c3e6a3a16cbe0f412db67a8f4d7ab917d3eedfff29497d184835ad2fd9ba"
+      "sha256": "ab0bb3062b5b88a617a65776cbd031017b3fa4c832a84fd8dff7e08ebd0a29e5"
     },
     {
       "path": "clossys/agents/designer/components.flow.canvas/slot.json",
@@ -1882,16 +1882,16 @@
       "sha256": "2bf6e8dcafe4aadbfbae98fc753ce5e43371089ad90accd234c9d935fb0329bf"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v5.json",
-      "sha256": "244b9377df351b15658d14d30a81b2d1b19fe8aa95fb5688fd5d0897595055fb"
+      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v7.json",
+      "sha256": "1a6f55ea12fcbfa2dcfa3683c3fb87398b8edb99d76c6cc10a1046918afa3638"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/pin.json",
-      "sha256": "6d3dbf0c30b6ed34c697397203ce888c854a181c16a28cf236b2aadc122a0e74"
+      "sha256": "44b59f19783ceb5396daf83ab585a8bfdc2404657cbefd2606fe0fab21859492"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
-      "sha256": "4c08abd5e2f7f483aefef4b7cc5a8a8118efe81d1bda44dcdcf0d0f860493d0e"
+      "sha256": "1e3f8220391751740780ba29a501996d2f260004559fab8a6d8fecc2ad213aca"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-header/slot.json",
@@ -6289,7 +6289,7 @@
     },
     {
       "path": "generated/studio-flow-theme.css",
-      "sha256": "2f10b551475a5d5b84667467bf709bd7df9f9b5184f24e78c160d1822ccd1790"
+      "sha256": "f9b236d74b808a56db189b24e0ba57850bde9b567ab1ff5a47d7c26852823022"
     },
     {
       "path": "generated/studio-icons.ts",
@@ -6297,7 +6297,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "bec3bf2942d900ae6679420b310224b394d07abb161d255afbc97d3fca5903ab"
+      "sha256": "0f9798b2d920ada7c3a6067435a2fa171af1a514f0085a4f02d14ab837905fdc"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6305,7 +6305,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "ed5ad61be1257d468c9038f0ba8c72b79cecbd709436ad3db1fed5312eec0fb6"
+      "sha256": "815105669812ee5ac3d21cf0f041ee76a8d90ad276e09ab0971d274b4a92519f"
     }
   ]
 }

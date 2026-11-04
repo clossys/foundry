@@ -74,14 +74,16 @@ export function studioShellProjection(map: ContentMap, entryId: string): StudioS
 /**
  * The trail of an entry, from the map: its root group, then its pages. A leaf sits under its tab's
  * record in the map (the map stays within its depth), so its trail is its tab's trail plus itself.
+ * A record whose one tab carries the record's own title (Producer's Pipeline record and its Pipeline
+ * tab) names one place: the trail keeps the deeper crumb only, so no label repeats back to back.
  */
 function studioBreadcrumbs(map: ContentMap, entryId: string): readonly ContentMapBreadcrumb[] {
   const leaf = studioLeaves.find(row => leafId(row) === entryId);
   const own = leaf ? [...projectBreadcrumbs(map, leaf.page), ...projectBreadcrumbs(map, entryId).slice(-1)] : projectBreadcrumbs(map, entryId);
   const group = studioGroupOf(leaf ? leaf.page : entryId);
-  if (!group || own.some(crumb => crumb.id === group.id)) return own;
-  const href = studioLanding(group.id);
-  return [{ id: group.id, label: group.title, ...(href ? { href } : {}) }, ...own];
+  const href = group ? studioLanding(group.id) : undefined;
+  const trail = !group || own.some(crumb => crumb.id === group.id) ? own : [{ id: group.id, label: group.title, ...(href ? { href } : {}) }, ...own];
+  return trail.filter((crumb, index) => index === trail.length - 1 || crumb.label !== trail[index + 1]!.label);
 }
 
 /** The compiled child pages of an entry, in map order: a record's tabs, an agent group's records. */

@@ -29303,7 +29303,7 @@
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 5
+      "version": 7
     },
     {
       "slot": "sections.studio.leaf-header",

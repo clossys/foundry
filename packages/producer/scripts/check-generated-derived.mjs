@@ -372,10 +372,13 @@ const XY_FROM_THEMES = [
   ['--xy-controls-button-color', 'themes.card-foreground'],
   ['--xy-controls-button-color-hover', 'themes.accent-foreground'],
   ['--xy-controls-button-border-color', 'themes.border'],
+  // The MiniMap reads in both modes: steps in the muted foreground on the card, the area outside the
+  // view dimmed by a tint of that foreground, the view outlined in the ring colour.
   ['--xy-minimap-background-color', 'themes.card'],
-  ['--xy-minimap-node-background-color', 'themes.muted'],
-  // xyflow's default mask is the background at 60% opacity; the same, from the pinned background.
-  ['--xy-minimap-mask-background-color', 'themes.background', value => `color-mix(in oklab, ${value} 60%, transparent)`],
+  ['--xy-minimap-node-background-color', 'themes.muted-foreground'],
+  ['--xy-minimap-node-stroke-color', 'themes.card'],
+  ['--xy-minimap-mask-background-color', 'themes.muted-foreground', value => `color-mix(in oklab, ${value} 18%, transparent)`],
+  ['--xy-minimap-mask-stroke-color', 'themes.ring'],
 ];
 
 /**

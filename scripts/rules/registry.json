@@ -450,9 +450,15 @@
           "cwd": ".",
           "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph.json --rendered {fixture}/rendered.json",
           "expect": "^FAIL edge-ids: edge missing from the page: design\\.hero->publish\\.compile"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph.json --rendered {fixture}/rendered-badge.json",
+          "expect": "^FAIL contain: the badge of step design\\.hero .* overflows its node"
         }
       ],
-      "note": "The Studio page /producer/pipeline draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row, ranks left to right, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, and the legend inside the viewport. The fixture is a recorded rendering that drops an edge."
+      "note": "The Studio page /producer/pipeline draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row, ranks left to right, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, the legend inside the viewport, every step's kind badge and title inside its node box, and (in the browser) a click on a step node or Enter on the focused step opening its sheet. The fixtures are recorded renderings: one drops an edge, one draws a kind badge past its node's right edge."
     }
   ],
   "exemptions": [

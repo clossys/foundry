@@ -1,5 +1,5 @@
 'use client';
-import { Background, Badge, BaseNode, BaseNodeContent, BaseNodeHeader, BaseNodeHeaderTitle, Button, Card, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SheetTrigger, SmoothStepEdge, type Edge, type Node, type NodeProps } from '@clossys/designer-ui';
+import { Background, Badge, BaseNode, BaseNodeContent, Card, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps } from '@clossys/designer-ui';
 
 /** The node kinds a pipeline step carries; graph.json names one per step. */
 export type StepKind = 'plumb' | 'decide:creative' | 'decide:judgment';
@@ -64,24 +64,32 @@ const KIND_VARIANT = { plumb: 'outline', 'decide:creative': 'secondary', 'decide
 /** A step's status on the stock React Flow UI NodeStatusIndicator: a ready step shows the success border, a pending one the loading border. */
 const STATUS_INDICATOR = { ready: 'success', pending: 'loading' } as const;
 
-/** One step: the stock React Flow UI BaseNode anatomy (header with the title and kind Badge, one labeled handle per side carrying the port count) inside the stock NodeStatusIndicator. The title is the stock SheetTrigger button that opens the step's sheet on the right; the open state lives in that trigger. */
-function StepNode({ data }: NodeProps<Node<StepNodeData, 'step'>>) {
+/**
+ * One step: the stock React Flow UI BaseNode anatomy inside the stock NodeStatusIndicator. Its header
+ * is the stock shadcn Item: the title in ItemContent (ItemTitle clamps it to one line) and the kind
+ * Badge in ItemActions, so the badge stays inside the card at any title length (Item wraps the
+ * actions under the title when both do not fit). One labeled handle per side carries the port count.
+ * The step's sheet follows React Flow's own selection: a click anywhere on the node, or Enter on the
+ * focused node, selects it and opens the sheet; closing the sheet clears the selection.
+ */
+function StepNode({ id, data, selected }: NodeProps<Node<StepNodeData, 'step'>>) {
+  const { updateNode } = useReactFlow();
   return <NodeStatusIndicator status={STATUS_INDICATOR[data.facts.status]}>
     <BaseNode>
-      <BaseNodeHeader>
-        <BaseNodeHeaderTitle>
-          <SheetTrigger>
-            <Button variant="link">{data.label}</Button>
-            <StepSheet step={data} copy={data.copy} />
-          </SheetTrigger>
-        </BaseNodeHeaderTitle>
-        <Badge variant={KIND_VARIANT[data.kind]}>{data.kindLabel}</Badge>
-      </BaseNodeHeader>
+      <Item size="sm">
+        <ItemContent>
+          <ItemTitle>{data.label}</ItemTitle>
+        </ItemContent>
+        <ItemActions>
+          <Badge variant={KIND_VARIANT[data.kind]}>{data.kindLabel}</Badge>
+        </ItemActions>
+      </Item>
       <BaseNodeContent>
         <LabeledHandle id="in" title={data.inputsLabel} type="target" position={Position.Left} />
         <LabeledHandle id="out" title={data.outputsLabel} type="source" position={Position.Right} />
       </BaseNodeContent>
     </BaseNode>
+    <StepSheet step={data} copy={data.copy} isOpen={selected} onOpenChange={open => { if (!open) updateNode(id, { selected: false }); }} />
   </NodeStatusIndicator>;
 }
 
@@ -95,7 +103,7 @@ const NODE_TYPES = { step: StepNode, lane: LaneNode };
 const EDGE_TYPES = { smoothstep: SmoothStepEdge };
 const EDGE_OPTIONS = { type: 'smoothstep' };
 /**
- * The initial zoom: step titles are the stock Button's 14px text, so 0.86 renders them at no less
+ * The initial zoom: step titles are the stock ItemTitle's 14px text, so 0.86 renders them at no less
  * than 12px. The view opens at the graph's top left (the lane labels) at that zoom; the stock
  * Controls and MiniMap pan and zoom from there, down to MIN_ZOOM, past the readable size.
  */
@@ -109,9 +117,9 @@ const FIT_ALL = { padding: 0.04 };
 const list = (values: readonly string[], none: string) => values.length ? values.join(', ') : none;
 
 /** One step's facts in a stock shadcn Sheet on the right: a stock FieldGroup with one Field (title, then the value) per fact, so long values wrap; the command keeps the code style. Read-only. */
-function StepSheet({ step, copy }: { step: StepData; copy: PipelineFlowCopy }) {
+function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy: PipelineFlowCopy; isOpen: boolean; onOpenChange: (open: boolean) => void }) {
   const facts = step.facts;
-  return <Sheet isDismissable>
+  return <Sheet isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>
     <SheetHeader>
       <SheetTitle>{step.label}</SheetTitle>
       <SheetDescription>{copy.lanes[step.lane] ?? step.lane}</SheetDescription>
@@ -127,7 +135,7 @@ function StepSheet({ step, copy }: { step: StepData; copy: PipelineFlowCopy }) {
   </Sheet>;
 }
 
-/** `sections.producer.pipeline-flow`: the standard canvas-app layout. graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a step's title opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
+/** `sections.producer.pipeline-flow`: the standard canvas-app layout. graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
 export default function PipelineFlowSection({ flow, ...provenance }: { flow: PipelineFlowInput } & { [marker: `data-clossys-${string}`]: string }) {
   const { graph, copy } = flow;
   if (!graph.nodes.length) return <Card size="sm" {...provenance}>
@@ -153,7 +161,7 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   // The stock Card is the canvas's frame and fills the content area below the page's header rows (flex-1); the canvas fills the Card.
   return <Card size="sm" className="flex-1" {...provenance}>
     <ReactFlow aria-label={copy.label} defaultNodes={[...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
-      nodesDraggable={false} nodesConnectable={false} defaultViewport={viewport} minZoom={MIN_ZOOM}>
+      nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>
       <Background />
       <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_ALL} />
       <MiniMap position="bottom-right" pannable zoomable />
