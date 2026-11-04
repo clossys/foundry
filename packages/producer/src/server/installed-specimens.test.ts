@@ -10,6 +10,9 @@ import type { BoundPage } from '@clossys/publisher/install';
 import { pageModule } from '../publish/install.js';
 import { resolveSampleCopy } from './specimen-state.js';
 import { fixtureChildren, moduleExports, pinnedWriterCopy, specimenTreeIssues } from './specimen-tree.js';
+import { createServer, request } from 'node:http';
+import { installedSpecimenRoutes, specimenSiteCsp } from './installed-specimens.js';
+import { SPECIMEN_FRAME_CSP } from './specimen-frame.js';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const designer = join(repo, 'clossys/agents/designer');
@@ -86,6 +89,56 @@ describe('specimen element trees', () => {
       const tree = fixtureChildren(item.meta.preview.fixtures);
       expect.soft(tree, slot).toBeDefined();
       expect.soft(specimenTreeIssues(tree, moduleExports(file.content), copy), slot).toEqual([]);
+    }
+  });
+});
+
+describe('specimen route policies', () => {
+  it('serves the built specimen page and its files under a CSP scoped to that one build, and the frame page under its own', async () => {
+    const dist = mkdtempSync(join(tmpdir(), 'specimen-site-'));
+    mkdirSync(join(dist, 'assets'));
+    writeFileSync(join(dist, 'index.html'), '<!doctype html><script type="module" crossorigin src="/__specimen-site/0123abcd/assets/index.js"></script>');
+    writeFileSync(join(dist, 'assets/index.js'), 'export {};');
+    const site = { key: '0123abcd', builds: [{ key: '0123abcd', dist }], findings: [],
+      pages: new Map([['components.button@v2', { page: 'specimen-components-button-v2', element: 'button', version: 2, build: '0123abcd' }]]) };
+    const routes = installedSpecimenRoutes(Promise.resolve(site));
+    const server = createServer((req, res) => { void routes.handle(req, res, new URL(req.url!, 'http://x').pathname).then(handled => { if (!handled) { res.writeHead(404); res.end(); } }); });
+    await new Promise<void>(accept => server.listen(0, '127.0.0.1', accept));
+    const port = (server.address() as { port: number }).port, origin = `http://127.0.0.1:${port}`;
+    const get = (path: string) => new Promise<{ status: number; headers: Record<string, any>; text: string }>((accept, reject) => {
+      const req = request({ hostname: '127.0.0.1', port, path }, response => { let text = ''; response.setEncoding('utf8'); response.on('data', chunk => { text += chunk; }); response.on('end', () => accept({ status: response.statusCode!, headers: response.headers, text })); });
+      req.on('error', reject); req.end();
+    });
+    try {
+      const expected = `sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen-site/0123abcd/; style-src ${origin}/__specimen-site/0123abcd/ 'unsafe-inline'; font-src ${origin}/__specimen-site/0123abcd/ data:; img-src ${origin}/__specimen-site/0123abcd/ data:; connect-src 'none'; base-uri 'none'; form-action 'none'`;
+      for (const path of ['/__specimen-site/0123abcd/index.html?page=specimen-components-button-v2', '/__specimen-site/0123abcd/', '/__specimen-site/0123abcd/assets/index.js']) {
+        const response = await get(path);
+        expect(response.status, path).toBe(200);
+        expect(response.headers['content-security-policy'], path).toBe(expected);
+      }
+      const policy = new Map(expected.split('; ').map(part => [part.split(' ')[0]!, part.slice(part.indexOf(' ') + 1)]));
+      // Script only from this build's own files; nothing to fetch; no top navigation, popups or forms (the sandbox grants none).
+      expect(policy.get('script-src')).toBe(`${origin}/__specimen-site/0123abcd/`);
+      expect(policy.get('connect-src')).toBe("'none'");
+      expect(policy.get('sandbox')!.split(' ').sort()).toEqual(['allow-same-origin', 'allow-scripts']);
+      expect(expected).not.toMatch(/'self'|\*|'unsafe-eval'|allow-top-navigation|allow-popups|allow-forms|frame-src|frame-ancestors/);
+      // The frame page that loads it runs only its hashed script and may be framed only by Studio's origin.
+      const frame = await get('/__specimen?element=components.button%2Fbutton&v=2&width=375');
+      expect(frame.status).toBe(200);
+      expect(frame.headers['content-security-policy']).toBe(SPECIMEN_FRAME_CSP);
+      expect(frame.text).toContain('src="/__specimen-site/0123abcd/index.html?page=specimen-components-button-v2"');
+      expect((await get('/__specimen-site/other/index.html')).status).toBe(404);
+    } finally {
+      await new Promise(accept => server.close(accept));
+      rmSync(dist, { recursive: true, force: true });
+    }
+  });
+
+  it('fails closed for an origin or build that is not a local specimen build', () => {
+    for (const [origin, build] of [['http://example.test', '0123abcd'], ['http://127.0.0.1:1', '../x'], ['http://127.0.0.1:1 *', '0123abcd'], ['http://', '0123abcd']]) {
+      const policy = specimenSiteCsp(origin!, build!);
+      expect(policy, `${origin} ${build}`).toContain("script-src 'none';");
+      expect(policy).not.toContain(origin!.length > 7 ? origin! : 'http://');
     }
   });
 });

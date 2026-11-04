@@ -221,6 +221,62 @@ const SECURITY = {
   "Content-Security-Policy": PREVIEW_PAGE_CSP,
   "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin",
 };
+/** The one route a specimen frame loads from. Without a trailing slash a CSP path matches exactly. */
+export const SPECIMEN_ROUTE = "/__specimen";
+const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
+/**
+ * The policy for a served Studio page (`publish --install --next`): Studio's own Designer and
+ * Publisher pages show specimens, so the page may frame exactly two same-origin paths and nothing
+ * else. `frame-src 'self'` would admit every Studio route (the app shell, `/api/*`), so each
+ * entry is a host-source with a path: `<origin>/__specimen` matches that one path (any query),
+ * and `<origin>/preview/<publication>/pages/` matches this publication's own page previews.
+ *
+ * Every other directive is PREVIEW_PAGE_CSP's, with one forced change: a sandbox flag a document
+ * lacks is lacking in every frame it nests, so a specimen can only run its bundle if this page's
+ * sandbox carries `allow-scripts`. The page itself still runs no script: there is no `script-src`,
+ * so `default-src 'none'` blocks every script, inline handler and `javascript:` URL, and the
+ * served render is stripped of its scripts first (staticPage). Each frame it nests is pinned by
+ * sandboxSpecimenFrames: a specimen runs script in an opaque origin, never on Studio's origin.
+ */
+export function specimenHostCsp(origin: string, publication: string): string {
+  if (!LOCAL_ORIGIN.test(origin) || !identity(publication)) return PREVIEW_PAGE_CSP;
+  return [
+    "sandbox allow-same-origin allow-scripts", "default-src 'none'", "style-src 'self' 'unsafe-inline'", "img-src 'self' data:", "font-src 'self' data:",
+    `frame-src ${origin}${SPECIMEN_ROUTE} ${origin}${PREVIEW_PREFIX}${publication}/pages/`,
+    "frame-ancestors 'self'", "base-uri 'none'", "form-action 'none'", "connect-src 'none'",
+  ].join("; ");
+}
+const attribute = (tag: string, name: string) => {
+  const match = new RegExp(`\\s${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s"'>]+))`, "i").exec(tag);
+  return match ? (match[1] ?? match[2] ?? match[3] ?? "").replace(/&amp;/g, "&") : undefined;
+};
+/**
+ * Pin the sandbox of every frame in a served page, replacing any sandbox the render carried:
+ *   - a specimen (`/__specimen?...`) gets `allow-scripts` and never `allow-same-origin`: its bundle
+ *     runs in an opaque origin that cannot reach this page, Studio or the run token, and with no
+ *     `allow-top-navigation`, `allow-popups` or `allow-forms` it cannot leave its frame;
+ *   - a nested page preview of the same publication (a Publisher card) is a static page that
+ *     runs no script, so it loads directly (not through the scaling frame page, which would need
+ *     script on this origin) with `allow-same-origin` only, the sandbox every preview page has;
+ *   - any other frame gets an empty sandbox (every restriction), and the CSP refuses it anyway.
+ */
+export function sandboxSpecimenFrames(html: string, publication: string): string {
+  const nested = new RegExp(`^${PREVIEW_PREFIX}${publication.replace(/\./g, "\\.")}/(?:frame|pages)/([a-z][a-z0-9.-]*)\\.html$`);
+  return html.replace(/<iframe\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi, tag => {
+    const src = attribute(tag, "src") ?? "";
+    const [pathname = "", search = ""] = src.split("#")[0]!.split("?");
+    let open = tag.replace(/\ssandbox(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+))?(?=[\s/>])/gi, "");
+    let sandbox = "";
+    const page = identity(publication) ? nested.exec(pathname)?.[1] : undefined;
+    if (pathname === SPECIMEN_ROUTE) sandbox = "allow-scripts";
+    else if (page && !page.includes("..")) {
+      sandbox = "allow-same-origin";
+      const href = `${PREVIEW_PREFIX}${publication}/pages/${page}.html${new URLSearchParams(search).get("theme") === "dark" ? "?theme=dark" : ""}`;
+      open = open.replace(/\ssrc\s*=\s*(?:"[^"]*"|'[^']*'|[^\s"'>]+)/i, ` src="${href}"`);
+    }
+    return open.replace(/^<iframe\b/i, `<iframe sandbox="${sandbox}"`);
+  });
+}
 export type PreviewTheme = "light" | "dark";
 export const previewTheme = (value: string | null | undefined): PreviewTheme => value === "dark" ? "dark" : "light";
 /**
@@ -251,8 +307,11 @@ export function staticPage(html: string): string {
     .replace(/<link\b(?=[^>]*\brel\s*=\s*["']?(?:modulepreload|preload)\b)(?=[^>]*\bas\s*=\s*["']?script\b|[^>]*\brel\s*=\s*["']?modulepreload\b)[^>]*>/gi, "");
 }
 const FRAME_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP, "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin" };
-/** Called after the server's existing Host, Origin and run-token guards. */
-export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams(), served?: ServedApp): Promise<void> {
+/**
+ * Called after the server's existing Host, Origin and run-token guards. `origin` is the request's
+ * own (guarded) origin: with it, a served Studio page previews with its specimens (specimenHostCsp).
+ */
+export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams(), served?: ServedApp, origin?: string): Promise<void> {
   const fail = (status: number, message: string) => { response.writeHead(status, { ...SECURITY, "Content-Type": "text/plain; charset=utf-8" }); response.end(message); };
   if (method !== "GET" && method !== "HEAD") { fail(405, "Publication preview is read-only"); return; }
   const match = /^\/preview\/([^/]+)\/(pages|assets|frame)\/(.+)$/.exec(pathname);
@@ -264,14 +323,17 @@ export async function servePreview(root: string, pathname: string, method: strin
     const page = /^([a-z][a-z0-9.-]*)\.html$/.exec(file)?.[1];
     if (!page || page.includes("..")) { fail(404, "Publication page is unavailable"); return; }
     const src = `${PREVIEW_PREFIX}${encodeURIComponent(selected)}/pages/${encodeURIComponent(page)}.html${theme === "dark" ? "?theme=dark" : ""}`;
-    const html = Buffer.from(specimenFramePage({ src, width: specimenWidth(query.get("width")), title: `${page} page preview`, sandbox: "allow-same-origin" }));
+    // A served page nests specimens, whose scripts need the flag here too (a frame cannot regain a
+    // flag its parent lacks); the page's own CSP still blocks every script it carries.
+    const sandbox = origin !== undefined && await servedPage(root, selected, page, installOut, served) ? "allow-same-origin allow-scripts" : "allow-same-origin";
+    const html = Buffer.from(specimenFramePage({ src, width: specimenWidth(query.get("width")), title: `${page} page preview`, sandbox }));
     response.writeHead(200, { ...FRAME_HEADERS, "Content-Type": TYPES[".html"]!, "Content-Length": html.length });
     response.end(method === "HEAD" ? undefined : html); return;
   }
   try {
     let type: string, bytes: Buffer;
     const base = previewRoot(root, selected);
-    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut, theme, served); return; }
+    if (!await stat(base).then(() => true, () => false)) { await serveInstall(root, selected, kind, file, method, response, fail, installOut, theme, served, origin); return; }
     if (kind === "pages") {
       const manifest = await descriptor(root, selected);
       const route = manifest.routes.find(route => `${route.id}.html` === file);
@@ -292,17 +354,24 @@ export async function servePreview(root: string, pathname: string, method: strin
 }
 
 /** Install output: the page's static HTML with its own substrate build's stylesheets, and those build assets. */
-async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string, theme: PreviewTheme = "light", served?: ServedApp): Promise<void> {
+/** A page of `selected` installed into the Next app Producer serves (no descriptor preview shadows it). */
+async function servedPage(root: string, selected: string, page: string, installOut?: string, served?: ServedApp): Promise<boolean> {
+  if (!served || await stat(previewRoot(root, selected)).then(() => true, () => false)) return false;
+  const found = await readInstallPublication(root, installOut, selected, served).catch(() => undefined);
+  return found?.manifest.publication === selected && !!found.installs.find(install => install.id === page)?.next;
+}
+async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string, theme: PreviewTheme = "light", served?: ServedApp, origin?: string): Promise<void> {
   const found = await readInstallPublication(root, installOut, selected, served);
   if (!found || found.manifest.publication !== selected) { fail(404, "Publication preview is unavailable"); return; }
-  let type: string, bytes: Buffer;
+  let type: string, bytes: Buffer, csp = PREVIEW_PAGE_CSP;
   const install = kind === "pages" ? found.installs.find(page => `${page.id}.html` === file) : undefined;
   if (install?.next) {
-    // The installed route's own render, served under the same no-script sandbox as any page.
+    // The installed route's own render, without its scripts; it runs none (its CSP has no script-src).
     const html = found.pages.find(page => page.id === install.id)?.emitted && served ? await served.render(install.next.route) : undefined;
     if (html === undefined) { fail(404, "Publication page is unavailable"); return; }
     type = TYPES[".html"]!;
-    bytes = Buffer.from(themePage(staticPage(html), theme));
+    bytes = Buffer.from(themePage(sandboxSpecimenFrames(staticPage(html), selected), theme));
+    if (origin !== undefined) csp = specimenHostCsp(origin, selected);
   } else if (kind === "pages") {
     if (!install?.html) { fail(404, "Publication page is unavailable"); return; }
     const links = install.css.map(css => `<link rel="stylesheet" href="${PREVIEW_PREFIX}${encodeURIComponent(selected)}/assets/${css.split("/").map(encodeURIComponent).join("/")}">`).join("");
@@ -315,6 +384,6 @@ async function serveInstall(root: string, selected: string, kind: string, file: 
     if (!/^[^/]+\/substrate\/dist\/assets\/[^/]+$/.test(file)) { fail(404, "Publication asset is unavailable"); return; }
     bytes = await previewSource(found.base, file);
   }
-  response.writeHead(200, { ...SECURITY, "Content-Type": type, "Content-Length": bytes.length });
+  response.writeHead(200, { ...SECURITY, "Content-Security-Policy": csp, "Content-Type": type, "Content-Length": bytes.length });
   response.end(method === "HEAD" ? undefined : bytes);
 }

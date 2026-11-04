@@ -37,11 +37,20 @@ export function parseSpecimenQuery(params: URLSearchParams): SpecimenQueryResult
   return { ok: true, query: { element, ...(v ? { version: Number(v) } : {}), ...(theme ? { theme } : {}), ...(width ? { width: Number(width) } : {}) } };
 }
 
-/** The page's security policy: scripts only from this origin or this response's nonce. */
-export function specimenCsp(nonce: string): string {
+const ORIGIN = /^https?:\/\/(?:[A-Za-z0-9.-]+|\[[0-9A-Fa-f:]+\])(?::\d{1,5})?$/;
+/**
+ * The page's security policy. Script runs only from this handler's own bundles
+ * (`<origin>/__specimen/assets/`, a path source; `'self'` when the origin is not known) or this
+ * response's nonce. A specimen fetches, frames and submits nothing (`connect-src`, `frame-src`,
+ * `form-action` are `'none'`), and its sandbox (`allow-scripts allow-same-origin`, nothing else)
+ * keeps it from navigating the top window, opening windows or submitting forms. Framed by a
+ * frame that is itself sandboxed without `allow-same-origin`, it inherits that opaque origin.
+ */
+export function specimenCsp(nonce: string, origin?: string): string {
+  const assets = origin !== undefined && ORIGIN.test(origin) ? `${origin}${SPECIMEN_PATH}/assets/` : "'self'";
   return [
-    "default-src 'self'", `script-src 'self' 'nonce-${nonce}'`, "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https:", "font-src 'self' data:", "connect-src 'self'", "object-src 'none'", "base-uri 'none'",
+    "sandbox allow-scripts allow-same-origin", "default-src 'none'", `script-src ${assets} 'nonce-${nonce}'`, "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https:", "font-src 'self' data:", "media-src 'self' data: blob:", "connect-src 'none'", "object-src 'none'", "base-uri 'none'", "form-action 'none'",
     "frame-ancestors 'self' http://127.0.0.1:* http://localhost:*",
   ].join("; ");
 }
@@ -87,7 +96,7 @@ export function createSpecimenHandler(options: SpecimenHandlerOptions) {
     if (!parsed.ok) { response.writeHead(400, { ...base, "content-type": "text/plain; charset=utf-8" }).end(`${parsed.error}\n`); return true; }
     const nonce = randomBytes(16).toString("base64");
     const page = await renderSpecimen({ source: options.source, builder, query: parsed.query, nonce });
-    response.writeHead(page.status, { ...base, "content-type": "text/html; charset=utf-8", "content-security-policy": specimenCsp(nonce), "referrer-policy": "no-referrer" });
+    response.writeHead(page.status, { ...base, "content-type": "text/html; charset=utf-8", "content-security-policy": specimenCsp(nonce, request.headers.host ? `http://${request.headers.host}` : undefined), "referrer-policy": "no-referrer" });
     response.end(request.method === "HEAD" ? undefined : page.html);
     return true;
   };

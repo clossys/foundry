@@ -1,7 +1,8 @@
 import { fileURLToPath } from "node:url";
+import { createServer, request } from "node:http";
 import { describe, expect, it } from "vitest";
 import {
-  adaptPreview, directoryRecordSource, parseSpecimenQuery, parseThemeParam, renderSpecimen, resolveFixtures,
+  adaptPreview, createSpecimenHandler, directoryRecordSource, parseSpecimenQuery, specimenCsp, parseThemeParam, renderSpecimen, resolveFixtures,
   specimenKindOf, specimenReporterScript, specimenUrl, textCopy, themeCss, validSpecimenId, createSpecimenBuilder,
 } from "./index.js";
 
@@ -98,5 +99,27 @@ describe("rendering", () => {
     const script = specimenReporterScript({ element: "</script><x>", elementVersion: 1, kind: "visual", theme: "t", width: null, preErrors: [{ source: "build", message: " " }] });
     expect(script).not.toContain("</script>");
     expect(script).not.toContain(" ");
+  });
+});
+
+describe("specimen page policy", () => {
+  it("runs script only from its own bundles and nonce, fetches nothing and cannot navigate the top window", async () => {
+    const origin = "http://127.0.0.1:4621";
+    expect(specimenCsp("n0nce", origin)).toBe(`sandbox allow-scripts allow-same-origin; default-src 'none'; script-src ${origin}/__specimen/assets/ 'nonce-n0nce'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; media-src 'self' data: blob:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'self' http://127.0.0.1:* http://localhost:*`);
+    // Without a usable origin the script source falls back to 'self', never wider.
+    for (const bad of [undefined, "*", "http://a b", "javascript:alert(1)"]) expect(specimenCsp("n", bad)).toContain("; script-src 'self' 'nonce-n'; ");
+    const handle = createSpecimenHandler({ source, builder: { build: async () => { throw new Error("no build"); }, asset: async () => undefined } as never });
+    const server = createServer((req, res) => { void handle(req, res).then(handled => { if (!handled) res.writeHead(404).end(); }); });
+    await new Promise<void>(accept => server.listen(0, "127.0.0.1", accept));
+    const port = (server.address() as { port: number }).port;
+    try {
+      const csp = await new Promise<string>((accept, reject) => {
+        const req = request({ hostname: "127.0.0.1", port, path: "/__specimen?element=example.button" }, response => { response.resume(); response.on("end", () => accept(String(response.headers["content-security-policy"]))); });
+        req.on("error", reject); req.end();
+      });
+      expect(csp).toMatch(new RegExp(`^sandbox allow-scripts allow-same-origin; default-src 'none'; script-src http://127\\.0\\.0\\.1:${port}/__specimen/assets/ 'nonce-[A-Za-z0-9+/=]+'; `));
+      expect(csp).toContain("connect-src 'none'");
+      expect(csp).not.toMatch(/allow-top-navigation|allow-popups|allow-forms/);
+    } finally { await new Promise(accept => server.close(accept)); }
   });
 });

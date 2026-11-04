@@ -15,6 +15,7 @@ import { selectionProfile, selectionRuntime, studioSelection } from "./selection
 import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
 import { installedSpecimens } from "./installed-specimens.js";
+import { opaqueSpecimenRequest } from "./specimen-frame.js";
 import { slotGallery } from "./slot-gallery.js";
 import { slotDetail } from "./slot-detail.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
@@ -104,7 +105,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       json(response, 403, { error: "Invalid local Host" }); return;
     }
     const origin = `http://${host}`;
-    if (request.headers.origin !== undefined && (headerCount(request, "origin") !== 1 || request.headers.origin !== origin)) {
+    // A specimen framed by a served preview page runs in an opaque origin, so its module script,
+    // crossorigin stylesheet and fonts arrive as CORS requests with `Origin: null`.
+    const opaqueSpecimen = opaqueSpecimenRequest(request);
+    if (opaqueSpecimen) { response.setHeader("Access-Control-Allow-Origin", "null"); response.setHeader("Vary", "Origin"); }
+    else if (request.headers.origin !== undefined && (headerCount(request, "origin") !== 1 || request.headers.origin !== origin)) {
       json(response, 403, { error: "Invalid same-origin request" }); return;
     }
     if (!["GET", "HEAD", "OPTIONS"].includes(request.method ?? "")) {
@@ -206,6 +211,8 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;
     }
+    // The opaque-origin read is for specimen files only; nothing else answers it.
+    if (opaqueSpecimen) { response.removeHeader("Access-Control-Allow-Origin"); json(response, 404, { error: "Specimen file is unavailable" }); return; }
     if (DEFAULT_AVATAR_PATH.test(pathname)) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Avatars are read-only" }); return; }
       // Stock blocks' sample avatars (e.g. /avatars/shadcn.jpg) are not shipped: every one is the pinned placeholder image.
@@ -217,7 +224,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       response.writeHead(200, { ...headers, "Content-Type": "image/svg+xml; charset=utf-8" });
       response.end(request.method === "HEAD" ? undefined : svg); return;
     }
-    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams, served); return; }
+    if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams, served, origin); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers);
     headers.host = `127.0.0.1:${child.port}`;

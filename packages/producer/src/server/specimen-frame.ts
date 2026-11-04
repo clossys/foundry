@@ -72,3 +72,22 @@ export function specimenFramePage(options: { src: string; width: number; title: 
     + `<body><iframe id="page" title="${escapeHtml(options.title)}" data-width="${specimenWidth(options.width)}"${sandbox} src="${escapeHtml(options.src)}"></iframe>`
     + `<script>${SCRIPT}</script></body></html>\n`;
 }
+
+/** Built specimen files: an installed specimen build (`/__specimen-site/<key>/...`) or a Publisher specimen bundle. */
+const SPECIMEN_ASSET = /^(?:\/__specimen-site\/[a-z0-9]+(?:-o\d+)?\/[A-Za-z0-9._/-]+|\/__specimen\/assets\/[0-9a-f]{24}\.(?:js|css))$/;
+const SPECIMEN_ASSET_DEST = new Set(["script", "style", "font"]);
+/**
+ * The one cross-origin read the server answers: a specimen running in a served preview page is
+ * sandboxed without `allow-same-origin`, so its module script, crossorigin stylesheet and fonts
+ * are CORS requests from an opaque origin (`Origin: null`). Only a GET or HEAD of a built
+ * specimen file, as a script, style or font subresource in CORS mode, qualifies; the server
+ * answers it with `Access-Control-Allow-Origin: null`. Everything else keeps the same-origin
+ * guard, so no opaque document can call `/api`, read a page, or post anything.
+ */
+export function opaqueSpecimenRequest(request: { method?: string; url?: string; headers: Record<string, string | string[] | undefined>; rawHeaders: string[] }): boolean {
+  const origins = request.rawHeaders.filter((_, index) => index % 2 === 0 && request.rawHeaders[index]!.toLowerCase() === "origin").length;
+  if (origins !== 1 || request.headers.origin !== "null" || (request.method !== "GET" && request.method !== "HEAD")) return false;
+  if (request.headers["sec-fetch-mode"] !== "cors" || !SPECIMEN_ASSET_DEST.has(String(request.headers["sec-fetch-dest"]))) return false;
+  const path = (request.url ?? "").split("?")[0]!;
+  return SPECIMEN_ASSET.test(path) && !path.split("/").some(part => part === ".." || part.startsWith("."));
+}

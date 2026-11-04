@@ -258,11 +258,40 @@ async function buildSite(root: string, library: string): Promise<InstalledSpecim
   return { key, builds, pages, findings };
 }
 
+const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
+/**
+ * The policy every `/__specimen-site/<key>/` response carries. The built page loads only its own
+ * build: script, stylesheets, fonts and images from `<origin>/__specimen-site/<key>/` (a path
+ * source, so neither Studio's routes nor another build qualify), inline styles for the
+ * components that inject them, and `data:` fonts and images. It has nothing to fetch, frame,
+ * submit or embed (`connect-src`, `frame-src`, `form-action`, `object-src` fall to `'none'`).
+ *
+ * Its own sandbox (`allow-scripts allow-same-origin`, no `allow-top-navigation`, `allow-popups`,
+ * `allow-forms` or `allow-modals`) keeps the bundle from navigating the top window, opening
+ * windows or submitting forms wherever it loads. In Studio's own cards it keeps Studio's origin
+ * (the frame page measures it); framed by a served preview page it inherits that frame's
+ * opaque origin, which no CSP flag can widen.
+ *
+ * No `frame-ancestors`: inside a preview its parent frame page is opaque, and `'self'` never
+ * matches an opaque ancestor. That parent (`/__specimen`) carries `frame-ancestors 'self'`.
+ */
+export function specimenSiteCsp(origin: string, build: string): string {
+  const site = LOCAL_ORIGIN.test(origin) && /^[a-z0-9]+(?:-o\d+)?$/.test(build) ? `${origin}${SITE_PREFIX}${build}/` : "'none'";
+  return [
+    "sandbox allow-scripts allow-same-origin", "default-src 'none'", `script-src ${site}`, `style-src ${site} 'unsafe-inline'`,
+    `font-src ${site} data:`, `img-src ${site} data:`, "connect-src 'none'", "base-uri 'none'", "form-action 'none'",
+  ].join("; ");
+}
+
 export function installedSpecimens(options: { root: string; library: string }): InstalledSpecimens {
-  const ready = buildSite(resolve(options.root), resolve(options.library)).catch(error => {
+  return installedSpecimenRoutes(buildSite(resolve(options.root), resolve(options.library)).catch(error => {
     console.warn("Producer specimens could not be built:", error instanceof Error ? error.message.split("\n")[0] : String(error));
     return undefined;
-  });
+  }));
+}
+
+/** The `/__specimen` and `/__specimen-site/*` routes over a (being) built site. */
+export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | undefined>): InstalledSpecimens {
   return {
     ready,
     async handle(request, response, pathname) {
@@ -294,7 +323,7 @@ export function installedSpecimens(options: { root: string; library: string }): 
         try { target = await realpath(file); if (!(await stat(target)).isFile() || relative(await realpath(build.dist), target).startsWith("..")) target = undefined; } catch { target = undefined; }
       }
       if (!target) { response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }); response.end("Not found\n"); return true; }
-      response.writeHead(200, { "Content-Type": TYPES[extname(target)] ?? "application/octet-stream", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff" });
+      response.writeHead(200, { "Content-Type": TYPES[extname(target)] ?? "application/octet-stream", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": specimenSiteCsp(`http://${request.headers.host ?? ""}`, build.key) });
       response.end(request.method === "HEAD" ? undefined : await readFile(target));
       return true;
     },
