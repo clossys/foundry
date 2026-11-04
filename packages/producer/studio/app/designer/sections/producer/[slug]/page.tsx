@@ -9,6 +9,8 @@ const leaves: { slug: string }[] = [
   { slug: "sections.producer.pipeline-flow" },
   { slug: "sections.producer.step-sheet" },
   { slug: "sections.producer.pipeline-legend" },
+  { slug: "sections.producer.team-strip" },
+  { slug: "sections.producer.system-empty" },
 ];
 export const dynamicParams = true;
 export function generateStaticParams() {

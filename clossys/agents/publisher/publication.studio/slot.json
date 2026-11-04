@@ -5,11 +5,12 @@
   "ia": {
     "l1": "studio",
     "l2": "publication",
-    "order": 20
+    "order": 22
   },
   "kind": "publication",
   "contract": {},
   "inputs": [
+    "page.build-overview",
     "page.designer-assets",
     "page.designer-components",
     "page.designer-frames",
@@ -25,6 +26,7 @@
     "page.home",
     "page.producer-pipeline",
     "page.publisher-studio",
+    "page.run-overview",
     "page.writer-lexicon",
     "page.writer-narratives",
     "page.writer-passages",
@@ -34,9 +36,12 @@
   "uses": [
     "assets.icon-document",
     "assets.icon-guide",
-    "assets.icon-integration",
     "assets.icon-layers",
+    "assets.icon-package",
+    "assets.icon-settings",
+    "assets.icon-team",
     "assets.icon-website",
+    "page.build-overview",
     "page.designer-assets",
     "page.designer-components",
     "page.designer-frames",
@@ -52,6 +57,7 @@
     "page.home",
     "page.producer-pipeline",
     "page.publisher-studio",
+    "page.run-overview",
     "page.writer-lexicon",
     "page.writer-narratives",
     "page.writer-passages",

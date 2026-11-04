@@ -3,5 +3,5 @@ import { createElement } from "react";
 import { PublishedPage } from "../../../../components/StudioInstalledPage";
 
 export default function Page() {
-  return createElement(PublishedPage, { page: "publisher-studio.producer" });
+  return createElement(PublishedPage, { page: "publisher-studio.systems" });
 }

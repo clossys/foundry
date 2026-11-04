@@ -57,10 +57,12 @@
           ]
         },
         {
-          "id": "producer",
-          "label": "Producer",
+          "id": "systems",
+          "label": "Systems",
           "slots": [
-            "page.producer-pipeline"
+            "page.producer-pipeline",
+            "page.build-overview",
+            "page.run-overview"
           ]
         },
         {

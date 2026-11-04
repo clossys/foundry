@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "433e220cab2aa4b4b7ea3ff9b814eda783349a1bf1d715b38b0471969f41f8d7",
+  "revision": "b0ed471e1b0347cc0fe24c672d838fac85a43a95d6201e03fc7a7d3bebff8300",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2105,6 +2105,222 @@
       "id": "studio.pipeline.status.pending",
       "text": "Pending",
       "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.you",
+      "text": "You",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.checks",
+      "text": "Checks",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.lane.unassigned",
+      "text": "Unassigned",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.brief",
+      "text": "Brief",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.select",
+      "text": "Select",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.make",
+      "text": "Make",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.pin",
+      "text": "Pin",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.assemble",
+      "text": "Assemble",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.check",
+      "text": "Check",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.stage.publish",
+      "text": "Publish",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.holder",
+      "text": "Held by",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.stage",
+      "text": "Stage",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.seat.derived",
+      "text": "Derived from the step",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.seat.file",
+      "text": "Named in its seat file",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.label",
+      "text": "Team",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.kind.you",
+      "text": "You",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.kind.ai",
+      "text": "AI",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.kind.code",
+      "text": "Code",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier.low",
+      "text": "Low tier",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier.mid",
+      "text": "Mid tier",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier.high",
+      "text": "High tier",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.tier-open",
+      "text": "Tier open",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.steps",
+      "text": "{count, plural, one {# step} other {# steps}}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.show",
+      "text": "Show {name} on the map",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.you",
+      "text": "Sets the brief, chooses between options and approves what ships.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.director",
+      "text": "Drafts the direction every other agent works from.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.designer",
+      "text": "Makes the visual candidates: themes, components, sections and frames.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.writer",
+      "text": "Writes the copy candidates every page reads.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.publisher",
+      "text": "Assembles pinned parts into pages and serves them.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.checks",
+      "text": "Verifies each output before the next step reads it.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.about.unassigned",
+      "text": "Steps that no seat holds yet.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.content.description",
+      "text": "How the content system works together: who holds each step, and when.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.build.empty.title",
+      "text": "Build is not set up yet",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.build.empty.description",
+      "text": "This system will show how the product gets built once its team and steps are declared.",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.run.empty.title",
+      "text": "Run is not set up yet",
+      "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.run.empty.description",
+      "text": "This system will show how the product is operated once its team and steps are declared.",
+      "context": "components/StudioPage.tsx",
       "status": "draft"
     },
     {

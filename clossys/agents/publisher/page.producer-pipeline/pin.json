@@ -1,6 +1,6 @@
 {
-  "candidate": "page-v3.json",
-  "sha256": "4a6249263735ea8525ffb647f74bfc1c2b40d6e9b564462647324d57480add0b",
-  "decidedBy": "planner:PIPELINE-CANVAS",
-  "at": "2026-11-04T06:17:39.693Z"
+  "candidate": "page-v4.json",
+  "sha256": "627ec2f7affa6a59ef3791a19b039b0eb97dc89b820443d7d444672ee4bea050",
+  "decidedBy": "planner:SYSTEMS-IA",
+  "at": "2026-11-04T08:09:55.863Z"
 }

@@ -4,7 +4,7 @@
   "agent": "publisher",
   "ia": {
     "l1": "studio",
-    "l2": "producer",
+    "l2": "systems",
     "order": 19
   },
   "kind": "page",
@@ -13,24 +13,18 @@
     "frames.studio-shell",
     "sections.producer.pipeline-flow",
     "sections.producer.pipeline-legend",
-    "sections.studio.page-header",
-    "sections.studio.page-tabs"
+    "sections.producer.team-strip",
+    "sections.studio.page-header"
   ],
   "uses": [
+    "assets.icon-team",
     "frames.studio-shell",
     "sections.module.checks",
     "sections.module.outline",
     "sections.producer.pipeline-flow",
     "sections.producer.pipeline-legend",
-    "sections.studio.checks",
-    "sections.studio.contract",
-    "sections.studio.history",
-    "sections.studio.leaf-header",
-    "sections.studio.options",
+    "sections.producer.team-strip",
     "sections.studio.page-header",
-    "sections.studio.page-tabs",
-    "sections.studio.references",
-    "sections.studio.specimen",
     "strings.common"
   ]
 }

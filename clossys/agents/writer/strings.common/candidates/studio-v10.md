@@ -1249,145 +1249,145 @@ Ready
 Pending
 
 ### studio.pipeline.lane.you
-<!-- {"id":"studio.pipeline.lane.you","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.lane.you","bindings":["lib/pipeline-flow.ts"]} -->
 You
 
 ### studio.pipeline.lane.checks
-<!-- {"id":"studio.pipeline.lane.checks","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.lane.checks","bindings":["lib/pipeline-flow.ts"]} -->
 Checks
 
 ### studio.pipeline.lane.unassigned
-<!-- {"id":"studio.pipeline.lane.unassigned","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.lane.unassigned","bindings":["lib/pipeline-flow.ts"]} -->
 Unassigned
 
 ### studio.pipeline.stage.brief
-<!-- {"id":"studio.pipeline.stage.brief","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.brief","bindings":["lib/pipeline-flow.ts"]} -->
 Brief
 
 ### studio.pipeline.stage.select
-<!-- {"id":"studio.pipeline.stage.select","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.select","bindings":["lib/pipeline-flow.ts"]} -->
 Select
 
 ### studio.pipeline.stage.make
-<!-- {"id":"studio.pipeline.stage.make","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.make","bindings":["lib/pipeline-flow.ts"]} -->
 Make
 
 ### studio.pipeline.stage.pin
-<!-- {"id":"studio.pipeline.stage.pin","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.pin","bindings":["lib/pipeline-flow.ts"]} -->
 Pin
 
 ### studio.pipeline.stage.assemble
-<!-- {"id":"studio.pipeline.stage.assemble","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.assemble","bindings":["lib/pipeline-flow.ts"]} -->
 Assemble
 
 ### studio.pipeline.stage.check
-<!-- {"id":"studio.pipeline.stage.check","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.check","bindings":["lib/pipeline-flow.ts"]} -->
 Check
 
 ### studio.pipeline.stage.publish
-<!-- {"id":"studio.pipeline.stage.publish","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.stage.publish","bindings":["lib/pipeline-flow.ts"]} -->
 Publish
 
 ### studio.pipeline.step.holder
-<!-- {"id":"studio.pipeline.step.holder","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.step.holder","bindings":["lib/pipeline-flow.ts"]} -->
 Held by
 
 ### studio.pipeline.step.stage
-<!-- {"id":"studio.pipeline.step.stage","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.step.stage","bindings":["lib/pipeline-flow.ts"]} -->
 Stage
 
 ### studio.pipeline.seat.derived
-<!-- {"id":"studio.pipeline.seat.derived","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.seat.derived","bindings":["lib/pipeline-flow.ts"]} -->
 Derived from the step
 
 ### studio.pipeline.seat.file
-<!-- {"id":"studio.pipeline.seat.file","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.pipeline.seat.file","bindings":["lib/pipeline-flow.ts"]} -->
 Named in its seat file
 
 ### studio.team.label
-<!-- {"id":"studio.team.label","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.label","bindings":["lib/pipeline-flow.ts"]} -->
 Team
 
 ### studio.team.kind.you
-<!-- {"id":"studio.team.kind.you","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.kind.you","bindings":["lib/pipeline-flow.ts"]} -->
 You
 
 ### studio.team.kind.ai
-<!-- {"id":"studio.team.kind.ai","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.kind.ai","bindings":["lib/pipeline-flow.ts"]} -->
 AI
 
 ### studio.team.kind.code
-<!-- {"id":"studio.team.kind.code","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.kind.code","bindings":["lib/pipeline-flow.ts"]} -->
 Code
 
 ### studio.team.tier.low
-<!-- {"id":"studio.team.tier.low","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.tier.low","bindings":["lib/pipeline-flow.ts"]} -->
 Low tier
 
 ### studio.team.tier.mid
-<!-- {"id":"studio.team.tier.mid","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.tier.mid","bindings":["lib/pipeline-flow.ts"]} -->
 Mid tier
 
 ### studio.team.tier.high
-<!-- {"id":"studio.team.tier.high","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.tier.high","bindings":["lib/pipeline-flow.ts"]} -->
 High tier
 
 ### studio.team.tier-open
-<!-- {"id":"studio.team.tier-open","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.tier-open","bindings":["lib/pipeline-flow.ts"]} -->
 Tier open
 
 ### studio.team.steps
-<!-- {"id":"studio.team.steps","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.steps","bindings":["lib/pipeline-flow.ts"]} -->
 {count, plural, one {# step} other {# steps}}
 
 ### studio.team.show
-<!-- {"id":"studio.team.show","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.show","bindings":["lib/pipeline-flow.ts"]} -->
 Show {name} on the map
 
 ### studio.team.about.you
-<!-- {"id":"studio.team.about.you","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.you","bindings":["lib/pipeline-flow.ts"]} -->
 Sets the brief, chooses between options and approves what ships.
 
 ### studio.team.about.director
-<!-- {"id":"studio.team.about.director","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.director","bindings":["lib/pipeline-flow.ts"]} -->
 Drafts the direction every other agent works from.
 
 ### studio.team.about.designer
-<!-- {"id":"studio.team.about.designer","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.designer","bindings":["lib/pipeline-flow.ts"]} -->
 Makes the visual candidates: themes, components, sections and frames.
 
 ### studio.team.about.writer
-<!-- {"id":"studio.team.about.writer","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.writer","bindings":["lib/pipeline-flow.ts"]} -->
 Writes the copy candidates every page reads.
 
 ### studio.team.about.publisher
-<!-- {"id":"studio.team.about.publisher","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.publisher","bindings":["lib/pipeline-flow.ts"]} -->
 Assembles pinned parts into pages and serves them.
 
 ### studio.team.about.checks
-<!-- {"id":"studio.team.about.checks","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.checks","bindings":["lib/pipeline-flow.ts"]} -->
 Verifies each output before the next step reads it.
 
 ### studio.team.about.unassigned
-<!-- {"id":"studio.team.about.unassigned","bindings":["lib/pipeline-flow.ts"],"status":"draft"} -->
+<!-- {"id":"studio.team.about.unassigned","bindings":["lib/pipeline-flow.ts"]} -->
 Steps that no seat holds yet.
 
 ### studio.content.description
-<!-- {"id":"studio.content.description","bindings":["components/StudioPage.tsx"],"status":"draft"} -->
+<!-- {"id":"studio.content.description","bindings":["components/StudioPage.tsx"]} -->
 How the content system works together: who holds each step, and when.
 
 ### studio.build.empty.title
-<!-- {"id":"studio.build.empty.title","bindings":["components/StudioPage.tsx"],"status":"draft"} -->
+<!-- {"id":"studio.build.empty.title","bindings":["components/StudioPage.tsx"]} -->
 Build is not set up yet
 
 ### studio.build.empty.description
-<!-- {"id":"studio.build.empty.description","bindings":["components/StudioPage.tsx"],"status":"draft"} -->
+<!-- {"id":"studio.build.empty.description","bindings":["components/StudioPage.tsx"]} -->
 This system will show how the product gets built once its team and steps are declared.
 
 ### studio.run.empty.title
-<!-- {"id":"studio.run.empty.title","bindings":["components/StudioPage.tsx"],"status":"draft"} -->
+<!-- {"id":"studio.run.empty.title","bindings":["components/StudioPage.tsx"]} -->
 Run is not set up yet
 
 ### studio.run.empty.description
-<!-- {"id":"studio.run.empty.description","bindings":["components/StudioPage.tsx"],"status":"draft"} -->
+<!-- {"id":"studio.run.empty.description","bindings":["components/StudioPage.tsx"]} -->
 This system will show how the product is operated once its team and steps are declared.

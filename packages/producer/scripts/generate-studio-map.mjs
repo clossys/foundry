@@ -304,7 +304,7 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     // Each expanded record's tabs, in order: the record's page-tabs read them, never a child walk.
     tabs,
     // The agent groups: the groups that hold an expanded record (an agent's records), in map order.
-    agents: map.entries.filter(row => row.kind === 'group' && expansion.tabs.some(tab => map.entries.find(entry => entry.id === tab.recordId)?.parentId === row.id)).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title })),
+    agents: map.entries.filter(row => row.kind === 'group' && expansion.tabs.some(tab => map.entries.find(entry => entry.id === tab.recordId)?.parentId === row.id)).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title, ...(row.icon ? { icon: row.icon } : {}) })),
     // The page every entry opens on, and every served entry's trail (groups, record, tab, leaf): the breadcrumbs.
     landings: Object.fromEntries(map.entries.flatMap(row => { const href = landingOf(map, expansion.tabs, row.id); return href ? [[row.id, href]] : []; })),
     trails: projectTrails(map, expansion.tabs, leaves),
@@ -354,7 +354,7 @@ export const studioLeaves = projection.leaves as readonly StudioLeaf[];
 export interface StudioTab { id: string; record: string; title: string; path: string }
 export const studioTabs = projection.tabs as readonly StudioTab[];
 /** The agent groups (the groups that hold an agent's expanded records), in map order. */
-export const studioAgents = projection.agents as readonly { id: string; label: string }[];
+export const studioAgents = projection.agents as readonly { id: string; label: string; icon?: string }[];
 /** The served path every entry opens on, by entry id. */
 export const studioLandings = projection.landings as Readonly<Record<string, string>>;
 /** One crumb of a served entry's trail. */

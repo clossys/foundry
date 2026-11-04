@@ -5,10 +5,9 @@ import { PublishedPage, publishedLeaf } from "../../../../../components/StudioIn
 
 /** The leaves the record store held at install, from the content map's static params. */
 const leaves: { slug: string }[] = [
-  { slug: "sections.producer.pipeline-header" },
-  { slug: "sections.producer.pipeline-flow" },
-  { slug: "sections.producer.step-sheet" },
-  { slug: "sections.producer.pipeline-legend" },
+  { slug: "page.producer-pipeline" },
+  { slug: "page.build-overview" },
+  { slug: "page.run-overview" },
 ];
 export const dynamicParams = true;
 export function generateStaticParams() {
@@ -17,6 +16,6 @@ export function generateStaticParams() {
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  if (!(await publishedLeaf("producer-pipeline.producer-pipeline", slug))) notFound();
-  return createElement(PublishedPage, { page: "producer-pipeline.producer-pipeline", slug });
+  if (!(await publishedLeaf("publisher-studio.systems", slug))) notFound();
+  return createElement(PublishedPage, { page: "publisher-studio.systems", slug });
 }

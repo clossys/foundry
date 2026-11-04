@@ -4,7 +4,7 @@ import { studioGroups } from './studio-route-map';
 
 /** The agents the chat names, from the content-map groups: "A, B and C". */
 function agentList(): string {
-  const names = studioGroups().map(group => group.title);
+  const names = studioGroups().map(group => group.label);
   if (names.length < 2) return names.join('');
   return studioCopy('studio.agent-list', { head: names.slice(0, -1).join(', '), last: names.at(-1)! });
 }

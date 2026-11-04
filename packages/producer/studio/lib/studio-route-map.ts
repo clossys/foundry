@@ -1,20 +1,20 @@
 /**
  * The one Studio route map. Publisher compiles the publication into `generated/studio-map`: Home,
- * one group per agent, one parameterized page record per agent top group, the group-tab pages the
- * content map expands from each record and, per tab, the leaf routes of its slots. Navigation,
- * the command menu, breadcrumbs, tabs, links and the router all read the map this module returns:
- * no Studio route string is built anywhere else.
+ * one group per system (Content, Build, Run), each system's overview page, the agent groups under
+ * Content, one parameterized page record per agent top group, the group-tab pages the content map
+ * expands from each record and, per tab, the leaf routes of its slots, plus the projected tabs,
+ * landings and trails. Navigation, the command menu, breadcrumbs, tabs, links and the router all
+ * read that projection through this module: no Studio route string is built anywhere else.
  */
-import { projectBreadcrumbs, projectCommands, projectNavigation, type ContentMap, type ContentMapBreadcrumb, type ContentMapCommandGroup, type ContentMapEntry, type ContentMapNavigation, type ContentMapNode } from '@clossys/publisher/content-map';
+import { projectBreadcrumbs, projectCommands, projectNavigation, type ContentMap, type ContentMapBreadcrumb, type ContentMapCommandGroup, type ContentMapEntry, type ContentMapNavigation } from '@clossys/publisher/content-map';
 import { studioCopy } from './studio-copy';
-import { studioHomeId, studioLeaves, studioMap, studioPages, type StudioAssemblySpec, type StudioLeaf, type StudioPageRecord } from '../generated/studio-map';
+import { studioAgents, studioHomeId, studioLandings, studioLeaves, studioMap, studioPages, studioTabs, studioTrails, type StudioAssemblySpec, type StudioLeaf, type StudioPageRecord, type StudioTab } from '../generated/studio-map';
 
 const pageById = new Map(studioPages.map(page => [page.id, page]));
 const entryById = new Map(studioMap.entries.map(entry => [entry.id, entry]));
 const leafId = (leaf: StudioLeaf) => `${leaf.page}:${leaf.slug}`;
-const order = (a: ContentMapNode, b: ContentMapNode) => a.order - b.order;
 
-/** The compiled map plus one page entry per leaf, under its tab's record (the map stays within its depth). */
+/** The compiled map plus one page entry per leaf, beside its tab (the map stays within its depth). */
 function runtimeMap(): ContentMap {
   const extra: ContentMapEntry[] = studioLeaves.flatMap((leaf, index) => {
     const tab = pageById.get(leaf.page);
@@ -46,13 +46,13 @@ export function resolveStudioRoute(map: ContentMap, segments: readonly string[])
   return page ? { state: 'page', entry, page, spec: page, key: entry.id } : { state: 'missing' };
 }
 
-/** The pinned page navigation highlights for an entry: itself, or its nearest pinned page ancestor. */
+/** The pinned page navigation highlights for an entry: the deepest pinned page on its projected trail. */
 function navigationActive(map: ContentMap, id: string): string {
   const byId = new Map(map.entries.map(row => [row.id, row]));
-  let row = byId.get(id);
-  while (row) {
-    if (row.pin && (row.kind === 'page' || row.kind === 'section')) return row.id;
-    row = row.parentId === undefined ? undefined : byId.get(row.parentId);
+  const trail = studioTrails[id] ?? [];
+  for (const crumb of [...trail].reverse()) {
+    const row = byId.get(crumb.id);
+    if (row?.pin && (row.kind === 'page' || row.kind === 'section')) return row.id;
   }
   return studioHomeId;
 }
@@ -71,44 +71,41 @@ export function studioShellProjection(map: ContentMap, entryId: string): StudioS
   };
 }
 
-/**
- * The trail of an entry, from the map: its root group, then its pages. A leaf sits under its tab's
- * record in the map (the map stays within its depth), so its trail is its tab's trail plus itself.
- * A record whose one tab carries the record's own title (Producer's Pipeline record and its Pipeline
- * tab) names one place: the trail keeps the deeper crumb only, so no label repeats back to back.
- */
+/** The trail of an entry: the one Publisher projected (groups, record, tab, leaf), else the map's own. */
 function studioBreadcrumbs(map: ContentMap, entryId: string): readonly ContentMapBreadcrumb[] {
-  const leaf = studioLeaves.find(row => leafId(row) === entryId);
-  const own = leaf ? [...projectBreadcrumbs(map, leaf.page), ...projectBreadcrumbs(map, entryId).slice(-1)] : projectBreadcrumbs(map, entryId);
-  const group = studioGroupOf(leaf ? leaf.page : entryId);
-  const href = group ? studioLanding(group.id) : undefined;
-  const trail = !group || own.some(crumb => crumb.id === group.id) ? own : [{ id: group.id, label: group.title, ...(href ? { href } : {}) }, ...own];
-  return trail.filter((crumb, index) => index === trail.length - 1 || crumb.label !== trail[index + 1]!.label);
+  return studioTrails[entryId] ?? projectBreadcrumbs(map, entryId);
 }
 
-/** The compiled child pages of an entry, in map order: a record's tabs, an agent group's records. */
-export function studioChildren(id: string): (ContentMapEntry & { path: string })[] {
-  return studioMap.entries.filter((row): row is ContentMapEntry & { path: string } => row.kind === 'page' && row.parentId === id && 'path' in row && typeof row.path === 'string').sort(order);
+/** An expanded record's tabs, in order, as Publisher projected them. */
+export function studioRecordTabs(recordId: string): readonly StudioTab[] {
+  return studioTabs.filter(tab => tab.record === recordId);
 }
 
-/** The page an entry opens on: a page without child pages is itself; otherwise its first child's. */
+/** The served path an entry opens on, as Publisher projected it: a record opens on its first tab, a group on its first child's landing. */
 export function studioLanding(id: string): string | undefined {
-  const entry = entryById.get(id);
-  const children = studioChildren(id);
-  if (children.length) return studioLanding(children[0]!.id);
-  return entry && entry.kind === 'page' && 'path' in entry ? entry.path : undefined;
+  return studioLandings[id];
 }
 
-/** The top-level groups of the map, in order. */
-export function studioGroups(): ContentMapNode[] {
-  return studioMap.entries.filter(row => row.kind === 'group' && !row.parentId).sort(order);
+/** The agent groups (the groups that hold an agent's records), in map order. */
+export function studioGroups(): readonly { id: string; label: string; icon?: string }[] {
+  return studioAgents;
 }
 
-/** The group an entry sits under (its root ancestor). */
-export function studioGroupOf(id: string): ContentMapNode | undefined {
-  let row = entryById.get(id);
-  while (row?.parentId) row = entryById.get(row.parentId);
-  return row?.kind === 'group' ? row : undefined;
+/** An agent group's expanded records, in map order (each record once, from Publisher's projected tabs). */
+export function studioAgentRecords(groupId: string): readonly string[] {
+  return [...new Set(studioTabs.map(tab => tab.record))].filter(record => entryById.get(record)?.parentId === groupId);
+}
+
+/** The agent group an entry sits under (its nearest ancestor that is an agent group). */
+export function studioGroupOf(id: string): { id: string; title: string } | undefined {
+  const agents = new Map(studioAgents.map(agent => [agent.id, agent.label]));
+  let row = entryById.get(id) ?? (studioLeaves.some(leaf => leafId(leaf) === id) ? entryById.get(id.split(':')[0]!) : undefined);
+  while (row) {
+    const label = agents.get(row.id);
+    if (label !== undefined) return { id: row.id, title: label };
+    row = row.parentId === undefined ? undefined : entryById.get(row.parentId);
+  }
+  return undefined;
 }
 
 /** The served path of a slot's leaf, through the map: the tab of the record whose leaf template reads that agent. */
