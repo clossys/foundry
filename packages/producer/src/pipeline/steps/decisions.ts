@@ -42,7 +42,8 @@ export const DECISION_STEPS = [
   defineStep({
     id: "selection", kind: "decide:judgment", actor: "owner", stage: "design.select",
     summary: "Frozen legacy library selection; no code writes it. Pins live in the slot model (clossys/agents/*/*/pin.json).",
-    inputs: ["clossys/library/**"], outputs: ["clossys/selection.json"],
+    // Typed both ways, as SYSTEMS-IA declared it: the library element records it was chosen from, and the selection port schema.
+    inputs: [LIBRARY_ELEMENTS, "clossys/library/**"], outputs: [SELECTION],
     command: { manual: "frozen: the selection writer is deleted; Designer's check:ref-verbatim --pinned, check-provenance and check-section-tokens still read it until they read slot-model pins" },
     checks: ["workspace"],
   }),
@@ -59,5 +60,14 @@ export const DECISION_STEPS = [
     outputs: [pinsOf(agent), `clossys/agents/${agent}/*/slot.json#notNeeded`],
     command: { cli: { verb: "pin", parser: "src/cli/pin.ts", target: agent }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state", "pin-propagation", "every-candidate-previewable"],
     open: `slots-undecided:${agent}`,
+  })),
+  // An agent seat's pick: the same pin.json, written by clossys pick with basis agent at the agent's pin stage.
+  // It may replace a bulk, planner or agent pin, never an owner pick (basis picked); Studio shows it as confirm.
+  ...PIN_ROUNDS.map(([agent, stage]) => defineStep({
+    id: `pick.${agent}`, kind: "decide:judgment", actor: "agent:judge", stage,
+    summary: `A judge seat picks one of a ${agent[0]!.toUpperCase()}${agent.slice(1)} slot's options (pin basis agent); Studio shows confirm until the owner pins.`,
+    inputs: [candidatesOf(agent), slotsOf(agent)],
+    outputs: [`clossys/agents/${agent}/*/pin.json#basis`],
+    command: { cli: { verb: "pick", parser: "src/cli/options.ts", target: agent }, entry: "src/cli/options.ts#runPickCli" }, checks: ["decisions", "slot-options"],
   })),
 ];

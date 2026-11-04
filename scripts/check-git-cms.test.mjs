@@ -50,7 +50,7 @@ test("iaSlots reads node children and extensions", () => {
 test("a tree in the flat layout is green and the CLI exits 0", () => withRepo(({ repo }) => {
   const { findings, summary } = checkGitCms(join(repo, "clossys"));
   assert.deepEqual(findings, []);
-  assert.deepEqual(summary.designer, { slots: 2, pinned: 1, notNeeded: 1, basis: { picked: 1, bulk: 0, planner: 0 }, findings: 0 });
+  assert.deepEqual(summary.designer, { slots: 2, pinned: 1, notNeeded: 1, basis: { picked: 1, bulk: 0, planner: 0, agent: 0 }, findings: 0 });
   const run = spawnSync(process.execPath, [scriptPath, "--repo", repo], { encoding: "utf8" });
   assert.equal(run.status, 0, run.stdout + run.stderr);
   assert.match(run.stdout, /every agent tree is green/);
@@ -101,10 +101,10 @@ test("a pin without decidedBy, without basis, or with another basis fails", () =
   editPin(pinned, ({ decidedBy, ...rest }) => rest);
   assert.deepEqual(rules(repo), ["pin-attribution designer/components.pinned/pin.json"]);
   editPin(pinned, ({ basis, ...rest }) => ({ ...rest, decidedBy: "owner" }));
-  assert.deepEqual(checkGitCms(join(repo, "clossys")).findings.map((row) => row.message), ["pin has no basis (picked | bulk | planner)"]);
+  assert.deepEqual(checkGitCms(join(repo, "clossys")).findings.map((row) => row.message), ["pin has no basis (picked | bulk | planner | agent)"]);
   editPin(pinned, (pin) => ({ ...pin, basis: "owner" }));
   assert.deepEqual(rules(repo), ["pin-attribution designer/components.pinned/pin.json"]);
-  for (const basis of ["picked", "bulk", "planner"]) {
+  for (const basis of ["picked", "bulk", "planner", "agent"]) {
     editPin(pinned, (pin) => ({ ...pin, basis }));
     assert.deepEqual(rules(repo), []);
   }

@@ -23,7 +23,7 @@
  *   no-candidates       a slot with zero candidate files
  *   pin-candidate       pin.json names a candidate file that does not exist
  *   pin-hash            pin.json sha256 differs from the candidate file's bytes
- *   pin-attribution     pin.json has no decidedBy, or no basis (picked | bulk | planner)
+ *   pin-attribution     pin.json has no decidedBy, or no basis (picked | bulk | planner | agent)
  *   not-needed-reason   slot.json notNeeded has no reason
  *
  * Nothing is exempt: an agent folder that is not in this layout fails until it is converted.
@@ -36,7 +36,7 @@ import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner']);
+export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner', 'agent']);
 const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 
 const stat = path => { try { return lstatSync(path); } catch { return undefined; } };
@@ -108,7 +108,7 @@ export function checkGitCms(consumer) {
     const agentDir = join(agents, agent);
     const before = findings.length;
     const add = (rule, path, message) => findings.push({ rule, agent, path, message });
-    const row = summary[agent] = { slots: 0, pinned: 0, notNeeded: 0, basis: { picked: 0, bulk: 0, planner: 0 }, findings: 0 };
+    const row = summary[agent] = { slots: 0, pinned: 0, notNeeded: 0, basis: Object.fromEntries(PIN_BASES.map((basis) => [basis, 0])), findings: 0 };
     if (!isDir(agentDir)) { add('stray-entry', agent, 'clossys/agents holds only agent folders'); row.findings = findings.length - before; continue; }
     let listed;
     if (!isFile(join(agentDir, 'ia.json'))) add('missing-ia', `${agent}/ia.json`, 'agent folder has no ia.json');
@@ -152,7 +152,7 @@ if (isMain) {
   else {
     for (const row of findings) console.log(`FAIL ${row.rule} ${row.path}: ${row.message}`);
     for (const [agent, row] of Object.entries(summary)) {
-      console.log(`${row.findings ? 'red  ' : 'green'} ${agent}: ${row.slots} slots, ${row.pinned} pinned (picked ${row.basis.picked}, bulk ${row.basis.bulk}, planner ${row.basis.planner}), ${row.notNeeded} not needed, ${row.findings} finding(s)`);
+      console.log(`${row.findings ? 'red  ' : 'green'} ${agent}: ${row.slots} slots, ${row.pinned} pinned (${PIN_BASES.map((basis) => `${basis} ${row.basis[basis]}`).join(', ')}), ${row.notNeeded} not needed, ${row.findings} finding(s)`);
     }
     const red = Object.entries(summary).filter(([, row]) => row.findings).map(([agent]) => agent);
     console.log(`check-git-cms: ${findings.length} finding(s); ${red.length ? `red: ${red.join(', ')}` : 'every agent tree is green'}`);

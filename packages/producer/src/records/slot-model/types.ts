@@ -31,18 +31,25 @@ export const CANDIDATES_DIR = "candidates";
 /** Decision provenance for migrated pins (D6, and the decidedBy rewrite) and for the owner-cleared Director brief. */
 export const MIGRATION_DECIDED_BY = "migrated";
 export const DIRECTOR_DECIDED_BY = "owner:2026-10-31 all-approved";
-/** Who decided: owner, planner or migration (each optionally `:<ref>`), or `migrated`. Written by `clossys pin`. */
-export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/;
+/** Who decided: owner, planner or migration (each optionally `:<ref>`), `agent:<seat>` (a judge seat, `clossys pick`), or `migrated`. Written by `clossys pin` and `clossys pick`. */
+export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/;
 /**
  * How a pin was decided, so Studio can show what the owner still has to confirm:
- * `picked` the owner chose this candidate; `bulk` a blanket owner approval; `planner` the planner chose it.
- * Written by `clossys pin` (`--by planner:*` is `planner`; any other decider needs an explicit `--basis`).
+ * `picked` the owner chose this candidate; `bulk` a blanket owner approval; `planner` the planner chose it;
+ * `agent` a judge seat picked one of the slot's options (`clossys pick`).
+ * Written by `clossys pin` (`--by planner:*` is `planner`; any other decider needs an explicit `--basis`)
+ * and `clossys pick` (always `agent`, with `--by agent:<seat>`). Required on every pin.
  */
-export const PIN_BASES = ["picked", "bulk", "planner"] as const;
+export const PIN_BASES = ["picked", "bulk", "planner", "agent"] as const;
 export type PinBasis = typeof PIN_BASES[number];
-/** A pin's review status: `confirm` until the owner picked it (basis bulk or planner), else `pinned`. */
+/** A pin's review status: `pinned` only for an owner pick (basis picked); bulk, planner and agent pins are `confirm`. */
 export type PinStatus = "pinned" | "confirm";
-export const pinStatus = (basis: PinBasis): PinStatus => basis === "bulk" || basis === "planner" ? "confirm" : "pinned";
+export const pinStatus = (basis: PinBasis): PinStatus => basis === "picked" ? "pinned" : "confirm";
+
+/** How many candidates a slot offers for choice (CANDIDATE-OPTIONS). */
+export const OPTION_COUNTS = [1, 2, 3] as const;
+/** A named variation axis (`varyOn`) or one of its values: lower-case words joined by hyphens. */
+export const VARY_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export interface IaLeafGroup { readonly id: string; readonly label: string; readonly slots: readonly string[] }
 export interface IaNode { readonly id: string; readonly label: string; readonly children: readonly IaLeafGroup[] }
@@ -78,6 +85,10 @@ export interface SlotDoc {
   readonly uses: readonly string[];
   /** The owner's decision that this slot is not needed. Present only for the `not-needed` state. */
   readonly notNeeded?: NotNeeded;
+  /** How many distinct candidates the slot must offer (1 to 3); written from the option-class mapping by `clossys options --classes`. */
+  readonly options?: typeof OPTION_COUNTS[number];
+  /** The axis candidates differ on (e.g. `tone`); required when options > 1. Each candidate tags its value as `vary: {"<axis>": "<value>"}`. */
+  readonly varyOn?: string;
 }
 
 /** Why a slot is not needed, since when (ISO date) and who decided. Written by `clossys pin --not-needed`, never by an agent fill. */

@@ -19,5 +19,7 @@
     "advantage.proposition.proof",
     "identity.verbal.narrative"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "arc"
 }

@@ -64,6 +64,12 @@ describe("clossys pin <agent>/<slot> <candidate-id>", () => {
     expect(load(join(slotDir, "pin.json"))).toMatchObject({ decidedBy: "owner:2026-11-03 go", basis: "bulk" });
   });
 
+  it("refuses an agent seat's pick: basis agent is written only by clossys pick", async () => {
+    expect((await pin(`designer/${ID}`, "example-v1.json", "--basis", "agent")).exitCode).toBe(2);
+    expect((await pin(`designer/${ID}`, "example-v1.json", "--by", "agent:judge", "--basis", "bulk")).exitCode).toBe(2);
+    expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
+  });
+
   it("takes the candidate id without its extension and a --by decider", async () => {
     const result = await pin(`designer/${ID}`, "example-v2", "--by", "planner:PIN-CLI");
     expect(result.exitCode).toBe(0);

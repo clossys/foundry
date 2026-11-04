@@ -110,6 +110,17 @@
           "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|migrated)$"
         }
       }
+    },
+    "options": {
+      "enum": [
+        1,
+        2,
+        3
+      ]
+    },
+    "varyOn": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
     }
   },
   "anyOf": [
@@ -156,5 +167,23 @@
         }
       }
     }
-  ]
+  ],
+  "not": {
+    "required": [
+      "options"
+    ],
+    "properties": {
+      "options": {
+        "enum": [
+          2,
+          3
+        ]
+      }
+    },
+    "not": {
+      "required": [
+        "varyOn"
+      ]
+    }
+  }
 }

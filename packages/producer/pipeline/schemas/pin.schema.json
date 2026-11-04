@@ -23,14 +23,15 @@
     },
     "decidedBy": {
       "type": "string",
-      "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|migrated)$"
+      "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|agent:\\S+|migrated)$"
     },
     "basis": {
-      "description": "How the pin was decided: picked (the owner chose this candidate), bulk (a blanket owner approval) or planner (the planner chose it). Studio shows bulk and planner pins as confirm.",
+      "description": "How the pin was decided: picked (the owner chose this candidate), bulk (a blanket owner approval), planner (the planner chose it) or agent (an agent seat picked it with clossys pick, decidedBy agent:<seat>). Studio shows bulk, planner and agent pins as confirm.",
       "enum": [
         "picked",
         "bulk",
-        "planner"
+        "planner",
+        "agent"
       ]
     },
     "at": {

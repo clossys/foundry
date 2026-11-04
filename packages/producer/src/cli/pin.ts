@@ -30,7 +30,7 @@ export interface DecisionRow {
   readonly candidate?: string;
   readonly reason?: string;
   readonly decidedBy?: string;
-  /** How a pinned slot was decided (picked | bulk | planner). */
+  /** How a pinned slot was decided (picked | bulk | planner | agent). */
   readonly basis?: PinBasis;
   /** Why an `open` slot is open: the loader's rejection (`no-pin`, `invalid-pin`, ...). */
   readonly rejection?: string;
@@ -71,6 +71,8 @@ function consumerOf(cwd: string, root: string | undefined): string {
  */
 export function pinBasis(by: string, basis: string | undefined): PinBasis {
   const planner = /^planner(?::|$)/.test(by);
+  // An agent seat's pick (basis agent, decidedBy agent:<seat>) is written only by clossys pick, which refuses to replace an owner pick.
+  if (basis === "agent" || by.startsWith("agent:")) throw new CliUsageError(`an agent seat picks with clossys pick <agent>/<slot> <candidate-id> --by agent:<seat>, not clossys pin\n${PIN_USAGE}`);
   if (basis !== undefined && !(PIN_BASES as readonly string[]).includes(basis)) throw new CliUsageError(`--basis must be ${PIN_BASES.join(", ")}, got ${basis}\n${PIN_USAGE}`);
   if (planner) {
     if (basis !== undefined && basis !== "planner") throw new CliUsageError(`--by ${by} is a planner pin: its basis is planner, not ${basis}\n${PIN_USAGE}`);

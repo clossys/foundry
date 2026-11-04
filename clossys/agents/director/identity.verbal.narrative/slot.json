@@ -26,5 +26,7 @@
     ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
 }

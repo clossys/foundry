@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "e523b42a02123c600fd5cf8ff11b4ced319778f9c747409f01918273050a35d1",
+  "revision": "99596db508878c7cf27b54c81fc1137e6c803580f34eae77512f6f881d717975",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2381,6 +2381,12 @@
       "id": "studio.pinned",
       "text": "Pinned",
       "context": "lib/designer-library.ts, lib/leaf-status.ts, lib/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm",
+      "text": "Pinned, to confirm",
+      "context": "lib/slot-detail.ts",
       "status": "draft"
     },
     {

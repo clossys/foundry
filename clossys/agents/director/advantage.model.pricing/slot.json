@@ -28,5 +28,7 @@
   "inputs": [
     "advantage.defensibility.differentiator"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
 }

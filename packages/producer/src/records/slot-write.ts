@@ -51,7 +51,7 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
 
 /**
  * Pin one existing, valid candidate. `decidedBy` names who decided (owner or planner, optionally
- * `:<message ref>`, or `migrated`); `basis` how (picked, bulk or planner). A `notNeeded` marker on
+ * `:<message ref>`, `agent:<seat>`, or `migrated`); `basis` how (PIN_BASES). A `notNeeded` marker on
  * the slot is cleared: the pin replaces it.
  */
 export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }): PinDoc {
@@ -80,4 +80,20 @@ export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, n
   writeFileSync(slotFile(entry.dir), jsonBytes(next));
   if (existsSync(pinFile(entry.dir))) unlinkSync(pinFile(entry.dir));
   return next;
+}
+
+/**
+ * Set a slot's `options` and `varyOn` from its option class (CANDIDATE-OPTIONS), keeping every
+ * other key. options 1 removes both keys (1 is the default). Returns true when slot.json changed.
+ */
+export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string, input: { options: 1 | 2 | 3; varyOn?: string }): boolean {
+  const { doc, entry } = located(consumer, agent, id);
+  const { options: _options, varyOn: _varyOn, ...rest } = doc;
+  const next: SlotDoc = input.options > 1 ? { ...rest, options: input.options, ...(input.varyOn ? { varyOn: input.varyOn } : {}) } : rest;
+  const issues = validateSlotDoc(next);
+  if (issues.length) throw new Error(`options refused: ${issues.map(issue => issue.message).join("; ")}`);
+  const before = jsonBytes(doc), after = jsonBytes(next);
+  if (before === after) return false;
+  writeFileSync(slotFile(entry.dir), after);
+  return true;
 }

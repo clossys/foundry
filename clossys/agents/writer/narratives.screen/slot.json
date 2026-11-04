@@ -18,5 +18,7 @@
     "focus.offer.included",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "arc"
 }

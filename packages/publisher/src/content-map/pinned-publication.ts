@@ -105,8 +105,9 @@ function pinned(records: PinnedPublicationSource, index: Map<string, Position>, 
   keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at"], pinPath);
   safeSegment(pin.candidate, CANDIDATE, pinPath);
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
-    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/.test(pin.decidedBy)
-    || (pin.basis !== undefined && !["picked", "bulk", "planner"].includes(pin.basis as string))
+    || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/.test(pin.decidedBy)
+    || !["picked", "bulk", "planner", "agent"].includes(pin.basis as string)
+    || (pin.basis === "agent") !== pin.decidedBy.startsWith("agent:")
     || typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || Number.isNaN(Date.parse(pin.at))) fail(pinPath, "Invalid pin");
   const path = `${dir}/candidates/${pin.candidate}`, raw = present(records.candidate(id, pin.candidate), path);
   if (raw.sha256 !== pin.sha256) fail(path, "Pinned candidate hash drift");
