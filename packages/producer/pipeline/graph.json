@@ -216,7 +216,7 @@
         "lane": "you",
         "stage": "design.select",
         "rank": 6,
-        "x": 3320,
+        "x": 3040,
         "y": 0
       }
     },
@@ -255,7 +255,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2720,
+        "x": 2440,
         "y": 344
       }
     },
@@ -310,7 +310,7 @@
         "lane": "you",
         "stage": "direct.pin",
         "rank": 2,
-        "x": 1200,
+        "x": 920,
         "y": 172
       }
     },
@@ -365,7 +365,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 4,
-        "x": 2440,
+        "x": 2160,
         "y": 172
       }
     },
@@ -420,7 +420,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2720,
+        "x": 2440,
         "y": 172
       }
     },
@@ -475,7 +475,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 7,
-        "x": 3960,
+        "x": 3680,
         "y": 172
       }
     },
@@ -523,7 +523,7 @@
         "lane": "you",
         "stage": "direct.pin",
         "rank": 2,
-        "x": 1200,
+        "x": 920,
         "y": 0
       }
     },
@@ -571,7 +571,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 4,
-        "x": 2440,
+        "x": 2160,
         "y": 0
       }
     },
@@ -619,7 +619,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2720,
+        "x": 2440,
         "y": 0
       }
     },
@@ -667,7 +667,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 7,
-        "x": 3960,
+        "x": 3680,
         "y": 0
       }
     },
@@ -716,7 +716,7 @@
         "lane": "director",
         "stage": "direct.make",
         "rank": 1,
-        "x": 880,
+        "x": 600,
         "y": 540
       }
     },
@@ -768,7 +768,7 @@
         "lane": "designer",
         "stage": "design.make",
         "rank": 3,
-        "x": 1840,
+        "x": 1560,
         "y": 736
       }
     },
@@ -823,7 +823,7 @@
         "lane": "writer",
         "stage": "design.make",
         "rank": 4,
-        "x": 2120,
+        "x": 1840,
         "y": 932
       }
     },
@@ -882,7 +882,7 @@
         "lane": "publisher",
         "stage": "publish.make",
         "rank": 6,
-        "x": 3640,
+        "x": 3360,
         "y": 1128
       }
     },
@@ -929,7 +929,7 @@
         "lane": "designer",
         "stage": "design.select",
         "rank": 5,
-        "x": 3040,
+        "x": 2760,
         "y": 736
       }
     },
@@ -1012,7 +1012,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 3,
-        "x": 1520,
+        "x": 1240,
         "y": 1128
       }
     },
@@ -1107,7 +1107,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 5,
-        "x": 4280,
+        "x": 4000,
         "y": 1128
       }
     },
@@ -1150,7 +1150,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 3,
-        "x": 1520,
+        "x": 1240,
         "y": 1300
       }
     },
@@ -1245,7 +1245,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 6,
-        "x": 4560,
+        "x": 4280,
         "y": 1128
       }
     },
@@ -1376,7 +1376,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 5120,
+        "x": 4840,
         "y": 1128
       }
     },
@@ -1384,7 +1384,7 @@
       "id": "options",
       "kind": "plumb",
       "actor": "code",
-      "stage": "direct.brief",
+      "stage": "publish.assemble",
       "summary": "Candidate options: write slot.json options/varyOn from the class mapping, list a slot's options, or print the brief for fresh ones.",
       "inputs": [
         {
@@ -1442,10 +1442,10 @@
       },
       "layout": {
         "lane": "publisher",
-        "stage": "direct.brief",
+        "stage": "publish.assemble",
         "rank": 8,
-        "x": 560,
-        "y": 1128
+        "x": 4840,
+        "y": 1300
       }
     },
     {
@@ -1714,7 +1714,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 6,
-        "x": 4560,
+        "x": 4280,
         "y": 1300
       }
     },
@@ -1763,7 +1763,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 4840,
+        "x": 4560,
         "y": 1128
       }
     },
@@ -1885,7 +1885,7 @@
         "stage": "publish.assemble",
         "rank": 8,
         "x": 5120,
-        "y": 1472
+        "y": 1128
       }
     },
     {
@@ -1969,8 +1969,8 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 5120,
-        "y": 1300
+        "x": 4840,
+        "y": 1472
       }
     },
     {
@@ -2074,7 +2074,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 5,
-        "x": 4280,
+        "x": 4000,
         "y": 1300
       }
     },
@@ -4027,8 +4027,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 2509,
-      "after": 2467
+      "before": 2696,
+      "after": 2585
     },
     "lanes": [
       {
@@ -4080,14 +4080,14 @@
         "index": 0,
         "x": 0,
         "y": -72,
-        "width": 800,
+        "width": 520,
         "round": "direct",
         "name": "brief"
       },
       {
         "id": "direct.make",
         "index": 1,
-        "x": 880,
+        "x": 600,
         "y": -72,
         "width": 240,
         "round": "direct",
@@ -4096,7 +4096,7 @@
       {
         "id": "direct.pin",
         "index": 2,
-        "x": 1200,
+        "x": 920,
         "y": -72,
         "width": 240,
         "round": "direct",
@@ -4105,7 +4105,7 @@
       {
         "id": "design.brief",
         "index": 3,
-        "x": 1520,
+        "x": 1240,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -4114,7 +4114,7 @@
       {
         "id": "design.make",
         "index": 4,
-        "x": 1840,
+        "x": 1560,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -4123,7 +4123,7 @@
       {
         "id": "design.pin",
         "index": 5,
-        "x": 2440,
+        "x": 2160,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -4132,7 +4132,7 @@
       {
         "id": "design.select",
         "index": 6,
-        "x": 3040,
+        "x": 2760,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -4141,7 +4141,7 @@
       {
         "id": "publish.make",
         "index": 7,
-        "x": 3640,
+        "x": 3360,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -4150,7 +4150,7 @@
       {
         "id": "publish.pin",
         "index": 8,
-        "x": 3960,
+        "x": 3680,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -4159,9 +4159,9 @@
       {
         "id": "publish.assemble",
         "index": 9,
-        "x": 4280,
+        "x": 4000,
         "y": -72,
-        "width": 1080,
+        "width": 1360,
         "round": "publish",
         "name": "assemble"
       },
@@ -4190,7 +4190,7 @@
         "index": 0,
         "x": 0,
         "y": -128,
-        "width": 1440,
+        "width": 1160,
         "stages": [
           "direct.brief",
           "direct.make",
@@ -4200,7 +4200,7 @@
       {
         "id": "design",
         "index": 1,
-        "x": 1520,
+        "x": 1240,
         "y": -128,
         "width": 2040,
         "stages": [
@@ -4213,9 +4213,9 @@
       {
         "id": "publish",
         "index": 2,
-        "x": 3640,
+        "x": 3360,
         "y": -128,
-        "width": 4040,
+        "width": 4320,
         "stages": [
           "publish.make",
           "publish.pin",

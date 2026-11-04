@@ -66,8 +66,9 @@ export const CLI_STEPS = [
     command: { cli: { verb: "compile", parser: "src/cli/compile.ts" }, entry: "src/cli/compile.ts#runCompileCli" }, checks: ["compile-pure"],
   }),
   defineStep({
-    id: "options", kind: "plumb", actor: "code", stage: "direct.brief",
+    id: "options", kind: "plumb", actor: "code", stage: "publish.assemble",
     summary: "Candidate options: write slot.json options/varyOn from the class mapping, list a slot's options, or print the brief for fresh ones.",
+    // It reads every pin and candidate, so it sits after the last pin stage, beside derive.uses (also a slot.json field).
     inputs: [IA, SLOTS, PINS, ...CANDIDATES],
     outputs: ["clossys/agents/*/*/slot.json#options", "clossys/agents/*/*/slot.json#varyOn"],
     command: { cli: { verb: "options", parser: "src/cli/options.ts" }, entry: "src/cli/options.ts#runOptionsCli" }, checks: ["slot-options"],

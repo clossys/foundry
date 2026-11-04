@@ -38,7 +38,8 @@ const here = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(process.env.CLOSSYS_CHECK_REPO ?? join(here, "../../.."));
 const DESIGNER_PROBE_PAGE = "page.home";
 const STUDIO_PUBLICATION = "studio";
-const PROBE = { decidedBy: "planner:check-pin-propagation", at: "2026-01-01T00:00:00.000Z" };
+// A planner repin: G15 requires the basis, and a planner decider records basis planner.
+const PROBE = { decidedBy: "planner:check-pin-propagation", basis: "planner", at: "2026-01-01T00:00:00.000Z" };
 
 async function modules(repo) {
   const load = async (rel, names) => {
