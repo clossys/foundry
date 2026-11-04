@@ -39,5 +39,11 @@
     "specimenKind": "visual"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.table",
+    "components.tabs"
+  ]
 }

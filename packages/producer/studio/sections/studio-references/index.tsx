@@ -30,8 +30,8 @@ function RefList({ label, refs, none }: { label: string; refs: readonly Referenc
 }
 
 /** `sections.studio.references`: what this leaf reads from other leaves, what reads it, and its lineage. */
-export default function ReferencesSection({ references }: { references: ReferencesInput }) {
-  return <Card size="sm" data-studio-section="references">
+export default function ReferencesSection({ references, ...provenance }: { references: ReferencesInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{references.copy.title}</CardTitle>
       <CardDescription>{references.copy.description}</CardDescription>

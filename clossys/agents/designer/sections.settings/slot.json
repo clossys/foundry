@@ -210,10 +210,13 @@
   },
   "inputs": [],
   "uses": [
-    "components.button",
-    "components.form",
+    "components.badge",
+    "components.checkbox",
+    "components.field",
+    "components.radio-group",
     "components.select",
+    "components.slider",
     "components.switch",
-    "components.toast"
+    "themes.input"
   ]
 }

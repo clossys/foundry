@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-page-tabs-v2.json",
-  "sha256": "7a552df3e87c368aec1f2a7aa79a5a0eb5afefdee188590cd7e440dff8e1d309",
-  "pinnedBy": "owner:2026-11-03 STUDIO-TEMPLATE-FIX go",
-  "at": "2026-11-03T15:00:00Z"
+  "candidate": "studio-page-tabs-v3.json",
+  "sha256": "9b318dc91666df47078cbbe5ef7324c6f4e17ccb69045670dc96cd008373eb5d",
+  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
+  "at": "2026-11-03T18:00:00Z"
 }

@@ -132,9 +132,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.semantic-content",
-    "sections.article",
-    "sections.section-header"
-  ]
+  "uses": []
 }

@@ -37,5 +37,9 @@
     "specimenKind": "text"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card"
+  ]
 }

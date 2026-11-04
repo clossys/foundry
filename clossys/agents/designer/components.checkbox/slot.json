@@ -60,5 +60,7 @@
     "apg": "checkbox"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "assets.icon-check"
+  ]
 }

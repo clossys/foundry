@@ -251,16 +251,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.badge",
-    "components.button",
-    "components.card",
-    "components.dialog",
-    "components.icon",
-    "components.link",
-    "components.menu",
-    "components.radio-group",
-    "components.status-mark",
-    "components.table",
-    "components.tooltip"
+    "assets.icon-check"
   ]
 }

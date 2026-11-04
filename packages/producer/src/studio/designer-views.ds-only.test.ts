@@ -155,6 +155,7 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
   const label = relative(base, file);
   const landmarks = kind === 'frame' || kind === 'ui-frame';
   const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const markerTyped = source.text.includes('{ [marker: `data-clossys-${string}`]: string }');
   const visit = (node: ts.Node) => {
     const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
     if (specifier !== undefined) {
@@ -167,6 +168,8 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
       const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
       if (/^[a-z]/.test(tag) && !(landmarks && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
         if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
+        // The generated provenance markers are typed `data-clossys-*` only, so their spread carries no styling.
+        if (ts.isJsxSpreadAttribute(attribute) && attribute.expression.getText(source) === 'provenance' && markerTyped) continue;
         const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
         if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
       }
@@ -287,6 +290,19 @@ describe('Studio sections are ds-only', () => {
       writeFileSync(file, "import { useState } from 'react';\nimport { readFileSync } from 'node:fs';\nimport type { T } from 'other-types';\nimport { RouterProvider } from 'react-aria-components';\nimport { map } from '@clossys/publisher/content-map';\nimport { cn } from './utils';\nexport const A = () => <main className=\"p-4\"><div style={{}} /><RouterProvider /></main>;\n");
       expect(fileViolations(file, 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Probe.tsx: imports react-aria-components', 'Probe.tsx: imports ./utils', 'Probe.tsx: <main className>', 'Probe.tsx: <div style>']);
       expect(fileViolations(file, 'ui-frame', new Set(), new Set(), undefined, probe)).toEqual(['Probe.tsx: imports node:fs', 'Probe.tsx: imports react-aria-components', 'Probe.tsx: imports @clossys/publisher/content-map', 'Probe.tsx: imports ./utils', 'Probe.tsx: <div style>']);
+      } finally { rmSync(probe, { recursive: true, force: true }); }
+    });
+
+  it('admits only the marker-typed provenance spread on raw markup', () => {
+    const probe = mkdtempSync(join(tmpdir(), 'ds-only-'));
+    try {
+      const typed = "export default function A({ x, ...provenance }: { x: string } & { [marker: `data-clossys-${string}`]: string }) { return <section {...provenance} aria-label={x} />; }\n";
+      writeFileSync(join(probe, 'Probe.tsx'), typed);
+      expect(dsOnlyViolations(probe)).toEqual([]);
+      writeFileSync(join(probe, 'Probe.tsx'), typed.replace(/provenance/g, 'rest'));
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      writeFileSync(join(probe, 'Probe.tsx'), "export default function A({ x, ...provenance }: { x: string; className?: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 });

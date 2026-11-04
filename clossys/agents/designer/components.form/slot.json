@@ -28,5 +28,7 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.separator"
+  ]
 }

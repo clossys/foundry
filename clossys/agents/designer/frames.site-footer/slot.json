@@ -111,10 +111,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.icon",
-    "components.link",
-    "components.logo",
-    "components.semantic-content",
-    "components.separator"
+    "components.logo"
   ]
 }

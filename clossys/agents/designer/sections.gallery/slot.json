@@ -143,8 +143,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.button",
-    "components.dialog",
-    "components.grid-list"
+    "components.card"
   ]
 }

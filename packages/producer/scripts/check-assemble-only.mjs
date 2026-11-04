@@ -7,7 +7,8 @@
  *   app-route        an `app/**\/page.tsx` does anything but mount `PublishedPage` for a record id
  *   agent-branch     the renderer, its loaders or sections branch on an agent name or slot kind,
  *                    or key copy/loaders by agent, instead of reading record data
- *   provenance       a section's top-level DOM block lacks `data-studio-section`, or the renderer
+ *   provenance       a section's top-level DOM block does not spread the generated `{...provenance}`
+ *                    markers (or hand-types a marker), or the renderer
  *                    draws its own DOM blocks between the frame and the sections
  *   explorer         a page renders the retired page-level explorer
  *   hard-coded-route nav, tab or API routes are string literals instead of content-map projections
@@ -131,7 +132,7 @@ function returnedRoots(body) {
   return roots;
 }
 
-/** (c) each section's default export roots carry `data-studio-section`; the renderer draws no DOM of its own. */
+/** (c) each section's default export roots spread the generated provenance markers and hand-type none; the renderer draws no DOM of its own. */
 function checkProvenance(studioRoot) {
   const findings = [];
   const sections = path.join(studioRoot, 'sections');
@@ -147,8 +148,11 @@ function checkProvenance(studioRoot) {
     if (!roots.length) findings.push({ rule: 'provenance', file: rel, detail: 'the section returns no JSX block' });
     for (const root of roots) {
       const attributes = jsxAttributes(root);
-      const tagged = attributes?.properties.some(property => ts.isJsxAttribute(property) && property.name.getText(tree) === 'data-studio-section');
-      if (!tagged) findings.push({ rule: 'provenance', file: rel, line: lineOf(text, root.getStart(tree)), detail: 'top-level block lacks data-studio-section' });
+      // The assembly passes data-clossys-slot/candidate/hash, generated from the page record and pins; the root spreads them.
+      const tagged = attributes?.properties.some(property => ts.isJsxSpreadAttribute(property) && property.expression.getText(tree) === 'provenance');
+      if (!tagged) findings.push({ rule: 'provenance', file: rel, line: lineOf(text, root.getStart(tree)), detail: 'top-level block does not spread the generated {...provenance} markers' });
+      const literal = attributes?.properties.find(property => ts.isJsxAttribute(property) && /^data-(?:studio-section|clossys-(?:slot|candidate|hash))$/.test(property.name.getText(tree)));
+      if (literal) findings.push({ rule: 'provenance', file: rel, line: lineOf(text, literal.getStart(tree)), detail: `top-level block hand-types ${literal.name.getText(tree)}` });
     }
   }
   const renderer = path.join(studioRoot, 'components', 'StudioPage.tsx');

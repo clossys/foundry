@@ -121,8 +121,8 @@ async function writerCallerFixture(t) {
   await writeFile(join(writer, 'ia.json'), JSON.stringify(ia));
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, 14);
-  // Draft binds what the slot model pins: the owner-approved options v4 and specimen v7.
-  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 4], ['sections.studio.specimen', 7]]);
+  // Draft binds what the slot model pins: the owner-approved options v5 and specimen v9.
+  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 5], ['sections.studio.specimen', 9]]);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
     const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
@@ -451,10 +451,10 @@ test('Studio runs exactly the pinned payload: code that drifts from the pinned c
   await run(options);
   await editCandidate(options, 'sections.studio.checks', item => {
     const file = item.files.find(entry => entry.path === 'index.tsx');
-    assert.ok(file.content.includes('data-studio-section="checks"'));
-    file.content = file.content.replace('data-studio-section="checks"', 'data-studio-section="drifted"');
+    assert.ok(file.content.includes('<Card size="sm" {...provenance}>'));
+    file.content = file.content.replace('<Card size="sm" {...provenance}>', '<Card size="sm" {...provenance} data-drifted="">');
   });
-  await assert.rejects(run(options), /index.tsx differs from studio-checks v2 as pinned/);
+  await assert.rejects(run(options), /index.tsx differs from studio-checks v3 as pinned/);
 });
 
 test('stale generated products and unexpected files fail closed', async t => {

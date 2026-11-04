@@ -76,7 +76,5 @@
     "apg": "button"
   },
   "inputs": [],
-  "uses": [
-    "components.icon"
-  ]
+  "uses": []
 }

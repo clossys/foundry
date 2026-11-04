@@ -26,8 +26,8 @@ export interface HomeInput {
  * Home-specific Designer parts carry exact stock source proof; this section binds display-ready data.
  * Canonical candidate qualification remains separate. Navigation stays in the shared frame.
  */
-export default function HomeSection({ home }: { home: HomeInput }) {
-  return <section data-studio-section="home" aria-label={home.agentsLabel}>
+export default function HomeSection({ home, ...provenance }: { home: HomeInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <section {...provenance} aria-label={home.agentsLabel}>
     <CardContent>
       <CardTitle role="heading" aria-level={2}>{home.agentsLabel}</CardTitle>
       <HomeStockGrid>

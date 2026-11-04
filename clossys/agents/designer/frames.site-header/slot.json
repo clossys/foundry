@@ -117,13 +117,5 @@
     ]
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.button",
-    "components.dialog",
-    "components.disclosure",
-    "components.icon",
-    "components.link",
-    "components.logo"
-  ]
+  "uses": []
 }

@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-history-v2.json",
-  "sha256": "5375e09dbba90c5d04be329885057223ec68302d7b2162377dce03498d60cfec",
-  "pinnedBy": "owner:2026-11-03 W2-COPY-THROUGH-WRITER go",
-  "at": "2026-11-03T13:45:00Z"
+  "candidate": "studio-history-v3.json",
+  "sha256": "408848fbb0a1d4a018f90a1e3ed904164dfde4c4293b3269a3c944b38280ecea",
+  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
+  "at": "2026-11-03T18:00:00Z"
 }

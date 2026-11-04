@@ -93,14 +93,14 @@
   },
   "inputs": [],
   "uses": [
-    "components.breadcrumbs",
-    "components.button",
-    "components.icon",
-    "components.link",
-    "components.menu",
-    "components.popover",
-    "components.status-mark",
-    "components.toggle-button",
-    "components.tooltip"
+    "assets.icon-arrow-right",
+    "assets.icon-chevron-right",
+    "assets.icon-folder",
+    "assets.icon-guide",
+    "assets.icon-payment",
+    "components.avatar",
+    "components.dropdown-menu",
+    "components.separator",
+    "components.sidebar"
   ]
 }

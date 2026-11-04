@@ -140,7 +140,8 @@ const notes = [];
     const file = `${STUDIO}/sections/${section}/index.tsx`;
     const source = read(file);
     if (!source) continue;
-    for (const match of source.matchAll(/<\w+[^>]*data-studio-section="[^"]+"[^>]*>/g)) {
+    // A section root is the element spreading the generated provenance markers.
+    for (const match of source.matchAll(/<\w+[^>]*\{\.\.\.provenance\}[^>]*>/g)) {
       const className = /className="([^"]*)"/.exec(match[0])?.[1] ?? '';
       const padding = className.split(/\s+/).filter(token => /^(?:[a-z0-9:@/-]+:)?-?(?:p|px|ps|pe|pl|pr|mx|ms|me|ml|mr)-(?!0(?:!|$))\S+$/.test(token));
       if (padding.length) fail('inset', file, `the section root adds its own inline spacing (${padding.join(' ')}); the frame body owns the inset`);

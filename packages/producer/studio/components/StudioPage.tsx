@@ -42,7 +42,8 @@ const SEVERITY_TONE: Record<string, ModuleCheckRow['tone']> = { error: 'destruct
 const STATUS_TONE: Record<string, SlotTone> = { active: 'secondary', draft: 'outline', missing: 'outline', failing: 'destructive' };
 /** A report's severity as shown (Writer copy). */
 const SEVERITY_LABEL: Record<string, string> = { error: studioCopy('studio.severity-error'), warning: studioCopy('studio.severity-warning'), info: studioCopy('studio.severity-info') };
-const sectionTarget = (name: string) => `[data-studio-section=${JSON.stringify(name)}]`;
+/** A placed section's root, by the slot id the assembly's generated provenance marks it with. */
+const sectionTarget = (slot: string) => `[data-clossys-slot=${JSON.stringify(slot)}]`;
 const message = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 const pageById = new Map(studioPages.map(page => [page.id, page]));
 
@@ -218,7 +219,7 @@ function versionsOutline(history: HistoryInput | undefined) {
   return (history?.rows ?? []).map(row => ({
     id: `v${row.version}`,
     label: [row.versionLabel, row.date, ...row.marks].filter(Boolean).join(' · '),
-    target: `${sectionTarget('history')} [data-key=${JSON.stringify(String(row.version))}]`,
+    target: `${sectionTarget('sections.studio.history')} [data-key=${JSON.stringify(String(row.version))}]`,
   }));
 }
 
@@ -234,7 +235,7 @@ function useManifestPopovers(entry: ContentMapEntry, spec: StudioAssemblySpec, l
     const outline = spec.sectionIds.filter(slot => inputs[spec.inputs[slot] ?? ''] !== undefined).flatMap(slot => {
       const name = shortName(slot);
       const label = OUTLINE_LABEL[name];
-      return label ? [{ id: name, label, target: sectionTarget(name) }] : [];
+      return label ? [{ id: name, label, target: sectionTarget(slot) }] : [];
     });
     const versions = versionsOutline(inputs.history as HistoryInput | undefined);
     const modules = spec.manifest.modules.map((module): PopoverSpec => {

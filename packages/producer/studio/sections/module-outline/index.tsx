@@ -7,9 +7,9 @@ export interface OutlineItem { id: string; label: string; target: string }
 export interface OutlineInput { label: string; heading: string; items: readonly OutlineItem[]; active?: string; onSelect: (target: string) => void }
 
 /** `sections.module.outline`: the open page's own sections in page order; a click brings one into view. */
-export default function OutlineSection({ outline }: { outline: OutlineInput }) {
+export default function OutlineSection({ outline, ...provenance }: { outline: OutlineInput } & { [marker: `data-clossys-${string}`]: string }) {
   const selected = outline.items.find(item => item.target === outline.active);
-  return <Command data-studio-section="module-outline" className="rounded-none! bg-transparent p-0">
+  return <Command {...provenance} className="rounded-none! bg-transparent p-0">
     <CommandList aria-label={outline.label} className="max-h-none" selectionMode="single" selectedKeys={selected ? [selected.id] : []}>
       <CommandGroup id="outline" heading={outline.heading}>
         {outline.items.map(item => <CommandItem

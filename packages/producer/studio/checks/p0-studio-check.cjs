@@ -214,7 +214,7 @@ function initialDataSnapshot() {
       candidatesLabel: card.querySelector('[data-slot="badge"]')?.getAttribute('aria-label'),
       pinned: card.querySelector('[data-slot="card-footer"] > div')?.textContent.trim(),
     })),
-    gallery: !!main.querySelector('[data-studio-section="agent-gallery"]'),
+    gallery: !!main.querySelector('[data-clossys-slot="sections.studio.agent-gallery"]'),
     cards: [...main.querySelectorAll('[data-gallery-leaf]')].map(card => {
       const link = card.querySelector('[data-slot="card-title"] a');
       return { key: card.getAttribute('data-gallery-leaf'), name: link?.textContent.trim(), href: link?.getAttribute('href') };

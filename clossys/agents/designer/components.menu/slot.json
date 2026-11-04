@@ -74,7 +74,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.button",
-    "components.popover"
+    "assets.icon-check",
+    "assets.icon-chevron-right"
   ]
 }

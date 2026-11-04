@@ -223,24 +223,14 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-arrow-right",
+    "assets.icon-chevron-right",
+    "assets.icon-folder",
+    "assets.icon-guide",
+    "assets.icon-payment",
     "components.avatar",
-    "components.banner",
-    "components.button",
-    "components.card",
-    "components.icon",
-    "components.logo",
-    "components.menu",
-    "components.progress-bar",
-    "components.resize-handle",
-    "components.skeleton",
-    "components.tabs",
-    "components.toast",
-    "components.toggle-button",
-    "components.tooltip",
-    "frames.app-header",
-    "frames.app-sidebar",
-    "frames.command",
-    "frames.inspector",
-    "frames.sheet"
+    "components.dropdown-menu",
+    "components.separator",
+    "components.sidebar"
   ]
 }

@@ -16,9 +16,13 @@
     "sections.task-list"
   ],
   "uses": [
+    "assets.icon-home",
     "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.outline",
     "sections.studio.home",
     "sections.studio.page-header",
-    "sections.task-list"
+    "sections.task-list",
+    "strings.common"
   ]
 }

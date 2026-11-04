@@ -76,8 +76,6 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.disclosure",
-    "components.grid-list",
-    "components.semantic-content"
+    "components.item"
   ]
 }

@@ -117,14 +117,14 @@
   },
   "inputs": [],
   "uses": [
+    "assets.icon-arrow-right",
+    "assets.icon-chevron-right",
+    "assets.icon-folder",
+    "assets.icon-guide",
+    "assets.icon-payment",
     "components.avatar",
-    "components.button",
-    "components.card",
-    "components.icon",
-    "components.link",
-    "components.menu",
-    "components.navigation-tree",
-    "components.tooltip",
-    "frames.sheet"
+    "components.dropdown-menu",
+    "components.separator",
+    "components.sidebar"
   ]
 }

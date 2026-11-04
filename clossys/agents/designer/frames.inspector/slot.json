@@ -95,8 +95,8 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.card",
-    "components.resize-handle",
-    "frames.sheet"
+    "components.field",
+    "components.sheet",
+    "themes.input"
   ]
 }

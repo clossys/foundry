@@ -63,6 +63,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.button"
+    "components.button",
+    "themes.input"
   ]
 }

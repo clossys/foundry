@@ -268,8 +268,10 @@
   },
   "inputs": [],
   "uses": [
-    "components.date-picker",
-    "components.search-field",
-    "components.table"
+    "components.button",
+    "components.dropdown-menu",
+    "components.select",
+    "components.table",
+    "themes.input"
   ]
 }

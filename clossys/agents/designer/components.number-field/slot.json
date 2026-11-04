@@ -62,7 +62,5 @@
     "apg": "spinbutton"
   },
   "inputs": [],
-  "uses": [
-    "components.button"
-  ]
+  "uses": []
 }

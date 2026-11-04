@@ -26,11 +26,11 @@ function LineageCell({ lineage }: { lineage: HistoryRow['lineage'] }) {
  * a short monospace hash and marks. Only the note wraps; the table scrolls inside its card when
  * the columns are wider than the card. `sections.studio.history` reads only its `history` input.
  */
-export default function HistorySection({ history }: { history: HistoryInput }) {
+export default function HistorySection({ history, ...provenance }: { history: HistoryInput } & { [marker: `data-clossys-${string}`]: string }) {
   const { rows, copy } = history;
   const lineage = rows.some(row => row.lineage);
   const hash = rows.some(row => row.hash);
-  return <Card size="sm" data-studio-section="history">
+  return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{copy.title}</CardTitle>
       <CardDescription>{copy.summary}</CardDescription>

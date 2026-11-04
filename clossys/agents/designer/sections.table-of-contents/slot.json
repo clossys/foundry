@@ -116,9 +116,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.disclosure",
-    "components.link",
-    "components.semantic-content"
-  ]
+  "uses": []
 }

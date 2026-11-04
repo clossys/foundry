@@ -39,5 +39,12 @@
     "specimenKind": "flow"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.field",
+    "components.item",
+    "components.separator"
+  ]
 }

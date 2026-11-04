@@ -308,10 +308,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.avatar",
-    "components.badge",
-    "components.icon",
-    "components.link",
-    "sections.empty-state"
+    "components.button",
+    "components.item"
   ]
 }

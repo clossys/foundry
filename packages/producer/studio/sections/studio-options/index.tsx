@@ -40,8 +40,8 @@ function Preview({ name, row, copy }: { name: string; row: OptionRow & { copy: O
 }
 
 /** `sections.studio.options`: the pinned version (if any) beside every version waiting for the owner's approval. */
-export default function OptionsSection({ options }: { options: OptionsInput }) {
-  return <Card size="sm" data-studio-section="options">
+export default function OptionsSection({ options, ...provenance }: { options: OptionsInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{options.copy.title}</CardTitle>
       <CardDescription>{options.description}</CardDescription>

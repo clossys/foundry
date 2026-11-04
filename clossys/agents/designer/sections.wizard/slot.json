@@ -178,9 +178,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.button",
-    "components.form",
-    "components.progress-bar"
-  ]
+  "uses": []
 }

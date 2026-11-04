@@ -252,10 +252,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.avatar",
-    "components.badge",
-    "components.checkbox",
-    "components.icon",
-    "components.status-mark"
+    "components.button",
+    "components.item"
   ]
 }

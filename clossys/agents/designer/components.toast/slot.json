@@ -39,6 +39,8 @@
   },
   "inputs": [],
   "uses": [
-    "components.button"
+    "assets.icon-info",
+    "assets.icon-success",
+    "assets.icon-warning"
   ]
 }

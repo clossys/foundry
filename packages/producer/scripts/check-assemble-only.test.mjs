@@ -13,9 +13,9 @@ export default function Page() {
   return createElement(PublishedPage, { page: "designer-themes" });
 }
 `;
-const SECTION = `export default function TabsSection({ tabs }: { tabs: { id: string }[] }) {
+const SECTION = `export default function TabsSection({ tabs, ...provenance }: { tabs: { id: string }[] }) {
   if (!tabs.length) return null;
-  return <nav data-studio-section="page-tabs">{tabs.map(tab => <a key={tab.id}>{tab.id}</a>)}</nav>;
+  return <nav {...provenance}>{tabs.map(tab => <a key={tab.id}>{tab.id}</a>)}</nav>;
 }
 `;
 const RENDERER = `export function StudioPage({ spec }) { return <Frame>{spec.sectionIds.map(slot => <Placed key={slot} slot={slot} />)}</Frame>; }
@@ -73,7 +73,10 @@ test('mutation: an agent-name branch or agent-keyed map fails agent-branch', () 
 });
 
 test('mutation: a section root without provenance, or renderer DOM, fails provenance', () => {
-  assert.deepEqual(rules(fixture({ 'packages/producer/studio/sections/page-tabs/index.tsx': SECTION.replace(' data-studio-section="page-tabs"', '') })), ['provenance']);
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/sections/page-tabs/index.tsx': SECTION.replace(' {...provenance}', '') })), ['provenance']);
+  // A hand-typed marker in place of, or beside, the generated spread fails too.
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/sections/page-tabs/index.tsx': SECTION.replace(' {...provenance}', ' data-studio-section="page-tabs"') })), ['provenance']);
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/sections/page-tabs/index.tsx': SECTION.replace(' {...provenance}', ' {...provenance} data-clossys-slot="sections.studio.page-tabs"') })), ['provenance']);
   assert.deepEqual(rules(fixture({ 'packages/producer/studio/components/StudioPage.tsx': RENDERER.replace('<Frame>', '<Frame><h1>Title</h1>') })), ['provenance']);
 });
 

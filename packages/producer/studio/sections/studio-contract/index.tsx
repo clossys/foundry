@@ -24,8 +24,8 @@ export interface ContractInput {
 }
 
 /** `sections.studio.contract`: the leaf's recorded facts, inputs and the lists it reads, binds and depends on. */
-export default function ContractSection({ contract }: { contract: ContractInput }) {
-  return <Card size="sm" data-studio-section="contract">
+export default function ContractSection({ contract, ...provenance }: { contract: ContractInput } & { [marker: `data-clossys-${string}`]: string }) {
+  return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{contract.copy.title}</CardTitle>
       <CardDescription>{contract.copy.description}</CardDescription>

@@ -1,0 +1,67 @@
+{
+  "sections.studio.page-header": {
+    "data-clossys-slot": "sections.studio.page-header",
+    "data-clossys-candidate": "studio-page-header-v2.json",
+    "data-clossys-hash": "sha256:df72ca4ae96485c64765063c53d1a0e00dcb3bae1455e79cd6114a1784992a0f"
+  },
+  "sections.studio.home": {
+    "data-clossys-slot": "sections.studio.home",
+    "data-clossys-candidate": "studio-home-v7.json",
+    "data-clossys-hash": "sha256:38a3dd1243afcb069a4e48801cedf08751d955a6494acfe9db340b5ee770e981"
+  },
+  "sections.module.outline": {
+    "data-clossys-slot": "sections.module.outline",
+    "data-clossys-candidate": "module-outline-v3.json",
+    "data-clossys-hash": "sha256:d38cfba4d8176a0a92f7a88c536737058b245a46596b65dd1ba5ec44ffe4c699"
+  },
+  "sections.module.checks": {
+    "data-clossys-slot": "sections.module.checks",
+    "data-clossys-candidate": "module-checks-v2.json",
+    "data-clossys-hash": "sha256:15fdea04591e2063ee9b84774cc46adf3dd1e11f0faa181531bc2603543c2d66"
+  },
+  "sections.studio.page-tabs": {
+    "data-clossys-slot": "sections.studio.page-tabs",
+    "data-clossys-candidate": "studio-page-tabs-v3.json",
+    "data-clossys-hash": "sha256:9b318dc91666df47078cbbe5ef7324c6f4e17ccb69045670dc96cd008373eb5d"
+  },
+  "sections.studio.slot-groups": {
+    "data-clossys-slot": "sections.studio.slot-groups",
+    "data-clossys-candidate": "studio-slot-groups-v4.json",
+    "data-clossys-hash": "sha256:e1340410cf9d47f9eae8aa427552840403b6ffe7bba568e902284c5262a0644a"
+  },
+  "sections.studio.leaf-header": {
+    "data-clossys-slot": "sections.studio.leaf-header",
+    "data-clossys-candidate": "studio-leaf-header-v4.json",
+    "data-clossys-hash": "sha256:9b19fbeabb3125a4a586d5d1df78974473e694ebe2bace65db7201d97d901872"
+  },
+  "sections.studio.specimen": {
+    "data-clossys-slot": "sections.studio.specimen",
+    "data-clossys-candidate": "studio-specimen-v9.json",
+    "data-clossys-hash": "sha256:217df6cf662c65331275b995a9b2e19c78a62af133f2f1f1209ce29cde35002a"
+  },
+  "sections.studio.options": {
+    "data-clossys-slot": "sections.studio.options",
+    "data-clossys-candidate": "studio-options-v5.json",
+    "data-clossys-hash": "sha256:becceac17139b32556c6e9efcaa6ba69920ef54090cdd77707e8d85cc662cf10"
+  },
+  "sections.studio.checks": {
+    "data-clossys-slot": "sections.studio.checks",
+    "data-clossys-candidate": "studio-checks-v3.json",
+    "data-clossys-hash": "sha256:a528d001ce12d0bf8b6d15071ababd891771a9d64f54fed93517ececcd1e1937"
+  },
+  "sections.studio.contract": {
+    "data-clossys-slot": "sections.studio.contract",
+    "data-clossys-candidate": "studio-contract-v3.json",
+    "data-clossys-hash": "sha256:f7a84d5c84bbf49cc1900a3c3b8aa110a0b50229d2dbfc3881767c80ffda328e"
+  },
+  "sections.studio.history": {
+    "data-clossys-slot": "sections.studio.history",
+    "data-clossys-candidate": "studio-history-v3.json",
+    "data-clossys-hash": "sha256:408848fbb0a1d4a018f90a1e3ed904164dfde4c4293b3269a3c944b38280ecea"
+  },
+  "sections.studio.references": {
+    "data-clossys-slot": "sections.studio.references",
+    "data-clossys-candidate": "studio-references-v3.json",
+    "data-clossys-hash": "sha256:ae4c65d7ac85c31ebc7b4ba7245e23eba5d651e1fa3a572cd3638cad047973fc"
+  }
+}

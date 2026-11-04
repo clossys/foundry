@@ -244,13 +244,8 @@
   },
   "inputs": [],
   "uses": [
-    "components.banner",
     "components.button",
-    "components.checkbox",
-    "components.combo-box",
-    "components.field",
-    "components.form",
-    "components.select",
-    "components.text-field"
+    "components.card",
+    "components.select"
   ]
 }

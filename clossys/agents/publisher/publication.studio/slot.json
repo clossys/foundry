@@ -31,6 +31,10 @@
     "page.writer-strings"
   ],
   "uses": [
+    "assets.icon-document",
+    "assets.icon-guide",
+    "assets.icon-layers",
+    "assets.icon-website",
     "page.designer-assets",
     "page.designer-components",
     "page.designer-frames",
@@ -49,6 +53,7 @@
     "page.writer-narratives",
     "page.writer-passages",
     "page.writer-patterns",
-    "page.writer-strings"
+    "page.writer-strings",
+    "strings.common"
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-options-v4.json",
-  "sha256": "ae8e9710ae424c6e2431eded93e03293513bf00aac33b6bec3128ee4127e0fc9",
-  "pinnedBy": "owner:2026-11-03 fix-all",
-  "at": "2026-11-03T08:47:06Z"
+  "candidate": "studio-options-v5.json",
+  "sha256": "becceac17139b32556c6e9efcaa6ba69920ef54090cdd77707e8d85cc662cf10",
+  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
+  "at": "2026-11-03T18:00:00Z"
 }

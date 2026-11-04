@@ -243,13 +243,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.button",
-    "components.card",
-    "components.disclosure",
-    "components.link",
-    "components.skeleton",
-    "components.tabs"
-  ]
+  "uses": []
 }

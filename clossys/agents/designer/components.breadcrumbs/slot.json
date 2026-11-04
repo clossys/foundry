@@ -49,6 +49,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.link"
+    "assets.icon-chevron-right"
   ]
 }

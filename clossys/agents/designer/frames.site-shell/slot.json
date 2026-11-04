@@ -164,24 +164,6 @@
   },
   "inputs": [],
   "uses": [
-    "components.avatar",
-    "components.badge",
-    "components.card",
-    "components.disclosure",
-    "components.icon",
-    "components.logo",
-    "components.progress-bar",
-    "components.semantic-content",
-    "components.status-mark",
-    "components.toast",
-    "frames.site-footer",
-    "frames.site-header",
-    "sections.features",
-    "sections.hero",
-    "sections.media",
-    "sections.pricing",
-    "sections.section-header",
-    "sections.status-list",
-    "sections.steps"
+    "components.logo"
   ]
 }

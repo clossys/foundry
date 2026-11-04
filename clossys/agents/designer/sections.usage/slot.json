@@ -230,9 +230,8 @@
   },
   "inputs": [],
   "uses": [
-    "components.meter",
-    "components.progress-bar",
-    "components.status-mark",
-    "sections.empty-state"
+    "components.field",
+    "components.item",
+    "components.slider"
   ]
 }

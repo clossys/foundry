@@ -89,6 +89,7 @@
     "check:import-purity": "node --test scripts/lib/import-purity.test.mjs",
     "check:packed-consumer": "node scripts/check-packed-consumer-readiness.mjs --skip-build",
     "check:later-publications": "node scripts/check-later-publications.mjs",
+    "check:generated-derived": "node packages/producer/scripts/check-generated-derived.mjs",
     "record:later-publication": "node scripts/record-later-publication.mjs",
     "check:visibility-declarations": "node scripts/check-package-visibility.mjs --declarations-only",
     "check:root-entry": "node scripts/check-root-entry-policy.mjs",

@@ -60,7 +60,5 @@
     ]
   },
   "inputs": [],
-  "uses": [
-    "components.toggle-button"
-  ]
+  "uses": []
 }

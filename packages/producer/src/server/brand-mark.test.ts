@@ -6,8 +6,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
-const brand = vi.hoisted(() => ({ value: {} as { name?: string; mark?: { light: string; dark: string } } }));
-// The brand source is the Designer mark cell; only the route's caching is under test here.
+const brand = vi.hoisted(() => ({ value: {} as { name?: string; mark?: { light: string; dark: string }; favicon?: string; appIcon?: string; lockup?: { light: string; dark: string } } }));
+// The brand source is the consumer's pinned assets.* slots; only the routes are under test here.
 vi.mock("./designer-globals.js", async original => ({ ...(await original<typeof import("./designer-globals.js")>()), consumerBrand: async () => brand.value }));
 const { startProducerServer } = await import("./index.js");
 
@@ -41,9 +41,20 @@ it("serves the brand mark with a short private cache and a content ETag, answeri
   expect((await get("/api/brand/mark.svg", { "If-None-Match": first.headers.etag })).status).toBe(200);
 });
 
-it("redirects to Studio's own mark with the same short cache when the consumer has none", async () => {
+it("never stands Foundry's own mark in for a consumer that pins no brand asset", async () => {
   server = await startProducerServer({ root, port: 0, handleSignals: false, studioEntry: fileURLToPath(new URL("./__fixtures__/studio-child.mjs", import.meta.url)) });
-  const response = await get("/api/brand/mark.svg");
-  expect(response.status).toBe(302); expect(response.headers.location).toBe("/studio-mark.svg");
-  expect(response.headers["cache-control"]).toBe("private, max-age=60, stale-while-revalidate=300");
+  for (const path of ["/api/brand/mark.svg", "/api/brand/lockup.svg", "/api/brand/favicon.svg", "/api/brand/app-icon.svg"]) {
+    const response = await get(path);
+    expect(response.status, path).toBe(404); expect(response.headers.location, path).toBeUndefined();
+  }
+});
+
+it("serves the favicon, app icon and lockup from the consumer brand", async () => {
+  const svg = (label: string) => `<svg xmlns="http://www.w3.org/2000/svg" aria-label="${label}"><rect width="1" height="1"/></svg>`;
+  brand.value = { name: "Example", favicon: svg("favicon"), appIcon: svg("app"), lockup: { light: svg("lockup"), dark: svg("lockup-dark") } } as typeof brand.value;
+  server = await startProducerServer({ root, port: 0, handleSignals: false, studioEntry: fileURLToPath(new URL("./__fixtures__/studio-child.mjs", import.meta.url)) });
+  expect((await get("/api/brand/favicon.svg")).text).toBe(svg("favicon"));
+  expect((await get("/api/brand/app-icon.svg")).text).toBe(svg("app"));
+  expect((await get("/api/brand/lockup.svg?ground=dark")).text).toBe(svg("lockup-dark"));
+  expect(JSON.parse((await get("/api/brand")).text)).toEqual({ name: "Example", mark: false, favicon: true, appIcon: true, lockup: true });
 });

@@ -86,11 +86,9 @@
   "inputs": [],
   "uses": [
     "components.button",
-    "components.disclosure",
-    "components.grid-list",
-    "components.navigation-tree",
-    "components.rich-text",
-    "components.semantic-content",
-    "components.table"
+    "components.dropdown-menu",
+    "components.select",
+    "components.table",
+    "themes.input"
   ]
 }

@@ -59,5 +59,8 @@
     "apg": "dialog-modal"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "assets.icon-close",
+    "components.button"
+  ]
 }

@@ -123,7 +123,7 @@ const SETTLED = leaf => `new Promise(resolve => {
   (function poll() {
     const main = document.querySelector('#studio-main');
     const missing = /could not be found|404/i.test(document.title + ' ' + (document.body?.innerText ?? '').slice(0, 400)) && !main;
-    const busy = !main || main.querySelector('[data-slot="skeleton"]') || ${leaf ? `!document.querySelector('[data-studio-section="leaf-header"]') && !main.innerText.trim()` : 'false'};
+    const busy = !main || main.querySelector('[data-slot="skeleton"]') || ${leaf ? `!document.querySelector('[data-clossys-slot="sections.studio.leaf-header"]') && !main.innerText.trim()` : 'false'};
     if (missing || !busy || Date.now() - start > 20000) return setTimeout(() => resolve({ timedOut: Boolean(busy) && !missing, missing }), 400);
     setTimeout(poll, 150);
   })();
@@ -134,7 +134,7 @@ const PROBE = `(() => {
   return {
     text: document.body?.innerText ?? '',
     frame: Boolean(main),
-    sections: [...document.querySelectorAll('[data-studio-section]')].map(element => element.getAttribute('data-studio-section')),
+    sections: [...document.querySelectorAll('[data-clossys-slot]')].map(element => element.getAttribute('data-clossys-slot').replace(/^sections\\.studio\\./, '')),
     headings: [...document.querySelectorAll('h1,h2,[role="heading"]')].map(element => element.textContent.trim()).filter(Boolean).length,
     links: [...document.querySelectorAll('a[href]')].map(element => element.href),
   };
@@ -169,7 +169,7 @@ const LAYOUT = `(() => {
         }
       }
     }
-    if (grid.closest('[data-studio-section="agent-gallery"]')) {
+    if (grid.closest('[data-clossys-slot="sections.studio.agent-gallery"]')) {
       const g = box(grid);
       for (const card of cards) if (Math.abs(box(card).width - g.width) > 1.5) { out.push({ rule: 'leaf-list', card: Math.round(box(card).width), grid: Math.round(g.width) }); break; }
     }
@@ -202,12 +202,12 @@ const LAYOUT = `(() => {
 
 /** Leaf counts each page states: Home's per-agent badge, a gallery's header description. */
 const COUNTS = `(() => {
-  const home = [...document.querySelectorAll('[data-studio-section="home"] [data-slot="card-grid"] > [data-slot="card"]')].map(card => ({
+  const home = [...document.querySelectorAll('[data-clossys-slot="sections.studio.home"] [data-slot="card-grid"] > [data-slot="card"]')].map(card => ({
     href: new URL(card.querySelector('a[href]')?.href ?? location.href).pathname,
     label: card.querySelector('[data-slot="card-action"]')?.textContent.trim() ?? '',
   }));
-  const gallery = document.querySelector('[data-studio-section="agent-gallery"] [data-slot="card-header"] [data-slot="card-description"]')?.textContent.trim() ?? '';
-  const roots = [...document.querySelectorAll('[data-studio-section="publications"] [id^="publication-"]')].map(card => card.textContent);
+  const gallery = document.querySelector('[data-clossys-slot="sections.studio.agent-gallery"] [data-slot="card-header"] [data-slot="card-description"]')?.textContent.trim() ?? '';
+  const roots = [...document.querySelectorAll('[data-clossys-slot="sections.studio.publications"] [id^="publication-"]')].map(card => card.textContent);
   return { home, gallery, roots };
 })()`;
 

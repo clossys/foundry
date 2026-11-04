@@ -136,8 +136,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.semantic-content",
-    "components.status-mark"
-  ]
+  "uses": []
 }

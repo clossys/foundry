@@ -139,7 +139,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.banner",
-    "components.semantic-content"
+    "components.badge",
+    "components.button"
   ]
 }

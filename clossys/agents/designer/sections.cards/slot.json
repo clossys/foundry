@@ -293,10 +293,5 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.card",
-    "components.link",
-    "components.semantic-content"
-  ]
+  "uses": []
 }

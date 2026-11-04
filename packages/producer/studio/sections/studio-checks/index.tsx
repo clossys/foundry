@@ -15,9 +15,9 @@ export interface CheckRow { key: string; label: string; ok: boolean; detail: str
 export interface ChecksInput { rows: readonly CheckRow[]; copy: ChecksCopy }
 
 /** `sections.studio.checks`: the record's checks, each passing or reported. Reports never block Studio. */
-export default function ChecksSection({ checks }: { checks: ChecksInput }) {
+export default function ChecksSection({ checks, ...provenance }: { checks: ChecksInput } & { [marker: `data-clossys-${string}`]: string }) {
   const { rows, copy } = checks;
-  return <Card size="sm" data-studio-section="checks">
+  return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{copy.title}</CardTitle>
       <CardDescription>{copy.summary}</CardDescription>

@@ -78,11 +78,5 @@
     ]
   },
   "inputs": [],
-  "uses": [
-    "components.button",
-    "components.icon",
-    "components.semantic-content",
-    "components.slider",
-    "components.toggle-button"
-  ]
+  "uses": []
 }

@@ -325,20 +325,10 @@
   },
   "inputs": [],
   "uses": [
-    "components.badge",
     "components.button",
-    "components.checkbox",
-    "components.dialog",
-    "components.icon",
-    "components.link",
-    "components.menu",
-    "components.popover",
+    "components.dropdown-menu",
     "components.select",
-    "components.skeleton",
-    "components.status-mark",
     "components.table",
-    "components.text-field",
-    "components.toolbar",
-    "components.tooltip"
+    "themes.input"
   ]
 }

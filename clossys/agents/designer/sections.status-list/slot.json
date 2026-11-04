@@ -269,7 +269,7 @@
   },
   "inputs": [],
   "uses": [
-    "components.semantic-content",
-    "components.status-mark"
+    "components.button",
+    "components.item"
   ]
 }

@@ -179,16 +179,17 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         json(response, 200, { state: "ready", leaf }); return;
       }
       if (pathname === "/api/brand") {
-        const brand = await consumerBrand(options.root);
-        json(response, 200, { ...(brand.name ? { name: brand.name } : {}), mark: !!brand.mark }); return;
+        const brand = await consumerBrand(options.root, library);
+        json(response, 200, { ...(brand.name ? { name: brand.name } : {}), mark: !!brand.mark, favicon: !!brand.favicon, appIcon: !!brand.appIcon, lockup: !!brand.lockup }); return;
       }
-      if (pathname === "/api/brand/mark.svg") {
-        const brand = await consumerBrand(options.root);
+      const brandAsset = /^\/api\/brand\/(mark|lockup|favicon|app-icon)\.svg$/.exec(pathname)?.[1];
+      if (brandAsset) {
+        const brand = await consumerBrand(options.root, library);
         const ground = new URL(raw, origin).searchParams.get("ground") === "dark" ? "dark" : "light";
-        // Without a consumer mark, Studio's own shipped mark stands in.
-        if (!brand.mark) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": BRAND_MARK_CACHE }); response.end(); return; }
+        // Every brand file is the consumer's own pinned asset; a consumer that pins none has none.
+        const svg = brandAsset === "mark" ? brand.mark?.[ground] : brandAsset === "lockup" ? brand.lockup?.[ground] : brandAsset === "favicon" ? brand.favicon : brand.appIcon;
+        if (!svg) { json(response, 404, { state: "missing", error: `The workspace pins no ${brandAsset}` }); return; }
         // Revalidated by content hash: a changed mark shows within a minute, an unchanged one is a 304.
-        const svg = brand.mark[ground];
         const etag = `"${createHash("sha256").update(svg).digest("base64url")}"`;
         const headers = { "Cache-Control": BRAND_MARK_CACHE, ETag: etag, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" };
         if ((request.headers["if-none-match"] ?? "").split(",").map(value => value.trim().replace(/^W\//, "")).includes(etag)) { response.writeHead(304, headers); response.end(); return; }
@@ -256,7 +257,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Avatars are read-only" }); return; }
       // Stock blocks' sample avatars (e.g. /avatars/shadcn.jpg) are not shipped: every one is the pinned placeholder image.
       const svg = await defaultAvatarSvg(options.root, library);
-      if (!svg) { response.writeHead(302, { Location: "/studio-mark.svg", "Cache-Control": BRAND_MARK_CACHE }); response.end(); return; }
+      if (!svg) { json(response, 404, { state: "missing", error: "The workspace pins no placeholder image or mark" }); return; }
       const etag = `"${createHash("sha256").update(svg).digest("base64url")}"`;
       const headers = { "Cache-Control": BRAND_MARK_CACHE, ETag: etag, "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'" };
       if ((request.headers["if-none-match"] ?? "").split(",").map(value => value.trim().replace(/^W\//, "")).includes(etag)) { response.writeHead(304, headers); response.end(); return; }
