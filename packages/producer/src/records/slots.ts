@@ -33,15 +33,47 @@ export interface PinEvent extends PinDoc { readonly commit: string }
 export type BlockReason = "inputs-undeclared" | "missing" | "unpinned" | "invalid-pin" | "missing-candidate" | "hash-drift" | "invalid-candidate" | "invalid-slot";
 export interface Readiness { readonly ready: boolean; readonly blockedBy: readonly { readonly slot: string; readonly reason: BlockReason }[] }
 
+/**
+ * A read scope memoises the symlink walk for directories already proven symlink-free, so the
+ * many reads of one call (or one Studio request) do not each lstat every ancestor up to `/`.
+ * It lives only while its outermost synchronous call runs and at most SCOPE_TTL_MS: a symlink
+ * that appears afterwards is rejected on the next read, exactly as without the memo. Leaf
+ * files are never memoised; only directories that exist and are not links.
+ */
+interface ReadScope { readonly started: number; checked: Set<string> }
+export const SCOPE_TTL_MS = 1000;
+let scope: ReadScope | undefined;
+/** Runs `fn` (synchronous) in one slot read scope; nested calls share the outermost scope. */
+export function withSlotReadScope<T>(fn: () => T): T {
+  if (scope) return fn();
+  scope = { started: Date.now(), checked: new Set() };
+  try { return fn(); } finally { scope = undefined; }
+}
+function scopedChecked(): Set<string> | undefined {
+  if (!scope) return undefined;
+  if (Date.now() - scope.started > SCOPE_TTL_MS) scope = { started: Date.now(), checked: new Set() };
+  return scope.checked;
+}
+
 function assertModelPath(path: string): void {
+  const checked = scopedChecked();
+  const proven: string[] = [];
   let cursor = resolve(path);
   for (;;) {
-    try { if (lstatSync(cursor).isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model"); }
+    // A proven directory's ancestors were proven with it.
+    if (checked?.has(cursor)) break;
+    try {
+      const stat = lstatSync(cursor);
+      if (stat.isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model");
+      if (stat.isDirectory()) proven.push(cursor);
+    }
     catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
     const parent = dirname(cursor);
     if (parent === cursor) break;
     cursor = parent;
   }
+  // Only a directory whose whole ancestor chain passed is memoised.
+  if (checked) for (const dir of proven) checked.add(dir);
 }
 function readBytes(path: string): string {
   assertModelPath(path);
@@ -56,17 +88,48 @@ export function hasSlotModel(consumer: string): boolean {
   return SLOT_AGENTS.some(agent => existsSync(iaPath(consumer, agent)));
 }
 
-export function readIa(consumer: string, agent: SlotAgent): IaDoc | null {
+/**
+ * Validated ia.json documents and their slot positions, keyed on the file's exact bytes: every
+ * read still walks for symlinks and reads the file as before, and only an unchanged document
+ * skips JSON parsing, validation and position resolution. An invalid document is never cached.
+ * Cached documents are frozen so no caller can change what the next caller reads.
+ */
+interface IaCacheEntry { readonly bytes: string; readonly ia: IaDoc; readonly positions: ReadonlyMap<string, SlotPosition> }
+const iaCache = new Map<string, IaCacheEntry>();
+function deepFreeze<T>(value: T): T {
+  if (value && typeof value === "object" && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) deepFreeze(child);
+  }
+  return value;
+}
+function loadIa(consumer: string, agent: SlotAgent): IaCacheEntry | null {
   const path = iaPath(consumer, agent);
   assertModelPath(path);
-  if (!existsSync(path)) return null;
-  const value = readJson(path);
+  if (!existsSync(path)) { iaCache.delete(path); return null; }
+  const bytes = readBytes(path);
+  const cached = iaCache.get(path);
+  if (cached?.bytes === bytes) return cached;
+  iaCache.delete(path);
+  const value = JSON.parse(bytes);
   if (validateIa(value, path).length) throw new Error(`Invalid ${agent} IA`);
-  return value as IaDoc;
+  const ia = deepFreeze(value as IaDoc);
+  const positions = slotPositions(agent, ia);
+  for (const position of positions.values()) deepFreeze(position);
+  const entry: IaCacheEntry = { bytes, ia, positions };
+  iaCache.set(path, entry);
+  return entry;
+}
+
+export function readIa(consumer: string, agent: SlotAgent): IaDoc | null {
+  return withSlotReadScope(() => loadIa(consumer, agent)?.ia ?? null);
 }
 
 function versionOf(name: string): number { return Number(CANDIDATE_NAME.exec(name)?.[2] ?? 0); }
 export function listCandidateNames(dir: string): string[] {
+  return withSlotReadScope(() => candidateNamesAt(dir));
+}
+function candidateNamesAt(dir: string): string[] {
   const root = candidatesDir(dir);
   assertModelPath(root);
   if (!isDir(root)) return [];
@@ -75,20 +138,21 @@ export function listCandidateNames(dir: string): string[] {
 }
 
 function locate(consumer: string, agent: SlotAgent, id: string): { position: SlotPosition; dir: string } {
-  const ia = readIa(consumer, agent);
-  const position = ia ? slotPositions(agent, ia).get(id) : undefined;
+  const position = loadIa(consumer, agent)?.positions.get(id);
   if (!position) throw new Error(`${agent} slot ${id} is not in ia.json`);
   return { position, dir: slotDir(consumer, agent, id) };
 }
 
 /** Every IA slot of one agent, in IA order; empty slots included. */
 export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
-  const ia = readIa(consumer, agent);
-  if (!ia) return [];
-  return [...slotPositions(agent, ia)].map(([id, position]) => {
-    const dir = slotDir(consumer, agent, id);
-    const pin = readPinAt(dir);
-    return { id, agent, position, dir, candidates: listCandidateNames(dir), pin, state: decideSlotState(dir, pin) };
+  return withSlotReadScope(() => {
+    const ia = loadIa(consumer, agent);
+    if (!ia) return [];
+    return [...ia.positions].map(([id, position]) => {
+      const dir = slotDir(consumer, agent, id);
+      const pin = readPinAt(dir);
+      return { id, agent, position, dir, candidates: candidateNamesAt(dir), pin, state: decideSlotState(dir, pin) };
+    });
   });
 }
 
@@ -97,12 +161,13 @@ export function listSlots(consumer: string, agent: SlotAgent): SlotEntry[] {
  * Undefined when the id is not in the agent's IA.
  */
 export function readSlotEntry(consumer: string, agent: SlotAgent, id: string): SlotEntry | undefined {
-  const ia = readIa(consumer, agent);
-  const position = ia ? slotPositions(agent, ia).get(id) : undefined;
-  if (!position) return undefined;
-  const dir = slotDir(consumer, agent, id);
-  const pin = readPinAt(dir);
-  return { id, agent, position, dir, candidates: listCandidateNames(dir), pin, state: decideSlotState(dir, pin) };
+  return withSlotReadScope(() => {
+    const position = loadIa(consumer, agent)?.positions.get(id);
+    if (!position) return undefined;
+    const dir = slotDir(consumer, agent, id);
+    const pin = readPinAt(dir);
+    return { id, agent, position, dir, candidates: candidateNamesAt(dir), pin, state: decideSlotState(dir, pin) };
+  });
 }
 
 /** The `notNeeded` marker in a slot's slot.json; `invalid` when the marker is present but malformed. */
@@ -134,18 +199,22 @@ function decideSlotState(dir: string, pin: PinDoc | null): SlotStateResult {
 }
 
 export function readSlotState(consumer: string, agent: SlotAgent, id: string): SlotStateResult {
-  const dir = locate(consumer, agent, id).dir;
-  return decideSlotState(dir, readPinAt(dir));
+  return withSlotReadScope(() => {
+    const dir = locate(consumer, agent, id).dir;
+    return decideSlotState(dir, readPinAt(dir));
+  });
 }
 
 export interface RejectedSlot { readonly agent: SlotAgent; readonly id: string; readonly reason: string; readonly message: string; readonly candidates: number }
 /** Every IA slot, across agents, that the loader rejects (neither pinned nor not-needed). */
 export function rejectedSlots(consumer: string): RejectedSlot[] {
-  const out: RejectedSlot[] = [];
-  for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) {
-    if (entry.state.state === "rejected") out.push({ agent, id: entry.id, reason: entry.state.reason, message: entry.state.message, candidates: entry.candidates.length });
-  }
-  return out;
+  return withSlotReadScope(() => {
+    const out: RejectedSlot[] = [];
+    for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) {
+      if (entry.state.state === "rejected") out.push({ agent, id: entry.id, reason: entry.state.reason, message: entry.state.message, candidates: entry.candidates.length });
+    }
+    return out;
+  });
 }
 
 /**
@@ -153,27 +222,33 @@ export function rejectedSlots(consumer: string): RejectedSlot[] {
  * agent and position). Malformed documents throw `Invalid <agent> slot <id>`, as in `readSlot`.
  */
 export function inspectSlot(consumer: string, agent: SlotAgent, id: string): { doc: SlotDoc; placed: boolean } {
-  const { position, dir } = locate(consumer, agent, id);
-  const path = slotFile(dir);
-  const value: unknown = readJson(path);
-  if (validateSlotDoc(value, path).length) throw new Error(`Invalid ${agent} slot ${id}`);
-  const doc = value as SlotDoc;
-  const placed = doc.id === id && doc.agent === agent
-    && doc.ia.l0 === position.l0 && doc.ia.l1 === position.l1
-    && doc.ia.l2 === position.l2 && doc.ia.order === position.order;
-  return { doc, placed };
+  return withSlotReadScope(() => {
+    const { position, dir } = locate(consumer, agent, id);
+    const path = slotFile(dir);
+    const value: unknown = readJson(path);
+    if (validateSlotDoc(value, path).length) throw new Error(`Invalid ${agent} slot ${id}`);
+    const doc = value as SlotDoc;
+    const placed = doc.id === id && doc.agent === agent
+      && doc.ia.l0 === position.l0 && doc.ia.l1 === position.l1
+      && doc.ia.l2 === position.l2 && doc.ia.order === position.order;
+    return { doc, placed };
+  });
 }
 
 export function readSlot(consumer: string, agent: SlotAgent, id: string): SlotDoc {
-  const { doc, placed } = inspectSlot(consumer, agent, id);
-  if (!placed) throw new Error(`Slot ${agent}/${id} does not match its IA position`);
-  return doc;
+  return withSlotReadScope(() => {
+    const { doc, placed } = inspectSlot(consumer, agent, id);
+    if (!placed) throw new Error(`Slot ${agent}/${id} does not match its IA position`);
+    return doc;
+  });
 }
 
 export function readCandidate(consumer: string, agent: SlotAgent, id: string, name: string): Candidate {
-  if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
-  const bytes = readBytes(join(candidatesDir(locate(consumer, agent, id).dir), name));
-  return { name, bytes, sha256: sha256Hex(bytes) };
+  return withSlotReadScope(() => {
+    if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
+    const bytes = readBytes(join(candidatesDir(locate(consumer, agent, id).dir), name));
+    return { name, bytes, sha256: sha256Hex(bytes) };
+  });
 }
 
 function readPinAt(dir: string): PinDoc | null {
@@ -188,47 +263,53 @@ function readPinAt(dir: string): PinDoc | null {
   return validatePin(value, path).length ? null : value as PinDoc;
 }
 export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc | null {
-  return readPinAt(locate(consumer, agent, id).dir);
+  return withSlotReadScope(() => {
+    return readPinAt(locate(consumer, agent, id).dir);
+  });
 }
 
 /** Pin history from git (newest first); outside git, the current pin only. */
 export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinEvent[] {
-  const dir = locate(consumer, agent, id).dir, path = pinFile(dir);
-  try {
-    const top = execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: consumer, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-    const rel = relative(top, path).split(sep).join("/");
-    // --follow keeps history across slot-folder moves (the flat layout, or any
-    // future regroup); each commit is read at the path the file had then.
-    const log = execFileSync("git", ["log", "--follow", "--format=%x00%H", "--name-only", "--", rel], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-    const commits = log.split("\0").filter(Boolean).map(chunk => {
-      const [commit = "", ...paths] = chunk.split("\n").map(line => line.trim()).filter(Boolean);
-      return { commit, path: paths[0] ?? rel };
-    });
-    const read = commits.map(({ commit, path: at }) => {
-      try { return { commit, at, bytes: execFileSync("git", ["show", `${commit}:${at}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }) }; }
-      catch { return { commit, at, bytes: undefined }; /* deleted in this commit: an unpin, not a pin event */ }
-    });
-    const events: PinEvent[] = [];
-    for (const [index, entry] of read.entries()) {
-      if (entry.bytes === undefined) continue;
-      const older = read[index + 1];
-      // A pure move (new path, same bytes) is not a pin event.
-      if (older && older.at !== entry.at && older.bytes === entry.bytes) continue;
-      try {
-        // Pins written before `clossys pin` named the decider `pinnedBy`.
-        const { pinnedBy, ...pin } = JSON.parse(entry.bytes) as PinDoc & { pinnedBy?: string };
-        events.push({ ...pin, decidedBy: pin.decidedBy ?? pinnedBy ?? "", commit: entry.commit });
-      } catch { /* unreadable historical pin */ }
-    }
-    if (events.length) return events;
-  } catch { /* not a git checkout */ }
-  const current = readPinAt(dir);
-  return current ? [{ ...current, commit: "working-tree" }] : [];
+  return withSlotReadScope(() => {
+    const dir = locate(consumer, agent, id).dir, path = pinFile(dir);
+    try {
+      const top = execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: consumer, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+      const rel = relative(top, path).split(sep).join("/");
+      // --follow keeps history across slot-folder moves (the flat layout, or any
+      // future regroup); each commit is read at the path the file had then.
+      const log = execFileSync("git", ["log", "--follow", "--format=%x00%H", "--name-only", "--", rel], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+      const commits = log.split("\0").filter(Boolean).map(chunk => {
+        const [commit = "", ...paths] = chunk.split("\n").map(line => line.trim()).filter(Boolean);
+        return { commit, path: paths[0] ?? rel };
+      });
+      const read = commits.map(({ commit, path: at }) => {
+        try { return { commit, at, bytes: execFileSync("git", ["show", `${commit}:${at}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }) }; }
+        catch { return { commit, at, bytes: undefined }; /* deleted in this commit: an unpin, not a pin event */ }
+      });
+      const events: PinEvent[] = [];
+      for (const [index, entry] of read.entries()) {
+        if (entry.bytes === undefined) continue;
+        const older = read[index + 1];
+        // A pure move (new path, same bytes) is not a pin event.
+        if (older && older.at !== entry.at && older.bytes === entry.bytes) continue;
+        try {
+          // Pins written before `clossys pin` named the decider `pinnedBy`.
+          const { pinnedBy, ...pin } = JSON.parse(entry.bytes) as PinDoc & { pinnedBy?: string };
+          events.push({ ...pin, decidedBy: pin.decidedBy ?? pinnedBy ?? "", commit: entry.commit });
+        } catch { /* unreadable historical pin */ }
+      }
+      if (events.length) return events;
+    } catch { /* not a git checkout */ }
+    const current = readPinAt(dir);
+    return current ? [{ ...current, commit: "working-tree" }] : [];
+  });
 }
 
 /** Slots in any agent whose slot.json `uses` names this slot. Every present document must be valid and placed. */
 export function usedBy(consumer: string, slot: string): { agent: SlotAgent; id: string }[] {
-  return scanUsedBy(consumer, slot, (agent, id) => readSlot(consumer, agent, id));
+  return withSlotReadScope(() => {
+    return scanUsedBy(consumer, slot, (agent, id) => readSlot(consumer, agent, id));
+  });
 }
 
 /**
@@ -237,14 +318,16 @@ export function usedBy(consumer: string, slot: string): { agent: SlotAgent; id: 
  * readiness report it). Unreadable, aliased or irregular files still throw.
  */
 export function usedByPlaced(consumer: string, slot: string): { agent: SlotAgent; id: string }[] {
-  return scanUsedBy(consumer, slot, (agent, id) => {
-    try {
-      const { doc, placed } = inspectSlot(consumer, agent, id);
-      return placed ? doc : undefined;
-    } catch (error) {
-      if (error instanceof Error && error.message === `Invalid ${agent} slot ${id}`) return undefined;
-      throw error;
-    }
+  return withSlotReadScope(() => {
+    return scanUsedBy(consumer, slot, (agent, id) => {
+      try {
+        const { doc, placed } = inspectSlot(consumer, agent, id);
+        return placed ? doc : undefined;
+      } catch (error) {
+        if (error instanceof Error && error.message === `Invalid ${agent} slot ${id}`) return undefined;
+        throw error;
+      }
+    });
   });
 }
 
@@ -260,9 +343,11 @@ function scanUsedBy(consumer: string, slot: string, read: (agent: SlotAgent, id:
 
 /** Index of slot id -> its agent and entry, across all agents. */
 export function slotIndex(consumer: string): Map<string, SlotEntry> {
-  const index = new Map<string, SlotEntry>();
-  for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) index.set(entry.id, entry);
-  return index;
+  return withSlotReadScope(() => {
+    const index = new Map<string, SlotEntry>();
+    for (const agent of SLOT_AGENTS) for (const entry of listSlots(consumer, agent)) index.set(entry.id, entry);
+    return index;
+  });
 }
 
 /** Only a valid pin over the current, valid candidate bytes clears an input. */
@@ -295,18 +380,20 @@ function inputBlocker(entry: SlotEntry): BlockReason | undefined {
 
 /** A slot is ready when it declares inputs and every input has an intact pin. */
 export function readiness(consumer: string, agent: SlotAgent, id: string, index = slotIndex(consumer)): Readiness {
-  const doc = readSlot(consumer, agent, id);
-  // Director slots are the roots of the chain: no inputs is their declared state (planner, 2026-10-31).
-  if (!doc.inputs.length && agent === "director") return { ready: true, blockedBy: [] };
-  if (!doc.inputs.length) return { ready: false, blockedBy: [{ slot: id, reason: "inputs-undeclared" }] };
-  const blockedBy: { slot: string; reason: BlockReason }[] = [];
-  for (const input of doc.inputs) {
-    const entry = index.get(input);
-    if (!entry) blockedBy.push({ slot: input, reason: "missing" });
-    else {
-      const reason = inputBlocker(entry);
-      if (reason) blockedBy.push({ slot: input, reason });
+  return withSlotReadScope(() => {
+    const doc = readSlot(consumer, agent, id);
+    // Director slots are the roots of the chain: no inputs is their declared state (planner, 2026-10-31).
+    if (!doc.inputs.length && agent === "director") return { ready: true, blockedBy: [] };
+    if (!doc.inputs.length) return { ready: false, blockedBy: [{ slot: id, reason: "inputs-undeclared" }] };
+    const blockedBy: { slot: string; reason: BlockReason }[] = [];
+    for (const input of doc.inputs) {
+      const entry = index.get(input);
+      if (!entry) blockedBy.push({ slot: input, reason: "missing" });
+      else {
+        const reason = inputBlocker(entry);
+        if (reason) blockedBy.push({ slot: input, reason });
+      }
     }
-  }
-  return { ready: blockedBy.length === 0, blockedBy };
+    return { ready: blockedBy.length === 0, blockedBy };
+  });
 }

@@ -20,6 +20,7 @@ import { slotGallery } from "./slot-gallery.js";
 import { slotDetail } from "./slot-detail.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
 import { slotCensus } from "./slot-census.js";
+import { withSlotReadScope } from "../records/slots.js";
 import { DEFAULT_AVATAR_PATH, defaultAvatarSvg } from "./default-avatar.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
@@ -125,18 +126,19 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     }
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
-      if (pathname === "/api/slots/census") { json(response, 200, slotCensus(library)); return; }
+      if (pathname === "/api/slots/census") { json(response, 200, withSlotReadScope(() => slotCensus(library))); return; }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       // One agent's slots in IA order, grouped as the Studio tabs place them (`<l1>/<l2>` sections).
       const galleryMatch = /^\/api\/slots\/([a-z]+)$/.exec(pathname);
       if (galleryMatch) {
         if (!(SLOT_AGENTS as readonly string[]).includes(galleryMatch[1]!)) { json(response, 404, { state: "missing" }); return; }
-        json(response, 200, { state: "ready", ...slotGallery(library, galleryMatch[1] as SlotAgent) }); return;
+        json(response, 200, { state: "ready", ...withSlotReadScope(() => slotGallery(library, galleryMatch[1] as SlotAgent)) }); return;
       }
       const slotMatch = /^\/api\/slots\/([a-z]+)\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
       if (slotMatch) {
         if (!(SLOT_AGENTS as readonly string[]).includes(slotMatch[1]!)) { json(response, 404, { state: "missing" }); return; }
-        const detail = slotDetail(options.root, slotMatch[1] as SlotAgent, slotMatch[2]!);
+        // One read scope per request: the detail's many reads share one symlink walk per folder.
+        const detail = withSlotReadScope(() => slotDetail(options.root, slotMatch[1] as SlotAgent, slotMatch[2]!));
         json(response, detail ? 200 : 404, detail ? { state: "ready", detail } : { state: "missing" }); return;
       }
       if (pathname === "/api/config") {
