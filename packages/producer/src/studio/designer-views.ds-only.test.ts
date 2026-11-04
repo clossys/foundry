@@ -220,7 +220,7 @@ describe('Studio sections are ds-only', () => {
   });
 
   it('covers every placed Studio section', () => {
-    expect(FOLDERS).toEqual(['module-checks', 'module-outline', 'producer-pipeline-flow', 'producer-pipeline-legend', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-page-header', 'studio-page-tabs', 'studio-references', 'studio-slot-groups', 'studio-specimen']);
+    expect(FOLDERS).toEqual(['module-checks', 'module-outline', 'producer-pipeline-flow', 'producer-pipeline-legend', 'producer-system-empty', 'producer-team-strip', 'studio-checks', 'studio-contract', 'studio-history', 'studio-home', 'studio-leaf-header', 'studio-options', 'studio-page-header', 'studio-page-tabs', 'studio-references', 'studio-slot-groups', 'studio-specimen']);
   });
 
   it.each(FOLDERS)('%s imports only the Designer component layer and carries no raw styled markup', folder => {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * check:pipeline-canvas: the Studio page /producer/pipeline draws packages/producer/pipeline/graph.json
+ * check:pipeline-canvas: the Studio page /content (the Content overview) draws packages/producer/pipeline/graph.json
  * and nothing else. It starts the built Producer (`clossys produce`), opens the page headless in the
  * Chrome already installed on this machine (playwright, never a downloaded browser) and fails unless
  *
@@ -14,6 +14,10 @@
  *              not: the whole graph is measured, it is not expected to fit the window) intersect, each
  *              lane has exactly one label, every step sits inside its lane's swim row (from its label
  *              down to the next lane's label) and ranks run left to right (a lower rank starts further left);
+ *   stage      each stage has exactly one header, and every step sits inside its stage's column (from its
+ *              header across to the next stage's header);
+ *   roster     the drawn lane rows, top to bottom, equal graph.json's roster in order, plus `unassigned`
+ *              while any step's lane is `unassigned` (lanes are the roster, never a hand list);
  *   readable   at the initial view every step title renders at READABLE_PX (12px) or more: its computed
  *              font size times the React Flow viewport scale;
  *   fill       the canvas reaches the bottom of the 1440x900 window (it fills the remaining content
@@ -43,7 +47,7 @@ import { fileURLToPath } from "node:url";
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const producerDir = join(repo, "packages/producer");
 export const DEFAULT_PORT = 4619;
-export const ROUTE = "/producer/pipeline";
+export const ROUTE = "/content";
 export const VIEWPORT = Object.freeze({ width: 1440, height: 900 });
 /** The smallest on-screen step title size at the initial view, in CSS pixels. */
 export const READABLE_PX = 12;
@@ -75,7 +79,8 @@ const inside = (part, box) => part.x >= box.x - 0.5 && part.y >= box.y - 0.5 && 
 
 /**
  * Findings for the drawn geometry against graph.json. `boxes` are screen boxes
- * (`{ id, kind: "step" | "lane", x, y, width, height }`; a lane box's id is its lane id) and `legend`
+ * (`{ id, kind: "step" | "lane" | "stage", x, y, width, height }`; a lane or stage box's id is its lane or
+ * stage id) and `legend`
  * the legend's screen box; `viewport` is the window it must fit. Runs only on what was recorded.
  */
 export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
@@ -99,6 +104,31 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
       const top = labels.get(lanes[at]?.id), next = labels.get(lanes[at + 1]?.id);
       if (!box || !top) continue;
       if (box.y < top.y || (next && box.y + box.height > next.y)) findings.push({ rule: "layout", message: `step ${node.id} is outside the ${node.layout.lane} swim row` });
+    }
+    const stages = (graph.layout?.stages ?? []).slice().sort((a, b) => a.index - b.index);
+    const headers = new Map();
+    for (const box of boxes.filter(box => box.kind === "stage")) {
+      if (headers.has(box.id)) findings.push({ rule: "stage", message: `stage ${box.id} has more than one header` });
+      headers.set(box.id, box);
+    }
+    if (!stages.length) findings.push({ rule: "stage", message: "graph.json lays out no stage columns" });
+    for (const stage of stages) if (!headers.has(stage.id)) findings.push({ rule: "stage", message: `stage ${stage.id} has no header` });
+    for (const id of headers.keys()) if (!stages.some(stage => stage.id === id)) findings.push({ rule: "stage", message: `stage header ${id} is not a graph.json stage` });
+    for (const node of graph.nodes ?? []) {
+      const box = steps.get(node.id), at = stages.findIndex(stage => stage.id === node.layout?.stage);
+      const start = headers.get(stages[at]?.id), next = headers.get(stages[at + 1]?.id);
+      if (!box) continue;
+      if (at < 0) { findings.push({ rule: "stage", message: `step ${node.id} has no stage column (layout.stage ${node.layout?.stage ?? "unset"})` }); continue; }
+      if (!start) continue;
+      if (box.x < start.x - 0.5 || (next && box.x + box.width > next.x + 0.5)) findings.push({ rule: "stage", message: `step ${node.id} is outside the ${node.layout.stage} stage column` });
+    }
+    const roster = Array.isArray(graph.roster) ? graph.roster.map(entry => entry.id) : undefined;
+    if (!roster) findings.push({ rule: "roster", message: "graph.json has no roster, so the lanes are not derived from it" });
+    else {
+      const want = [...roster, ...((graph.nodes ?? []).some(node => node.layout?.lane === "unassigned") ? ["unassigned"] : [])];
+      const declared = lanes.map(lane => lane.id), drawn = [...labels.values()].sort((a, b) => a.y - b.y).map(box => box.id);
+      if (declared.join(",") !== want.join(",")) findings.push({ rule: "roster", message: `graph.json lanes (${declared.join(", ")}) are not the roster (${want.join(", ")})` });
+      if (drawn.join(",") !== want.join(",")) findings.push({ rule: "roster", message: `the drawn lane rows (${drawn.join(", ")}) are not the roster (${want.join(", ")})` });
     }
     for (const a of graph.nodes ?? []) for (const b of graph.nodes ?? []) {
       const boxA = steps.get(a.id), boxB = steps.get(b.id);
@@ -215,8 +245,8 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
         nodes: ids('.react-flow__node-step[data-testid^="rf__node-"]', "rf__node-"), edges: ids('[data-testid^="rf__edge-"]', "rf__edge-"),
         boxes: [...document.querySelectorAll('.react-flow__node[data-testid^="rf__node-"]')].map(element => {
           const id = element.getAttribute("data-testid").slice("rf__node-".length);
-          const lane = element.classList.contains("react-flow__node-lane");
-          return { id: lane ? id.replace(/^lane:/, "") : id, kind: lane ? "lane" : "step", ...box(element) };
+          const kind = element.classList.contains("react-flow__node-lane") ? "lane" : element.classList.contains("react-flow__node-stage") ? "stage" : "step";
+          return { id: kind === "step" ? id : id.replace(/^(lane|stage):/, ""), kind, ...box(element) };
         }),
         parts: [...document.querySelectorAll('.react-flow__node-step[data-testid^="rf__node-"]')].flatMap(element => {
           const id = element.getAttribute("data-testid").slice("rf__node-".length);

@@ -21,6 +21,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:routes-published",
+      "cwd": "packages/producer",
+      "run": "npm run check:routes-published",
+      "kind": "static"
+    },
+    {
       "id": "producer check:studio-template",
       "cwd": "packages/producer",
       "run": "npm run check:studio-template",

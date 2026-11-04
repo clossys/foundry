@@ -470,9 +470,58 @@
           "cwd": ".",
           "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph.json --rendered {fixture}/rendered-badge.json",
           "expect": "^FAIL contain: the badge of step design\\.hero .* overflows its node"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-swimlane.json --rendered {fixture}/rendered-swimlane.json",
+          "expect": "^FAIL stage: step publish\\.compile is outside the publish stage column"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-roster.json --rendered {fixture}/rendered-roster.json",
+          "expect": "^FAIL roster: graph\\.json lanes \\(designer, publisher\\) are not the roster"
         }
       ],
-      "note": "The Studio page /producer/pipeline draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row, ranks left to right, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, the legend inside the viewport, every step's kind badge and title inside its node box, and (in the browser) a click on a step node or Enter on the focused step opening its sheet. The fixtures are recorded renderings: one drops an edge, one draws a kind badge past its node's right edge."
+      "note": "The Studio Content overview (/content) draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row and its stage's column (one header per stage), the drawn lane rows equal to graph.json's roster (plus unassigned while a step has no holder), ranks left to right, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, the legend inside the viewport, every step's kind badge and title inside its node box, and (in the browser) a click on a step node or Enter on the focused step opening its sheet. The fixtures are recorded renderings: one drops an edge, one draws a kind badge past its node's right edge, one draws a step outside its stage column, one draws lanes that leave out a roster entry."
+    },
+    {
+      "id": "R-ROUTES-PUBLISHED",
+      "owner_words": {
+        "quote": "make sure all pages/routes are built via publisher itself officially",
+        "date": "2026-11-04"
+      },
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:routes-published"
+      ],
+      "related": [
+        "packages/producer#check:assemble-only",
+        "packages/producer#check:studio-routes"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ROUTES-PUBLISHED",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^route-unpublished\\s+app/probe/page\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^record-unserved\\s+orphan"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^link-unpublished\\s+docs > gone"
+        }
+      ],
+      "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json): check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, and breadcrumbs, tabs or landings missing from the projection. The fixture serves an unpublished probe route, leaves an orphan record unserved and links a breadcrumb to an unpublished path."
     }
   ],
   "exemptions": [
