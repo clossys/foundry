@@ -188,7 +188,9 @@ function copyRoot(name) {
 let entryOk = existsSync(cliEntry);
 if (!entryOk) finding('compile', 'packages/producer/dist/cli/index.js is not built: run npm run build');
 else {
-  const cli = readFileSync(cliEntry, 'utf8') + (existsSync(join(producer, 'dist/cli/main.js')) ? readFileSync(join(producer, 'dist/cli/main.js'), 'utf8') : '');
+  // Verbs are declared in the pipeline step registry and dispatched by the runner (check:pipeline runner.bypass).
+  const cli = [cliEntry, join(producer, 'dist/cli/main.js'), join(producer, 'dist/pipeline/steps/cli.js')]
+    .filter(file => existsSync(file)).map(file => readFileSync(file, 'utf8')).join('\n');
   if (!/["']compile["']/.test(cli)) { finding('compile', 'the built CLI has no compile verb'); entryOk = false; }
 }
 
