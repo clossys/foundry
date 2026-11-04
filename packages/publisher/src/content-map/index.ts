@@ -16,3 +16,5 @@ export { buildSecurityTxt } from "./security.js";
 export type { SecurityTxtOptions } from "./security.js";
 
 export type { CellCompileOptions, CellCompileFinding } from "./cells.js";
+export { projectPinnedPublication } from "./pinned-publication.js";
+export type { PinnedPublication, PinnedPublicationSource } from "./pinned-publication.js";

@@ -1,8 +1,6 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
-import { existsSync, lstatSync } from 'node:fs';
-import { join } from 'node:path';
-import { listSlots, readCandidate, readIa, readSlot, readSlotEntry, type SlotEntry } from '../records/slots.js';
-import { iaPath, pinFile, type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
+import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, type SlotEntry } from '../records/slots.js';
+import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { slotIdLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
@@ -31,12 +29,9 @@ export function cardState(entry: SlotEntry): SlotCardState {
 }
 export interface SlotGallerySection { id: string; label: string; level: 0 | 1 | 2; cards: SlotGalleryCard[] }
 export const candidateVersion = (name: string) => Number(/-v(\d+)\.(?:md|json)$/.exec(name)?.[1] ?? 0);
-export const hasAgentSlots = (consumer: string, agent: SlotAgent) => existsSync(iaPath(consumer, agent));
+export const hasAgentSlots = (consumer: string, agent: SlotAgent) => hasAgentModel(consumer, agent);
 
-function hasPinFile(entry: SlotEntry): boolean {
-  try { lstatSync(pinFile(entry.dir)); return true; }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return false; throw error; }
-}
+const hasPinFile = (entry: SlotEntry) => hasPinRecord(entry.dir);
 
 function checkedSlot(consumer: string, agent: SlotAgent, entry: SlotEntry) {
   const doc = readSlot(consumer, agent, entry.id);
@@ -57,8 +52,9 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return undefined;
   if (!entry.pin && hasPinFile(entry)) return undefined;
-  const name = agent === 'director' ? entry.pin?.candidate : candidate ?? shownCandidate(entry);
-  if (agent === 'director' && (!name || (candidate !== undefined && candidate !== name))) return undefined;
+  // A Director card shows its pin; a named Director candidate renders as a preview of its own bytes.
+  const name = agent === 'director' ? candidate ?? entry.pin?.candidate : candidate ?? shownCandidate(entry);
+  if (agent === 'director' && !name) return undefined;
   let doc: ReturnType<typeof checkedSlot>;
   try { doc = checkedSlot(consumer, agent, entry); } catch { return undefined; }
   const empty = copyRef(entry.candidates.length ? 'studio.no-pin' : 'studio.no-candidate');
@@ -72,7 +68,7 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   }
   try {
     if (validateCandidate(doc.kind, id, name, source.bytes).length) return undefined;
-    if (agent === 'director' && source.sha256 !== entry.pin!.sha256) return undefined;
+    if (agent === 'director' && entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) return undefined;
   } catch { return undefined; }
   if (entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) throw new Error(`Candidate hash mismatch: ${id}`);
   const parsed = parseFrontmatter(source.bytes);
@@ -184,7 +180,8 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
       }
     } catch { failing = true; }
     let record: RecordSpecimenInput | undefined;
-    if (!failing && (agent === 'director' || (agent === 'writer' && candidate && entry.pin?.candidate === candidate))) {
+    // A card shows the pin only; previews of other candidates live on the slot's detail route.
+    if (!failing && ((agent === 'director' && entry.pin && (candidate === undefined || candidate === entry.pin.candidate)) || (agent === 'writer' && candidate && entry.pin?.candidate === candidate))) {
       try { record = recordSpecimenInput(consumer, agent, id, candidate); } catch { record = undefined; }
     }
     target.cards.push({ id, slug: id, name: label(agent, id), kind, version: candidate ? candidateVersion(candidate) : 0,

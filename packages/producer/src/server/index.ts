@@ -23,6 +23,7 @@ import { DEFAULT_AVATAR_PATH, defaultAvatarSvg } from "./default-avatar.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { hasAgentModel } from "../records/slots.js";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -70,7 +71,7 @@ function specimenNpmRoot(workspace: string): string {
 export async function startProducerServer(options: ProducerServerOptions): Promise<ProducerServer> {
   const entry = await studioEntry(options.studioEntry);
   const library = resolve(options.root, options.library ?? "clossys");
-  const hasLibrary = existsSync(join(library, "agents", "designer", "ia.json"));
+  const hasLibrary = hasAgentModel(library, "designer");
   // Pinned items render through the install pipeline; the record handler stays for other versions.
   const installed = hasLibrary ? installedSpecimens({ root: options.root, library }) : undefined;
   // No default theme id: a specimen that names none renders in the consumer's whole pinned theme.

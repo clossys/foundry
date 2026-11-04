@@ -15,7 +15,7 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { applySiteNavigation, installAndBind, isBlocking, needComponentSelection, planSite, siteLinkFindings, substrateDependencies, type BoundPage, type PageHostSelection, type InstallFinding, type InstallPins, type InstallResult, type ShadcnRunner, type SitePlan, type SiteRoutePack } from "@clossys/publisher/install";
-import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
+import { readPinnedPublication } from "./pinned-publication.js";
 import { hasSlotModel } from "../records/slots.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenRoots } from "./publish.js";
@@ -144,10 +144,9 @@ const htmlPath = (out: string, path: string) => join(out, "site", ...path.split(
 export async function publishSite(options: PublishSiteOptions): Promise<PublishSiteResult> {
   const root = resolve(options.root);
   if (!/^[a-z0-9][a-z0-9-]*$/.test(options.site)) throw new Error(`publish --install --site: ${options.site} needs a pack id ([a-z0-9-])`);
-  const base = join(root, "clossys", "agents", "publisher");
   // The publication is the pinned `publication.<site>` slot; there is no file-store fallback.
   if (!hasSlotModel(join(root, "clossys"))) throw new Error("publish --install --site: clossys/agents/<agent>/ia.json is missing");
-  const native = await readPinnedPublication(base, options.site);
+  const native = await readPinnedPublication(join(root, "clossys"), options.site);
   if (!native.routePack) throw new Error(`publish --install --site: native publication ${options.site} has no route pack`);
   const pack = native.routePack as unknown as SiteRoutePack;
   const map = native.map as Parameters<typeof planSite>[0];

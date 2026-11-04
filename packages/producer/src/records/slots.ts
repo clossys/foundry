@@ -7,11 +7,12 @@
  * stores and `hasSlotModel` is false; callers keep the old-store behavior.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, lstatSync, readdirSync, readFileSync, statSync, watch, type FSWatcher } from "node:fs";
+import { lstat } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { sha256Hex } from "./hash.js";
 import {
-  CANDIDATE_NAME, SLOT_AGENTS, candidatesDir, iaPath, pinFile, slotDir, slotFile, slotPositions,
+  CANDIDATE_NAME, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
@@ -309,4 +310,147 @@ export function readiness(consumer: string, agent: SlotAgent, id: string, index 
     }
   }
   return { ready: blockedBy.length === 0, blockedBy };
+}
+
+// ---------------- one reader: every other module opens agents/** through these ----------------
+// D1 (SLOT-WIRING-LOCK): this file is the only code that opens slot-model paths
+// (`check:single-reader` fails on any other opener). The functions below give callers
+// with their own semantics (status counts, migrations, the model check, Studio
+// presence) the access they need without a second reader.
+
+/** Refuse anything that is not under a consumer's `agents/` folder. */
+function modelScoped(path: string): string {
+  const target = resolve(path);
+  if (!target.split(sep).includes("agents")) throw new Error(`Not a slot-model path: ${path}`);
+  return target;
+}
+
+/** True when `<dir>/agents` is a directory (a consumer root, or a workspace's `clossys/`). */
+export function hasModelRoot(dir: string): boolean {
+  return statSync(agentsDir(dir), { throwIfNoEntry: false })?.isDirectory() === true;
+}
+/** True when this agent's ia.json exists (the agent is on the slot model). */
+export function hasAgentModel(consumer: string, agent: SlotAgent): boolean {
+  return existsSync(iaPath(consumer, agent));
+}
+/** True when the slot folder holds a pin.json entry, valid or not (a dangling alias counts). */
+export function hasPinFile(dir: string): boolean {
+  try { lstatSync(pinFile(dir)); return true; }
+  catch (error) { if (["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) return false; throw error; }
+}
+/** `mtime:size` of a slot's pin.json, or `-` when there is none: a cache key, never a decision. */
+export function pinStamp(dir: string): string {
+  try { const stat = statSync(pinFile(dir)); return `${stat.mtimeMs}:${stat.size}`; } catch { return "-"; }
+}
+/** Whether a model path exists, without following its last component. */
+export function modelPresence(path: string): "present" | "missing" | "error" {
+  try { lstatSync(modelScoped(path)); return "present"; }
+  catch (error) { return (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing" : "error"; }
+}
+/** existsSync over a model path. */
+export function modelExists(path: string): boolean { return existsSync(modelScoped(path)); }
+/** A real (non-alias) directory under the model. */
+export function isModelDir(path: string): boolean { return isDir(modelScoped(path)); }
+/** The names in a real model directory (unsorted, as the OS returns them); [] when absent or not a directory. */
+export function listModelDir(path: string): string[] { return isModelDir(path) ? readdirSync(path) : []; }
+/**
+ * The raw text of a model file, unvalidated and without the alias walk: for status counts,
+ * migrations and the model check, which report malformed files themselves. Never selection authority.
+ */
+export function readModelText(path: string): string { return readFileSync(modelScoped(path), "utf8"); }
+/** The raw bytes of a model file (exact hashing), as `readModelText`. */
+export function readModelBytes(path: string): Buffer { return readFileSync(modelScoped(path)); }
+
+/** The raw text of a slot folder's own record (slot.json or pin.json); aliases refused; undefined when absent. */
+export function readSlotRecordText(dir: string, file: "slot.json" | "pin.json"): string | undefined {
+  const path = file === "pin.json" ? pinFile(dir) : slotFile(dir);
+  assertModelPath(path);
+  if (!existsSync(path)) return undefined;
+  return readBytes(path);
+}
+/**
+ * An agent-level file (`agents/<agent>/<name>`: Writer `declarations.json`, Designer
+ * `globals.css`); aliases refused; undefined when absent.
+ */
+export function readAgentFile(consumer: string, agent: SlotAgent, name: string): string | undefined {
+  if (!/^[a-z0-9][a-z0-9.-]*$/.test(name) || name.includes("..")) throw new Error(`invalid agent file ${name}`);
+  const path = join(agentDir(consumer, agent), name);
+  assertModelPath(path);
+  if (!existsSync(path)) return undefined;
+  return readBytes(path);
+}
+/**
+ * The regular files of an agent's non-slot folder (`agents/director/_evidence`), name -> text.
+ * Aliases refused; other entries skipped; {} when the folder is absent.
+ */
+export function readAgentFolder(consumer: string, agent: SlotAgent, folder: string): Record<string, string> {
+  if (!/^_[a-z0-9-]+$/.test(folder)) throw new Error(`invalid non-slot folder ${folder}`);
+  const dir = join(agentDir(consumer, agent), folder);
+  assertModelPath(dir);
+  const files: Record<string, string> = {};
+  let names: string[] = [];
+  try { names = readdirSync(dir); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  for (const name of names.sort()) {
+    const path = join(dir, name);
+    if (lstatSync(path).isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model");
+    if (lstatSync(path).isFile()) files[name] = readFileSync(path, "utf8");
+  }
+  return files;
+}
+
+/** Refuse aliases, secret-like names and irregular entries anywhere under the slot agents' folders. */
+export function assertModelTree(consumer: string): void {
+  const safe = (path: string) => {
+    let cursor = resolve(path);
+    for (;;) {
+      try { if (lstatSync(cursor).isSymbolicLink()) throw new Error("Symlink input is unsupported."); }
+      catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+      const parent = dirname(cursor); if (parent === cursor) break; cursor = parent;
+    }
+    return path;
+  };
+  const tree = (path: string): void => {
+    safe(path);
+    if (!existsSync(path)) return;
+    const stat = lstatSync(path);
+    if (stat.isDirectory()) for (const name of readdirSync(path)) {
+      if (name === ".env" || name.startsWith(".env.")) throw new Error("Secret-like input is unsupported.");
+      tree(join(path, name));
+    }
+    else if (!stat.isFile()) throw new Error("Model input must be a regular file or directory.");
+  };
+  safe(consumer);
+  for (const agent of SLOT_AGENTS) {
+    const base = safe(agentDir(consumer, agent));
+    if (!existsSync(base)) continue;
+    for (const name of readdirSync(base)) tree(join(base, name));
+  }
+}
+
+/**
+ * One recursive watcher on `<consumer>/agents`, also when it is absent (the nearest existing
+ * ancestor is watched). `onChange` gets the changed path's segments relative to `agents/`.
+ */
+export async function watchSlotModel(consumer: string, onChange: (segments: string[] | null) => void): Promise<() => void> {
+  const target = agentsDir(resolve(consumer));
+  let watched = target;
+  for (;;) {
+    try {
+      const stat = await lstat(watched);
+      if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Expected a regular agents directory");
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
+      const parent = dirname(watched); if (parent === watched) throw error; watched = parent;
+    }
+  }
+  let closed = false;
+  const watcher: FSWatcher = watch(watched, { recursive: true }, (_type, filename) => {
+    if (closed || filename === null) return;
+    const rel = relative(target, resolve(watched, String(filename)));
+    if (rel === ".." || rel.startsWith(`..${sep}`)) return;
+    onChange(rel.split(sep));
+  });
+  watcher.on("error", () => { if (!closed) onChange(null); });
+  return () => { closed = true; watcher.close(); };
 }

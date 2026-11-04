@@ -14,7 +14,7 @@ export const SCRIPT_STEPS = [
   defineStep({
     id: "studio.map", kind: "plumb", actor: "code", stage: "derive",
     summary: "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
-    inputs: [IA, SLOTS, PINS, ...CANDIDATES, "clossys/library/**", "clossys/selection.json"],
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES, "clossys/library/**"],
     outputs: STUDIO_GENERATED.map(name => `pkg:studio/generated/${name}`),
     command: { script: "scripts/generate-studio-map.mjs", npm: "generate:studio-map" }, checks: ["studio-map", "studio-routes"],
   }),

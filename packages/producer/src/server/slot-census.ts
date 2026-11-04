@@ -1,5 +1,4 @@
-import { lstatSync } from 'node:fs';
-import { listCandidateNames, readCandidate, readIa, readPin, readSlot } from '../records/slots.js';
+import { listCandidateNames, modelPresence, readCandidate, readIa, readPin, readSlot } from '../records/slots.js';
 import {
   SLOT_AGENTS, pinFile, slotDir, slotFile, slotPositions, validateCandidate, validateSlotDoc,
   type SlotAgent, type SlotDoc, type SlotPosition,
@@ -20,10 +19,7 @@ export type SlotCensus =
   | { state: 'ready'; total: number; withCandidate: number; pinned: number; rows: SlotCensusRow[] }
   | { state: 'error'; message: string };
 
-function presence(path: string): 'present' | 'missing' | 'error' {
-  try { lstatSync(path); return 'present'; }
-  catch (error) { return (error as NodeJS.ErrnoException).code === 'ENOENT' ? 'missing' : 'error'; }
-}
+const presence = modelPresence;
 
 function censusRow(consumer: string, agent: SlotAgent, id: string, position: SlotPosition) {
   const dir = slotDir(consumer, agent, id);

@@ -6,18 +6,12 @@ import {
   ELEMENT_SCHEMA,
   PREVIEW_SCHEMA,
   REFERENCES_MANIFEST_SCHEMA,
-  RELEASE_SCHEMA,
-  SELECTION_SCHEMA,
   SLOT_CONTRACT_SCHEMA,
 } from "./schemas.js";
 import type {
   ElementRecord,
-  Pins,
-  PinState,
   PreviewRecord,
   ReferencesManifest,
-  Release,
-  Selection,
   SlotContract,
 } from "./types.js";
 
@@ -98,75 +92,6 @@ export function validateSlotContract(value: unknown): Validation<SlotContract> {
   });
 }
 
-export function validateRelease(value: unknown): Validation<Release> {
-  return run<Release>(RELEASE_SCHEMA, value, () => []);
-}
-
-/**
- * Replay a pin history into the pins it implies. Throws on an event that
- * cannot apply; `validateSelection` turns that into an issue.
- */
-export function foldHistory(history: Selection["history"]): Pins {
-  const pins: Record<string, PinState> = {};
-  const byId = new Map<string, Selection["history"][number]>();
-  for (const [index, event] of history.entries()) {
-    const where = `$.history[${index}]`;
-    if (byId.has(event.id)) throw new FoldError(where, `duplicate event id "${event.id}"`);
-    const previous = history[index - 1];
-    if (previous && event.at < previous.at) throw new FoldError(where, "events must be in time order");
-    if (event.action === "unpin") {
-      if (event.element !== undefined || event.version !== undefined || event.hash !== undefined) {
-        throw new FoldError(where, "unpin carries no element, version or hash");
-      }
-      if (!pins[event.slot]) throw new FoldError(where, `slot ${event.slot} is not pinned`);
-      delete pins[event.slot];
-    } else {
-      if (event.element === undefined || event.version === undefined || event.hash === undefined) {
-        throw new FoldError(where, `${event.action} needs element, version and hash`);
-      }
-      if (event.action === "restore") {
-        const target = event.restores === undefined ? undefined : byId.get(event.restores);
-        if (!target || target.action === "unpin" || target.slot !== event.slot) {
-          throw new FoldError(where, "restore must name an earlier pin of the same slot");
-        }
-        if (target.element !== event.element || target.version !== event.version || target.hash !== event.hash) {
-          throw new FoldError(where, "restore must re-apply exactly the element, version and hash it names");
-        }
-      } else if (event.restores !== undefined) {
-        throw new FoldError(where, "only a restore names an earlier event");
-      }
-      pins[event.slot] = { element: event.element, version: event.version, hash: event.hash, event: event.id };
-    }
-    byId.set(event.id, event);
-  }
-  return pins;
-}
-
-class FoldError extends Error {
-  constructor(readonly path: string, message: string) {
-    super(message);
-  }
-}
-
-function canonical(pins: Pins): string {
-  return JSON.stringify(Object.keys(pins).sort().map((slot) => [slot, pins[slot]]));
-}
-
-export function validateSelection(value: unknown): Validation<Selection> {
-  return run<Selection>(SELECTION_SCHEMA, value, (selection) => {
-    let implied: Pins;
-    try {
-      implied = foldHistory(selection.history);
-    } catch (error) {
-      if (error instanceof FoldError) return [{ path: error.path, message: error.message }];
-      throw error;
-    }
-    return canonical(implied) === canonical(selection.pins)
-      ? []
-      : [{ path: "$.pins", message: "pins disagree with the replayed history" }];
-  });
-}
-
 export function validateReferencesManifest(value: unknown): Validation<ReferencesManifest> {
   return run<ReferencesManifest>(REFERENCES_MANIFEST_SCHEMA, value, (manifest) => {
     const issues: SchemaIssue[] = [];
@@ -199,8 +124,6 @@ function load<T>(path: string, what: string, validate: (value: unknown) => Valid
 
 export const loadElement = (path: string): ElementRecord => load(path, "element record", validateElement);
 export const loadPreview = (path: string): PreviewRecord => load(path, "preview record", validatePreview);
-export const loadSelection = (path: string): Selection => load(path, "selection", validateSelection);
-export const loadRelease = (path: string): Release => load(path, "release", validateRelease);
 export const loadSlotContract = (path: string): SlotContract => load(path, "slot contract", validateSlotContract);
 export const loadReferencesManifest = (path: string): ReferencesManifest =>
   load(path, "references manifest", validateReferencesManifest);

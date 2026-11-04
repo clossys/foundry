@@ -102,7 +102,7 @@ it("projects the repository's own pinned Studio publication from its slots", asy
   const before = await snapshot(root);
   const apps = await consumerApps(root);
   expect(apps).toMatchObject({ state: "ready", publications: [{ id: "studio", source: "slots", format: "web.page.responsive" }] });
-  const { readPinnedPublication } = await import("@clossys/publisher/content-map/slots");
-  expect(apps.publications[0]!.map).toEqual((await readPinnedPublication(publisher, "studio")).map);
+  const { readPinnedPublication } = await import("../publish/pinned-publication.js");
+  expect(apps.publications[0]!.map).toEqual((await readPinnedPublication(join(root, "clossys"), "studio")).map);
   expect(await snapshot(root)).toEqual(before);
 });

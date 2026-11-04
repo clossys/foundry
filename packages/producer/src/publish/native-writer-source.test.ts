@@ -79,7 +79,7 @@ describe("native Writer source", () => {
   it("rejects declaration and candidate symlinks", async () => {
     const path = join(writer, "declarations.json"), outside = join(root, "declarations.json");
     writeFileSync(outside, readFileSync(path)); rmSync(path); symlinkSync(outside, path);
-    await expect(readWriter(root)).rejects.toThrow(/regular Writer declarations/);
+    await expect(readWriter(root)).rejects.toThrow(/Symbolic links are not followed in the slot model/);
     rmSync(path); writeFileSync(path, readFileSync(outside));
     const candidate = join(dir, "candidates", "example-v1.md"), copy = join(root, "candidate.md");
     writeFileSync(copy, readFileSync(candidate)); rmSync(candidate); symlinkSync(copy, candidate);

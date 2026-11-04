@@ -3,14 +3,12 @@
  * through the owning agent's own compiler or check where one exists; nothing is written
  * into the consumer root.
  */
-import { existsSync } from "node:fs";
-import { lstat, readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
-import { agentModule, agentRoot } from "../server/cells.js";
-import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
-import { hasSlotModel, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
-import { parseFrontmatter, pinFile, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { agentModule } from "../server/cells.js";
+import { readPinnedPublication } from "./pinned-publication.js";
+import { hasPinFile, hasSlotModel, listSlots, readAgentFile, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { parseFrontmatter, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import type { PageCopyBinding, PublisherInput, WriterInput, WriterRecord, WriterSectionBinding } from "./site-plan.js";
 
 const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
@@ -32,12 +30,11 @@ function nativeCopy(copy: unknown): PageCopyBinding[] {
 }
 
 async function readNativePublisher(consumer: string, publication?: string): Promise<PublisherInput> {
-  const base = join(consumer, "agents", "publisher");
   const entries = listSlots(consumer, "publisher");
   const ids = publication ? [publication]
     : entries.filter(entry => entry.pin && entry.id.startsWith("publication.")).map(entry => entry.id.slice("publication.".length));
   if (!ids.length) throw new Error("Publisher has no publication");
-  const read = await Promise.all(ids.map(async id => ({ id, ...await readPinnedPublication(base, id) })));
+  const read = await Promise.all(ids.map(async id => ({ id, ...await readPinnedPublication(consumer, id) })));
   const chosen = publication ? read[0]! : read.find(row => typeof row.map.format === "string" && row.map.format.startsWith("web.")) ?? read[0]!;
   const cellOfEntry: Record<string, string> = {};
   const copy: Record<string, PageCopyBinding[]> = {};
@@ -64,7 +61,7 @@ async function pinnedWriterRows(consumer: string): Promise<{ rows: WriterSlotBod
   const selectedLocales = new Set<string>();
   for (const entry of entries) {
     if (!entry.pin) {
-      if (existsSync(pinFile(entry.dir))) throw new Error(`Invalid Writer pin: ${entry.id}`);
+      if (hasPinFile(entry.dir)) throw new Error(`Invalid Writer pin: ${entry.id}`);
       continue;
     }
     const doc = readSlot(consumer, "writer", entry.id);
@@ -90,16 +87,12 @@ async function pinnedWriterRows(consumer: string): Promise<{ rows: WriterSlotBod
 export async function readWriter(root: string): Promise<WriterInput & { locale: string; native?: { rows: WriterSlotBodyRecord[]; declarations: Record<string, unknown> } }> {
   const consumer = join(root, "clossys");
   if (!readIa(consumer, "writer")) throw new Error("Writer native IA is missing");
-  const path = join(agentRoot(root, "writer"), "declarations.json");
-  const declarationFile = await lstat(path).catch((error: NodeJS.ErrnoException) => {
-    if (error.code !== "ENOENT") throw error;
-    return undefined;
-  });
+  // Aliased or irregular declarations are refused by the one reader.
+  const declarationText = readAgentFile(consumer, "writer", "declarations.json");
   const { rows, locales } = await pinnedWriterRows(consumer);
-  if (declarationFile) {
-    if (!declarationFile.isFile() || declarationFile.isSymbolicLink()) throw new Error("Expected a regular Writer declarations file");
+  if (declarationText !== undefined) {
     const api = await agentModule("writer", "declarations.js");
-    const declarations = api.parseWriterDeclarations(await readFile(path, "utf8"));
+    const declarations = api.parseWriterDeclarations(declarationText);
     // Without pinned locales, declarations still select an explicit locale and validate every target.
     const available = locales.length ? locales : Object.keys(declarations.locales).sort();
     const locale = available.includes("en") ? "en" : available[0]!;

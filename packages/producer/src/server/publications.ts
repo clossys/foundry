@@ -1,8 +1,8 @@
 import { lstat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { ContentMap, ContentMapBreadcrumb, ContentMapCommandGroup, ContentMapNavigation, ContentMapOutlineNode } from "@clossys/publisher/content-map";
-import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
-import { agentModule, agentRoot } from "./cells.js";
+import { readPinnedPublication } from "../publish/pinned-publication.js";
+import { agentModule } from "./cells.js";
 import { hasSlotModel, listSlots, readCandidate, readIa } from "../records/slots.js";
 
 export interface ConsumerPublication {
@@ -69,8 +69,6 @@ async function appTarget(root: string, map: ContentMap, metadata: unknown): Prom
  * compiles cells, repairs generated maps or consults the installed Studio map. */
 export async function consumerApps(root: string): Promise<ConsumerAppsResponse> {
   try {
-    const publisherRoot = agentRoot(root, "publisher");
-    await safePath(publisherRoot, ".");
     const consumer = join(root, "clossys");
     const sources = new Map<string, { map: ContentMap; title?: string; source: ConsumerPublication["source"]; metadata?: unknown }>();
     const api = await agentModule("publisher", "content-map/index.js");
@@ -79,7 +77,7 @@ export async function consumerApps(root: string): Promise<ConsumerAppsResponse> 
       for (const entry of listSlots(consumer, "publisher")) {
         if (!entry.pin || !entry.id.startsWith("publication.")) continue;
         const id = entry.id.slice("publication.".length);
-        const { map, routePack } = await readPinnedPublication(publisherRoot, id);
+        const { map, routePack } = await readPinnedPublication(consumer, id);
         const candidate = readCandidate(consumer, "publisher", entry.id, entry.pin.candidate);
         if (candidate.sha256 !== entry.pin.sha256) throw new TypeError("Publisher publication pin hash drift");
         const tree = (JSON.parse(candidate.bytes) as { meta?: { tree?: { name?: unknown } } }).meta?.tree;

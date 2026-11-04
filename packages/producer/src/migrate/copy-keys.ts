@@ -16,10 +16,10 @@
  *
  * Deterministic and idempotent: a second run plans no change.
  */
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
 import { sha256Hex } from "../records/hash.js";
-import { listSlots } from "../records/slots.js";
+import { listSlots, readCandidate, readSlotRecordText } from "../records/slots.js";
 import { designerIa, writerIa, type FoundrySlot } from "../records/slot-model/foundry-ia.js";
 import { candidatesDir, pinFile, slotFile } from "../records/slot-model/layout.js";
 
@@ -85,8 +85,8 @@ export function planCopyKeyMigration(consumer: string, catalog: CopyKeyCatalog =
   for (const agent of ["designer", "writer"] as const) {
     for (const entry of listSlots(consumer, agent)) {
       const path = slotFile(entry.dir);
-      if (!existsSync(path)) continue;
-      const before = readFileSync(path, "utf8");
+      const before = readSlotRecordText(entry.dir, "slot.json");
+      if (before === undefined) continue;
       let doc: unknown;
       try { doc = JSON.parse(before); } catch { continue; }
       const declared = catalog[agent].get(entry.id) ?? new Set<string>();
@@ -107,11 +107,12 @@ export function planCopyKeyMigration(consumer: string, catalog: CopyKeyCatalog =
       if (agent !== "writer" || !segments.size) continue;
       for (const name of entry.candidates) {
         const candidate = join(candidatesDir(entry.dir), name);
-        const bytes = readFileSync(candidate, "utf8"), renamed = renameRecordIds(bytes, segments);
+        const bytes = readCandidate(consumer, agent, entry.id, name).bytes, renamed = renameRecordIds(bytes, segments);
         if (renamed === bytes) continue;
         files.push({ path: rel(candidate), before: bytes, after: renamed });
         if (entry.pin?.candidate !== name || entry.pin.sha256 !== sha256Hex(bytes)) continue;
-        const pinPath = pinFile(entry.dir), pinBytes = readFileSync(pinPath, "utf8");
+        const pinPath = pinFile(entry.dir), pinBytes = readSlotRecordText(entry.dir, "pin.json");
+        if (pinBytes === undefined) continue;
         const pinAfter = pinBytes.replace(`"sha256": "${entry.pin.sha256}"`, `"sha256": "${sha256Hex(renamed)}"`);
         if (pinAfter === pinBytes) continue;
         files.push({ path: rel(pinPath), before: pinBytes, after: pinAfter });

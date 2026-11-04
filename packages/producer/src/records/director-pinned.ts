@@ -3,11 +3,11 @@
  * (contracts, won't-claim, grounding) run over the slot model unchanged. Bullets are read by
  * the Director's own `readBullet`; Producer parses no strategy prose itself.
  */
-import { readdirSync, readFileSync, lstatSync } from "node:fs";
-import { join } from "node:path";
 import type { Bullet, Cell, Finding, StrategyModel } from "@clossys/strategist";
 import { agentModule } from "../server/cells.js";
 import { candidateDocument, readPinned, type PinnedCandidate, type PinnedSet } from "./pinned.js";
+import { readAgentFolder } from "./slots.js";
+import { join } from "node:path";
 
 export interface PinnedDirector {
   readonly set: PinnedSet;
@@ -57,15 +57,7 @@ export const directorRef = (cell: Pick<Cell, "id" | "version">) => `director:${c
 
 /** Director evidence (`agents/director/_evidence/<id>.md`), read by the Director's own finding parser. */
 export async function readDirectorEvidence(consumer: string): Promise<{ findings: Finding[]; issues: { file: string; line: number; detail: string }[] }> {
-  const dir = join(consumer, "agents", "director", "_evidence");
-  const files: Record<string, string> = {};
-  let names: string[] = [];
-  try { names = readdirSync(dir); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
-  for (const name of names.sort()) {
-    const path = join(dir, name);
-    if (lstatSync(path).isSymbolicLink()) throw new Error("Symbolic links are not followed in the slot model");
-    if (lstatSync(path).isFile()) files[name] = readFileSync(path, "utf8");
-  }
+  const files = readAgentFolder(consumer, "director", "_evidence");
   const api = await agentModule("director", "index.js");
   const read = api.readFindings({ files });
   return { findings: read.findings, issues: read.issues };

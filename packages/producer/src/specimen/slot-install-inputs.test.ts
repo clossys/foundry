@@ -27,12 +27,18 @@ beforeEach(() => {
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
 describe("installed specimen input projection", () => {
-  it("uses exact native current pins and newer same-element options", () => {
+  it("uses exact native current pins and offers every other valid candidate as a preview option", () => {
     const inputs = slotInstallInputs(root)!;
     expect(inputs.pins).toEqual({ "components.card": { element: "card", version: 1 } });
-    expect([...inputs.options]).toEqual([["components.card", [2]]]);
+    expect([...inputs.options]).toEqual([["components.card", [{ element: "card", version: 2 }]]]);
     expect(inputs.unpinned).toEqual({});
     expect(slotInstallInputs(root)).toEqual(inputs);
+    // Older, newer and other-element candidates all preview; only the pin is installed.
+    candidate("card", 3); candidate("variant", 4); pin("card-v2.json");
+    const repinned = slotInstallInputs(root)!;
+    expect(repinned.pins).toEqual({ "components.card": { element: "card", version: 2 } });
+    expect(repinned.options.get("components.card")).toEqual(expect.arrayContaining([{ element: "card", version: 1 }, { element: "card", version: 3 }, { element: "variant", version: 4 }]));
+    expect(repinned.options.get("components.card")).toHaveLength(3);
   });
 
   it("fingerprints actual candidate bytes stably even when versions do not change", () => {
@@ -55,13 +61,16 @@ describe("installed specimen input projection", () => {
     expect(() => slotInstallInputs(root)).toThrow(/Specimen slot/);
   });
 
-  it("keeps absent pins out of current selection and only supplies singleton unpinned elements for option passes", () => {
+  it("keeps absent pins out of current selection, previews every valid candidate and only supplies singleton unpinned elements as stand-ins", () => {
     rmSync(pinFile(dir()));
     candidate("button", 1, "components.button"); candidate("alternative", 3, "components.button");
     put(join(candidatesDir(dir()), "card-v3.json"), "{}");
     put(join(candidatesDir(dir("components.empty")), "invalid-v1.json"), "{}");
     const inputs = slotInstallInputs(root)!;
-    expect(inputs.pins).toEqual({}); expect([...inputs.options]).toEqual([]);
+    expect(inputs.pins).toEqual({});
+    expect(inputs.options.get("components.card")).toEqual([{ element: "card", version: 1 }, { element: "card", version: 2 }]);
+    expect(inputs.options.get("components.button")).toEqual(expect.arrayContaining([{ element: "alternative", version: 3 }, { element: "button", version: 1 }]));
+    expect([...inputs.options.keys()].sort()).toEqual(["components.button", "components.card"]);
     expect(inputs.unpinned).toEqual({ "components.card": { element: "card", version: 2 } });
   });
 
@@ -72,7 +81,7 @@ describe("installed specimen input projection", () => {
     put(join(candidatesDir(dir()), "card-v5.json"), "{}");
     mkdirSync(join(root, "agents/designer/orphan/candidates"), { recursive: true });
     put(join(root, "agents/designer/orphan/candidates/card-v1.json"), readFileSync(join(candidatesDir(dir()), "card-v1.json"), "utf8"));
-    expect(slotInstallInputs(root)!.options.get("components.card")).toEqual([2]);
+    expect(slotInstallInputs(root)!.options.get("components.card")).toEqual([{ element: "card", version: 2 }, { element: "other", version: 3 }]);
     expect(slotInstallInputs(root)!.unpinned).toEqual({});
   });
 

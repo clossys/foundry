@@ -200,15 +200,14 @@ export async function compileLibraryCells(cellRoot: string, libraryDir: string, 
   return { ok: true, drift: [] };
 }
 
-/** Shared verbs for both the installed CLI and the repository convenience script. */
+/**
+ * Shared verbs for both the installed CLI and the repository convenience script.
+ * The cell root is always explicit: clossys/agents/designer is the slot model, which only
+ * Producer's slot reader (records/slots.ts) opens, so cells never default into it.
+ */
 export async function resolveDesignerCellRoot(explicit?: string, cwd = process.cwd()): Promise<string> {
-  if (explicit !== undefined) return resolve(cwd, explicit);
-  let cursor = resolve(cwd);
-  for (;;) {
-    try { await fs.lstat(join(cursor, ".git")); return join(cursor, "clossys", "agents", "designer"); }
-    catch (e) { if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e; }
-    const parent = dirname(cursor); if (parent === cursor) return join(resolve(cwd), "clossys", "agents", "designer"); cursor = parent;
-  }
+  if (explicit === undefined) throw new Error("Designer cells need an explicit --root <cell-root> (or --to for migrate); clossys/agents is the slot model and is read only through Producer's slot reader");
+  return resolve(cwd, explicit);
 }
 export async function runCellsCli(argv: string[], io = { out: (s: string) => console.log(s), error: (s: string) => console.error(s) }, cwd = process.cwd()): Promise<number> {
   try {

@@ -82,6 +82,11 @@ describe("agent loop layout", () => {
     write("elsewhere/writer/loop.json", { ...VALID_STATE, role: "writer" });
     symlinkSync(join(root, "elsewhere"), join(root, "clossys/agents"), "dir");
     expect(loadLoopStates(root)).toEqual({ roles: {}, unreadable: [] });
+    // A symbolic link standing for one agent folder is skipped too.
+    rmSync(join(root, "clossys/agents"));
+    mkdirSync(join(root, "clossys/agents"));
+    symlinkSync(join(root, "elsewhere/writer"), join(root, "clossys/agents/writer"), "dir");
+    expect(loadLoopStates(root)).toEqual({ roles: {}, unreadable: [] });
   });
 
   it("loads all four nested agents alongside unchanged non-agent roles, ignoring legacy and unknown nested paths", () => {

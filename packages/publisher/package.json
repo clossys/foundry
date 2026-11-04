@@ -44,10 +44,6 @@
       "types": "./dist/content-map/cells.d.ts",
       "node": "./dist/content-map/cells.js"
     },
-    "./content-map/slots": {
-      "types": "./dist/content-map/slots.d.ts",
-      "node": "./dist/content-map/slots.js"
-    },
     "./archetypes": {
       "types": "./dist/archetypes/index.d.ts",
       "import": "./dist/archetypes/index.js"

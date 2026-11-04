@@ -36,9 +36,10 @@ export const DECISION_STEPS = [
   }),
   defineStep({
     id: "selection", kind: "decide:judgment", actor: "owner", stage: "pin",
-    summary: "The consumer's component selection and release events.",
+    summary: "Frozen legacy library selection; no code writes it. Pins live in the slot model (clossys/agents/*/*/pin.json).",
     inputs: ["clossys/library/**"], outputs: ["clossys/selection.json"],
-    command: { module: "src/records/selection.ts#writeSelection" }, checks: ["workspace"],
+    command: { manual: "frozen: the selection writer is deleted; Designer's check:ref-verbatim --pinned, check-provenance and check-section-tokens still read it until they read slot-model pins" },
+    checks: ["workspace"],
   }),
   defineStep({
     id: "writer.approve", kind: "decide:judgment", actor: "owner", stage: "pin",
@@ -51,7 +52,7 @@ export const DECISION_STEPS = [
     summary: "Pin one candidate per L3 slot, or mark the slot not needed.",
     inputs: [...CANDIDATES, SLOTS],
     outputs: [PINS, "clossys/agents/*/*/slot.json#notNeeded"],
-    command: { cli: { verb: "pin", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state"],
+    command: { cli: { verb: "pin", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state", "pin-propagation", "every-candidate-previewable"],
     open: "slots-undecided",
   }),
 ];

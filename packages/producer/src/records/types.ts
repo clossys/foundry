@@ -141,24 +141,6 @@ export type PinEvent = {
   readonly reason?: string;
 };
 
-export type Pins = Readonly<Record<string, PinState>>;
-
-export type Selection = {
-  readonly schema: "clossys.selection/1";
-  readonly pins: Pins;
-  readonly history: readonly PinEvent[];
-};
-
-export type Release = {
-  readonly schema: "clossys.release/1";
-  readonly number: number;
-  readonly at: string;
-  readonly by: string;
-  readonly pins: Pins;
-  readonly selectionEvent: string | null;
-  readonly notes?: string;
-};
-
 export type SpecimenKind = "visual" | "text" | "data" | "media" | "flow";
 
 /** Region input names are bound once by the frame that owns the region. */

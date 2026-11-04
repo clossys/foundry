@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
+import { readPinnedPublication } from '../dist/publish/pinned-publication.js';
 import { projectNavigation, projectCommands } from '@clossys/publisher/content-map';
 import { HANDLERS, assemblyOf, checkManifest, designerContracts, generateStudioMap } from './generate-studio-map.mjs';
 import { pinnedBindings } from './studio-draft-items.mjs';
@@ -223,7 +223,7 @@ const PAGE_NAMES = ['home',
 const pageSlot = name => `page.${name}`;
 /** Every route the pinned publication declares, with its content-map entry. */
 async function pinnedRoutes(options) {
-  const { map, routePack } = await readPinnedPublication(options.publisherRoot, 'studio');
+  const { map, routePack } = await readPinnedPublication(options.clossysRoot, 'studio');
   return routePack.routes.map(route => ({ route, entry: map.entries.find(entry => entry.id === route.instanceId) }));
 }
 
@@ -304,7 +304,7 @@ test('L16 browser manifest preflight permits action-free pages and detects copy-
 
 test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the expanded native pinned map', async t => {
   const options = await fixture(t), projection = await run(options);
-  const { routePack } = await readPinnedPublication(options.publisherRoot, 'studio');
+  const { routePack } = await readPinnedPublication(options.clossysRoot, 'studio');
   assert.deepEqual(projection.root, routePack.root);
   assert.equal(projection.homeId, routePack.homeRouteId);
   // The map is the content-map expansion: every authored record, one page per IA group (tab) beneath it.
@@ -502,7 +502,7 @@ test('unselected legacy compiled output cannot replace the pinned publication', 
 });
 
 test('Foundry pinned Publisher inventory exposes the Studio publication and its authored page records', async () => {
-  const { map, routePack } = await readPinnedPublication(join(clossys, 'agents', 'publisher'), 'studio');
+  const { map, routePack } = await readPinnedPublication(clossys, 'studio');
   assert.equal(map.publicationId, 'studio');
   assert.equal(routePack.packId, 'studio');
   assert.deepEqual(map.entries.filter(entry => entry.kind === 'page').map(entry => entry.id), PAGE_NAMES);

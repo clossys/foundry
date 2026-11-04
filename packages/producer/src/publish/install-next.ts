@@ -14,7 +14,7 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding } from "@clossys/publisher/install";
-import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
+import { readPinnedPublication } from "./pinned-publication.js";
 import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "./install-out.js";
 
@@ -78,7 +78,7 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const root = resolve(options.root);
   if (!/^[a-z0-9][a-z0-9-]*$/.test(options.publication)) throw new Error(`publish --install --next: ${options.publication} needs a publication id ([a-z0-9-])`);
   const app = resolve(options.app);
-  const pinned = await readPinnedPublication(join(root, "clossys", "agents", "publisher"), options.publication);
+  const pinned = await readPinnedPublication(join(root, "clossys"), options.publication);
   if (!pinned.routePack) throw new Error(`publish --install --next: publication ${options.publication} has no route pack`);
   const { map, leafTemplates } = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
   const plan = planNextRoutes({ map, leafTemplates, assembly: options.assembly, live: options.live === true });

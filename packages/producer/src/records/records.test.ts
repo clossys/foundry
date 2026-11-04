@@ -1,17 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-// The ref-verbatim pin gate has its own tests (ref-verbatim-gate.test.ts); these
-// record tests pin synthetic versions, so the gate passes them here.
-vi.mock("@clossys/designer/ref-verbatim", () => ({
-  checkElement: (_root: string, target: { slot: string; element: string; version: number }) => ({
-    key: `${target.slot}/${target.element}@v${target.version}`,
-    findings: [],
-  }),
-}));
 import {
   hashFiles,
   sha256Hex,
@@ -19,28 +11,16 @@ import {
   loadReferencesManifest,
   manifestReferenceHash,
   validateReferencesManifest,
-  createRelease,
-  deriveSlotStatus,
   ELEMENT_SCHEMA,
-  emptySelection,
-  latestRelease,
   listVersions,
-  pin as rawPin,
-  pinsAt,
   readElementVersion,
-  restore as rawRestore,
   SLOT_CONTRACT_SCHEMA,
-  unpin,
   validateElement,
   validatePreview,
-  validateRelease,
-  validateSelection,
   validateSlotContract,
   verifyElementVersion,
   workspaceSlotStatus,
   writeElementVersion,
-  writeRelease,
-  writeSelection,
   type ElementRecord,
   type Hash,
   type NewElementVersion,
@@ -48,36 +28,6 @@ import {
   type ReferenceRef,
 } from "./index.js";
 import { candidatesDir, iaPath, jsonBytes, pinFile, slotDir, slotFile, slotPositions, type IaDoc } from "./slot-model/index.js";
-
-// Synthetic record fixtures still carry explicit owner decisions; approval enforcement stays real.
-function approvePin(input: { root: string; element: { slot: string; id: string; version: number; hash: string } }) {
-  const file = join(input.root, "approvals.json");
-  const data = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : { schema: "clossys.owner-approvals/1", records: [] };
-  const id = `fixture-${data.records.length + 1}`;
-  data.records.push({ id, actor: "owner", owner: "fixture-owner", reference: "test owner decision", at: "2026-10-29T00:00:00Z", action: "pin", slot: input.element.slot, element: input.element.id, version: input.element.version, hash: input.element.hash });
-  writeFileSync(file, JSON.stringify(data));
-  return id;
-}
-function ensurePinFixture(input: Parameters<typeof rawPin>[1]): void {
-  const dir = join(input.root, "library", input.element.slot, input.element.id, `v${input.element.version}`);
-  if (existsSync(join(dir, "element.json"))) return;
-  const bytes = fixtureBytes.get(input.element.hash);
-  if (bytes === undefined) throw new Error("Fixture hash must name genuine payload bytes");
-  mkdirSync(dir, { recursive: true });
-  writeFileSync(join(dir, "fixture.json"), bytes);
-  const record = { ...elementBase({ id: input.element.id, slot: input.element.slot, layer: input.element.slot.split(".")[0]! }),
-    version: input.element.version, hash: hashFiles(dir, ["fixture.json"]), payload: ["fixture.json"] };
-  writeFileSync(join(dir, "element.json"), JSON.stringify(record));
-  writeFileSync(join(dir, "preview.json"), JSON.stringify(preview));
-}
-const pin = (selection: Parameters<typeof rawPin>[0], input: Parameters<typeof rawPin>[1]) => {
-  ensurePinFixture(input);
-  return rawPin(selection, { ...input, approval: approvePin(input) });
-};
-const restore = (selection: Parameters<typeof rawRestore>[0], event: string, input: Parameters<typeof rawRestore>[2]) => {
-  const target = selection.history.find(row => row.id === event)!;
-  return rawRestore(selection, event, { ...input, approval: target ? approvePin({ ...input, element: { slot: target.slot, id: target.element!, version: target.version!, hash: target.hash! } }) : undefined });
-};
 
 const fixtureBytes = new Map<string, string>();
 const H = (c: string): Hash => {
@@ -157,7 +107,7 @@ describe("element.json schema", () => {
   });
 });
 
-describe("preview.json, release and slot contract schemas", () => {
+describe("preview.json and slot contract schemas", () => {
   it("accepts valid records and rejects missing fields", () => {
     expect(validatePreview(preview).ok).toBe(true);
     const { width: _width, ...noWidth } = preview;
@@ -183,7 +133,6 @@ describe("preview.json, release and slot contract schemas", () => {
       expect(validateSlotContract(copy).ok, `without ${field}`).toBe(false);
     }
     expect(validateSlotContract({ ...contract, specimenKind: "audio" }).ok).toBe(false);
-    expect(validateRelease({ schema: "clossys.release/1", number: 0, at: AT(0), by: "x", pins: {}, selectionEvent: null }).ok).toBe(false);
   });
 });
 
@@ -220,53 +169,6 @@ describe("library/<slot>/<element>/v<n>/", () => {
     expect(() => writeElementVersion(root, { element: elementBase({ reason: "" }), preview, files })).toThrow(/reason/);
     expect(listVersions(root, "sections.hero", "hero")).toEqual([]);
     expect(() => writeElementVersion(root, { element: elementBase(), preview, files: { "../escape.tsx": "x" } })).toThrow(/invalid payload path/);
-  });
-});
-
-describe("selection.json pins and history", () => {
-  const el = (version: number, hash: Hash) => ({ slot: "sections.hero", id: "hero", version, hash });
-
-  it("records pins as events; restore is a new event and history is never rewritten", () => {
-    let s = pin(emptySelection(), { root, element: el(1, H("1")), at: AT(1), by: "owner", from: "option" });
-    s = pin(s, { root, element: el(2, H("2")), at: AT(2), by: "owner", from: "version" });
-    const before = s.history;
-    s = restore(s, "e1", { root, at: AT(3), by: "owner", reason: "back to v1" });
-    expect(s.history.slice(0, 2)).toEqual(before);
-    expect(s.history[2]).toMatchObject({ id: "e3", action: "restore", restores: "e1", version: 1 });
-    expect(s.pins["sections.hero"]).toEqual({ element: "hero", version: 1, hash: H("1"), event: "e3" });
-    expect(pinsAt(s, AT(2))["sections.hero"]?.version).toBe(2);
-    expect(pinsAt(s, AT(0))).toEqual({});
-    s = unpin(s, "sections.hero", { at: AT(4), by: "owner" });
-    expect(s.pins).toEqual({});
-    expect(validateSelection(s).ok).toBe(true);
-
-    writeSelection(root, s);
-    expect(JSON.parse(readFileSync(join(root, "selection.json"), "utf8"))).toEqual(s);
-  });
-
-  it("rejects pins that disagree with history, forged restores and out-of-order events", () => {
-    const s = pin(emptySelection(), { root, element: el(1, H("1")), at: AT(1), by: "owner" });
-    expect(validateSelection({ ...s, pins: {} }).ok).toBe(false);
-    const forged = {
-      ...s,
-      history: [...s.history, { id: "e2", at: AT(2), by: "x", action: "restore", slot: "sections.hero", element: "hero", version: 9, hash: H("9"), restores: "e1" }],
-      pins: { "sections.hero": { element: "hero", version: 9, hash: H("9"), event: "e2" } },
-    };
-    expect(validateSelection(forged).ok).toBe(false);
-    const outOfOrder = { ...s, history: [...s.history, { ...s.history[0]!, id: "e2", at: AT(0) }] };
-    expect(validateSelection(outOfOrder).ok).toBe(false);
-  });
-});
-
-describe("releases/<n>.json", () => {
-  it("snapshots the pins and never overwrites a release", () => {
-    const s = pin(emptySelection(), { root, element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(1), by: "owner" });
-    const release = createRelease(s, { number: 1, at: AT(2), by: "owner" });
-    expect(release.pins).toEqual(s.pins);
-    expect(release.selectionEvent).toBe("e1");
-    writeRelease(root, release);
-    expect(() => writeRelease(root, release)).toThrow(/immutable/);
-    expect(latestRelease(root)).toEqual(release);
   });
 });
 
@@ -311,67 +213,8 @@ describe("Designer references manifest", () => {
 });
 
 describe("slot status derivation", () => {
-  const record = (overrides: Partial<ElementRecord> = {}): ElementRecord => ({ ...fullElement(), hash: H("1"), ...overrides });
   const upstream = new Map([["tailark-oss/mist-hero-section-1@8139698", H("a")]]);
   const referenceHash = (ref: ReferenceRef) => upstream.get(`${ref.registry}/${ref.item}@${ref.version}`);
-
-  it("derives pinned, missing, failing, stale and unreleased", () => {
-    let s = pin(emptySelection(), { root, element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(1), by: "o" });
-    s = pin(s, { root, element: { slot: "sections.pricing", id: "pricing", version: 1, hash: H("2") }, at: AT(2), by: "o" });
-    s = pin(s, { root, element: { slot: "sections.faq", id: "faq", version: 1, hash: H("3") }, at: AT(3), by: "o" });
-    const release = createRelease(s, { number: 1, at: AT(4), by: "o" });
-    s = pin(s, { root, element: { slot: "sections.stats", id: "stats", version: 1, hash: H("4") }, at: AT(5), by: "o" });
-
-    const records: Record<string, ElementRecord> = {
-      "sections.hero": record(),
-      "sections.pricing": record({ slot: "sections.pricing", id: "pricing", hash: H("2"), checks: [{ id: "contrast", type: "measured", status: "fail" }] }),
-      "sections.faq": record({ slot: "sections.faq", id: "faq", hash: H("3"), lineage: { mode: "verbatim", source: { ...source, item: "mist-faqs-1" } } }),
-      "sections.stats": record({ slot: "sections.stats", id: "stats", hash: H("4"), lineage: { mode: "original" } }),
-    };
-    upstream.set("tailark-oss/mist-faqs-1@8139698", H("a"));
-    const rows = (hashes = upstream) =>
-      deriveSlotStatus({
-        slots: ["sections.hero", "sections.pricing", "sections.faq", "sections.stats", "sections.cta"],
-        selection: s,
-        release,
-        referenceHash: (ref) => hashes.get(`${ref.registry}/${ref.item}@${ref.version}`),
-        readPinned: (slot) => ({ record: records[slot]!, issues: [] }),
-      });
-    const status = (list: ReturnType<typeof rows>) => Object.fromEntries(list.map((row) => [row.slot, row.status]));
-
-    expect(status(rows())).toEqual({
-      "sections.cta": "missing",
-      "sections.faq": "pinned",
-      "sections.hero": "pinned",
-      "sections.pricing": "failing",
-      "sections.stats": "unreleased",
-    });
-
-    // Upstream reference changes after the pin: the faq slot goes stale (mutation).
-    const moved = new Map(upstream);
-    moved.set("tailark-oss/mist-faqs-1@8139698", H("f"));
-    const after = rows(moved);
-    expect(status(after)["sections.faq"]).toBe("stale");
-    expect(after.find((row) => row.slot === "sections.faq")!.detail.join(" ")).toMatch(/changed after the pin/);
-    expect(status(after)["sections.hero"]).toBe("pinned");
-  });
-
-  it("marks a slot stale when a dependency element's pin moves", () => {
-    let s = pin(emptySelection(), { root, element: { slot: "components.button", id: "button", version: 1, hash: H("5") }, at: AT(1), by: "o" });
-    s = pin(s, { root, element: { slot: "sections.hero", id: "hero", version: 1, hash: H("1") }, at: AT(2), by: "o" });
-    const hero = record({ deps: { npm: {}, elements: [{ slot: "components.button", element: "button", version: 1, hash: H("5") }] } });
-    const derive = () =>
-      deriveSlotStatus({
-        slots: ["sections.hero"],
-        selection: s,
-        release: createRelease(s, { number: 1, at: AT(9), by: "o" }),
-        referenceHash,
-        readPinned: (slot) => ({ record: slot === "sections.hero" ? hero : record({ slot: "components.button", layer: "components", id: "button", hash: H("5"), lineage: { mode: "original" } }), issues: [] }),
-      }).find((row) => row.slot === "sections.hero")!;
-    expect(derive().status).toBe("pinned");
-    s = pin(s, { root, element: { slot: "components.button", id: "button", version: 2, hash: H("6") }, at: AT(3), by: "o" });
-    expect(derive().flags).toContain("stale");
-  });
 
   it("reads a whole Designer slot model from disk, including a tampered candidate", () => {
     const ia: IaDoc = { schema: "clossys.ia/1", source: "consumer#fixture", extensions: [], nodes: [{ id: "sections.content", label: "Content", children: [{ id: "heroes", label: "Heroes", slots: ["sections.hero", "sections.faq"] }] }] };

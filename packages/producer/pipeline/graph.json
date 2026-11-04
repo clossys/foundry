@@ -148,7 +148,7 @@
       "kind": "decide:judgment",
       "actor": "owner",
       "stage": "pin",
-      "summary": "The consumer's component selection and release events.",
+      "summary": "Frozen legacy library selection; no code writes it. Pins live in the slot model (clossys/agents/*/*/pin.json).",
       "inputs": [
         {
           "glob": "clossys/library/**"
@@ -160,7 +160,7 @@
         }
       ],
       "command": {
-        "module": "src/records/selection.ts#writeSelection"
+        "manual": "frozen: the selection writer is deleted; Designer's check:ref-verbatim --pinned, check-provenance and check-section-tokens still read it until they read slot-model pins"
       },
       "checks": [
         "workspace"
@@ -251,7 +251,9 @@
       },
       "checks": [
         "decisions",
-        "slot-state"
+        "slot-state",
+        "pin-propagation",
+        "every-candidate-previewable"
       ],
       "open": "slots-undecided",
       "seat": "clossys/agents/producer/pin/seat.json",
@@ -1271,9 +1273,6 @@
         },
         {
           "glob": "clossys/library/**"
-        },
-        {
-          "glob": "clossys/selection.json"
         }
       ],
       "outputs": [
@@ -2487,11 +2486,6 @@
       "step": "studio.map",
       "port": "input",
       "glob": "clossys/library/**"
-    },
-    {
-      "step": "studio.map",
-      "port": "input",
-      "glob": "clossys/selection.json"
     },
     {
       "step": "studio.map",

@@ -1,6 +1,7 @@
 import { afterEach, expect, it } from "vitest";
 import { createHash } from "node:crypto";
-import { mkdtemp, mkdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { readFileSync } from "node:fs";
+import { mkdtemp, mkdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,9 +9,20 @@ import { adminContentMap } from "./__fixtures__/admin.js";
 import { contentMapFromCells, contentMapToCells } from "./cells.js";
 import type { ContentMap } from "./contract.js";
 import { pageId } from "./page-identity.js";
-import { readPinnedPublication } from "./slots.js";
+import { projectPinnedPublication, type PinnedPublicationSource } from "./pinned-publication.js";
 
 type JsonObject = Record<string, any>;
+// Test-only record source over a fixture folder. Production records come from the one
+// slot-model reader (Producer records/slots.ts), which also refuses aliases (tested there).
+function source(root: string): PinnedPublicationSource {
+  const text = (path: string) => { try { return readFileSync(join(root, path), "utf8"); } catch (cause) { if ((cause as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw cause; } };
+  return {
+    ia: () => text("ia.json"),
+    record: (id, file) => text(join(id, file)),
+    candidate: (id, name) => { const bytes = text(join(id, "candidates", name)); return bytes === undefined ? undefined : { bytes, sha256: createHash("sha256").update(bytes).digest("hex") }; },
+  };
+}
+const readPinnedPublication = async (root: string, publicationId: string) => projectPinnedPublication(source(root), publicationId);
 const roots: string[] = [];
 const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 afterEach(async () => { await Promise.all(roots.splice(0).map(root => rm(root, { recursive: true, force: true }))); });
@@ -215,13 +227,11 @@ it("NATIVE rejects duplicate IA placement and unsafe paths", async () => {
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Unsafe/);
 });
 
-it.each(["missing candidate", "malformed pin", "unsafe candidate name", "malformed selected candidate", "candidate symlink", "slot folder symlink"])("NATIVE rejects %s without a legacy fallback", async name => {
+it.each(["missing candidate", "malformed pin", "unsafe candidate name", "malformed selected candidate"])("NATIVE rejects %s without a legacy fallback", async name => {
   const f = await fixture(), id = "page.designer", pin = join(dir(f.path, id), "pin.json"), selected = candidatePath(f.path, id);
   if (name === "missing candidate") await rm(selected);
   if (name === "malformed pin") await writeFile(pin, "{");
   if (name === "unsafe candidate name") await edit(pin, value => { value.candidate = "../../foreign-v1.json"; });
   if (name === "malformed selected candidate") { await writeFile(selected, "{"); await repin(f.path, id); }
-  if (name === "candidate symlink") { const source = join(await root(), "candidate.json"); await writeFile(source, await readFile(selected)); await rm(selected); await symlink(source, selected); }
-  if (name === "slot folder symlink") { const source = await root(); await rm(dir(f.path, id), { recursive: true }); await symlink(source, dir(f.path, id)); }
-  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Missing native record|Malformed JSON|Unsafe|Symbolic/);
+  await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/Missing native record|Malformed JSON|Unsafe/);
 });
