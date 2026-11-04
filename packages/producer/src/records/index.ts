@@ -63,5 +63,5 @@ export { guardDesignerFlow, DesignerNeedError } from "./owner-approval.js";
 export type { DesignerFlow, DesignerPath, OwnerApproval } from "./owner-approval.js";
 
 // The Designer, Writer, Director and Publisher slot model: readers and the one writer.
-export { listSlots, readCandidate, readPin } from "./slots.js";
+export { listSlots, readCandidate, readPin, readSlotState, rejectedSlots, type RejectedSlot } from "./slots.js";
 export { writeCandidate, writePin } from "./slot-write.js";

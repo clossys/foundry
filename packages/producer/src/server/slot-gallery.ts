@@ -1,8 +1,8 @@
 /** IA-first Studio gallery data. Empty slots never depend on a candidate or a route. */
 import { existsSync, lstatSync } from 'node:fs';
 import { join } from 'node:path';
-import { listSlots, readCandidate, readIa, readSlot, type SlotEntry } from '../records/slots.js';
-import { iaPath, pinFile, type IaDoc, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
+import { listSlots, readCandidate, readIa, readSlot, readSlotEntry, type SlotEntry } from '../records/slots.js';
+import { iaPath, pinFile, type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { slotIdLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
@@ -20,6 +20,14 @@ export interface SlotGalleryCard {
   candidate?: string; element?: string; specimen?: string; emptyState?: SlotEmptyState; excerpt: string[];
   /** Candidate files on disk (the "N options" state of an unpinned slot). */
   options: number;
+  /** The loader's slot state: pinned, not-needed, or rejected (an error state). */
+  state: SlotCardState;
+}
+export type SlotCardState = { state: 'pinned' } | { state: 'not-needed'; notNeeded: NotNeeded } | { state: 'rejected'; reason: SlotStateRejection };
+/** The loader's decision, without the pin body (cards carry the candidate and version already). */
+export function cardState(entry: SlotEntry): SlotCardState {
+  const state = entry.state;
+  return state.state === 'pinned' ? { state: 'pinned' } : state.state === 'not-needed' ? { state: 'not-needed', notNeeded: state.notNeeded } : { state: 'rejected', reason: state.reason };
 }
 export interface SlotGallerySection { id: string; label: string; level: 0 | 1 | 2; cards: SlotGalleryCard[] }
 export const candidateVersion = (name: string) => Number(/-v(\d+)\.(?:md|json)$/.exec(name)?.[1] ?? 0);
@@ -46,7 +54,7 @@ export function shownCandidate(entry: SlotEntry): string | undefined {
 
 /** Director brief and Writer strings -> the existing Studio specimen component's input. */
 export function recordSpecimenInput(consumer: string, agent: 'director' | 'writer', id: string, candidate?: string): RecordSpecimenInput | undefined {
-  const entry = listSlots(consumer, agent).find(row => row.id === id);
+  const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return undefined;
   if (!entry.pin && hasPinFile(entry)) return undefined;
   const name = agent === 'director' ? entry.pin?.candidate : candidate ?? shownCandidate(entry);
@@ -181,7 +189,7 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     }
     target.cards.push({ id, slug: id, name: label(agent, id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,
-      excerpt: recordLead(record), options: entry.candidates.length, ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'no-candidate' as const : 'no-pin' as const } : {}),
+      excerpt: recordLead(record), options: entry.candidates.length, state: cardState(entry), ...(candidate ? { candidate } : {}), ...(element ? { element, specimen: `${id}/${element}` } : {}), ...(!failing && (missing || !entry.pin) ? { emptyState: missing ? 'no-candidate' as const : 'no-pin' as const } : {}),
     });
   }
   return { sections, count: sections.reduce((n, row) => n + row.cards.length, 0) };

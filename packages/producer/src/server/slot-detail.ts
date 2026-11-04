@@ -2,8 +2,8 @@
 import { join } from "node:path";
 import { copyRef, type CopyText } from "./copy-ref.js";
 import { slotLabel } from "../records/slot-labels.js";
-import { recordSpecimenInput, type RecordSpecimenInput } from "./slot-gallery.js";
-import { hasSlotModel, inspectSlot, listSlots, pinHistory, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
+import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
+import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
@@ -22,6 +22,8 @@ export interface SlotDetail {
   links: { agent: SlotAgent; id: string }[];
   candidates: DetailCandidate[]; shown?: string;
   pin: ReturnType<typeof listSlots>[number]["pin"];
+  /** The loader's slot state: pinned, not-needed, or rejected (an error state). */
+  state: SlotCardState;
   history: ReturnType<typeof pinHistory>;
   /** Each check names its words by Writer copy key; ids, candidate names and issues stay data. */
   checks: { label: CopyText; ok: boolean; detail: CopyText }[];
@@ -31,7 +33,7 @@ export interface SlotDetail {
 export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDetail | undefined {
   const consumer = join(root, "clossys");
   if (!hasSlotModel(consumer)) return undefined;
-  const entry = listSlots(consumer, agent).find(slot => slot.id === id);
+  const entry = readSlotEntry(consumer, agent, id);
   if (!entry) return undefined;
   // A schema-valid document that is not the one its IA position names keeps an honest detail:
   // no preview, no readiness clearance, and a failing placement check.
@@ -77,7 +79,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     agent, id, name: slotLabel(consumer, agent, id), kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
     contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedByPlaced(consumer, id),
     links: refs.flatMap(ref => { const target = index.get(ref); return target ? [{ agent: target.agent, id: ref }] : []; }),
-    candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin,
+    candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin, state: cardState(entry),
     history: pinHistory(consumer, agent, id),
     checks: [
       { label: copyRef("studio.check-candidate-recorded"), ok: candidates.length > 0, detail: copyRef("studio.check-candidate-count", { count: candidates.length }) },

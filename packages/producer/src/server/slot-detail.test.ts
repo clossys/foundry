@@ -43,7 +43,7 @@ describe('slot details', () => {
     expect(detail.pin).toBeNull();
     expect(detail.shown).toBeUndefined();
     const inputs = slotDetailInputs(detail, links, 'light');
-    expect(inputs).toMatchObject({ header: { statusLabel: 'No candidate' }, specimen: { kind: 'record', rows: [], empty: 'No candidate' }, options: { rows: [] }, history: { rows: [] } });
+    expect(inputs).toMatchObject({ header: { statusLabel: 'No candidate' }, specimen: { kind: 'record', status: { label: 'No pin', tone: 'destructive' } }, options: { rows: [] }, history: { rows: [] } });
     expect(inputs.checks).toMatchObject({ rows: expect.arrayContaining([expect.objectContaining({ label: 'Candidate recorded', ok: false })]) });
     expect(slotDetail(root, 'writer', 'passages.unknown')).toBeUndefined();
   });
@@ -76,7 +76,8 @@ describe('slot details', () => {
     unlinkSync(join(dir, 'candidates', first.name));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.checks[0]!.ok).toBe(false);
-    expect(slotDetailInputs(detail, links, 'light')).toMatchObject({ specimen: { rows: [] } });
+    expect(slotDetailInputs(detail, links, 'light').specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
+    expect(slotDetailInputs(detail, links, 'light').specimen).not.toHaveProperty('rows');
   });
 
   it('reports broken hashes and derives used-by from slot.json rather than candidate prose', () => {
@@ -214,18 +215,19 @@ describe('slot details', () => {
     })) });
     const withoutPublication = slotDetailInputs(detail, links, 'light');
     for (const name of ['header', 'options', 'contract', 'checks', 'history', 'references']) expect(inputs[name]).toEqual(withoutPublication[name]);
-    // Without an emitted page the detail shows the pinned candidate record.
-    expect(withoutPublication.specimen).toMatchObject({ kind: 'record', rows: [{ text: bytes }] });
+    // Without an emitted page the detail shows an explicit error, never the candidate file text.
+    expect(withoutPublication.specimen).toMatchObject({ kind: 'record', status: { label: 'Missing', tone: 'destructive' } });
+    expect(JSON.stringify(withoutPublication.specimen)).not.toContain(bytes);
     if (publication.state !== 'ready') throw new Error('Expected fixture publication');
     for (const page of [{ ...publication.pages[0]!, emitted: false }, { ...publication.pages[0]!, cellId: 'page.other' }, { ...publication.pages[0]!, cellId: undefined }]) {
-      expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [page] }).specimen).toMatchObject({ kind: 'record' });
+      expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [page] }).specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
     }
     // The native endpoint's explicit emitted identity takes precedence over route matching.
     expect(slotDetailInputs(detail, links, 'light', { ...publication, pages: [{ ...publication.pages[0]!, route: '/different', cellId: id }] }).specimen).toMatchObject({ kind: 'viewports', specimens: [375, 768, 1280].map(viewport => ({ viewport })) });
     unlinkSync(join(dir, 'pin.json'));
-    expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication)).toMatchObject({ header: { statusLabel: 'No pin' }, specimen: { kind: 'record', title: 'Candidate' } });
+    expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication)).toMatchObject({ header: { statusLabel: 'No pin' }, specimen: { kind: 'record', status: { label: 'No pin', tone: 'destructive' } } });
     unlinkSync(join(dir, 'candidates/example-v1.json'));
-    expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication).specimen).toMatchObject({ kind: 'record', rows: [], empty: 'No candidate' });
+    expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication).specimen).toMatchObject({ kind: 'record', status: { label: 'No pin', tone: 'destructive' } });
   });
 
   it('binds only the native Writer strings pin to the inline record specimen while preserving source and options', () => {
@@ -265,7 +267,7 @@ describe('slot details', () => {
       restore(); mutation();
       const detail = slotDetail(root, 'writer', id)!;
       expect(detail.candidates.every(candidate => candidate.record === undefined)).toBe(true);
-      expect(slotDetailInputs(detail, links, 'dark')).toMatchObject({ specimen: { kind: 'record', title: 'Candidate' }, options: { rows: [{ version: 1 }, { version: 2 }] } });
+      expect(slotDetailInputs(detail, links, 'dark')).toMatchObject({ specimen: { kind: 'record', status: { tone: 'destructive' } }, options: { rows: [{ version: 1 }, { version: 2 }] } });
     }
   });
 
@@ -300,7 +302,7 @@ describe('slot details', () => {
     const noPreview = () => {
       const detail = slotDetail(root, 'director', id)!;
       expect(detail.candidates.every(candidate => candidate.record === undefined)).toBe(true);
-      expect(slotDetailInputs(detail, links, 'light').specimen).toMatchObject({ kind: 'record', title: 'Candidate' });
+      expect(slotDetailInputs(detail, links, 'light').specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
     };
     for (const mutation of [
       () => unlinkSync(join(dir, 'pin.json')),

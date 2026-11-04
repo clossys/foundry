@@ -4,7 +4,8 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "./hash.js";
 import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent, type SlotDoc } from "./slot-model/index.js";
-import { listSlots, readCandidate, readIa, readSlot, readiness, slotIndex, usedBy } from "./slots.js";
+import { listSlots, readCandidate, readIa, readSlot, readSlotState, readiness, rejectedSlots, slotIndex, usedBy } from "./slots.js";
+import { validateSlotDoc } from "./slot-model/index.js";
 
 let root: string;
 let dirs: Record<string, string>;
@@ -193,5 +194,35 @@ describe("shared slot reader input integrity", () => {
     save(path, { ...load(path), uses: [], inputs: ["brief.missing"] });
     expect(usedBy(root, ids.designer)).toEqual([]);
     expect(readiness(root, "publisher", ids.publisher)).toEqual({ ready: false, blockedBy: [{ slot: "brief.missing", reason: "missing" }] });
+  });
+});
+
+describe("slot state (closed union: pinned or not-needed)", () => {
+  const marker = { reason: "Owner: no toolbar on this site.", since: "2026-11-03" };
+  const mark = (agent: SlotAgent, value: unknown) => save(join(dirs[agent]!, "slot.json"), { ...load(join(dirs[agent]!, "slot.json")), notNeeded: value });
+
+  it("decides pinned, not-needed and every rejected state in the one loader", () => {
+    for (const agent of agents) expect(readSlotState(root, agent, ids[agent]).state).toBe("pinned");
+    expect(rejectedSlots(root)).toEqual([]);
+
+    rmSync(join(dirs.designer!, "pin.json"));
+    expect(readSlotState(root, "designer", ids.designer)).toMatchObject({ state: "rejected", reason: "no-pin" });
+    expect(rejectedSlots(root)).toEqual([expect.objectContaining({ agent: "designer", id: ids.designer, reason: "no-pin", candidates: 1 })]);
+    expect(listSlots(root, "designer")[0]!.state).toMatchObject({ state: "rejected", reason: "no-pin" });
+
+    mark("designer", marker);
+    expect(validateSlotDoc(load(join(dirs.designer!, "slot.json")))).toEqual([]);
+    expect(readSlotState(root, "designer", ids.designer)).toEqual({ state: "not-needed", notNeeded: marker });
+    expect(rejectedSlots(root)).toEqual([]);
+
+    mark("writer", marker);
+    expect(readSlotState(root, "writer", ids.writer)).toMatchObject({ state: "rejected", reason: "pinned-and-not-needed" });
+    writeFileSync(join(dirs.director!, "pin.json"), "{}");
+    expect(readSlotState(root, "director", ids.director)).toMatchObject({ state: "rejected", reason: "invalid-pin" });
+    for (const bad of [{ reason: "" , since: "2026-11-03" }, { reason: "x" }, { reason: "x", since: "soon" }, { reason: "x", since: "2026-11-03", by: "agent" }, "yes"]) {
+      mark("designer", bad);
+      expect(validateSlotDoc(load(join(dirs.designer!, "slot.json"))).map(issue => issue.message)).toContain("notNeeded must be {reason, since} with a non-empty reason and an ISO date");
+      expect(readSlotState(root, "designer", ids.designer)).toMatchObject({ state: "rejected", reason: "invalid-slot" });
+    }
   });
 });

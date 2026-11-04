@@ -63,7 +63,26 @@ export interface SlotDoc {
   readonly inputs: readonly string[];
   /** Slots it composes or binds (F10). `usedBy` is never stored. */
   readonly uses: readonly string[];
+  /** The owner's decision that this slot is not needed. Present only for the `not-needed` state. */
+  readonly notNeeded?: NotNeeded;
 }
+
+/** Why a slot is not needed, and since when (ISO date). Set by the owner or planner, never by an agent fill. */
+export interface NotNeeded { readonly reason: string; readonly since: string }
+
+/**
+ * Slot state is a closed union: a slot is `pinned` (pin.json exists) or `not-needed`
+ * (slot.json carries `notNeeded`). Every other state fails validation; the one loader
+ * (`readSlotState` in records/slots.ts) decides it.
+ */
+export const SLOT_STATES = ["pinned", "not-needed"] as const;
+export type SlotStateName = typeof SLOT_STATES[number];
+export type SlotState =
+  | { readonly state: "pinned"; readonly pin: PinDoc }
+  | { readonly state: "not-needed"; readonly notNeeded: NotNeeded };
+/** Why the loader rejects a slot's state. */
+export type SlotStateRejection = "no-pin" | "invalid-pin" | "pinned-and-not-needed" | "invalid-slot";
+export type SlotStateResult = SlotState | { readonly state: "rejected"; readonly reason: SlotStateRejection; readonly message: string };
 
 export interface PinDoc {
   readonly candidate: string;

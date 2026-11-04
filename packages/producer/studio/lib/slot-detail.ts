@@ -6,7 +6,7 @@ import { contractCopy } from './contract-copy';
 import { copyText, resolveCopy, studioCopy } from './studio-copy';
 /** Detail inputs only; gallery rendering has its own projection. */
 import type { SlotDetail, DetailCandidate } from '../../src/server/slot-detail';
-import type { SlotGalleryCard } from '../../src/server/slot-gallery';
+import type { SlotCardState, SlotGalleryCard } from '../../src/server/slot-gallery';
 import type { SpecimenInput } from '../sections/studio-specimen';
 import type { OptionsInput } from '../sections/studio-options';
 import type { HistoryInput, HistoryRow } from '../sections/studio-history';
@@ -52,10 +52,12 @@ export function detailStrings(content: string): { key: string; text: string }[] 
   return rows;
 }
 
-/** A candidate's record rows; the Key column shows each record's Writer key (data, not a label). */
+/**
+ * A candidate's Writer strings, parsed by structure; the Key column shows each record's Writer key
+ * (data, not a label). Never the raw file text: other kinds have no rows.
+ */
 function candidateRows(candidate: DetailCandidate): { key: string; label: string; text: string }[] {
-  const strings = detailStrings(candidate.content);
-  return (strings.length ? strings : [{ key: candidate.name, text: candidate.content }]).map(({ key, text }) => ({ key, label: key, text }));
+  return detailStrings(candidate.content).map(({ key, text }) => ({ key, label: key, text }));
 }
 
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
@@ -68,10 +70,9 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     ? publication.pages.find(row => row.cellId === detail.id && row.emitted && safePreviewUrl(row.previewUrl)) : undefined;
   const specimen = slotSpecimen({
     name, description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
+    state: detail.state, kind: detail.kind, options: detail.candidates.length,
     ...(page ? { page } : {}), ...(shown?.specimen ? { element: { specimen: shown.specimen, version: shown.version } } : {}),
     ...(shown?.record ? { record: resolveCopy(shown.record) as RecordDraft } : {}),
-    fallback: { kind: 'record', name, title: studioCopy("studio.candidate"), description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
-      rows: shown ? candidateRows(shown) : [], empty: detail.pin ? studioCopy("studio.pin-unavailable") : statusLabel },
   });
   const options: OptionsInput = {
     copy: optionsCopy(),
@@ -145,13 +146,19 @@ export interface SpecimenSource {
   element?: { specimen: string; version?: number };
   /** A Director brief or Writer strings pin, as record rows or lead lines. */
   record?: RecordDraft;
-  /** The explicit state when the pin produces nothing to draw: never left blank. */
-  fallback: RecordDraft;
+  /** The loader's slot state (closed union): pinned, not-needed, or rejected. */
+  state: SlotCardState;
+  /** The slot kind: a pinned Publisher page with no emitted page is an explicit error. */
+  kind: string;
+  /** Candidate files on disk, for the No pin error's description. */
+  options: number;
 }
 
 /**
  * The one specimen path for every agent and layer: the detail page draws every viewport in both
  * themes; a gallery card (`card`) draws the widest one, view-only, in the current theme.
+ * Its only states are a rendered specimen, Not needed (with the owner's reason) and an error
+ * (No pin, pin unavailable, page not emitted, no renderer). It never draws candidate file text.
  */
 export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | 'dark'; loading: string }): SpecimenInput {
   const name = source.name;
@@ -161,9 +168,19 @@ export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | '
     : ([375, 768, 1280] as const).map(viewport => ({ viewport, light: src(viewport, 'light'), dark: src(viewport, 'dark'), heading: heading(viewport),
       title: studioCopy('studio.specimen-frame-title-light', { name, viewport }), darkTitle: studioCopy('studio.specimen-frame-title-dark', { name, viewport }) }));
   const head = { name: source.name, title: studioCopy("studio.specimen"), description: source.description, empty: studioCopy("studio.no-candidate"), ...(card ? { loading: card.loading } : {}) };
+  const status = (label: string, tone: 'secondary' | 'destructive', description: string): SpecimenInput =>
+    withRowsCopy({ name: source.name, title: head.title, description: source.description, kind: 'record', empty: label, status: { label, tone, description } });
+  const state = source.state;
+  if (state.state === 'not-needed') return status(studioCopy("studio.not-needed"), 'secondary', state.notNeeded.reason);
+  if (state.state === 'rejected') return state.reason === 'no-pin'
+    ? status(studioCopy("studio.no-pin"), 'destructive', source.options ? studioCopy("studio.no-pin-candidates-await-approval") : studioCopy("studio.this-slot-has-no-candidate-yet"))
+    : status(studioCopy("studio.pin-unavailable"), 'destructive', studioCopy("studio.no-pin-87eb19"));
   if (source.page) { const page = source.page; return { ...head, kind: 'viewports', specimens: frames((viewport, theme) => publisherFrameUrl(page, viewport, theme)) }; }
   if (source.element) { const element = source.element; return { ...head, kind: 'viewports', specimens: frames((viewport, theme) => specimenHref(element, theme, viewport)!) }; }
-  return withRowsCopy(source.record ?? source.fallback);
+  if (source.record) return withRowsCopy(source.record);
+  // Pinned, but nothing renders it: an unemitted Publisher page or a kind with no renderer is an error.
+  if (source.kind === 'page') return status(studioCopy("studio.missing"), 'destructive', studioCopy("studio.publish-this-page-to-preview-it"));
+  return status(studioCopy("studio.unavailable"), 'destructive', studioCopy("studio.no-specimen-recorded-for-this-leaf-yet"));
 }
 
 /** The rows table's words: its accessible label (the slot's name) and the column headings. */
@@ -175,16 +192,16 @@ function withRowsCopy(input: RecordDraft): SpecimenInput {
 export const versionLabel = (version: number) => studioCopy('studio.version-label', { version });
 
 /** A gallery card's specimen: the same path as the detail page, from the card data the gallery has. */
-export function slotCardSpecimen(card: Pick<SlotGalleryCard, 'id' | 'status' | 'specimen' | 'version' | 'excerpt' | 'emptyState'>, label: string, theme: 'light' | 'dark', publication?: PublicationResponse): SpecimenInput {
+export function slotCardSpecimen(card: Pick<SlotGalleryCard, 'id' | 'kind' | 'state' | 'options' | 'status' | 'specimen' | 'version' | 'excerpt'>, label: string, theme: 'light' | 'dark', publication?: PublicationResponse): SpecimenInput {
   const active = card.status === 'active';
   const page = active && publication?.state === 'ready'
     ? publication.pages.find(row => row.cellId === card.id && row.emitted && safePreviewUrl(row.previewUrl)) : undefined;
   const head = { name: label, title: studioCopy("studio.specimen"), description: card.id };
-  const empty = card.status === 'failing' ? studioCopy("studio.pin-unavailable") : card.emptyState === 'no-candidate' ? studioCopy("studio.no-candidate") : studioCopy("studio.no-pin");
+  // A failing pinned card (invalid candidate or hash drift) is the loader's pin, but nothing it can draw.
+  const state: SlotCardState = card.status === 'failing' && card.state.state === 'pinned' ? { state: 'rejected', reason: 'invalid-pin' } : card.state;
   return slotSpecimen({
-    name: label, description: card.id, ...(page ? { page } : {}),
+    name: label, description: card.id, state, kind: card.kind, options: card.options, ...(page ? { page } : {}),
     ...(active && card.specimen ? { element: { specimen: card.specimen, version: card.version } } : {}),
-    ...(card.excerpt.length ? { record: { ...head, kind: 'record', lead: card.excerpt, empty } } : {}),
-    fallback: { ...head, kind: 'record', empty },
+    ...(active && card.excerpt.length ? { record: { ...head, kind: 'record', lead: card.excerpt, empty: studioCopy("studio.no-candidate") } } : {}),
   }, { theme, loading: label });
 }
