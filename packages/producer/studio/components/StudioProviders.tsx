@@ -5,7 +5,6 @@ import { studioCopy } from '../lib/studio-copy';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { RouterProvider } from 'react-aria-components';
-import { loadCells, type AgentCells } from '../lib/cells-client';
 import { studioCellChange } from '../lib/cell-events';
 import type { StudioReport } from '../lib/studio-report';
 import { loadBrand, loadReports, type Resource, type StudioBrandInfo, type StudioSeed } from '../lib/studio-seed';
@@ -15,8 +14,8 @@ export type { Resource, StudioBrandInfo } from '../lib/studio-seed';
 export type ThemeMode = 'light' | 'dark' | 'system';
 
 /** `census` is only the server-rendered slot census; Home refreshes it per revision itself. */
-interface StudioData { cells: Resource<AgentCells[]>; revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo>; census?: StudioSeed['census'] }
-const DataContext = createContext<StudioData>({ cells: { state: 'loading' }, revision: 0, reports: { state: 'loading' }, brand: { state: 'loading' } });
+interface StudioData { revision: number; reports: Resource<StudioReport[]>; brand: Resource<StudioBrandInfo>; census?: StudioSeed['census'] }
+const DataContext = createContext<StudioData>({ revision: 0, reports: { state: 'loading' }, brand: { state: 'loading' } });
 const ThemeContext = createContext<{ mode: ThemeMode; resolved: 'light' | 'dark'; setMode: (mode: ThemeMode) => void }>({ mode: 'system', resolved: 'light', setMode: () => {} });
 
 export function useStudioData() { return useContext(DataContext); }
@@ -41,7 +40,6 @@ function applyMode(mode: ThemeMode): 'light' | 'dark' {
 export function StudioProviders({ children, seed }: { children: ReactNode; seed?: StudioSeed }) {
   const router = useRouter();
   const [revision, setRevision] = useState(0);
-  const [cells, setCells] = useState<Resource<AgentCells[]>>(() => seed?.cells ?? { state: 'loading' });
   const [reports, setReports] = useState<Resource<StudioReport[]>>(() => seed?.reports ?? { state: 'loading' });
   const [brand, setBrand] = useState<Resource<StudioBrandInfo>>(() => seed ? { state: 'ready', value: seed.brand } : { state: 'loading' });
   const seeded = useRef(seed ? 0 : undefined);
@@ -75,7 +73,6 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
     if (seeded.current === revision) return;
     seeded.current = undefined;
     const controller = new AbortController();
-    loadCells(controller.signal).then(value => setCells({ state: 'ready', value }), error => { if (!controller.signal.aborted) setCells({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
     loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
     loadBrand(controller.signal).then(value => setBrand({ state: 'ready', value }), () => { if (!controller.signal.aborted) setBrand({ state: 'ready', value: {} }); });
     return () => controller.abort();
@@ -86,7 +83,7 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
   }, [brand]);
 
   const census = seed?.census;
-  const data = useMemo(() => ({ cells, revision, reports, brand, ...(census ? { census } : {}) }), [cells, revision, reports, brand, census]);
+  const data = useMemo(() => ({ revision, reports, brand, ...(census ? { census } : {}) }), [revision, reports, brand, census]);
   const theme = useMemo(() => ({ mode, resolved, setMode }), [mode, resolved, setMode]);
   return <RouterProvider navigate={href => router.push(href)}>
     <ThemeContext.Provider value={theme}><DataContext.Provider value={data}><StudioRouteMapProvider>{children}</StudioRouteMapProvider></DataContext.Provider></ThemeContext.Provider>

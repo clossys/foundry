@@ -18,16 +18,16 @@ Sign in to your workspace.
 <!-- {"id":"studio.sign-in.providers.0.label","bindings":[]} -->
 Continue with work SSO
 
-### studio.sign-in.credentials.identifierLabel
-<!-- {"id":"studio.sign-in.credentials.identifierLabel","bindings":[]} -->
+### studio.sign-in.credentials.identifier-label
+<!-- {"id":"studio.sign-in.credentials.identifier-label","bindings":[]} -->
 Email
 
-### studio.sign-in.credentials.passwordLabel
-<!-- {"id":"studio.sign-in.credentials.passwordLabel","bindings":[]} -->
+### studio.sign-in.credentials.password-label
+<!-- {"id":"studio.sign-in.credentials.password-label","bindings":[]} -->
 Password
 
-### studio.sign-in.verification.codeLabel
-<!-- {"id":"studio.sign-in.verification.codeLabel","bindings":[]} -->
+### studio.sign-in.verification.code-label
+<!-- {"id":"studio.sign-in.verification.code-label","bindings":[]} -->
 Code
 
 ### studio.sign-in.actions.submit

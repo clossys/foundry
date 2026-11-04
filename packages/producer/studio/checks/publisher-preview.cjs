@@ -15,10 +15,10 @@ async function checkPublisherPreview(origin, mode = 'ready', output) {
   try {
     const page = await browser.newPage({ viewport: { width: 1680, height: 1100 } });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
-    const cells = await (await fetch(`${origin}/api/cells`)).json();
-    const index = cells.agents.find(agent => agent.agent === 'publisher');
-    const selected = publication.state === 'ready' ? publication.pages.find(page => page.cellId)?.cellId : index?.cells[0]?.id;
-    assert.ok(selected, 'The proof requires an actual Publisher cell.');
+    const gallery = await (await fetch(`${origin}/api/slots/publisher`)).json();
+    const firstSlot = gallery.sections?.flatMap(section => section.cards).find(card => card.status !== 'missing')?.id;
+    const selected = publication.state === 'ready' ? publication.pages.find(page => page.cellId)?.cellId : firstSlot;
+    assert.ok(selected, 'The proof requires an actual Publisher slot.');
     await page.goto(`${origin}/agents/publisher?cell=${encodeURIComponent(selected)}`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.documentElement.dataset.studioState === 'ready', undefined, { timeout: 90_000 });
     if (mode === 'missing') {

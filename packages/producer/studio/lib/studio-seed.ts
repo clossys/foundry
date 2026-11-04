@@ -6,7 +6,6 @@ import { studioCopy } from './studio-copy';
  * Server-safe: no hooks and no client-only imports.
  */
 import type { StudioAssemblySpec } from '../generated/studio-map';
-import { loadCells, type AgentCells } from './cells-client';
 import { producerUrl } from './producer-url';
 import { loadPublication, type PublicationResponse } from './publisher-preview';
 import { loadSlotCensus, type SlotCensusByAgent } from './slot-census-load';
@@ -70,7 +69,7 @@ async function settle<T>(load: Promise<T>, fallback: string): Promise<Resource<T
 }
 
 /** What every Studio route shares: the providers' resources. */
-export interface StudioSeed { cells: Resource<AgentCells[]>; reports: Resource<StudioReport[]>; brand: StudioBrandInfo; census: SlotCensusByAgent }
+export interface StudioSeed { reports: Resource<StudioReport[]>; brand: StudioBrandInfo; census: SlotCensusByAgent }
 /** What one route adds: its leaf record, or its page's slot groups. */
 export interface StudioPageSeed {
   leaf?: { agent: string; slug: string; record: Resource<LeafRecord | undefined> };
@@ -82,13 +81,12 @@ const hasProducer = () => typeof window === 'undefined' && Boolean(process.env.C
 
 export async function loadStudioSeed(signal: AbortSignal = new AbortController().signal): Promise<StudioSeed | undefined> {
   if (!hasProducer()) return undefined;
-  const [cells, reports, brand, census] = await Promise.all([
-    settle(loadCells(signal), unavailable()),
+  const [reports, brand, census] = await Promise.all([
     settle(loadReports(signal), unavailable()),
     loadBrand(signal).catch((): StudioBrandInfo => ({})),
     loadSlotCensus(signal),
   ]);
-  return { cells, reports, brand, census };
+  return { reports, brand, census };
 }
 
 /** The data a page record's loader reads, by the record's own loader input (`data.agent`). */

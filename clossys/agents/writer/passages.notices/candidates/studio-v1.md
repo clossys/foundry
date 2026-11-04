@@ -18,6 +18,6 @@ Unpinned candidates
 <!-- {"id":"studio.notices.notices.0.body","bindings":[]} -->
 Every candidate here is a draft until the owner pins it.
 
-### studio.notices.notices.0.dismissLabel
-<!-- {"id":"studio.notices.notices.0.dismissLabel","bindings":[]} -->
+### studio.notices.notices.0.dismiss-label
+<!-- {"id":"studio.notices.notices.0.dismiss-label","bindings":[]} -->
 Dismiss

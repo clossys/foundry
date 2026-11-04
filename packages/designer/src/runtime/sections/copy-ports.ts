@@ -25,20 +25,20 @@ export interface WriterSectionCopyPorts {
     readonly "permissions[].permissions[].label": string;
     readonly "permissions[].permissions[].description"?: string;
     readonly "labels.label"?: string;
-    readonly "roles[].lockedReason"?: string;
-    readonly "labels.permissionHeader"?: string;
+    readonly "roles[].locked-reason"?: string;
+    readonly "labels.permission-header"?: string;
     readonly "labels.cell"?: WriterIcuMessage<"labels.cell">;
-    readonly "labels.groupAll"?: WriterIcuMessage<"labels.groupAll">;
+    readonly "labels.group-all"?: WriterIcuMessage<"labels.group-all">;
     readonly "labels.inherited"?: string;
     readonly "labels.locked"?: string;
-    readonly "labels.changeSummary"?: WriterIcuMessage<"labels.changeSummary">;
+    readonly "labels.change-summary"?: WriterIcuMessage<"labels.change-summary">;
   };
   readonly "sections.account-summary": {
     readonly "heading": string;
     readonly "identity.name": string;
-    readonly "identity.nameLabel": string;
+    readonly "identity.name-label": string;
     readonly "identity.email": string;
-    readonly "identity.emailLabel": string;
+    readonly "identity.email-label": string;
     readonly "rows[].label": string;
     readonly "rows[].value": string;
     readonly "actions[].label": string;
@@ -58,14 +58,14 @@ export interface WriterSectionCopyPorts {
     readonly "states.error.description"?: string;
     readonly "events[].actor.name": string;
     readonly "events[].summary": ReactNode;
-    readonly "events[].timeText": string;
+    readonly "events[].time-text": string;
     readonly "events[].changes[].field": string;
     readonly "events[].changes[].from"?: string;
     readonly "events[].changes[].to"?: string;
     readonly "events[].detail"?: ReactNode;
     readonly "labels.unread"?: string;
-    readonly "labels.changedFrom"?: string;
-    readonly "labels.changedTo"?: string;
+    readonly "labels.changed-from"?: string;
+    readonly "labels.changed-to"?: string;
     readonly "labels.cleared"?: string;
   };
   readonly "sections.article": {
@@ -98,7 +98,7 @@ export interface WriterSectionCopyPorts {
     readonly "states.empty.description"?: string;
     readonly "states.error.label": string;
     readonly "states.error.description"?: string;
-    readonly "entries[].timeText": string;
+    readonly "entries[].time-text": string;
   };
   readonly "sections.band": {
   };
@@ -130,6 +130,16 @@ export interface WriterSectionCopyPorts {
     readonly "states.error.label": string;
     readonly "states.error.description"?: string;
     readonly "records[].badge.label"?: string;
+    readonly "records[].image.alt"?: string;
+    readonly "records[].editorial.author.name"?: string;
+    readonly "records[].editorial.author.label"?: string;
+    readonly "records[].editorial.date.label"?: string;
+    readonly "records[].editorial.reading-time.value"?: string;
+    readonly "records[].editorial.reading-time.label"?: string;
+    readonly "records[].editorial.tags[].label"?: string;
+    readonly "records[].editorial.summary"?: string;
+    readonly "records[].editorial.outcome-stats[].label"?: string;
+    readonly "records[].editorial.outcome-stats[].value"?: string;
   };
   readonly "sections.chat": {
     readonly "header.eyebrow"?: string;
@@ -187,6 +197,8 @@ export interface WriterSectionCopyPorts {
     readonly "media.title"?: string;
     readonly "media.series[].name"?: string;
     readonly "footnote"?: string;
+    readonly "aside[].label"?: string;
+    readonly "aside[].value"?: string;
   };
   readonly "sections.data-grid": {
     readonly "header.eyebrow"?: string;
@@ -214,8 +226,8 @@ export interface WriterSectionCopyPorts {
     readonly "toolbar.search.placeholder"?: string;
     readonly "toolbar.actions[].label"?: string;
     readonly "pagination.label"?: string;
-    readonly "pagination.pageText"?: WriterIcuMessage<"pagination.pageText">;
-    readonly "pagination.totalText"?: WriterIcuMessage<"pagination.totalText">;
+    readonly "pagination.page-text"?: WriterIcuMessage<"pagination.page-text">;
+    readonly "pagination.total-text"?: WriterIcuMessage<"pagination.total-text">;
     readonly "labels.label"?: string;
     readonly "labels.selection"?: string;
     readonly "labels.sort"?: string;
@@ -274,11 +286,11 @@ export interface WriterSectionCopyPorts {
     readonly "fields[].options[].label"?: string;
     readonly "operators[].label": string;
     readonly "groups[].label"?: string;
-    readonly "labels.addRule"?: string;
-    readonly "labels.addGroup"?: string;
+    readonly "labels.add-rule"?: string;
+    readonly "labels.add-group"?: string;
     readonly "labels.remove"?: string;
-    readonly "labels.matchAll"?: string;
-    readonly "labels.matchAny"?: string;
+    readonly "labels.match-all"?: string;
+    readonly "labels.match-any"?: string;
     readonly "labels.value"?: string;
   };
   readonly "sections.form": {
@@ -347,7 +359,7 @@ export interface WriterSectionCopyPorts {
     readonly "figure.caption"?: string;
     readonly "figure.media.title": string;
     readonly "figure.media.series[].name"?: string;
-    readonly "figure.chromeLabel"?: string;
+    readonly "figure.chrome-label"?: string;
     readonly "callouts.label"?: string;
     readonly "callouts.items[].body"?: string;
   };
@@ -359,9 +371,9 @@ export interface WriterSectionCopyPorts {
     readonly "email.placeholder"?: string;
     readonly "consent": string;
     readonly "submit.label": string;
-    readonly "submit.pendingLabel": string;
-    readonly "submit.sentMessage": string;
-    readonly "submit.failedMessage": string;
+    readonly "submit.pending-label": string;
+    readonly "submit.sent-message": string;
+    readonly "submit.failed-message": string;
   };
   readonly "sections.notices": {
     readonly "header.eyebrow"?: string;
@@ -370,7 +382,7 @@ export interface WriterSectionCopyPorts {
     readonly "notices[].title": string;
     readonly "notices[].body"?: ReactNode;
     readonly "notices[].action.label"?: string;
-    readonly "notices[].dismissLabel"?: string;
+    readonly "notices[].dismiss-label"?: string;
   };
   readonly "sections.page-header": {
     readonly "header.eyebrow"?: string;
@@ -386,13 +398,13 @@ export interface WriterSectionCopyPorts {
   };
   readonly "sections.pagination": {
     readonly "page.label"?: string;
-    readonly "page.previousLabel"?: string;
-    readonly "page.nextLabel"?: string;
-    readonly "page.pageText"?: WriterIcuMessage<"page.pageText">;
+    readonly "page.previous-label"?: string;
+    readonly "page.next-label"?: string;
+    readonly "page.page-text"?: WriterIcuMessage<"page.page-text">;
     readonly "total.label"?: string;
-    readonly "page.noResultsLabel"?: string;
-    readonly "page.pageSizeLabel"?: string;
-    readonly "total.rangeText"?: WriterIcuMessage<"total.rangeText">;
+    readonly "page.no-results-label"?: string;
+    readonly "page.page-size-label"?: string;
+    readonly "total.range-text"?: WriterIcuMessage<"total.range-text">;
   };
   readonly "sections.people": {
     readonly "header.eyebrow"?: string;
@@ -413,8 +425,8 @@ export interface WriterSectionCopyPorts {
     readonly "plans[].cta.label": string;
     readonly "plans[].badge"?: string;
     readonly "interval"?: string;
-    readonly "plans[].priceByInterval[].amount": string;
-    readonly "plans[].priceByInterval[].priceText": string;
+    readonly "plans[].price-by-interval[].amount": string;
+    readonly "plans[].price-by-interval[].price-text": string;
   };
   readonly "sections.record-detail": {
     readonly "header.eyebrow"?: string;
@@ -443,8 +455,8 @@ export interface WriterSectionCopyPorts {
     readonly "toolbar.label"?: string;
     readonly "toolbar.search.label"?: string;
     readonly "toolbar.search.placeholder"?: string;
-    readonly "pagination.pageText"?: WriterIcuMessage<"pagination.pageText">;
-    readonly "pagination.totalText"?: WriterIcuMessage<"pagination.totalText">;
+    readonly "pagination.page-text"?: WriterIcuMessage<"pagination.page-text">;
+    readonly "pagination.total-text"?: WriterIcuMessage<"pagination.total-text">;
     readonly "labels.label"?: string;
     readonly "states.loading.label": string;
     readonly "states.loading.description"?: string;
@@ -458,6 +470,8 @@ export interface WriterSectionCopyPorts {
     readonly "heading": string;
     readonly "description"?: string;
     readonly "actions[].label"?: string;
+  };
+  readonly "sections.sectioned-document": {
   };
   readonly "sections.settings": {
     readonly "header.eyebrow"?: string;
@@ -478,11 +492,11 @@ export interface WriterSectionCopyPorts {
     readonly "header.heading": string;
     readonly "header.description"?: string;
     readonly "providers[].label": string;
-    readonly "credentials.identifierLabel": string;
-    readonly "credentials.identifierPlaceholder"?: string;
-    readonly "credentials.passwordLabel": string;
-    readonly "credentials.passwordPlaceholder"?: string;
-    readonly "verification.codeLabel": string;
+    readonly "credentials.identifier-label": string;
+    readonly "credentials.identifier-placeholder"?: string;
+    readonly "credentials.password-label": string;
+    readonly "credentials.password-placeholder"?: string;
+    readonly "verification.code-label": string;
     readonly "verification.description"?: string;
     readonly "verification.placeholder"?: string;
     readonly "actions.submit": string;
@@ -521,7 +535,7 @@ export interface WriterSectionCopyPorts {
     readonly "labels.available"?: string;
     readonly "labels.partial"?: string;
     readonly "labels.planned"?: string;
-    readonly "labels.notOffered"?: string;
+    readonly "labels.not-offered"?: string;
     readonly "states.loading.label": string;
     readonly "states.loading.description"?: string;
     readonly "states.empty.label": string;
@@ -570,15 +584,15 @@ export interface WriterSectionCopyPorts {
     readonly "header.heading"?: string;
     readonly "header.description"?: string;
     readonly "quotes[].quote": string;
-    readonly "quotes[].attributorName": string;
-    readonly "quotes[].attributorRole"?: string;
+    readonly "quotes[].attributor-name": string;
+    readonly "quotes[].attributor-role"?: string;
   };
   readonly "sections.timeline": {
     readonly "header.eyebrow"?: string;
     readonly "header.heading"?: string;
     readonly "header.description"?: string;
     readonly "events[].heading": string;
-    readonly "events[].dateText": string;
+    readonly "events[].date-text": string;
     readonly "events[].description"?: string;
   };
   readonly "sections.usage": {
@@ -586,9 +600,9 @@ export interface WriterSectionCopyPorts {
     readonly "header.heading"?: string;
     readonly "header.description"?: string;
     readonly "meters[].label": string;
-    readonly "meters[].usedText"?: string;
-    readonly "meters[].limitText"?: string;
-    readonly "meters[].periodText"?: string;
+    readonly "meters[].used-text"?: string;
+    readonly "meters[].limit-text"?: string;
+    readonly "meters[].period-text"?: string;
     readonly "labels.label"?: string;
     readonly "states.loading.label": string;
     readonly "states.loading.description"?: string;
@@ -596,7 +610,7 @@ export interface WriterSectionCopyPorts {
     readonly "states.empty.description"?: string;
     readonly "states.error.label": string;
     readonly "states.error.description"?: string;
-    readonly "meters[].projectedText"?: string;
+    readonly "meters[].projected-text"?: string;
     readonly "meters[].thresholds[].message"?: string;
   };
   readonly "sections.wizard": {
@@ -620,7 +634,7 @@ export interface TableCopy {
   readonly emptyDescription: NonNullable<TableContractCopy["states.empty.description"]>;
   readonly paginationLabel: NonNullable<TableContractCopy["pagination.label"]>;
 }
-export type PaginationSummaryMessage = NonNullable<TableContractCopy["pagination.totalText"]>;
+export type PaginationSummaryMessage = NonNullable<TableContractCopy["pagination.total-text"]>;
 export interface RecordDetailCopy { readonly title: string; readonly fields: readonly DetailViewField[]; readonly actionsLabel: string }
 export interface ChatCopy { readonly label: string; readonly placeholder: string; readonly labels: Required<ChatLabels> }
 export const CHAT_LABEL_KEYS = ["logLabel", "userLabel", "assistantLabel", "actionGroupLabel", "copyMessageLabel", "regenerateLabel", "helpfulLabel", "unhelpfulLabel", "emptyLabel", "jumpLabel", "streamingLabel", "errorLabel", "retryLabel", "composerLabel", "stopLabel", "sendLabel", "copyCodeLabel", "copiedLabel", "copyUnavailableLabel"] as const satisfies readonly (keyof ChatLabels)[];

@@ -89,7 +89,7 @@ describe("archetype page copy", () => {
         records: [{ id: "r1", text: "Home" }, { id: "r2", text: "Home page." }],
       }),
     }));
-    vi.doMock("../server/cells.js", async importOriginal => ({ ...(await importOriginal<object>()), readCells: async () => [] }));
+    vi.doMock("../records/director-pinned.js", async importOriginal => ({ ...(await importOriginal<object>()), readPinnedDirector: async () => ({ set: { agent: "director", pinned: [], unpinned: [], issues: [] }, cells: [], unreadable: [] }) }));
     const { consumerPageRecords } = await import("./record-suites.js");
     const { records } = await consumerPageRecords(consumer());
     const archetypes = await import("../../../publisher/src/archetypes/index.js");
@@ -98,6 +98,6 @@ describe("archetype page copy", () => {
     expect(meta("bound")).toEqual([]);
     expect(meta("missing")).toEqual(expect.arrayContaining(["meta-title-missing", "meta-description-missing"]));
     vi.doUnmock("../publish/site-source.js");
-    vi.doUnmock("../server/cells.js");
+    vi.doUnmock("../records/director-pinned.js");
   });
 });

@@ -1,0 +1,900 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/designer#leaf-freeze:undefined",
+  "extensions": [
+    "frames.plain"
+  ],
+  "nodes": [
+    {
+      "id": "themes.colors",
+      "label": "Colors",
+      "children": [
+        {
+          "id": "colors-surfaces",
+          "label": "Surfaces",
+          "slots": [
+            "themes.background",
+            "themes.foreground",
+            "themes.card",
+            "themes.card-foreground",
+            "themes.popover",
+            "themes.popover-foreground"
+          ]
+        },
+        {
+          "id": "colors-actions",
+          "label": "Actions",
+          "slots": [
+            "themes.primary",
+            "themes.primary-foreground",
+            "themes.secondary",
+            "themes.secondary-foreground",
+            "themes.accent",
+            "themes.accent-foreground",
+            "themes.destructive"
+          ]
+        },
+        {
+          "id": "colors-neutrals",
+          "label": "Neutrals",
+          "slots": [
+            "themes.muted",
+            "themes.muted-foreground",
+            "themes.border",
+            "themes.input",
+            "themes.ring"
+          ]
+        },
+        {
+          "id": "colors-charts",
+          "label": "Charts",
+          "slots": [
+            "themes.chart-1",
+            "themes.chart-2",
+            "themes.chart-3",
+            "themes.chart-4",
+            "themes.chart-5"
+          ]
+        },
+        {
+          "id": "colors-sidebar",
+          "label": "Sidebar",
+          "slots": [
+            "themes.sidebar",
+            "themes.sidebar-foreground",
+            "themes.sidebar-primary",
+            "themes.sidebar-primary-foreground",
+            "themes.sidebar-accent",
+            "themes.sidebar-accent-foreground",
+            "themes.sidebar-border",
+            "themes.sidebar-ring"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "themes.shape",
+      "label": "Shape",
+      "children": [
+        {
+          "id": "shape-corners",
+          "label": "Corners",
+          "slots": [
+            "themes.radius"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "themes.typography",
+      "label": "Typography",
+      "children": [
+        {
+          "id": "typography-fonts",
+          "label": "Fonts",
+          "slots": [
+            "themes.font-sans",
+            "themes.font-heading",
+            "themes.font-mono",
+            "themes.font-serif"
+          ]
+        },
+        {
+          "id": "typography-tracking",
+          "label": "Tracking",
+          "slots": [
+            "themes.tracking-tight"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "themes.space",
+      "label": "Space",
+      "children": [
+        {
+          "id": "space-rhythm",
+          "label": "Rhythm",
+          "slots": [
+            "themes.spacing"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "themes.depth",
+      "label": "Depth",
+      "children": [
+        {
+          "id": "depth-effects",
+          "label": "Effects",
+          "slots": [
+            "themes.shadow"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "themes.motion",
+      "label": "Motion",
+      "children": [
+        {
+          "id": "motion-animations",
+          "label": "Animations",
+          "slots": [
+            "themes.animate-marquee",
+            "themes.animate-marquee-vertical",
+            "themes.animate-shiny-text"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assets.logo",
+      "label": "Logo",
+      "children": [
+        {
+          "id": "logo-artwork",
+          "label": "Artwork",
+          "slots": [
+            "assets.lockup",
+            "assets.mark"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assets.app-identity",
+      "label": "App identity",
+      "children": [
+        {
+          "id": "app-identity-browser",
+          "label": "Browser",
+          "slots": [
+            "assets.favicon"
+          ]
+        },
+        {
+          "id": "app-identity-application",
+          "label": "Application",
+          "slots": [
+            "assets.app-icon"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assets.icons",
+      "label": "Icons",
+      "children": [
+        {
+          "id": "icons-navigation",
+          "label": "Navigation",
+          "slots": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-up",
+            "assets.icon-chevron-left",
+            "assets.icon-chevron-right",
+            "assets.icon-arrow-right",
+            "assets.icon-external-link",
+            "assets.icon-home",
+            "assets.icon-panel-left"
+          ]
+        },
+        {
+          "id": "icons-actions",
+          "label": "Actions",
+          "slots": [
+            "assets.icon-search",
+            "assets.icon-close",
+            "assets.icon-check",
+            "assets.icon-settings",
+            "assets.icon-list-view",
+            "assets.icon-grid-view",
+            "assets.icon-theme-light",
+            "assets.icon-theme-dark",
+            "assets.icon-theme-system"
+          ]
+        },
+        {
+          "id": "icons-status",
+          "label": "Status",
+          "slots": [
+            "assets.icon-success",
+            "assets.icon-warning",
+            "assets.icon-danger",
+            "assets.icon-info"
+          ]
+        },
+        {
+          "id": "icons-objects",
+          "label": "Objects",
+          "slots": [
+            "assets.icon-user",
+            "assets.icon-team",
+            "assets.icon-organization",
+            "assets.icon-website",
+            "assets.icon-institution",
+            "assets.icon-guide",
+            "assets.icon-document",
+            "assets.icon-document-approved",
+            "assets.icon-folder",
+            "assets.icon-date",
+            "assets.icon-time",
+            "assets.icon-payment",
+            "assets.icon-receipt",
+            "assets.icon-business",
+            "assets.icon-security",
+            "assets.icon-locked",
+            "assets.icon-legal",
+            "assets.icon-package",
+            "assets.icon-layers",
+            "assets.icon-integration"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "assets.imagery",
+      "label": "Media",
+      "children": [
+        {
+          "id": "imagery-framing",
+          "label": "Framing",
+          "slots": [
+            "assets.image-ratio"
+          ]
+        },
+        {
+          "id": "imagery-resources",
+          "label": "Resources",
+          "slots": [
+            "assets.image",
+            "assets.video"
+          ]
+        },
+        {
+          "id": "imagery-patterns",
+          "label": "Patterns",
+          "slots": [
+            "assets.pattern"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.actions",
+      "label": "Actions",
+      "children": [
+        {
+          "id": "actions-buttons",
+          "label": "Buttons",
+          "slots": [
+            "components.button",
+            "components.native-action",
+            "components.toggle-button"
+          ]
+        },
+        {
+          "id": "actions-menus",
+          "label": "Menus",
+          "slots": [
+            "components.menu",
+            "components.command",
+            "components.dropdown-menu"
+          ]
+        },
+        {
+          "id": "actions-toolbars",
+          "label": "Toolbars",
+          "slots": [
+            "components.toolbar"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.inputs",
+      "label": "Inputs",
+      "children": [
+        {
+          "id": "inputs-form",
+          "label": "Form",
+          "slots": [
+            "components.field",
+            "components.form"
+          ]
+        },
+        {
+          "id": "inputs-text",
+          "label": "Text",
+          "slots": [
+            "components.text-field",
+            "components.search-field"
+          ]
+        },
+        {
+          "id": "inputs-choice",
+          "label": "Choice",
+          "slots": [
+            "components.checkbox",
+            "components.radio-group",
+            "components.switch",
+            "components.select",
+            "components.combo-box",
+            "components.toggle-group"
+          ]
+        },
+        {
+          "id": "inputs-tags",
+          "label": "Tags",
+          "slots": [
+            "components.tag-group"
+          ]
+        },
+        {
+          "id": "inputs-number",
+          "label": "Number",
+          "slots": [
+            "components.number-field",
+            "components.slider"
+          ]
+        },
+        {
+          "id": "inputs-date",
+          "label": "Date",
+          "slots": [
+            "components.date-field",
+            "components.date-picker",
+            "components.calendar"
+          ]
+        },
+        {
+          "id": "inputs-color",
+          "label": "Color",
+          "slots": [
+            "components.color-picker"
+          ]
+        },
+        {
+          "id": "inputs-files",
+          "label": "Files",
+          "slots": [
+            "components.file-trigger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.display",
+      "label": "Display",
+      "children": [
+        {
+          "id": "display-data",
+          "label": "Data",
+          "slots": [
+            "components.table",
+            "components.grid-list",
+            "components.tree",
+            "components.meter"
+          ]
+        },
+        {
+          "id": "display-labels",
+          "label": "Labels",
+          "slots": [
+            "components.badge",
+            "components.keyboard"
+          ]
+        },
+        {
+          "id": "display-media",
+          "label": "Media",
+          "slots": [
+            "components.avatar",
+            "components.media-player"
+          ]
+        },
+        {
+          "id": "display-assets",
+          "label": "Assets",
+          "slots": [
+            "components.icon",
+            "components.logo"
+          ]
+        },
+        {
+          "id": "charts-core",
+          "label": "Core charts",
+          "slots": [
+            "components.chart-bar",
+            "components.chart-line",
+            "components.chart-area"
+          ]
+        },
+        {
+          "id": "charts-compact",
+          "label": "Compact charts",
+          "slots": [
+            "components.chart-sparkline",
+            "components.chart-status-strip"
+          ]
+        },
+        {
+          "id": "charts-analytic",
+          "label": "Analytic charts",
+          "slots": [
+            "components.chart-scatter",
+            "components.chart-heatmap",
+            "components.chart-range",
+            "components.chart-waterfall"
+          ]
+        },
+        {
+          "id": "display-content",
+          "label": "Content",
+          "slots": [
+            "components.semantic-content",
+            "components.rich-text",
+            "components.item"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.feedback",
+      "label": "Feedback",
+      "children": [
+        {
+          "id": "feedback-messages",
+          "label": "Messages",
+          "slots": [
+            "components.banner",
+            "components.toast",
+            "components.empty"
+          ]
+        },
+        {
+          "id": "feedback-indicators",
+          "label": "Indicators",
+          "slots": [
+            "components.status-mark"
+          ]
+        },
+        {
+          "id": "feedback-progress",
+          "label": "Progress",
+          "slots": [
+            "components.progress-bar",
+            "components.spinner",
+            "components.skeleton"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.navigation",
+      "label": "Navigation",
+      "children": [
+        {
+          "id": "navigation-links",
+          "label": "Links",
+          "slots": [
+            "components.link",
+            "components.breadcrumbs"
+          ]
+        },
+        {
+          "id": "navigation-panels",
+          "label": "Panels",
+          "slots": [
+            "components.tabs"
+          ]
+        },
+        {
+          "id": "navigation-trees",
+          "label": "Trees",
+          "slots": [
+            "components.navigation-tree",
+            "components.sidebar"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.containment",
+      "label": "Containment",
+      "children": [
+        {
+          "id": "containment-structure",
+          "label": "Structure",
+          "slots": [
+            "components.card",
+            "components.separator",
+            "components.disclosure",
+            "components.resize-handle",
+            "components.scroll-area"
+          ]
+        },
+        {
+          "id": "containment-overlays",
+          "label": "Overlays",
+          "slots": [
+            "components.dialog",
+            "components.popover",
+            "components.tooltip",
+            "components.sheet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.specimens",
+      "label": "Specimens",
+      "children": [
+        {
+          "id": "specimens-content",
+          "label": "Content and presentation",
+          "slots": [
+            "sections.specimen-swatch",
+            "sections.specimen-color-ramp",
+            "sections.specimen-type-ladder",
+            "sections.specimen-spacing-ladder",
+            "sections.specimen-radius-ladder",
+            "sections.specimen-motion-player",
+            "sections.specimen-asset-grid",
+            "sections.specimen-icon-grid",
+            "sections.specimen-variant-matrix",
+            "sections.specimen-section-viewports",
+            "sections.specimen-frame-viewports",
+            "sections.specimen-rich-passage",
+            "sections.specimen-copy-in-context",
+            "sections.specimen-page-viewports"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.parts",
+      "label": "Parts",
+      "children": [
+        {
+          "id": "parts-structure",
+          "label": "Structure",
+          "slots": [
+            "sections.band",
+            "sections.section-header"
+          ]
+        },
+        {
+          "id": "parts-navigation",
+          "label": "Navigation",
+          "slots": [
+            "sections.pagination"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.explain",
+      "label": "Explain",
+      "children": [
+        {
+          "id": "explain-introductions",
+          "label": "Introductions",
+          "slots": [
+            "sections.hero",
+            "sections.logo-hero",
+            "sections.page-header",
+            "sections.logo-mark"
+          ]
+        },
+        {
+          "id": "explain-reading",
+          "label": "Reading",
+          "slots": [
+            "sections.content",
+            "sections.article",
+            "sections.sectioned-document",
+            "sections.legal-prose"
+          ]
+        },
+        {
+          "id": "explain-promotion",
+          "label": "Promotion",
+          "slots": [
+            "sections.features",
+            "sections.call-to-action"
+          ]
+        },
+        {
+          "id": "explain-social-proof",
+          "label": "Social proof",
+          "slots": [
+            "sections.testimonials",
+            "sections.logo-cloud",
+            "sections.people"
+          ]
+        },
+        {
+          "id": "explain-media",
+          "label": "Media",
+          "slots": [
+            "sections.media",
+            "sections.gallery"
+          ]
+        },
+        {
+          "id": "explain-guidance",
+          "label": "Guidance",
+          "slots": [
+            "sections.faq",
+            "sections.steps",
+            "sections.timeline"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.organize",
+      "label": "Organize",
+      "children": [
+        {
+          "id": "organize-collections",
+          "label": "Collections",
+          "slots": [
+            "sections.cards",
+            "sections.resource-list",
+            "sections.task-list"
+          ]
+        },
+        {
+          "id": "organize-comparison",
+          "label": "Comparison",
+          "slots": [
+            "sections.comparison",
+            "sections.pricing"
+          ]
+        },
+        {
+          "id": "organize-summaries",
+          "label": "Summaries",
+          "slots": [
+            "sections.stats",
+            "sections.status-list",
+            "sections.usage",
+            "sections.account-summary"
+          ]
+        },
+        {
+          "id": "organize-records",
+          "label": "Records",
+          "slots": [
+            "sections.data-table",
+            "sections.data-grid",
+            "sections.record-detail"
+          ]
+        },
+        {
+          "id": "organize-history",
+          "label": "History",
+          "slots": [
+            "sections.activity-feed",
+            "sections.audit-log"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.collect",
+      "label": "Collect",
+      "children": [
+        {
+          "id": "collect-forms",
+          "label": "Forms",
+          "slots": [
+            "sections.form",
+            "sections.newsletter"
+          ]
+        },
+        {
+          "id": "collect-workflows",
+          "label": "Workflows",
+          "slots": [
+            "sections.wizard"
+          ]
+        },
+        {
+          "id": "collect-preferences",
+          "label": "Preferences",
+          "slots": [
+            "sections.settings"
+          ]
+        },
+        {
+          "id": "collect-configuration",
+          "label": "Configuration",
+          "slots": [
+            "sections.column-mapper",
+            "sections.access-matrix"
+          ]
+        },
+        {
+          "id": "collect-conversation",
+          "label": "Conversation",
+          "slots": [
+            "sections.chat"
+          ]
+        },
+        {
+          "id": "collect-inputs",
+          "label": "Inputs",
+          "slots": [
+            "sections.sign-in-form"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.navigate",
+      "label": "Navigate",
+      "children": [
+        {
+          "id": "navigate-indexes",
+          "label": "Indexes",
+          "slots": [
+            "sections.link-index",
+            "sections.table-of-contents"
+          ]
+        },
+        {
+          "id": "navigate-discovery",
+          "label": "Discovery",
+          "slots": [
+            "sections.explorer",
+            "sections.filter-builder"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.respond",
+      "label": "Respond",
+      "children": [
+        {
+          "id": "respond-states",
+          "label": "States",
+          "slots": [
+            "sections.empty-state",
+            "sections.error-state",
+            "sections.boundary-message"
+          ]
+        },
+        {
+          "id": "respond-messages",
+          "label": "Messages",
+          "slots": [
+            "sections.notices",
+            "sections.consent"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frames.page-shells",
+      "label": "Page shells",
+      "children": [
+        {
+          "id": "page-shells-documents",
+          "label": "Documents",
+          "slots": [
+            "frames.site-shell",
+            "frames.document"
+          ]
+        },
+        {
+          "id": "page-shells-workspaces",
+          "label": "Workspaces",
+          "slots": [
+            "frames.app-shell"
+          ]
+        },
+        {
+          "id": "page-shells-authentication",
+          "label": "Authentication",
+          "slots": [
+            "frames.auth-shell"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frames.regions",
+      "label": "Regions",
+      "children": [
+        {
+          "id": "headers",
+          "label": "Headers",
+          "slots": [
+            "frames.site-header",
+            "frames.app-header"
+          ]
+        },
+        {
+          "id": "navigation",
+          "label": "Navigation",
+          "slots": [
+            "frames.app-sidebar"
+          ]
+        },
+        {
+          "id": "panels",
+          "label": "Panels",
+          "slots": [
+            "frames.inspector"
+          ]
+        },
+        {
+          "id": "footers",
+          "label": "Footers",
+          "slots": [
+            "frames.site-footer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frames.overlay-shells",
+      "label": "Overlay shells",
+      "children": [
+        {
+          "id": "overlay-shells-panels",
+          "label": "Panels",
+          "slots": [
+            "frames.sheet"
+          ]
+        },
+        {
+          "id": "overlay-shells-commands",
+          "label": "Commands",
+          "slots": [
+            "frames.command"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "frames.extensions",
+      "label": "Consumer extensions",
+      "children": [
+        {
+          "id": "extensions",
+          "label": "Signed extensions",
+          "slots": [
+            "frames.plain"
+          ]
+        }
+      ]
+    }
+  ]
+}

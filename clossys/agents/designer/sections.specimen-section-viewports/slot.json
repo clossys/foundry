@@ -70,7 +70,7 @@
       "sourceLocale": "en",
       "fields": [
         {
-          "key": "labels.showAllVariants",
+          "key": "labels.show-all-variants",
           "kind": "icu",
           "required": true,
           "maxLength": {

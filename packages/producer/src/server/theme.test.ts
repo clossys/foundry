@@ -1,164 +1,84 @@
-import { mkdir, mkdtemp, readFile, readdir, realpath, rm, symlink, writeFile } from "node:fs/promises";
+import { readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { applyLibraryChange, emit, libraryHash, loadCatalog, resolve, type LibraryData } from "@clossys/designer/catalog";
-import { agentModule, agentRoot } from "./cells.js";
+import { afterEach, describe, expect, it } from "vitest";
+import { flatConsumer, snapshot } from "../cli/__fixtures__/flat-consumer.js";
 import { defaultStudioTheme, studioTheme, themeHash } from "./theme.js";
 import { startProducerServer } from "./index.js";
 
-let root: string;
-beforeEach(async () => { root = await realpath(await mkdtemp(join(tmpdir(), "producer-theme-"))); });
-afterEach(async () => { await rm(root, { recursive: true, force: true }); });
+const roots: string[] = [];
+afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
+const consumer = () => { const root = flatConsumer(["designer"]); roots.push(root); return root; };
+const designer = (root: string) => join(root, "clossys", "agents", "designer");
+const themeSlots = (root: string) => readdirSync(designer(root)).filter(id => id.startsWith("themes.")).sort();
+const pinned = (root: string, id: string) => {
+  const pin = JSON.parse(readFileSync(join(designer(root), id, "pin.json"), "utf8")) as { candidate: string };
+  return join(designer(root), id, "candidates", pin.candidate);
+};
+const pinnedThemes = (root: string) => themeSlots(root).filter(id => { try { pinned(root, id); return true; } catch { return false; } });
 
-function adoptedDefaults(): LibraryData {
-  const catalog = loadCatalog();
-  const empty: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "UNLICENSED" }, fills: [], adoptedAt: "2026-10-29" };
-  const sources = ["foundry", "shadcn@aria", "tailwind-default"];
-  const changes = catalog.slots.filter(slot => slot.layer === "themes").flatMap(slot => {
-    const offers = catalog.fills.filter(fill => fill.$extensions["com.clossys.fill"].slot === slot.id && fill.$extensions["com.clossys.fill"].mode !== "reference");
-    const fill = sources.map(source => offers.find(fill => fill.$extensions["com.clossys.fill"].source === source)).find(Boolean);
-    return fill ? [{ op: "adopt" as const, slot: slot.id, source: fill.$extensions["com.clossys.fill"].source }] : [];
-  });
-  return applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes });
-}
-
-async function brandedCells(composite = false, authored = true, consumerRoot = root, hue = 250): Promise<LibraryData> {
-  const catalog = loadCatalog();
-  let library = adoptedDefaults();
-  if (authored) library = applyLibraryChange(catalog, library, { baseHash: libraryHash(library), changes: [{ op: "author", slot: "themes.primary", tokens: { default: { $type: "color", $value: `oklch(0.65 0.2 ${hue})`, $extensions: { "com.clossys.modes": { dark: `oklch(0.75 0.15 ${hue})` } } } } }] });
-  const api = await agentModule("designer", "library-cli/fs-library.js");
-  const source = join(consumerRoot, "library");
-  for (const [name, contents] of api.libraryFiles(catalog, library, [])) {
-    const path = join(source, name); await mkdir(dirname(path), { recursive: true }); await writeFile(path, contents);
-  }
-  const cells = await agentModule("designer", "library-cli/cells.js");
-  await cells.libraryToCells(source, agentRoot(consumerRoot, "designer"), { catalog, date: "2026-10-29" });
-  if (composite) {
-    // A valid composite token library does not require adopted components.
-    const treePath = join(agentRoot(consumerRoot, "designer"), "tree.json");
-    const tree = JSON.parse(await readFile(treePath, "utf8"));
-    const { adoptedAt, ...values } = tree.meta.metadata;
-    tree.meta.metadata = { format: "composite-v1", adoptedAt, values, components: {}, files: [] };
-    await writeFile(treePath, JSON.stringify(tree));
-  }
-  return library;
-}
-
-describe("Studio compiled theme", () => {
-  it("binds the official Foundry catalog default when there are no consumer cells", async () => {
+describe("Studio theme from the pinned themes.* slots", () => {
+  it("is the Foundry theme, reported as such, without a Designer slot model", async () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "producer-theme-"))); roots.push(root);
     const theme = await studioTheme(root);
     expect(theme).toEqual(defaultStudioTheme());
     expect(theme.source).toBe("foundry");
-    expect(theme.css).toContain(":root[data-brand-bound]");
-    const official = emit(resolve({ catalog: loadCatalog(), library: adoptedDefaults() }), ["css-brand", "css-scales"], { full: true, header: false }).map(file => file.contents).join("\n");
-    expect(theme.css).toBe(official);
-    expect(theme.hash).toBe(themeHash(official));
-    expect(theme.css).toContain('[data-theme="dark"]');
     expect(theme.message).toBeUndefined();
   });
 
-  it.each([false, true])("compiles actual active token cells (composite=%s) without writing a consumer projection", async composite => {
-    const library = await brandedCells(composite);
-    const theme = await studioTheme(root);
-    const expected = emit(resolve({ catalog: loadCatalog(), library }), ["css-brand", "css-scales"], { full: true, header: false }).map(file => file.contents).join("\n");
-    expect(theme).toEqual({ source: "consumer", css: expected, hash: themeHash(expected) });
-    expect(theme.css).toContain("oklch(0.65 0.2 250)");
-    expect(theme.css).toContain("oklch(0.75 0.15 250)");
-    expect(await readdir(agentRoot(root, "designer"))).toEqual(expect.arrayContaining(["cells", "tree.json", "compile.json"]));
-    expect(await readdir(agentRoot(root, "designer"))).not.toContain("compiled");
-  });
-
-  it("has exact CSS hash parity when a consumer adopts Foundry defaults", async () => {
-    await brandedCells(false, false);
-    const theme = await studioTheme(root), foundry = defaultStudioTheme();
-    expect(theme.source).toBe("consumer");
-    expect(theme.css).toBe(foundry.css);
-    expect(theme.hash).toBe(foundry.hash);
-    expect(theme.hash).toMatch(/^sha256:[a-f0-9]{64}$/);
-  });
-
-  it("preserves authored consumer overrides instead of substituting Foundry defaults", async () => {
-    await brandedCells();
+  it("composes the consumer's pinned theme variables without writing into the consumer", async () => {
+    const root = consumer();
+    expect(pinnedThemes(root).length).toBeGreaterThan(0);
+    const before = snapshot(root);
     const theme = await studioTheme(root);
     expect(theme.source).toBe("consumer");
+    expect(theme.message).toBeUndefined();
     expect(theme.hash).toBe(themeHash(theme.css));
+    expect(theme.css).toMatch(/^:root \{\n {2}--[a-z]/);
     expect(theme.hash).not.toBe(defaultStudioTheme().hash);
+    expect(snapshot(root)).toEqual(before);
   });
 
-  it("compiles two different consumer brands with independent valid CSS hashes", async () => {
-    const secondRoot = join(root, "second-consumer");
-    await brandedCells(false, true, root, 250);
-    await brandedCells(false, true, secondRoot, 320);
-    const first = await studioTheme(root), second = await studioTheme(secondRoot);
-    for (const theme of [first, second]) {
-      expect(theme.source).toBe("consumer");
-      expect(theme.message).toBeUndefined();
-      expect(theme.hash).toBe(themeHash(theme.css));
-    }
-    expect(first.css).not.toBe(second.css);
-    expect(first.hash).not.toBe(second.hash);
-    expect(second.css).toContain("oklch(0.65 0.2 320)");
+  it("is the unbranded Foundry theme when the consumer pins no theme slot", async () => {
+    const root = consumer();
+    for (const id of pinnedThemes(root)) rmSync(join(designer(root), id, "pin.json"));
+    expect(await studioTheme(root)).toEqual(defaultStudioTheme());
   });
 
-  it("distinguishes a corrupt consumer theme from an uninitialized theme", async () => {
-    await brandedCells();
-    await writeFile(join(agentRoot(root, "designer"), "cells/themes.primary/v1.md"), "invalid");
-    expect(await studioTheme(root)).toEqual({ ...defaultStudioTheme(), message: "Consumer theme could not be compiled; using the Foundry theme" });
+  it("is a visible error, never a silent fallback, when a pinned theme candidate drifts", async () => {
+    const root = consumer();
+    const [id] = pinnedThemes(root);
+    writeFileSync(pinned(root, id!), readFileSync(pinned(root, id!), "utf8") + "\n");
+    const theme = await studioTheme(root);
+    expect(theme.source).toBe("error");
+    expect(theme.message).toBe(`Consumer theme could not be compiled: ${id} does not match its pin`);
+    expect(theme.css).toBe(defaultStudioTheme().css);
   });
 
-  it("includes the compiled consumer theme in the read-only config response", async () => {
-    await brandedCells();
+  it("is a visible error when the Designer IA cannot be read, and never exposes target paths", async () => {
+    const root = consumer();
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), "producer-theme-outside-"))); roots.push(outside);
+    const ia = join(designer(root), "ia.json");
+    writeFileSync(join(outside, "ia.json"), readFileSync(ia));
+    rmSync(ia); symlinkSync(join(outside, "ia.json"), ia);
+    const theme = await studioTheme(root);
+    expect(theme.source).toBe("error");
+    expect(theme.message).toMatch(/^Consumer theme could not be compiled: /);
+    expect(JSON.stringify(theme)).not.toContain(outside);
+  });
+
+  it("includes the consumer theme in the read-only config response", async () => {
+    const root = consumer();
     const server = await startProducerServer({ root, port: 0, studioEntry: fileURLToPath(new URL("./__fixtures__/studio-child.mjs", import.meta.url)), handleSignals: false });
     try {
       const response = await fetch(`${server.url}/api/config`);
-      const config = await response.json() as { readOnly: boolean; theme: { source: string; css: string } };
+      const config = await response.json() as { readOnly: boolean; theme: { source: string; css: string; hash: string } };
       expect(response.status).toBe(200);
       expect(config.readOnly).toBe(true);
+      expect(config.theme).toEqual(await studioTheme(root));
       expect(config.theme.source).toBe("consumer");
-      expect(config.theme.css).toContain("oklch(0.65 0.2 250)");
-      expect(await readdir(agentRoot(root, "designer"))).not.toContain("compiled");
     } finally { await server.close(); }
   }, 60_000);
-
-  it("provides consumer config to the supervised Studio before child readiness", async () => {
-    await brandedCells();
-    const entry = join(root, "ssr-child.mjs");
-    await writeFile(entry, `import { createServer } from "node:http";
-const response = await fetch(process.env.CLOSSYS_PRODUCER_ORIGIN + "/api/config");
-const { theme } = await response.json();
-const server = createServer((request, response) => { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ theme })); });
-server.listen(Number(process.env.PORT), process.env.HOSTNAME);
-process.once("SIGTERM", () => server.close(() => process.exit(0)));
-`);
-    const server = await startProducerServer({ root, port: 0, studioEntry: entry, handleSignals: false });
-    try {
-      const applied = await (await fetch(server.url)).json() as { theme: { source: string; css: string; hash: string } };
-      expect(applied.theme).toEqual(await studioTheme(root));
-      expect(applied.theme.source).toBe("consumer");
-    } finally { await server.close(); }
-  }, 60_000);
-
-  it.each(["consumer-root", "cell-tree"] as const)("refuses a symlinked %s and does not expose target paths", async kind => {
-    await brandedCells();
-    const cells = agentRoot(root, "designer");
-    const outside = join(root, "outside");
-    const before = await readFile(join(cells, "tree.json"));
-    let input = root;
-    if (kind === "consumer-root") {
-      input = outside;
-      await symlink(root, input, "dir");
-    } else {
-      const { rename } = await import("node:fs/promises");
-      await rename(cells, outside); await symlink(outside, cells, "dir");
-    }
-    // Attacker-controlled paths are deliberately NOT canonicalized.
-    const theme = await studioTheme(input);
-    expect(theme.source).toBe("foundry");
-    expect(theme.message).toBe("Consumer theme could not be compiled; using the Foundry theme");
-    expect(JSON.stringify(theme)).not.toContain(outside);
-    expect(JSON.stringify(theme)).not.toContain(root);
-    expect(await readFile(join(kind === "cell-tree" ? outside : cells, "tree.json"))).toEqual(before);
-  });
 });

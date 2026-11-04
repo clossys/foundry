@@ -74,7 +74,7 @@ function ScrollDataTable({ input }: { input: SectionRenderInput }) {
   };
   const rangeSummaryMessage = (start: number, end: number, total: number): string => {
     const message = input.sectionHost?.paginationSummary;
-    if (!isMessageRecord(message) || message.key !== "pagination.totalText" || typeof message.writerId !== "string" || !message.writerId.trim() || typeof message.locale !== "string" || !message.locale.trim() || typeof message.message !== "string" || !message.message.trim() || !isMessageRecord(message.values) || Object.values(message.values).some(value => typeof value !== "string" && (typeof value !== "number" || !Number.isFinite(value)))) throw new TypeError("sections.data-table: paginationSummary requires a Writer ICU message with args");
+    if (!isMessageRecord(message) || message.key !== "pagination.total-text" || typeof message.writerId !== "string" || !message.writerId.trim() || typeof message.locale !== "string" || !message.locale.trim() || typeof message.message !== "string" || !message.message.trim() || !isMessageRecord(message.values) || Object.values(message.values).some(value => typeof value !== "string" && (typeof value !== "number" || !Number.isFinite(value)))) throw new TypeError("sections.data-table: paginationSummary requires a Writer ICU message with args");
     const formatter = input.sectionHost?.formatCopyMessage;
     if (typeof formatter !== "function") throw new TypeError("sections.data-table: formatCopyMessage Writer formatter is required");
     // Paging belongs to the section. Consumer-authored values cannot override it.

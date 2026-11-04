@@ -11,7 +11,7 @@ export function editorialMetadata(value: RuntimeJson | undefined): EditorialMeta
     if (!text?.trim()) throw new TypeError(`Editorial metadata requires ${key}`);
     return text;
   };
-  const named = (key: "author" | "date" | "readingTime", field: "name" | "value") => {
+  const named = (key: "author" | "date" | "reading-time", field: "name" | "value") => {
     const row = value[key];
     if (row === undefined) return undefined;
     if (!isObject(row)) throw new TypeError(`Editorial metadata ${key} must be a record`);
@@ -19,8 +19,8 @@ export function editorialMetadata(value: RuntimeJson | undefined): EditorialMeta
   };
   const author = named("author", "name") as EditorialMetadata["author"];
   const date = named("date", "value") as EditorialMetadata["date"];
-  const readingTime = named("readingTime", "value") as EditorialMetadata["readingTime"];
+  const readingTime = named("reading-time", "value") as EditorialMetadata["readingTime"];
   const tags = value.tags === undefined ? undefined : recordsOf("editorial", "tags", value.tags).map(row => ({ id: required(row, "id"), label: required(row, "label"), ...(row.href !== undefined ? { href: required(row, "href") } : {}) }));
-  const outcomeStats = value.outcomeStats === undefined ? undefined : recordsOf("editorial", "outcomeStats", value.outcomeStats).map(row => ({ id: required(row, "id"), label: required(row, "label"), value: required(row, "value") }));
+  const outcomeStats = value["outcome-stats"] === undefined ? undefined : recordsOf("editorial", "outcome-stats", value["outcome-stats"]).map(row => ({ id: required(row, "id"), label: required(row, "label"), value: required(row, "value") }));
   return { author, date, readingTime, tags, outcomeStats, ...(value.summary !== undefined ? { summary: required(value, "summary") } : {}) };
 }

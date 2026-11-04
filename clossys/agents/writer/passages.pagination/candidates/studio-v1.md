@@ -10,18 +10,18 @@ source: {"kind":"derived","ref":["director:identity.verbal.voice@1"]}
 <!-- {"id":"studio.pages.page.label","bindings":[]} -->
 Pages
 
-### studio.pages.page.previousLabel
-<!-- {"id":"studio.pages.page.previousLabel","bindings":[]} -->
+### studio.pages.page.previous-label
+<!-- {"id":"studio.pages.page.previous-label","bindings":[]} -->
 Previous
 
-### studio.pages.page.nextLabel
-<!-- {"id":"studio.pages.page.nextLabel","bindings":[]} -->
+### studio.pages.page.next-label
+<!-- {"id":"studio.pages.page.next-label","bindings":[]} -->
 Next
 
-### studio.pages.page.pageText
-<!-- {"id":"studio.pages.page.pageText","bindings":[]} -->
+### studio.pages.page.page-text
+<!-- {"id":"studio.pages.page.page-text","bindings":[]} -->
 Page {page} of {pages}
 
-### studio.pages.total.rangeText
-<!-- {"id":"studio.pages.total.rangeText","bindings":[]} -->
+### studio.pages.total.range-text
+<!-- {"id":"studio.pages.total.range-text","bindings":[]} -->
 {from} to {to} of {total}

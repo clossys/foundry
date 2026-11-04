@@ -36,7 +36,7 @@ describe("scroll section kit", () => {
     const pin = vi.fn();
     const format = vi.fn(({ message, locale, values }: { message: string; locale: string; values: Record<string, string | number> }) => String(new IntlMessageFormat(message, locale).format(values)));
     const value = input("sections.data-table", { header: { heading: "Inputs", level: 4 }, columns: [{ id: "name", label: "Name", kind: "text" }], rows: Array.from({ length: 205 }, (_, n) => ({ id: String(n), name: `Row ${n}` })), selection: [], pagination: { showAll: "Show all (205)", label: "Rows", previous: "Previous", next: "Next", summary: "Page" } });
-    Object.assign(value, { sectionHost: { ...copyPortsFor("sections.data-table"), onSelectionChange: pin, paginationSummary: { key: "pagination.totalText", writerId: "st.9njpzn8mym", locale: "en", message: "Writer {page, select, 1 {first} other {second}} range", values: {} }, formatCopyMessage: format } });
+    Object.assign(value, { sectionHost: { ...copyPortsFor("sections.data-table"), onSelectionChange: pin, paginationSummary: { key: "pagination.total-text", writerId: "st.9njpzn8mym", locale: "en", message: "Writer {page, select, 1 {first} other {second}} range", values: {} }, formatCopyMessage: format } });
     render(renderDataTable(value));
     expect(screen.queryByText("Row 10")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Show all (205)" }));

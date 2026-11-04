@@ -1,6 +1,6 @@
 {
   "candidate": "studio-v1.md",
-  "sha256": "7decaef574a17bd0827b7cf34b86289eb488b1b74ff94c036d3ff5e31045de26",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "sha256": "409de620dae32e118ccadda82eb896b383adf7df3f5a8632fdf72b37da17286c",
+  "pinnedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:39Z"
 }

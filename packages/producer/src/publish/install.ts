@@ -240,8 +240,6 @@ export async function writerCopy(root: string): Promise<Record<string, string>> 
   return copy;
 }
 
-const COPY_BULLET = /^- (.+?): writer:([a-z][a-z0-9-]*\.[a-z][a-z0-9-]*)$/;
-
 /** The fields of a clossys.page/1 candidate install reads. `copy` maps copy slot to `<writer slot>#<key>`; `bindings` does per section instance key. */
 export interface NativePageCandidate {
   readonly frame: string | null;
@@ -269,13 +267,13 @@ export function installCopy(page: Pick<NativePageCandidate, "copy" | "bindings">
 }
 
 /**
- * The page record for a page id, read from the consumer's active Publisher page cell. Theme
- * slots (`themes.*`) the consumer pinned are included; the cell's copy bullets bind copy slots.
+ * The page record for a page id, read from the consumer's pinned Publisher page slot. Theme
+ * slots (`themes.*`) the consumer pinned are included; the candidate's copy refs bind copy slots.
  */
 export async function pageRecordFromCell(root: string, id: string, pins: InstallPins, writer?: Readonly<Record<string, string>>): Promise<InstallPageRecord> {
   const cellId = id.startsWith("page.") ? id : `page.${id}`;
   const consumer = join(root, "clossys");
-  if (hasSlotModel(consumer)) {
+  if (hasSlotModel(consumer) && readIa(consumer, "publisher")) {
     const ia = readIa(consumer, "publisher");
     const position = ia ? slotPositions("publisher", ia).get(cellId) : undefined;
     if (!position) throw new Error(`publish --install: Publisher has no page slot ${cellId} in ia.json`);
@@ -296,32 +294,7 @@ export async function pageRecordFromCell(root: string, id: string, pins: Install
     const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
     return { id: cellId.slice("page.".length), frame: page.frame, sections: page.sections, ...(include.length ? { include } : {}), ...installCopy(page, writer) };
   }
-  const base = join(root, "clossys", "agents", "publisher");
-  let tree: any;
-  try { tree = JSON.parse(await readFile(join(base, "tree.json"), "utf8")); } catch { throw new Error(`publish --install: no Publisher tree at ${join(base, "tree.json")}`); }
-  const version = tree?.active?.[cellId];
-  if (!Number.isInteger(version)) throw new Error(`publish --install: Publisher has no active page cell ${cellId}`);
-  const path = join(base, "cells", cellId, `v${version}.md`);
-  const text = await readFile(path, "utf8");
-  const front = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text)?.[1] ?? "";
-  const field = (name: string) => new RegExp(`^${name}:\\s*(.+)$`, "m").exec(front)?.[1]?.trim();
-  const frame = field("frame"), sections = field("sections")?.replace(/^\[|\]$/g, "").split(",").map(item => item.trim()).filter(Boolean);
-  if (!frame || !sections) throw new Error(`publish --install: ${path} names no frame and sections`);
-  const copy: Record<string, string> = {};
-  const lines = text.split(/\r?\n/), start = lines.indexOf("## Copy");
-  for (const line of start < 0 ? [] : lines.slice(start + 1)) {
-    if (line.startsWith("## ")) break;
-    const match = COPY_BULLET.exec(line.trim());
-    if (!match) continue;
-    const [spec, cell] = [match[1]!.trim(), match[2]!];
-    const equals = spec.indexOf(" = ");
-    if (equals >= 0) { copy[spec.slice(0, equals).trim()] = `${cell}.${spec.slice(equals + 3).trim()}`; continue; }
-    const key = `${cell}.${spec}`;
-    copy[key] ??= key;
-    copy[spec] ??= key;
-  }
-  const include = Object.keys(pins).filter(slot => slot.startsWith("themes.")).sort();
-  return { id: cellId.slice("page.".length), frame, sections, ...(include.length ? { include } : {}), copy };
+  throw new Error("publish --install: the consumer has no Publisher slot model (clossys/agents/publisher/ia.json)");
 }
 
 const IMPORT = /\bfrom\s*["']([^"']+)["']|\bimport\s*\(?\s*["']([^"']+)["']/g;

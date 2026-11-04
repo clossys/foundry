@@ -27,7 +27,7 @@
           "dir": "auto"
         },
         {
-          "key": "page.previousLabel",
+          "key": "page.previous-label",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -36,7 +36,7 @@
           "dir": "auto"
         },
         {
-          "key": "page.nextLabel",
+          "key": "page.next-label",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -45,7 +45,7 @@
           "dir": "auto"
         },
         {
-          "key": "page.pageText",
+          "key": "page.page-text",
           "kind": "icu",
           "required": false,
           "maxLength": {
@@ -63,7 +63,7 @@
           "dir": "auto"
         },
         {
-          "key": "page.noResultsLabel",
+          "key": "page.no-results-label",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -72,7 +72,7 @@
           "dir": "auto"
         },
         {
-          "key": "page.pageSizeLabel",
+          "key": "page.page-size-label",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -81,7 +81,7 @@
           "dir": "auto"
         },
         {
-          "key": "total.rangeText",
+          "key": "total.range-text",
           "kind": "icu",
           "required": false,
           "maxLength": {

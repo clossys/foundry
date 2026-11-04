@@ -1,0 +1,63 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "plain-frame",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "registry/frames/plain-frame.tsx",
+      "type": "registry:component",
+      "target": "components/frames/plain-frame.tsx",
+      "content": "import type * as React from \"react\";\n\nexport function PlainFrame({ title, children }: { title: string; children?: React.ReactNode }) {\n  return (\n    <main data-frame=\"plain\">\n      <header><p data-copy=\"frame.title\">{title}</p></header>\n      {children}\n    </main>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "frames.plain",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "hash": "sha256:bc8a11f930287d436c012a68e0da0d1128ec2a5523f933b37ffcca0cb549f27b",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "plain-frame",
+      "package": "designer",
+      "layer": "frames",
+      "slot": "frames.plain",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT"
+      },
+      "creator": {
+        "agent": "designer",
+        "model": "fixture"
+      },
+      "reason": "fixture: install-and-bind",
+      "createdAt": "2026-10-31T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "frame.title"
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "title": {
+          "$copy": "frame.title"
+        }
+      },
+      "copy": {
+        "frame.title": "Sample site"
+      },
+      "container": "page",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

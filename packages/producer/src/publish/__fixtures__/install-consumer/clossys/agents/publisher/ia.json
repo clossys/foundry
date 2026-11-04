@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "consumer#agents/publisher/tree.json",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "example-site",
+      "label": "example-site",
+      "children": [
+        {
+          "id": "example-site.pages",
+          "label": "Pages",
+          "slots": [
+            "page.home",
+            "page.about"
+          ]
+        },
+        {
+          "id": "publication",
+          "label": "Publication",
+          "slots": [
+            "publication.example-site"
+          ]
+        }
+      ]
+    }
+  ]
+}

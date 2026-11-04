@@ -1,0 +1,88 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.media-player",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.display",
+    "l2": "display-media",
+    "order": 123
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "controls.full",
+        "controls.minimal"
+      ]
+    },
+    "props": [
+      "video",
+      "poster",
+      "passage",
+      "captions",
+      "muted",
+      "autoplay",
+      "loop",
+      "controls",
+      "className",
+      "decorative"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.radius",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.spacing",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.image",
+        "assets.video",
+        "assets.icon-chevron-right"
+      ],
+      "components": [
+        "components.button",
+        "components.toggle-button",
+        "components.slider",
+        "components.icon",
+        "components.semantic-content"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.toggle-button",
+      "components.slider",
+      "components.icon",
+      "components.semantic-content"
+    ]
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.icon",
+    "components.semantic-content",
+    "components.slider",
+    "components.toggle-button"
+  ]
+}

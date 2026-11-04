@@ -46,7 +46,7 @@ export function studioReports(config: unknown): StudioReport[] {
     reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: slot ? studioCopy("studio.designer-selection-detail", { value0: String(slot) }) : studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason }) });
   }
   const theme = object(config.theme) ? config.theme : undefined;
-  if (theme?.source === 'foundry') reports.push({ id: 'theme', area: 'theme', severity: 'info', title: studioCopy("studio.consumer-theme-not-compiled"), detail: typeof theme.message === 'string' ? reportText(theme.message) : studioCopy("studio.producer-is-using-the-foundry-theme") });
+  if (theme?.source === 'foundry' || theme?.source === 'error') reports.push({ id: 'theme', area: 'theme', severity: theme.source === 'error' ? 'error' : 'info', title: studioCopy("studio.consumer-theme-not-compiled"), detail: typeof theme.message === 'string' ? reportText(theme.message) : studioCopy("studio.producer-is-using-the-foundry-theme") });
   if (Array.isArray(config.compilation)) for (const row of config.compilation) {
     if (!object(row) || typeof row.agent !== 'string' || row.state !== 'error') continue;
     reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: studioCopy("studio.agent-compile-failed", { agent: agentTitle(row.agent) }), detail: typeof row.message === 'string' ? reportText(row.message) : studioCopy("studio.producer-could-not-compile-these-cells") });

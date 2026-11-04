@@ -8,7 +8,7 @@ import {
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type SlotAgent, type SlotDoc,
 } from '../records/slot-model/index.js';
-import { checkSlotModel } from '../migrate/slot-check.js';
+import { checkSlotModel } from '../records/slot-check.js';
 import { agentSlotCensus, slotCensus } from './slot-census.js';
 
 let root: string;

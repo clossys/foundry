@@ -560,7 +560,7 @@
       "status": "draft",
       "origin": "authored",
       "schema": "passages.notices",
-      "schemaDigest": "3c70693ef586e11b0b9aab3fabad1f465a1c7149d31df99b8534dbf14036614f",
+      "schemaDigest": "d398a2f65a95feb4bc094d3b1c9eacf0b43908ce36ad486a72c357321dfb6b2f",
       "fields": {
         "header.eyebrow": {
           "ref": "string",
@@ -586,7 +586,7 @@
           "ref": "string",
           "id": "st.000000001x"
         },
-        "notices[].dismissLabel": {
+        "notices[].dismiss-label": {
           "ref": "string",
           "id": "st.ev3xsrhrwe"
         }

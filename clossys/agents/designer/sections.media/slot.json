@@ -139,7 +139,7 @@
           "dir": "auto"
         },
         {
-          "key": "figure.chromeLabel",
+          "key": "figure.chrome-label",
           "kind": "plain",
           "required": false,
           "maxLength": {

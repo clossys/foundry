@@ -17,7 +17,6 @@ const page = { schema: "clossys.page/1", path: "/", title: "example.title", fram
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "specimen-page-slots-")));
   base = join(root, "clossys", "agents", "publisher");
-  save(join(base, "tree.json"), { active: { "page.legacy": 1, "page.home": 3 } });
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
@@ -52,10 +51,6 @@ describe("installed specimen page discovery", () => {
     const publication = readCandidate(consumer, "publisher", "publication.site", "sample-v1.json");
     expect(validateCandidate("publication", "publication.site", publication.name, publication.bytes)).toEqual([]);
     expect(JSON.parse(candidate.bytes).frame).toBe("frames.plain");
-    save(join(base, "tree.json"), { active: { "page.contradiction": 9 } });
-    expect(await specimenPageSlotIds(root)).toEqual(["page.home", "page.alpha", "page.zebra"]);
-    rmSync(join(base, "tree.json"));
-    expect(await specimenPageSlotIds(root)).toEqual(["page.home", "page.alpha", "page.zebra"]);
   });
 
   it.each([
@@ -68,7 +63,7 @@ describe("installed specimen page discovery", () => {
     ["wrong agent", () => { const path = join(dir("page.home"), "slot.json"); save(path, { ...load(path), agent: "writer" }); }],
     ["wrong kind", () => { const path = join(dir("page.home"), "slot.json"); save(path, { ...load(path), kind: "publication" }); }],
     ["wrong position", () => { const path = join(dir("page.home"), "slot.json"); const doc = load(path); save(path, { ...doc, ia: { ...doc.ia, order: 9 } }); }],
-  ] as const)("excludes %s without leaking the legacy home page", async (_name, mutate) => {
+  ] as const)("excludes %s", async (_name, mutate) => {
     native(["page.home"]);
     mutate();
     expect(await specimenPageSlotIds(root)).toEqual([]);
@@ -82,15 +77,12 @@ describe("installed specimen page discovery", () => {
     expect(await specimenPageSlotIds(root)).toEqual([]);
   });
 
-  it("rejects invalid native IA without reading the legacy tree", async () => {
+  it("rejects invalid native IA", async () => {
     save(join(base, "ia.json"), {});
     await expect(specimenPageSlotIds(root)).rejects.toThrow(/Invalid publisher IA/);
   });
 
-  it("keeps legacy active page filtering and ordering only without any IA", async () => {
-    save(join(base, "tree.json"), { active: { "page.zebra": 2, "page.alpha": 3, "page.home": 1, "publication.site": 1, "page.bad.dot": 1 } });
-    expect(await specimenPageSlotIds(root)).toEqual(["page.home", "page.alpha", "page.zebra"]);
-    rmSync(join(base, "tree.json"));
+  it("discovers no pages without a slot model", async () => {
     expect(await specimenPageSlotIds(root)).toEqual([]);
   });
 });

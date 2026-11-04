@@ -18,11 +18,11 @@ export const renderPagination: SectionRenderer = input => {
   const total = slotValue(input, "total");
   const totalItems = total === undefined ? undefined : typeof total === "number" ? total : numberField(total, "total");
   if (total !== undefined && totalItems === undefined) throw new TypeError(`${LEAF}: total needs a number`);
-  const pageText = stringField(page, "pageText"), rangeText = stringField(total, "rangeText");
+  const pageText = stringField(page, "page-text"), rangeText = stringField(total, "range-text");
   return <Pagination
     page={current} pageCount={pageCount} pageSize={numberField(page, "pageSize")} totalItems={totalItems} onPageChange={noop}
-    aria-label={stringField(page, "label")} previousPageLabel={stringField(page, "previousLabel")} nextPageLabel={stringField(page, "nextLabel")}
-    noResultsLabel={stringField(page, "noResultsLabel")} pageSizeLabel={stringField(page, "pageSizeLabel")}
+    aria-label={stringField(page, "label")} previousPageLabel={stringField(page, "previous-label")} nextPageLabel={stringField(page, "next-label")}
+    noResultsLabel={stringField(page, "no-results-label")} pageSizeLabel={stringField(page, "page-size-label")}
     pageSummaryMessage={pageText === undefined ? undefined : () => pageText}
     rangeSummaryMessage={rangeText === undefined ? undefined : () => rangeText}
   />;

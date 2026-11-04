@@ -12,8 +12,8 @@ export function renderTestimonialsSection(input: SectionRenderInput): ReactNode 
     return {
       id: text(content, quote.id, `quotes.${index}.id`),
       quote: text(content, quote.quote, `quotes.${index}.quote`),
-      attributorName: text(content, quote.attributorName, `quotes.${index}.attributorName`),
-      attributorRole: optionalText(content, quote.attributorRole, `quotes.${index}.attributorRole`),
+      attributorName: text(content, quote["attributor-name"], `quotes.${index}.attributor-name`),
+      attributorRole: optionalText(content, quote["attributor-role"], `quotes.${index}.attributor-role`),
     };
   });
   const layout = memberValue(content, "layout", ["single", "grid"] as const);

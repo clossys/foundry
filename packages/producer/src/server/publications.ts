@@ -1,9 +1,8 @@
-import { constants } from "node:fs";
-import { lstat, open, readdir } from "node:fs/promises";
+import { lstat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { ContentMap, ContentMapBreadcrumb, ContentMapCommandGroup, ContentMapNavigation, ContentMapOutlineNode } from "@clossys/publisher/content-map";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
-import { agentModule, agentRoot, readCells } from "./cells.js";
+import { agentModule, agentRoot } from "./cells.js";
 import { hasSlotModel, listSlots, readCandidate, readIa } from "../records/slots.js";
 
 export interface ConsumerPublication {
@@ -11,7 +10,7 @@ export interface ConsumerPublication {
   /** The publication's own name (its tree name); absent when the publication names none. */
   title?: string;
   format: ContentMap["format"];
-  source: "slots" | "cells" | "content-map";
+  source: "slots";
   map: ContentMap;
   entryId?: string;
   navigation?: ContentMapNavigation;
@@ -28,7 +27,6 @@ export interface ConsumerAppsResponse {
 }
 type ObjectValue = Record<string, unknown>;
 const object = (value: unknown): value is ObjectValue => value !== null && typeof value === "object" && !Array.isArray(value);
-const identity = (value: unknown): value is string => typeof value === "string" && /^[a-z][a-z0-9.-]*$/.test(value) && !value.includes("..");
 
 /** Check every ancestor, including absent leaves, before opening consumer data. */
 async function safePath(root: string, path: string): Promise<string> {
@@ -41,15 +39,6 @@ async function safePath(root: string, path: string): Promise<string> {
     const parent = dirname(cursor); if (parent === cursor) break; cursor = parent;
   }
   return target;
-}
-async function readJson(root: string, path: string): Promise<unknown> {
-  const handle = await open(await safePath(root, path), constants.O_RDONLY | constants.O_NOFOLLOW);
-  try { if (!(await handle.stat()).isFile()) throw new TypeError("Expected a publication file"); return JSON.parse(await handle.readFile("utf8")); }
-  finally { await handle.close(); }
-}
-async function optionalJson(root: string, path: string): Promise<unknown> {
-  try { return await readJson(root, path); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
 }
 async function appTarget(root: string, map: ContentMap, metadata: unknown): Promise<ConsumerPublication["target"]> {
   if (metadata === undefined) return undefined;
@@ -99,39 +88,10 @@ export async function consumerApps(root: string): Promise<ConsumerAppsResponse> 
       }
       return await projectPublications(root, sources, api);
     }
-    const tree = await optionalJson(publisherRoot, "tree.json");
-    if (tree !== undefined && (!object(tree) || tree.meta !== undefined && !object(tree.meta))) throw new TypeError("Invalid Publisher tree");
-    const declarations = object(tree) && object(tree.meta) ? tree.meta.publications : undefined;
-    if (declarations !== undefined && !Array.isArray(declarations)) throw new TypeError("Invalid Publisher publications");
-    // The shared store validates grouping, active pointers and cell boundaries
-    // even when there are no publications to send through Publisher's reader.
-    const active = tree === undefined ? [] : await readCells(root, "publisher", true);
-    if (!declarations?.length && active.length) throw new TypeError("Active Publisher cells require publication declarations");
-    const cells = declarations?.length ? await agentModule("publisher", "content-map/cells.js") : undefined;
-    for (const declaration of declarations ?? []) {
-      if (!object(declaration) || !identity(declaration.id) || sources.has(declaration.id)) throw new TypeError("Invalid or repeated publication identity");
-      const map: ContentMap = await cells.contentMapFromCells(publisherRoot, declaration.id);
-      const group = object(tree) && Array.isArray(tree.tree) ? tree.tree.find(node => object(node) && node.id === declaration.id) : undefined;
-      const named = object(group) && typeof group.name === "string" && group.name.trim() ? group.name : undefined;
-      sources.set(declaration.id, { map, ...(named ? { title: named } : {}), source: "cells", metadata: declaration.routePack });
-    }
-    let filenames: string[] = [];
-    // A cell-authored publication set also owns removals. Stale generated files
-    // must not resurrect a publication removed from the consumer's tree.
-    try { if (declarations === undefined) filenames = await readdir(await safePath(publisherRoot, "content-map")); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
-    for (const filename of filenames.sort()) {
-      if (!filename.endsWith(".json")) continue;
-      const id = filename.slice(0, -5);
-      if (!identity(id)) throw new TypeError("Invalid published map filename");
-      await safePath(publisherRoot, join("content-map", filename));
-      const map = await readJson(publisherRoot, join("content-map", filename));
-      if (api.checkContentMap(map).length || !object(map) || map.publicationId !== id) throw new TypeError("Invalid published content map");
-      sources.set(id, { map: map as unknown as ContentMap, source: "content-map", metadata: await optionalJson(publisherRoot, join("route-pack", filename)) });
-    }
+    // Without a Publisher slot model there are no publications to read.
     return await projectPublications(root, sources, api);
   } catch {
-    return { state: "error", publications: [], message: "Publisher publications could not be read; check the publication maps and cell format" };
+    return { state: "error", publications: [], message: "Publisher publications could not be read; check the pinned publication slots" };
   }
 }
 

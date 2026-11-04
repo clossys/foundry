@@ -8,7 +8,7 @@ const { createServer } = require('node:http');
 const { checkCommand, probeBrowser, failureReport, REPORT_EXIT_CODES } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
-const plan = { routes: ['/', '/agents/publisher'], templates: ['/', '/agents/publisher', '/agents/publisher/[slug]', '/content/[agent]/[id]'], leafTemplates: ['/agents/publisher/[slug]'], agents: ['publisher'], contentRoute: true };
+const plan = { routes: ['/', '/designer', '/publisher', '/writer'], templates: ['/', '/designer', '/publisher', '/publisher/[slug]', '/writer'], leafTemplates: ['/publisher/[slug]'], agents: ['publisher'] };
 const defectRules = ['raw-cell-id', 'fact-placeholder', 'owner-placeholder', 'empty-heading', 'missing-asset', 'http-error'];
 async function fixtureServer() {
   const requests = [];
@@ -16,7 +16,6 @@ async function fixtureServer() {
   const server = createServer((request, response) => {
     requests.push(request.url);
     if (request.url === '/favicon.ico') { response.writeHead(204); response.end(); return; }
-    if (request.url === '/api/cells') { response.setHeader('Content-Type', 'application/json'); response.end(JSON.stringify({ agents: [{ agent: 'publisher', state: 'ready', cells: [{ id: 'page.home', version: 3 }] }] })); return; }
     if (request.url === '/missing.png') { response.writeHead(404); response.end(); return; }
     response.setHeader('Content-Type', 'text/html');
     const extra = mutation === 'need' ? '<p>NEED: fixture evidence unavailable</p>'
@@ -50,7 +49,7 @@ async function runMutationProof(options = {}) {
     const baseline = await checkCommand({ origin: fixture.origin, browser, plan, screenshotRoot: path.join(output, 'baseline') });
     assert.equal(baseline.exitCode, 0, 'The unmutated fixture must pass before mutation evidence is accepted');
     assert.equal(baseline.report.checks.length, 16);
-    assert.ok(fixture.requests.includes('/content/publisher/page.home?version=3'));
+    assert.ok(plan.routes.every(route => fixture.requests.includes(route)), 'Every fixture route must be requested');
     const results = [];
     for (const [mutation, rules] of [['need', ['need']], ['console', ['console-error']], ['pageerror', ['page-error']], ['defects', defectRules]]) {
       fixture.mutate(mutation);

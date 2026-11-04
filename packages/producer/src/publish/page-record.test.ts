@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "../records/hash.js";
 import { bindPage, resolvePage } from "@clossys/publisher/install";
 import { directoryRecordSource } from "@clossys/publisher/specimen";
-import { pageBlocks } from "../migrate/slots.js";
 import { jsonBytes, slotPositions, validateCandidate, type IaDoc } from "../records/slot-model/index.js";
 import { installCopy, pageRecordFromCell } from "./install.js";
 
@@ -22,15 +21,7 @@ const page = {
 
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "producer-page-record-")));
-  const base = join(root, "clossys", "agents", "publisher");
-  mkdirSync(join(base, "cells", "page.home"), { recursive: true });
-  save(join(base, "tree.json"), { active: { "page.home": 1 } });
-  writeFileSync(join(base, "cells", "page.home", "v1.md"), [
-    "---", "frame: frames.legacy", "sections: [sections.legacy]", "---", "## Copy",
-    "- title: writer:landing.hero", "- hero.subtitle = subtitle: writer:landing.hero", "## Notes",
-    "- ignored: writer:landing.hero", "",
-  ].join("\n"));
-  dir = join(base, "page.home");
+  dir = join(root, "clossys", "agents", "publisher", "page.home");
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
@@ -53,7 +44,7 @@ function nativePage(): void {
 }
 
 describe("Publisher page record selection", () => {
-  it("reads the exact native pinned page despite contradictory legacy and newer draft pages", async () => {
+  it("reads the exact pinned page despite a newer draft candidate", async () => {
     nativePage();
     const pins = { "themes.zinc": { element: "zinc", version: 1 }, "sections.hero": { element: "hero", version: 1 }, "themes.font": { element: "font", version: 1 } };
     const expected = { id: "home", frame: page.frame, sections: page.sections, copy: { "hero.title": "title" }, bindings: { "sections.hero#2": { copy: { "hero.title": "second-title" } } }, include: ["themes.font", "themes.zinc"] };
@@ -73,31 +64,24 @@ describe("Publisher page record selection", () => {
     ["invalid instance key", () => replacePinned({ ...page, bindings: { "sections.hero#0": { copy: {} } } })],
     ["invalid slot", () => save(join(dir, "slot.json"), { ...load(join(dir, "slot.json")), kind: "publication" })],
     ["wrong slot position", () => { const slot = load(join(dir, "slot.json")); save(join(dir, "slot.json"), { ...slot, ia: { ...slot.ia, order: 9 } }); }],
-  ] as const)("rejects native %s without legacy or newest fallback", async (_name, mutate) => {
+  ] as const)("rejects native %s without newest-candidate fallback", async (_name, mutate) => {
     nativePage();
     mutate();
     await expect(pageRecordFromCell(root, "home", {})).rejects.toThrow();
   });
 
-  it("rejects legacy pages once another agent has an IA", async () => {
+  it("refuses a consumer without a Publisher slot model", async () => {
+    await expect(pageRecordFromCell(root, "home", {})).rejects.toThrow(/no Publisher slot model/);
     const base = join(root, "clossys", "agents", "writer");
     mkdirSync(base, { recursive: true });
     save(join(base, "ia.json"), {});
-    await expect(pageRecordFromCell(root, "home", {})).rejects.toThrow(/no page slot/);
-  });
-
-  it("keeps active legacy page and copy bullet behavior without any IA", async () => {
-    expect(await pageRecordFromCell(root, "home", {})).toEqual({
-      id: "home", frame: "frames.legacy", sections: ["sections.legacy"],
-      copy: { title: "landing.hero.title", "landing.hero.title": "landing.hero.title", "hero.subtitle": "landing.hero.subtitle" },
-    });
+    await expect(pageRecordFromCell(root, "home", {})).rejects.toThrow(/no Publisher slot model/);
   });
 });
 
 describe("page copy direction", () => {
-  it("round-trips one direction: legacy bullets to copy slot -> <writer slot>#<key>, to install copy slot -> Writer key, to bound Writer text", async () => {
-    const { copy } = pageBlocks("## Copy\n- title: writer:landing.hero\n- frame.title = site-name: writer:landing.hero\n");
-    expect(copy).toEqual({ title: "landing.hero#title", "frame.title": "landing.hero#site-name" });
+  it("round-trips one direction: copy slot -> <writer slot>#<key>, to install copy slot -> Writer key, to bound Writer text", async () => {
+    const copy = { title: "landing.hero#title", "frame.title": "landing.hero#site-name" };
     expect(validateCandidate("page", "page.home", "home-v1.json", jsonBytes({ ...page, copy }))).toEqual([]);
     const install = installCopy({ copy });
     expect(install).toEqual({ copy: { title: "title", "frame.title": "site-name" } });

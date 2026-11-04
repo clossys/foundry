@@ -13,7 +13,7 @@ export interface CliArgs {
   noOpen: boolean;
   pages?: string;
   report?: string;
-  /** publish: the install out dir; produce: the folder of install out dirs Studio previews. */
+  /** publish: the install out dir; produce: the folder of install out dirs Studio previews; direct|design|write: the projection file. */
   out?: string;
   /** check: run the record suites (archetypes, Writer/Director slots, slot contracts). */
   suites: boolean;
@@ -51,9 +51,10 @@ export class CliUsageError extends Error {
 
 export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check> [--check] [--root <dir>] [--json]\n"
   + "Options: --help; produce --once --port <0-65535> --no-open [--out <install out folder>]; publish --install --page <id> | --site <pack id> [--origin <url>] [--build] [--out <dir>]\n"
-  + "Derivation inputs: design|write --brief (read-only; cannot combine with --check)\n"
+  + "Agents (pinned slot model, read-only): direct|design|write [--brief | --check] [--out <projection.json>]; publish (dry run: every pinned page compiled and checked, nothing installed)\n"
+  + "Migrate: clossys migrate copy-keys [--check] [--root <dir>] (camelCase copy ids to the catalog's kebab-case ids; record text unchanged)\n"
   + "Page check: clossys check --pages <generated-manifest.json> --report <report.json> [--json]\n"
-  + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default); migration: clossys migrate slots [--check] [--compare]\n"
+  + "Slots: clossys check [--slots] [--readiness] [--root <dir>] (enforced by default)\n"
   + "Decisions: clossys pin <agent>/<slot> <candidate-id> [--by <who>] | clossys pin <agent>/<slot> --not-needed --reason <text>; clossys decisions [--json]\n"
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
@@ -107,7 +108,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   }
   if ((args.once || args.noOpen) && args.verb !== "produce") throw new CliUsageError("--once and --no-open require produce");
   if (args.port !== undefined && args.verb !== "produce") throw new CliUsageError("--port requires produce");
-  if (args.out !== undefined && args.verb !== "publish" && args.verb !== "produce") throw new CliUsageError("--out requires publish or produce");
+  if (args.out !== undefined && args.verb === "check") throw new CliUsageError("--out requires direct, design, write, publish or produce");
   if ((args.pages !== undefined || args.report !== undefined) && args.verb !== "check") {
     throw new CliUsageError("--pages and --report require check");
   }
@@ -123,7 +124,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.next !== undefined || args.assembly !== undefined || args.live) && (args.site === undefined || !args.install)) throw new CliUsageError("--next, --assembly and --live require publish --install --site");
   if ((args.next === undefined) !== (args.assembly === undefined)) throw new CliUsageError("publish --install --next requires --assembly <module>, and --assembly requires --next");
   if (args.next !== undefined && (args.build || args.origin !== undefined || args.selection !== undefined || args.records.length)) throw new CliUsageError("--next installs routes only; it takes no --build, --origin, --selection or --records");
-  if (args.brief && args.verb !== "write" && args.verb !== "design") throw new CliUsageError("--brief requires design or write");
+  if (args.brief && args.verb !== "write" && args.verb !== "design" && args.verb !== "direct") throw new CliUsageError("--brief requires direct, design or write");
   if (args.brief && args.check) throw new CliUsageError("--brief and --check are mutually exclusive");
   if (!args.verb && !args.help) throw new CliUsageError("A verb is required");
   if (args.verb === "check" && !args.help) {

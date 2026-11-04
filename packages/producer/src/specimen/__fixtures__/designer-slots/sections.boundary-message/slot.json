@@ -1,0 +1,154 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.boundary-message",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.respond",
+    "l2": "respond-states",
+    "order": 222
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "status",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "title",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "description",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": false,
+        "max": 2
+      },
+      {
+        "name": "notes",
+        "type": "copy",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "kind.sign-in-unavailable",
+        "kind.not-authorized",
+        "kind.service-unavailable",
+        "kind.sign-out-confirm",
+        "status.not-found",
+        "status.unavailable",
+        "status.construction"
+      ]
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.boundary-message",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "status",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 80
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "description",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "notes",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.link",
+    "components.semantic-content"
+  ]
+}

@@ -22,20 +22,20 @@ By version
 <!-- {"id":"studio.history.events.0.summary","bindings":[]} -->
 Added {candidate}.
 
-### studio.history.events.0.timeText
-<!-- {"id":"studio.history.events.0.timeText","bindings":[]} -->
+### studio.history.events.0.time-text
+<!-- {"id":"studio.history.events.0.time-text","bindings":[]} -->
 {date}
 
 ### studio.history.events.0.changes.0.field
 <!-- {"id":"studio.history.events.0.changes.0.field","bindings":[]} -->
 Candidate
 
-### studio.history.labels.changedFrom
-<!-- {"id":"studio.history.labels.changedFrom","bindings":[]} -->
+### studio.history.labels.changed-from
+<!-- {"id":"studio.history.labels.changed-from","bindings":[]} -->
 From
 
-### studio.history.labels.changedTo
-<!-- {"id":"studio.history.labels.changedTo","bindings":[]} -->
+### studio.history.labels.changed-to
+<!-- {"id":"studio.history.labels.changed-to","bindings":[]} -->
 To
 
 ### studio.history.states.loading.label

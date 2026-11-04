@@ -43,7 +43,7 @@
           "dir": "auto"
         },
         {
-          "key": "credentials.identifierLabel",
+          "key": "credentials.identifier-label",
           "kind": "plain",
           "required": true,
           "maxLength": {
@@ -52,7 +52,7 @@
           "dir": "auto"
         },
         {
-          "key": "credentials.identifierPlaceholder",
+          "key": "credentials.identifier-placeholder",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -61,7 +61,7 @@
           "dir": "auto"
         },
         {
-          "key": "credentials.passwordLabel",
+          "key": "credentials.password-label",
           "kind": "plain",
           "required": true,
           "maxLength": {
@@ -70,7 +70,7 @@
           "dir": "auto"
         },
         {
-          "key": "credentials.passwordPlaceholder",
+          "key": "credentials.password-placeholder",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -79,7 +79,7 @@
           "dir": "auto"
         },
         {
-          "key": "verification.codeLabel",
+          "key": "verification.code-label",
           "kind": "plain",
           "required": true,
           "maxLength": {

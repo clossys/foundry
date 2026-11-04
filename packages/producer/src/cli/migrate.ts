@@ -1,75 +1,35 @@
-/**
- * `clossys migrate slots [--check] [--compare] [--root <dir>]` and the slot half
- * of `clossys check --slots [--readiness]`.
- */
-import { statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { checkSlotModel, compareSlotModel } from "../migrate/slot-check.js";
-import { planMigration, writePlan } from "../migrate/slots.js";
-import { SLOT_AGENTS } from "../records/slot-model/index.js";
-import { CliUsageError } from "./args.js";
+/** `clossys migrate copy-keys [--check] [--root <dir>] [--json]`: deterministic copy-id codemod. */
+import { resolve } from "node:path";
+import { applyCopyKeyMigration, planCopyKeyMigration } from "../migrate/copy-keys.js";
 import type { CliResult } from "./main.js";
+import { discoverRoot } from "./root.js";
 
-export const MIGRATE_USAGE = "Usage: clossys migrate slots [--check] [--compare] [--root <dir>] [--json]\n"
-  + "  (no flag) write the slot model beside the old stores; deterministic and idempotent\n"
-  + "  --check   validate the slot model (IA position, one pin, pin hash, single source, no candidate status, refs)\n"
-  + "  --compare re-derive the old projections from the old stores and the slot model; any diff fails";
-
-/** A workspace root holds `clossys/clossys.config.ts` or a `clossys/agents/` store. */
-export function discoverWorkspace(startDir: string): string {
-  let current = resolve(startDir);
-  for (;;) {
-    const config = statSync(join(current, "clossys", "clossys.config.ts"), { throwIfNoEntry: false })?.isFile();
-    const agents = statSync(join(current, "clossys", "agents"), { throwIfNoEntry: false })?.isDirectory();
-    if (config || agents) return current;
-    const parent = dirname(current);
-    if (parent === current) throw Object.assign(new Error("Root not found: expected clossys/clossys.config.ts or clossys/agents/ in this directory or an ancestor"), { exitCode: 2 });
-    current = parent;
-  }
-}
+export const MIGRATE_USAGE = "Usage: clossys migrate copy-keys [--check] [--root <dir>] [--json]\n"
+  + "Renames camelCase copy ids in Designer and Writer slot.json and Writer candidates to the catalog's kebab-case ids; record text is unchanged. --check reports pending renames and exits 1 when any remain.";
 
 export async function runMigrateCli(argv: readonly string[], cwd: string): Promise<CliResult> {
-  let check = false, compare = false, root: string | undefined, help = false;
-  const rest = [...argv];
-  if (rest[0] !== "slots" && !rest.includes("--help")) throw new CliUsageError(`migrate requires the slots target\n${MIGRATE_USAGE}`);
-  if (rest[0] === "slots") rest.shift();
+  const [command, ...rest] = argv;
+  if (command === "--help" || command === undefined) return { exitCode: command ? 0 : 2, message: MIGRATE_USAGE };
+  if (command !== "copy-keys") return { exitCode: 2, message: `Unknown migrate command: ${command}\n${MIGRATE_USAGE}` };
+  let check = false, root: string | undefined;
   for (let index = 0; index < rest.length; index++) {
     const arg = rest[index]!;
     if (arg === "--check") check = true;
-    else if (arg === "--compare") compare = true;
     else if (arg === "--json") continue;
-    else if (arg === "--help") help = true;
-    else if (arg === "--root") { const next = rest[++index]; if (!next || next.startsWith("--")) throw new CliUsageError("--root requires a value"); root = next; }
-    else throw new CliUsageError(`Unknown argument: ${arg}\n${MIGRATE_USAGE}`);
+    else if (arg === "--root" && rest[index + 1] && !rest[index + 1]!.startsWith("--")) root = rest[++index];
+    else return { exitCode: 2, message: `Unknown argument: ${arg}\n${MIGRATE_USAGE}` };
   }
-  if (help) return { exitCode: 0, message: MIGRATE_USAGE };
-  let workspace: string;
-  try { workspace = discoverWorkspace(resolve(cwd, root ?? ".")); } catch (error) { return { exitCode: 2, message: (error as Error).message }; }
-  const consumer = join(workspace, "clossys");
-  const lines: string[] = [];
-  let failed = false;
-  if (!check && !compare) {
-    const plan = await planMigration(consumer);
-    const result = writePlan(plan);
-    for (const agent of SLOT_AGENTS) {
-      const row = plan.agents[agent];
-      const slots = [...row.slots.values()];
-      lines.push(`${agent}: ${slots.length} slots, ${slots.reduce((n, slot) => n + slot.candidates.length, 0)} candidates, ${slots.filter(slot => slot.pin).length} pins${row.offIa.length ? `; off-IA (not migrated): ${row.offIa.join(", ")}` : ""}`);
-    }
-    lines.push(`migrate slots: ${result.written.length} written, ${result.unchanged} unchanged, ${result.kept.length} kept${result.kept.length ? ` (${result.kept.join(", ")})` : ""}; ${plan.dropped} unmapped refs dropped`);
-    return { exitCode: 0, message: lines.join("\n"), root: workspace };
-  }
-  if (check) {
-    const issues = checkSlotModel(consumer);
-    for (const issue of issues) lines.push(`${issue.code} ${issue.path}: ${issue.message}`);
-    lines.push(`migrate slots --check: ${issues.length} findings`);
-    failed ||= issues.length > 0;
-  }
-  if (compare) {
-    const diffs = await compareSlotModel(consumer);
-    for (const diff of diffs) lines.push(`${diff.code}: ${diff.message}`);
-    lines.push(`migrate slots --compare: ${diffs.length} diffs`);
-    failed ||= diffs.length > 0;
-  }
-  return { exitCode: failed ? 1 : 0, message: lines.join("\n"), root: workspace, check: true };
+  const dir = discoverRoot(resolve(cwd, root ?? "."));
+  const consumer = resolve(dir, "clossys");
+  const plan = planCopyKeyMigration(consumer);
+  if (!check) applyCopyKeyMigration(consumer, plan);
+  const verb = check ? "pending" : "renamed";
+  const lines = [
+    `migrate copy-keys: ${plan.renames.length} copy key(s) ${verb}, ${plan.files.length} file(s)${check ? " to rewrite" : " rewritten"}, ${plan.repinned.length} pin(s) carried to renamed bytes; ${plan.findings.length} finding(s)`,
+    ...plan.renames.map(rename => `${rename.agent}/${rename.slot}: ${rename.from} -> ${rename.to}`),
+    ...plan.repinned.map(slot => `repinned (id rename only): ${slot}`),
+    ...plan.findings.map(finding => `finding: ${finding.message}`),
+  ];
+  const exitCode = plan.findings.length || (check && plan.files.length) ? 1 : 0;
+  return { exitCode, message: lines.join("\n"), root: dir, check };
 }

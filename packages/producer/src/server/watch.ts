@@ -12,7 +12,7 @@ export async function watchCells(root: string, onChange: (event: ChangeEvent) =>
   for (;;) {
     try {
       const stat = await lstat(watched);
-      if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Expected a regular cell directory");
+      if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Expected a regular agents directory");
       break;
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
@@ -25,9 +25,10 @@ export async function watchCells(root: string, onChange: (event: ChangeEvent) =>
     const changed = resolve(watched, String(filename));
     const rel = relative(target, changed);
     if (rel === ".." || rel.startsWith(`..${sep}`)) return;
-    const [kind, directory, cell] = rel.split(sep);
+    // Flat slot model: agents/<agent>/<slot-id>/{slot.json,candidates/,pin.json}.
+    const [kind, slot] = rel.split(sep);
     const agent = AGENT_KINDS.includes(kind as AgentKind) ? kind as AgentKind : null;
-    const id = directory === "cells" && cell && CELL_ID.test(cell) ? cell : null;
+    const id = agent && slot && CELL_ID.test(slot) ? slot : null;
     onChange({ agent, id, reload: true });
   });
   watcher.on("error", () => { if (!closed) onChange({ agent: null, id: null, reload: true }); });

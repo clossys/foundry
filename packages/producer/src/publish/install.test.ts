@@ -10,7 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { runCli } from "../cli/main.js";
-import { migrateFixtureLibrary } from "../specimen/__fixtures__/canonical-library.js";
+import { withDesignerSlots } from "../specimen/__fixtures__/canonical-library.js";
 
 const fixtureSource = join(import.meta.dirname, "__fixtures__", "install-consumer");
 let fixture: string;
@@ -23,7 +23,7 @@ const temp = (prefix: string) => { const dir = realpathSync(mkdtempSync(join(tmp
 beforeAll(async () => {
   fixture = temp("producer-install-fixture-");
   cpSync(fixtureSource, fixture, { recursive: true });
-  await migrateFixtureLibrary(join(fixture, "clossys"));
+  await withDesignerSlots(join(fixture, "clossys"));
   stub = createServer((request, response) => {
     if (request.url?.startsWith("/r/colors/")) {
       response.setHeader("content-type", "application/json");

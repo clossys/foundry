@@ -105,16 +105,12 @@ async function discoverRoutePlan(options = {}) {
   const templates = pages.map(page => page.template);
   const represented = new Set();
   const leafTemplates = [];
-  let contentRoute = false;
   for (const page of pages) {
     const source = fs.readFileSync(page.file, 'utf8');
     const leafOf = /^(.*)\/\[slug\]$/.exec(page.template);
     if (leafOf && source.split('\n', 1)[0] === ROUTE_MARKER && routes.includes(leafOf[1] || '/')) {
       // A Publisher-installed leaf template; its leaves are the record store's, served live.
       leafTemplates.push(page.template);
-    } else if (page.template === '/content/[agent]/[id]') {
-      assert.match(source, /(?:cellContentHref|StandaloneCellContent)/, 'The content route no longer uses the known content port');
-      contentRoute = true;
     } else if (page.template.includes('[') || page.template.includes('@')) {
       throw new Error(`Unexpanded App Router route: ${page.template}`);
     } else represented.add(page.template);
@@ -126,32 +122,8 @@ async function discoverRoutePlan(options = {}) {
   // The per-agent gallery pages were retired: tab pages assemble slot groups and are covered as ordinary pages.
   const galleries = {};
   const home = content.entries.find(row => row.kind === 'page' && row.id === 'home')?.path;
-  return { routes: [...represented].sort(), templates: templates.sort(), leafTemplates: leafTemplates.sort(), agents, galleries, home, contentRoute };
+  return { routes: [...represented].sort(), templates: templates.sort(), leafTemplates: leafTemplates.sort(), agents, galleries, home };
 }
-/** The live resource index expands dynamic content identities and their exposed version. */
-function expandContentRoutes(plan, inventory) {
-  if (!plan.contentRoute) return { routes: plan.routes, cellIds: [], contentRoutes: [] };
-  assert.ok(inventory && Array.isArray(inventory.agents), 'Missing live cell index for dynamic route coverage');
-  const seenAgents = new Set(), contentRoutes = [], cellIds = [];
-  for (const entry of inventory.agents) {
-    assert.ok(plan.agents.includes(entry.agent) && !seenAgents.has(entry.agent), 'Unknown or repeated agent in live content index');
-    seenAgents.add(entry.agent);
-    assert.ok(['ready', 'missing'].includes(entry.state) && Array.isArray(entry.cells), `Unreadable content index for ${entry.agent}`);
-    assert.ok(entry.state === 'ready' || entry.cells.length === 0, 'Missing agent reports content');
-    const seenCells = new Set();
-    for (const cell of entry.cells) {
-      assert.ok(/^[a-z][a-z0-9-]*(?:\.[a-z][a-z0-9-]*){1,2}$/.test(cell.id) && !seenCells.has(cell.id), 'Invalid or repeated live cell identity');
-      assert.ok(Number.isSafeInteger(cell.version) && cell.version > 0, 'Invalid live cell version');
-      seenCells.add(cell.id); cellIds.push(cell.id);
-      const base = `/content/${encodeURIComponent(entry.agent)}/${encodeURIComponent(cell.id)}`;
-      contentRoutes.push(base, `${base}?version=${cell.version}`);
-    }
-  }
-  assert.deepEqual([...seenAgents].sort(), plan.agents, 'Live cell index omits a published agent');
-  assert.ok(contentRoutes.length, 'Dynamic content route has no real content examples; coverage is incomplete');
-  return { routes: [...new Set([...plan.routes, ...contentRoutes])].sort(), cellIds: [...new Set(cellIds)].sort(), contentRoutes: contentRoutes.sort() };
-}
-
 /** Observe the initial page's own client channel; never substitute a Node/API probe. */
 function initialResource(plan, route) {
   if (route === plan.home) return { kind: 'home', path: '/api/slots/census', agents: plan.agents };
@@ -283,16 +255,7 @@ async function runStudioCheck(options = {}) {
   const browser = options.browser ?? await launchStudioBrowser(options);
   const checks = [], failures = [];
   try {
-    let inventory;
-    if (plan.contentRoute) {
-      const request = await browser.newContext();
-      try {
-        const response = await request.request.get(`${origin}/api/cells`, { timeout });
-        assert.equal(response.status(), 200, 'Live content index HTTP status');
-        inventory = await response.json();
-      } finally { await request.close(); }
-    }
-    const coverage = expandContentRoutes(plan, inventory);
+    const coverage = { routes: plan.routes, cellIds: [] };
     const expectedPaths = new Set(coverage.routes.map(route => new URL(route, origin).pathname));
     for (const variant of variants) for (const theme of ['light', 'dark']) {
       // Firefox supports the mobile viewport but has no Playwright isMobile emulation.
@@ -359,7 +322,7 @@ async function runStudioCheck(options = {}) {
         }
       } finally { await context.close(); }
     }
-    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes, dynamicContentRoutes: coverage.contentRoutes, versionCoverage: 'all current identities and their version exposed by /api/cells; historical versions are not enumerated by that API', checks };
+    const report = { check: 'studio:check', status: failures.length ? 'FAIL' : 'PASS', phase: 'render', executed: true, origin, templates: plan.templates, routes: coverage.routes, checks };
     fs.writeFileSync(path.join(screenshotRoot, 'report.json'), JSON.stringify(report, null, 2) + '\n');
     if (failures.length) {
       const error = new Error(`studio:check failed in ${failures.length}/${checks.length} route/theme/viewport checks: ${[...new Set(failures.flatMap(check => check.findings.map(finding => finding.rule)))].join(', ')}`);
@@ -396,5 +359,5 @@ function parseArgs(args) {
   }
   return options;
 }
-module.exports = { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, expandContentRoutes, inspectPage, screenshotName, checkStudio, checkCommand, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
+module.exports = { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, inspectPage, screenshotName, checkStudio, checkCommand, parseArgs, failureReport, reportError, REPORT_EXIT_CODES, browserRuntime, launchStudioBrowser, probeBrowser };
 if (require.main === module) Promise.resolve().then(() => checkCommand(parseArgs(process.argv.slice(2)))).then(({ exitCode, report }) => { console.log(JSON.stringify(report, null, 2)); process.exitCode = exitCode; }).catch(error => { const report = failureReport(error); console.error(JSON.stringify(report, null, 2)); process.exitCode = REPORT_EXIT_CODES[report.status] ?? 1; });

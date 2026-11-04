@@ -6,7 +6,7 @@ import { lintPages } from "../check/page-lint.js";
 import { readPageCheckSource, readPageManifest } from "../check/page-manifest.js";
 import type { PageLintReport } from "../check/page-types.js";
 import { recordSuitesSummary, refVerbatimSuite, runRecordSuites } from "../check/record-suites.js";
-import { discoverWorkspace } from "./migrate.js";
+import { discoverWorkspace } from "./workspace.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
 

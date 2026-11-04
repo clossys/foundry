@@ -54,7 +54,7 @@
           "dir": "auto"
         },
         {
-          "key": "quotes[].attributorName",
+          "key": "quotes[].attributor-name",
           "kind": "plain",
           "required": true,
           "maxLength": {
@@ -63,7 +63,7 @@
           "dir": "auto"
         },
         {
-          "key": "quotes[].attributorRole",
+          "key": "quotes[].attributor-role",
           "kind": "plain",
           "required": false,
           "maxLength": {

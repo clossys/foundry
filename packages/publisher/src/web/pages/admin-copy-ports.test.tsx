@@ -28,7 +28,7 @@ it("renders Writer-bound item and empty-table copy through the selected native r
   expect(empty).not.toMatch(/No orders yet|customer checks out/);
   const tableHost = hosts["sections.data-table"];
   expect(JSON.parse(JSON.stringify(tableHost.paginationSummary))).toEqual(tableHost.paginationSummary);
-  expect(tableHost.paginationSummary).toMatchObject({ key: "pagination.totalText", writerId: pages.aliases["strings.admin.pagination.range"], locale: "en" });
+  expect(tableHost.paginationSummary).toMatchObject({ key: "pagination.total-text", writerId: pages.aliases["strings.admin.pagination.range"], locale: "en" });
   expect(tableHost.formatCopyMessage({ ...tableHost.paginationSummary, values: {start:101,end:200,total:250,page:2,pageCount:3,pages:3} })).toBe(copy("strings.admin.pagination.range",{start:101,end:200,total:250}));
   expect(copy.provenance().some(value=>value.provenance.cellId === "strings.admin.item.heading")).toBe(true);
   expect(()=>adminPageSectionHosts({copy,title,item:true})).toThrow(/fields/);

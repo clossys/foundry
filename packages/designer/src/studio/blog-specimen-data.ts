@@ -5,7 +5,7 @@ export function blogSpecimenRecords<T extends { readonly id: string; readonly ti
     badge: { label: "Journal", variant: "neutral" as const },
     editorial: {
       author: { name: "Studio author", label: "By" },
-      readingTime: { value: `${index + 3} minutes`, label: "Reading time" },
+      "reading-time": { value: `${index + 3} minutes`, label: "Reading time" },
       tags: [{ id: "journal", label: "Journal" }],
     },
   }));

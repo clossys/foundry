@@ -2,7 +2,6 @@ import { readdir, realpath, stat } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
 import { extname, join, relative } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
-import { inventory } from "./cells.js";
 import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
@@ -76,16 +75,11 @@ export async function publication(root: string, requested?: string, installOut?:
     const selected = requested ?? publications[0];
     if (!selected) return { state: "missing", message: "Not published yet", command: PREVIEW_COMMAND };
     const manifest = await descriptor(root, selected);
-    const publisher = readIa(join(root, "clossys"), "publisher") ? undefined : await inventory(root, "publisher");
-    const meta = publisher?.tree?.meta as Record<string, unknown> | undefined;
-    const declared = Array.isArray(meta?.publications) ? meta.publications.find((value: any) => value?.id === selected) as Record<string, any> | undefined : undefined;
     const pages = await Promise.all(manifest.routes.map(async route => {
       const entry = manifest.contentMap.entries.find(entry => entry.id === route.id);
-      const cellId = object(declared?.entryIds) ? Object.entries(declared.entryIds).find(([, id]) => id === route.id)?.[0] : publisher?.cells.find(cell => cell.fields.path === route.path)?.id;
       let emitted = false;
       try { await confinedPreviewFile(previewRoot(root, selected), route.source.file); emitted = true; } catch { /* Descriptor metadata does not prove source exists. */ }
       return { id: route.id, route: route.path, emitted, ...pageRoutes(selected, route.id),
-        ...(cellId === undefined ? {} : { cellId }),
         ...(entry?.title === undefined ? {} : { title: entry.title }), ...(typeof entry?.description === "string" ? { description: entry.description } : {}),
         ...(typeof entry?.ogImage === "string" ? { ogImage: entry.ogImage } : {}), ...(entry?.indexing === "index" || entry?.indexing === "noindex" ? { indexing: entry.indexing } : {}),
         ...(typeof entry?.inSitemap === "boolean" ? { inSitemap: entry.inSitemap } : {}), ...(typeof entry?.lastPublished === "string" ? { lastPublished: entry.lastPublished } : {}),
@@ -204,25 +198,8 @@ async function readInstallPublication(root: string, installOut?: string, request
   try { base = await realpath(installOut ?? installOutRoot(root)); } catch { return undefined; }
   const installs = await installPages(base);
   if (!installs.length) return undefined;
-  if (readIa(join(root, "clossys"), "publisher")) return nativeInstallPublication(root, base, installs, requested, served);
-  const publisher = await inventory(root, "publisher");
-  const meta = publisher.tree?.meta as Record<string, unknown> | undefined;
-  const declared = (Array.isArray(meta?.publications) ? meta.publications : []).find((value: any) => object(value?.entryIds) && identity(String(value.id)) && installs.some(page => Object.values(value.entryIds).includes(page.id))) as Record<string, any> | undefined;
-  const id = typeof declared?.id === "string" ? declared.id : "site";
-  const order: string[] = Array.isArray(declared?.entryOrder) ? declared.entryOrder : [];
-  installs.sort((a, b) => ((order.indexOf(a.id) + 1) || Infinity) - ((order.indexOf(b.id) + 1) || Infinity) || a.id.localeCompare(b.id));
-  const pages = installs.map(install => {
-    const cellId = object(declared?.entryIds) ? Object.entries(declared.entryIds).find(([, entry]) => entry === install.id)?.[0] : publisher.cells.find(cell => cell.id === `page.${install.id}`)?.id;
-    const path = publisher.cells.find(cell => cell.id === cellId)?.fields.path;
-    return { id: install.id, route: typeof path === "string" && path.startsWith("/") ? path : install.id === "home" ? "/" : `/${install.id}`, emitted: !!install.html,
-      ...pageRoutes(id, install.id), title: install.id, ...(cellId === undefined ? {} : { cellId }) } as PublicationPage;
-  });
-  const manifest: PublicationManifest = {
-    schemaVersion: 1, publication: id, sourceApp: typeof declared?.routePack?.app === "string" ? declared.routePack.app : "clossys publish --install", format: "web.page.responsive",
-    routes: pages.map(page => ({ id: page.id, path: page.route, source: { file: installs.find(install => install.id === page.id)!.html ?? `${page.id}.html`, export: "default" } })),
-    contentMap: { version: 1, publicationId: id, entries: pages.map(page => ({ id: page.id, title: page.title!, kind: "page", path: page.route })) },
-  };
-  return { base, manifest, pages, installs };
+  // Installed pages publish under the pinned Publisher slot model; without one there is no publication.
+  return readIa(join(root, "clossys"), "publisher") ? nativeInstallPublication(root, base, installs, requested, served) : undefined;
 }
 /** Studio's publication view over `clossys publish --install` output. */
 async function installPublication(root: string, requested?: string, installOut?: string, served?: ServedApp): Promise<PublicationResponse> {

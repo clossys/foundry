@@ -17,9 +17,9 @@ export function renderNewsletterSection(input: SectionRenderInput): ReactNode {
       emailLabel={text(content, email.label, "email.label")}
       privacyNote={text(content, required(content, "consent"), "consent")}
       submitLabel={text(content, submit.label, "submit.label")}
-      pendingLabel={text(content, submit.pendingLabel, "submit.pendingLabel")}
-      sentMessage={text(content, submit.sentMessage, "submit.sentMessage")}
-      failedMessage={text(content, submit.failedMessage, "submit.failedMessage")}
+      pendingLabel={text(content, submit["pending-label"], "submit.pending-label")}
+      sentMessage={text(content, submit["sent-message"], "submit.sent-message")}
+      failedMessage={text(content, submit["failed-message"], "submit.failed-message")}
       action={text(content, submit.action, "submit.action")}
     />
   );

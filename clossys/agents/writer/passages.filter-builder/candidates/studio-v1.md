@@ -34,20 +34,20 @@ is
 <!-- {"id":"studio.filter.operators.1.label","bindings":[]} -->
 is not
 
-### studio.filter.labels.addRule
-<!-- {"id":"studio.filter.labels.addRule","bindings":[]} -->
+### studio.filter.labels.add-rule
+<!-- {"id":"studio.filter.labels.add-rule","bindings":[]} -->
 Add rule
 
 ### studio.filter.labels.remove
 <!-- {"id":"studio.filter.labels.remove","bindings":[]} -->
 Remove
 
-### studio.filter.labels.matchAll
-<!-- {"id":"studio.filter.labels.matchAll","bindings":[]} -->
+### studio.filter.labels.match-all
+<!-- {"id":"studio.filter.labels.match-all","bindings":[]} -->
 Match all
 
-### studio.filter.labels.matchAny
-<!-- {"id":"studio.filter.labels.matchAny","bindings":[]} -->
+### studio.filter.labels.match-any
+<!-- {"id":"studio.filter.labels.match-any","bindings":[]} -->
 Match any
 
 ### studio.filter.labels.value

@@ -580,12 +580,12 @@
         "required": false
       },
       {
-        "name": "plans[].priceByInterval[].amount",
+        "name": "plans[].price-by-interval[].amount",
         "kind": "copy",
         "required": true
       },
       {
-        "name": "plans[].priceByInterval[].priceText",
+        "name": "plans[].price-by-interval[].price-text",
         "kind": "copy",
         "required": true
       },
@@ -632,9 +632,9 @@
       "plans[].description.maxLength.en": 480,
       "plans[].features[].maxLength.en": 120,
       "plans[].name.maxLength.en": 160,
+      "plans[].price-by-interval[].amount.maxLength.en": 160,
+      "plans[].price-by-interval[].price-text.maxLength.en": 160,
       "plans[].price.maxLength.en": 120,
-      "plans[].priceByInterval[].amount.maxLength.en": 160,
-      "plans[].priceByInterval[].priceText.maxLength.en": 160,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -1062,13 +1062,13 @@
     "purpose": "Studio specimen that renders color tokens as swatches, one per item across the host-supplied axes.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1089,13 +1089,13 @@
     "purpose": "Studio specimen that lays color tokens out as ordered ramps so neighbouring steps read side by side.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1116,13 +1116,13 @@
     "purpose": "Studio specimen that renders font and type tokens as a ladder of sample lines.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1143,13 +1143,13 @@
     "purpose": "Studio specimen that renders spacing tokens as a ladder of measured bars.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1170,13 +1170,13 @@
     "purpose": "Studio specimen that renders radius tokens as a ladder of rounded samples.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1197,13 +1197,13 @@
     "purpose": "Studio specimen that plays motion tokens (animations and durations) with replay controls.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1224,13 +1224,13 @@
     "purpose": "Studio specimen that lays brand and media assets out as a grid of labelled tiles.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1251,13 +1251,13 @@
     "purpose": "Studio specimen that lays glyph assets out as a grid of icons on their design grid.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1278,7 +1278,7 @@
     "purpose": "Studio specimen that renders a component across its member axes as a matrix of variants.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       },
@@ -1289,7 +1289,7 @@
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1310,7 +1310,7 @@
     "purpose": "Studio specimen that renders one section at several viewport widths side by side.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       },
@@ -1321,7 +1321,7 @@
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1342,7 +1342,7 @@
     "purpose": "Studio specimen that renders one frame at several viewport widths side by side.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       },
@@ -1353,7 +1353,7 @@
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1374,13 +1374,13 @@
     "purpose": "Studio specimen that renders a rich-text passage with its typographic styles.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1401,7 +1401,7 @@
     "purpose": "Studio specimen that shows Writer copy placed in the section or component that renders it.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       },
@@ -1412,7 +1412,7 @@
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1433,7 +1433,7 @@
     "purpose": "Studio specimen that renders a whole page at several viewport widths side by side.",
     "inputs": [
       {
-        "name": "labels.showAllVariants",
+        "name": "labels.show-all-variants",
         "kind": "copy",
         "required": true
       },
@@ -1444,7 +1444,7 @@
       }
     ],
     "limits": {
-      "labels.showAllVariants.maxLength.en": 160
+      "labels.show-all-variants.maxLength.en": 160
     },
     "references": [
       {
@@ -1470,17 +1470,17 @@
         "required": false
       },
       {
-        "name": "page.previousLabel",
+        "name": "page.previous-label",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "page.nextLabel",
+        "name": "page.next-label",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "page.pageText",
+        "name": "page.page-text",
         "kind": "copy",
         "required": false
       },
@@ -1490,17 +1490,17 @@
         "required": false
       },
       {
-        "name": "page.noResultsLabel",
+        "name": "page.no-results-label",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "page.pageSizeLabel",
+        "name": "page.page-size-label",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "total.rangeText",
+        "name": "total.range-text",
         "kind": "copy",
         "required": false
       },
@@ -1527,13 +1527,13 @@
     ],
     "limits": {
       "page.label.maxLength.en": 120,
-      "page.nextLabel.maxLength.en": 120,
-      "page.noResultsLabel.maxLength.en": 120,
-      "page.pageSizeLabel.maxLength.en": 120,
-      "page.pageText.maxLength.en": 120,
-      "page.previousLabel.maxLength.en": 120,
+      "page.next-label.maxLength.en": 120,
+      "page.no-results-label.maxLength.en": 120,
+      "page.page-size-label.maxLength.en": 120,
+      "page.page-text.maxLength.en": 120,
+      "page.previous-label.maxLength.en": 120,
       "total.label.maxLength.en": 120,
-      "total.rangeText.maxLength.en": 120
+      "total.range-text.maxLength.en": 120
     },
     "references": [
       {
@@ -2283,12 +2283,12 @@
         "required": true
       },
       {
-        "name": "quotes[].attributorName",
+        "name": "quotes[].attributor-name",
         "kind": "copy",
         "required": true
       },
       {
-        "name": "quotes[].attributorRole",
+        "name": "quotes[].attributor-role",
         "kind": "copy",
         "required": false
       },
@@ -2324,8 +2324,8 @@
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
-      "quotes[].attributorName.maxLength.en": 120,
-      "quotes[].attributorRole.maxLength.en": 120,
+      "quotes[].attributor-name.maxLength.en": 120,
+      "quotes[].attributor-role.maxLength.en": 120,
       "quotes[].quote.maxLength.en": 2400,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
@@ -2569,7 +2569,7 @@
         "required": false
       },
       {
-        "name": "figure.chromeLabel",
+        "name": "figure.chrome-label",
         "kind": "copy",
         "required": false
       },
@@ -2615,7 +2615,7 @@
       "compose.band": "sections.band",
       "compose.header": "sections.section-header",
       "figure.caption.maxLength.en": 480,
-      "figure.chromeLabel.maxLength.en": 160,
+      "figure.chrome-label.maxLength.en": 160,
       "figure.media.series[].name.maxLength.en": 160,
       "figure.media.title.maxLength.en": 160,
       "header.description.maxLength.en": 480,
@@ -2856,7 +2856,7 @@
         "required": true
       },
       {
-        "name": "events[].dateText",
+        "name": "events[].date-text",
         "kind": "copy",
         "required": true
       },
@@ -2899,7 +2899,7 @@
     "limits": {
       "compose.band": "sections.band",
       "compose.header": "sections.section-header",
-      "events[].dateText.maxLength.en": 120,
+      "events[].date-text.maxLength.en": 120,
       "events[].description.maxLength.en": 480,
       "events[].heading.maxLength.en": 160,
       "header.description.maxLength.en": 480,
@@ -3015,12 +3015,12 @@
         "required": false
       },
       {
-        "name": "records[].editorial.readingTime.value",
+        "name": "records[].editorial.reading-time.value",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "records[].editorial.readingTime.label",
+        "name": "records[].editorial.reading-time.label",
         "kind": "copy",
         "required": false
       },
@@ -3035,12 +3035,12 @@
         "required": false
       },
       {
-        "name": "records[].editorial.outcomeStats[].label",
+        "name": "records[].editorial.outcome-stats[].label",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "records[].editorial.outcomeStats[].value",
+        "name": "records[].editorial.outcome-stats[].value",
         "kind": "copy",
         "required": false
       },
@@ -3096,10 +3096,10 @@
       "records[].editorial.author.label.maxLength.en": 160,
       "records[].editorial.author.name.maxLength.en": 160,
       "records[].editorial.date.label.maxLength.en": 160,
-      "records[].editorial.outcomeStats[].label.maxLength.en": 160,
-      "records[].editorial.outcomeStats[].value.maxLength.en": 160,
-      "records[].editorial.readingTime.label.maxLength.en": 160,
-      "records[].editorial.readingTime.value.maxLength.en": 160,
+      "records[].editorial.outcome-stats[].label.maxLength.en": 160,
+      "records[].editorial.outcome-stats[].value.maxLength.en": 160,
+      "records[].editorial.reading-time.label.maxLength.en": 160,
+      "records[].editorial.reading-time.value.maxLength.en": 160,
       "records[].editorial.summary.maxLength.en": 480,
       "records[].editorial.tags[].label.maxLength.en": 160,
       "records[].image.alt.maxLength.en": 160,
@@ -3181,12 +3181,12 @@
         "required": false
       },
       {
-        "name": "pagination.pageText",
+        "name": "pagination.page-text",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "pagination.totalText",
+        "name": "pagination.total-text",
         "kind": "copy",
         "required": false
       },
@@ -3248,8 +3248,8 @@
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
       "labels.label.maxLength.en": 120,
-      "pagination.pageText.maxLength.en": 120,
-      "pagination.totalText.maxLength.en": 120,
+      "pagination.page-text.maxLength.en": 120,
+      "pagination.total-text.maxLength.en": 120,
       "records[].description.maxLength.en": 480,
       "records[].meta.maxLength.en": 120,
       "records[].title.maxLength.en": 160,
@@ -3629,7 +3629,7 @@
         "required": false
       },
       {
-        "name": "labels.notOffered",
+        "name": "labels.not-offered",
         "kind": "copy",
         "required": false
       },
@@ -3701,7 +3701,7 @@
       "items[].items[].label.maxLength.en": 120,
       "items[].label.maxLength.en": 160,
       "labels.available.maxLength.en": 120,
-      "labels.notOffered.maxLength.en": 120,
+      "labels.not-offered.maxLength.en": 120,
       "labels.partial.maxLength.en": 120,
       "labels.planned.maxLength.en": 120,
       "legend.maxLength.en": 120,
@@ -3756,17 +3756,17 @@
         "required": true
       },
       {
-        "name": "meters[].usedText",
+        "name": "meters[].used-text",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "meters[].limitText",
+        "name": "meters[].limit-text",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "meters[].periodText",
+        "name": "meters[].period-text",
         "kind": "copy",
         "required": false
       },
@@ -3806,7 +3806,7 @@
         "required": false
       },
       {
-        "name": "meters[].projectedText",
+        "name": "meters[].projected-text",
         "kind": "copy",
         "required": false
       },
@@ -3834,11 +3834,11 @@
       "header.heading.maxLength.en": 160,
       "labels.label.maxLength.en": 120,
       "meters[].label.maxLength.en": 120,
-      "meters[].limitText.maxLength.en": 120,
-      "meters[].periodText.maxLength.en": 120,
-      "meters[].projectedText.maxLength.en": 160,
+      "meters[].limit-text.maxLength.en": 120,
+      "meters[].period-text.maxLength.en": 120,
+      "meters[].projected-text.maxLength.en": 160,
       "meters[].thresholds[].message.maxLength.en": 160,
-      "meters[].usedText.maxLength.en": 120,
+      "meters[].used-text.maxLength.en": 120,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -3880,7 +3880,7 @@
         "required": true
       },
       {
-        "name": "identity.nameLabel",
+        "name": "identity.name-label",
         "kind": "copy",
         "required": true
       },
@@ -3890,7 +3890,7 @@
         "required": true
       },
       {
-        "name": "identity.emailLabel",
+        "name": "identity.email-label",
         "kind": "copy",
         "required": true
       },
@@ -4024,10 +4024,10 @@
       "actions[].label.maxLength.en": 160,
       "compose.band": "sections.band",
       "heading.maxLength.en": 160,
+      "identity.email-label.maxLength.en": 120,
       "identity.email.maxLength.en": 320,
-      "identity.emailLabel.maxLength.en": 120,
+      "identity.name-label.maxLength.en": 120,
       "identity.name.maxLength.en": 160,
-      "identity.nameLabel.maxLength.en": 120,
       "rows[].label.maxLength.en": 120,
       "rows[].value.maxLength.en": 1000,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
@@ -4093,12 +4093,12 @@
         "required": false
       },
       {
-        "name": "pagination.pageText",
+        "name": "pagination.page-text",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "pagination.totalText",
+        "name": "pagination.total-text",
         "kind": "copy",
         "required": false
       },
@@ -4204,8 +4204,8 @@
       "labels.selection.maxLength.en": 120,
       "labels.sort.maxLength.en": 120,
       "pagination.label.maxLength.en": 120,
-      "pagination.pageText.maxLength.en": 120,
-      "pagination.totalText.maxLength.en": 120,
+      "pagination.page-text.maxLength.en": 120,
+      "pagination.total-text.maxLength.en": 120,
       "rows[].cells[].text.maxLength.en": 120,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
@@ -4676,7 +4676,7 @@
         "required": true
       },
       {
-        "name": "events[].timeText",
+        "name": "events[].time-text",
         "kind": "copy",
         "required": true
       },
@@ -4706,12 +4706,12 @@
         "required": false
       },
       {
-        "name": "labels.changedFrom",
+        "name": "labels.changed-from",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "labels.changedTo",
+        "name": "labels.changed-to",
         "kind": "copy",
         "required": false
       },
@@ -4735,14 +4735,14 @@
       "events[].changes[].to.maxLength.en": 160,
       "events[].detail.maxLength.en": 480,
       "events[].summary.maxLength.en": 480,
-      "events[].timeText.maxLength.en": 160,
+      "events[].time-text.maxLength.en": 160,
       "filters.links[].label.maxLength.en": 120,
       "grouping[].label.maxLength.en": 120,
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
-      "labels.changedFrom.maxLength.en": 160,
-      "labels.changedTo.maxLength.en": 160,
+      "labels.changed-from.maxLength.en": 160,
+      "labels.changed-to.maxLength.en": 160,
       "labels.cleared.maxLength.en": 160,
       "labels.label.maxLength.en": 120,
       "labels.unread.maxLength.en": 160,
@@ -4877,7 +4877,7 @@
         "required": false
       },
       {
-        "name": "entries[].timeText",
+        "name": "entries[].time-text",
         "kind": "copy",
         "required": true
       },
@@ -4893,7 +4893,7 @@
       "entries[].action.maxLength.en": 120,
       "entries[].actor.maxLength.en": 120,
       "entries[].target.maxLength.en": 120,
-      "entries[].timeText.maxLength.en": 160,
+      "entries[].time-text.maxLength.en": 160,
       "export.label.maxLength.en": 120,
       "filter.search.label.maxLength.en": 120,
       "filter.search.placeholder.maxLength.en": 120,
@@ -4971,17 +4971,17 @@
         "required": true
       },
       {
-        "name": "submit.pendingLabel",
+        "name": "submit.pending-label",
         "kind": "copy",
         "required": true
       },
       {
-        "name": "submit.sentMessage",
+        "name": "submit.sent-message",
         "kind": "copy",
         "required": true
       },
       {
-        "name": "submit.failedMessage",
+        "name": "submit.failed-message",
         "kind": "copy",
         "required": true
       },
@@ -5135,10 +5135,10 @@
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
       "rule.spacing": "section padding, gutter and container width come from sections.band tokens; no numeric section-scale spacing, container width or arbitrary size",
       "rule.type": "display, heading, title, lead and figure sizes come from the band type tokens; no text-xl and larger, no arbitrary text size",
-      "submit.failedMessage.maxLength.en": 120,
+      "submit.failed-message.maxLength.en": 120,
       "submit.label.maxLength.en": 120,
-      "submit.pendingLabel.maxLength.en": 120,
-      "submit.sentMessage.maxLength.en": 120
+      "submit.pending-label.maxLength.en": 120,
+      "submit.sent-message.maxLength.en": 120
     },
     "references": [],
     "checkSuite": "designer.slot-contracts.sections",
@@ -5605,12 +5605,12 @@
         "required": false
       },
       {
-        "name": "roles[].lockedReason",
+        "name": "roles[].locked-reason",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "labels.permissionHeader",
+        "name": "labels.permission-header",
         "kind": "copy",
         "required": false
       },
@@ -5620,7 +5620,7 @@
         "required": false
       },
       {
-        "name": "labels.groupAll",
+        "name": "labels.group-all",
         "kind": "copy",
         "required": false
       },
@@ -5635,7 +5635,7 @@
         "required": false
       },
       {
-        "name": "labels.changeSummary",
+        "name": "labels.change-summary",
         "kind": "copy",
         "required": false
       },
@@ -5657,17 +5657,17 @@
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
       "labels.cell.maxLength.en": 160,
-      "labels.changeSummary.maxLength.en": 160,
-      "labels.groupAll.maxLength.en": 160,
+      "labels.change-summary.maxLength.en": 160,
+      "labels.group-all.maxLength.en": 160,
       "labels.inherited.maxLength.en": 160,
       "labels.label.maxLength.en": 120,
       "labels.locked.maxLength.en": 160,
-      "labels.permissionHeader.maxLength.en": 160,
+      "labels.permission-header.maxLength.en": 160,
       "permissions[].label.maxLength.en": 120,
       "permissions[].permissions[].description.maxLength.en": 480,
       "permissions[].permissions[].label.maxLength.en": 120,
       "roles[].label.maxLength.en": 120,
-      "roles[].lockedReason.maxLength.en": 160,
+      "roles[].locked-reason.maxLength.en": 160,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",
       "rule.overflow": "no horizontal page overflow at 375, 768 and 1280; content fits the measure instead of scrolling or bleeding",
@@ -5804,27 +5804,27 @@
         "required": true
       },
       {
-        "name": "credentials.identifierLabel",
+        "name": "credentials.identifier-label",
         "kind": "copy",
         "required": true
       },
       {
-        "name": "credentials.identifierPlaceholder",
+        "name": "credentials.identifier-placeholder",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "credentials.passwordLabel",
+        "name": "credentials.password-label",
         "kind": "copy",
         "required": true
       },
       {
-        "name": "credentials.passwordPlaceholder",
+        "name": "credentials.password-placeholder",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "verification.codeLabel",
+        "name": "verification.code-label",
         "kind": "copy",
         "required": true
       },
@@ -5926,10 +5926,10 @@
       "actions.resend.maxLength.en": 120,
       "actions.submit.maxLength.en": 120,
       "actions.verify.maxLength.en": 120,
-      "credentials.identifierLabel.maxLength.en": 120,
-      "credentials.identifierPlaceholder.maxLength.en": 120,
-      "credentials.passwordLabel.maxLength.en": 120,
-      "credentials.passwordPlaceholder.maxLength.en": 120,
+      "credentials.identifier-label.maxLength.en": 120,
+      "credentials.identifier-placeholder.maxLength.en": 120,
+      "credentials.password-label.maxLength.en": 120,
+      "credentials.password-placeholder.maxLength.en": 120,
       "error.code.maxLength.en": 240,
       "error.identifier.maxLength.en": 240,
       "error.message.maxLength.en": 480,
@@ -5938,7 +5938,7 @@
       "header.heading.maxLength.en": 160,
       "providers.max": 4,
       "providers[].label.maxLength.en": 120,
-      "verification.codeLabel.maxLength.en": 120,
+      "verification.code-label.maxLength.en": 120,
       "verification.description.maxLength.en": 480,
       "verification.placeholder.maxLength.en": 120
     },
@@ -6351,12 +6351,12 @@
         "required": false
       },
       {
-        "name": "labels.addRule",
+        "name": "labels.add-rule",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "labels.addGroup",
+        "name": "labels.add-group",
         "kind": "copy",
         "required": false
       },
@@ -6366,12 +6366,12 @@
         "required": false
       },
       {
-        "name": "labels.matchAll",
+        "name": "labels.match-all",
         "kind": "copy",
         "required": false
       },
       {
-        "name": "labels.matchAny",
+        "name": "labels.match-any",
         "kind": "copy",
         "required": false
       },
@@ -6425,10 +6425,10 @@
       "header.description.maxLength.en": 480,
       "header.eyebrow.maxLength.en": 120,
       "header.heading.maxLength.en": 160,
-      "labels.addGroup.maxLength.en": 120,
-      "labels.addRule.maxLength.en": 120,
-      "labels.matchAll.maxLength.en": 120,
-      "labels.matchAny.maxLength.en": 120,
+      "labels.add-group.maxLength.en": 120,
+      "labels.add-rule.maxLength.en": 120,
+      "labels.match-all.maxLength.en": 120,
+      "labels.match-any.maxLength.en": 120,
       "labels.remove.maxLength.en": 120,
       "labels.value.maxLength.en": 120,
       "operators[].label.maxLength.en": 120,
@@ -6707,7 +6707,7 @@
         "required": false
       },
       {
-        "name": "notices[].dismissLabel",
+        "name": "notices[].dismiss-label",
         "kind": "copy",
         "required": false
       },
@@ -6735,7 +6735,7 @@
       "header.heading.maxLength.en": 160,
       "notices[].action.label.maxLength.en": 120,
       "notices[].body.maxLength.en": 2400,
-      "notices[].dismissLabel.maxLength.en": 120,
+      "notices[].dismiss-label.maxLength.en": 120,
       "notices[].title.maxLength.en": 160,
       "rule.copy": "every visible label, including table corner and row-header cells, binds a declared copy field; never delete UI for a missing Writer key",
       "rule.decoration": "decorative UI renders only inside a bound media, backdrop or records slot with content; no empty boxes",

@@ -72,7 +72,7 @@
           "dir": "auto"
         },
         {
-          "key": "notices[].dismissLabel",
+          "key": "notices[].dismiss-label",
           "kind": "plain",
           "required": false,
           "maxLength": {

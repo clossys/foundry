@@ -103,7 +103,7 @@
           "dir": "auto"
         },
         {
-          "key": "identity.nameLabel",
+          "key": "identity.name-label",
           "kind": "plain",
           "required": true,
           "maxLength": {
@@ -121,7 +121,7 @@
           "dir": "auto"
         },
         {
-          "key": "identity.emailLabel",
+          "key": "identity.email-label",
           "kind": "plain",
           "required": true,
           "maxLength": {

@@ -54,7 +54,7 @@
           "dir": "auto"
         },
         {
-          "key": "events[].dateText",
+          "key": "events[].date-text",
           "kind": "plain",
           "required": true,
           "maxLength": {

@@ -1,5 +1,4 @@
 /** Page discovery for installed specimens; record bytes stay with pageRecordFromCell. */
-import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { hasSlotModel, listSlots, readSlot } from "../records/slots.js";
 import { validateSlotDoc } from "../records/slot-model/index.js";
@@ -20,7 +19,5 @@ export async function specimenPageSlotIds(root: string): Promise<string[]> {
       } catch { return false; }
     }).map(entry => entry.id).sort(pageOrder);
   }
-  let tree: { active?: Record<string, number> } | undefined;
-  try { tree = JSON.parse(await readFile(join(consumer, "agents", "publisher", "tree.json"), "utf8")); } catch { return []; }
-  return Object.keys(tree?.active ?? {}).filter(id => /^page\.[a-z0-9][a-z0-9-]*$/.test(id)).sort(pageOrder);
+  return [];
 }

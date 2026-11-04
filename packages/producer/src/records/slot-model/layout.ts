@@ -19,16 +19,6 @@ export const slotFile = (dir: string) => join(dir, SLOT_FILE);
 export const pinFile = (dir: string) => join(dir, PIN_FILE);
 export const candidatesDir = (dir: string) => join(dir, CANDIDATES_DIR);
 
-/** Legacy store entries that may sit beside the slot folders until F8 deletes them. */
-export const LEGACY_ENTRIES: Readonly<Record<SlotAgent, readonly string[]>> = {
-  // Request writer: strategist/src/write/index.ts requestPath / commitChanges.
-  // Report writer: strategist/src/cli/reports.ts persistReport.
-  director: ["tree.json", "cells", "compile.json", "findings", "compiled", "requests", "reports"],
-  designer: ["tree.json", "cells", "compile.json", "compiled"],
-  writer: ["tree.json", "cells", "compile.json", "compiled"],
-  publisher: ["tree.json", "cells", "compile.json", "content-map", "route-pack", "compiled"],
-};
-
 /** Agent-level files beside ia.json that a current reader owns (never slot folders, never orphans). */
 export const AGENT_FILES: Readonly<Record<SlotAgent, readonly string[]>> = {
   director: [], designer: [],

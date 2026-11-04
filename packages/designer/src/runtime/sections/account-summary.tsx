@@ -33,7 +33,7 @@ export const accountSummaryRenderer: SurfaceRendererEntry = {
   leaf: LEAF,
   sample: dataset => ({
     heading: "Account",
-    identity: { name: dataset.avatar.alt, nameLabel: "Name", email: "member@example.com", emailLabel: "Email" },
+    identity: { name: dataset.avatar.alt, "name-label": "Name", email: "member@example.com", "email-label": "Email" },
     rows: [{ label: "Workspace", value: dataset.assets.mark.name }],
     actions: [{ label: "Account settings", href: "/account/settings" }],
   }),
@@ -41,12 +41,12 @@ export const accountSummaryRenderer: SurfaceRendererEntry = {
     const content = readSectionContent(input, LEAF, accountSummaryInputs);
     const heading = text(content, required(content, "heading"), "heading");
     const identity = object(content, required(content, "identity"), "identity");
-    closed(content, identity, ["name", "nameLabel", "email", "emailLabel", "avatar"], "identity");
+    closed(content, identity, ["name", "name-label", "email", "email-label", "avatar"], "identity");
     const name = text(content, identity.name, "identity.name");
     const avatar = optionalText(content, identity.avatar, "identity.avatar");
     const fields: DetailViewField[] = [
-      { label: copy(text(content, identity.nameLabel, "identity.nameLabel")), value: <SemanticContent as="div" className="flex items-center gap-sm"><Avatar alt={name} {...(avatar === undefined ? {} : { src: destination(content, avatar, "identity.avatar") })} />{copy(name)}</SemanticContent> },
-      { label: copy(text(content, identity.emailLabel, "identity.emailLabel")), value: copy(text(content, identity.email, "identity.email")) },
+      { label: copy(text(content, identity["name-label"], "identity.name-label")), value: <SemanticContent as="div" className="flex items-center gap-sm"><Avatar alt={name} {...(avatar === undefined ? {} : { src: destination(content, avatar, "identity.avatar") })} />{copy(name)}</SemanticContent> },
+      { label: copy(text(content, identity["email-label"], "identity.email-label")), value: copy(text(content, identity.email, "identity.email")) },
       ...records(content, "rows").map((row, index) => {
         closed(content, row, ["label", "value"], `rows.${index}`);
         return { label: copy(text(content, row.label, `rows.${index}.label`)), value: copy(text(content, row.value, `rows.${index}.value`)) };

@@ -33,7 +33,7 @@ export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "nar
 export function directorIa(): FoundryIa {
   const root = resolveAgent("director").packageRoot;
   const ia = readJson(root, "src/catalog/ia/strategy.json") as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[] };
-  const cells = new Map((readJson(root, "src/catalog/cells/strategy.json") as { id: string; question: string; mustContain: unknown }[]).map(cell => [cell.id, cell]));
+  const cells = new Map((readJson(root, join("src", "catalog", "cells", "strategy.json")) as { id: string; question: string; mustContain: unknown }[]).map(cell => [cell.id, cell]));
   const freeze = readJson(root, "src/catalog/ia/strategy.leaf-freeze.json") as { frozenAt: string };
   let contracts = new Map<string, { inputs: string[]; feeds: string[] }>();
   try {

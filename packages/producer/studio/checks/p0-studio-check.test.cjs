@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
-const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, expandContentRoutes, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
+const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
 const evidenceRoot = path.join(repositoryRoot, 'tmp/p0b-resume/browser/unit');
@@ -24,10 +24,8 @@ function projectionFixture() {
   write(root, 'studio/app/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
   write(root, 'studio/app/publisher/studio/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
   write(root, 'studio/app/publisher/studio/[slug]/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
-  write(root, 'studio/app/content/[agent]/[id]/page.tsx', 'StandaloneCellContent');
   return { root, studio, publication, options: { repositoryRoot: root, studioRoot: studio, publication } };
 }
-const inventory = { agents: [{ agent: 'publisher', state: 'ready', cells: [{ id: 'page.home', version: 3 }, { id: 'page.article', version: 1 }] }] };
 
 test('checked-in publication and every real App Router route are discovered', async () => {
   const plan = await discoverRoutePlan();
@@ -42,17 +40,7 @@ test('checked-in publication and every real App Router route are discovered', as
   assert.deepEqual(plan.templates, [...pages, ...leaves].sort(), 'Publisher-installed pages and leaf templates only');
   assert.ok(plan.leafTemplates.includes('/designer/themes/colors/[slug]') && !plan.templates.includes('/designer/[slug]'));
   assert.deepEqual(plan.agents, ['designer', 'director', 'publisher', 'writer']);
-  assert.equal(plan.contentRoute, false, 'the standalone content route is retired');
-});
-
-test('coverage expands every live identity and exposed version instead of selecting one dynamic example', async () => {
-  const fixture = projectionFixture(), plan = await discoverRoutePlan(fixture.options);
-  const coverage = expandContentRoutes(plan, inventory);
-  assert.deepEqual(coverage.contentRoutes, ['/content/publisher/page.article', '/content/publisher/page.article?version=1', '/content/publisher/page.home', '/content/publisher/page.home?version=3']);
-  assert.equal(coverage.routes.length, 6);
-  assert.throws(() => expandContentRoutes(plan, { agents: [] }), /omits a published agent/);
-  assert.throws(() => expandContentRoutes(plan, { agents: [{ agent: 'publisher', state: 'error', cells: [] }] }), /Unreadable/);
-  assert.throws(() => expandContentRoutes(plan, { agents: [{ agent: 'publisher', state: 'ready', cells: [] }] }), /coverage is incomplete/);
+  assert.ok(!plan.templates.some(template => template.startsWith('/content/')), 'the standalone content route is retired');
 });
 
 test('new static pages join coverage, unknown dynamic pages and publication drift fail closed', async () => {
@@ -78,7 +66,7 @@ test('browser launch failure has a structured ENV envelope and never retries', a
   let launches = 0;
   const screenshotRoot = directory('environment');
   const playwright = { chromium: { executablePath: () => 'uninstalled-browser', launch: async () => { launches++; throw new Error('Fixture browser launch unavailable'); } } };
-  const result = await checkCommand({ playwright, plan: { routes: ['/'], templates: ['/'], contentRoute: false }, screenshotRoot });
+  const result = await checkCommand({ playwright, plan: { routes: ['/'], templates: ['/'] }, screenshotRoot });
   assert.equal(launches, 1);
   assert.equal(result.exitCode, 2);
   assert.equal(result.report.status, 'ENV');

@@ -35,10 +35,10 @@ function annotations(content: SectionContent): ChromeCalloutsProps | undefined {
 export function renderMediaSection(input: SectionRenderInput): ReactNode {
   const content = readSectionContent(input, "sections.media", mediaInputs);
   const figure = object(content, required(content, "figure"), "figure");
-  keys(content, figure, ["media", "caption", "chromeLabel", "ratio"], "figure");
+  keys(content, figure, ["media", "caption", "chrome-label", "ratio"], "figure");
   const chrome = memberValue(content, "chrome", ["browser", "device", "bare"] as const) ?? "bare";
-  const chromeLabel = optionalText(content, figure.chromeLabel, "figure.chromeLabel");
-  if (chromeLabel !== undefined && chrome !== "browser") throw new SectionContentError(content.leaf, "figure.chromeLabel requires chrome.browser");
+  const chromeLabel = optionalText(content, figure["chrome-label"], "figure.chrome-label");
+  if (chromeLabel !== undefined && chrome !== "browser") throw new SectionContentError(content.leaf, "figure.chrome-label requires chrome.browser");
   const props = { chrome, chromeLabel, caption: optionalText(content, figure.caption, "figure.caption"), callouts: annotations(content) };
   const media = object(content, figure.media, "figure.media");
   if (media.kind === "image") {

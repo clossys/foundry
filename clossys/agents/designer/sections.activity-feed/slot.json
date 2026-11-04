@@ -223,7 +223,7 @@
           "dir": "auto"
         },
         {
-          "key": "events[].timeText",
+          "key": "events[].time-text",
           "kind": "plain",
           "required": true,
           "maxLength": {
@@ -277,7 +277,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.changedFrom",
+          "key": "labels.changed-from",
           "kind": "plain",
           "required": false,
           "maxLength": {
@@ -286,7 +286,7 @@
           "dir": "auto"
         },
         {
-          "key": "labels.changedTo",
+          "key": "labels.changed-to",
           "kind": "plain",
           "required": false,
           "maxLength": {

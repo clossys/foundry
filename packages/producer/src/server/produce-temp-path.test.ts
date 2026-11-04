@@ -4,14 +4,13 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { beforeAll, describe, expect, it } from "vitest";
-import { applyLibraryChange, libraryHash, loadCatalog, type LibraryData } from "@clossys/designer/catalog";
-import { agentModule, agentRoot } from "./cells.js";
+import { agentRoot } from "./cells.js";
 import { studioSelection, type StudioSelection } from "./selection.js";
 import { studioTheme, type StudioTheme } from "./theme.js";
 
 const repository = fileURLToPath(new URL("../../../../", import.meta.url));
 const timeout = 90_000;
-interface Config { selection: StudioSelection; theme: StudioTheme; compilation: { agent: string; state: string }[] }
+interface Config { selection: StudioSelection; theme: StudioTheme }
 
 // Exercise the actual bin, startup compiler, process environment and HTTP API.
 // Only the standalone UI child is the existing fixture; no server/read API is replaced.
@@ -28,16 +27,8 @@ describe("clossys produce temporary projection paths", () => {
     await symlink(physicalTemp, aliasTemp, "dir");
     await mkdir(join(consumer, "clossys"), { recursive: true });
     await writeFile(join(consumer, "clossys/clossys.config.ts"), "export default {};\n");
-    const catalog = loadCatalog();
-    const empty: LibraryData = { source: { id: "example", kind: "consumer", author: "consumer", license: "MIT" }, adoptedAt: "2026-10-30", fills: [] };
-    const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [{ op: "adopt", slot: "themes.primary", source: "shadcn@aria" }] });
-    const reader = await agentModule("designer", "library-cli/fs-library.js");
-    const source = join(directory, "library");
-    for (const [name, contents] of reader.libraryFiles(catalog, library, [])) {
-      const path = join(source, name); await mkdir(dirname(path), { recursive: true }); await writeFile(path, contents);
-    }
-    const cells = await agentModule("designer", "library-cli/cells.js");
-    await cells.libraryToCells(source, agentRoot(consumer, "designer"), { catalog, date: "2026-10-30" });
+    // The repository's own flat Designer slots: agents/designer/<slot-id>/{slot.json,candidates/,pin.json}.
+    await cp(join(repository, "clossys/agents/designer"), agentRoot(consumer, "designer"), { recursive: true });
 
     const runtime = join(directory, "runtime");
     await cp(join(repository, "packages/producer/dist"), join(runtime, "dist"), { recursive: true });
@@ -90,7 +81,7 @@ describe("clossys produce temporary projection paths", () => {
       const force = setTimeout(() => child.kill("SIGKILL"), 2_000);
       let result;
       try { result = await exited; } finally { clearTimeout(force); }
-      await writeFile(join(directory, `${++sequence}-${label}.json`), JSON.stringify({ temp, root, config: config ? { selection: config.selection, theme: config.theme, compilation: config.compilation } : undefined, ...result, stdout, stderr }, null, 2));
+      await writeFile(join(directory, `${++sequence}-${label}.json`), JSON.stringify({ temp, root, config: config ? { selection: config.selection, theme: config.theme } : undefined, ...result, stdout, stderr }, null, 2));
       expect(result.code, stderr).toBe(0);
       expect(result.signal, stderr).toBeNull();
     }
@@ -106,7 +97,6 @@ describe("clossys produce temporary projection paths", () => {
     expect(physical.theme).toEqual(theme);
     expect(physical.selection).toEqual(selection);
     const aliased = await produce("aliased-temp", aliasTemp);
-    expect(aliased.compilation.find(row => row.agent === "designer")?.state).toBe("compiled");
     expect(aliased.selection.message).toBe(physical.selection.message);
     expect(aliased.theme).toEqual(physical.theme);
     expect(aliased.selection).toEqual(physical.selection);
@@ -115,19 +105,20 @@ describe("clossys produce temporary projection paths", () => {
     if (selection.message !== undefined) expect(aliased.selection.message).toBe(selection.message);
   }, timeout);
 
-  it.each(["consumer-root", "cell-tree"] as const)("continues rejecting a symlinked %s through the real server", async kind => {
+  it.each(["consumer-root", "agent-ia"] as const)("continues rejecting a symlinked %s through the real server", async kind => {
     const target = join(directory, kind);
     if (kind === "consumer-root") await symlink(consumer, target, "dir");
     else {
       await mkdir(join(target, "clossys/agents/designer"), { recursive: true });
       await writeFile(join(target, "clossys/clossys.config.ts"), "export default {};\n");
-      await symlink(join(agentRoot(consumer, "designer"), "tree.json"), join(agentRoot(target, "designer"), "tree.json"));
+      await symlink(join(agentRoot(consumer, "designer"), "ia.json"), join(agentRoot(target, "designer"), "ia.json"));
     }
-    const treePath = join(agentRoot(consumer, "designer"), "tree.json");
-    const before = await readFile(treePath, "utf8");
+    const iaPath = join(agentRoot(consumer, "designer"), "ia.json");
+    const before = await readFile(iaPath, "utf8");
     const config = await produce(`rejected-${kind}`, aliasTemp, target);
-    expect(config.selection).toMatchObject({ message: "Symbolic links are not followed", leaves: [] });
-    expect(config.compilation.find(row => row.agent === "designer")?.state).toBe("error");
-    expect(await readFile(treePath, "utf8")).toBe(before);
+    expect(config.selection.leaves).toEqual([]);
+    expect(config.selection.message).toMatch(/[Ss]ymbolic link|symlink/);
+    expect(config.theme.source).not.toBe("consumer");
+    expect(await readFile(iaPath, "utf8")).toBe(before);
   }, timeout);
 });

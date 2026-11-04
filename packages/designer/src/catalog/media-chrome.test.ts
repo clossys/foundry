@@ -12,7 +12,7 @@ import { emitCopyPortTypes } from "../../scripts/generate-copy-ports.mjs";
 const section = sections.find(row => row.id === "sections.media")!;
 const passage = passages.find(row => row.id === "passages.media")!;
 const newCopy = [
-  { key: "figure.chromeLabel", kind: "plain", required: false, maxLength: { en: 160 }, dir: "auto" },
+  { key: "figure.chrome-label", kind: "plain", required: false, maxLength: { en: 160 }, dir: "auto" },
   { key: "callouts.label", kind: "plain", required: false, maxLength: { en: 160 }, dir: "auto" },
   { key: "callouts.items[].body", kind: "plain", required: false, maxLength: { en: 480 }, dir: "auto" },
 ];
