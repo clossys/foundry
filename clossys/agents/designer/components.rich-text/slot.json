@@ -70,5 +70,14 @@
     ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.link",
+    "components.semantic-content",
+    "components.table"
+  ],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). No vendored item in the approved set maps to this slot (Plate is not vendored; manifest skipped @plate/editor-basic); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03"
+  }
 }

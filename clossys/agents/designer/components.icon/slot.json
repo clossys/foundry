@@ -70,5 +70,9 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). No vendored item in the approved set maps to this slot (lucide icons are vendored per icon and pinned in assets.icon-*; manifest skipped lucide-react); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03"
+  }
 }

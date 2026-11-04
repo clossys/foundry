@@ -147,5 +147,16 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.link",
+    "components.menu",
+    "components.semantic-content",
+    "components.status-mark"
+  ],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). No vendored item in the approved set maps to this slot (no registry:block or registry:example); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03"
+  }
 }

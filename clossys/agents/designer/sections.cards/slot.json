@@ -293,5 +293,14 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.card",
+    "components.link",
+    "components.semantic-content"
+  ],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). The only direct item, shadcn/card@4.23.0, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF); no registry:block or registry:example; candidate v1 fails ref-verbatim. shadcn-app/card-example fails REF-FLAVOR (unstyled).",
+    "since": "2026-11-03"
+  }
 }

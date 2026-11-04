@@ -170,5 +170,16 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.breadcrumbs",
+    "components.button",
+    "components.grid-list",
+    "components.icon",
+    "components.resize-handle",
+    "components.tree"
+  ],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03"
+  }
 }

@@ -178,5 +178,13 @@
     }
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.button",
+    "components.form",
+    "components.progress-bar"
+  ],
+  "notNeeded": {
+    "reason": "no approved-registry source; composition lineage pending (W6). The only direct item, diceui/stepper@04aad54, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF and REF-FLAVOR); no registry:block or registry:example; candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03"
+  }
 }
