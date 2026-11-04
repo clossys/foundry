@@ -1,1 +1,0 @@
-import fs from 'node:fs';fs.appendFileSync("/Users/calvinhung/code/worktrees/clossys-foundry/slot-4/tmp/p0-gate-process/runner-tests/integration-S1rmeS/default-runs",'ran\n');console.log(JSON.stringify({schemaVersion:1,sourceHead:"7e8ba606fd630ccd31e80827276edf3fcefc2176",status:"complete",missing:[],invalid:[]}));process.exitCode=0;

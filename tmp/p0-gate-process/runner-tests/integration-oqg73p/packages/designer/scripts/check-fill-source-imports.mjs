@@ -1,1 +1,0 @@
-import fs from 'node:fs';fs.writeFileSync("/Users/calvinhung/code/worktrees/clossys-foundry/slot-4/tmp/p0-gate-process/runner-tests/integration-oqg73p/gate-1-ran",'ran');console.log(JSON.stringify({gate:'fixture-1',inputHead:"7e8ba606fd630ccd31e80827276edf3fcefc2176",violations:[],unverified:[]}));process.exitCode=2;
