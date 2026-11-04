@@ -27,7 +27,8 @@ import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioChildren, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { useSlotCensus } from '../lib/slot-census';
-import { loadLeaf, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
+import { pipelineInputs, type PipelineGraphFile } from '../lib/pipeline-flow';
+import { loadLeaf, loadPipeline, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
@@ -203,6 +204,17 @@ function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
   }, [agent, slug, record, page, spec, resolved, reports]);
 }
 
+/** The pipeline page: graph.json's steps and edges as the flow, its counts as the header, its kinds as the legend. */
+function usePipelineInputs({ page }: LoaderProps): Loaded {
+  const record = useResource<PipelineGraphFile>('pipeline', undefined, loadPipeline, studioCopy("studio.pipeline.empty.description"));
+  return useMemo((): Loaded => {
+    if (record.state === 'loading') return { state: 'loading' };
+    if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.pipeline.empty.title"), description: record.message } };
+    const inputs = pipelineInputs(record.value, pageHeader(page));
+    return { state: 'ready', inputs: { ...inputs }, modules: { checks: checksInput([], [], []) } };
+  }, [record, page]);
+}
+
 /* Assembly. */
 
 function Placed({ slot, spec, inputs }: { slot: string; spec: StudioAssemblySpec; inputs: Inputs }) {
@@ -289,9 +301,10 @@ function Assembled(props: LoaderProps & { loaded: Loaded }) {
 function HomePage(props: LoaderProps) { return <Assembled {...props} loaded={useHomeInputs(props)} />; }
 function SlotGroupsPage(props: LoaderProps) { return <Assembled {...props} loaded={useSlotGroupsInputs(props)} />; }
 function LeafPage(props: LoaderProps) { return <Assembled {...props} loaded={useLeafInputs(props)} />; }
+function PipelinePage(props: LoaderProps) { return <Assembled {...props} loaded={usePipelineInputs(props)} />; }
 
 /** The loaders a page record may name (`data.loader`). */
-const LOADERS = { home: HomePage, 'slot-groups': SlotGroupsPage, leaf: LeafPage } as const;
+const LOADERS = { home: HomePage, 'slot-groups': SlotGroupsPage, leaf: LeafPage, pipeline: PipelinePage } as const;
 
 /** Renders whatever page record the Studio map resolves `segments` to. */
 export function StudioPage({ segments, seed }: { segments: readonly string[]; seed?: StudioPageSeed }) {

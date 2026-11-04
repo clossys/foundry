@@ -10,7 +10,7 @@ import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
 import { expandPublication } from '../dist/publish/expand-tabs.js';
 import { checkPayload } from './studio-payload.mjs';
-import { brandJson, iconsModule, provenanceJson } from './check-generated-derived.mjs';
+import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
@@ -369,7 +369,7 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i},
     : await studioCopyRegistry(clossysRoot);
   // Derived products: the icon map from the pinned icon glyphs, each section's DOM provenance from its binding, the consumer brand from its pinned assets.
   const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
-    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot) };
+    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });

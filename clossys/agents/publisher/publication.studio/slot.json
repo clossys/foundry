@@ -5,7 +5,7 @@
   "ia": {
     "l1": "studio",
     "l2": "publication",
-    "order": 19
+    "order": 20
   },
   "kind": "publication",
   "contract": {},
@@ -23,6 +23,7 @@
     "page.director-focus",
     "page.director-identity",
     "page.home",
+    "page.producer-pipeline",
     "page.publisher-studio",
     "page.writer-lexicon",
     "page.writer-narratives",
@@ -33,6 +34,7 @@
   "uses": [
     "assets.icon-document",
     "assets.icon-guide",
+    "assets.icon-integration",
     "assets.icon-layers",
     "assets.icon-website",
     "page.designer-assets",
@@ -48,6 +50,7 @@
     "page.director-focus",
     "page.director-identity",
     "page.home",
+    "page.producer-pipeline",
     "page.publisher-studio",
     "page.writer-lexicon",
     "page.writer-narratives",

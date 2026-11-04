@@ -894,12 +894,12 @@
       "sha256": "1a0618874ec0442bca934a2270c59f9bc81ff1a9c3ab6bc7d0df80e5078db1ab"
     },
     {
-      "path": "clossys/agents/designer/components.flow.canvas/candidates/canvas-v1.json",
-      "sha256": "677ef908b3b1791939304b111af76613e38220dde2157ebf0cf286f3a59e513f"
+      "path": "clossys/agents/designer/components.flow.canvas/candidates/canvas-v2.json",
+      "sha256": "0cffe04f3c70451bfb761d247d191c22692755db9bdf0fcf94667c644581f5e5"
     },
     {
       "path": "clossys/agents/designer/components.flow.canvas/pin.json",
-      "sha256": "729426127313609bc86a40012bfdc5cb17b6796c14c809bd19de82661199c904"
+      "sha256": "7fe175ada263e8db85ca40e4713e138bd22f2653016390db550de58bae1d06c4"
     },
     {
       "path": "clossys/agents/designer/components.flow.canvas/slot.json",
@@ -1870,12 +1870,12 @@
       "sha256": "2bf6e8dcafe4aadbfbae98fc753ce5e43371089ad90accd234c9d935fb0329bf"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v2.json",
-      "sha256": "13febb2ec4f7fa1d311897cf830f892c4c6d469c9a995368b78eac5260d5b16a"
+      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v3.json",
+      "sha256": "5f9ced5517d9b94eaeccbbd2ee07f052683bea5c898fce97fa2b09cee341054b"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/pin.json",
-      "sha256": "181890c60ab1f5f5bb60b9c8d751b022dc099fe29deb60d28da303179bfcd794"
+      "sha256": "718cfd8128489476e9fda232c77c0c7e00c57ca0692dded364c65ddddc802eed"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
@@ -1894,12 +1894,12 @@
       "sha256": "d2f3ca8d5e294458f1f3633110d64889509c1c0f5464c7efe7a53845e7287692"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-legend/candidates/producer-pipeline-legend-v1.json",
-      "sha256": "49629f30ca18899bcdc3076b8a2481980d8fb6eb1b448fb6ac327db0586a82d4"
+      "path": "clossys/agents/designer/sections.producer.pipeline-legend/candidates/producer-pipeline-legend-v2.json",
+      "sha256": "54b21fa5996786c5eafa33e9dfb6ed42494dc4cc5bf91a3a8bc5a8a2a6e887e8"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-legend/pin.json",
-      "sha256": "527dc14b6806d51e4d0e2ec280c998fb12fdb2de0f1a28ce4ee0cddf643ba266"
+      "sha256": "2da773b49e8c99fdb2622b1971d93cbbf3f5bd9a6018bba6cc30d1cb57223b8d"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-legend/slot.json",
@@ -3567,7 +3567,7 @@
     },
     {
       "path": "clossys/agents/publisher/ia.json",
-      "sha256": "7bcd4359db3e5873e909ab087b72e0b84d96e426ea3697897efcaa94f4586801"
+      "sha256": "5744977a43db9e013c4ec535f65d0dc2ce36cf601cf260f38d211f251e197884"
     },
     {
       "path": "clossys/agents/publisher/page.designer-assets/candidates/page-v3.json",
@@ -3726,6 +3726,18 @@
       "sha256": "6881df9c922cf527ddca8f51b31ca0a355fbd445ecdd23258af14e5570943235"
     },
     {
+      "path": "clossys/agents/publisher/page.producer-pipeline/candidates/page-v1.json",
+      "sha256": "23f85adff1b407e6852be9e1a6867e7320bcd42b1ac77556687856bb5fc715a7"
+    },
+    {
+      "path": "clossys/agents/publisher/page.producer-pipeline/pin.json",
+      "sha256": "c0b9602a36f6ad90a38976b8a30a477892de92cd1ef1c59c13d43fb912a50414"
+    },
+    {
+      "path": "clossys/agents/publisher/page.producer-pipeline/slot.json",
+      "sha256": "c3e78b4ba744e4112c18c91a971a9b54b98a48b28b6ee465f882cd39151a06c7"
+    },
+    {
       "path": "clossys/agents/publisher/page.publisher-studio/candidates/page-v3.json",
       "sha256": "2eb1c0d2859a82a9a92443a1da01d617f3e1963c08960d6ddb35b27441a763b3"
     },
@@ -3798,16 +3810,16 @@
       "sha256": "7dfe5ced64d19d0f6f38d90aea424389c563ea2f145d450500d26ae1d09ed8d4"
     },
     {
-      "path": "clossys/agents/publisher/publication.studio/candidates/publication-v2.json",
-      "sha256": "853e65360df858f2e35dda8357fed6ab361b1d781dc33c98835ff57e0a59bc05"
+      "path": "clossys/agents/publisher/publication.studio/candidates/publication-v3.json",
+      "sha256": "dafee0a9752375ca1c07aa533b970483a531ec166c549bb5e221bb0707dde31c"
     },
     {
       "path": "clossys/agents/publisher/publication.studio/pin.json",
-      "sha256": "30607fba13c60befe1ae7e7d920b2ff550dd90c54c2b783f2c4cf69ae24daddd"
+      "sha256": "cb463d7bfe292984def9f053fa0fd06821fcfbf32cb356619d678efb2e7045dd"
     },
     {
       "path": "clossys/agents/publisher/publication.studio/slot.json",
-      "sha256": "17a9d9f834324561ea188f32cc3de41c5a0f10d50b09642451c1dc2ae0e5289c"
+      "sha256": "9da6d7dd02f8bfac90f42628410cd5bf9e7c5b88f32bf49fd9eb50feed96c914"
     },
     {
       "path": "clossys/agents/writer/ia.json",
@@ -5976,6 +5988,10 @@
       "sha256": "ac0a764d8b875b0a6d0bf367391ca3ef9215bd8375edb03fcf505024ffcc987a"
     },
     {
+      "path": "app/producer/pipeline/page.tsx",
+      "sha256": "c6fbf02dd3bd7575653780240949ad5a71e0e3b0443d920068e8ca537210c54b"
+    },
+    {
       "path": "app/publisher/studio/designer/[slug]/page.tsx",
       "sha256": "83f2e6244c3afe985aa6b83787a29a2e0acdffb76a2a6bb8b52c1d71b1f6f9b9"
     },
@@ -6002,6 +6018,14 @@
     {
       "path": "app/publisher/studio/pages/page.tsx",
       "sha256": "8174d86ad2e9d794f57c1d6d96b204716396138309b45acbe38cd0f90cb3c669"
+    },
+    {
+      "path": "app/publisher/studio/producer/[slug]/page.tsx",
+      "sha256": "792b1dd70bd697f6c75b6544000edb50fb77f3c8b065125ea774a5b7132b6438"
+    },
+    {
+      "path": "app/publisher/studio/producer/page.tsx",
+      "sha256": "437af489caa6c102221f7c0fa6e0948bc00c3f12d3bcc774d51a759204860c24"
     },
     {
       "path": "app/publisher/studio/publication/[slug]/page.tsx",
@@ -6249,7 +6273,7 @@
     },
     {
       "path": "generated/assembly-bindings.ts",
-      "sha256": "8529194fc56d00525f73134995a50ca121236e8c037192ee8c3d398e23271ebc"
+      "sha256": "eefd73f7c8be34f51423fa3e4ed648df2c97f327941a36f50e93fc392368a423"
     },
     {
       "path": "generated/studio-brand.json",
@@ -6260,12 +6284,16 @@
       "sha256": "1e24af0be5acd1b27f3a90dc271858f690146877ade940d343983c3476ac2976"
     },
     {
+      "path": "generated/studio-flow-theme.css",
+      "sha256": "cc855409432fb26be6ecbb66123dd7eca46a78b5ba313c8a338fd6f9eb4cf11e"
+    },
+    {
       "path": "generated/studio-icons.ts",
       "sha256": "5bc969632929c0431bc1c1c73278aaf55880e09655387790cbab5ca5a46c5b0a"
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "2d2a44d5f5c9de404c9aa542ec5e8846215d6bd2ff66773963e546b87c83687d"
+      "sha256": "3e4ab5eabe444ccb75a76595a6980cbc7fb661dd0b41a8e33457b060f6275ce3"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6273,7 +6301,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "ff85f33fcab137a2f94d7122d6bbf1f9562c942fa00d1f3a48fb06c511fd8b8d"
+      "sha256": "49fc0299b84ad4958290a27dd7b80e2d3f51068f51dc026105bee45fde4ff40c"
     }
   ]
 }

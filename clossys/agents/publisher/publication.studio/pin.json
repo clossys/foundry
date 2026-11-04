@@ -1,6 +1,6 @@
 {
-  "candidate": "publication-v2.json",
-  "sha256": "853e65360df858f2e35dda8357fed6ab361b1d781dc33c98835ff57e0a59bc05",
-  "decidedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
-  "at": "2026-11-03T12:00:00Z"
+  "candidate": "publication-v3.json",
+  "sha256": "dafee0a9752375ca1c07aa533b970483a531ec166c549bb5e221bb0707dde31c",
+  "decidedBy": "planner:PIPELINE-CANVAS",
+  "at": "2026-11-04T04:37:09.976Z"
 }

@@ -13,6 +13,7 @@ import { loadSlotDetail } from './slot-detail';
 import type { SlotDetail } from '../../src/server/slot-detail';
 import type { SlotGallerySection } from '../../src/server/slot-gallery';
 import { studioReports, type StudioReport } from './studio-report';
+import type { PipelineGraphFile } from './pipeline-flow';
 
 export type Resource<T> = { state: 'loading' } | { state: 'error'; message: string } | { state: 'ready'; value: T };
 /** The consumer's brand as its Designer output names it; the mark image is served by Producer. */
@@ -52,6 +53,15 @@ export async function loadSlotGroups(agent: string, signal: AbortSignal): Promis
   const pages = sections.some(section => section.cards.some(card => card.kind === 'page' && card.status === 'active'));
   const publication = pages ? await loadPublication(signal).catch(() => undefined) : undefined;
   return { sections, count: typeof value.count === 'number' ? value.count : 0, ...(publication ? { publication } : {}) };
+}
+
+/** The pipeline graph as Producer serves it: `packages/producer/pipeline/graph.json`, read and nothing else. */
+export async function loadPipeline(signal: AbortSignal): Promise<PipelineGraphFile> {
+  const response = await fetch(producerUrl('/api/pipeline'), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
+  if (!response.ok) throw new Error(studioCopy("studio.pipeline.empty.description"));
+  const value = await response.json() as { state?: unknown; graph?: PipelineGraphFile };
+  if (value.state !== 'ready' || !value.graph || !Array.isArray(value.graph.nodes) || !Array.isArray(value.graph.edges)) throw new Error(studioCopy("studio.pipeline.empty.description"));
+  return value.graph;
 }
 
 export async function loadLeaf(agent: string, slug: string, signal: AbortSignal): Promise<LeafRecord | undefined> {

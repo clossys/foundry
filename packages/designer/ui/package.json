@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./styles.css": "./src/index.css"
+    "./styles.css": "./src/index.css",
+    "./flow-canvas.css": "./src/components/flow-canvas.css"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"

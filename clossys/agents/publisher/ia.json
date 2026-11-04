@@ -57,6 +57,13 @@
           ]
         },
         {
+          "id": "producer",
+          "label": "Producer",
+          "slots": [
+            "page.producer-pipeline"
+          ]
+        },
+        {
           "id": "publication",
           "label": "Publication",
           "slots": [

@@ -119,9 +119,16 @@
           "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-CODE",
           "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
           "expect": "REF-NPM-CODE components\\.flow\\.canvas"
+        },
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-ASSET",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-NPM-ASSET components\\.flow\\.canvas"
         }
       ],
-      "note": "Code-level gate: every pinned Designer candidate ships the vendored reference file plus only allowed hunks; an npm candidate ships only named re-exports of the package version package-lock.json resolves."
+      "note": "Code-level gate: every pinned Designer candidate ships the vendored reference file plus only allowed hunks; an npm candidate ships only named re-exports of the package version package-lock.json resolves, and any other file it ships is that package's own file byte for byte."
     },
     {
       "id": "R-VENDORED-SOURCES",
@@ -422,6 +429,30 @@
         }
       ],
       "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write)."
+    },
+    {
+      "id": "R-PIPELINE-CANVAS",
+      "owner_words": {
+        "quote": "anything that is deterministic need to be process driven by code and identifiers",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:pipeline-canvas"
+      ],
+      "related": [
+        "packages/designer#check:ref-verbatim"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PIPELINE-CANVAS",
+      "fixture_runs": [
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph.json --rendered {fixture}/rendered.json",
+          "expect": "^FAIL edge-ids: edge missing from the page: design\\.hero->publish\\.compile"
+        }
+      ],
+      "note": "The Studio page /producer/pipeline draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied. The fixture is a recorded rendering that drops an edge."
     }
   ],
   "exemptions": [

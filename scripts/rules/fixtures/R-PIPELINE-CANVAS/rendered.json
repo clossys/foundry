@@ -1,0 +1,5 @@
+{
+  "//": "A page that draws both steps but drops the edge between them (React Flow drops an edge whose handle it cannot find).",
+  "nodes": ["design.hero", "publish.compile"],
+  "edges": []
+}

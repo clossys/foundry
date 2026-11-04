@@ -475,6 +475,42 @@
         "actions": []
       },
       {
+        "path": "/producer",
+        "kind": "group",
+        "source": {
+          "planItemId": "studio.producer"
+        },
+        "pin": {
+          "nav": true
+        },
+        "icon": "assets.icon-integration",
+        "id": "producer",
+        "title": "Producer",
+        "order": 5
+      },
+      {
+        "id": "producer-pipeline",
+        "parentId": "producer",
+        "order": 0,
+        "title": "Pipeline",
+        "kind": "page",
+        "path": "/producer/pipeline",
+        "source": {
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.page-header",
+            "sections.producer.pipeline-header",
+            "sections.producer.pipeline-flow",
+            "sections.producer.pipeline-legend"
+          ]
+        },
+        "pin": {
+          "nav": true,
+          "group": "producer"
+        },
+        "actions": []
+      },
+      {
         "id": "director-context.market",
         "parentId": "director-context",
         "order": 0,
@@ -1883,9 +1919,25 @@
         }
       },
       {
-        "id": "publisher-studio.publication",
+        "id": "publisher-studio.producer",
         "parentId": "publisher-studio",
         "order": 5,
+        "title": "Producer",
+        "kind": "page",
+        "path": "/publisher/studio/producer",
+        "source": {
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.page-header",
+            "sections.studio.page-tabs",
+            "sections.studio.slot-groups"
+          ]
+        }
+      },
+      {
+        "id": "publisher-studio.publication",
+        "parentId": "publisher-studio",
+        "order": 6,
         "title": "Publication",
         "kind": "page",
         "path": "/publisher/studio/publication",
@@ -4286,6 +4338,11 @@
         "permanent": false
       },
       {
+        "from": "/publisher/page.producer-pipeline",
+        "to": "/publisher/studio/producer/page.producer-pipeline",
+        "permanent": false
+      },
+      {
         "from": "/publisher/publication.studio",
         "to": "/publisher/studio/publication/publication.studio",
         "permanent": false
@@ -5716,6 +5773,84 @@
         "sections.studio.page-header": "header",
         "sections.studio.page-tabs": "tabs",
         "sections.studio.slot-groups": "groups"
+      },
+      "manifest": {
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "studio.outline-label",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "studio.checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "input": "checks"
+          }
+        ],
+        "actions": [],
+        "wiring": [
+          {
+            "do": "open outline",
+            "expect": "outline open"
+          },
+          {
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "cmdk",
+            "expect": "every popover listed with its shortcut"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
+          }
+        ]
+      }
+    },
+    {
+      "id": "producer-pipeline",
+      "path": "/producer/pipeline",
+      "title": "Pipeline",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.page-header",
+        "sections.producer.pipeline-header",
+        "sections.producer.pipeline-flow",
+        "sections.producer.pipeline-legend"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "pipeline",
+        "purpose": "studio.pipeline.description",
+        "description": "studio.pipeline.description"
+      },
+      "inputs": {
+        "sections.studio.page-header": "header",
+        "sections.producer.pipeline-header": "header",
+        "sections.producer.pipeline-flow": "flow",
+        "sections.producer.pipeline-legend": "legend"
       },
       "manifest": {
         "navigator": "outline",
@@ -23135,6 +23270,202 @@
       }
     },
     {
+      "id": "publisher-studio.producer",
+      "path": "/publisher/studio/producer",
+      "title": "Producer",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.page-header",
+        "sections.studio.page-tabs",
+        "sections.studio.slot-groups"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "slot-groups",
+        "agent": "publisher",
+        "purpose": "studio.pages-what-gets-published-where-and-its",
+        "description": "studio.group-publisher-studio",
+        "groups": [
+          "studio/producer"
+        ]
+      },
+      "inputs": {
+        "sections.studio.page-header": "header",
+        "sections.studio.page-tabs": "tabs",
+        "sections.studio.slot-groups": "groups"
+      },
+      "manifest": {
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "studio.outline-label",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "studio.checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "input": "checks"
+          }
+        ],
+        "actions": [],
+        "wiring": [
+          {
+            "do": "open outline",
+            "expect": "outline open"
+          },
+          {
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "cmdk",
+            "expect": "every popover listed with its shortcut"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "publisher"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "studio.outline-label",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "studio.checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "studio.versions-label",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "studio.request-change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "studio.request-change-prompt"
+              },
+              "shortcut": "r"
+            }
+          ],
+          "wiring": [
+            {
+              "do": "open outline",
+              "expect": "outline open"
+            },
+            {
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "cmdk",
+              "expect": "every popover listed with its shortcut"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "publisher-studio.publication",
       "path": "/publisher/studio/publication",
       "title": "Publication",
@@ -26195,6 +26526,12 @@
       "path": "/publisher/studio/publisher/page.publisher-studio"
     },
     {
+      "page": "publisher-studio.producer",
+      "slug": "page.producer-pipeline",
+      "title": "Producer pipeline",
+      "path": "/publisher/studio/producer/page.producer-pipeline"
+    },
+    {
       "page": "publisher-studio.publication",
       "slug": "publication.studio",
       "title": "Studio",
@@ -27888,6 +28225,11 @@
       "permanent": false
     },
     {
+      "source": "/publisher/page.producer-pipeline",
+      "destination": "/publisher/studio/producer/page.producer-pipeline",
+      "permanent": false
+    },
+    {
       "source": "/publisher/page.publisher-studio",
       "destination": "/publisher/studio/publisher/page.publisher-studio",
       "permanent": false
@@ -28650,6 +28992,21 @@
       "version": 4
     },
     {
+      "slot": "sections.producer.pipeline-header",
+      "element": "producer-pipeline-header",
+      "version": 1
+    },
+    {
+      "slot": "sections.producer.pipeline-flow",
+      "element": "producer-pipeline-flow",
+      "version": 3
+    },
+    {
+      "slot": "sections.producer.pipeline-legend",
+      "element": "producer-pipeline-legend",
+      "version": 2
+    },
+    {
       "slot": "sections.studio.leaf-header",
       "element": "studio-leaf-header",
       "version": 6
@@ -28716,6 +29073,7 @@
     "writer-passages": [],
     "writer-narratives": [],
     "publisher-studio": [],
+    "producer-pipeline": [],
     "director-context.market": [],
     "director-context.customer": [],
     "director-context.competition": [],
@@ -28804,6 +29162,7 @@
     "publisher-studio.designer": [],
     "publisher-studio.writer": [],
     "publisher-studio.publisher": [],
+    "publisher-studio.producer": [],
     "publisher-studio.publication": []
   },
   "routes": [
@@ -28975,6 +29334,15 @@
       "label": "Studio",
       "entry": {
         "file": "studio/app/publisher/studio/page.tsx",
+        "export": "default"
+      }
+    },
+    {
+      "instanceId": "producer-pipeline",
+      "path": "/producer/pipeline",
+      "label": "Pipeline",
+      "entry": {
+        "file": "studio/app/producer/pipeline/page.tsx",
         "export": "default"
       }
     },
@@ -30382,6 +30750,22 @@
         "path": "/publisher/studio/publisher/[slug]",
         "entry": {
           "file": "studio/app/publisher/studio/publisher/[slug]/page.tsx",
+          "export": "default"
+        }
+      }
+    },
+    {
+      "instanceId": "publisher-studio.producer",
+      "path": "/publisher/studio/producer",
+      "label": "Producer",
+      "entry": {
+        "file": "studio/app/publisher/studio/producer/page.tsx",
+        "export": "default"
+      },
+      "leaf": {
+        "path": "/publisher/studio/producer/[slug]",
+        "entry": {
+          "file": "studio/app/publisher/studio/producer/[slug]/page.tsx",
           "export": "default"
         }
       }

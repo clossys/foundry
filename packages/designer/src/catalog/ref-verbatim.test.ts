@@ -67,8 +67,8 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(21);
-    expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES", "REF-NPM-VERSION", "REF-NPM-CODE"]));
+    expect(CODES).toHaveLength(22);
+    expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES", "REF-NPM-VERSION", "REF-NPM-CODE", "REF-NPM-ASSET"]));
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
 
@@ -818,6 +818,17 @@ describe("composition lineage (W6)", () => {
     expect(npmCheck(npmItem('export { ReactFlow } from "@xyflow/system"\n'))).toEqual(["REF-NPM-CODE"]);
     expect(npmCheck({ ...npmItem(), files: [{ path: "LICENCE.md", content: "MIT" }] })).toEqual(["REF-NPM-CODE"]);
     expect(npmCheck(npmItem(CANVAS, "12.12.1", { refVerbatim: { files: {} } }))).toEqual(["REF-ADAPTATION"]);
+  });
+  it("fails an npm candidate whose non-code file is not the installed package's own file byte for byte", () => {
+    // The repository lockfile: its folder holds the installed @xyflow/react the asset is compared to.
+    const lockfile = resolve(pkg, "../../package-lock.json");
+    const css = read("ui/src/components/flow-canvas.css");
+    const withAsset = (path: string, content: string) => ({ ...npmItem(), files: [...npmItem().files, { path, content }] });
+    const assetCheck = (item: unknown) => codes(checkRegistryItem(setup(), "components.flow.canvas", item, { strict: true, lockfile }).findings);
+    expect(assetCheck(withAsset("dist/style.css", css))).toEqual([]);
+    expect(assetCheck(withAsset("dist/style.css", css.replace(".react-flow", ".react-flaw")))).toEqual(["REF-NPM-ASSET"]);
+    expect(assetCheck(withAsset("dist/theme.css", css))).toEqual(["REF-NPM-ASSET"]);
+    expect(assetCheck(withAsset("../../package.json", "{}"))).toEqual(["REF-NPM-ASSET"]);
   });
   it("lets a composition place a declared npm part through the layer's verbatim re-export file", () => {
     const FLOW = 'import { Card, CardContent, ReactFlow } from "@clossys/designer-ui"\n\nexport function Flow() {\n  return (\n    <Card>\n      <CardContent><ReactFlow nodes={[]} edges={[]} /></CardContent>\n    </Card>\n  )\n}\n';

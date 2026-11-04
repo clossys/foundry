@@ -22,10 +22,13 @@ import { slotCensus } from "./slot-census.js";
 import { DEFAULT_AVATAR_PATH, defaultAvatarSvg } from "./default-avatar.js";
 import { specimenMount } from "../publish/site-server.js";
 import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const BRAND_MARK_CACHE = "private, max-age=60, stale-while-revalidate=300";
+/** The pipeline graph Producer ships (`check:pipeline` keeps it current): the one file `/api/pipeline` reads. */
+const PIPELINE_GRAPH = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..", "pipeline", "graph.json");
 
 export type { ChangeEvent } from "./contract.js";
 export { TOKEN_HEADER } from "./contract.js";
@@ -121,6 +124,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     if (pathname === "/api" || pathname.startsWith("/api/")) {
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
       if (pathname === "/api/slots/census") { json(response, 200, slotCensus(library)); return; }
+      // The pipeline graph as committed: steps, edges, lanes and seats, read from graph.json only.
+      if (pathname === "/api/pipeline") {
+        const graph = await readFile(PIPELINE_GRAPH, "utf8").then(text => JSON.parse(text) as unknown).catch(() => undefined);
+        json(response, graph ? 200 : 404, graph ? { state: "ready", graph } : { state: "missing" }); return;
+      }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       // One agent's slots in IA order, grouped as the Studio tabs place them (`<l1>/<l2>` sections).
       const galleryMatch = /^\/api\/slots\/([a-z]+)$/.exec(pathname);
