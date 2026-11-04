@@ -8,8 +8,10 @@ reader and one writer, and a pin is the only wire from a slot to everything that
   (pinned publication), the CLI verbs, Studio and the specimen route import the reader.
 - **No legacy selection path.** The selection writer (`records/selection.ts`), its schema,
   validator, status rows and release snapshots are gone. Pins live only in `pin.json`.
-  `clossys/selection.json` and `clossys/library/**` remain as frozen data (pipeline step
-  `selection`, manual) until the Designer checks that still read them move to slot-model pins.
+  `clossys/selection.json` and its pipeline step are deleted: Designer check-provenance,
+  check-ref-verbatim and check-section-tokens read pins through the reader
+  (`packages/designer/scripts/slot-pins.mjs`), and `check:no-selection-store` fails if the store
+  or a reader of it comes back. `clossys/library/**` remains frozen data.
 - **Every candidate renders.** The specimen route takes `(slot, candidate)` and builds those bytes.
   The valid pin is badged pinned; every other candidate carries `preview` and is never used by
   pages.
@@ -18,6 +20,7 @@ reader and one writer, and a pin is the only wire from a slot to everything that
 
 | Check | What fails it |
 |---|---|
+| `check:no-selection-store` | `clossys/selection.json` exists, or a package, script or bin file (tests and fixtures aside) opens a `selection.json` pin store or names the `clossys.selection/1` schema (failing fixture in `scripts/check-no-selection-store.test.mjs`). |
 | `check:single-reader` | Any package, script or bin file outside the reader and writer that opens a slot-model path (AST import and taint rule; failing fixture in `scripts/check-single-reader.test.mjs`). |
 | `check:pin-propagation` | In a temporary copy: a drifted pinned candidate byte that Studio detail does not flag (`studio.check-pin-hash-mismatch`) or a page build that does not refuse it; a repin that does not change Studio detail, the specimen inputs and Publisher output. |
 | `check:every-candidate-previewable` | A placed, valid candidate with no specimen or record, a Designer candidate the specimen route does not accept, or a `preview` flag that is not exactly "not the valid pin". |

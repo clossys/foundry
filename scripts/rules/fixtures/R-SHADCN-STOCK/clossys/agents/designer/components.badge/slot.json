@@ -6,7 +6,7 @@
     "l0": "components",
     "l1": "components.display",
     "l2": "display-labels",
-    "order": 123
+    "order": 0
   },
   "kind": "element",
   "contract": {

@@ -1,6 +1,6 @@
 import { defineStep } from "../define.js";
 import type { Stage } from "../define.js";
-import { IA, LIBRARY_ELEMENTS, SEATS, SELECTION, SLOTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
+import { IA, LIBRARY_ELEMENTS, SEATS, SLOTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
 import type { Agent } from "./ports.js";
 
 /** One `clossys pin` step per agent, at the pin stage of the agent's round; You hold every one. */
@@ -38,14 +38,6 @@ export const DECISION_STEPS = [
     summary: "Rule registry rows and gate yes/no.",
     inputs: [], outputs: ["scripts/rules/registry.json"],
     command: { manual: "owner approves rule rows and gates" }, checks: ["rules"],
-  }),
-  defineStep({
-    id: "selection", kind: "decide:judgment", actor: "owner", stage: "design.select",
-    summary: "Frozen legacy library selection; no code writes it. Pins live in the slot model (clossys/agents/*/*/pin.json).",
-    // Typed both ways, as SYSTEMS-IA declared it: the library element records it was chosen from, and the selection port schema.
-    inputs: [LIBRARY_ELEMENTS, "clossys/library/**"], outputs: [SELECTION],
-    command: { manual: "frozen: the selection writer is deleted; Designer's check:ref-verbatim --pinned, check-provenance and check-section-tokens still read it until they read slot-model pins" },
-    checks: ["workspace"],
   }),
   defineStep({
     id: "writer.approve", kind: "decide:judgment", actor: "owner", stage: "design.pin",

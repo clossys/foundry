@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 /**
- * Provenance check over a consumer library (read-only).
+ * Provenance check over a consumer's Designer slots (read-only).
  *
  *   node check-provenance.mjs --root <consumer>/clossys            pins + pending options
- *   node check-provenance.mjs --root <consumer>/clossys --all      every version directory
- *   node check-provenance.mjs --root <consumer>/clossys --element <slot>/<element>/v<N>
- *                                                                  one version, strict (pin gate)
+ *   node check-provenance.mjs --root <consumer>/clossys --all      every candidate
+ *   node check-provenance.mjs --root <consumer>/clossys --element <slot>/<candidate>.json
+ *                                                                  one candidate, strict (pin gate)
  *   node check-provenance.mjs --scan <dir>                         every element.json under dir;
  *                                                                  `__fixtures__` records are exempt
  *
@@ -17,14 +17,16 @@
  * themes from a shadcn theme preset. `original` is allowed only in a consumer-asset
  * slot (logo, brand marks, consumer media).
  *
- * Default scope is what the consumer pins or proposes: every pin and the newest
- * unpinned version of each element (an option). A pinned violator whose slot has a
+ * Pins and candidates come only from the one slot-model reader (slot-pins.mjs). Default
+ * scope is what the consumer pins or proposes: every pin and the newest unpinned
+ * candidate of each slot (an option). A pinned violator whose slot has a
  * passing pending option is reported as pending replacement, not failed: the owner
  * approves the pin. Exit 1 on any violation, 2 on a usage error.
  */
 import { existsSync, readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
+import { designerPins, pinLabel } from "./slot-pins.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = path => JSON.parse(readFileSync(path, "utf8"));
@@ -39,30 +41,15 @@ export function loadManifest(path = join(packageRoot, "references/manifest.json"
 
 const globMatch = (pattern, slot) => pattern.endsWith("*") ? slot.startsWith(pattern.slice(0, -1)) : pattern === slot;
 
-/** Lineage of one version directory: element.json, else the registry item's meta (not yet seeded). */
-export function lineageOf(dir) {
-  const element = join(dir, "element.json");
-  if (existsSync(element)) {
-    const record = json(element);
-    return { slot: record.slot, mode: record.lineage?.mode, source: record.lineage?.source, parts: record.lineage?.parts };
-  }
-  const item = join(dir, "registry-item.json");
-  if (existsSync(item)) {
-    const meta = json(item).meta ?? {};
-    return { slot: meta.leaf, mode: meta.lineage, source: meta.reference };
-  }
-  return null;
-}
-
 /** One reference (the source, or a part) against the manifest: trusted registry, listed item, same hash. Returns the manifest row. */
-function referenceFindings(label, at, ref, manifest, findings) {
-  const missing = ["registry", "item", "version", "hash"].filter(field => typeof ref?.[field] !== "string" || ref[field] === "");
+function referenceFindings(label, at, ref, manifest, findings, { hashed = true } = {}) {
+  const missing = ["registry", "item", "version", ...(hashed ? ["hash"] : [])].filter(field => typeof ref?.[field] !== "string" || ref[field] === "");
   if (missing.length) { findings.push(...missing.map(field => `${label}: ${at} has no ${field}`)); return undefined; }
   const key = `${ref.registry}/${ref.item}@${ref.version}`;
   if (!manifest.registries?.[ref.registry]) { findings.push(`${label}: ${key} is from ${ref.registry}, which is not a trusted registry (references/manifest.json)`); return undefined; }
   const found = (manifest.items ?? []).find(row => row.registry === ref.registry && row.name === ref.item && row.version === ref.version);
   if (!found) { findings.push(`${label}: ${key} is not in the references manifest`); return undefined; }
-  if (found.hash !== ref.hash) findings.push(`${label}: ${key} hash ${ref.hash} != manifest ${found.hash}`);
+  if (hashed && found.hash !== ref.hash) findings.push(`${label}: ${key} hash ${ref.hash} != manifest ${found.hash}`);
   return found;
 }
 
@@ -79,7 +66,7 @@ export function lineageFindings(label, lineage, { rule = loadRule(), manifest = 
   if (!source) return [`${label}: ${mode} item has no lineage.source`];
   const found = referenceFindings(label, "lineage.source", source, manifest, findings);
   if (!found) return findings;
-  for (const [index, part] of (lineage.parts ?? []).entries()) referenceFindings(label, `lineage.parts[${index}]`, part, manifest, findings);
+  for (const [index, part] of (lineage.parts ?? []).entries()) referenceFindings(label, `lineage.parts[${index}]`, part, manifest, findings, { hashed: lineage.partsHashed !== false || typeof part?.hash === "string" });
   const cls = (rule.classes ?? []).find(row => globMatch(row.slots, slot ?? ""));
   if (cls) {
     const typed = (cls.sourceTypes ?? []).includes(found.type);
@@ -89,73 +76,87 @@ export function lineageFindings(label, lineage, { rule = loadRule(), manifest = 
   return findings;
 }
 
-const versionDirs = libraryRoot => {
-  const out = [];
-  if (!existsSync(libraryRoot)) return out;
-  for (const slot of readdirSync(libraryRoot).sort()) {
-    const slotDir = join(libraryRoot, slot);
-    if (!statSync(slotDir).isDirectory()) continue;
-    for (const element of readdirSync(slotDir).sort()) {
-      const elementDir = join(slotDir, element);
-      if (!statSync(elementDir).isDirectory()) continue;
-      for (const v of readdirSync(elementDir)) {
-        const m = /^v(\d+)$/.exec(v);
-        if (m) out.push({ slot, element, version: Number(m[1]), dir: join(elementDir, v) });
-      }
-    }
+/** One `source.ref` entry as a reference: `registry/item@version`, or a JSON object naming registry, item, version and hash. Self-lineage entries (no registry) are null. */
+function parseRef(ref) {
+  if (typeof ref !== "string") return null;
+  if (ref.startsWith("{")) {
+    try {
+      const value = JSON.parse(ref);
+      return value?.registry ? { registry: value.registry, item: value.item, version: value.version, hash: value.hash } : null;
+    } catch { return null; }
   }
-  return out.sort((a, b) => a.slot.localeCompare(b.slot) || a.element.localeCompare(b.element) || a.version - b.version);
-};
+  const m = /^([^/@]+)\/(.+)@([^@]+)$/.exec(ref);
+  return m ? { registry: m[1], item: m[2], version: m[3] } : null;
+}
 
 /**
- * Provenance of a consumer root (`<consumer>/clossys`).
+ * Lineage of one Designer candidate (registry item): `original` stays original, `registry` is a
+ * verbatim adoption, `derived` is customized; the first reference is the source, the rest are parts.
+ * `composition` and `npm` candidates cite pinned slots or an npm package, not a registry item, and
+ * are verified by check-ref-verbatim: null here.
+ */
+export function candidateLineage(slot, item) {
+  const source = item?.meta?.source ?? {};
+  if (source.kind === "original") return { slot, mode: "original" };
+  if (source.kind === "composition" || source.kind === "npm") return null;
+  const mode = source.kind === "registry" ? "verbatim" : source.kind === "derived" ? "customized" : source.kind;
+  const refs = (source.ref ?? []).map(parseRef).filter(Boolean);
+  const [first, ...parts] = refs;
+  // `source.hash` is the first reference's manifest hash; a further plain ref is a part named by registry, item and version.
+  const ref = first && !first.hash ? { ...first, hash: source.hash } : first;
+  // A candidate's plain part refs carry no hash of their own: they must still be trusted manifest items.
+  return { slot, mode, source: ref, parts, partsHashed: false };
+}
+
+/**
+ * Provenance of a consumer root (`<consumer>/clossys`), over the Designer slot pins read through
+ * the one slot-model reader. Default scope is every pin and the newest unpinned candidate of each
+ * slot (an option); `all` checks every candidate.
  * Returns { violations, pending, checked } where pending lists pinned violators whose
  * slot has a passing pending option.
  */
-export function provenanceFindings(root, { all = false, rule = loadRule(), manifest = loadManifest() } = {}) {
-  const pins = existsSync(join(root, "selection.json")) ? json(join(root, "selection.json")).pins ?? {} : {};
-  const dirs = versionDirs(join(root, "library"));
-  const label = d => `${d.slot}/${d.element}@v${d.version}`;
-  const check = d => {
-    const lineage = lineageOf(d.dir);
-    if (!lineage) return [`${label(d)}: no element.json or registry-item.json`];
-    return lineageFindings(label(d), { ...lineage, slot: lineage.slot ?? d.slot }, { rule, manifest });
+export function provenanceFindings(root, { all = false, rule = loadRule(), manifest = loadManifest(), entries = designerPins(root, { all: true }) } = {}) {
+  const check = entry => {
+    if (entry.error) return [`${pinLabel(entry)}: ${entry.error}`];
+    const lineage = candidateLineage(entry.slot, entry.item);
+    return lineage ? lineageFindings(pinLabel(entry), lineage, { rule, manifest }) : [];
   };
-  if (all) {
-    const violations = dirs.flatMap(check);
-    return { violations, pending: [], checked: dirs.map(label) };
-  }
-  const newest = new Map();
-  for (const d of dirs) newest.set(`${d.slot}/${d.element}`, d);
-  const pinned = dirs.filter(d => pins[d.slot]?.element === d.element && pins[d.slot]?.version === d.version);
-  const options = [...newest.values()].filter(d => !(pins[d.slot]?.element === d.element && d.version <= pins[d.slot]?.version));
+  if (all) return { violations: entries.flatMap(check), pending: [], checked: entries.map(pinLabel) };
+  const bySlot = new Map();
+  for (const entry of entries) bySlot.set(entry.slot, [...(bySlot.get(entry.slot) ?? []), entry]);
   const violations = [];
   const pending = [];
-  const optionOk = new Map();
-  for (const d of options) {
-    const found = check(d);
-    optionOk.set(d.slot, found.length === 0);
-    violations.push(...found.map(f => `option ${f}`));
+  const checked = [];
+  for (const [, list] of bySlot) {
+    const pinned = list.find(entry => entry.pin);
+    const newest = list.at(-1);
+    const option = newest && !newest.pin && (!pinned || list.indexOf(newest) > list.indexOf(pinned)) ? newest : undefined;
+    let optionOk = false;
+    if (option) {
+      const found = check(option);
+      optionOk = found.length === 0;
+      violations.push(...found.map(f => `option ${f}`));
+      checked.push(pinLabel(option));
+    }
+    if (pinned) {
+      const found = check(pinned);
+      if (found.length && optionOk) pending.push(...found.map(f => `pin ${f} (pending replacement by the slot's option)`));
+      else violations.push(...found.map(f => `pin ${f}`));
+      checked.push(pinLabel(pinned));
+    }
   }
-  for (const d of pinned) {
-    const found = check(d);
-    if (found.length && optionOk.get(d.slot)) pending.push(...found.map(f => `pin ${f} (pending replacement by the slot's option)`));
-    else violations.push(...found.map(f => `pin ${f}`));
-  }
-  for (const [slot, pin] of Object.entries(pins)) {
-    if (!pinned.some(d => d.slot === slot)) violations.push(`pin ${slot}/${pin.element}@v${pin.version}: no library directory`);
-  }
-  return { violations, pending, checked: [...pinned, ...options].map(label) };
+  return { violations, pending, checked };
 }
 
-/** One version, strict: the gate the Designer skill runs before it pins. */
+/** One candidate, strict: the gate the Designer skill runs before it pins (`<slot>/<candidate>`). */
 export function elementFindings(root, spec, { rule = loadRule(), manifest = loadManifest() } = {}) {
-  const m = /^([a-z0-9-]+\.[a-z0-9-]+)\/([a-z0-9-]+)\/v(\d+)$/.exec(spec);
-  if (!m) throw new Error(`--element must be <slot>/<element>/v<N>, got ${spec}`);
-  const dir = join(root, "library", m[1], m[2], `v${m[3]}`);
-  const lineage = lineageOf(dir);
-  if (!lineage) return [`${spec}: no element.json or registry-item.json`];
-  return lineageFindings(`${m[1]}/${m[2]}@v${m[3]}`, { ...lineage, slot: lineage.slot ?? m[1] }, { rule, manifest });
+  const m = /^([a-z0-9-]+(?:\.[a-z0-9-]+)+)\/([a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json)$/.exec(spec);
+  if (!m) throw new Error(`--element must be <slot>/<candidate>.json, got ${spec}`);
+  const entry = designerPins(root, { all: true }).find(row => row.slot === m[1] && row.candidate.name === m[2]);
+  if (!entry) return [`${spec}: no such Designer candidate`];
+  if (entry.error) return [`${spec}: ${entry.error}`];
+  const lineage = candidateLineage(entry.slot, entry.item);
+  return lineage ? lineageFindings(spec, lineage, { rule, manifest }) : [];
 }
 
 /** Every clossys.element/1 record under dir. Records inside `__fixtures__` are test fixtures: listed, exempt. */
@@ -184,7 +185,7 @@ export function scanFindings(dir, { rule = loadRule(), manifest = loadManifest()
   return { violations, exempt, checked };
 }
 
-const USAGE = "usage: check-provenance.mjs --root <consumer>/clossys [--all | --element <slot>/<element>/v<N>] | --scan <dir> [--manifest <references/manifest.json>]";
+const USAGE = "usage: check-provenance.mjs --root <consumer>/clossys [--all | --element <slot>/<candidate>.json] | --scan <dir> [--manifest <references/manifest.json>]";
 
 function main(argv) {
   if (argv.includes("--help")) { console.log(USAGE); return 0; }
@@ -225,7 +226,7 @@ function main(argv) {
     console.error(`check-provenance: FAIL (${result.violations.length})\n- ${result.violations.join("\n- ")}`);
     return 1;
   }
-  console.log(`check-provenance: ok; ${result.checked.length} version(s) checked, ${result.pending.length} pinned violator(s) pending replacement`);
+  console.log(`check-provenance: ok; ${result.checked.length} candidate(s) checked, ${result.pending.length} pinned violator(s) pending replacement`);
   return 0;
 }
 

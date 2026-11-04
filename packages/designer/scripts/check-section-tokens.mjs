@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Section shell lint over a consumer library (read-only).
+ * Section shell lint over a consumer's pinned Designer slots (read-only).
  *
  *   node check-section-tokens.mjs --root <consumer>/clossys
  *
@@ -20,21 +20,19 @@
  * The pinned band item must emit every token its contract names in `emits.theme`
  * through `cssVars.theme`.
  *
+ * Pins are read only through the one slot-model reader (slot-pins.mjs).
  * `registry:ui|hook|lib` files are reference primitives and are not linted. The
- * one other exemption is stock code: a file is skipped only when its bytes hash
- * to the manifest-verified vendored reference file that the version's
- * element.json maps it to in `lineage.source.files` (raw, or after the shadcn
- * CLI add-time rewrites), and the strict designer-ref-verbatim check passes for
- * that version with every registry-item.json code file in its payload. The shell
- * rule is skipped only when every code file is such stock. Self-declared `meta`
- * claims are never read. Exit 1 on any finding.
+ * one other exemption is stock code: a file of a `registry` candidate is skipped
+ * only when the strict designer-ref-verbatim check passes for the candidate and
+ * that file equals, with no hunk, the vendored reference file its
+ * `meta.refVerbatim.files` maps it to. The shell rule is skipped only when every code file is such stock.
+ * Exit 1 on any finding.
  */
-import { createHash } from "node:crypto";
-import { existsSync, readFileSync, realpathSync } from "node:fs";
+import { readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { CODE_FILE, checkElement, defaults as refDefaults } from "./check-ref-verbatim.mjs";
-import { configFromComponents, normalizeReference } from "./ref-verbatim/normalize.mjs";
+import { CODE_FILE, checkRegistryItem } from "./check-ref-verbatim.mjs";
+import { designerSlotRecords } from "./slot-pins.mjs";
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = path => JSON.parse(readFileSync(path, "utf8"));
@@ -84,46 +82,25 @@ export function tokenFindings(element, files) {
   return findings;
 }
 
-const sha256 = bytes => createHash("sha256").update(bytes).digest("hex");
 const codeFiles = item => (item.files ?? []).filter(file => CODE_FILE.test(file.path ?? ""));
 
 /**
- * Code files of one library version that are byte-identical stock: the strict
- * ref-verbatim check passes for the version and covers every registry-item.json
- * code file, and each returned file's bytes hash to the vendored reference file
- * that element.json `lineage.source.files` maps it to (manifest-verified), raw or
- * after the CLI add-time rewrites. Anything else is linted.
+ * Code files of one pinned candidate that are byte-identical stock: the strict ref-verbatim check
+ * passes for the candidate and each returned file equals, with no hunk, the vendored reference file
+ * its `meta.refVerbatim.files` maps it to (raw or after the CLI add-time rewrites). Anything else is linted.
  */
 export function stockFiles(root, entry, options = {}) {
   const stock = new Set();
   const code = codeFiles(entry.item);
-  const recordPath = join(entry.dir, "element.json");
-  if (!code.length || !existsSync(recordPath)) return stock;
+  if (!code.length || entry.item.meta?.source?.kind !== "registry") return stock;
   try {
-    const record = json(recordPath);
-    const source = record.lineage?.source;
-    const mapped = source?.files;
-    if (!mapped || typeof mapped !== "object" || Array.isArray(mapped)) return stock;
-    const strict = checkElement(root, { slot: entry.slot, element: entry.pin.element, version: entry.pin.version }, { ...options, strict: true });
+    const strict = checkRegistryItem(root, entry.slot, entry.item, { ...options, strict: true, slotDoc: entry.slotDoc });
     if (strict.status !== "pass" || strict.findings.length) return stock;
     const checked = new Map(strict.files.map(row => [row.file, row]));
-    const payload = new Set(Array.isArray(record.payload) ? record.payload : []);
-    // The strict pass must cover every code file the lint would read.
-    if (!code.every(file => payload.has(file.path) && checked.get(file.path)?.status === "pass" && checked.get(file.path)?.mapping === "recorded")) return stock;
-    const opts = refDefaults(options);
-    const ref = (opts.manifest.items ?? []).find(row => row.registry === source.registry && row.name === source.item && row.version === source.version && row.hash === source.hash);
-    if (!ref) return stock;
-    const components = [options.components, join(root, "components.json"), join(root, "..", "components.json")].find(path => path && existsSync(path));
-    const config = components ? configFromComponents(json(components)) : undefined;
     for (const file of code) {
-      const path = mapped[file.path];
-      const manifestFile = typeof path === "string" ? ref.files.find(row => row.path === path) : undefined;
-      if (!manifestFile || checked.get(file.path)?.reference !== path) continue;
-      const rawBytes = readFileSync(join(opts.referencesDir, ref.dir, path));
-      if (sha256(rawBytes) !== manifestFile.sha256) continue;
-      const stockHashes = new Set([manifestFile.sha256]);
-      if (config) stockHashes.add(sha256(normalizeReference(rawBytes.toString("utf8"), path, config)));
-      if (stockHashes.has(sha256(readFileSync(join(entry.dir, file.path))))) stock.add(file.path);
+      const row = checked.get(file.path);
+      // Stock bytes: a recorded mapping with no hunk at all; an adapted file passes ref-verbatim but is linted.
+      if (row?.status === "pass" && row.mapping === "recorded" && Array.isArray(row.hunks) && row.hunks.length === 0) stock.add(file.path);
     }
   } catch {
     return new Set();
@@ -132,24 +109,24 @@ export function stockFiles(root, entry, options = {}) {
 }
 
 /** Item files the lint reads: code that is neither byte-identical stock nor a ui/hook/lib primitive. */
-export function lintableFiles(item, dir, stock = new Set()) {
+export function lintableFiles(item, stock = new Set()) {
   return codeFiles(item)
     .filter(file => !stock.has(file.path) && !/^registry:(?:ui|hook|lib)$/.test(file.type))
-    .map(file => [file.path, readFileSync(join(dir, file.path), "utf8")]);
+    .map(file => [file.path, String(file.content ?? "")]);
 }
 
-/** Every finding for a consumer root (`<consumer>/clossys`). */
+/** The element name a pinned candidate composes as (`@<ns>/<element>`). */
+const elementOf = entry => entry.item.meta?.element?.id ?? entry.item.name;
+
+/** Every finding for a consumer root (`<consumer>/clossys`); pins come only from the one slot-model reader. */
 export function sectionShellFindings(root, catalog = loadCatalog(), options = {}) {
   const findings = [];
-  const selection = json(join(root, "selection.json"));
-  const pins = selection.pins ?? {};
+  const records = options.records ?? designerSlotRecords(root);
   const itemOf = slot => {
-    const pin = pins[slot];
-    if (!pin) return null;
-    const dir = join(root, "library", slot, pin.element, `v${pin.version}`);
-    const file = join(dir, "registry-item.json");
-    return existsSync(file) ? { slot, pin, dir, item: json(file) } : null;
+    const record = records.get(slot);
+    return record?.pinned.item ? { slot, pin: record.pinned.pin, item: record.pinned.item, slotDoc: record.slotDoc } : null;
   };
+  const pinnedSlots = [...records].filter(([, record]) => record.pinned.pin || record.pinned.error !== "is not pinned").map(([slot]) => slot);
   const band = itemOf("sections.band");
   const header = itemOf("sections.section-header");
   const bandContract = catalog.contracts.get("sections.band");
@@ -157,24 +134,25 @@ export function sectionShellFindings(root, catalog = loadCatalog(), options = {}
   else {
     const emitted = new Set(Object.keys(band.item.cssVars?.theme ?? {}).map(name => `--${name}`));
     for (const token of String(bandContract?.limits?.["emits.theme"] ?? "").split(",").filter(Boolean)) {
-      if (!emitted.has(token)) findings.push(`shell: ${band.pin.element} does not emit ${token} in cssVars.theme`);
+      if (!emitted.has(token)) findings.push(`shell: ${elementOf(band)} does not emit ${token} in cssVars.theme`);
     }
   }
-  for (const slot of Object.keys(pins).sort()) {
+  for (const slot of pinnedSlots.sort()) {
     const anatomy = catalog.anatomy.get(slot);
     const measure = catalog.contracts.get(slot)?.limits?.["compose.measure"];
     if (!anatomy?.band && !measure) continue;
     const entry = itemOf(slot);
-    if (!entry) { findings.push(`shell: ${slot} pin has no library item`); continue; }
+    if (!entry) { findings.push(`shell: ${slot} pin ${records.get(slot).pinned.error}`); continue; }
     const stock = stockFiles(root, entry, options);
     const code = codeFiles(entry.item);
     if (code.length && code.every(file => stock.has(file.path))) continue;
+    const element = elementOf(entry);
     const deps = new Set(entry.item.registryDependencies ?? []);
-    const named = target => [...deps].some(dep => new RegExp(`^@[a-z0-9-]+/${target.pin.element}$`).test(dep));
-    if (band && !named(band)) findings.push(`shell: ${entry.pin.element} (${slot}) does not depend on the band ${band.pin.element}`);
-    if (anatomy?.header && header && slot !== "sections.section-header" && !named(header)) findings.push(`shell: ${entry.pin.element} (${slot}) does not depend on the section header ${header.pin.element}`);
+    const named = target => [...deps].some(dep => new RegExp(`^@[a-z0-9-]+/${elementOf(target)}$`).test(dep));
+    if (band && !named(band)) findings.push(`shell: ${element} (${slot}) does not depend on the band ${elementOf(band)}`);
+    if (anatomy?.header && header && slot !== "sections.section-header" && !named(header)) findings.push(`shell: ${element} (${slot}) does not depend on the section header ${elementOf(header)}`);
     if (anatomy?.header && !header) findings.push(`shell: ${slot} composes sections.section-header, which has no pinned item`);
-    findings.push(...tokenFindings(entry.pin.element, lintableFiles(entry.item, entry.dir, stock)));
+    findings.push(...tokenFindings(element, lintableFiles(entry.item, stock)));
   }
   return findings;
 }

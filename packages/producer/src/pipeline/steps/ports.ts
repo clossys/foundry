@@ -20,8 +20,6 @@ export const candidatesOf = (agent: Agent): Port => ({ glob: `clossys/agents/${a
 export const CANDIDATES: readonly Port[] = AGENTS.map(candidatesOf);
 /** Library element records (src/records/schemas.ts ELEMENT_SCHEMA); their payload files stay untyped. */
 export const LIBRARY_ELEMENTS: Port = { glob: "clossys/library/*/*/v*/element.json", schema: "library-element" };
-/** The consumer selection (src/records/schemas.ts SELECTION_SCHEMA). */
-export const SELECTION: Port = { glob: "clossys/selection.json", schema: "selection" };
 /** The Studio map projection the Studio checks and capture read. */
 export const STUDIO_MAP: Port = { glob: "pkg:studio/generated/studio-map.json", schema: "studio-map" };
 /** The compile lock `clossys compile` writes. */

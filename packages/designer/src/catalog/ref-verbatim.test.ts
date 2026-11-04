@@ -1,12 +1,13 @@
 // @vitest-environment node
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 // @ts-expect-error plain ESM check script, no type declarations for the .mjs path
+import { writeDesignerSlot } from "../../scripts/__fixtures__/slot-model.mjs";
 import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, checkElement, checkRegistryItem, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
 // @ts-expect-error plain ESM check script, no type declarations
 import { cleanClasses, configFromComponents, mapImport, normalizeReference } from "../../scripts/ref-verbatim/normalize.mjs";
@@ -116,10 +117,9 @@ const sourceOf = (registry: string, name: string, files?: Record<string, string>
   return { registry, item: name, version: row.version, hash: row.hash, ...(files ? { files } : {}) };
 };
 
-type Version = { slot: string; element: string; version?: number; lineage: Record<string, unknown>; files: Record<string, string>; pinned?: boolean; hash?: string };
+type Version = { slot: string; element: string; version?: number; lineage: Record<string, unknown>; files: Record<string, string>; hash?: string };
 function consumer(versions: Version[], { components = true } = {}) {
-  const root = mkdtempSync(join(tmpdir(), "ref-verbatim-"));
-  const pins: Record<string, unknown> = {};
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "ref-verbatim-")));
   for (const v of versions) {
     const version = v.version ?? 1;
     const dir = join(root, "library", v.slot, v.element, `v${version}`);
@@ -127,9 +127,7 @@ function consumer(versions: Version[], { components = true } = {}) {
     for (const [file, text] of Object.entries(v.files)) writeFileSync(join(dir, file), text);
     const hash = v.hash ?? `sha256:${sha(JSON.stringify(v))}`;
     writeFileSync(join(dir, "element.json"), JSON.stringify({ schema: "clossys.element/1", id: v.element, slot: v.slot, version, hash, lineage: v.lineage, payload: Object.keys(v.files), reads: { copyKeys: [], themeVars: [] } }));
-    if (v.pinned) pins[v.slot] = { element: v.element, version, hash, event: "e1" };
   }
-  writeFileSync(join(root, "selection.json"), JSON.stringify({ schema: "clossys.selection/1", pins, history: [] }));
   if (components) writeFileSync(join(root, "components.json"), read("ui/components.json"));
   return root;
 }
@@ -620,18 +618,18 @@ describe("ref-verbatim baseline (shrink only)", () => {
     expect(codes(refVerbatimReport(root, { baselinePath: added }).findings)).toEqual(["REF-BASELINE"]);
   });
 
-  it("a baselined pin blocks the report and the pin gate", () => {
-    const failing = button({ pinned: true, hash: `sha256:${"3".repeat(64)}`, files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } });
+  it("a baselined library version blocks the --all report and the pin gate", () => {
+    const failing = button({ hash: `sha256:${"3".repeat(64)}`, files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } });
     const root = consumer([failing]);
     const dir = mkdtempSync(join(tmpdir(), "ref-verbatim-baseline-"));
     const path = join(dir, "baseline.json");
     const row = { slot: "components.button", element: "button", version: 1, hash: failing.hash! };
     writeFileSync(path, JSON.stringify({ rows: [row] }));
-    const report = refVerbatimReport(root, { baselinePath: path, ceiling: [baselineKey(row)] });
+    const report = refVerbatimReport(root, { all: true, baselinePath: path, ceiling: [baselineKey(row)] });
     expect(codes(report.findings)).toEqual(["REF-HUNK-CLASS"]);
     expect(report.elements.map((e: { status: string }) => e.status)).toEqual(["baselined"]);
     expect(gate(root, "components.button/button/v1")).toEqual(["REF-HUNK-CLASS"]);
-    const unlisted = refVerbatimReport(root, { baselinePath: path });
+    const unlisted = refVerbatimReport(root, { all: true, baselinePath: path });
     expect(codes(unlisted.findings)).toEqual(["REF-BASELINE", "REF-HUNK-CLASS"]);
   });
 });
@@ -681,25 +679,36 @@ describe("every pinned source representation", () => {
     writeFileSync(join(root, "library/components.button/button/v1/button.json"), JSON.stringify(item));
     expect(gate(root, "components.button/button/v1")).toEqual(["REF-HUNK-CLASS"]);
   });
-  it("checks modern Designer pins independently of the legacy selection store", () => {
+  it("checks modern Designer pins through the slot-model reader, never a legacy selection store", () => {
     const root = consumer([]);
     const item = { name: "button", type: "registry:ui", files: [{ path: "button.tsx", content: BUTTON }], meta: {
       source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, refVerbatim: { files: { "button.tsx": BUTTON_REF } },
     } };
     expect(checkRegistryItem(root, "components.button", item, { strict: true }).findings).toEqual([]);
-    const dir = join(root, "agents/designer/components/actions/components.button");
-    mkdirSync(join(dir, "candidates"), { recursive: true });
-    writeFileSync(join(dir, "slot.json"), JSON.stringify({ id: "components.button" }));
-    const save = () => {
-      const bytes = JSON.stringify(item);
-      writeFileSync(join(dir, "candidates/button-v1.json"), bytes);
-      writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: "button-v1.json", sha256: sha(bytes) }));
-    };
+    const save = () => writeDesignerSlot(root, { id: "components.button", candidates: { "button-v1.json": item }, pin: "button-v1.json" });
     save();
     expect(refVerbatimReport(root).findings).toEqual([]);
     item.files[0].content = BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
     save();
     expect(codes(refVerbatimReport(root).findings)).toEqual(["REF-HUNK-CLASS"]);
+    // A legacy selection pin is not a pin: the failing library version is not reported in pinned mode.
+    const legacy = consumer([button({ files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
+    writeFileSync(join(legacy, "selection.json"), JSON.stringify({ schema: "clossys.selection/1", pins: { "components.button": { element: "button", version: 1, hash: "sha256:x", event: "e1" } }, history: [] }));
+    expect(refVerbatimReport(legacy).elements).toEqual([]);
+  });
+  it("reports a slot folder the IA does not place and a pin the slot model rejects, never skips them", () => {
+    const root = consumer([]);
+    const item = { name: "button", type: "registry:ui", files: [{ path: "button.tsx", content: BUTTON }], meta: {
+      source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, refVerbatim: { files: { "button.tsx": BUTTON_REF } },
+    } };
+    const dir = writeDesignerSlot(root, { id: "components.button", candidates: { "button-v1.json": item }, pin: "button-v1.json" });
+    expect(refVerbatimReport(root).findings).toEqual([]);
+    const pin = JSON.parse(readFileSync(join(dir, "pin.json"), "utf8"));
+    writeFileSync(join(dir, "pin.json"), JSON.stringify({ ...pin, basis: undefined, pinnedBy: "owner" }));
+    expect(refVerbatimReport(root).findings.map(row => [row.code, row.detail])).toEqual([["REF-NO-SOURCE", expect.stringContaining("rejects")]]);
+    writeFileSync(join(dir, "pin.json"), JSON.stringify(pin));
+    writeFileSync(join(root, "agents/designer/ia.json"), JSON.stringify({ schema: "clossys.ia/1", source: "synthetic#test", extensions: [], nodes: [] }));
+    expect(refVerbatimReport(root).findings.map(row => [row.code, row.detail])).toEqual([["REF-NO-SOURCE", expect.stringContaining("does not place")]]);
   });
 });
 
@@ -733,13 +742,8 @@ describe("finite data-fit and additional source parts", () => {
 describe("composition lineage (W6)", () => {
   const ui = (name: string) => read(`ui/src/components/ui/${name}.tsx`);
   const vendored = (name: string) => `registry/aria-nova/ui/${name}.tsx`;
-  const writeSlot = (root: string, id: string, item: unknown, uses?: string[]) => {
-    const dir = join(root, "agents/designer", id);
-    mkdirSync(join(dir, "candidates"), { recursive: true });
-    writeFileSync(join(dir, "slot.json"), JSON.stringify(uses ? { id, uses } : { id }));
-    const bytes = JSON.stringify(item);
-    writeFileSync(join(dir, "candidates/item-v1.json"), bytes);
-    writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: "item-v1.json", sha256: sha(bytes) }));
+  const writeSlot = (root: string, id: string, item: unknown, uses: string[] = []) => {
+    writeDesignerSlot(root, { id, candidates: { "item-v1.json": item }, pin: "item-v1.json", uses });
   };
   const stockItem = (name: string, patch: Record<string, unknown> = {}) => ({ name, type: "registry:ui", files: [{ path: `${name}.tsx`, content: ui(name) }], meta: {
     source: { kind: "registry", ref: [`shadcn-aria/${name}@4.23.0`] }, refVerbatim: { files: { [`${name}.tsx`]: vendored(name) } }, ...patch,

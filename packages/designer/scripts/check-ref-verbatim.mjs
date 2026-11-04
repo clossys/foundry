@@ -30,6 +30,7 @@ import { replayDataFit } from "./ref-verbatim/data-fit.mjs";
 import { ADAPTATION_KINDS, adaptationHash, recordedHunk, staticSingleOptionRow } from "./ref-verbatim/adaptations.mjs";
 export { ADAPTATION_KINDS, adaptationHash };
 import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
+import { designerSlotRecords } from "./slot-pins.mjs";
 import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
 import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents } from "./ref-verbatim/ds-only.mjs";
 export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents };
@@ -957,42 +958,12 @@ function withSelfCitation(checked, refs) {
 
 const sameSet = (a, b) => JSON.stringify([...new Set(a)].sort()) === JSON.stringify([...new Set(b)].sort());
 
-/** Every Designer slot directory under agents/designer, by slot id (flat or nested layouts). */
-function designerSlotDirs(root) {
-  const dirs = new Map();
-  const walk = dir => {
-    if (!existsSync(dir)) return;
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isDirectory() || entry.isSymbolicLink() || entry.name === "candidates") continue;
-      const child = join(dir, entry.name);
-      if (existsSync(join(child, "slot.json"))) {
-        const id = json(join(child, "slot.json")).id;
-        if (typeof id === "string" && !dirs.has(id)) dirs.set(id, child);
-      }
-      walk(child);
-    }
-  };
-  walk(join(root, "agents", "designer"));
-  return dirs;
-}
-
-/** The pinned candidate of one slot, with its pin hash verified; `error` says why there is none. */
-function pinnedCandidate(dir) {
-  if (!dir) return { error: "is not a Designer slot in this consumer" };
-  if (!existsSync(join(dir, "pin.json"))) return { error: "is not pinned" };
-  const pin = json(join(dir, "pin.json"));
-  if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/.test(pin.candidate ?? "") || !existsSync(join(dir, "candidates", pin.candidate))) return { error: "pins a missing candidate" };
-  const bytes = readFileSync(join(dir, "candidates", pin.candidate));
-  if (sha256(bytes) !== pin.sha256) return { error: "has a pin sha256 that does not match its candidate" };
-  return { pin, item: JSON.parse(bytes.toString("utf8")) };
-}
-
 /**
  * A stock part: pinned with registry lineage, verbatim (no recorded adaptations
  * or extra parts), passing the strict ref-verbatim check itself, with code.
  */
-function stockPart(root, slot, dir, options) {
-  const { error, item } = pinnedCandidate(dir);
+function stockPart(root, slot, record, options) {
+  const { error, item } = record ? record.pinned : { error: "is not a Designer slot in this consumer" };
   if (error) return { error };
   const kind = item.meta?.source?.kind;
   if (kind === "npm") {
@@ -1127,14 +1098,14 @@ function checkComposition(root, slot, candidate, options = {}) {
     }
   }
 
-  const slotDirs = designerSlotDirs(root);
+  const slotRecords = designerSlotRecords(root);
   const parts = Array.isArray(source.parts) ? source.parts : [];
   if (!parts.length) fail("REF-COMP-PART", "composition lineage needs parts: [{slot, files: [vendored reference paths]}]");
   const declared = new Map();
   for (const part of parts) {
     if (!part || typeof part.slot !== "string" || !Array.isArray(part.files) || !part.files.length || part.files.some(file => typeof file !== "string")) { fail("REF-COMP-PART", "each part must be {slot, files: [vendored reference paths]}"); continue; }
     if (declared.has(part.slot)) { fail("REF-COMP-PART", `${part.slot} is declared twice`); continue; }
-    const stock = stockPart(root, part.slot, slotDirs.get(part.slot), options);
+    const stock = stockPart(root, part.slot, slotRecords.get(part.slot), options);
     if (stock.error) { fail("REF-COMP-PART", `${part.slot} ${stock.error}; a composition places only stock parts`); continue; }
     if (!sameSet(part.files, stock.vendored)) { fail("REF-COMP-PART", `${part.slot} files ${JSON.stringify(part.files)} are not its pin's vendored reference paths ${JSON.stringify(stock.vendored)}`); continue; }
     declared.set(part.slot, { ...stock, used: false });
@@ -1147,8 +1118,8 @@ function checkComposition(root, slot, candidate, options = {}) {
   const stockOwners = name => {
     if (!owners) {
       owners = new Map();
-      for (const [id, dir] of slotDirs) {
-        const { item } = pinnedCandidate(dir);
+      for (const [id, record] of slotRecords) {
+        const { item } = record.pinned;
         if (item?.meta?.source?.kind !== "registry" && item?.meta?.source?.kind !== "npm") continue;
         for (const file of item.files ?? []) if (isCode(file.path)) owners.set(basename(file.path), [...(owners.get(basename(file.path)) ?? []), id]);
       }
@@ -1224,7 +1195,7 @@ function checkComposition(root, slot, candidate, options = {}) {
   }
   for (const [id, part] of declared) if (!part.used) fail("REF-COMP-UNUSED", `${id} is a declared part, but no import resolves to its vendored files`);
 
-  const doc = options.slotDoc ?? (slotDirs.get(slot) ? json(join(slotDirs.get(slot), "slot.json")) : undefined);
+  const doc = options.slotDoc ?? slotRecords.get(slot)?.slotDoc;
   const partSlots = parts.filter(part => typeof part?.slot === "string").map(part => part.slot);
   if (!doc) fail("REF-COMP-USES", `${slot} has no slot.json whose uses could match the declared parts`);
   else if (!Array.isArray(doc.uses) || !sameSet(doc.uses, partSlots)) fail("REF-COMP-USES", `slot.json uses ${JSON.stringify(doc.uses ?? [])} must equal the declared parts ${JSON.stringify([...partSlots].sort())}`);
@@ -1275,10 +1246,8 @@ export function loadBaseline(options = {}) {
  * @returns {{ mode, elements, findings, baselined, stale }}
  */
 export function refVerbatimReport(root, { all = false, ...options } = {}) {
-  const pins = existsSync(join(root, "selection.json")) ? json(join(root, "selection.json")).pins ?? {} : {};
-  const targets = all
-    ? versionDirs(join(root, "library"))
-    : Object.entries(pins).map(([slot, pin]) => ({ slot, element: pin.element, version: pin.version, pinHash: pin.hash }));
+  // Pins come only from the one slot-model reader; `--all` also walks every legacy library version directory.
+  const targets = all ? versionDirs(join(root, "library")) : [];
   const { rows, findings: baselineFindings } = loadBaseline(options);
   // A row outside the ceiling is itself a finding and excuses nothing.
   const ceiling = new Set(defaults(options).ceiling);
@@ -1300,29 +1269,20 @@ export function refVerbatimReport(root, { all = false, ...options } = {}) {
     elements.push(checked);
     findings.push(...checked.findings);
   }
-  const agentDir = join(root, "agents", "designer");
-  const walkSlots = (dir) => {
-    if (!existsSync(dir)) return;
-    for (const entry of readdirSync(dir, { withFileTypes: true })) {
-      if (!entry.isDirectory() || entry.isSymbolicLink() || entry.name === "candidates") continue;
-      const child = join(dir, entry.name);
-      const pinPath = join(child, "pin.json");
-      if (existsSync(pinPath)) {
-        const pin = json(pinPath);
-        const slotDoc = json(join(child, "slot.json"));
-        const slot = slotDoc.id;
-        if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/.test(pin.candidate ?? "")) throw new Error(`invalid Designer pin candidate in ${slot}`);
-        const bytes = readFileSync(join(child, "candidates", pin.candidate));
-        const checked = checkRegistryItem(root, slot, JSON.parse(bytes.toString("utf8")), { ...options, strict: true, slotDoc });
-        if (sha256(bytes) !== pin.sha256) checked.findings.push({ element: checked.key, code: "REF-NO-SOURCE", detail: "slot pin sha256 does not match candidate bytes" });
-        if (checked.findings.length) checked.status = "fail";
-        elements.push(checked);
-        findings.push(...checked.findings);
-      }
-      walkSlots(child);
+  if (!all) for (const [slot, record] of designerSlotRecords(root)) {
+    if (!record.pinned.item && record.pinned.error === "is not pinned") continue;
+    if (!record.pinned.item) {
+      const key = `${slot}/${record.dir ? "pin" : "?"}`;
+      const finding = { element: key, code: "REF-NO-SOURCE", detail: `slot pin ${record.pinned.error}` };
+      elements.push({ key, slot, status: "fail", files: [], findings: [finding] });
+      findings.push(finding);
+      continue;
     }
-  };
-  if (!all) walkSlots(agentDir);
+    const checked = checkRegistryItem(root, slot, record.pinned.item, { ...options, strict: true, slotDoc: record.slotDoc });
+    if (checked.findings.length) checked.status = "fail";
+    elements.push(checked);
+    findings.push(...checked.findings);
+  }
   const stale = rows.map(baselineKey).filter((k) => !used.has(k));
   return { mode: all ? "all" : "pinned", root, elements, findings, baselined, stale };
 }

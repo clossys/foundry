@@ -179,48 +179,6 @@
       }
     },
     {
-      "id": "selection",
-      "kind": "decide:judgment",
-      "actor": "owner",
-      "stage": "design.select",
-      "summary": "Frozen legacy library selection; no code writes it. Pins live in the slot model (clossys/agents/*/*/pin.json).",
-      "inputs": [
-        {
-          "glob": "clossys/library/*/*/v*/element.json",
-          "schema": "library-element"
-        },
-        {
-          "glob": "clossys/library/**"
-        }
-      ],
-      "outputs": [
-        {
-          "glob": "clossys/selection.json",
-          "schema": "selection"
-        }
-      ],
-      "command": {
-        "manual": "frozen: the selection writer is deleted; Designer's check:ref-verbatim --pinned, check-provenance and check-section-tokens still read it until they read slot-model pins"
-      },
-      "checks": [
-        "workspace"
-      ],
-      "seat": "clossys/agents/producer/selection/seat.json",
-      "holder": {
-        "id": "you",
-        "kind": "you",
-        "source": "derived",
-        "tier": null
-      },
-      "layout": {
-        "lane": "you",
-        "stage": "design.select",
-        "rank": 6,
-        "x": 3040,
-        "y": 0
-      }
-    },
-    {
       "id": "writer.approve",
       "kind": "decide:judgment",
       "actor": "owner",
@@ -475,7 +433,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 7,
-        "x": 3680,
+        "x": 3400,
         "y": 172
       }
     },
@@ -667,7 +625,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 7,
-        "x": 3680,
+        "x": 3400,
         "y": 0
       }
     },
@@ -882,7 +840,7 @@
         "lane": "publisher",
         "stage": "publish.make",
         "rank": 6,
-        "x": 3360,
+        "x": 3080,
         "y": 1128
       }
     },
@@ -969,7 +927,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 3,
-        "x": 5440,
+        "x": 5160,
         "y": 1668
       }
     },
@@ -1059,7 +1017,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 5,
-        "x": 5720,
+        "x": 5440,
         "y": 1668
       }
     },
@@ -1107,7 +1065,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 5,
-        "x": 4000,
+        "x": 3720,
         "y": 1128
       }
     },
@@ -1197,7 +1155,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 6,
-        "x": 6000,
+        "x": 5720,
         "y": 1668
       }
     },
@@ -1245,7 +1203,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 6,
-        "x": 4280,
+        "x": 4000,
         "y": 1128
       }
     },
@@ -1314,7 +1272,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 10,
-        "x": 6840,
+        "x": 6560,
         "y": 1668
       }
     },
@@ -1376,7 +1334,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 4840,
+        "x": 4560,
         "y": 1128
       }
     },
@@ -1444,7 +1402,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 4840,
+        "x": 4560,
         "y": 1300
       }
     },
@@ -1485,7 +1443,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 8,
-        "x": 6280,
+        "x": 6000,
         "y": 1668
       }
     },
@@ -1549,7 +1507,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 9,
-        "x": 7440,
+        "x": 7160,
         "y": 1128
       }
     },
@@ -1602,7 +1560,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 8,
-        "x": 7160,
+        "x": 6880,
         "y": 1128
       }
     },
@@ -1650,7 +1608,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 8,
-        "x": 6280,
+        "x": 6000,
         "y": 1840
       }
     },
@@ -1714,7 +1672,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 6,
-        "x": 4280,
+        "x": 4000,
         "y": 1300
       }
     },
@@ -1763,7 +1721,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 4560,
+        "x": 4280,
         "y": 1128
       }
     },
@@ -1830,7 +1788,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 8,
-        "x": 6280,
+        "x": 6000,
         "y": 2012
       }
     },
@@ -1884,7 +1842,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 5120,
+        "x": 4840,
         "y": 1128
       }
     },
@@ -1969,7 +1927,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 4840,
+        "x": 4560,
         "y": 1472
       }
     },
@@ -2036,7 +1994,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 9,
-        "x": 6560,
+        "x": 6280,
         "y": 1668
       }
     },
@@ -2074,7 +2032,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 5,
-        "x": 4000,
+        "x": 3720,
         "y": 1300
       }
     },
@@ -2131,7 +2089,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 9,
-        "x": 6560,
+        "x": 6280,
         "y": 2012
       }
     },
@@ -2169,7 +2127,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 9,
-        "x": 6560,
+        "x": 6280,
         "y": 1840
       }
     }
@@ -3790,17 +3748,6 @@
       ]
     },
     {
-      "from": "designer.library",
-      "to": "selection",
-      "via": [
-        {
-          "output": "clossys/library/*/*/v*/element.json",
-          "input": "clossys/library/*/*/v*/element.json",
-          "schema": "library-element"
-        }
-      ]
-    },
-    {
       "from": "compile",
       "to": "build.receipt",
       "via": [
@@ -3876,11 +3823,6 @@
       "step": "rules",
       "port": "output",
       "glob": "scripts/rules/registry.json"
-    },
-    {
-      "step": "selection",
-      "port": "input",
-      "glob": "clossys/library/**"
     },
     {
       "step": "writer.approve",
@@ -4027,8 +3969,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 2696,
-      "after": 2585
+      "before": 2653,
+      "after": 2549
     },
     "lanes": [
       {
@@ -4134,14 +4076,14 @@
         "index": 6,
         "x": 2760,
         "y": -72,
-        "width": 520,
+        "width": 240,
         "round": "design",
         "name": "select"
       },
       {
         "id": "publish.make",
         "index": 7,
-        "x": 3360,
+        "x": 3080,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -4150,7 +4092,7 @@
       {
         "id": "publish.pin",
         "index": 8,
-        "x": 3680,
+        "x": 3400,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -4159,7 +4101,7 @@
       {
         "id": "publish.assemble",
         "index": 9,
-        "x": 4000,
+        "x": 3720,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -4168,7 +4110,7 @@
       {
         "id": "publish.check",
         "index": 10,
-        "x": 5440,
+        "x": 5160,
         "y": -72,
         "width": 1640,
         "round": "publish",
@@ -4177,7 +4119,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 7160,
+        "x": 6880,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -4202,7 +4144,7 @@
         "index": 1,
         "x": 1240,
         "y": -128,
-        "width": 2040,
+        "width": 1760,
         "stages": [
           "design.brief",
           "design.make",
@@ -4213,7 +4155,7 @@
       {
         "id": "publish",
         "index": 2,
-        "x": 3360,
+        "x": 3080,
         "y": -128,
         "width": 4320,
         "stages": [
@@ -4262,14 +4204,6 @@
     },
     "rules": {
       "path": "clossys/agents/producer/rules/seat.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
-      "issues": []
-    },
-    "selection": {
-      "path": "clossys/agents/producer/selection/seat.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4419,7 +4353,7 @@
       "kinds": [
         "you"
       ],
-      "steps": 15,
+      "steps": 14,
       "sources": [
         "file",
         "derived"

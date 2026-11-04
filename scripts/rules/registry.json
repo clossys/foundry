@@ -221,7 +221,10 @@
         "date": "2026-11-02"
       },
       "status": "unenforced",
-      "note": "No check fails when a legacy store (selection.json, library/, cells) is read or shipped (W3 CLI on flat slot folders)."
+      "note": "No check fails when a legacy library/ or cells store is read or shipped (W3 CLI on flat slot folders); the selection.json store alone is refused by check:no-selection-store.",
+      "related": [
+        ".#check:no-selection-store"
+      ]
     },
     {
       "id": "R-SLOT-PINS",
@@ -629,6 +632,79 @@
         }
       ],
       "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json): check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, and breadcrumbs, tabs or landings missing from the projection. The fixture serves an unpublished probe route, leaves an orphan record unserved and links a breadcrumb to an unpublished path."
+    },
+    {
+      "id": "R-SINGLE-READER",
+      "owner_words": {
+        "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:single-reader"
+      ],
+      "related": [
+        ".#check:no-selection-store",
+        ".#check:git-cms"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SINGLE-READER",
+      "fixture_runs": [
+        {
+          "check": ".#check:single-reader",
+          "cwd": ".",
+          "run": "node scripts/check-single-reader.mjs --root {fixture}",
+          "expect": "leak\\.mjs:\\d+: readFileSync opens a slot-model path outside the reader"
+        }
+      ],
+      "note": "Shipped code opens the slot model (ia.json, slot.json, pin.json, candidates) only through packages/producer/src/records/slots.ts and writes it only through records/slot-write.ts. The fixture is a package source file that reads a Designer pin.json by hand."
+    },
+    {
+      "id": "R-PIN-PROPAGATION",
+      "owner_words": {
+        "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:pin-propagation"
+      ],
+      "related": [
+        ".#check:single-reader"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PIN-PROPAGATION",
+      "fixture_runs": [
+        {
+          "check": ".#check:pin-propagation",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && mkdir -p {out}/repo/packages/producer {out}/repo/packages/publisher && cp {fixture}/built/stub.mjs {out}/repo/packages/stub.mjs && cp -R {fixture}/built/producer {out}/repo/packages/producer/dist && cp -R {fixture}/built/publisher {out}/repo/packages/publisher/dist && CLOSSYS_CHECK_REPO={out}/repo node --test packages/producer/scripts/check-pin-propagation.test.mjs",
+          "expect": "drift: Studio detail flags the pin hash mismatch"
+        }
+      ],
+      "note": "A pin is the one wire from a slot to everything that renders it: drifting a pinned candidate byte is flagged by Studio detail and refused by the page and specimen builds, and a repin changes Studio, the specimen inputs and Publisher output. The fixture is a built surface (stub modules over a two-slot model) whose Studio slot detail never compares the pin sha256 with the candidate bytes; with that defect removed the same fixture passes."
+    },
+    {
+      "id": "R-EVERY-CANDIDATE-PREVIEWABLE",
+      "owner_words": {
+        "quote": "i want a super tight/connect system, so that we have all the plumbing/wiring locked",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:every-candidate-previewable"
+      ],
+      "related": [
+        ".#check:pin-propagation"
+      ],
+      "fixture": "scripts/rules/fixtures/R-EVERY-CANDIDATE-PREVIEWABLE",
+      "fixture_runs": [
+        {
+          "check": ".#check:every-candidate-previewable",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && mkdir -p {out}/repo/packages/producer {out}/repo/packages/publisher && cp {fixture}/built/stub.mjs {out}/repo/packages/stub.mjs && cp -R {fixture}/built/producer {out}/repo/packages/producer/dist && cp -R {fixture}/built/publisher {out}/repo/packages/publisher/dist && CLOSSYS_CHECK_REPO={out}/repo node --test packages/producer/scripts/check-every-candidate-previewable.test.mjs",
+          "expect": "the specimen route does not accept this \\(slot, candidate\\)"
+        }
+      ],
+      "note": "Every placed, valid candidate renders from its own bytes and only the valid pin is used by pages: an unpinned Designer candidate is a specimen option the route accepts. The fixture is a built surface (stub modules over a two-slot model) whose specimen inputs list no options; with that defect removed the same fixture passes."
     }
   ],
   "exemptions": [
