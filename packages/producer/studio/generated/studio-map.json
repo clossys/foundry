@@ -89,7 +89,7 @@
         "icon": "assets.icon-guide",
         "id": "director",
         "title": "Director",
-        "order": 0,
+        "order": 1,
         "parentId": "content"
       },
       {
@@ -251,7 +251,7 @@
         "icon": "assets.icon-layers",
         "id": "designer",
         "title": "Designer",
-        "order": 1,
+        "order": 2,
         "parentId": "content"
       },
       {
@@ -371,7 +371,7 @@
         "icon": "assets.icon-document",
         "id": "writer",
         "title": "Writer",
-        "order": 2,
+        "order": 3,
         "parentId": "content"
       },
       {
@@ -491,7 +491,7 @@
         "icon": "assets.icon-website",
         "id": "publisher",
         "title": "Publisher",
-        "order": 3,
+        "order": 4,
         "parentId": "content"
       },
       {

@@ -1,0 +1,217 @@
+{
+  "schema": "clossys.publication/1",
+  "format": "web.page.responsive",
+  "entryOrder": [
+    "home",
+    "content",
+    "producer-pipeline",
+    "director",
+    "director-context",
+    "director-aspiration",
+    "director-focus",
+    "director-advantage",
+    "director-identity",
+    "director-capability",
+    "director-execution",
+    "designer",
+    "designer-themes",
+    "designer-assets",
+    "designer-components",
+    "designer-sections",
+    "designer-frames",
+    "writer",
+    "writer-lexicon",
+    "writer-strings",
+    "writer-patterns",
+    "writer-passages",
+    "writer-narratives",
+    "publisher",
+    "publisher-studio",
+    "build",
+    "build-overview",
+    "run",
+    "run-overview"
+  ],
+  "routePack": {
+    "packId": "studio",
+    "homeRouteId": "home",
+    "root": {
+      "kind": "local-origin",
+      "note": "Producer serves Studio on this machine, so the root is the origin it runs on."
+    }
+  },
+  "meta": {
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "publisher:tree.json"
+      ]
+    },
+    "tree": {
+      "id": "studio",
+      "name": "Studio",
+      "children": [
+        {
+          "id": "studio.pages",
+          "name": "Pages",
+          "cells": [
+            "page.home"
+          ]
+        },
+        {
+          "id": "content",
+          "name": "Content",
+          "entry": {
+            "path": "/systems/content",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.content"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-team"
+          },
+          "children": [
+            {
+              "id": "content.pages",
+              "name": "Pages",
+              "cells": [
+                "page.producer-pipeline"
+              ]
+            },
+            {
+              "id": "director",
+              "name": "Director",
+              "entry": {
+                "path": "/director",
+                "kind": "group",
+                "source": {
+                  "planItemId": "studio.director"
+                },
+                "pin": {
+                  "nav": true
+                },
+                "icon": "assets.icon-guide"
+              },
+              "children": [],
+              "cells": [
+                "page.director-context",
+                "page.director-aspiration",
+                "page.director-focus",
+                "page.director-advantage",
+                "page.director-identity",
+                "page.director-capability",
+                "page.director-execution"
+              ]
+            },
+            {
+              "id": "designer",
+              "name": "Designer",
+              "entry": {
+                "path": "/designer",
+                "kind": "group",
+                "source": {
+                  "planItemId": "studio.designer"
+                },
+                "pin": {
+                  "nav": true
+                },
+                "icon": "assets.icon-layers"
+              },
+              "children": [],
+              "cells": [
+                "page.designer-themes",
+                "page.designer-assets",
+                "page.designer-components",
+                "page.designer-sections",
+                "page.designer-frames"
+              ]
+            },
+            {
+              "id": "writer",
+              "name": "Writer",
+              "entry": {
+                "path": "/writer",
+                "kind": "group",
+                "source": {
+                  "planItemId": "studio.writer"
+                },
+                "pin": {
+                  "nav": true
+                },
+                "icon": "assets.icon-document"
+              },
+              "children": [],
+              "cells": [
+                "page.writer-lexicon",
+                "page.writer-strings",
+                "page.writer-patterns",
+                "page.writer-passages",
+                "page.writer-narratives"
+              ]
+            },
+            {
+              "id": "publisher",
+              "name": "Publisher",
+              "entry": {
+                "path": "/publisher",
+                "kind": "group",
+                "source": {
+                  "planItemId": "studio.publisher"
+                },
+                "pin": {
+                  "nav": true
+                },
+                "icon": "assets.icon-website"
+              },
+              "children": [],
+              "cells": [
+                "page.publisher-studio"
+              ]
+            }
+          ],
+          "cells": []
+        },
+        {
+          "id": "build",
+          "name": "Build",
+          "entry": {
+            "path": "/systems/build",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.build"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-package"
+          },
+          "children": [],
+          "cells": [
+            "page.build-overview"
+          ]
+        },
+        {
+          "id": "run",
+          "name": "Run",
+          "entry": {
+            "path": "/systems/run",
+            "kind": "group",
+            "source": {
+              "planItemId": "studio.run"
+            },
+            "pin": {
+              "nav": true
+            },
+            "icon": "assets.icon-settings"
+          },
+          "children": [],
+          "cells": [
+            "page.run-overview"
+          ]
+        }
+      ]
+    }
+  }
+}

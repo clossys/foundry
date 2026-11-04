@@ -3854,12 +3854,12 @@
       "sha256": "7dfe5ced64d19d0f6f38d90aea424389c563ea2f145d450500d26ae1d09ed8d4"
     },
     {
-      "path": "clossys/agents/publisher/publication.studio/candidates/publication-v4.json",
-      "sha256": "812efc17f0e2407963c55f09a04180d6aada3cc8dcb618d28191b5d1799b4c4f"
+      "path": "clossys/agents/publisher/publication.studio/candidates/publication-v5.json",
+      "sha256": "47dc9631e33e85c6a1fb30aa47cf2669400c9982c7fb6a37cbe36299c73f5bce"
     },
     {
       "path": "clossys/agents/publisher/publication.studio/pin.json",
-      "sha256": "8e93d2b25e0488c08e66abf4b9ed7700bf9164309125ede92aeeb17acd7c5da6"
+      "sha256": "8eb707ee909c8c47576a2f2d8de4aa4c146a92fdac4a5bced0577c106d838999"
     },
     {
       "path": "clossys/agents/publisher/publication.studio/slot.json",
@@ -6345,7 +6345,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "8f105c22b461fac20dd8e3b2f2d418d02a85812c96253fadbea20fbb120651a3"
+      "sha256": "c942c14825ba62db4a13f5758b00f0d27ac022d939463a81bc9ecd007c13abab"
     },
     {
       "path": "generated/studio-map.ts",
