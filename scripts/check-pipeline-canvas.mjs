@@ -9,10 +9,14 @@
  *   flow-css   React Flow's stylesheet (pinned components.flow.canvas dist/style.css) is applied;
  *   flow-theme the generated --xy-* theme resolves to the pinned tokens (--xy-node-background-color
  *              equals --card on the canvas);
- *   page       the page renders without an uncaught error (an unresolved Writer key is one).
+ *   page       the page renders without an uncaught error (an unresolved Writer key is one);
+ *   layout     at fit-view in 1440x900 no two node boxes (steps and lane labels) intersect, each lane
+ *              has exactly one label, every step sits inside its lane's swim row (from its label down
+ *              to the next lane's label) and ranks run left to right (a lower rank starts further left);
+ *   legend     the pipeline legend is fully inside the 1440x900 viewport without scrolling.
  *
- * `--rendered <file>` compares a recorded rendering (`{ nodes: [...], edges: [...] }`) instead of
- * opening a browser: the same comparison, for the rule fixture.
+ * `--rendered <file>` compares a recorded rendering (`{ nodes: [...], edges: [...] }`, optionally
+ * `boxes` and `legend`) instead of opening a browser: the same comparison, for the rule fixture.
  *
  * Usage: node scripts/check-pipeline-canvas.mjs [--root CLOSSYS_DIR] [--graph FILE] [--port N]
  *        [--screenshot FILE] [--rendered FILE] [--json]
@@ -45,6 +49,47 @@ export function compareRendering(expected, rendered) {
     if (have.size !== (rendered[kind] ?? []).length) findings.push({ rule, message: `the page draws a ${kind.slice(0, -1)} id twice` });
     for (const id of want) if (!have.has(id)) findings.push({ rule, message: `${kind.slice(0, -1)} missing from the page: ${id}` });
     for (const id of have) if (!want.has(id)) findings.push({ rule, message: `${kind.slice(0, -1)} drawn but not in graph.json: ${id}` });
+  }
+  return findings;
+}
+
+const intersects = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/**
+ * Findings for the drawn geometry against graph.json. `boxes` are screen boxes
+ * (`{ id, kind: "step" | "lane", x, y, width, height }`; a lane box's id is its lane id) and `legend`
+ * the legend's screen box; `viewport` is the window it must fit. Runs only on what was recorded.
+ */
+export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
+  const findings = [];
+  const boxes = rendered.boxes;
+  if (Array.isArray(boxes)) {
+    for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+      if (intersects(boxes[i], boxes[j])) findings.push({ rule: "layout", message: `${boxes[i].kind} ${boxes[i].id} intersects ${boxes[j].kind} ${boxes[j].id}` });
+    }
+    const lanes = (graph.layout?.lanes ?? []).slice().sort((a, b) => a.index - b.index);
+    const labels = new Map();
+    for (const box of boxes.filter(box => box.kind === "lane")) {
+      if (labels.has(box.id)) findings.push({ rule: "layout", message: `lane ${box.id} is labelled more than once` });
+      labels.set(box.id, box);
+    }
+    for (const lane of lanes) if (!labels.has(lane.id)) findings.push({ rule: "layout", message: `lane ${lane.id} has no label` });
+    for (const id of labels.keys()) if (!lanes.some(lane => lane.id === id)) findings.push({ rule: "layout", message: `lane label ${id} is not a graph.json lane` });
+    const steps = new Map(boxes.filter(box => box.kind === "step").map(box => [box.id, box]));
+    for (const node of graph.nodes ?? []) {
+      const box = steps.get(node.id), at = lanes.findIndex(lane => lane.id === node.layout?.lane);
+      const top = labels.get(lanes[at]?.id), next = labels.get(lanes[at + 1]?.id);
+      if (!box || !top) continue;
+      if (box.y < top.y || (next && box.y + box.height > next.y)) findings.push({ rule: "layout", message: `step ${node.id} is outside the ${node.layout.lane} swim row` });
+    }
+    for (const a of graph.nodes ?? []) for (const b of graph.nodes ?? []) {
+      const boxA = steps.get(a.id), boxB = steps.get(b.id);
+      if (boxA && boxB && a.layout.rank < b.layout.rank && !(boxA.x < boxB.x)) findings.push({ rule: "layout", message: `step ${a.id} (rank ${a.layout.rank}) is not left of ${b.id} (rank ${b.layout.rank})` });
+    }
+  }
+  const legend = rendered.legend;
+  if (legend !== undefined && (!legend || legend.x < 0 || legend.y < 0 || legend.x + legend.width > viewport.width || legend.y + legend.height > viewport.height)) {
+    findings.push({ rule: "legend", message: legend ? `the legend (${Math.round(legend.y)}-${Math.round(legend.y + legend.height)}px) is not inside the ${viewport.width}x${viewport.height} viewport` : "the legend is not on the page" });
   }
   return findings;
 }
@@ -113,12 +158,20 @@ async function renderPage({ origin, expected, screenshot }) {
     const response = await page.goto(`${origin}${ROUTE}`, { waitUntil: "networkidle", timeout: 60_000 });
     const status = response?.status() ?? 0;
     const read = () => page.evaluate(() => {
-      const ids = prefix => [...document.querySelectorAll(`[data-testid^="${prefix}"]`)].map(element => element.getAttribute("data-testid").slice(prefix.length));
+      const ids = (selector, prefix) => [...document.querySelectorAll(selector)].map(element => element.getAttribute("data-testid").slice(prefix.length));
       const canvas = document.querySelector(".react-flow");
       const node = document.querySelector(".react-flow__node");
       const style = canvas ? getComputedStyle(canvas) : undefined;
+      const box = element => { const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height }; };
+      const legend = document.querySelector('[data-clossys-slot="sections.producer.pipeline-legend"]');
       return {
-        nodes: ids("rf__node-"), edges: ids("rf__edge-"),
+        nodes: ids('.react-flow__node-step[data-testid^="rf__node-"]', "rf__node-"), edges: ids('[data-testid^="rf__edge-"]', "rf__edge-"),
+        boxes: [...document.querySelectorAll('.react-flow__node[data-testid^="rf__node-"]')].map(element => {
+          const id = element.getAttribute("data-testid").slice("rf__node-".length);
+          const lane = element.classList.contains("react-flow__node-lane");
+          return { id: lane ? id.replace(/^lane:/, "") : id, kind: lane ? "lane" : "step", ...box(element) };
+        }),
+        legend: legend ? box(legend) : null,
         nodePosition: node ? getComputedStyle(node).position : undefined,
         xyNodeBackground: style?.getPropertyValue("--xy-node-background-color").trim(),
         card: style?.getPropertyValue("--card").trim(),
@@ -134,6 +187,9 @@ async function renderPage({ origin, expected, screenshot }) {
       drawn = next;
       if (stable >= 12 && drawn.nodes.length > 0) break;
     }
+    // fitView runs once the nodes are measured; let the viewport transform settle before measuring boxes.
+    await page.waitForTimeout(500);
+    drawn = await read();
     if (screenshot) { mkdirSync(dirname(screenshot), { recursive: true }); await page.screenshot({ path: screenshot }); }
     return { status, errors, ...drawn };
   } finally {
@@ -142,10 +198,11 @@ async function renderPage({ origin, expected, screenshot }) {
 }
 
 export async function checkPipelineCanvas(args) {
-  const expected = graphIds(JSON.parse(readFileSync(args.graph, "utf8")));
+  const graph = JSON.parse(readFileSync(args.graph, "utf8"));
+  const expected = graphIds(graph);
   if (args.rendered) {
     const rendered = JSON.parse(readFileSync(args.rendered, "utf8"));
-    return { expected, rendered, findings: compareRendering(expected, rendered) };
+    return { expected, rendered, findings: [...compareRendering(expected, rendered), ...checkGeometry(graph, rendered)] };
   }
   const producer = await startProducer(args);
   try {
@@ -155,6 +212,7 @@ export async function checkPipelineCanvas(args) {
     for (const error of rendered.errors) findings.push({ rule: "page", message: error.split("\n")[0] });
     findings.push(...compareRendering(expected, rendered));
     if (rendered.nodes.length && rendered.nodePosition !== "absolute") findings.push({ rule: "flow-css", message: `React Flow's stylesheet is not applied (.react-flow__node is position ${rendered.nodePosition})` });
+    findings.push(...checkGeometry(graph, rendered));
     if (rendered.nodes.length && (!rendered.xyNodeBackground || rendered.xyNodeBackground !== rendered.card)) findings.push({ rule: "flow-theme", message: `--xy-node-background-color (${rendered.xyNodeBackground || "unset"}) is not the pinned --card (${rendered.card || "unset"})` });
     return { expected, rendered, findings };
   } finally {

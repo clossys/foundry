@@ -1,7 +1,7 @@
 import { defineStep } from "../define.js";
 import { CANDIDATES, IA, PINS, SLOTS } from "./ports.js";
 
-const STUDIO_GENERATED = ["studio-copy.json", "studio-map.json", "studio-map.ts", "assembly-bindings.ts", "studio-icons.ts", "studio-provenance.json", "studio-brand.json"];
+const STUDIO_GENERATED = ["studio-copy.json", "studio-map.json", "studio-map.ts", "assembly-bindings.ts", "studio-icons.ts", "studio-provenance.json", "studio-brand.json", "studio-flow-theme.css"];
 
 /** Build, generate, compose and capture scripts: plumb, byte-identical every run. */
 export const SCRIPT_STEPS = [
@@ -13,7 +13,7 @@ export const SCRIPT_STEPS = [
   }),
   defineStep({
     id: "studio.map", kind: "plumb", actor: "code", stage: "derive",
-    summary: "Generate the Studio map, copy, bindings, icons, provenance and brand.",
+    summary: "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
     inputs: [IA, SLOTS, PINS, ...CANDIDATES, "clossys/library/**", "clossys/selection.json"],
     outputs: STUDIO_GENERATED.map(name => `pkg:studio/generated/${name}`),
     command: { script: "scripts/generate-studio-map.mjs", npm: "generate:studio-map" }, checks: ["studio-map", "studio-routes"],

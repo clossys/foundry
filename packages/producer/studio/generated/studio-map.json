@@ -499,9 +499,10 @@
           "frameId": "frames.studio-shell",
           "sectionIds": [
             "sections.studio.page-header",
+            "sections.studio.page-tabs",
             "sections.producer.pipeline-header",
-            "sections.producer.pipeline-flow",
-            "sections.producer.pipeline-legend"
+            "sections.producer.pipeline-legend",
+            "sections.producer.pipeline-flow"
           ]
         },
         "pin": {
@@ -1947,6 +1948,24 @@
             "sections.studio.page-header",
             "sections.studio.page-tabs",
             "sections.studio.slot-groups"
+          ]
+        }
+      },
+      {
+        "id": "producer-pipeline.producer-pipeline",
+        "parentId": "producer-pipeline",
+        "order": 0,
+        "title": "Pipeline",
+        "kind": "page",
+        "path": "/producer/pipeline/producer-pipeline",
+        "source": {
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.page-header",
+            "sections.studio.page-tabs",
+            "sections.producer.pipeline-header",
+            "sections.producer.pipeline-legend",
+            "sections.producer.pipeline-flow"
           ]
         }
       }
@@ -4348,6 +4367,26 @@
         "permanent": false
       },
       {
+        "from": "/producer/sections.producer.pipeline-header",
+        "to": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-header",
+        "permanent": false
+      },
+      {
+        "from": "/producer/sections.producer.pipeline-flow",
+        "to": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-flow",
+        "permanent": false
+      },
+      {
+        "from": "/producer/sections.producer.step-sheet",
+        "to": "/producer/pipeline/producer-pipeline/sections.producer.step-sheet",
+        "permanent": false
+      },
+      {
+        "from": "/producer/sections.producer.pipeline-legend",
+        "to": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-legend",
+        "permanent": false
+      },
+      {
         "from": "/director",
         "to": "/director/context/market",
         "permanent": false
@@ -4365,6 +4404,11 @@
       {
         "from": "/publisher",
         "to": "/publisher/studio/pages",
+        "permanent": false
+      },
+      {
+        "from": "/producer",
+        "to": "/producer/pipeline/producer-pipeline",
         "permanent": false
       }
     ]
@@ -5836,9 +5880,10 @@
       "frameId": "frames.studio-shell",
       "sectionIds": [
         "sections.studio.page-header",
+        "sections.studio.page-tabs",
         "sections.producer.pipeline-header",
-        "sections.producer.pipeline-flow",
-        "sections.producer.pipeline-legend"
+        "sections.producer.pipeline-legend",
+        "sections.producer.pipeline-flow"
       ],
       "body": "plain",
       "data": {
@@ -5848,6 +5893,7 @@
       },
       "inputs": {
         "sections.studio.page-header": "header",
+        "sections.studio.page-tabs": "tabs",
         "sections.producer.pipeline-header": "header",
         "sections.producer.pipeline-flow": "flow",
         "sections.producer.pipeline-legend": "legend"
@@ -23660,6 +23706,205 @@
           ]
         }
       }
+    },
+    {
+      "id": "producer-pipeline.producer-pipeline",
+      "path": "/producer/pipeline/producer-pipeline",
+      "title": "Pipeline",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.page-header",
+        "sections.studio.page-tabs",
+        "sections.producer.pipeline-header",
+        "sections.producer.pipeline-legend",
+        "sections.producer.pipeline-flow"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "pipeline",
+        "purpose": "studio.pipeline.description",
+        "description": "studio.pipeline.description",
+        "groups": [
+          "sections.producer/producer-pipeline"
+        ]
+      },
+      "inputs": {
+        "sections.studio.page-header": "header",
+        "sections.studio.page-tabs": "tabs",
+        "sections.producer.pipeline-header": "header",
+        "sections.producer.pipeline-flow": "flow",
+        "sections.producer.pipeline-legend": "legend"
+      },
+      "manifest": {
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "studio.outline-label",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "studio.checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "input": "checks"
+          }
+        ],
+        "actions": [],
+        "wiring": [
+          {
+            "do": "open outline",
+            "expect": "outline open"
+          },
+          {
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "cmdk",
+            "expect": "every popover listed with its shortcut"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "designer"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "studio.outline-label",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "studio.checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "studio.versions-label",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "studio.request-change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "studio.request-change-prompt"
+              },
+              "shortcut": "r"
+            }
+          ],
+          "wiring": [
+            {
+              "do": "open outline",
+              "expect": "outline open"
+            },
+            {
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "cmdk",
+              "expect": "every popover listed with its shortcut"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
+            }
+          ]
+        }
+      }
     }
   ],
   "leaves": [
@@ -26536,6 +26781,30 @@
       "slug": "publication.studio",
       "title": "Studio",
       "path": "/publisher/studio/publication/publication.studio"
+    },
+    {
+      "page": "producer-pipeline.producer-pipeline",
+      "slug": "sections.producer.pipeline-header",
+      "title": "Producer pipeline header",
+      "path": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-header"
+    },
+    {
+      "page": "producer-pipeline.producer-pipeline",
+      "slug": "sections.producer.pipeline-flow",
+      "title": "Producer pipeline flow",
+      "path": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-flow"
+    },
+    {
+      "page": "producer-pipeline.producer-pipeline",
+      "slug": "sections.producer.step-sheet",
+      "title": "Producer step sheet",
+      "path": "/producer/pipeline/producer-pipeline/sections.producer.step-sheet"
+    },
+    {
+      "page": "producer-pipeline.producer-pipeline",
+      "slug": "sections.producer.pipeline-legend",
+      "title": "Producer pipeline legend",
+      "path": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-legend"
     }
   ],
   "redirects": [
@@ -28155,6 +28424,31 @@
       "permanent": false
     },
     {
+      "source": "/producer",
+      "destination": "/producer/pipeline/producer-pipeline",
+      "permanent": false
+    },
+    {
+      "source": "/producer/sections.producer.pipeline-flow",
+      "destination": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-flow",
+      "permanent": false
+    },
+    {
+      "source": "/producer/sections.producer.pipeline-header",
+      "destination": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-header",
+      "permanent": false
+    },
+    {
+      "source": "/producer/sections.producer.pipeline-legend",
+      "destination": "/producer/pipeline/producer-pipeline/sections.producer.pipeline-legend",
+      "permanent": false
+    },
+    {
+      "source": "/producer/sections.producer.step-sheet",
+      "destination": "/producer/pipeline/producer-pipeline/sections.producer.step-sheet",
+      "permanent": false
+    },
+    {
       "source": "/publisher",
       "destination": "/publisher/studio/pages",
       "permanent": false
@@ -28997,14 +29291,14 @@
       "version": 1
     },
     {
-      "slot": "sections.producer.pipeline-flow",
-      "element": "producer-pipeline-flow",
-      "version": 3
-    },
-    {
       "slot": "sections.producer.pipeline-legend",
       "element": "producer-pipeline-legend",
       "version": 2
+    },
+    {
+      "slot": "sections.producer.pipeline-flow",
+      "element": "producer-pipeline-flow",
+      "version": 4
     },
     {
       "slot": "sections.studio.leaf-header",
@@ -29163,7 +29457,8 @@
     "publisher-studio.writer": [],
     "publisher-studio.publisher": [],
     "publisher-studio.producer": [],
-    "publisher-studio.publication": []
+    "publisher-studio.publication": [],
+    "producer-pipeline.producer-pipeline": []
   },
   "routes": [
     {
@@ -30782,6 +31077,22 @@
         "path": "/publisher/studio/publication/[slug]",
         "entry": {
           "file": "studio/app/publisher/studio/publication/[slug]/page.tsx",
+          "export": "default"
+        }
+      }
+    },
+    {
+      "instanceId": "producer-pipeline.producer-pipeline",
+      "path": "/producer/pipeline/producer-pipeline",
+      "label": "Pipeline",
+      "entry": {
+        "file": "studio/app/producer/pipeline/producer-pipeline/page.tsx",
+        "export": "default"
+      },
+      "leaf": {
+        "path": "/producer/pipeline/producer-pipeline/[slug]",
+        "entry": {
+          "file": "studio/app/producer/pipeline/producer-pipeline/[slug]/page.tsx",
           "export": "default"
         }
       }

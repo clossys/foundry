@@ -205,14 +205,17 @@ function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
 }
 
 /** The pipeline page: graph.json's steps and edges as the flow, its counts as the header, its kinds as the legend. */
-function usePipelineInputs({ page }: LoaderProps): Loaded {
+function usePipelineInputs({ entry, page }: LoaderProps): Loaded {
   const record = useResource<PipelineGraphFile>('pipeline', undefined, loadPipeline, studioCopy("studio.pipeline.empty.description"));
   return useMemo((): Loaded => {
     if (record.state === 'loading') return { state: 'loading' };
     if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.pipeline.empty.title"), description: record.message } };
-    const inputs = pipelineInputs(record.value, pageHeader(page));
-    return { state: 'ready', inputs: { ...inputs }, modules: { checks: checksInput([], [], []) } };
-  }, [record, page]);
+    // The record heads the page on its own route and on its tab; its child pages are the tabs. Its one tab is the pipeline itself, named by the Writer key that names the page.
+    const owner = pageById.get(entry.parentId ?? '') ?? page;
+    const tabs: PageTabsInput = { label: owner.title, active: entry.id, tabs: studioChildren(owner.id).map(tab => ({ id: tab.id, label: studioCopy("studio.pipeline.title"), href: tab.path })) };
+    const inputs = pipelineInputs(record.value, pageHeader(owner));
+    return { state: 'ready', inputs: { ...inputs, tabs }, modules: { checks: checksInput([], [], []) } };
+  }, [record, entry, page]);
 }
 
 /* Assembly. */

@@ -31,7 +31,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 0,
-        "y": 96
+        "y": 144
       }
     },
     {
@@ -86,7 +86,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 0,
-        "y": 480
+        "y": 720
       }
     },
     {
@@ -114,7 +114,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 0,
-        "y": 288
+        "y": 432
       }
     },
     {
@@ -140,7 +140,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 0,
-        "y": 192
+        "y": 288
       }
     },
     {
@@ -170,7 +170,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 0,
-        "y": 384
+        "y": 576
       }
     },
     {
@@ -201,7 +201,7 @@
       "layout": {
         "lane": "owner",
         "rank": 5,
-        "x": 1500,
+        "x": 1600,
         "y": 0
       }
     },
@@ -258,7 +258,7 @@
       "layout": {
         "lane": "owner",
         "rank": 3,
-        "x": 900,
+        "x": 960,
         "y": 0
       }
     },
@@ -300,8 +300,8 @@
       "layout": {
         "lane": "agent:director",
         "rank": 1,
-        "x": 300,
-        "y": 720
+        "x": 320,
+        "y": 1056
       }
     },
     {
@@ -345,8 +345,8 @@
       "layout": {
         "lane": "agent:designer",
         "rank": 2,
-        "x": 600,
-        "y": 600
+        "x": 640,
+        "y": 888
       }
     },
     {
@@ -393,8 +393,8 @@
       "layout": {
         "lane": "agent:writer",
         "rank": 4,
-        "x": 1200,
-        "y": 960
+        "x": 1280,
+        "y": 1392
       }
     },
     {
@@ -445,8 +445,8 @@
       "layout": {
         "lane": "agent:publisher",
         "rank": 5,
-        "x": 1500,
-        "y": 840
+        "x": 1600,
+        "y": 1224
       }
     },
     {
@@ -484,8 +484,8 @@
       "layout": {
         "lane": "agent:designer",
         "rank": 4,
-        "x": 1200,
-        "y": 600
+        "x": 1280,
+        "y": 888
       }
     },
     {
@@ -517,8 +517,8 @@
       "layout": {
         "lane": "code",
         "rank": 4,
-        "x": 1200,
-        "y": 1464
+        "x": 1280,
+        "y": 2136
       }
     },
     {
@@ -557,8 +557,8 @@
       "layout": {
         "lane": "code",
         "rank": 4,
-        "x": 1200,
-        "y": 1176
+        "x": 1280,
+        "y": 1704
       }
     },
     {
@@ -597,8 +597,8 @@
       "layout": {
         "lane": "code",
         "rank": 4,
-        "x": 1200,
-        "y": 1272
+        "x": 1280,
+        "y": 1848
       }
     },
     {
@@ -638,8 +638,8 @@
       "layout": {
         "lane": "code",
         "rank": 4,
-        "x": 1200,
-        "y": 1368
+        "x": 1280,
+        "y": 1992
       }
     },
     {
@@ -678,8 +678,8 @@
       "layout": {
         "lane": "code",
         "rank": 5,
-        "x": 1500,
-        "y": 1080
+        "x": 1600,
+        "y": 1560
       }
     },
     {
@@ -718,8 +718,8 @@
       "layout": {
         "lane": "code",
         "rank": 5,
-        "x": 1500,
-        "y": 1176
+        "x": 1600,
+        "y": 1704
       }
     },
     {
@@ -759,8 +759,8 @@
       "layout": {
         "lane": "code",
         "rank": 5,
-        "x": 1500,
-        "y": 1272
+        "x": 1600,
+        "y": 1848
       }
     },
     {
@@ -817,8 +817,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1848
+        "x": 1920,
+        "y": 2712
       }
     },
     {
@@ -872,8 +872,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1080
+        "x": 1920,
+        "y": 1560
       }
     },
     {
@@ -906,8 +906,8 @@
       "layout": {
         "lane": "code",
         "rank": 4,
-        "x": 1200,
-        "y": 1080
+        "x": 1280,
+        "y": 1560
       }
     },
     {
@@ -959,8 +959,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1752
+        "x": 1920,
+        "y": 2568
       }
     },
     {
@@ -1005,8 +1005,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1464
+        "x": 1920,
+        "y": 2136
       }
     },
     {
@@ -1046,8 +1046,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1560
+        "x": 1920,
+        "y": 2280
       }
     },
     {
@@ -1083,7 +1083,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1272
+        "y": 1848
       }
     },
     {
@@ -1124,8 +1124,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1272
+        "x": 1920,
+        "y": 1848
       }
     },
     {
@@ -1183,8 +1183,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1368
+        "x": 1920,
+        "y": 1992
       }
     },
     {
@@ -1230,8 +1230,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1176
+        "x": 1920,
+        "y": 1704
       }
     },
     {
@@ -1239,7 +1239,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "derive",
-      "summary": "Generate the Studio map, copy, bindings, icons, provenance and brand.",
+      "summary": "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
       "inputs": [
         {
           "glob": "clossys/agents/*/ia.json",
@@ -1297,6 +1297,9 @@
         },
         {
           "glob": "pkg:studio/generated/studio-brand.json"
+        },
+        {
+          "glob": "pkg:studio/generated/studio-flow-theme.css"
         }
       ],
       "command": {
@@ -1310,8 +1313,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 1800,
-        "y": 1656
+        "x": 1920,
+        "y": 2424
       }
     },
     {
@@ -1341,7 +1344,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1080
+        "y": 1560
       }
     },
     {
@@ -1370,7 +1373,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1464
+        "y": 2136
       }
     },
     {
@@ -1418,7 +1421,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1368
+        "y": 1992
       }
     },
     {
@@ -1448,7 +1451,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1176
+        "y": 1704
       }
     }
   ],
@@ -2526,6 +2529,11 @@
       "glob": "pkg:studio/generated/studio-brand.json"
     },
     {
+      "step": "studio.map",
+      "port": "output",
+      "glob": "pkg:studio/generated/studio-flow-theme.css"
+    },
+    {
       "step": "build.receipt",
       "port": "input",
       "glob": "pkg:studio/generated/studio-map.json"
@@ -2568,48 +2576,55 @@
   ],
   "layout": {
     "constants": {
-      "nodeWidth": 220,
-      "nodeHeight": 72,
-      "rankGap": 300,
-      "rowGap": 96,
-      "laneGap": 48
+      "nodeWidth": 240,
+      "nodeHeight": 120,
+      "rankGap": 320,
+      "rowGap": 144,
+      "laneGap": 48,
+      "laneLabelWidth": 160
     },
     "lanes": [
       {
         "id": "owner",
         "index": 0,
+        "x": -160,
         "y": 0,
-        "height": 552
+        "height": 840
       },
       {
         "id": "agent:designer",
         "index": 1,
-        "y": 600,
-        "height": 72
+        "x": -160,
+        "y": 888,
+        "height": 120
       },
       {
         "id": "agent:director",
         "index": 2,
-        "y": 720,
-        "height": 72
+        "x": -160,
+        "y": 1056,
+        "height": 120
       },
       {
         "id": "agent:publisher",
         "index": 3,
-        "y": 840,
-        "height": 72
+        "x": -160,
+        "y": 1224,
+        "height": 120
       },
       {
         "id": "agent:writer",
         "index": 4,
-        "y": 960,
-        "height": 72
+        "x": -160,
+        "y": 1392,
+        "height": 120
       },
       {
         "id": "code",
         "index": 5,
-        "y": 1080,
-        "height": 840
+        "x": -160,
+        "y": 1560,
+        "height": 1272
       }
     ],
     "cycleBreaks": [

@@ -14,7 +14,8 @@
     "sections.producer.pipeline-flow",
     "sections.producer.pipeline-header",
     "sections.producer.pipeline-legend",
-    "sections.studio.page-header"
+    "sections.studio.page-header",
+    "sections.studio.page-tabs"
   ],
   "uses": [
     "frames.studio-shell",
@@ -23,7 +24,15 @@
     "sections.producer.pipeline-flow",
     "sections.producer.pipeline-header",
     "sections.producer.pipeline-legend",
+    "sections.studio.checks",
+    "sections.studio.contract",
+    "sections.studio.history",
+    "sections.studio.leaf-header",
+    "sections.studio.options",
     "sections.studio.page-header",
+    "sections.studio.page-tabs",
+    "sections.studio.references",
+    "sections.studio.specimen",
     "strings.common"
   ]
 }

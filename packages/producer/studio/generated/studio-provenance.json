@@ -34,15 +34,15 @@
     "data-clossys-candidate": "producer-pipeline-header-v1.json",
     "data-clossys-hash": "sha256:27450afb95ff15cdc20be402bab856039f85002b4120396918aed1da77c22ebc"
   },
-  "sections.producer.pipeline-flow": {
-    "data-clossys-slot": "sections.producer.pipeline-flow",
-    "data-clossys-candidate": "producer-pipeline-flow-v3.json",
-    "data-clossys-hash": "sha256:5f9ced5517d9b94eaeccbbd2ee07f052683bea5c898fce97fa2b09cee341054b"
-  },
   "sections.producer.pipeline-legend": {
     "data-clossys-slot": "sections.producer.pipeline-legend",
     "data-clossys-candidate": "producer-pipeline-legend-v2.json",
     "data-clossys-hash": "sha256:54b21fa5996786c5eafa33e9dfb6ed42494dc4cc5bf91a3a8bc5a8a2a6e887e8"
+  },
+  "sections.producer.pipeline-flow": {
+    "data-clossys-slot": "sections.producer.pipeline-flow",
+    "data-clossys-candidate": "producer-pipeline-flow-v4.json",
+    "data-clossys-hash": "sha256:032db8a638f017f89ddab1429a414dd575eabbcb36402b1310eafbf363e292b8"
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",

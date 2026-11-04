@@ -7,25 +7,31 @@
  *         order (a depth-first walk from the sources, then every step, successors by id, drops
  *         each edge back into the walk) and every edge it skips is listed in `cycleBreaks`
  *   x, y  from fixed constants: x by rank, y by lane top plus the step's row in its lane/rank cell
- *         (steps sharing a cell stack by id)
+ *         (steps sharing a cell stack by id); ranks run left to right and lanes are swim rows, each
+ *         lane's label sits once at the row's start (x = -laneLabelWidth)
+ *
+ * The constants are sized for the canvas's compact step node (title, kind, one labeled handle per
+ * side), so no two node boxes intersect: rowGap > nodeHeight and rankGap > nodeWidth.
  *
  * The same steps and edges always give byte-identical output: every iteration is over sorted ids.
  */
 import type { Step } from "./define.js";
 
 export const LAYOUT_CONSTANTS = Object.freeze({
-  nodeWidth: 220,
-  nodeHeight: 72,
+  nodeWidth: 240,
+  nodeHeight: 120,
   /** Horizontal distance between rank columns. */
-  rankGap: 300,
+  rankGap: 320,
   /** Vertical distance between stacked steps in one lane/rank cell. */
-  rowGap: 96,
+  rowGap: 144,
   /** Vertical space between two lanes. */
   laneGap: 48,
+  /** Width of the lane label column left of rank 0. */
+  laneLabelWidth: 160,
 });
 
 export interface NodeLayout { readonly lane: string; readonly rank: number; readonly x: number; readonly y: number }
-export interface LaneLayout { readonly id: string; readonly index: number; readonly y: number; readonly height: number }
+export interface LaneLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly height: number }
 export interface CycleBreak { readonly from: string; readonly to: string }
 export interface PipelineLayout {
   readonly constants: typeof LAYOUT_CONSTANTS;
@@ -109,7 +115,7 @@ export function computeLayout(steps: readonly Pick<Step, "id" | "actor">[], edge
   lanes.forEach((lane, index) => {
     const rows = Math.max(1, ...[...cells].filter(([key]) => key.startsWith(`${lane}\0`)).map(([, members]) => members.length));
     const height = (rows - 1) * C.rowGap + C.nodeHeight;
-    laneLayouts.push({ id: lane, index, y: top, height });
+    laneLayouts.push({ id: lane, index, x: -C.laneLabelWidth, y: top, height });
     for (const [key, members] of [...cells].filter(([key]) => key.startsWith(`${lane}\0`))) {
       const cellRank = Number(key.slice(lane.length + 1));
       members.forEach((id, row) => { nodes[id] = { lane, rank: cellRank, x: cellRank * C.rankGap, y: top + row * C.rowGap }; });

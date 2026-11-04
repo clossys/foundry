@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-v6.md",
-  "sha256": "32c112fe17d6879dbf784da4bd2b0d7dd36ad424a456897740c45b56f179679b",
-  "decidedBy": "owner:2026-11-03 W2-COPY-THROUGH-WRITER go",
-  "at": "2026-11-03T13:45:00Z"
+  "candidate": "studio-v8.md",
+  "sha256": "299f6ed0b230de7138cf092ff7eaa82a00bfa6826a9cad3db09966c815380646",
+  "decidedBy": "planner:PIPELINE-CANVAS",
+  "at": "2026-11-04T05:18:28.745Z"
 }

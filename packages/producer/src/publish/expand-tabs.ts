@@ -39,13 +39,15 @@ export interface Expansion {
 
 const object = (value: unknown): value is Json => typeof value === "object" && value !== null && !Array.isArray(value);
 const SEGMENT = /^[a-z0-9][a-z0-9-]*$/;
+/** An IA node id: one or more dot-joined segments (`studio`, `sections.producer`). It is only looked up, never a path. */
+const IA_ID = /^[a-z0-9][a-z0-9-]*(?:\.[a-z0-9][a-z0-9-]*)*$/;
 const pathOf = (entry: ContentMapNode) => ("path" in entry && typeof entry.path === "string" ? entry.path : `/${(entry as { slug: string }).slug}`);
 
 /** Read and check a record's `expand` declaration; undefined when the record does not expand. */
 export function expandSpec(route: Json): ExpandSpec | undefined {
   if (route.expand === undefined) return undefined;
   const spec = route.expand;
-  if (!object(spec) || typeof spec.agent !== "string" || typeof spec.namespace !== "string" || !SEGMENT.test(spec.agent) || !SEGMENT.test(spec.namespace)) {
+  if (!object(spec) || typeof spec.agent !== "string" || typeof spec.namespace !== "string" || !SEGMENT.test(spec.agent) || !IA_ID.test(spec.namespace)) {
     throw new Error(`content-map expansion: ${String(route.instanceId)} declares an invalid expand block`);
   }
   return { agent: spec.agent, namespace: spec.namespace };

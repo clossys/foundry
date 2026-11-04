@@ -67,9 +67,13 @@
   "inputs": [],
   "uses": [
     "components.badge",
+    "components.button",
     "components.card",
     "components.flow.base-node",
     "components.flow.canvas",
-    "components.flow.labeled-handle"
+    "components.flow.edge",
+    "components.flow.labeled-handle",
+    "components.sheet",
+    "components.table"
   ]
 }

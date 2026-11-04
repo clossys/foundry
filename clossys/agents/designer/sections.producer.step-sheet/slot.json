@@ -51,9 +51,10 @@
     "specimenKind": "data"
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.sheet",
-    "components.table"
-  ]
+  "uses": [],
+  "notNeeded": {
+    "reason": "composed into pipeline-flow v4",
+    "since": "2026-11-04",
+    "decidedBy": "planner:PIPELINE-CANVAS"
+  }
 }

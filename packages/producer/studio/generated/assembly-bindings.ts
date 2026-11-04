@@ -10,8 +10,8 @@ import Section3 from "../sections/module-checks";
 import Section4 from "../sections/studio-page-tabs";
 import Section5 from "../sections/studio-slot-groups";
 import Section6 from "../sections/producer-pipeline-header";
-import Section7 from "../sections/producer-pipeline-flow";
-import Section8 from "../sections/producer-pipeline-legend";
+import Section7 from "../sections/producer-pipeline-legend";
+import Section8 from "../sections/producer-pipeline-flow";
 import Section9 from "../sections/studio-leaf-header";
 import Section10 from "../sections/studio-specimen";
 import Section11 from "../sections/studio-options";
@@ -39,8 +39,8 @@ export const studioSections: Record<string, ComponentType<any>> = {
   "sections.studio.page-tabs": marked(Section4, (provenance as Record<string, StudioProvenance>)["sections.studio.page-tabs"]),
   "sections.studio.slot-groups": marked(Section5, (provenance as Record<string, StudioProvenance>)["sections.studio.slot-groups"]),
   "sections.producer.pipeline-header": marked(Section6, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-header"]),
-  "sections.producer.pipeline-flow": marked(Section7, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-flow"]),
-  "sections.producer.pipeline-legend": marked(Section8, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-legend"]),
+  "sections.producer.pipeline-legend": marked(Section7, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-legend"]),
+  "sections.producer.pipeline-flow": marked(Section8, (provenance as Record<string, StudioProvenance>)["sections.producer.pipeline-flow"]),
   "sections.studio.leaf-header": marked(Section9, (provenance as Record<string, StudioProvenance>)["sections.studio.leaf-header"]),
   "sections.studio.specimen": marked(Section10, (provenance as Record<string, StudioProvenance>)["sections.studio.specimen"]),
   "sections.studio.options": marked(Section11, (provenance as Record<string, StudioProvenance>)["sections.studio.options"]),

@@ -17,7 +17,9 @@ export interface PipelineGraphStep {
   kind: StepKind;
   inputs: readonly { glob: string }[];
   outputs: readonly { glob: string }[];
+  command: Readonly<Record<string, unknown>>;
   open: string | null;
+  pending?: unknown;
   layout: { lane: string; x: number; y: number };
 }
 /** One edge: the step that writes a file and the step that reads it. */
@@ -28,7 +30,9 @@ export interface PipelineGraphFile {
   nodes: readonly PipelineGraphStep[];
   edges: readonly PipelineGraphEdge[];
   untyped: readonly unknown[];
-  layout: { lanes: readonly { id: string }[] };
+  layout: { constants: { nodeWidth: number }; lanes: readonly { id: string; x: number; y: number }[] };
+  seats?: Readonly<Record<string, { by: string | null }>>;
+  options?: { cli?: Readonly<Record<string, readonly { flag: string }[]>> };
 }
 
 const KINDS: readonly StepKind[] = ['plumb', 'decide:creative', 'decide:judgment'];
@@ -37,6 +41,11 @@ const kindKey = (kind: StepKind) => kind.replace(':', '-');
 /** A lane's Writer key suffix: an agent lane (`agent:designer`) is named by its agent. */
 const laneKey = (lane: string) => lane.replace(/^agent:/, '');
 const unique = (values: readonly string[]) => [...new Set(values)];
+const words = (value: unknown): string[] => typeof value === 'string' ? [value] : Array.isArray(value) ? value.flatMap(words) : value && typeof value === 'object' ? Object.values(value).flatMap(words) : [];
+/** A step's command as graph.json records it, one `<form> <value>` part per field (`cli compile`, `entry src/cli/compile.ts#runCompileCli`). */
+export const commandLine = (command: Readonly<Record<string, unknown>>) => Object.entries(command).map(([form, value]) => [form, ...words(value)].join(' ')).join('; ');
+/** A step's state as `clossys pipeline status` names it from graph.json alone: pending until its step is declared, otherwise ready. */
+const stepStatus = (step: PipelineGraphStep) => step.pending ? 'pending' : 'ready';
 
 /** The edge identity the page renders and `check:pipeline-canvas` compares: `from->to`. */
 export const edgeId = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`;
@@ -61,12 +70,22 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput):
       nodes: graph.nodes.map(step => ({
         id: step.id,
         position: { x: step.layout.x, y: step.layout.y },
-        data: { label: step.id, kind: step.kind, lane: step.layout.lane, inputs: unique(step.inputs.map(port => port.glob)), outputs: unique(step.outputs.map(port => port.glob)) },
+        width: graph.layout.constants.nodeWidth,
+        data: {
+          label: step.id, kind: step.kind, lane: step.layout.lane,
+          facts: {
+            command: commandLine(step.command),
+            inputs: unique(step.inputs.map(port => port.glob)),
+            outputs: unique(step.outputs.map(port => port.glob)),
+            options: (graph.options?.cli?.[step.id] ?? []).map(option => option.flag),
+            seat: graph.seats?.[step.id]?.by ?? null,
+            status: stepStatus(step),
+          },
+        },
       })),
-      edges: graph.edges.map(edge => ({
-        id: edgeId(edge), source: edge.from, target: edge.to,
-        ...(edge.via[0] ? { sourceHandle: edge.via[0].output, targetHandle: edge.via[0].input } : {}),
-      })),
+      // One handle per side: every edge leaves its writer's right handle and enters its reader's left handle.
+      edges: graph.edges.map(edge => ({ id: edgeId(edge), source: edge.from, target: edge.to, sourceHandle: 'out', targetHandle: 'in' })),
+      lanes: graph.layout.lanes.map(lane => ({ id: lane.id, position: { x: lane.x, y: lane.y } })),
     },
     copy: {
       label: studioCopy('studio.pipeline.flow-label'),
@@ -74,6 +93,16 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput):
       lanes: Object.fromEntries(graph.layout.lanes.map(lane => [lane.id, studioCopy(`studio.pipeline.lane.${laneKey(lane.id)}`)])),
       emptyTitle: studioCopy('studio.pipeline.empty.title'),
       emptyDescription: studioCopy('studio.pipeline.empty.description'),
+      field: studioCopy('studio.pipeline.step.field'),
+      value: studioCopy('studio.pipeline.step.value'),
+      command: studioCopy('studio.pipeline.step.command'),
+      inputs: studioCopy('studio.pipeline.step.inputs'),
+      outputs: studioCopy('studio.pipeline.step.outputs'),
+      options: studioCopy('studio.pipeline.step.options'),
+      seat: studioCopy('studio.pipeline.step.seat'),
+      status: studioCopy('studio.pipeline.step.status'),
+      none: studioCopy('studio.pipeline.step.none'),
+      openSeat: studioCopy('studio.pipeline.seat.open'),
     },
   };
   const legend: PipelineLegendInput = {
