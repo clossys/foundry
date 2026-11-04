@@ -449,6 +449,31 @@
       "note": "Agent trees under clossys/agents/<agent>/ hold only ia.json and slot folders; a slot folder holds only slot.json, candidates/ and pin.json, matches ia.json, has a candidate, and a pin names an existing candidate by exact sha256 with decidedBy and basis (picked | bulk | planner). Evidence lives in clossys/evidence/. No agent is exempt."
     },
     {
+      "id": "R-SLOT-OPTIONS",
+      "owner_words": {
+        "quote": "add some variety to the candidate generation so end user have a choice",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:slot-options"
+      ],
+      "related": [
+        ".#check:decisions",
+        ".#check:git-cms"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-OPTIONS",
+      "fixture_runs": [
+        {
+          "check": ".#check:slot-options",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-options.mjs --repo {fixture}",
+          "expect": "^options-short\\s+director/identity\\.brand\\.essence"
+        }
+      ],
+      "note": "Every Director and Writer slot is classed by the committed option-class mapping (records/slot-model/option-classes.ts); its slot.json options and varyOn match its class, and a choice slot holds at least that many candidates that differ on varyOn, each tagged with a distinct allowed value. An agent seat's pick (clossys pick --by agent:<seat>, basis agent) may replace a bulk, planner or agent pin, never an owner pick. The fixture is a three-option slot holding one untagged candidate."
+    },
+    {
       "id": "R-PIPELINE-IS-CODE",
       "owner_words": {
         "quote": "anything that is deterministic need to be process driven by code and identifiers",
