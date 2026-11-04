@@ -116,8 +116,10 @@ async function discoverRoutePlan(options = {}) {
     } else represented.add(page.template);
   }
   for (const route of routes) assert.ok(represented.has(route), `Published route has no App Router page: ${route}`);
-  // Each agent is a top-level content-map group whose tab pages expand from its `page.<agent>-<ns>` records.
-  const agents = content.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id).sort();
+  // Each agent is a content-map group whose tab pages expand from its `page.<agent>-<ns>` records: the
+  // Publisher projection lists them (`agents`, the Home cards) wherever a system group nests them;
+  // without that list, the top-level groups.
+  const agents = (Array.isArray(projection.agents) ? projection.agents.map(row => row.id) : content.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id)).sort();
   assert.equal(new Set(agents).size, agents.length, 'Duplicate agent identities in content map');
   // The per-agent gallery pages were retired: tab pages assemble slot groups and are covered as ordinary pages.
   const galleries = {};
