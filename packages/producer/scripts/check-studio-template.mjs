@@ -100,9 +100,12 @@ const notes = [];
   const keys = new Set(copyKeys(copy));
   const seen = new Map();
   // A tab's header is its record's, so the description is owned per record (an entry under a group).
+  // A projected tab (studio.tabs[].record) sits beside its record when the map depth flattens it.
   const entries = new Map((Array.isArray(studio.map) ? studio.map : studio.map?.entries ?? []).map(entry => [entry.id, entry]));
+  const tabs = new Set((studio.tabs ?? []).map(tab => tab.id));
   for (const page of studio.pages ?? []) {
     if (page.data?.loader !== 'slot-groups') continue;
+    if (tabs.has(page.id)) continue;
     if (entries.get(entries.get(page.id)?.parentId)?.kind !== 'group') continue;
     const key = page.data.description;
     if (typeof key !== 'string') { fail('group', page.path, 'the slot-groups record names no description of its own'); continue; }
