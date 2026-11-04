@@ -16,7 +16,7 @@ function candidate(element = "card", version = 1, slot = "components.card", cont
   return bytes;
 }
 function pin(name = "card-v1.json", bytes = readFileSync(join(candidatesDir(dir()), name), "utf8")) {
-  put(pinFile(dir()), jsonBytes({ candidate: name, sha256: sha256Hex(bytes), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" }));
+  put(pinFile(dir()), jsonBytes({ candidate: name, sha256: sha256Hex(bytes), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" }));
 }
 beforeEach(() => {
   root = realpathSync(mkdtempSync(join(tmpdir(), "specimen-inputs-")));

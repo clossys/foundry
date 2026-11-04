@@ -1,6 +1,6 @@
 {
   "candidate": "faq-v1.json",
   "sha256": "a2719e4b35f53dd703fe4469e99c39e4039038d45f10e4a64f066aca05db5cff",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

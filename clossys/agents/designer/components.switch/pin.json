@@ -1,6 +1,6 @@
 {
   "candidate": "switch-v2.json",
   "sha256": "7b3020eed8e75831a9fc6fa1a93ec31ae1bb8a73325dc5be33bb28c0b9c6039b",
-  "pinnedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
   "at": "2026-11-03T12:00:00Z"
 }

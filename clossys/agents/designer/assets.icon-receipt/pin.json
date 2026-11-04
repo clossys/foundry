@@ -1,6 +1,6 @@
 {
   "candidate": "icon-receipt-v1.json",
   "sha256": "0599f3dccd3fbbab81e5965ffae3b7131a809e8b9a3c4a64d396883f61f3272d",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

@@ -1,6 +1,6 @@
 {
   "candidate": "error-state-v2.json",
   "sha256": "a95051f6b00466ce1611869effb5de540fa441d0f6e217c3b702e85d1ac83cc1",
-  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
   "at": "2026-11-03T14:00:15Z"
 }

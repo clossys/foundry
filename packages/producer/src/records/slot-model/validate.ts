@@ -1,6 +1,6 @@
 import { parseFrontmatter } from "./frontmatter.js";
 import {
-  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
+  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
   PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
@@ -98,9 +98,10 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   }
   if (value.notNeeded !== undefined) {
     const marker = value.notNeeded;
-    if (!object(marker) || Object.keys(marker).some(key => key !== "reason" && key !== "since") || !nonEmpty(marker.reason)
-      || typeof marker.since !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(marker.since) || Number.isNaN(Date.parse(marker.since))) {
-      fail("notNeeded must be {reason, since} with a non-empty reason and an ISO date");
+    if (!object(marker) || Object.keys(marker).some(key => key !== "reason" && key !== "since" && key !== "decidedBy") || !nonEmpty(marker.reason)
+      || typeof marker.since !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(marker.since) || Number.isNaN(Date.parse(marker.since))
+      || typeof marker.decidedBy !== "string" || !DECIDED_BY.test(marker.decidedBy)) {
+      fail("notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided");
     }
   }
   return issues;
@@ -110,10 +111,10 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "pin-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  for (const key of Object.keys(value)) if (!["candidate", "sha256", "pinnedBy", "at"].includes(key)) fail(`unknown key ${key}`);
+  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "at"].includes(key)) fail(`unknown key ${key}`);
   if (!nonEmpty(value.candidate) || !CANDIDATE_NAME.test(value.candidate)) fail("candidate must be a candidate file name");
   if (typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256)) fail("sha256 must be 64 lowercase hex");
-  if (typeof value.pinnedBy !== "string" || !/^(owner:.+|migration:SLOT-MODEL)$/.test(value.pinnedBy)) fail("pinnedBy must be owner:<msg ref> or migration:SLOT-MODEL");
+  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>] or migrated");
   if (typeof value.at !== "string" || Number.isNaN(Date.parse(value.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(value.at)) fail("at must be an ISO timestamp");
   return issues;
 }

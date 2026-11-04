@@ -134,7 +134,7 @@ describe("clossys migrate slots", () => {
   it("migrates the active brief, page and strings with pins", async () => {
     await migrate();
     const brief = listSlots(consumer, "director").find(slot => slot.id === "identity.brand.essence");
-    expect(brief?.pin?.pinnedBy).toMatch(/^owner:/);
+    expect(brief?.pin?.decidedBy).toMatch(/^owner:/);
     expect(listSlots(consumer, "publisher").find(slot => slot.id === "page.about")?.pin?.candidate).toBe("page-v1.json");
     const strings = listSlots(consumer, "writer").find(slot => slot.id === "strings.common");
     expect(strings?.candidates).toContain("migrated-v1.md");
@@ -182,7 +182,7 @@ describe("clossys migrate slots", () => {
       expect(doc.contract).toEqual(contract);
       expect(doc.uses).toContain("sections.hero");
       expect(usedBy(consumer, "sections.hero")).toContainEqual({ agent: "designer", id });
-      expect(slot.pin).toMatchObject({ candidate: "sample-v2.json", at: "2026-10-20T10:30:00Z", pinnedBy: "migration:SLOT-MODEL" });
+      expect(slot.pin).toMatchObject({ candidate: "sample-v2.json", at: "2026-10-20T10:30:00Z", decidedBy: "migrated" });
       const candidate = JSON.parse(readFileSync(join(candidatesDir(slot.dir), "sample-v2.json"), "utf8"));
       expect(candidate.files[0].content).toBe("export const Sample = () => null;\n");
       expect(candidate.meta.source.hash).toBe(hash);

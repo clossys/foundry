@@ -89,7 +89,7 @@ async function listFiles(dir, prefix = '') {
 function portable(value) {
   if (typeof value === 'string' && (/^(?:\/|[A-Za-z]:[\\/]|\\\\)/.test(value))) fail('absolute path in source evidence');
   if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) {
-    if (/^(?:actor|owner|creator|by|pinnedBy)$/i.test(key)) fail('identity field in source evidence');
+    if (/^(?:actor|owner|creator|by|pinnedBy|decidedBy)$/i.test(key)) fail('identity field in source evidence');
     portable(child);
   }
   return value;

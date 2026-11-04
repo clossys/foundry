@@ -31,7 +31,7 @@ function fixture() {
     const name = `example-v${version}.json`, bytes = JSON.stringify(doc);
     writeFileSync(join(dir, "candidates", name), bytes);
     if (pinned) writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: name,
-      sha256: createHash("sha256").update(bytes).digest("hex"), pinnedBy: "owner:synthetic-test-only:inventory", at: "2026-01-01T00:00:00Z" }));
+      sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "owner:synthetic-test-only:inventory", at: "2026-01-01T00:00:00Z" }));
   }
   return { consumer, dirs, candidate, read: () => slotInventory(consumer, "publisher", "@clossys/publisher") };
 }

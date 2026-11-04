@@ -1,6 +1,6 @@
 {
   "candidate": "site-shell-v1.json",
   "sha256": "254d8e90d1aea6b70e999d997c4ffc139b736740283a55c42a2067554ffedd8d",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

@@ -1,6 +1,6 @@
 {
   "candidate": "warning-v1.json",
   "sha256": "04a3f81913ca6246e42b1cf2ae31281661a29ce2115deab5ae58ccc3043a4b6e",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

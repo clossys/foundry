@@ -16,7 +16,7 @@ const declarations = (locales: unknown = { en: { aliases: { "example.title": "ti
 function pin(body: string, locales = ["en"]) {
   const bytes = serializeFrontmatter({ slot: id, source: { kind: "original", ref: [] }, locales }, body);
   writeFileSync(join(dir, "candidates", "example-v1.md"), bytes);
-  save(join(dir, "pin.json"), { candidate: "example-v1.md", sha256: sha256Hex(bytes), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" });
+  save(join(dir, "pin.json"), { candidate: "example-v1.md", sha256: sha256Hex(bytes), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" });
 }
 const body = () => `## en\n### example.title\n<!-- ${JSON.stringify({ id: "title-1", bindings: ["opaque.path", binding], limits: { maxChars: 60 } })} -->\nNative title\n\\## literal heading\n\\<!-- literal comment -->\n\\\\literal slash\n\n### example.data\n<!-- {"id":"data-1","bindings":[],"custom":{"a":1}} -->\n\u0060\u0060\u0060json\n{"id":"data-1","context":"example.data","value":[1,2]}\n\u0060\u0060\u0060\n\n`;
 

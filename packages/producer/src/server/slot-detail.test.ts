@@ -55,7 +55,7 @@ describe('slot details', () => {
     candidate(dir, 2, 'An unapproved alternative');
     const sha256 = createHash('sha256').update(first.bytes).digest('hex');
     // Attribution and date are synthetic test metadata, not an approval record.
-    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, pinnedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, decidedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.shown).toBe(first.name);
     expect(detail.checks.filter(check => JSON.stringify(check.label) !== JSON.stringify({ copy: 'studio.check-inputs-ready' }) && check.detail !== 'inputs-undeclared').every(check => check.ok)).toBe(true);
@@ -85,7 +85,7 @@ describe('slot details', () => {
     const file = join(dir, 'slot.json');
     writeFileSync(file, JSON.stringify({ ...JSON.parse(readFileSync(file, 'utf8')), inputs: ['identity.missing'], uses: [id] }));
     // Keep the deliberate byte mismatch within an otherwise valid synthetic pin.
-    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'copy-v1.md', sha256: '0'.repeat(64), pinnedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'copy-v1.md', sha256: '0'.repeat(64), decidedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.usedBy).toEqual([{ agent: 'writer', id }]);
     expect(detail.checks).toEqual(expect.arrayContaining([
@@ -111,7 +111,7 @@ describe('slot details', () => {
       '## Direction\n- example: Direction\n\n## Because\n- example: Evidence\n\n## Watch\n- example: Constraint\n');
     const candidatePath = join(upstreamDir, 'candidates/brief-v1.md');
     const pinPath = join(upstreamDir, 'pin.json');
-    const pin = { candidate: 'brief-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:readiness', at: '2026-01-01T00:00:00Z' };
+    const pin = { candidate: 'brief-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), decidedBy: 'owner:synthetic-test-only:readiness', at: '2026-01-01T00:00:00Z' };
     writeFileSync(candidatePath, bytes); writeFileSync(pinPath, JSON.stringify(pin));
     const docPath = join(dir, 'slot.json');
     const doc = JSON.parse(readFileSync(docPath, 'utf8'));
@@ -172,7 +172,7 @@ describe('slot details', () => {
     const bytes = serializeFrontmatter({ slot: id, locales: ['en', 'fr'], source: { kind: 'original', ref: [] } }, body);
     writeFileSync(join(dir, 'candidates/copy-v1.md'), bytes);
     writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'copy-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'),
-      pinnedBy: 'owner:synthetic-test-only:writer-verbatim-detail', at: '2026-01-01T00:00:00Z' }));
+      decidedBy: 'owner:synthetic-test-only:writer-verbatim-detail', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.candidates[0]!.issues).toEqual([]);
     const inputs = slotDetailInputs(detail, links, 'light');
@@ -204,7 +204,7 @@ describe('slot details', () => {
     writeFileSync(join(dir, 'slot.json'), JSON.stringify({ schema: 'clossys.slot/1', id, agent: 'publisher', ia: slotPositions('publisher', ia).get(id), kind: 'page', contract: { purpose: 'Example page' }, inputs: [], uses: [] }));
     const bytes = JSON.stringify({ schema: 'clossys.page/1', title: 'Example', path: '/example', frame: null, sections: [], copy: {}, meta: { source: { kind: 'original', ref: [] } } });
     writeFileSync(join(dir, 'candidates/example-v1.json'), bytes);
-    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'example-v1.json', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:publisher-detail', at: '2026-01-01T00:00:00Z' }));
+    writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'example-v1.json', sha256: createHash('sha256').update(bytes).digest('hex'), decidedBy: 'owner:synthetic-test-only:publisher-detail', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'publisher', id)!;
     expect(detail.candidates[0]!.issues).toEqual([]);
     const publication = parsePublicationResponse({ state: 'ready', publication: 'example', publications: ['example'], manifest: { schemaVersion: 1, publication: 'example', contentMap: { entries: [] } }, pages: [{ id: 'emitted-example', cellId: id, route: '/example', previewUrl: '/preview/example/pages/emitted-example.html', frameUrl: '/preview/example/frame/emitted-example.html', emitted: true }] });
@@ -235,7 +235,7 @@ describe('slot details', () => {
     const full = 'First line.\nSecond line.';
     const first = candidate(dir, 1, full);
     candidate(dir, 2, 'Newer draft');
-    const pin = { candidate: first.name, sha256: createHash('sha256').update(first.bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:writer-viewports', at: '2026-01-01T00:00:00Z' };
+    const pin = { candidate: first.name, sha256: createHash('sha256').update(first.bytes).digest('hex'), decidedBy: 'owner:synthetic-test-only:writer-viewports', at: '2026-01-01T00:00:00Z' };
     const doc = JSON.parse(readFileSync(join(dir, 'slot.json'), 'utf8'));
     const restore = () => {
       writeFileSync(join(dir, 'slot.json'), JSON.stringify(doc));
@@ -282,7 +282,7 @@ describe('slot details', () => {
     const fields = { slot: id, source: { kind: 'original', ref: [] }, feeds: [], functions: [] };
     const body = '## Direction\nPinned demand\n## Because\nEvidence\n## Watch\nSignals';
     const bytes = serializeFrontmatter(fields, body);
-    const pin = { candidate: 'brief-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:director-viewports', at: '2026-01-01T00:00:00Z' };
+    const pin = { candidate: 'brief-v1.md', sha256: createHash('sha256').update(bytes).digest('hex'), decidedBy: 'owner:synthetic-test-only:director-viewports', at: '2026-01-01T00:00:00Z' };
     const restore = () => {
       writeFileSync(join(dir, 'slot.json'), JSON.stringify(doc));
       writeFileSync(join(dir, 'candidates/brief-v1.md'), bytes);
@@ -341,7 +341,7 @@ describe('slot details', () => {
     const file = join(dir, 'candidates/example-v1.json');
     const bytes = JSON.stringify({ ...item, meta: { slot: 'sections.example', source: { kind: 'original', ref: [] } } });
     writeFileSync(file, bytes);
-    const pin = { candidate: 'example-v1.json', sha256: createHash('sha256').update(bytes).digest('hex'), pinnedBy: 'owner:synthetic-test-only:canonical-viewport', at: '2026-01-01T00:00:00Z' };
+    const pin = { candidate: 'example-v1.json', sha256: createHash('sha256').update(bytes).digest('hex'), decidedBy: 'owner:synthetic-test-only:canonical-viewport', at: '2026-01-01T00:00:00Z' };
     writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
     const detail = slotDetail(root, 'designer', 'sections.example')!;
     const inputs = slotDetailInputs(detail, links, 'dark');

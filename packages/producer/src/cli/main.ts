@@ -18,6 +18,10 @@ export interface CliResult {
   compilation?: unknown;
   /** Printed as-is under --json (clossys pipeline status|graph). */
   output?: unknown;
+  /** pin: the decision just written. */
+  decision?: unknown;
+  /** decisions: every slot's state and the counts. */
+  decisions?: unknown;
 }
 
 /** Every command runs through the pipeline runner: only a defined step can run (src/pipeline/steps). */

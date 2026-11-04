@@ -38,7 +38,7 @@ beforeEach(() => {
           : { schema: "clossys.page/1", path: "/", title: "example.title", frame: null, sections: [], copy: {}, meta: { source } });
     const name = `sample-v1.${agent === "director" || agent === "writer" ? "md" : "json"}`;
     writeFileSync(join(dir, "candidates", name), bytes);
-    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" });
+    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" });
   }
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
@@ -198,7 +198,7 @@ describe("shared slot reader input integrity", () => {
 });
 
 describe("slot state (closed union: pinned or not-needed)", () => {
-  const marker = { reason: "Owner: no toolbar on this site.", since: "2026-11-03" };
+  const marker = { reason: "Owner: no toolbar on this site.", since: "2026-11-03", decidedBy: "owner" };
   const mark = (agent: SlotAgent, value: unknown) => save(join(dirs[agent]!, "slot.json"), { ...load(join(dirs[agent]!, "slot.json")), notNeeded: value });
 
   it("decides pinned, not-needed and every rejected state in the one loader", () => {
@@ -219,9 +219,10 @@ describe("slot state (closed union: pinned or not-needed)", () => {
     expect(readSlotState(root, "writer", ids.writer)).toMatchObject({ state: "rejected", reason: "pinned-and-not-needed" });
     writeFileSync(join(dirs.director!, "pin.json"), "{}");
     expect(readSlotState(root, "director", ids.director)).toMatchObject({ state: "rejected", reason: "invalid-pin" });
-    for (const bad of [{ reason: "" , since: "2026-11-03" }, { reason: "x" }, { reason: "x", since: "soon" }, { reason: "x", since: "2026-11-03", by: "agent" }, "yes"]) {
+    for (const bad of [{ reason: "", since: "2026-11-03", decidedBy: "owner" }, { reason: "x", decidedBy: "owner" }, { reason: "x", since: "soon", decidedBy: "owner" },
+      { reason: "x", since: "2026-11-03" }, { reason: "x", since: "2026-11-03", decidedBy: "agent" }, { reason: "x", since: "2026-11-03", decidedBy: "owner", by: "agent" }, "yes"]) {
       mark("designer", bad);
-      expect(validateSlotDoc(load(join(dirs.designer!, "slot.json"))).map(issue => issue.message)).toContain("notNeeded must be {reason, since} with a non-empty reason and an ISO date");
+      expect(validateSlotDoc(load(join(dirs.designer!, "slot.json"))).map(issue => issue.message)).toContain("notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided");
       expect(readSlotState(root, "designer", ids.designer)).toMatchObject({ state: "rejected", reason: "invalid-slot" });
     }
   });

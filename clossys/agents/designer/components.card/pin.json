@@ -1,6 +1,6 @@
 {
   "candidate": "card-v2.json",
   "sha256": "ee9da96eb4400214c589059e168b895fe11fd3567b6041f5b535cc94a8b3a951",
-  "pinnedBy": "owner:2026-11-03 fix-all",
+  "decidedBy": "owner:2026-11-03 fix-all",
   "at": "2026-11-03T09:30:00Z"
 }

@@ -1,6 +1,6 @@
 {
   "candidate": "command-v2.json",
   "sha256": "ba45504c8a8245edd382999b5397ec042f32003c00a069f4b6ea35990fd58de7",
-  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
   "at": "2026-11-03T14:00:22Z"
 }

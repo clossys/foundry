@@ -104,7 +104,7 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
     // History is pin history, rather than inferred "revises" relationships.
     history: historyInput(detail.history.map(event => {
       const version = Number(/-v(\d+)\./.exec(event.candidate)?.[1] ?? 0);
-      return { version, versionLabel: versionLabel(version), date: event.at, note: `${event.candidate} · ${event.commit}`, hash: event.sha256, marks: [event.pinnedBy] };
+      return { version, versionLabel: versionLabel(version), date: event.at, note: `${event.candidate} · ${event.commit}`, hash: event.sha256, marks: [event.decidedBy] };
     })),
   };
 }

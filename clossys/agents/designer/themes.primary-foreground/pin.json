@@ -1,6 +1,6 @@
 {
   "candidate": "primary-foreground-v1.json",
   "sha256": "569a7cac6f40a676adbcbb8920fca2201d534dd440c6f42ec628fd35cc059a03",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

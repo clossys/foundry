@@ -48,7 +48,7 @@ function nativePage(): void {
   save(join(dir, "candidates", "home-v1.json"), page);
   save(join(dir, "candidates", "home-v2.json"), { ...page, frame: "frames.draft", sections: [], copy: {} });
   save(join(dir, "pin.json"), {
-    candidate: "home-v1.json", sha256: sha256Hex(jsonBytes(page)), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z",
+    candidate: "home-v1.json", sha256: sha256Hex(jsonBytes(page)), decidedBy: "migrated", at: "2026-10-31T00:00:00Z",
   });
 }
 

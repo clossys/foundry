@@ -1,6 +1,6 @@
 {
   "candidate": "settings-v1.json",
   "sha256": "498e9dbb16cd18aaba3903528696fb1908b80992e90451844aa2d8c9d884d733",
-  "pinnedBy": "owner:2026-11-03 pin-if-agree",
+  "decidedBy": "owner:2026-11-03 pin-if-agree",
   "at": "2026-11-03T08:58:02Z"
 }

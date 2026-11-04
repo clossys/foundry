@@ -31,7 +31,7 @@ describe('native detail viewport data for stock iframe consumers', () => {
   it('draws Not needed with the reason and No pin as an error', () => {
     // NEED (Writer): the Studio strings pin has no `studio.not-needed` label yet. Until Writer adds it,
     // the Not needed state refuses to render with hand-written copy; flip this when the copy lands.
-    const notNeeded = { ...detail, state: { state: 'not-needed' as const, notNeeded: { reason: 'Owner: the site has no toolbar.', since: '2026-11-03' } } };
+    const notNeeded = { ...detail, state: { state: 'not-needed' as const, notNeeded: { reason: 'Owner: the site has no toolbar.', since: '2026-11-03', decidedBy: 'owner' } } };
     expect(() => slotDetailInputs(notNeeded, links, 'light')).toThrow(/studio\.not-needed/);
     const noPin = slotDetailInputs({ ...detail, state: { state: 'rejected', reason: 'no-pin' } }, links, 'light');
     expect(noPin.specimen).toMatchObject({ kind: 'record', status: { label: 'No pin', tone: 'destructive' } });

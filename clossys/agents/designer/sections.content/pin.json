@@ -1,6 +1,6 @@
 {
   "candidate": "content-v2.json",
   "sha256": "10b8cdac30cba707778b00a52b26907ce91df7346eda66a82187efbb2aa537f7",
-  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
   "at": "2026-11-03T14:00:13Z"
 }

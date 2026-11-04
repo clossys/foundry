@@ -1,6 +1,6 @@
 {
   "candidate": "specimen-type-ladder-v2.json",
   "sha256": "75425409b137847a7d9d3444ec9c351f9e56f72f98f88ff7bea59bc2d1c93103",
-  "pinnedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
   "at": "2026-11-03T14:00:20Z"
 }

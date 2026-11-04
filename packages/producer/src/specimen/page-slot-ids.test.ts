@@ -32,7 +32,7 @@ function native(ids = ["page.zebra", "page.empty", "publication.site", "page.hom
       : page;
     save(join(dir(id), "candidates", "sample-v1.json"), pinned);
     save(join(dir(id), "candidates", "sample-v2.json"), { ...page, frame: "frames.draft" });
-    if (id !== "page.draft") save(join(dir(id), "pin.json"), { candidate: "sample-v1.json", sha256: sha256Hex(jsonBytes(pinned)), pinnedBy: "migration:SLOT-MODEL", at: "2026-10-31T00:00:00Z" });
+    if (id !== "page.draft") save(join(dir(id), "pin.json"), { candidate: "sample-v1.json", sha256: sha256Hex(jsonBytes(pinned)), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" });
   }
 }
 
