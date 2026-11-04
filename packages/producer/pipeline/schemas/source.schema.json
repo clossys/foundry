@@ -15,7 +15,8 @@
         "registry",
         "derived",
         "original",
-        "composition"
+        "composition",
+        "npm"
       ]
     },
     "ref": {
@@ -91,6 +92,27 @@
         "ref": {
           "type": "array",
           "minItems": 1
+        }
+      },
+      "not": {
+        "required": [
+          "parts"
+        ]
+      }
+    },
+    {
+      "properties": {
+        "kind": {
+          "const": "npm"
+        },
+        "ref": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^npm/((?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*)@(\\d+\\.\\d+\\.\\d+)$"
+          }
         }
       },
       "not": {

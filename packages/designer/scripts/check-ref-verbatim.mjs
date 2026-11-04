@@ -57,6 +57,8 @@ export const CODES = [
   "REF-COMP-UNUSED",
   "REF-COMP-MARKUP",
   "REF-COMP-USES",
+  "REF-NPM-VERSION",
+  "REF-NPM-CODE",
 ];
 
 /**
@@ -129,6 +131,7 @@ export function defaults(overrides = {}) {
     components: overrides.components,
     linkComponents: overrides.linkComponents ?? [],
     ui: overrides.ui,
+    lockfile: overrides.lockfile,
   };
 }
 
@@ -793,6 +796,7 @@ export function checkElement(root, target, options = {}) {
  */
 export function checkRegistryItem(root, slot, candidate, options = {}) {
   if (candidate.meta?.source?.kind === "composition") return checkComposition(root, slot, candidate, options);
+  if (candidate.meta?.source?.kind === "npm") return withSelfCitation(checkNpmItem(root, slot, candidate, options), candidate.meta?.source?.ref);
   return withSelfCitation(checkLineageItem(root, slot, candidate, options), candidate.meta?.source?.ref);
 }
 
@@ -812,6 +816,87 @@ function checkLineageItem(root, slot, candidate, options = {}) {
     ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
   return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files });
+}
+
+// ---- npm package reference -------------------------------------------------
+
+/** `npm/<package>@<exact version>`: the one ref of an `npm` source. */
+export const NPM_REF = /^npm\/((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(\d+\.\d+\.\d+)$/;
+
+/** The package-lock.json that governs a consumer root: the explicit option, else the nearest one at or above the root. */
+function lockfileFor(root, explicit) {
+  if (explicit) return existsSync(explicit) ? explicit : undefined;
+  for (let dir = resolve(root); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, "package-lock.json"))) return join(dir, "package-lock.json");
+    if (dirname(dir) === dir) return undefined;
+  }
+}
+
+/** The version package-lock.json resolves for one package (its hoisted `node_modules/<package>` entry). */
+export function lockedVersion(root, pkg, explicit) {
+  const path = lockfileFor(root, explicit);
+  if (!path) return undefined;
+  const version = json(path).packages?.[`node_modules/${pkg}`]?.version;
+  return typeof version === "string" ? version : undefined;
+}
+
+/**
+ * An `npm` source: the candidate ships the package itself, unmodified.
+ * - its one ref is `npm/<package>@<exact version>`, and that version is the one
+ *   package-lock.json resolves (REF-NPM-VERSION);
+ * - it records no refVerbatim mappings or adaptations (REF-ADAPTATION);
+ * - it ships at least one code file, and every code file holds only named
+ *   re-exports from that package: no `export *`, no default, no other
+ *   statement of any kind (REF-NPM-CODE).
+ */
+const syntaxName = (ts, kind) => Object.keys(ts.SyntaxKind).find(name => ts.SyntaxKind[name] === kind && !/^(?:First|Last)/.test(name)) ?? String(kind);
+
+function checkNpmItem(root, slot, candidate, options = {}) {
+  const opts = defaults(options);
+  const element = candidate.name ?? "unknown";
+  const key = `${slot}/${element}@v1`;
+  const findings = [];
+  const files = [];
+  const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
+  const source = candidate.meta?.source ?? {};
+  const payload = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
+  if (Object.values(payload).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
+  const hash = treeHash(Object.entries(payload).map(([path, content]) => ({ path, sha256: sha256(content) })));
+  const refs = Array.isArray(source.ref) ? source.ref : [];
+  const match = refs.length === 1 && typeof refs[0] === "string" ? NPM_REF.exec(refs[0]) : null;
+  const pkg = match?.[1];
+  const version = match?.[2];
+  if (!match) fail("REF-NO-SOURCE", "an npm source names exactly one ref, npm/<package>@<exact version>");
+  else {
+    const locked = lockedVersion(root, pkg, opts.lockfile);
+    if (locked === undefined) fail("REF-NPM-VERSION", `${pkg} is not resolved in package-lock.json`);
+    else if (locked !== version) fail("REF-NPM-VERSION", `${pkg}@${version} differs from the version package-lock.json resolves (${locked})`);
+  }
+  if (candidate.meta?.refVerbatim !== undefined) fail("REF-ADAPTATION", "an npm candidate records no refVerbatim mappings or adaptations: it re-exports the package unmodified");
+  const code = Object.entries(payload).filter(([path]) => isCode(path)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  if (!code.length) fail("REF-NPM-CODE", "an npm candidate ships at least one re-export file");
+  const names = [];
+  const ts = loadTypeScript();
+  for (const [file, text] of code) {
+    const before = findings.length;
+    const parsed = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith("x") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    if (parsed.parseDiagnostics?.length) fail("REF-NORMALIZE", `${file} does not parse`, { file });
+    if (!parsed.statements.length) fail("REF-NPM-CODE", `${file} re-exports nothing`, { file });
+    for (const st of parsed.statements) {
+      const line = parsed.getLineAndCharacterOfPosition(st.getStart(parsed)).line + 1;
+      const named = ts.isExportDeclaration(st) && st.moduleSpecifier && ts.isStringLiteral(st.moduleSpecifier) && st.exportClause && ts.isNamedExports(st.exportClause) && st.exportClause.elements.length > 0;
+      if (!named) { fail("REF-NPM-CODE", `${file}:${line}: ${syntaxName(ts, st.kind)} is not a named re-export; an npm candidate holds only export { ... } from "${pkg ?? "<package>"}"`, { file }); continue; }
+      if (pkg && st.moduleSpecifier.text !== pkg) fail("REF-NPM-CODE", `${file}:${line}: re-exports from ${st.moduleSpecifier.text}, not ${pkg}`, { file });
+      for (const e of st.exportClause.elements) {
+        const local = (e.propertyName ?? e.name).text;
+        if (local === "default" || e.name.text === "default") fail("REF-NPM-CODE", `${file}:${line}: a default re-export does not name the symbol it ships`, { file });
+        else names.push(e.name.text);
+      }
+    }
+    const codes = [...new Set(findings.slice(before).map(f => f.code))];
+    files.push({ file, mapping: "npm", hunks: [], codes, status: codes.length ? "fail" : "pass" });
+  }
+  return { key, slot, element, version: 1, status: findings.length ? "fail" : "pass", files, findings, hash, ref: refs[0], npm: pkg ? { package: pkg, version, names } : undefined };
 }
 
 // ---- self-citation ----------------------------------------------------------
@@ -879,7 +964,14 @@ function stockPart(root, slot, dir, options) {
   const { error, item } = pinnedCandidate(dir);
   if (error) return { error };
   const kind = item.meta?.source?.kind;
-  if (kind !== "registry") return { error: `is pinned with ${kind ?? "no"} lineage, not registry` };
+  if (kind === "npm") {
+    // An npm part is stock when its pin passes the npm rule: its code files are the package's own named re-exports.
+    const checked = checkRegistryItem(root, slot, item, { ...options, strict: true, slotDoc: undefined });
+    if (checked.status !== "pass") return { error: `fails ref-verbatim itself (${[...new Set(checked.findings.map(f => f.code))].join(", ")})` };
+    const codeFiles = (item.files ?? []).filter(file => isCode(file.path));
+    return { item, vendored: codeFiles.map(file => file.path), codeFiles, npm: checked.npm };
+  }
+  if (kind !== "registry") return { error: `is pinned with ${kind ?? "no"} lineage, not registry or npm` };
   const mapping = item.meta?.refVerbatim ?? {};
   // Additional source parts are verbatim too (each is diffed against its own vendored file); recorded adaptations, or the byte-proof format, are not stock.
   if ((Array.isArray(mapping.adaptations) && mapping.adaptations.length) || Object.hasOwn(mapping, "exactParts")) return { error: "is pinned with recorded adaptations, not verbatim" };
@@ -915,7 +1007,7 @@ function componentLayer(opts, componentsPath) {
   return undefined;
 }
 
-/** Exported name -> the file that defines it, following re-exports inside the layer; null when ambiguous, `external:<spec>` outside it. */
+/** Exported name -> the file that defines it, following re-exports inside the layer; null when ambiguous, `external:<spec>\u0000<re-exporting file>` outside it. */
 function moduleExports(file, cache) {
   if (cache.has(file)) return cache.get(file);
   const map = new Map();
@@ -923,6 +1015,8 @@ function moduleExports(file, cache) {
   const ts = loadTypeScript();
   const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
   const set = (name, defined) => map.set(name, map.has(name) && map.get(name) !== defined ? null : defined);
+  // An outside package, with the layer file that re-exports it (`external:<spec>\u0000<file>`): an npm part is claimed through that file.
+  const external = spec => `external:${spec}\u0000${file}`;
   const target = spec => (spec.startsWith(".") ? resolveModuleFile(resolve(dirname(file), spec)) : undefined);
   const imported = new Map();
   for (const st of source.statements) {
@@ -934,14 +1028,14 @@ function moduleExports(file, cache) {
     const imp = imported.get(local);
     if (!imp) return file;
     const inner = target(imp.spec);
-    return inner ? moduleExports(inner, cache).get(imp.name) ?? null : `external:${imp.spec}`;
+    return inner ? moduleExports(inner, cache).get(imp.name) ?? null : external(imp.spec);
   };
   for (const st of source.statements) {
     if (ts.isExportDeclaration(st)) {
       const spec = st.moduleSpecifier && ts.isStringLiteral(st.moduleSpecifier) ? st.moduleSpecifier.text : undefined;
       const inner = spec !== undefined ? target(spec) : undefined;
       if (spec !== undefined && !inner) {
-        if (st.exportClause && ts.isNamedExports(st.exportClause)) for (const e of st.exportClause.elements) set(e.name.text, `external:${spec}`);
+        if (st.exportClause && ts.isNamedExports(st.exportClause)) for (const e of st.exportClause.elements) set(e.name.text, external(spec));
         continue;
       }
       if (!st.exportClause) { for (const [name, defined] of moduleExports(inner, cache)) if (name !== "default") set(name, defined); continue; }
@@ -1024,7 +1118,7 @@ function checkComposition(root, slot, candidate, options = {}) {
       owners = new Map();
       for (const [id, dir] of slotDirs) {
         const { item } = pinnedCandidate(dir);
-        if (item?.meta?.source?.kind !== "registry") continue;
+        if (item?.meta?.source?.kind !== "registry" && item?.meta?.source?.kind !== "npm") continue;
         for (const file of item.files ?? []) if (isCode(file.path)) owners.set(basename(file.path), [...(owners.get(basename(file.path)) ?? []), id]);
       }
     }
@@ -1032,8 +1126,18 @@ function checkComposition(root, slot, candidate, options = {}) {
   };
   const shown = path => (layer && path.startsWith(layer.dir) ? `${DS_COMPONENT_LAYER}/${path.slice(layer.dir.length + 1)}` : path);
   const claim = (resolved, label, file) => {
-    if (typeof resolved !== "string" || resolved.startsWith("external:")) {
-      fail("REF-COMP-IMPORT", `${label} ${resolved === null ? "is exported ambiguously" : resolved ? `is re-exported from ${resolved.slice(9)}` : "does not resolve"} in the component layer; it is no declared part's vendored file`, { file });
+    if (typeof resolved === "string" && resolved.startsWith("external:")) {
+      // An outside package reaches a composition only through a declared npm part whose pinned re-export file the layer ships verbatim.
+      const [spec, via] = resolved.slice(9).split("\u0000");
+      const viaName = via ? basename(via) : undefined;
+      const npmMatches = [...declared].filter(([, part]) => part.npm?.package === spec && part.codeFiles.some(entry => basename(entry.path) === viaName));
+      if (npmMatches.length !== 1) {
+        fail("REF-COMP-IMPORT", `${label} is re-exported from ${spec} in the component layer${npmMatches.length ? `, which ${npmMatches.map(([id]) => id).join(" and ")} all ship; declare one` : "; it is no declared part's vendored file"}`, { file });
+        return;
+      }
+      resolved = via;
+    } else if (typeof resolved !== "string") {
+      fail("REF-COMP-IMPORT", `${label} ${resolved === null ? "is exported ambiguously" : "does not resolve"} in the component layer; it is no declared part's vendored file`, { file });
       return;
     }
     const name = basename(resolved);

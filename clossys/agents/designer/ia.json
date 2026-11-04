@@ -2,9 +2,19 @@
   "schema": "clossys.ia/1",
   "source": "@clossys/designer#leaf-freeze:undefined",
   "extensions": [
+    "components.flow.base-handle",
+    "components.flow.base-node",
+    "components.flow.canvas",
+    "components.flow.edge",
+    "components.flow.labeled-handle",
+    "components.flow.node-header",
     "frames.studio-shell",
     "sections.module.checks",
     "sections.module.outline",
+    "sections.producer.pipeline-flow",
+    "sections.producer.pipeline-header",
+    "sections.producer.pipeline-legend",
+    "sections.producer.step-sheet",
     "sections.studio.checks",
     "sections.studio.contract",
     "sections.studio.history",
@@ -935,6 +945,52 @@
             "sections.studio.references",
             "sections.studio.slot-groups",
             "sections.studio.specimen"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.flow",
+      "label": "Flow",
+      "children": [
+        {
+          "id": "flow-nodes",
+          "label": "Nodes",
+          "slots": [
+            "components.flow.base-node",
+            "components.flow.node-header",
+            "components.flow.base-handle",
+            "components.flow.labeled-handle"
+          ]
+        },
+        {
+          "id": "flow-edges",
+          "label": "Edges",
+          "slots": [
+            "components.flow.edge"
+          ]
+        },
+        {
+          "id": "flow-canvas",
+          "label": "Canvas",
+          "slots": [
+            "components.flow.canvas"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sections.producer",
+      "label": "Producer",
+      "children": [
+        {
+          "id": "producer-pipeline",
+          "label": "Pipeline",
+          "slots": [
+            "sections.producer.pipeline-header",
+            "sections.producer.pipeline-flow",
+            "sections.producer.step-sheet",
+            "sections.producer.pipeline-legend"
           ]
         }
       ]

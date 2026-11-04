@@ -38,6 +38,7 @@ const HOSTS = new Map([
   ["magicui.design", "magicui"],
   ["diceui.com", "diceui"],
   ["r.assistant-ui.com", "assistant-ui"],
+  ["ui.reactflow.dev", "reactflow"],
 ]);
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");

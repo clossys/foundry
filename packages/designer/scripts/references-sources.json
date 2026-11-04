@@ -492,6 +492,18 @@
       "licenseFiles": {
         "LICENSE": "https://raw.githubusercontent.com/KevinGirelli/corsair-ui/ecfd4f59e03694ff35741096d5371e4fec3c80e2/LICENSE"
       }
+    },
+    "reactflow": {
+      "namespace": "@reactflow",
+      "kind": "registry-json",
+      "source": "https://ui.reactflow.dev/registry/{name}.json",
+      "version": "20261103",
+      "versionBasis": "React Flow UI registry endpoint (the URL `shadcn add https://ui.reactflow.dev/<name>` redirects to), served at fetchedAt; the registry publishes no version or source commit, so the version is the fetch date; licence file from github.com/xyflow/xyflow at the commit recorded in upstream",
+      "upstream": "github.com/xyflow/xyflow@1bc405cd113618c17fd181b931a9fe573bec9fee",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/xyflow/xyflow/1bc405cd113618c17fd181b931a9fe573bec9fee/LICENSE"
+      }
     }
   },
   "direct": [
@@ -1819,6 +1831,28 @@
       "registry": "corsair-ui",
       "name": "nav-link",
       "slots": []
+    },
+    {
+      "registry": "reactflow",
+      "name": "base-node",
+      "slots": [
+        "components.flow.base-node",
+        "components.flow.node-header"
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "base-handle",
+      "slots": [
+        "components.flow.base-handle"
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "labeled-handle",
+      "slots": [
+        "components.flow.labeled-handle"
+      ]
     }
   ],
   "skipped": [

@@ -1179,6 +1179,22 @@
         }
       },
       {
+        "id": "designer-components.flow",
+        "parentId": "designer-components",
+        "order": 6,
+        "title": "Flow",
+        "kind": "page",
+        "path": "/designer/components/flow",
+        "source": {
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.page-header",
+            "sections.studio.page-tabs",
+            "sections.studio.slot-groups"
+          ]
+        }
+      },
+      {
         "id": "designer-sections.specimens",
         "parentId": "designer-sections",
         "order": 0,
@@ -1297,6 +1313,22 @@
         "title": "Consumer extensions",
         "kind": "page",
         "path": "/designer/sections/extensions",
+        "source": {
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.page-header",
+            "sections.studio.page-tabs",
+            "sections.studio.slot-groups"
+          ]
+        }
+      },
+      {
+        "id": "designer-sections.producer",
+        "parentId": "designer-sections",
+        "order": 8,
+        "title": "Producer",
+        "kind": "page",
+        "path": "/designer/sections/producer",
         "source": {
           "frameId": "frames.studio-shell",
           "sectionIds": [
@@ -2964,6 +2996,36 @@
         "permanent": false
       },
       {
+        "from": "/designer/components.flow.base-node",
+        "to": "/designer/components/flow/components.flow.base-node",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.flow.node-header",
+        "to": "/designer/components/flow/components.flow.node-header",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.flow.base-handle",
+        "to": "/designer/components/flow/components.flow.base-handle",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.flow.labeled-handle",
+        "to": "/designer/components/flow/components.flow.labeled-handle",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.flow.edge",
+        "to": "/designer/components/flow/components.flow.edge",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.flow.canvas",
+        "to": "/designer/components/flow/components.flow.canvas",
+        "permanent": false
+      },
+      {
         "from": "/designer/sections.specimen-swatch",
         "to": "/designer/sections/specimens/sections.specimen-swatch",
         "permanent": false
@@ -3361,6 +3423,26 @@
       {
         "from": "/designer/sections.studio.specimen",
         "to": "/designer/sections/extensions/sections.studio.specimen",
+        "permanent": false
+      },
+      {
+        "from": "/designer/sections.producer.pipeline-header",
+        "to": "/designer/sections/producer/sections.producer.pipeline-header",
+        "permanent": false
+      },
+      {
+        "from": "/designer/sections.producer.pipeline-flow",
+        "to": "/designer/sections/producer/sections.producer.pipeline-flow",
+        "permanent": false
+      },
+      {
+        "from": "/designer/sections.producer.step-sheet",
+        "to": "/designer/sections/producer/sections.producer.step-sheet",
+        "permanent": false
+      },
+      {
+        "from": "/designer/sections.producer.pipeline-legend",
+        "to": "/designer/sections/producer/sections.producer.pipeline-legend",
         "permanent": false
       },
       {
@@ -14347,6 +14429,204 @@
       }
     },
     {
+      "id": "designer-components.flow",
+      "path": "/designer/components/flow",
+      "title": "Flow",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.page-header",
+        "sections.studio.page-tabs",
+        "sections.studio.slot-groups"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "slot-groups",
+        "agent": "designer",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
+        "groups": [
+          "components.flow/flow-nodes",
+          "components.flow/flow-edges",
+          "components.flow/flow-canvas"
+        ]
+      },
+      "inputs": {
+        "sections.studio.page-header": "header",
+        "sections.studio.page-tabs": "tabs",
+        "sections.studio.slot-groups": "groups"
+      },
+      "manifest": {
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "studio.outline-label",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "studio.checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "input": "checks"
+          }
+        ],
+        "actions": [],
+        "wiring": [
+          {
+            "do": "open outline",
+            "expect": "outline open"
+          },
+          {
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "cmdk",
+            "expect": "every popover listed with its shortcut"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "designer"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "studio.outline-label",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "studio.checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "studio.versions-label",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "studio.request-change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "studio.request-change-prompt"
+              },
+              "shortcut": "r"
+            }
+          ],
+          "wiring": [
+            {
+              "do": "open outline",
+              "expect": "outline open"
+            },
+            {
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "cmdk",
+              "expect": "every popover listed with its shortcut"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "designer-sections.specimens",
       "path": "/designer/sections/specimens",
       "title": "Specimens",
@@ -15753,6 +16033,202 @@
         "description": "studio.group-designer-sections",
         "groups": [
           "sections.extensions/extensions"
+        ]
+      },
+      "inputs": {
+        "sections.studio.page-header": "header",
+        "sections.studio.page-tabs": "tabs",
+        "sections.studio.slot-groups": "groups"
+      },
+      "manifest": {
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "studio.outline-label",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "studio.checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "input": "checks"
+          }
+        ],
+        "actions": [],
+        "wiring": [
+          {
+            "do": "open outline",
+            "expect": "outline open"
+          },
+          {
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "cmdk",
+            "expect": "every popover listed with its shortcut"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "designer"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "studio.outline-label",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "studio.checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "studio.versions-label",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "studio.request-change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "studio.request-change-prompt"
+              },
+              "shortcut": "r"
+            }
+          ],
+          "wiring": [
+            {
+              "do": "open outline",
+              "expect": "outline open"
+            },
+            {
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "cmdk",
+              "expect": "every popover listed with its shortcut"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "designer-sections.producer",
+      "path": "/designer/sections/producer",
+      "title": "Producer",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.page-header",
+        "sections.studio.page-tabs",
+        "sections.studio.slot-groups"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "slot-groups",
+        "agent": "designer",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-sections",
+        "groups": [
+          "sections.producer/producer-pipeline"
         ]
       },
       "inputs": {
@@ -24171,6 +24647,42 @@
       "path": "/designer/components/containment/components.sheet"
     },
     {
+      "page": "designer-components.flow",
+      "slug": "components.flow.base-node",
+      "title": "Flow base node",
+      "path": "/designer/components/flow/components.flow.base-node"
+    },
+    {
+      "page": "designer-components.flow",
+      "slug": "components.flow.node-header",
+      "title": "Flow node header",
+      "path": "/designer/components/flow/components.flow.node-header"
+    },
+    {
+      "page": "designer-components.flow",
+      "slug": "components.flow.base-handle",
+      "title": "Flow base handle",
+      "path": "/designer/components/flow/components.flow.base-handle"
+    },
+    {
+      "page": "designer-components.flow",
+      "slug": "components.flow.labeled-handle",
+      "title": "Flow labeled handle",
+      "path": "/designer/components/flow/components.flow.labeled-handle"
+    },
+    {
+      "page": "designer-components.flow",
+      "slug": "components.flow.edge",
+      "title": "Flow edge",
+      "path": "/designer/components/flow/components.flow.edge"
+    },
+    {
+      "page": "designer-components.flow",
+      "slug": "components.flow.canvas",
+      "title": "Flow canvas",
+      "path": "/designer/components/flow/components.flow.canvas"
+    },
+    {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-swatch",
       "title": "Color swatch",
@@ -24649,6 +25161,30 @@
       "slug": "sections.studio.specimen",
       "title": "Studio specimen",
       "path": "/designer/sections/extensions/sections.studio.specimen"
+    },
+    {
+      "page": "designer-sections.producer",
+      "slug": "sections.producer.pipeline-header",
+      "title": "Producer pipeline header",
+      "path": "/designer/sections/producer/sections.producer.pipeline-header"
+    },
+    {
+      "page": "designer-sections.producer",
+      "slug": "sections.producer.pipeline-flow",
+      "title": "Producer pipeline flow",
+      "path": "/designer/sections/producer/sections.producer.pipeline-flow"
+    },
+    {
+      "page": "designer-sections.producer",
+      "slug": "sections.producer.step-sheet",
+      "title": "Producer step sheet",
+      "path": "/designer/sections/producer/sections.producer.step-sheet"
+    },
+    {
+      "page": "designer-sections.producer",
+      "slug": "sections.producer.pipeline-legend",
+      "title": "Producer pipeline legend",
+      "path": "/designer/sections/producer/sections.producer.pipeline-legend"
     },
     {
       "page": "designer-frames.page-shells",
@@ -26057,6 +26593,36 @@
       "permanent": false
     },
     {
+      "source": "/designer/components.flow.base-handle",
+      "destination": "/designer/components/flow/components.flow.base-handle",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.base-node",
+      "destination": "/designer/components/flow/components.flow.base-node",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.canvas",
+      "destination": "/designer/components/flow/components.flow.canvas",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.edge",
+      "destination": "/designer/components/flow/components.flow.edge",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.labeled-handle",
+      "destination": "/designer/components/flow/components.flow.labeled-handle",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.node-header",
+      "destination": "/designer/components/flow/components.flow.node-header",
+      "permanent": false
+    },
+    {
       "source": "/designer/components.form",
       "destination": "/designer/components/inputs/components.form",
       "permanent": false
@@ -26509,6 +27075,26 @@
     {
       "source": "/designer/sections.pricing",
       "destination": "/designer/sections/organize/sections.pricing",
+      "permanent": false
+    },
+    {
+      "source": "/designer/sections.producer.pipeline-flow",
+      "destination": "/designer/sections/producer/sections.producer.pipeline-flow",
+      "permanent": false
+    },
+    {
+      "source": "/designer/sections.producer.pipeline-header",
+      "destination": "/designer/sections/producer/sections.producer.pipeline-header",
+      "permanent": false
+    },
+    {
+      "source": "/designer/sections.producer.pipeline-legend",
+      "destination": "/designer/sections/producer/sections.producer.pipeline-legend",
+      "permanent": false
+    },
+    {
+      "source": "/designer/sections.producer.step-sheet",
+      "destination": "/designer/sections/producer/sections.producer.step-sheet",
       "permanent": false
     },
     {
@@ -28174,6 +28760,7 @@
     "designer-components.feedback": [],
     "designer-components.navigation": [],
     "designer-components.containment": [],
+    "designer-components.flow": [],
     "designer-sections.specimens": [],
     "designer-sections.parts": [],
     "designer-sections.explain": [],
@@ -28182,6 +28769,7 @@
     "designer-sections.navigate": [],
     "designer-sections.respond": [],
     "designer-sections.extensions": [],
+    "designer-sections.producer": [],
     "designer-frames.page-shells": [],
     "designer-frames.regions": [],
     "designer-frames.overlay-shells": [],
@@ -29095,6 +29683,22 @@
       }
     },
     {
+      "instanceId": "designer-components.flow",
+      "path": "/designer/components/flow",
+      "label": "Flow",
+      "entry": {
+        "file": "studio/app/designer/components/flow/page.tsx",
+        "export": "default"
+      },
+      "leaf": {
+        "path": "/designer/components/flow/[slug]",
+        "entry": {
+          "file": "studio/app/designer/components/flow/[slug]/page.tsx",
+          "export": "default"
+        }
+      }
+    },
+    {
       "instanceId": "designer-sections.specimens",
       "path": "/designer/sections/specimens",
       "label": "Specimens",
@@ -29218,6 +29822,22 @@
         "path": "/designer/sections/extensions/[slug]",
         "entry": {
           "file": "studio/app/designer/sections/extensions/[slug]/page.tsx",
+          "export": "default"
+        }
+      }
+    },
+    {
+      "instanceId": "designer-sections.producer",
+      "path": "/designer/sections/producer",
+      "label": "Producer",
+      "entry": {
+        "file": "studio/app/designer/sections/producer/page.tsx",
+        "export": "default"
+      },
+      "leaf": {
+        "path": "/designer/sections/producer/[slug]",
+        "entry": {
+          "file": "studio/app/designer/sections/producer/[slug]/page.tsx",
           "export": "default"
         }
       }

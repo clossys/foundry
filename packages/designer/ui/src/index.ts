@@ -21,6 +21,11 @@ import * as dialog from "./foundry/dialog"
 import * as dropdownMenu from "./foundry/dropdown-menu"
 import * as empty from "./foundry/empty"
 import * as field from "./foundry/field"
+import * as flowBaseHandle from "./foundry/flow-base-handle"
+import * as flowBaseNode from "./foundry/flow-base-node"
+import * as flowCanvas from "./foundry/flow-canvas"
+import * as flowEdge from "./foundry/flow-edge"
+import * as flowLabeledHandle from "./foundry/flow-labeled-handle"
 import * as input from "./foundry/input"
 import * as inputGroup from "./foundry/input-group"
 import * as label from "./foundry/label"
@@ -51,6 +56,11 @@ export const FOUNDRY_COMPONENT_SLOTS = [
   "dropdown-menu",
   "empty",
   "field",
+  "flow-base-handle",
+  "flow-base-node",
+  "flow-canvas",
+  "flow-edge",
+  "flow-labeled-handle",
   "input",
   "input-group",
   "label",
@@ -85,6 +95,11 @@ export const foundryComponents = {
   "dropdown-menu": { DropdownMenu: dropdownMenu.DropdownMenu, DropdownMenuTrigger: dropdownMenu.DropdownMenuTrigger, DropdownMenuItem: dropdownMenu.DropdownMenuItem },
   empty: { Empty: empty.Empty, EmptyHeader: empty.EmptyHeader, EmptyMedia: empty.EmptyMedia, EmptyTitle: empty.EmptyTitle, EmptyDescription: empty.EmptyDescription },
   field: { Field: field.Field, FieldLabel: field.FieldLabel },
+  "flow-base-handle": { BaseHandle: flowBaseHandle.BaseHandle },
+  "flow-base-node": { BaseNode: flowBaseNode.BaseNode, BaseNodeHeader: flowBaseNode.BaseNodeHeader, BaseNodeHeaderTitle: flowBaseNode.BaseNodeHeaderTitle, BaseNodeContent: flowBaseNode.BaseNodeContent, BaseNodeFooter: flowBaseNode.BaseNodeFooter },
+  "flow-canvas": { ReactFlow: flowCanvas.ReactFlow, Background: flowCanvas.Background, Controls: flowCanvas.Controls, Handle: flowCanvas.Handle, MarkerType: flowCanvas.MarkerType, Position: flowCanvas.Position },
+  "flow-edge": { BaseEdge: flowEdge.BaseEdge, SmoothStepEdge: flowEdge.SmoothStepEdge },
+  "flow-labeled-handle": { LabeledHandle: flowLabeledHandle.LabeledHandle },
   input: { Input: input.Input },
   "input-group": { InputGroup: inputGroup.InputGroup, InputGroupAddon: inputGroup.InputGroupAddon },
   label: { Label: label.Label },
@@ -115,6 +130,11 @@ export * from "./foundry/dialog"
 export * from "./foundry/dropdown-menu"
 export * from "./foundry/empty"
 export * from "./foundry/field"
+export * from "./foundry/flow-base-handle"
+export * from "./foundry/flow-base-node"
+export * from "./foundry/flow-canvas"
+export * from "./foundry/flow-edge"
+export * from "./foundry/flow-labeled-handle"
 export * from "./foundry/input"
 export * from "./foundry/input-group"
 export * from "./foundry/label"

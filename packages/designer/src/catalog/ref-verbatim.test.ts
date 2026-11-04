@@ -67,8 +67,8 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(19);
-    expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES"]));
+    expect(CODES).toHaveLength(21);
+    expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES", "REF-NPM-VERSION", "REF-NPM-CODE"]));
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
 
@@ -793,5 +793,43 @@ describe("composition lineage (W6)", () => {
   });
   it("checks slot.json uses against the declared parts", () => {
     expect(check(setup(), composed(SECTION), ["components.badge"])).toEqual(["REF-COMP-USES"]);
+  });
+
+  // npm parts: the package itself, as named re-exports of the version package-lock.json resolves.
+  const CANVAS = read("ui/src/components/flow-canvas.ts");
+  const npmItem = (content = CANVAS, version = "12.12.1", patch: Record<string, unknown> = {}) => ({ name: "canvas", type: "registry:lib", files: [{ path: "LICENCE.md", content: "MIT" }, { path: "flow-canvas.ts", content }], meta: { source: { kind: "npm", ref: [`npm/@xyflow/react@${version}`] }, ...patch } });
+  const locked = (root: string, version = "12.12.1") => {
+    writeFileSync(join(root, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: { "node_modules/@xyflow/react": { version } } }));
+    return root;
+  };
+  const npmCheck = (item: unknown, root = locked(setup())) => codes(checkRegistryItem(root, "components.flow.canvas", item, { strict: true }).findings);
+  it("passes an npm candidate that only re-exports named symbols of the locked package version", () => {
+    expect(npmCheck(npmItem())).toEqual([]);
+  });
+  it("fails an npm candidate whose version differs from package-lock.json, or that the lockfile does not resolve", () => {
+    expect(npmCheck(npmItem(CANVAS, "12.11.0"))).toEqual(["REF-NPM-VERSION"]);
+    expect(npmCheck(npmItem(), setup())).toEqual(["REF-NPM-VERSION"]);
+    expect(npmCheck({ ...npmItem(), meta: { source: { kind: "npm", ref: ["npm/@xyflow/react@^12.12.1"] } } })).toEqual(["REF-NO-SOURCE"]);
+  });
+  it("fails an npm candidate carrying any code beside its named re-exports", () => {
+    expect(npmCheck(npmItem(`${CANVAS}export const tint = "var(--ring)"\n`))).toEqual(["REF-NPM-CODE"]);
+    expect(npmCheck(npmItem('export * from "@xyflow/react"\n'))).toEqual(["REF-NPM-CODE"]);
+    expect(npmCheck(npmItem('export { default as Flow } from "@xyflow/react"\n'))).toEqual(["REF-NPM-CODE"]);
+    expect(npmCheck(npmItem('export { ReactFlow } from "@xyflow/system"\n'))).toEqual(["REF-NPM-CODE"]);
+    expect(npmCheck({ ...npmItem(), files: [{ path: "LICENCE.md", content: "MIT" }] })).toEqual(["REF-NPM-CODE"]);
+    expect(npmCheck(npmItem(CANVAS, "12.12.1", { refVerbatim: { files: {} } }))).toEqual(["REF-ADAPTATION"]);
+  });
+  it("lets a composition place a declared npm part through the layer's verbatim re-export file", () => {
+    const FLOW = 'import { Card, CardContent, ReactFlow } from "@clossys/designer-ui"\n\nexport function Flow() {\n  return (\n    <Card>\n      <CardContent><ReactFlow nodes={[]} edges={[]} /></CardContent>\n    </Card>\n  )\n}\n';
+    const canvasPart = { slot: "components.flow.canvas", files: ["flow-canvas.ts"] };
+    const root = locked(setup());
+    writeSlot(root, "components.flow.canvas", npmItem());
+    expect(check(root, composed(FLOW, [part("card"), canvasPart]), ["components.card", "components.flow.canvas"])).toEqual([]);
+    expect(check(root, composed(FLOW, [part("card")]), ["components.card"])).toEqual(["REF-COMP-IMPORT"]);
+    const direct = FLOW.replace('import { Card, CardContent, ReactFlow } from "@clossys/designer-ui"', 'import { Card, CardContent } from "@clossys/designer-ui"\nimport { ReactFlow } from "@xyflow/react"');
+    expect(check(root, composed(direct, [part("card"), canvasPart]), ["components.card", "components.flow.canvas"])).toEqual(["REF-COMP-IMPORT", "REF-COMP-UNUSED"]);
+    const drifted = locked(setup());
+    writeSlot(drifted, "components.flow.canvas", npmItem(CANVAS, "12.11.0"));
+    expect(check(drifted, composed(FLOW, [part("card"), canvasPart]), ["components.card", "components.flow.canvas"])).toContain("REF-COMP-PART");
   });
 });

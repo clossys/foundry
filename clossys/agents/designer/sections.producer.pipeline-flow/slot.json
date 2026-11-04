@@ -1,0 +1,75 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.producer.pipeline-flow",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.producer",
+    "l2": "producer-pipeline",
+    "order": 261
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.producer.pipeline-flow",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "graph.json rendered by @xyflow/react: one components.flow.base-node per step with its header, labeled input and output handles and lane, joined by the built-in smoothstep edge; positions come from graph.json.",
+    "inputs": [
+      {
+        "name": "flow",
+        "kind": "data",
+        "required": true,
+        "description": "graph.json (steps with positions, edges between handles) and the kind, lane and empty-state Writer copy."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "reactflow",
+        "item": "base-node",
+        "version": "20261103",
+        "hash": "sha256:4c5125009f11fb4fdb99bd2643f273317197bdc1248007ac4fdb02c2c2e7378b",
+        "url": "https://ui.reactflow.dev/registry/base-node.json"
+      },
+      {
+        "registry": "reactflow",
+        "item": "base-handle",
+        "version": "20261103",
+        "hash": "sha256:696394e672cd88bb6ae5c5680fb5ccdc884cfafb85e8062911fc8dde77759055",
+        "url": "https://ui.reactflow.dev/registry/base-handle.json"
+      },
+      {
+        "registry": "reactflow",
+        "item": "labeled-handle",
+        "version": "20261103",
+        "hash": "sha256:9c4819063fbba809fef0d40f35552f73c5a350d202cfff03d18a44f9c179bdf2",
+        "url": "https://ui.reactflow.dev/registry/labeled-handle.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.card",
+    "components.flow.base-node",
+    "components.flow.canvas",
+    "components.flow.labeled-handle"
+  ]
+}

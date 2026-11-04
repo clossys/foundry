@@ -95,6 +95,13 @@ describe("composition lineage (W6)", () => {
     expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "derived", ref: [] })))).toEqual(["candidate-source"]);
     expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "hand-drawn", ref: [] })))).toEqual(["candidate-source"]);
   });
+  it("takes an npm source only as one exact npm/<package>@<version> ref", () => {
+    expect(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "npm", ref: ["npm/@xyflow/react@12.12.1"] }))).toEqual([]);
+    for (const ref of [[], ["npm/@xyflow/react@^12.12.1"], ["npm/@xyflow/react"], ["@xyflow/react@12.12.1"], ["npm/@xyflow/react@12.12.1", "npm/react@19.0.0"]]) {
+      expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "npm", ref }))), JSON.stringify(ref)).toEqual(["candidate-source"]);
+    }
+    expect(codes(validateCandidate("page", "page.home", "page-v1.json", withSource({ kind: "npm", ref: ["npm/@xyflow/react@12.12.1"], parts: [part] })))).toEqual(["candidate-source"]);
+  });
 });
 
 describe("derived inputs and uses (F10)", () => {

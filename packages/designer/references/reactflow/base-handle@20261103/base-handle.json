@@ -1,0 +1,19 @@
+{
+  "name": "base-handle",
+  "type": "registry:component",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:component",
+      "path": "base-handle.tsx",
+      "content": "import type { ComponentProps } from \"react\";\nimport { Handle, type HandleProps } from \"@xyflow/react\";\n\nimport { cn } from \"@/lib/utils\";\n\nexport type BaseHandleProps = HandleProps;\n\nexport function BaseHandle({\n  className,\n  children,\n  ...props\n}: ComponentProps<typeof Handle>) {\n  return (\n    <Handle\n      {...props}\n      className={cn(\n        \"dark:border-secondary dark:bg-secondary h-[11px] w-[11px] rounded-full border border-slate-300 bg-slate-100 transition\",\n        className,\n      )}\n    >\n      {children}\n    </Handle>\n  );\n}\n"
+    }
+  ],
+  "tailwind": {},
+  "cssVars": {},
+  "meta": {}
+}

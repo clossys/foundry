@@ -95,7 +95,9 @@ export interface PinDoc {
   readonly at: string;
 }
 
-export const SOURCE_KINDS = ["registry", "derived", "original", "composition"] as const;
+export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm"] as const;
+/** The one ref of an `npm` source: `npm/<package>@<exact version>` (ref-verbatim proves it against package-lock.json). */
+export const NPM_SOURCE_REF = /^npm\/((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(\d+\.\d+\.\d+)$/;
 /** One stock part of a `composition` source: a pinned slot and the exact vendored reference paths its pin maps. */
 export interface CompositionPart {
   readonly slot: string;

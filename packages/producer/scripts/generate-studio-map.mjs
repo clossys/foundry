@@ -161,7 +161,7 @@ function pinnedItem(clossysRoot, entries, slot) {
       const owner = entries.get(part?.slot);
       if (!owner?.pin || !owner.candidates.includes(owner.pin.candidate)) fail(`${slot} composes ${part?.slot}, which is not a pinned Designer slot`);
       const bytes = readCandidate(clossysRoot, 'designer', part.slot, owner.pin.candidate);
-      if (bytes.sha256 !== owner.pin.sha256 || JSON.parse(bytes.bytes).meta?.source?.kind !== 'registry') fail(`${slot} composes ${part.slot}, which is not pinned with registry (stock) lineage`);
+      if (bytes.sha256 !== owner.pin.sha256 || !['registry', 'npm'].includes(JSON.parse(bytes.bytes).meta?.source?.kind)) fail(`${slot} composes ${part.slot}, which is not pinned with registry or npm (stock) lineage`);
     }
   } else if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${slot} must come from a trusted reference (source registry or derived with a ref, or a composition of stock parts)`);
   if (!nonEmpty(item.name) || !Array.isArray(item.files) || !item.files.length) fail(`${slot} candidate ${pin.candidate} carries no files`);
