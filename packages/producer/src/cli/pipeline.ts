@@ -8,7 +8,7 @@ import { discoverRoot } from "./root.js";
 export const PIPELINE_USAGE = "Usage: clossys pipeline status [--json] [--root <dir>]\n"
   + "       clossys pipeline graph [--json] [--root <dir>] [--out <graph.json>]\n"
   + "status is read-only: per step input/output hashes, last run, checks (never run here) and open decisions; per agent slot counts.\n"
-  + "graph prints {nodes, edges, seats, options, status}; --out writes the graph without live status (pipeline/graph.json).";
+  + "graph prints {nodes (with layout), edges, untyped, layout, seats, options, status}; --out writes the graph without live status (pipeline/graph.json).";
 
 export interface PipelineArgs { readonly command?: "status" | "graph"; readonly json: boolean; readonly root?: string; readonly out?: string; readonly help: boolean }
 
@@ -64,5 +64,5 @@ export async function runPipelineCli(argv: readonly string[], cwd: string): Prom
     writeFileSync(file, graphJson(graph));
   }
   const output = { ...graph, status };
-  return { exitCode: 0, root, message: `pipeline graph: ${graph.nodes.length} steps, ${graph.edges.length} edges${args.out ? `; wrote ${args.out}` : ""}`, output };
+  return { exitCode: 0, root, message: `pipeline graph: ${graph.nodes.length} steps, ${graph.edges.length} edges, ${graph.untyped.length} untyped ports, ${graph.layout.cycleBreaks.length} cycle breaks${args.out ? `; wrote ${args.out}` : ""}`, output };
 }

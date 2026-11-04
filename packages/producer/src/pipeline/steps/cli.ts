@@ -1,7 +1,9 @@
 import { defineStep } from "../define.js";
+import { CANDIDATES, IA, PINS, SEATS, SLOTS, candidatesOf, pinsOf } from "./ports.js";
+import type { Agent } from "./ports.js";
 
-const DIRECTOR_PINS = ["clossys/agents/director/*/pin.json", "clossys/agents/director/*/candidates/*"];
-const agentInputs = (agent: string) => [`clossys/agents/${agent}/*/pin.json`, `clossys/agents/${agent}/*/candidates/*`, "clossys/agents/director/*/pin.json"];
+const DIRECTOR_PINS = [pinsOf("director"), candidatesOf("director")];
+const agentInputs = (agent: Agent) => [pinsOf(agent), candidatesOf(agent), pinsOf("director")];
 
 /** The CLI verbs. `clossys <verb>` runs only the step whose verb and mode flags match (src/pipeline/runner.ts). */
 export const CLI_STEPS = [
@@ -50,40 +52,40 @@ export const CLI_STEPS = [
   defineStep({
     id: "workspace.check", kind: "plumb", actor: "code", stage: "check",
     summary: "Slot model, page and record-suite checks over the workspace.",
-    inputs: ["clossys/agents/*/ia.json", "clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*"],
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES],
     outputs: [{ glob: "arg:--report", schema: "check-report" }],
     command: { cli: { verb: "check" }, entry: "src/cli/check.ts#runCheck" }, checks: ["workspace"],
   }),
   defineStep({
     id: "compile", kind: "plumb", actor: "code", stage: "compile",
     summary: "Compile the Studio from decision files only into the compile lock.",
-    inputs: ["clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*", "clossys/agents/*/*/slot.json"],
+    inputs: [PINS, ...CANDIDATES, SLOTS],
     outputs: [{ glob: "pkg:studio/compile.lock.json", schema: "compile-lock" }],
     command: { cli: { verb: "compile", parser: "src/cli/compile.ts" }, entry: "src/cli/compile.ts#runCompileCli" }, checks: ["compile-pure"],
   }),
   defineStep({
     id: "decisions", kind: "plumb", actor: "code", stage: "check",
     summary: "List every slot's decision state: pinned, not needed or open (read-only).",
-    inputs: ["clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json"], outputs: [],
+    inputs: [SLOTS, PINS], outputs: [],
     command: { cli: { verb: "decisions", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runDecisionsCli" }, checks: ["decisions"],
   }),
   defineStep({
     id: "studio.produce", kind: "plumb", actor: "code", stage: "operate",
     summary: "Serve the local Studio over the live slot model (no compile step).",
-    inputs: ["clossys/agents/*/ia.json", "clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*"], outputs: [],
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES], outputs: [],
     command: { cli: { verb: "produce" }, entry: "src/cli/produce.ts#runProduce" }, checks: ["studio-p0"],
   }),
   defineStep({
     id: "publish.install", kind: "plumb", actor: "code", stage: "compile",
     summary: "Install pinned pages, a routed site or Next routes into a consumer app.",
-    inputs: ["clossys/agents/publisher/*/pin.json", "clossys/agents/publisher/*/candidates/*", "clossys/library/**"],
+    inputs: [pinsOf("publisher"), candidatesOf("publisher"), "clossys/library/**"],
     outputs: ["arg:--out", "arg:--next"],
     command: { cli: { verb: "publish", flags: ["--install"] }, entry: "src/cli/publish.ts#runPublish" }, checks: ["workspace"],
   }),
   defineStep({
     id: "publish.page", kind: "plumb", actor: "code", stage: "compile",
     summary: "Bare publish: dry-run check of every pinned page against pinned Designer slots and Writer copy (read-only).",
-    inputs: ["clossys/agents/publisher/*/pin.json", "clossys/agents/publisher/*/candidates/*", "clossys/agents/designer/*/pin.json", "clossys/agents/writer/*/pin.json"], outputs: [],
+    inputs: [pinsOf("publisher"), candidatesOf("publisher"), pinsOf("designer"), pinsOf("writer")], outputs: [],
     command: { cli: { verb: "publish" }, entry: "src/cli/publish.ts#runPublishCheck" }, checks: ["workspace"],
   }),
   defineStep({
@@ -95,13 +97,13 @@ export const CLI_STEPS = [
   defineStep({
     id: "migrate", kind: "plumb", actor: "code", stage: "derive",
     summary: "One-shot codemod: migrate copy keys to port ids (--check reports only).",
-    inputs: ["clossys/agents/*/*/candidates/*"], outputs: [],
+    inputs: [...CANDIDATES], outputs: [],
     command: { cli: { verb: "migrate", parser: "src/cli/migrate.ts" }, entry: "src/cli/migrate.ts#runMigrateCli" }, checks: ["workspace"],
   }),
   defineStep({
     id: "pipeline", kind: "plumb", actor: "code", stage: "operate",
     summary: "Report pipeline status (read-only) and the step graph built from these definitions.",
-    inputs: ["clossys/agents/producer/*/seat.json", "clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*"],
+    inputs: [SEATS, SLOTS, PINS, ...CANDIDATES],
     outputs: ["pkg:pipeline/graph.json"],
     command: { cli: { verb: "pipeline", parser: "src/cli/pipeline.ts" }, entry: "src/cli/pipeline.ts#runPipelineCli", npm: "generate:pipeline-graph" }, checks: ["pipeline"],
   }),

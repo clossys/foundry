@@ -1,4 +1,5 @@
 import { defineStep } from "../define.js";
+import { CANDIDATES, IA, PINS, SEATS, SLOTS, candidatesOf } from "./ports.js";
 
 /** Owner and agent decisions: the only steps that may write decision files (decision-boundary.md). */
 export const DECISION_STEPS = [
@@ -6,7 +7,7 @@ export const DECISION_STEPS = [
     id: "ia", kind: "decide:judgment", actor: "owner", stage: "direct",
     summary: "Place every L3 slot: the agent IA tree and each slot's contract.",
     inputs: [],
-    outputs: [{ glob: "clossys/agents/*/ia.json", schema: "ia" }, { glob: "clossys/agents/*/*/slot.json", schema: "slot" }],
+    outputs: [IA, SLOTS],
     command: { manual: "owner edits ia.json and slot.json" }, checks: ["workspace"], open: "slots-without-slot-json",
   }),
   defineStep({
@@ -24,7 +25,7 @@ export const DECISION_STEPS = [
   defineStep({
     id: "seats", kind: "decide:judgment", actor: "owner", stage: "direct",
     summary: "Who decides each decide step: an llm seat, a human seat, or both.",
-    inputs: [], outputs: [{ glob: "clossys/agents/producer/*/seat.json", schema: "seat" }],
+    inputs: [], outputs: [SEATS],
     command: { manual: "owner writes clossys/agents/producer/<step>/seat.json" }, checks: ["pipeline"], open: "seats-open",
   }),
   defineStep({
@@ -42,14 +43,14 @@ export const DECISION_STEPS = [
   defineStep({
     id: "writer.approve", kind: "decide:judgment", actor: "owner", stage: "pin",
     summary: "Owner approves Writer copy keys (status approved).",
-    inputs: ["clossys/agents/writer/*/candidates/*"], outputs: ["clossys/agents/writer/*/candidates/*#status"],
+    inputs: [candidatesOf("writer")], outputs: ["clossys/agents/writer/*/candidates/*#status"],
     command: { manual: "owner sets a Writer key status to approved" }, checks: ["workspace"], open: "writer-keys-unapproved",
   }),
   defineStep({
     id: "pin", kind: "decide:judgment", actor: "owner", stage: "pin",
     summary: "Pin one candidate per L3 slot, or mark the slot not needed.",
-    inputs: ["clossys/agents/*/*/candidates/*", "clossys/agents/*/*/slot.json"],
-    outputs: [{ glob: "clossys/agents/*/*/pin.json", schema: "pin" }, { glob: "clossys/agents/*/*/slot.json#notNeeded" }],
+    inputs: [...CANDIDATES, SLOTS],
+    outputs: [PINS, "clossys/agents/*/*/slot.json#notNeeded"],
     command: { cli: { verb: "pin", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state"],
     open: "slots-undecided",
   }),

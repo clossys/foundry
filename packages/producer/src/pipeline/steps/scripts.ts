@@ -1,4 +1,5 @@
 import { defineStep } from "../define.js";
+import { CANDIDATES, IA, PINS, SLOTS } from "./ports.js";
 
 const STUDIO_GENERATED = ["studio-copy.json", "studio-map.json", "studio-map.ts", "assembly-bindings.ts", "studio-icons.ts", "studio-provenance.json", "studio-brand.json"];
 
@@ -7,13 +8,13 @@ export const SCRIPT_STEPS = [
   defineStep({
     id: "derive.uses", kind: "plumb", actor: "code", stage: "derive",
     summary: "Derive each slot's uses list from pinned candidates.",
-    inputs: ["clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*"], outputs: ["clossys/agents/*/*/slot.json#uses"],
+    inputs: [PINS, ...CANDIDATES], outputs: ["clossys/agents/*/*/slot.json#uses"],
     command: { script: "scripts/check-generated-derived.mjs", npm: "build" }, checks: ["generated-derived"],
   }),
   defineStep({
     id: "studio.map", kind: "plumb", actor: "code", stage: "derive",
     summary: "Generate the Studio map, copy, bindings, icons, provenance and brand.",
-    inputs: ["clossys/agents/*/ia.json", "clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*", "clossys/library/**", "clossys/selection.json"],
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES, "clossys/library/**", "clossys/selection.json"],
     outputs: STUDIO_GENERATED.map(name => `pkg:studio/generated/${name}`),
     command: { script: "scripts/generate-studio-map.mjs", npm: "generate:studio-map" }, checks: ["studio-map", "studio-routes"],
   }),
