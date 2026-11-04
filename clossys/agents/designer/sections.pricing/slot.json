@@ -207,19 +207,10 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.button",
-    "components.card",
-    "components.icon",
-    "components.link",
-    "components.semantic-content",
-    "components.status-mark",
-    "components.table",
-    "components.toggle-group"
-  ],
+  "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, pricing-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed), components.status-mark (not-needed); 10 styled raw element attribute(s); imports outside the stock parts: react, cn, @/components/ui/icon (absent from the component layer), @/components/ui/semantic-content (absent from the component layer), @/components/ui/toggle-group (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. The only direct item, tailark-oss/mist-pricing-1@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

@@ -207,16 +207,10 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.button",
-    "components.combo-box",
-    "components.date-picker",
-    "components.select",
-    "components.tag-group",
-    "components.text-field"
-  ],
+  "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, filter-builder-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 7 styled raw element attribute(s); imports outside the stock parts: react, lucide-react. The only direct item, diceui/faceted@04aad54, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF and REF-FLAVOR); no registry:block or registry:example; candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

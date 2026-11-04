@@ -19,7 +19,7 @@
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "a958c6661b684957c64c6fd28a20bba5460cacc58b6051cdf33314564986f3d9"
+      "sha256": "c381924da771cd1acac2371b29bdf458683660adebe2c41fd0c71997b94b33e1"
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -43,15 +43,15 @@
     },
     {
       "path": "section-defaults.r1.en.json",
-      "sha256": "919c189e4aaa1d209bcbb7a8997d8182786757b15442e8c7f05745c19f206db7"
+      "sha256": "f8e6f8bb0dd5467b62deb382132e2eb4faf1c6cf1ba13d221cd250622763f85d"
     },
     {
       "path": "sign-in.json",
-      "sha256": "a95362da02a1004a291292a54e0ca29b8a6403ea7942d44a77b90fc355fef676"
+      "sha256": "804bb767b0f5505b4af2aada8f4ffe31d4df121c2b613af5b1797f5adfb17959"
     },
     {
       "path": "site.en.json",
-      "sha256": "94044c46564611da0613de177acb2d7fa6b45077240ba4795dd93a4145e5aa19"
+      "sha256": "085fa79de29c23742d1710463c78fc888f571d00a1d200e4d0316e8eedd3140d"
     }
   ],
   "bundles": [

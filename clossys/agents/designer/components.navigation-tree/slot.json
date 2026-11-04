@@ -55,5 +55,13 @@
     "apg": "treeview"
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "assets.icon-panel-left",
+    "components.button",
+    "components.separator",
+    "components.sheet",
+    "components.skeleton",
+    "components.tooltip",
+    "themes.input"
+  ]
 }

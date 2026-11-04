@@ -62,6 +62,7 @@
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, chart-heatmap-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-PART: a primitive slot with no stock parts in uses; 12 styled raw element attribute(s); imports outside the stock parts: react, cn. No vendored item in the approved set maps to this slot (Recharts is not vendored; shadcn chart maps to chart-area/bar/line/sparkline only; manifest gap row); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

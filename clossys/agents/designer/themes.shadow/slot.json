@@ -42,6 +42,7 @@
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, shadow-v1.json unmodified) fails REF-COMP-PART: a token value, not code, so there are no parts to compose. Tailwind v4 default value: shadcn/neutral@4.23.0 and no vendored registry item defines it (references/manifest.json skipped: 'tailwind default'); candidate v1 fails REF-NO-SOURCE.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

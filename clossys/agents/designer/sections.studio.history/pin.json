@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-history-v3.json",
-  "sha256": "408848fbb0a1d4a018f90a1e3ed904164dfde4c4293b3269a3c944b38280ecea",
-  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
-  "at": "2026-11-03T18:00:00Z"
+  "candidate": "studio-history-v5.json",
+  "sha256": "cd1fe2f005074cad80baa0fa694f47ec3786069a0ad39a70b970df7c01ef4782",
+  "decidedBy": "planner:CONVERGE-R2",
+  "at": "2026-11-04T00:50:34.050Z"
 }

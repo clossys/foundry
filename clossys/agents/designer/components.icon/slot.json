@@ -73,6 +73,7 @@
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, icon-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-PART: a primitive slot with no stock parts in uses; imports outside the stock parts: react, class-variance-authority, cn, lucide-react. No vendored item in the approved set maps to this slot (lucide icons are vendored per icon and pinned in assets.icon-*; manifest skipped lucide-react); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

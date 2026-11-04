@@ -243,17 +243,10 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.badge",
-    "components.button",
-    "components.card",
-    "components.disclosure",
-    "components.link",
-    "components.skeleton",
-    "components.tabs"
-  ],
+  "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, record-detail-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 11 styled raw element attribute(s); imports outside the stock parts: lucide-react; Button resolves to button.tsx, which both components.button and components.link ship. No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

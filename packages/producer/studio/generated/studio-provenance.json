@@ -1,8 +1,8 @@
 {
   "sections.studio.page-header": {
     "data-clossys-slot": "sections.studio.page-header",
-    "data-clossys-candidate": "studio-page-header-v2.json",
-    "data-clossys-hash": "sha256:df72ca4ae96485c64765063c53d1a0e00dcb3bae1455e79cd6114a1784992a0f"
+    "data-clossys-candidate": "studio-page-header-v4.json",
+    "data-clossys-hash": "sha256:16170aecb8317c4bdaa476b014777afae9e42491b11a4dfef3c666958f108716"
   },
   "sections.studio.home": {
     "data-clossys-slot": "sections.studio.home",
@@ -11,18 +11,18 @@
   },
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
-    "data-clossys-candidate": "module-outline-v3.json",
-    "data-clossys-hash": "sha256:d38cfba4d8176a0a92f7a88c536737058b245a46596b65dd1ba5ec44ffe4c699"
+    "data-clossys-candidate": "module-outline-v5.json",
+    "data-clossys-hash": "sha256:5d8224fdd4d04b6c6b284e2cbfbe22d0c669aa97eede7b380ec3423ba14f026d"
   },
   "sections.module.checks": {
     "data-clossys-slot": "sections.module.checks",
-    "data-clossys-candidate": "module-checks-v2.json",
-    "data-clossys-hash": "sha256:15fdea04591e2063ee9b84774cc46adf3dd1e11f0faa181531bc2603543c2d66"
+    "data-clossys-candidate": "module-checks-v4.json",
+    "data-clossys-hash": "sha256:24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199"
   },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",
-    "data-clossys-candidate": "studio-page-tabs-v3.json",
-    "data-clossys-hash": "sha256:9b318dc91666df47078cbbe5ef7324c6f4e17ccb69045670dc96cd008373eb5d"
+    "data-clossys-candidate": "studio-page-tabs-v5.json",
+    "data-clossys-hash": "sha256:3a11e9363ff01c75af9d72874a3ec4b300f9476d1c8c98aa49b33e97769d44dc"
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
@@ -31,8 +31,8 @@
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",
-    "data-clossys-candidate": "studio-leaf-header-v4.json",
-    "data-clossys-hash": "sha256:9b19fbeabb3125a4a586d5d1df78974473e694ebe2bace65db7201d97d901872"
+    "data-clossys-candidate": "studio-leaf-header-v6.json",
+    "data-clossys-hash": "sha256:3865f280bc35af5961d9bb560f38e185cb04f0d1e4e55e3f4fa5ca71f58cc0c9"
   },
   "sections.studio.specimen": {
     "data-clossys-slot": "sections.studio.specimen",
@@ -46,22 +46,22 @@
   },
   "sections.studio.checks": {
     "data-clossys-slot": "sections.studio.checks",
-    "data-clossys-candidate": "studio-checks-v3.json",
-    "data-clossys-hash": "sha256:a528d001ce12d0bf8b6d15071ababd891771a9d64f54fed93517ececcd1e1937"
+    "data-clossys-candidate": "studio-checks-v5.json",
+    "data-clossys-hash": "sha256:7e92ce7441e9245dfdd3916ff248bdd18d2eda2e6bbd93b718cf459dbfc95b3b"
   },
   "sections.studio.contract": {
     "data-clossys-slot": "sections.studio.contract",
-    "data-clossys-candidate": "studio-contract-v3.json",
-    "data-clossys-hash": "sha256:f7a84d5c84bbf49cc1900a3c3b8aa110a0b50229d2dbfc3881767c80ffda328e"
+    "data-clossys-candidate": "studio-contract-v5.json",
+    "data-clossys-hash": "sha256:fc3c78ec26ae6aa9645a22a08c8c54cdfae371ffff394923572de1e1b75abe18"
   },
   "sections.studio.history": {
     "data-clossys-slot": "sections.studio.history",
-    "data-clossys-candidate": "studio-history-v3.json",
-    "data-clossys-hash": "sha256:408848fbb0a1d4a018f90a1e3ed904164dfde4c4293b3269a3c944b38280ecea"
+    "data-clossys-candidate": "studio-history-v5.json",
+    "data-clossys-hash": "sha256:cd1fe2f005074cad80baa0fa694f47ec3786069a0ad39a70b970df7c01ef4782"
   },
   "sections.studio.references": {
     "data-clossys-slot": "sections.studio.references",
-    "data-clossys-candidate": "studio-references-v3.json",
-    "data-clossys-hash": "sha256:ae4c65d7ac85c31ebc7b4ba7245e23eba5d651e1fa3a572cd3638cad047973fc"
+    "data-clossys-candidate": "studio-references-v5.json",
+    "data-clossys-hash": "sha256:df033035bc0f288b298fb0eea9928fc621ef762c4b259a835775e53c6741a3ee"
   }
 }

@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-contract-v3.json",
-  "sha256": "f7a84d5c84bbf49cc1900a3c3b8aa110a0b50229d2dbfc3881767c80ffda328e",
-  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
-  "at": "2026-11-03T18:00:00Z"
+  "candidate": "studio-contract-v5.json",
+  "sha256": "fc3c78ec26ae6aa9645a22a08c8c54cdfae371ffff394923572de1e1b75abe18",
+  "decidedBy": "planner:CONVERGE-R2",
+  "at": "2026-11-04T00:50:33.695Z"
 }

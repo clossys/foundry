@@ -170,16 +170,10 @@
     }
   },
   "inputs": [],
-  "uses": [
-    "components.breadcrumbs",
-    "components.button",
-    "components.grid-list",
-    "components.icon",
-    "components.resize-handle",
-    "components.tree"
-  ],
+  "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, explorer-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed), components.tree (not-needed); 5 styled raw element attribute(s); imports outside the stock parts: react, react-aria-components, @/components/ui/icon (absent from the component layer), @/components/ui/item (absent from the component layer), @/components/ui/resizable (absent from the component layer), @/components/ui/tree (absent from the component layer). No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03"
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
   }
 }

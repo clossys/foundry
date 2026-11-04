@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-leaf-header-v4.json",
-  "sha256": "9b19fbeabb3125a4a586d5d1df78974473e694ebe2bace65db7201d97d901872",
-  "pinnedBy": "owner:2026-11-03 GEN-DERIVED go",
-  "at": "2026-11-03T18:00:00Z"
+  "candidate": "studio-leaf-header-v6.json",
+  "sha256": "3865f280bc35af5961d9bb560f38e185cb04f0d1e4e55e3f4fa5ca71f58cc0c9",
+  "decidedBy": "planner:CONVERGE-R2",
+  "at": "2026-11-04T00:50:34.405Z"
 }
