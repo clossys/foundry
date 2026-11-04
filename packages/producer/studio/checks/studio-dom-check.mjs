@@ -2,17 +2,22 @@
 /**
  * studio:dom — the browser check over the one Studio map, against a running Studio.
  *
- *   node studio/checks/studio-dom-check.mjs <origin> [--out report.json] [--only <path>...]
+ *   node studio/checks/studio-dom-check.mjs <origin> [--out report.json] [--full] [--only <path>...]
+ *
+ * Scope: by default the page records only (Home, the agent galleries and the Publisher page, the map
+ * entries that are neither tabs `<page>.<tab>` nor leaves `<page>:<slug>`), at 1280 wide, light and
+ * dark, so the check finishes well inside the check:studio timeout. `--full` sweeps every map entry
+ * at 375/768/1280; `--only` names paths (at the widths of the chosen scope).
  *
  * It builds the runtime map with Studio's own code (the compiled Publisher pages plus every leaf
- * the record stores hold, loaded from the same Producer endpoints) and then, for every entry:
+ * the record stores hold, loaded from the same Producer endpoints) and then, for every entry in scope:
  *   - the served path answers HTTP 200 and the page renders its assembly (no not-found, no error);
  *   - every internal link the page renders is a map path;
  *   - no specimen reads "No specimen";
  *   - a leaf shows Options, History and References whenever its records hold them.
  * On Home it opens the command menu and requires one command per map entry.
  *
- * Class-wide layout and overflow rules, on every page at 375/768/1280, light and dark:
+ * Class-wide layout and overflow rules, on every page in scope at its widths, light and dark:
  *   - card-grid: cards in one grid row are equal height; a card footer ends at the card bottom and
  *     spans its edges; no card description sits beside a card action (it would wrap in a narrow column);
  *   - card-in-card: the page body (#studio-main) never nests a card inside a card;
@@ -39,8 +44,12 @@ import { overflowFindings } from './studio-overflow.mjs';
 const studio = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-/** Studio's own map and leaf loader, bundled for node with relative requests sent to `origin`. */
-export async function loadStudioMap(origin) {
+/**
+ * Studio's own map and leaf loader, bundled for node with relative requests sent to `origin`.
+ * `scope(entries)` picks the entries a run covers (all by default); only the leaf records of
+ * in-scope leaves are loaded, before any page is checked. Returns the scoped `targets` too.
+ */
+export async function loadStudioMap(origin, { scope = entries => entries } = {}) {
   const scratch = realpathSync(mkdtempSync(join(tmpdir(), 'studio-dom-')));
   try {
     const entry = `export { studioRuntimeMap, studioPageEntries } from './lib/studio-route-map';
@@ -54,16 +63,20 @@ export async function loadStudioMap(origin) {
       const lib = await import(pathToFileURL(file).href);
       const signal = new AbortController().signal;
       const pages = new Map(lib.studioPages.map(page => [page.id, page]));
+      const map = lib.studioRuntimeMap;
+      const entries = lib.studioPageEntries(map);
+      const targets = scope(entries);
+      const wanted = new Set(targets.map(entry => entry.id));
       const records = {};
-      // Every leaf the compiled map holds: its tab record names the agent whose slot it reads.
+      // Every in-scope leaf: its tab record names the agent whose slot it reads.
       for (const leaf of lib.studioLeaves) {
+        if (!wanted.has(`${leaf.page}:${leaf.slug}`)) continue;
         const agent = pages.get(leaf.page)?.leaf?.data.agent;
         if (typeof agent !== 'string') continue;
         const record = await lib.loadLeaf(agent, leaf.slug, signal);
         if (record) records[`${leaf.page}:${leaf.slug}`] = record.detail;
       }
-      const map = lib.studioRuntimeMap;
-      return { map, entries: lib.studioPageEntries(map), records, expect: id => expectations(records[id]) };
+      return { map, entries, targets, records, expect: id => expectations(records[id]) };
     } finally { globalThis.fetch = native; }
   } finally { rmSync(scratch, { recursive: true, force: true }); }
 }
@@ -200,17 +213,32 @@ const COUNTS = `(() => {
 
 const DARK = `new Promise(resolve => { const root = document.documentElement; root.classList.add('dark'); root.dataset.theme = 'dark'; setTimeout(resolve, 1500); })`;
 
+/** The authored page records of the runtime map: tabs (`<page>.<tab>`) and leaves (`<page>:<slug>`) expand from them. */
+export const pageRecords = entries => entries.filter(entry => !/[.:]/.test(entry.id));
+/** Widths per scope: one for the default page-record pass, three for the full sweep. */
+export const WIDTHS = Object.freeze({ pages: Object.freeze([1280]), full: Object.freeze([375, 768, 1280]) });
+
+/** The entries a run covers: `only` paths, else every entry with `full`, else the page records. */
+export function scopeEntries(entries, { only, full = false } = {}) {
+  if (only?.length) return entries.filter(entry => only.includes(entry.path));
+  return full ? entries : pageRecords(entries);
+}
+
 const resource = pathname => /^\/(?:api|__[a-z-]+|preview|_next)(?:\/|$)/.test(pathname) || /\.[a-z0-9]+$/i.test(pathname);
 
-export async function runDomCheck(origin, { only } = {}) {
+export async function runDomCheck(origin, { only, full = false } = {}) {
   origin = new URL(origin).origin;
-  const { map, entries, expect } = await loadStudioMap(origin);
+  const started = Date.now();
+  const { map, entries, targets, records, expect } = await loadStudioMap(origin, { scope: all => scopeEntries(all, { only, full }) });
+  const mapSeconds = (Date.now() - started) / 1000;
+  console.error(`studio:dom: map loaded in ${mapSeconds}s, ${targets.length} of ${entries.length} entries in scope, ${Object.keys(records).length} leaf record(s)`);
   const paths = new Set(entries.map(entry => entry.path));
   const findings = [], checked = [];
   const browser = await chrome();
   try {
-    const targets = only?.length ? entries.filter(entry => only.includes(entry.path)) : entries;
+    const widths = full ? WIDTHS.full : WIDTHS.pages;
     for (const entry of targets) {
+      const pageStarted = Date.now();
       const add = (rule, extra = {}) => findings.push({ rule, path: entry.path, id: entry.id, ...extra });
       const response = await fetch(new URL(entry.path, origin), { redirect: 'manual' });
       // A record page opens on its first tab: its redirect is the map's own landing, not a finding.
@@ -236,7 +264,7 @@ export async function runDomCheck(origin, { only } = {}) {
       }
       const required = leaf ? expect(entry.id) : (entry.source?.sectionIds ?? []).map(slot => slot.replace(/^sections\.studio\./, ''));
       for (const section of required) if (!page.sections.includes(section)) add('missing-section', { section });
-      for (const width of [375, 768, 1280]) {
+      for (const width of widths) {
         await browser.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width === 375 });
         await browser.evaluate(`new Promise(resolve => { document.documentElement.classList.remove('dark'); document.documentElement.dataset.theme = 'light'; setTimeout(resolve, 400); })`);
         for (const theme of ['light', 'dark']) {
@@ -255,7 +283,8 @@ export async function runDomCheck(origin, { only } = {}) {
       if (counts?.gallery && !leaf && !counts.gallery.startsWith(label(leafCount(entry.id)))) add('leaf-count', { gallery: counts.gallery.slice(0, 30), map: label(leafCount(entry.id)) });
       for (const text of counts?.roots ?? []) if (/No root configured|Unavailable/.test(text)) add('publication-root', { text: text.slice(0, 60) });
       for (const error of browser.errors.slice(errorsBefore)) add('page-error', { message: error });
-      checked.push({ path: entry.path, sections: page.sections, links: page.links.length });
+      checked.push({ path: entry.path, sections: page.sections, links: page.links.length, seconds: (Date.now() - pageStarted) / 1000 });
+      console.error(`studio:dom: ${entry.path} ${checked.at(-1).seconds}s`);
     }
     // The command menu lists every map entry.
     const home = entries.find(entry => entry.path === '/');
@@ -272,7 +301,7 @@ export async function runDomCheck(origin, { only } = {}) {
     const listed = new Map();
     for (const label of commands) listed.set(label, (listed.get(label) ?? 0) + 1);
     for (const [title, count] of wanted) if ((listed.get(title) ?? 0) < count) findings.push({ rule: 'command-missing', path: home?.path ?? '/', title, wanted: count, listed: listed.get(title) ?? 0 });
-    return { check: 'studio:dom', status: findings.length ? 'FAIL' : 'PASS', origin, entries: entries.length, checked: checked.length, commands: commands.length, findings, pages: checked };
+    return { check: 'studio:dom', status: findings.length ? 'FAIL' : 'PASS', origin, scope: only?.length ? 'only' : full ? 'full' : 'pages', widths, timings: { mapSeconds, leafRecords: Object.keys(records).length, totalSeconds: (Date.now() - started) / 1000 }, entries: entries.length, checked: checked.length, commands: commands.length, findings, pages: checked };
   } finally { await browser.close(); }
 }
 
@@ -282,13 +311,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const outIndex = args.indexOf('--out');
   const out = outIndex > 0 ? args[outIndex + 1] : undefined;
   const onlyIndex = args.indexOf('--only');
-  const only = onlyIndex > 0 ? args.slice(onlyIndex + 1) : undefined;
-  if (!origin) { console.error('Usage: studio-dom-check.mjs <origin> [--out report.json] [--only <path>...]'); process.exit(2); }
-  runDomCheck(origin, { only }).then(report => {
+  const only = onlyIndex > 0 ? args.slice(onlyIndex + 1).filter(arg => arg !== '--full') : undefined;
+  const full = args.includes('--full');
+  if (!origin) { console.error('Usage: studio-dom-check.mjs <origin> [--out report.json] [--full] [--only <path>...]'); process.exit(2); }
+  runDomCheck(origin, { only, full }).then(report => {
     if (out) writeFileSync(out, JSON.stringify(report, null, 2) + '\n');
     const rules = {};
     for (const finding of report.findings) rules[finding.rule] = (rules[finding.rule] ?? 0) + 1;
-    console.log(JSON.stringify({ check: report.check, status: report.status, entries: report.entries, checked: report.checked, commands: report.commands, rules, sample: report.findings.slice(0, 30) }, null, 2));
+    console.log(JSON.stringify({ check: report.check, status: report.status, scope: report.scope, widths: report.widths, timings: report.timings, slowest: [...report.pages].sort((a, b) => b.seconds - a.seconds).slice(0, 5).map(row => `${row.path} ${row.seconds}s`), entries: report.entries, checked: report.checked, commands: report.commands, rules, sample: report.findings.slice(0, 30) }, null, 2));
     process.exitCode = report.status === 'PASS' ? 0 : 1;
   }, error => { console.error(error); process.exitCode = error.env ? 2 : 1; });
 }

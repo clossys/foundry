@@ -2,7 +2,7 @@
 'use strict';
 
 const assert = require('node:assert/strict');
-const { chromium } = require('playwright');
+const { launchChrome, failureExitCode } = require('./chrome-launch.cjs');
 const { inspectStudioBody, inspectStudioSelection, assertCovered, assertSelection } = require('./check-no-handrolling.cjs');
 
 /** Run against a native standalone Studio with a real emitted publication fixture. */
@@ -11,7 +11,7 @@ async function checkPublisherPreview(origin, mode = 'ready', output) {
   const publication = await response.json();
   const selectedRuntime = (await (await fetch(`${origin}/api/config`)).json()).selection;
   assert.ok(selectedRuntime?.runtimeUrl, selectedRuntime?.message ?? 'The consumer selection runtime is unavailable.');
-  const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? '/usr/bin/chromium', headless: true, args: ['--no-sandbox'] });
+  const browser = await launchChrome({ headless: true, args: ['--no-sandbox'] });
   try {
     const page = await browser.newPage({ viewport: { width: 1680, height: 1100 } });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
@@ -65,4 +65,4 @@ async function checkPublisherPreview(origin, mode = 'ready', output) {
   } finally { await browser.close(); }
 }
 module.exports = { checkPublisherPreview };
-if (require.main === module) checkPublisherPreview(new URL(process.argv[2] ?? 'http://127.0.0.1:4300').origin, process.argv[3] ?? 'ready', process.argv[4]).then(result => console.log(JSON.stringify(result, null, 2))).catch(error => { console.error(error); process.exitCode = 1; });
+if (require.main === module) checkPublisherPreview(new URL(process.argv[2] ?? 'http://127.0.0.1:4300').origin, process.argv[3] ?? 'ready', process.argv[4]).then(result => console.log(JSON.stringify(result, null, 2))).catch(error => { console.error(error); process.exitCode = failureExitCode(error); });

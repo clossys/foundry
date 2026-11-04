@@ -1,0 +1,9 @@
+#!/bin/sh
+# Pre-push ratchet (installed per clone by `npm run hooks:install`, which sets core.hooksPath=scripts/githooks).
+# Runs check:rules and the fast, server-free check:studio sub-checks on HEAD and on
+# `git merge-base HEAD origin/main`, the base measured with HEAD's check code, and blocks only what
+# HEAD adds: a new finding, a new failing rule or a newly red check. No baseline file; the delta is
+# printed. It is not the full `npm run check`; the Studio server and vitest suites stay there.
+set -e
+cd "$(git rev-parse --show-toplevel)"
+exec node scripts/pre-push-ratchet.mjs

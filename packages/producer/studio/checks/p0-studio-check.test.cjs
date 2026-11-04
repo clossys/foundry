@@ -155,3 +155,32 @@ test('a Next specimen page gets no exemption: /__specimen is a Producer server r
   assert.ok(plan.routes.includes('/%5F_specimen'));
   assert.ok(plan.routes.includes('/specimen-help'));
 });
+
+test('shared Chrome launch prefers the chrome channel, falls back to CLOSSYS_CHROME, else blocks with exit 2', async () => {
+  const { launchChrome, failureExitCode } = require('./chrome-launch.cjs');
+  const calls = [];
+  const fake = outcomes => ({ chromium: { launch: async options => { calls.push(options); const outcome = outcomes.shift(); if (outcome instanceof Error) throw outcome; return outcome; } } });
+  calls.length = 0;
+  assert.equal(await launchChrome({ executablePath: '/usr/bin/chromium', args: ['--no-sandbox'] }, { playwright: fake(['channel']), env: {} }), 'channel');
+  assert.deepEqual(calls, [{ headless: true, args: ['--no-sandbox'], channel: 'chrome' }]);
+  calls.length = 0;
+  assert.equal(await launchChrome({}, { playwright: fake([new Error('no channel'), 'path']), env: { CLOSSYS_CHROME: '/opt/chrome' } }), 'path');
+  assert.deepEqual(calls, [{ headless: true, channel: 'chrome' }, { headless: true, executablePath: '/opt/chrome' }]);
+  calls.length = 0;
+  const blocked = await launchChrome({}, { playwright: fake([new Error('no channel')]), env: {} }).catch(error => error);
+  assert.equal(calls.length, 1);
+  assert.match(blocked.message, /^BLOCKED no browser: channel chrome: no channel; CLOSSYS_CHROME unset$/);
+  assert.equal(failureExitCode(blocked), 2);
+  assert.equal(failureExitCode(new Error('real finding')), 1);
+  const both = await launchChrome({}, { playwright: fake([new Error('no channel'), new Error('bad path')]), env: { CLOSSYS_CHROME: '/opt/chrome' } }).catch(error => error);
+  assert.equal(both.exitCode, 2);
+  assert.match(both.message, /CLOSSYS_CHROME \/opt\/chrome: bad path/);
+});
+
+test('studio check reports a blocked Chrome launch as ENV exit 2 with the blocked diagnostic', async () => {
+  const playwright = { chromium: { executablePath: () => 'uninstalled-browser', launch: async () => { throw new Error('Fixture browser launch unavailable'); } } };
+  const result = await checkCommand({ playwright, env: {}, plan: { routes: ['/'], templates: ['/'], contentRoute: false }, screenshotRoot: directory('blocked') });
+  assert.equal(result.exitCode, 2);
+  assert.equal(result.report.diagnostics[1].rule, 'blocked-no-browser');
+  assert.match(result.report.diagnostics[1].message, /^BLOCKED no browser/);
+});

@@ -1,0 +1,6 @@
+{
+  "name": "rule-fixture-orphan",
+  "private": true,
+  "workspaces": ["packages/*"],
+  "scripts": { "check": "node -e 0", "test": "node -e 0" }
+}

@@ -27,7 +27,8 @@ import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from '../records/s
  * store tracks (a re-pin of the dependency marks the dependent stale), never an ad hoc import.
  */
 const STUDIO = resolve(dirname(fileURLToPath(import.meta.url)), '../../studio');
-const VIEWS = join(STUDIO, 'sections');
+// DS_ONLY_SECTIONS_ROOT points the section scan at another sections folder (a rule fixture).
+const VIEWS = process.env.DS_ONLY_SECTIONS_ROOT ? resolve(process.env.DS_ONLY_SECTIONS_ROOT) : join(STUDIO, 'sections');
 const FRAMES = join(STUDIO, 'frames');
 const folders = (root: string) => readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
 const FOLDERS = folders(VIEWS);

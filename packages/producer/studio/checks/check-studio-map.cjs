@@ -237,7 +237,9 @@ async function checkStudioMap({ studioRoot = STUDIO_ROOT, clossysRoot, outputDir
 }
 
 module.exports = { findRouteLiterals, inspectFrameProjection, inspectShellProjection, productionFiles, orphanModules, checkStudioMap };
-if (require.main === module) checkStudioMap().then(findings => {
+// `--root <repository>` checks another repository tree (a rule fixture): its packages/producer/studio.
+const rootAt = process.argv.indexOf('--root');
+if (require.main === module) checkStudioMap(rootAt > 1 ? { studioRoot: path.resolve(process.argv[rootAt + 1] ?? '', 'packages/producer/studio') } : {}).then(findings => {
   if (findings.length) {
     console.error(JSON.stringify({ check: 'Studio Publisher map', findings }, null, 2));
     process.exitCode = 1;

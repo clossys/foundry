@@ -2,13 +2,18 @@
 /**
  * studio:modules — the header popover check of every page manifest, against a running Studio.
  *
- *   node studio/checks/studio-modules-check.mjs <origin> [--out report.json] [--only <path>...]
+ *   node studio/checks/studio-modules-check.mjs <origin> [--out report.json] [--full] [--only <path>...]
+ *
+ * Scope: the browserless manifest pass always covers every page manifest. The browser pass covers
+ * the page records by default (Home, the agent galleries and the Publisher page; see pageRecords in
+ * ./studio-dom-check.mjs), so it finishes well inside the check:studio timeout; `--full` runs it on
+ * every map entry, the L3 leaves' versions and request-change wiring included.
  *
  * First, without a browser, every page manifest of the generated Publisher projection must carry
  * its required popovers: the navigator (explorer or outline) and checks on every page,
  * plus versions and request change on every L3 leaf. A manifest missing one fails (rc 1).
  *
- * Then, for every entry of the runtime map (Home, the agent galleries and every L3 leaf), it runs
+ * Then, for every entry in scope (with --full: Home, the agent galleries and every L3 leaf), it runs
  * each wiring line in a real Chrome, judging only the rendered DOM:
  *   - open <id>: the header icon opens its popover anchored to it and `?p=` names it;
  *   - select <explorer|outline|versions>: every item, clicked, brings its target into the page
@@ -26,7 +31,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { chrome, loadStudioMap } from './studio-dom-check.mjs';
+import { chrome, loadStudioMap, scopeEntries } from './studio-dom-check.mjs';
 
 const studio = join(dirname(fileURLToPath(import.meta.url)), '..');
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -145,9 +150,12 @@ const FRAME = ids => `(() => {
   return out;
 })()`;
 
-export async function runModulesCheck(origin, { only } = {}) {
+export async function runModulesCheck(origin, { only, full = false } = {}) {
   origin = new URL(origin).origin;
-  const { entries } = await loadStudioMap(origin);
+  const started = Date.now();
+  const { entries, targets, records } = await loadStudioMap(origin, { scope: all => scopeEntries(all, { only, full }) });
+  const mapSeconds = (Date.now() - started) / 1000;
+  console.error(`studio:modules: map loaded in ${mapSeconds}s, ${targets.length} of ${entries.length} entries in scope, ${Object.keys(records).length} leaf record(s)`);
   const findings = [], checked = [];
   const browser = await chrome();
   const { send, evaluate } = browser;
@@ -185,8 +193,8 @@ export async function runModulesCheck(origin, { only } = {}) {
 
   for (const finding of manifestFindings()) findings.push({ path: '(manifest)', ...finding });
   try {
-    const targets = only?.length ? entries.filter(entry => only.includes(entry.path)) : entries;
     for (const entry of targets) {
+      const pageStarted = Date.now();
       const add = (rule, extra = {}) => findings.push({ rule, path: entry.path, ...extra });
       const manifest = manifestOf(entry);
       if (!manifest) { add('no-manifest'); continue; }
@@ -286,10 +294,11 @@ export async function runModulesCheck(origin, { only } = {}) {
         } else result(line, false, { reason: 'unknown wiring verb' });
       }
       for (const error of browser.errors.slice(errorsBefore)) add('page-error', { message: error });
-      checked.push({ path: entry.path, lines: lines.length, failed: lines.filter(line => !line.ok).length, na: lines.filter(line => line.na).length });
+      checked.push({ path: entry.path, seconds: (Date.now() - pageStarted) / 1000, lines: lines.length, failed: lines.filter(line => !line.ok).length, na: lines.filter(line => line.na).length });
+      console.error(`studio:modules: ${entry.path} ${checked.at(-1).seconds}s`);
     }
     const lines = checked.reduce((sum, row) => sum + row.lines, 0);
-    return { check: 'studio:modules', status: findings.length ? 'FAIL' : 'PASS', origin, entries: entries.length, checked: checked.length, lines, findings, pages: checked };
+    return { check: 'studio:modules', status: findings.length ? 'FAIL' : 'PASS', origin, scope: only?.length ? 'only' : full ? 'full' : 'pages', timings: { mapSeconds, leafRecords: Object.keys(records).length, totalSeconds: (Date.now() - started) / 1000 }, entries: entries.length, checked: checked.length, lines, findings, pages: checked };
   } finally { await browser.close(); }
 }
 
@@ -299,13 +308,14 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
   const outIndex = args.indexOf('--out');
   const out = outIndex > 0 ? args[outIndex + 1] : undefined;
   const onlyIndex = args.indexOf('--only');
-  const only = onlyIndex > 0 ? args.slice(onlyIndex + 1).filter(arg => arg !== '--out' && arg !== out) : undefined;
-  if (!origin) { console.error('Usage: studio-modules-check.mjs <origin> [--out report.json] [--only <path>...]'); process.exit(2); }
-  runModulesCheck(origin, { only }).then(report => {
+  const only = onlyIndex > 0 ? args.slice(onlyIndex + 1).filter(arg => arg !== '--out' && arg !== out && arg !== '--full') : undefined;
+  const full = args.includes('--full');
+  if (!origin) { console.error('Usage: studio-modules-check.mjs <origin> [--out report.json] [--full] [--only <path>...]'); process.exit(2); }
+  runModulesCheck(origin, { only, full }).then(report => {
     if (out) writeFileSync(out, JSON.stringify(report, null, 2) + '\n');
     const rules = {};
     for (const finding of report.findings) rules[finding.rule] = (rules[finding.rule] ?? 0) + 1;
-    console.log(JSON.stringify({ check: report.check, status: report.status, entries: report.entries, checked: report.checked, lines: report.lines, rules, sample: report.findings.slice(0, 20) }, null, 2));
+    console.log(JSON.stringify({ check: report.check, status: report.status, scope: report.scope, timings: report.timings, slowest: [...report.pages].sort((a, b) => b.seconds - a.seconds).slice(0, 5).map(row => `${row.path} ${row.seconds}s`), entries: report.entries, checked: report.checked, lines: report.lines, rules, sample: report.findings.slice(0, 20) }, null, 2));
     process.exitCode = report.status === 'PASS' ? 0 : 1;
   }, error => { console.error(error); process.exitCode = error.env ? 2 : 1; });
 }
