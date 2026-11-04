@@ -942,12 +942,12 @@
       "sha256": "7a59ca71ec25b723bfab2543cf710ec7bbb0f4e2957fdea44675c285435a615f"
     },
     {
-      "path": "clossys/agents/designer/components.flow.node-status/candidates/node-status-v1.json",
-      "sha256": "763a8319ad05f68352728c3679dcef770c38e40429b0182f50052ddac67f1a16"
+      "path": "clossys/agents/designer/components.flow.node-status/candidates/node-status-v2.json",
+      "sha256": "34d69ab7050fbce3e07bc04c3635a4abc07a8db4c33691e32d17000469974178"
     },
     {
       "path": "clossys/agents/designer/components.flow.node-status/pin.json",
-      "sha256": "a28197ee46d54d4c3ec9d478f36874e880a2ba5270d8b4c8f0c792bc499d30c2"
+      "sha256": "c0959226be9244f19e25f2619f659ea0cd191f921369b12efe8c9d063955117a"
     },
     {
       "path": "clossys/agents/designer/components.flow.node-status/slot.json",

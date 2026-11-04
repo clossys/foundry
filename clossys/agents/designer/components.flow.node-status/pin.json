@@ -1,7 +1,7 @@
 {
-  "candidate": "node-status-v1.json",
-  "sha256": "763a8319ad05f68352728c3679dcef770c38e40429b0182f50052ddac67f1a16",
-  "decidedBy": "planner:PIPELINE-CANVAS",
+  "candidate": "node-status-v2.json",
+  "sha256": "34d69ab7050fbce3e07bc04c3635a4abc07a8db4c33691e32d17000469974178",
+  "decidedBy": "planner:INTEGRATE-R2-W2",
   "basis": "planner",
-  "at": "2026-11-04T06:09:56.489Z"
+  "at": "2026-11-04T10:25:17.074Z"
 }
