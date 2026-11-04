@@ -7,6 +7,9 @@
  *   stage WHEN: the step's stage (define.ts STAGES), one column per stage in STAGES order; a step
  *         whose stage is not a declared stage sits in a trailing `unstaged` column (check:pipeline
  *         fails it as stage.missing)
+ *   round the stages' rounds (define.ts ROUNDS) when the caller gives them: each round spans its
+ *         stage columns, from its first stage's left edge to its last stage's right edge, and each
+ *         stage records its round and its name inside the round
  *   rank  longest-path topological rank over the derived edges; cycles are broken in step id
  *         order (a depth-first walk from the sources, then every step, successors by id, drops
  *         each edge back into the walk) and every edge it skips is listed in `cycleBreaks`. Inside
@@ -21,7 +24,8 @@
  *         as its blocks together. x by stage column plus rank block plus sub-column, y by lane top
  *         plus the step's row. Each lane's label sits once at the
  *         row's start (x = -laneLabelWidth); each stage's label sits once above its column
- *         (y = -stageLabelHeight)
+ *         (y = -stageLabelHeight) and each round's label once above its first stage's label
+ *         (y = -stageLabelHeight - roundLabelHeight)
  *   crossings  pairs of edges whose straight segments (source right middle to target left middle)
  *         cross, counted with the starting order (`before`) and with the kept order (`after`)
  *
@@ -45,6 +49,8 @@ export const LAYOUT_CONSTANTS = Object.freeze({
   laneLabelWidth: 160,
   /** Height of the stage label row above the first lane. */
   stageLabelHeight: 72,
+  /** Height of the round label row above the stage label row. */
+  roundLabelHeight: 56,
   /** Most steps one lane/rank cell stacks before wrapping into another sub-column. */
   cellRows: 3,
   /** Horizontal distance between two sub-columns of one cell. */
@@ -58,8 +64,10 @@ export const BARYCENTER_SWEEPS = 4;
 export const UNSTAGED = "unstaged";
 
 export interface NodeLayout { readonly lane: string; readonly stage: string; readonly rank: number; readonly x: number; readonly y: number }
-/** One stage column: its left edge and width (its widest cell's sub-columns), and its label's place. */
-export interface StageLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly width: number }
+/** One stage column: its left edge and width (its widest cell's sub-columns), and its label's place; with rounds, its round and its name inside it. */
+export interface StageLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly width: number; readonly round?: string; readonly name?: string }
+/** One round: the stage columns it spans, left to right, and its label's place. */
+export interface RoundLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly width: number; readonly stages: readonly string[] }
 export interface LaneLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly height: number }
 export interface CycleBreak { readonly from: string; readonly to: string }
 export interface Crossings { readonly before: number; readonly after: number }
@@ -68,6 +76,7 @@ export interface PipelineLayout {
   readonly crossings: Crossings;
   readonly lanes: readonly LaneLayout[];
   readonly stages: readonly StageLayout[];
+  readonly rounds: readonly RoundLayout[];
   readonly cycleBreaks: readonly CycleBreak[];
   readonly nodes: Readonly<Record<string, NodeLayout>>;
 }
@@ -95,8 +104,10 @@ function backEdges(ids: readonly string[], next: ReadonlyMap<string, readonly st
 
 /** A step as the layout reads it: its id, the lane it sits in (its holder) and its stage. */
 export interface LayoutStep { readonly id: string; readonly lane: string; readonly stage: string }
-/** The lanes top to bottom and the stages left to right; neither is listed by the layout itself. */
-export interface LayoutAxes { readonly lanes: readonly string[]; readonly stages: readonly string[] }
+/** One round as the caller declares it: its id and its stage ids, in order. */
+export interface LayoutRound { readonly id: string; readonly stages: readonly string[] }
+/** The lanes top to bottom, the stages left to right and the rounds that group them; none is listed by the layout itself. */
+export interface LayoutAxes { readonly lanes: readonly string[]; readonly stages: readonly string[]; readonly rounds?: readonly LayoutRound[] }
 
 export function computeLayout(steps: readonly LayoutStep[], edges: readonly { readonly from: string; readonly to: string }[], axes: LayoutAxes): PipelineLayout {
   const ids = steps.map(step => step.id).sort(byId);
@@ -168,12 +179,19 @@ export function computeLayout(steps: readonly LayoutStep[], edges: readonly { re
   });
   const stageX = new Map<string, number>();
   const stageLayouts: StageLayout[] = [];
+  const roundOfStage = new Map((axes.rounds ?? []).flatMap(round => round.stages.map(stage => [stage, round.id] as const)));
   let left = 0;
   stages.forEach((stage, index) => {
     const width = (stageColumns(stage) - 1) * C.columnGap + C.nodeWidth;
     stageX.set(stage, left);
-    stageLayouts.push({ id: stage, index, x: left, y: -C.stageLabelHeight, width });
+    const round = roundOfStage.get(stage);
+    stageLayouts.push({ id: stage, index, x: left, y: -C.stageLabelHeight, width, ...(round !== undefined ? { round, name: stage.startsWith(`${round}.`) ? stage.slice(round.length + 1) : stage } : {}) });
     left += (stageColumns(stage) - 1) * C.columnGap + C.rankGap;
+  });
+  const roundLayouts: RoundLayout[] = (axes.rounds ?? []).map((round, index) => {
+    const spanned = stageLayouts.filter(stage => round.stages.includes(stage.id));
+    const x = spanned.length ? spanned[0]!.x : 0, right = spanned.length ? spanned.at(-1)!.x + spanned.at(-1)!.width : 0;
+    return { id: round.id, index, x, y: -C.stageLabelHeight - C.roundLabelHeight, width: right - x, stages: spanned.map(stage => stage.id) };
   });
 
   const place = (order: ReadonlyMap<string, readonly string[]>): Record<string, NodeLayout> => {
@@ -226,5 +244,5 @@ export function computeLayout(steps: readonly LayoutStep[], edges: readonly { re
   const nodes = place(best.order);
   const ordered: Record<string, NodeLayout> = {};
   for (const id of ids) ordered[id] = nodes[id]!;
-  return { constants: C, crossings: { before, after: best.count }, lanes: laneLayouts, stages: stageLayouts, cycleBreaks, nodes: ordered };
+  return { constants: C, crossings: { before, after: best.count }, lanes: laneLayouts, stages: stageLayouts, rounds: roundLayouts, cycleBreaks, nodes: ordered };
 }

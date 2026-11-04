@@ -128,7 +128,7 @@ function writerKeysUnapproved(root: string): number {
 }
 
 function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["agents"], seats: Record<string, SeatReport>): number {
-  if (counter === "slots-undecided") return Object.values(agents).reduce((sum, agent) => sum + agent.open, 0);
+  if (counter.startsWith("slots-undecided:")) return agents[counter.slice("slots-undecided:".length)]?.open ?? 0;
   if (counter === "writer-keys-unapproved") return writerKeysUnapproved(root);
   if (counter === "seats-open") return Object.values(seats).filter(seat => seat.state !== "assigned").length;
   if (counter === "slots-without-slot-json") {

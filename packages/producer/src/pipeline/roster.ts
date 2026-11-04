@@ -6,12 +6,13 @@
  * (clossys/agents/producer/<step>/seat.json) when one exists; otherwise it is derived from the step:
  *   decide:judgment  You
  *   decide:creative  the agent the step names (actor agent:<name>), at its tier once a seat names one
- *   plumb            Code: Checks for a check-stage step, otherwise Publisher (it assembles and serves)
+ *   plumb            Code: Checks for a step at a check stage, otherwise Publisher (it assembles and serves)
  * A derived holder is marked `derived`. Lanes are never listed by hand: they are the roster in order,
  * plus `unassigned` while any step has no holder. A holder that is not a roster entry fails
  * check:pipeline (lane.unrostered).
  */
 import { SLOT_AGENTS } from "../records/slot-model/types.js";
+import { stageName } from "./define.js";
 import type { Step } from "./define.js";
 import type { SeatReport } from "./seats.js";
 
@@ -72,7 +73,7 @@ export function holderOf(step: Pick<Step, "kind" | "actor" | "stage">, seat: Sea
   let id: string = UNASSIGNED;
   if (step.kind === "decide:judgment") id = "you";
   else if (step.kind === "decide:creative") id = step.actor.startsWith("agent:") ? holderIdOf(step.actor) : step.actor === "owner" ? "you" : UNASSIGNED;
-  else if (step.kind === "plumb") id = step.stage === "check" ? "checks" : "publisher";
+  else if (step.kind === "plumb") id = stageName(step.stage) === "check" ? "checks" : "publisher";
   return { id, kind: id === UNASSIGNED ? null : kindOf(id, step), source: "derived", tier: null };
 }
 

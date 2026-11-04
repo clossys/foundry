@@ -446,10 +446,10 @@
           "cwd": ".",
           "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/stage-orphan",
           "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
-          "expect": "^FAIL stage\\.orphan: step \"capture\" \\(check\\): no derived edge feeds it"
+          "expect": "^FAIL stage\\.orphan: step \"capture\" \\(publish\\.check\\): no derived edge feeds it"
         }
       ],
-      "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write). Every step names a stage from define.ts STAGES (stage.missing) and a holder that is a roster.ts ROSTER entry (lane.unrostered), and every step outside the first stage (brief) is fed by a derived edge (stage.orphan: only a brief step may start the flow); the stage-missing, lane-unrostered and stage-orphan fixtures are the real steps with one stage removed, one step held by an unrostered agent and the capture step stripped of its inputs."
+      "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write). Every step names a stage from define.ts STAGES (stage.missing) and a holder that is a roster.ts ROSTER entry (lane.unrostered), and every step outside the first stage (direct.brief, the Direct round's brief) is fed by a derived edge (stage.orphan: only a direct.brief step may start the flow); the stage-missing, lane-unrostered and stage-orphan fixtures are the real steps with one stage removed, one step held by an unrostered agent and the capture step stripped of its inputs."
     },
     {
       "id": "R-PIPELINE-CANVAS",
@@ -513,9 +513,21 @@
           "cwd": ".",
           "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-orphan.json --rendered {fixture}/rendered-orphan.json",
           "expect": "^FAIL orphan: step publish\\.compile \\(publish\\) has no edge into it"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-rounds.json --rendered {fixture}/rendered-rounds.json",
+          "expect": "^FAIL flow: edge designer\\.candidates->ia runs backward: designer\\.candidates \\(design\\.make\\) feeds ia \\(direct\\.brief\\)"
+        },
+        {
+          "check": ".#check:pipeline-canvas",
+          "cwd": ".",
+          "run": "node scripts/check-pipeline-canvas.mjs --graph {fixture}/graph-rounds.json --rendered {fixture}/rendered-rounds-span.json",
+          "expect": "^FAIL stage: stage design\\.make's header is outside the design round"
         }
       ],
-      "note": "The Studio Content overview (/content) draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row and its stage's column (one header per stage), the drawn lane rows equal to graph.json's roster (plus unassigned while a step has no holder), every edge flowing forward (never into an earlier stage, and left to right inside one stage), ranks left to right inside each stage column, every step outside the first stage fed by an edge, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, the legend inside the viewport, every step's kind badge and title inside its node box, and (in the browser) a click on a step node or Enter on the focused step opening its sheet. The fixtures are recorded renderings: one drops an edge, one draws a kind badge past its node's right edge, one draws a step outside its stage column, one draws lanes that leave out a roster entry, one has an edge back into an earlier stage, one draws a rank-1 step left of the rank-0 step that feeds it in one stage, and one has a later-stage step no edge feeds."
+      "note": "The Studio Content overview (/content) draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row and its stage's column (one header per stage, and, when the stages are grouped in rounds, one header per round above and spanning its stages' headers), the drawn lane rows equal to graph.json's roster (plus unassigned while a step has no holder), every edge flowing forward (never into an earlier stage in (round, stage) order, and left to right inside one stage), ranks left to right inside each stage column, every step outside the first stage fed by an edge, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, the legend inside the viewport, every step's kind badge and title inside its node box, and (in the browser) a click on a step node or Enter on the focused step opening its sheet. The fixtures are recorded renderings: one drops an edge, one draws a kind badge past its node's right edge, one draws a step outside its stage column, one draws lanes that leave out a roster entry, one has an edge back into an earlier stage, one draws a rank-1 step left of the rank-0 step that feeds it in one stage, one has a later-stage step no edge feeds, one has an edge from the design round back into the direct round, and one draws a stage header outside its round."
     },
     {
       "id": "R-ROUTES-PUBLISHED",

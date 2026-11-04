@@ -30,7 +30,7 @@ function stepsModule(name, body) {
 const rules = result => new Set(result.out.failures.map(failure => failure.rule));
 const foreignWriters = result => result.out.failures.filter(failure => failure.rule === "decide.foreign-writer").map(failure => failure.message);
 // A mutant reads nothing, so it sits in the first stage (a later step with no feeding edge is stage.orphan).
-const extra = fields => `STEPS.push(defineStep({ id: "mutant", kind: "plumb", actor: "code", stage: "brief", summary: "mutant", inputs: [], outputs: [], checks: [], ${fields} }));`;
+const extra = fields => `STEPS.push(defineStep({ id: "mutant", kind: "plumb", actor: "code", stage: "direct.brief", summary: "mutant", inputs: [], outputs: [], checks: [], ${fields} }));`;
 
 describe("check:pipeline", { concurrency: 3 }, () => {
   it("passes on the committed definitions and graph", () => {
@@ -47,7 +47,7 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     assert.deepEqual(result.out.pendingSteps, ["mutant"]);
   });
   it("fails a hand-listed edge", () => {
-    const result = run(["--steps", stepsModule("edge", extra(`command: { npm: "check:pipeline" }, edges: ["pin"]`))]);
+    const result = run(["--steps", stepsModule("edge", extra(`command: { npm: "check:pipeline" }, edges: ["pin.director"]`))]);
     assert.equal(result.code, 1);
     assert.ok(rules(result).has("edge.declared"), [...rules(result)].join(","));
   });
@@ -59,19 +59,19 @@ describe("check:pipeline", { concurrency: 3 }, () => {
   it("fails a stale committed graph", () => {
     const file = join(work, "graph.json");
     const graph = JSON.parse(readFileSync(join(PKG, "pipeline", "graph.json"), "utf8"));
-    graph.edges.push({ from: "pin", to: "ia", via: [] });
+    graph.edges.push({ from: "pin.director", to: "ia", via: [] });
     writeFileSync(file, `${JSON.stringify(graph, null, 2)}\n`);
     const result = run(["--graph", file]);
     assert.equal(result.code, 1);
     assert.deepEqual([...rules(result)].sort(), ["edges.stale", "graph.stale"]);
-    assert.ok(result.out.failures.some(failure => failure.rule === "edges.stale" && failure.message.includes("not derived pin->ia")));
+    assert.ok(result.out.failures.some(failure => failure.rule === "edges.stale" && failure.message.includes("not derived pin.director->ia")));
   });
   it("commits a layout per node: lanes by holder, columns by stage, ranks over the derived edges", () => {
     const graph = JSON.parse(readFileSync(join(PKG, "pipeline", "graph.json"), "utf8"));
     const lanes = graph.layout.lanes.map(lane => lane.id);
     assert.ok(graph.nodes.length > 0 && graph.nodes.every(node => node.layout && node.layout.lane === node.holder.id && node.layout.stage === node.stage && Number.isInteger(node.layout.rank) && Number.isInteger(node.layout.x) && Number.isInteger(node.layout.y)), "every node carries {lane, stage, rank, x, y}");
     assert.deepEqual(lanes, graph.roster.map(entry => entry.id), "the lanes are the roster");
-    assert.deepEqual(graph.layout.stages.map(stage => stage.id), ["brief", "select", "make", "pin", "assemble", "check", "publish"]);
+    assert.deepEqual(graph.layout.stages.map(stage => stage.id), ["direct.brief", "direct.make", "direct.pin", "design.brief", "design.make", "design.pin", "design.select", "publish.make", "publish.pin", "publish.assemble", "publish.check", "publish.publish"]);
     for (const node of graph.nodes) {
       const stage = graph.layout.stages.find(each => each.id === node.stage), lane = graph.layout.lanes.find(each => each.id === node.layout.lane);
       assert.ok(node.layout.x >= stage.x && node.layout.x + graph.layout.constants.nodeWidth <= stage.x + stage.width, `${node.id} sits inside its stage column`);

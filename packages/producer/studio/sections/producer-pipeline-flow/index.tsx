@@ -14,7 +14,9 @@ export interface StepFacts {
   seat: string | null;
   /** graph.json's step state; the node's status border and the sheet's Writer label follow it. */
   status: StepStatus;
-  /** The step's stage (its column), as its Writer label. */
+  /** The step's round (the column group its stage sits in), as its Writer label. */
+  round: string;
+  /** The step's stage (its column inside the round), as its Writer label. */
   stage: string;
   /** Who holds the step (its lane), as resolved Writer labels. */
   holder: StepHolder;
@@ -46,11 +48,14 @@ export interface StepData {
 /** One swim row (WHO): its lane id, a roster entry or `unassigned`, and the position graph.json gives its label. */
 export interface PipelineLane { id: string; position: { x: number; y: number } }
 
-/** One column (WHEN): its stage id and the position graph.json gives its header. */
+/** One column (WHEN): its stage id (`<round>.<stage>`) and the position graph.json gives its header. */
 export interface PipelineStage { id: string; position: { x: number; y: number } }
 
-/** graph.json: the steps with their positions, the lanes, the stages, and the edges between steps. */
-export interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[]; lanes: readonly PipelineLane[]; stages: readonly PipelineStage[] }
+/** One round (a group of columns): its round id and the position graph.json gives its header, above its first stage's header. */
+export interface PipelineRound { id: string; position: { x: number; y: number } }
+
+/** graph.json: the steps with their positions, the lanes, the rounds and their stages, and the edges between steps. */
+export interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[]; lanes: readonly PipelineLane[]; stages: readonly PipelineStage[]; rounds: readonly PipelineRound[] }
 
 /** Writer copy of the flow and its step sheet (studio.pipeline.*). */
 export interface PipelineFlowCopy {
@@ -58,6 +63,7 @@ export interface PipelineFlowCopy {
   kinds: Readonly<Record<StepKind, string>>;
   lanes: Readonly<Record<string, string>>;
   stages: Readonly<Record<string, string>>;
+  rounds: Readonly<Record<string, string>>;
   emptyTitle: string;
   emptyDescription: string;
   command: string;
@@ -66,6 +72,7 @@ export interface PipelineFlowCopy {
   options: string;
   seat: string;
   status: string;
+  round: string;
   stage: string;
   holder: string;
   none: string;
@@ -79,6 +86,7 @@ export interface PipelineFlowInput { graph: PipelineGraph; copy: PipelineFlowCop
 type StepNodeData = StepData & { kindLabel: string; inputsLabel: string; outputsLabel: string; copy: PipelineFlowCopy; active: boolean };
 type LaneNodeData = { [key: string]: unknown; label: string; active: boolean };
 type StageNodeData = { [key: string]: unknown; label: string };
+type RoundNodeData = { [key: string]: unknown; label: string };
 
 /** Each kind's stock Badge variant; the legend uses the same mapping. */
 const KIND_VARIANT = { plumb: 'outline', 'decide:creative': 'secondary', 'decide:judgment': 'default' } as const;
@@ -126,7 +134,12 @@ function StageNode({ data }: NodeProps<Node<StageNodeData, 'stage'>>) {
   return <Badge variant="outline">{data.label}</Badge>;
 }
 
-const NODE_TYPES = { step: StepNode, lane: LaneNode, stage: StageNode };
+/** One round's header, placed once above its first stage's header; its stages' headers sit under it. */
+function RoundNode({ data }: NodeProps<Node<RoundNodeData, 'round'>>) {
+  return <Badge variant="secondary">{data.label}</Badge>;
+}
+
+const NODE_TYPES = { step: StepNode, lane: LaneNode, stage: StageNode, round: RoundNode };
 /** The pinned components.flow.edge smoothstep edge between a step's right handle and the next step's left handle. */
 const EDGE_TYPES = { smoothstep: SmoothStepEdge };
 const EDGE_OPTIONS = { type: 'smoothstep' };
@@ -153,6 +166,7 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
       <SheetDescription>{facts.holder.name}</SheetDescription>
     </SheetHeader>
     <FieldGroup className="px-4">
+      <Field data-fact="round"><FieldTitle>{copy.round}</FieldTitle><FieldDescription>{facts.round}</FieldDescription></Field>
       <Field data-fact="stage"><FieldTitle>{copy.stage}</FieldTitle><FieldDescription>{facts.stage}</FieldDescription></Field>
       <Field data-fact="holder"><FieldTitle>{copy.holder}</FieldTitle><FieldDescription>{facts.holder.name}</FieldDescription>
         <ItemActions>
@@ -171,7 +185,7 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
   </Sheet>;
 }
 
-/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage). graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
+/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage, grouped by round). graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, one round header above each round's columns, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
 export default function PipelineFlowSection({ flow, ...provenance }: { flow: PipelineFlowInput } & { [marker: `data-clossys-${string}`]: string }) {
   const { graph, copy, seat } = flow;
   if (!graph.nodes.length) return <Card size="sm" {...provenance}>
@@ -191,16 +205,19 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   const stages: Node[] = graph.stages.map(stage => ({
     id: `stage:${stage.id}`, type: 'stage', position: stage.position, data: { label: copy.stages[stage.id] ?? stage.id }, ...fixed,
   }));
-  // Open at the lane labels' and stage headers' top left corner at the readable zoom.
+  const rounds: Node[] = graph.rounds.map(round => ({
+    id: `round:${round.id}`, type: 'round', position: round.position, data: { label: copy.rounds[round.id] ?? round.id }, ...fixed,
+  }));
+  // Open at the lane labels' and round headers' top left corner at the readable zoom.
   const left = Math.min(...graph.lanes.map(lane => lane.position.x), ...graph.nodes.map(node => node.position.x));
-  const top = Math.min(...graph.stages.map(stage => stage.position.y), ...graph.lanes.map(lane => lane.position.y), ...graph.nodes.map(node => node.position.y));
+  const top = Math.min(...graph.rounds.map(round => round.position.y), ...graph.stages.map(stage => stage.position.y), ...graph.lanes.map(lane => lane.position.y), ...graph.nodes.map(node => node.position.y));
   const viewport = { x: INSET - left * READABLE_ZOOM, y: INSET - top * READABLE_ZOOM, zoom: READABLE_ZOOM };
   // Uncontrolled (defaultNodes, defaultEdges): React Flow keeps the measured node sizes, which the stock MiniMap draws from.
   // The flow is read-only and mounts once graph.json has loaded (the empty state renders until then).
   // The stock Card is the canvas's frame and fills the content area below the page's header rows (flex-1); the canvas fills the Card.
   // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.
   return <Card size="sm" className="flex-1" {...provenance}>
-    <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
+    <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...rounds, ...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
       nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>
       <Background />
       <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_ALL} />

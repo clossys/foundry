@@ -1,5 +1,5 @@
 import { STEPS } from "./steps/index.js";
-import { STAGES } from "./define.js";
+import { ROUNDS, STAGES } from "./define.js";
 import type { Step } from "./define.js";
 import { portsOverlap } from "./globs.js";
 import { PACKAGE_ROOT, stepOptions } from "./options.js";
@@ -88,7 +88,7 @@ export function buildGraph(root: string, steps: readonly Step[] = STEPS, package
   const holders = new Map(steps.map(step => [step.id, holderOf(step, seats[step.id])]));
   const { nodes: positions, ...layout } = computeLayout(
     steps.map(step => ({ id: step.id, lane: laneOf(holders.get(step.id)!), stage: step.stage })), edges,
-    { lanes: laneIds([...holders.values()]), stages: STAGES },
+    { lanes: laneIds([...holders.values()]), stages: STAGES, rounds: ROUNDS.map(round => ({ id: round.id, stages: round.stages.map(stage => `${round.id}.${stage}`) })) },
   );
   return {
     schema: GRAPH_SCHEMA, rule: "R-PIPELINE-IS-CODE",

@@ -52,7 +52,9 @@ export async function runPipeline(argv: readonly string[], cwd: string, steps: r
   try {
     const head = argv[0];
     // A verb with its own parser (specimen, migrate, pipeline) gets its argv untouched.
-    const own = steps.find(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);
+    // A verb with a target per step (`clossys pin <agent>/<slot>`) runs the step whose agent the argument names.
+    const owners = steps.filter(step => step.command.cli?.parser !== undefined && step.command.cli.verb === head);
+    const own = owners.find(step => step.command.cli?.target !== undefined && argv.slice(1).some(arg => arg.startsWith(`${step.command.cli!.target}/`))) ?? owners[0];
     if (own) return await dispatch(own, { argv: argv.slice(1), cwd, root: () => discoverRoot(cwd) }, steps);
     // A declared verb the shared parser does not know yet belongs to a pending step.
     const declared = head && !(VERBS as readonly string[]).includes(head) ? steps.find(step => step.command.cli?.verb === head) : undefined;

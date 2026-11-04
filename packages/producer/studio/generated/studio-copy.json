@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "b0ed471e1b0347cc0fe24c672d838fac85a43a95d6201e03fc7a7d3bebff8300",
+  "revision": "e523b42a02123c600fd5cf8ff11b4ced319778f9c747409f01918273050a35d1",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2168,8 +2168,32 @@
       "status": "draft"
     },
     {
+      "id": "studio.pipeline.round.direct",
+      "text": "Direct",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.round.design",
+      "text": "Design & Write",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.round.publish",
+      "text": "Publish",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
       "id": "studio.pipeline.step.holder",
       "text": "Held by",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.round",
+      "text": "Round",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },

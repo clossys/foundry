@@ -15,12 +15,12 @@
 //   dist.missing      dist/pipeline is absent or older than src/pipeline; build first
 //   step.invalid      a step definition does not load (defineStep refused it) or is malformed
 //   stage.missing     a step names no stage, or a stage that is not one of define.ts STAGES (WHEN:
-//                     the canvas's columns)
+//                     the canvas's columns, `<round>.<stage>` in (round, stage) order)
 //   lane.unrostered   a step's seat holder (its seat file's `by`, else derived from its kind; WHO:
 //                     the canvas's lanes) is not a roster entry (roster.ts ROSTER)
-//   stage.orphan      a step outside the first stage (brief) that no derived edge feeds: it reads
-//                     nothing another step produces, so it starts the flow mid-way. Only a brief
-//                     step may start it; declare the typed files the step really reads
+//   stage.orphan      a step outside the first stage (direct.brief) that no derived edge feeds: it
+//                     reads nothing another step produces, so it starts the flow mid-way. Only a
+//                     first-stage step may start it; declare the typed files the step really reads
 //   edge.declared     an edge, option or config listed by hand; edges are derived from output/input globs
 //   graph.stale       pipeline/graph.json differs from the graph built from the definitions
 //   edges.stale       its edges differ from the derived edges (an edge needs the same schema on
@@ -32,7 +32,8 @@
 //   schema.missing    a port names a schema with no file under pipeline/schemas/
 //   schema.invalid    a committed file an output glob matches fails its port schema (reported by step id)
 //   output.zero       a tracked data file, or a step input, that no step produces
-//   output.multiple   one file (or one JSON field) produced by two steps
+//   output.multiple   one file (or one JSON field) produced by two steps, or one CLI mode (verb, flags
+//                     and `<agent>/` target) declared by two steps
 //   entry.missing     a step names an entry, module, script, npm script or skill that does not exist
 //   entry.stale       a pending step whose branch has landed (or whose removal already happened)
 //   verb.undeclared   a CLI verb no step declares; verb.unknown is the reverse
@@ -375,7 +376,8 @@ for (const verb of verbs) {
   if (!owners) { fail("verb.undeclared", `clossys ${verb} runs, but no step declares it`); continue; }
   const modes = new Map();
   for (const step of owners) {
-    const mode = (step.run.cli.flags ?? []).join(" ") || "default";
+    // A mode is the step's flags, plus the `<agent>/` its first argument names when the verb takes a target.
+    const mode = [...(step.run.cli.flags ?? []), ...(step.run.cli.target !== undefined ? [`${step.run.cli.target}/<slot>`] : [])].join(" ") || "default";
     if (modes.has(mode)) fail("output.multiple", `clossys ${verb} (${mode}) is declared by ${modes.get(mode)} and ${step.id}`);
     modes.set(mode, step.id);
   }

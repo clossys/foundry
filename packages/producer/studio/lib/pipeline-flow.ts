@@ -38,7 +38,7 @@ export interface PipelineGraphFile {
   nodes: readonly PipelineGraphStep[];
   edges: readonly PipelineGraphEdge[];
   untyped: readonly unknown[];
-  layout: { constants: { nodeWidth: number }; lanes: readonly { id: string; x: number; y: number }[]; stages: readonly { id: string; x: number; y: number }[] };
+  layout: { constants: { nodeWidth: number }; lanes: readonly { id: string; x: number; y: number }[]; stages: readonly { id: string; x: number; y: number; round?: string; name?: string }[]; rounds?: readonly { id: string; x: number; y: number; stages: readonly string[] }[] };
   roster: readonly GraphRosterEntry[];
   seats?: Readonly<Record<string, { by: string | null }>>;
   options?: { cli?: Readonly<Record<string, readonly { flag: string }[]>> };
@@ -56,6 +56,12 @@ export const commandLine = (command: Readonly<Record<string, unknown>>) => Objec
 /** A step's state as `clossys pipeline status` names it from graph.json alone: pending until its step is declared, otherwise ready. */
 const stepStatus = (step: PipelineGraphStep): StepStatus => step.pending ? 'pending' : 'ready';
 const STATUSES: readonly StepStatus[] = ['ready', 'pending'];
+/** A stage's Writer key suffix: its name inside its round (`design.make` is `make`). */
+const stageKey = (stage: string) => stage.slice(stage.indexOf('.') + 1);
+/** A stage's round id (`design.make` is `design`). */
+const roundKey = (stage: string) => stage.slice(0, Math.max(0, stage.indexOf('.')));
+const stageLabel = (stage: string) => studioCopy(`studio.pipeline.stage.${stageKey(stage)}`);
+const roundLabel = (round: string) => studioCopy(`studio.pipeline.round.${round}`);
 
 const SEAT_KINDS: readonly SeatKind[] = ['you', 'ai', 'code'];
 /** A lane's (and team card's) name: `studio.pipeline.lane.<id>`. */
@@ -125,7 +131,8 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, 
             options: (graph.options?.cli?.[step.id] ?? []).map(option => option.flag),
             seat: graph.seats?.[step.id]?.by ?? null,
             status: stepStatus(step),
-            stage: studioCopy(`studio.pipeline.stage.${step.layout.stage}`),
+            round: roundLabel(roundKey(step.layout.stage)),
+            stage: stageLabel(step.layout.stage),
             holder: holderFacts(step),
           },
         },
@@ -134,13 +141,15 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, 
       edges: graph.edges.map(edge => ({ id: edgeId(edge), source: edge.from, target: edge.to, sourceHandle: 'out', targetHandle: 'in' })),
       lanes: graph.layout.lanes.map(lane => ({ id: lane.id, position: { x: lane.x, y: lane.y } })),
       stages: graph.layout.stages.map(stage => ({ id: stage.id, position: { x: stage.x, y: stage.y } })),
+      rounds: (graph.layout.rounds ?? []).map(round => ({ id: round.id, position: { x: round.x, y: round.y } })),
     },
     seat: lit,
     copy: {
       label: studioCopy('studio.pipeline.flow-label'),
       kinds: Object.fromEntries(KINDS.map(kind => [kind, studioCopy(`studio.pipeline.kind.${kindKey(kind)}`)])) as Record<StepKind, string>,
       lanes: Object.fromEntries(graph.layout.lanes.map(lane => [lane.id, laneName(lane.id)])),
-      stages: Object.fromEntries(graph.layout.stages.map(stage => [stage.id, studioCopy(`studio.pipeline.stage.${stage.id}`)])),
+      stages: Object.fromEntries(graph.layout.stages.map(stage => [stage.id, stageLabel(stage.id)])),
+      rounds: Object.fromEntries((graph.layout.rounds ?? []).map(round => [round.id, roundLabel(round.id)])),
       emptyTitle: studioCopy('studio.pipeline.empty.title'),
       emptyDescription: studioCopy('studio.pipeline.empty.description'),
       command: studioCopy('studio.pipeline.step.command'),
@@ -149,6 +158,7 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, 
       options: studioCopy('studio.pipeline.step.options'),
       seat: studioCopy('studio.pipeline.step.seat'),
       status: studioCopy('studio.pipeline.step.status'),
+      round: studioCopy('studio.pipeline.step.round'),
       stage: studioCopy('studio.pipeline.step.stage'),
       holder: studioCopy('studio.pipeline.step.holder'),
       none: studioCopy('studio.pipeline.step.none'),

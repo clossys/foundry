@@ -1882,12 +1882,12 @@
       "sha256": "2bf6e8dcafe4aadbfbae98fc753ce5e43371089ad90accd234c9d935fb0329bf"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v8.json",
-      "sha256": "6d2bf0cee3b09f744c9445cef85342af4e2e7dd9245879f14865477dc356ccf3"
+      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v9.json",
+      "sha256": "5304aea9ebb0d673de47724884ee4c7a42e0615bf34a1e9c83fbf564d9d1024c"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/pin.json",
-      "sha256": "d2157e0981f96fd61dfc05af9e043633f8f37f385e6f1a4b8e87194b837b1108"
+      "sha256": "29602de99bd9a4a92dd71cb6f5b2b2e6e694bf510155de7e95f4553da3f4376c"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
@@ -5286,12 +5286,12 @@
       "sha256": "0d974eb32e0459440d7ceefd90c017af5d917dddaac98e8c44ab733f96bd993f"
     },
     {
-      "path": "clossys/agents/writer/strings.common/candidates/studio-v10.md",
-      "sha256": "07037b8bf00a19a3a25fd3bf7672ba7a53618b70f7eb4234880e71bf68f55b29"
+      "path": "clossys/agents/writer/strings.common/candidates/studio-v11.md",
+      "sha256": "1be2d29db6ef3aefa877eaa11787e1e1807478394f6057754e7ce525568eb85d"
     },
     {
       "path": "clossys/agents/writer/strings.common/pin.json",
-      "sha256": "17a8e4cc1b16a4075bbbba35c88d92f0166f6c517b2fb76e2799b7ab1690b3c2"
+      "sha256": "866150894cd6da387baebf1b018ab702a3d1a87ab09605893d1aaf19491750a2"
     },
     {
       "path": "clossys/agents/writer/strings.common/slot.json",
@@ -6333,7 +6333,7 @@
     },
     {
       "path": "generated/studio-copy.json",
-      "sha256": "00cd513ade182281c180b5911545938d6f0e949df1d961da9f8eee2d9404eda9"
+      "sha256": "fb9112ed7f06c0aadfbf99aea391d1a3537572709e94b47f64a6d34332f84eda"
     },
     {
       "path": "generated/studio-flow-theme.css",
@@ -6345,7 +6345,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "c942c14825ba62db4a13f5758b00f0d27ac022d939463a81bc9ecd007c13abab"
+      "sha256": "6223912ca62ffc32985ee5d58a05c7ab48286a12d15584d0238722c56c3cf0e6"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6353,7 +6353,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "ca23a210cb2ab7d710be0da5a8e1d11b3b91ee7aeb3ceecb2548f8723104ca36"
+      "sha256": "39c4d7397e0cc1d25523606de3684f73cc872a61895ded236ab2831d6e523c5b"
     }
   ]
 }

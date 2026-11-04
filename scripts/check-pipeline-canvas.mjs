@@ -19,7 +19,9 @@
  *   rank       inside one stage column a lower graph rank starts further left (rank order per stage);
  *   orphan     only a first-stage step may start the flow: every step in a later stage has an edge into it;
  *   stage      each stage has exactly one header, and every step sits inside its stage's column (from its
- *              header across to the next stage's header);
+ *              header across to the next stage's header); when graph.json groups the stages in rounds,
+ *              each round has exactly one header, above its stages' headers, and every stage header sits
+ *              inside its round's span (from the round's header across to the next round's header);
  *   roster     the drawn lane rows, top to bottom, equal graph.json's roster in order, plus `unassigned`
  *              while any step's lane is `unassigned` (lanes are the roster, never a hand list);
  *   readable   at the initial view every step title renders at READABLE_PX (12px) or more: its computed
@@ -83,8 +85,8 @@ const inside = (part, box) => part.x >= box.x - 0.5 && part.y >= box.y - 0.5 && 
 
 /**
  * Findings for the drawn geometry against graph.json. `boxes` are screen boxes
- * (`{ id, kind: "step" | "lane" | "stage", x, y, width, height }`; a lane or stage box's id is its lane or
- * stage id) and `legend`
+ * (`{ id, kind: "step" | "lane" | "stage" | "round", x, y, width, height }`; a lane, stage or round box's id
+ * is its lane, stage or round id) and `legend`
  * the legend's screen box; `viewport` is the window it must fit. Runs only on what was recorded.
  */
 export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
@@ -139,6 +141,28 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
       if (at < 0) { findings.push({ rule: "stage", message: `step ${node.id} has no stage column (layout.stage ${node.layout?.stage ?? "unset"})` }); continue; }
       if (!start) continue;
       if (box.x < start.x - 0.5 || (next && box.x + box.width > next.x + 0.5)) findings.push({ rule: "stage", message: `step ${node.id} is outside the ${node.layout.stage} stage column` });
+    }
+    // Rounds group the stage columns: one header each, above and spanning its stages' headers.
+    const rounds = Array.isArray(graph.layout?.rounds) ? graph.layout.rounds.slice().sort((a, b) => a.index - b.index) : undefined;
+    if (!rounds && stages.some(stage => stage.round !== undefined)) findings.push({ rule: "stage", message: "graph.json stages name rounds but it lays out no rounds" });
+    if (rounds) {
+      const roundHeaders = new Map();
+      for (const box of boxes.filter(box => box.kind === "round")) {
+        if (roundHeaders.has(box.id)) findings.push({ rule: "stage", message: `round ${box.id} has more than one header` });
+        roundHeaders.set(box.id, box);
+      }
+      for (const round of rounds) if (!roundHeaders.has(round.id)) findings.push({ rule: "stage", message: `round ${round.id} has no header` });
+      for (const id of roundHeaders.keys()) if (!rounds.some(round => round.id === id)) findings.push({ rule: "stage", message: `round header ${id} is not a graph.json round` });
+      for (const stage of stages) {
+        const header = headers.get(stage.id);
+        if (!header) continue;
+        const at = rounds.findIndex(round => (round.stages ?? []).includes(stage.id));
+        if (at < 0) { findings.push({ rule: "stage", message: `stage ${stage.id} is in no graph.json round` }); continue; }
+        const start = roundHeaders.get(rounds[at].id), next = roundHeaders.get(rounds[at + 1]?.id);
+        if (!start) continue;
+        if (!(start.y + start.height <= header.y + 0.5)) findings.push({ rule: "stage", message: `round ${rounds[at].id}'s header is not above stage ${stage.id}'s header` });
+        if (header.x < start.x - 0.5 || (next && header.x + header.width > next.x + 0.5)) findings.push({ rule: "stage", message: `stage ${stage.id}'s header is outside the ${rounds[at].id} round` });
+      }
     }
     const roster = Array.isArray(graph.roster) ? graph.roster.map(entry => entry.id) : undefined;
     if (!roster) findings.push({ rule: "roster", message: "graph.json has no roster, so the lanes are not derived from it" });
@@ -269,8 +293,8 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
         nodes: ids('.react-flow__node-step[data-testid^="rf__node-"]', "rf__node-"), edges: ids('[data-testid^="rf__edge-"]', "rf__edge-"),
         boxes: [...document.querySelectorAll('.react-flow__node[data-testid^="rf__node-"]')].map(element => {
           const id = element.getAttribute("data-testid").slice("rf__node-".length);
-          const kind = element.classList.contains("react-flow__node-lane") ? "lane" : element.classList.contains("react-flow__node-stage") ? "stage" : "step";
-          return { id: kind === "step" ? id : id.replace(/^(lane|stage):/, ""), kind, ...box(element) };
+          const kind = element.classList.contains("react-flow__node-lane") ? "lane" : element.classList.contains("react-flow__node-stage") ? "stage" : element.classList.contains("react-flow__node-round") ? "round" : "step";
+          return { id: kind === "step" ? id : id.replace(/^(lane|stage|round):/, ""), kind, ...box(element) };
         }),
         parts: [...document.querySelectorAll('.react-flow__node-step[data-testid^="rf__node-"]')].flatMap(element => {
           const id = element.getAttribute("data-testid").slice("rf__node-".length);
