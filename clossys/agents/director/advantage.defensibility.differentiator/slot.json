@@ -28,5 +28,7 @@
   "inputs": [
     "advantage.proposition.promise"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
 }

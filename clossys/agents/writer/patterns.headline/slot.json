@@ -29,5 +29,7 @@
     "advantage.proposition.promise",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "tone"
 }

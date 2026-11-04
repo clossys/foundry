@@ -6,6 +6,7 @@ import { runDirect } from "../cli/direct.js";
 import type { CliResult } from "../cli/main.js";
 import { runMigrateCli } from "../cli/migrate.js";
 import { runDecisionsCli, runPinCli } from "../cli/pin.js";
+import { runOptionsCli, runPickCli } from "../cli/options.js";
 import { runPipelineCli } from "../cli/pipeline.js";
 import { runProduce } from "../cli/produce.js";
 import { runPublish, runPublishCheck } from "../cli/publish.js";
@@ -47,6 +48,8 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/compile.ts#runCompileCli": async context => runCompileCli(context.argv, context.cwd),
   "src/cli/pin.ts#runPinCli": async context => runPinCli(context.argv, context.cwd),
   "src/cli/pin.ts#runDecisionsCli": async context => runDecisionsCli(context.argv, context.cwd),
+  "src/cli/options.ts#runOptionsCli": async context => runOptionsCli(context.argv, context.cwd),
+  "src/cli/options.ts#runPickCli": async context => runPickCli(context.argv, context.cwd),
   "src/cli/specimen.ts#runSpecimenCli": async context => runSpecimenCli(context.argv, context.cwd),
   "src/cli/migrate.ts#runMigrateCli": async context => runMigrateCli(context.argv, context.cwd),
   "src/cli/pipeline.ts#runPipelineCli": async context => runPipelineCli(context.argv, context.cwd),

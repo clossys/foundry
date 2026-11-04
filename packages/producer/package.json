@@ -59,6 +59,7 @@
     "check:studio-map": "node studio/checks/check-studio-map.cjs",
     "check:studio-routes": "node studio/checks/check-studio-routes.cjs",
     "check:assemble-only": "node scripts/check-assemble-only.mjs",
+    "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:studio-template": "node scripts/check-studio-template.mjs",
     "check:studio": "node scripts/check-studio.mjs",

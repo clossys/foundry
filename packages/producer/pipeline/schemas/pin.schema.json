@@ -22,7 +22,15 @@
     },
     "decidedBy": {
       "type": "string",
-      "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|migrated)$"
+      "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|agent:\\S+|migrated)$"
+    },
+    "basis": {
+      "enum": [
+        "picked",
+        "bulk",
+        "planner",
+        "agent"
+      ]
     },
     "at": {
       "type": "string",

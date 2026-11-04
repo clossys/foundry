@@ -20,5 +20,7 @@
     "advantage.proposition.promise",
     "identity.brand.essence"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "tone"
 }

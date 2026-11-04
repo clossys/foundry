@@ -1,7 +1,7 @@
 import { parseFrontmatter } from "./frontmatter.js";
 import {
   AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
-  PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
+  PUBLICATION_SCHEMA, OPTION_COUNTS, PIN_BASES, VARY_ID, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
 
@@ -82,7 +82,7 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "slot-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses", "notNeeded"]);
+  const allowed = new Set(["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses", "notNeeded", "options", "varyOn"]);
   for (const key of Object.keys(value)) if (!allowed.has(key)) fail(`unknown key ${key}${key === "usedBy" ? " (usedBy is computed, never stored)" : ""}`);
   if (value.schema !== SLOT_SCHEMA) fail(`schema must be ${SLOT_SCHEMA}`);
   if (!nonEmpty(value.id) || !SLOT_ID.test(value.id)) fail("id must be a slot id");
@@ -104,6 +104,9 @@ export function validateSlotDoc(value: unknown, path = "slot.json"): SlotModelIs
       fail("notNeeded must be {reason, since, decidedBy} with a non-empty reason, an ISO date and who decided");
     }
   }
+  if (value.options !== undefined && !(OPTION_COUNTS as readonly unknown[]).includes(value.options)) fail("options must be 1, 2 or 3");
+  if (value.varyOn !== undefined && (typeof value.varyOn !== "string" || !VARY_ID.test(value.varyOn))) fail("varyOn must be an axis id such as tone");
+  if (typeof value.options === "number" && value.options > 1 && value.varyOn === undefined) fail("varyOn is required when options > 1");
   return issues;
 }
 
@@ -111,10 +114,12 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "pin-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "at"].includes(key)) fail(`unknown key ${key}`);
+  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "at", "basis"].includes(key)) fail(`unknown key ${key}`);
+  if (value.basis !== undefined && !(PIN_BASES as readonly unknown[]).includes(value.basis)) fail(`basis must be one of ${PIN_BASES.join(", ")}`);
+  if ((value.basis === "agent") !== (typeof value.decidedBy === "string" && value.decidedBy.startsWith("agent:"))) fail("basis agent and decidedBy agent:<seat> go together (clossys pick)");
   if (!nonEmpty(value.candidate) || !CANDIDATE_NAME.test(value.candidate)) fail("candidate must be a candidate file name");
   if (typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256)) fail("sha256 must be 64 lowercase hex");
-  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>] or migrated");
+  if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>], agent:<seat> or migrated");
   if (typeof value.at !== "string" || Number.isNaN(Date.parse(value.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(value.at)) fail("at must be an ISO timestamp");
   return issues;
 }
@@ -143,6 +148,13 @@ export function validateSource(value: unknown, path: string): SlotModelIssue[] {
   return [];
 }
 
+/** A candidate's variation tag: exactly one `{"<axis>": "<value>"}` pair (CANDIDATE-OPTIONS). */
+export function validVary(value: unknown): value is Record<string, string> {
+  if (!object(value)) return false;
+  const entries = Object.entries(value);
+  return entries.length === 1 && VARY_ID.test(entries[0]![0]) && typeof entries[0]![1] === "string" && VARY_ID.test(entries[0]![1]);
+}
+
 /** Pin state and legacy provenance keys never appear on the candidate's own record level. */
 function candidateKeys(record: Record<string, unknown>, path: string, where: string): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
@@ -158,7 +170,7 @@ const REGISTRY_TYPES = new Set(["registry:ui", "registry:block", "registry:compo
 function validateBrief(fields: Record<string, unknown>, body: string, slot: string, path: string): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "candidate-invalid", path, message });
-  for (const key of Object.keys(fields)) if (!["slot", "source", "feeds", "functions", "note"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
+  for (const key of Object.keys(fields)) if (!["slot", "source", "feeds", "functions", "note", "vary"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
   if (fields.slot !== slot) fail(`slot must be ${slot}`);
   if (!strings(fields.feeds) || !strings(fields.functions)) fail("feeds and functions must be lists");
   if (fields.note !== undefined && typeof fields.note !== "string") fail("note must be a string");
@@ -170,7 +182,7 @@ function validateBrief(fields: Record<string, unknown>, body: string, slot: stri
 function validateStrings(fields: Record<string, unknown>, body: string, slot: string, path: string): SlotModelIssue[] {
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "candidate-invalid", path, message });
-  for (const key of Object.keys(fields)) if (!["slot", "locales", "source"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
+  for (const key of Object.keys(fields)) if (!["slot", "locales", "source", "vary"].includes(key) && !(CANDIDATE_STATUS_KEYS as readonly string[]).includes(key) && !(LEGACY_PROVENANCE_KEYS as readonly string[]).includes(key)) fail(`unknown frontmatter key ${key}`);
   if (fields.slot !== slot) fail(`slot must be ${slot}`);
   if (!strings(fields.locales) || !fields.locales.length) { fail("locales must be a non-empty list"); return issues; }
   const lines = body.split(/\r?\n/);
@@ -198,6 +210,7 @@ function validateJsonCandidate(kind: SlotKind, value: Record<string, unknown>, s
   if (!object(meta)) { issues.push({ code: "candidate-source", path, message: "meta.source is required" }); return issues; }
   issues.push(...candidateKeys(value, path, ""), ...candidateKeys(meta, path, "meta."));
   if (!Object.hasOwn(meta, "source")) issues.push({ code: "candidate-source", path, message: "meta.source is required" });
+  if (meta.vary !== undefined && !validVary(meta.vary)) fail('meta.vary must be {"<axis>": "<value>"} with one axis');
   else issues.push(...validateSource(meta.source, path));
   if (kind === "element") {
     if (typeof value.name !== "string" || !value.name) fail("registry-item name is required");
@@ -238,6 +251,7 @@ export function validateCandidate(kind: SlotKind, slot: string, name: string, by
     const issues = candidateKeys(fields, path, "frontmatter ");
     if (!Object.hasOwn(fields, "source")) issues.push({ code: "candidate-source", path, message: "frontmatter source is required" });
     else issues.push(...validateSource(fields.source, path));
+    if (fields.vary !== undefined && !validVary(fields.vary)) issues.push({ code: "candidate-invalid", path, message: 'vary must be {"<axis>": "<value>"} with one axis' });
     return [...issues, ...(kind === "brief" ? validateBrief(fields, parsed.value.body, slot, path) : validateStrings(fields, parsed.value.body, slot, path))];
   }
   let value: unknown;

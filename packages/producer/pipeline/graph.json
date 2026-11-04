@@ -31,7 +31,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 0,
-        "y": 344
+        "y": 172
       }
     },
     {
@@ -85,8 +85,8 @@
       "layout": {
         "lane": "owner",
         "rank": 0,
-        "x": 0,
-        "y": 172
+        "x": 280,
+        "y": 344
       }
     },
     {
@@ -114,7 +114,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 280,
-        "y": 344
+        "y": 0
       }
     },
     {
@@ -139,8 +139,8 @@
       "layout": {
         "lane": "owner",
         "rank": 0,
-        "x": 280,
-        "y": 172
+        "x": 0,
+        "y": 344
       }
     },
     {
@@ -170,7 +170,7 @@
         "lane": "owner",
         "rank": 0,
         "x": 280,
-        "y": 0
+        "y": 172
       }
     },
     {
@@ -260,6 +260,58 @@
         "rank": 3,
         "x": 1240,
         "y": 0
+      }
+    },
+    {
+      "id": "pick",
+      "kind": "decide:judgment",
+      "actor": "agent:judge",
+      "stage": "pin",
+      "summary": "A judge seat picks one of a slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+      "inputs": [
+        {
+          "glob": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        },
+        {
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        },
+        {
+          "glob": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        },
+        {
+          "glob": "clossys/agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "clossys/agents/*/*/pin.json#basis"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "pick",
+          "parser": "src/cli/options.ts"
+        },
+        "entry": "src/cli/options.ts#runPickCli"
+      },
+      "checks": [
+        "decisions",
+        "slot-options"
+      ],
+      "seat": "clossys/agents/producer/pick/seat.json",
+      "layout": {
+        "lane": "agent:judge",
+        "rank": 6,
+        "x": 2480,
+        "y": 932
       }
     },
     {
@@ -394,7 +446,7 @@
         "lane": "agent:writer",
         "rank": 4,
         "x": 1560,
-        "y": 1128
+        "y": 1324
       }
     },
     {
@@ -446,7 +498,7 @@
         "lane": "agent:publisher",
         "rank": 5,
         "x": 2160,
-        "y": 932
+        "y": 1128
       }
     },
     {
@@ -518,7 +570,7 @@
         "lane": "code",
         "rank": 4,
         "x": 1840,
-        "y": 1496
+        "y": 1692
       }
     },
     {
@@ -558,7 +610,7 @@
         "lane": "code",
         "rank": 4,
         "x": 1560,
-        "y": 1496
+        "y": 1692
       }
     },
     {
@@ -598,7 +650,7 @@
         "lane": "code",
         "rank": 4,
         "x": 1560,
-        "y": 1668
+        "y": 1864
       }
     },
     {
@@ -639,7 +691,7 @@
         "lane": "code",
         "rank": 4,
         "x": 1840,
-        "y": 1324
+        "y": 1520
       }
     },
     {
@@ -679,7 +731,7 @@
         "lane": "code",
         "rank": 5,
         "x": 2160,
-        "y": 1324
+        "y": 1520
       }
     },
     {
@@ -719,7 +771,7 @@
         "lane": "code",
         "rank": 5,
         "x": 2160,
-        "y": 1496
+        "y": 1692
       }
     },
     {
@@ -760,7 +812,7 @@
         "lane": "code",
         "rank": 5,
         "x": 2160,
-        "y": 1668
+        "y": 1864
       }
     },
     {
@@ -817,8 +869,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 3040,
-        "y": 1324
+        "x": 3320,
+        "y": 1520
       }
     },
     {
@@ -872,8 +924,69 @@
       "layout": {
         "lane": "code",
         "rank": 6,
+        "x": 2480,
+        "y": 1520
+      }
+    },
+    {
+      "id": "options",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "derive",
+      "summary": "Candidate options: write slot.json options/varyOn from the class mapping, list a slot's options, or print the brief for fresh ones.",
+      "inputs": [
+        {
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        },
+        {
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        },
+        {
+          "glob": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        },
+        {
+          "glob": "clossys/agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "clossys/agents/*/*/slot.json#options"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json#varyOn"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "options",
+          "parser": "src/cli/options.ts"
+        },
+        "entry": "src/cli/options.ts#runOptionsCli"
+      },
+      "checks": [
+        "slot-options"
+      ],
+      "layout": {
+        "lane": "code",
+        "rank": 6,
         "x": 2760,
-        "y": 1324
+        "y": 1520
       }
     },
     {
@@ -907,7 +1020,7 @@
         "lane": "code",
         "rank": 4,
         "x": 1560,
-        "y": 1324
+        "y": 1520
       }
     },
     {
@@ -959,8 +1072,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 2760,
-        "y": 1668
+        "x": 3040,
+        "y": 1864
       }
     },
     {
@@ -1005,8 +1118,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 2480,
-        "y": 1324
+        "x": 2760,
+        "y": 1864
       }
     },
     {
@@ -1046,8 +1159,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 2480,
-        "y": 1496
+        "x": 3040,
+        "y": 1520
       }
     },
     {
@@ -1082,8 +1195,8 @@
       "layout": {
         "lane": "code",
         "rank": 0,
-        "x": 280,
-        "y": 1496
+        "x": 0,
+        "y": 1864
       }
     },
     {
@@ -1124,8 +1237,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 3040,
-        "y": 1668
+        "x": 2480,
+        "y": 1864
       }
     },
     {
@@ -1183,8 +1296,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 2480,
-        "y": 1668
+        "x": 2760,
+        "y": 1692
       }
     },
     {
@@ -1230,8 +1343,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 3040,
-        "y": 1496
+        "x": 2480,
+        "y": 1692
       }
     },
     {
@@ -1313,8 +1426,8 @@
       "layout": {
         "lane": "code",
         "rank": 6,
-        "x": 2760,
-        "y": 1496
+        "x": 3040,
+        "y": 1692
       }
     },
     {
@@ -1344,7 +1457,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1324
+        "y": 1520
       }
     },
     {
@@ -1373,7 +1486,7 @@
         "lane": "code",
         "rank": 0,
         "x": 280,
-        "y": 1324
+        "y": 1692
       }
     },
     {
@@ -1420,8 +1533,8 @@
       "layout": {
         "lane": "code",
         "rank": 0,
-        "x": 0,
-        "y": 1496
+        "x": 280,
+        "y": 1520
       }
     },
     {
@@ -1451,7 +1564,7 @@
         "lane": "code",
         "rank": 0,
         "x": 0,
-        "y": 1668
+        "y": 1692
       }
     }
   ],
@@ -1459,6 +1572,17 @@
     {
       "from": "ia",
       "to": "pin",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
+      "to": "pick",
       "via": [
         {
           "output": "clossys/agents/*/*/slot.json",
@@ -1531,6 +1655,22 @@
       "from": "ia",
       "to": "compile",
       "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
+      "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
         {
           "output": "clossys/agents/*/*/slot.json",
           "input": "clossys/agents/*/*/slot.json",
@@ -1783,6 +1923,17 @@
     },
     {
       "from": "pin",
+      "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin",
       "to": "decisions",
       "via": [
         {
@@ -1881,6 +2032,17 @@
     },
     {
       "from": "director.candidates",
+      "to": "pick",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/candidates/*",
+          "input": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        }
+      ]
+    },
+    {
+      "from": "director.candidates",
       "to": "designer.candidates",
       "via": [
         {
@@ -1926,6 +2088,17 @@
     {
       "from": "director.candidates",
       "to": "compile",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/candidates/*",
+          "input": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        }
+      ]
+    },
+    {
+      "from": "director.candidates",
+      "to": "options",
       "via": [
         {
           "output": "clossys/agents/director/*/candidates/*",
@@ -1992,6 +2165,17 @@
     {
       "from": "designer.candidates",
       "to": "pin",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
+      "to": "pick",
       "via": [
         {
           "output": "clossys/agents/designer/*/candidates/*",
@@ -2090,6 +2274,17 @@
     },
     {
       "from": "designer.candidates",
+      "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
       "to": "studio.produce",
       "via": [
         {
@@ -2167,6 +2362,17 @@
     },
     {
       "from": "writer.candidates",
+      "to": "pick",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/candidates/*",
+          "input": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        }
+      ]
+    },
+    {
+      "from": "writer.candidates",
       "to": "publisher.candidates",
       "via": [
         {
@@ -2223,6 +2429,17 @@
     {
       "from": "writer.candidates",
       "to": "compile",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/candidates/*",
+          "input": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        }
+      ]
+    },
+    {
+      "from": "writer.candidates",
+      "to": "options",
       "via": [
         {
           "output": "clossys/agents/writer/*/candidates/*",
@@ -2299,6 +2516,17 @@
     },
     {
       "from": "publisher.candidates",
+      "to": "pick",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/candidates/*",
+          "input": "clossys/agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
       "to": "workspace.check",
       "via": [
         {
@@ -2311,6 +2539,17 @@
     {
       "from": "publisher.candidates",
       "to": "compile",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/candidates/*",
+          "input": "clossys/agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
+      "to": "options",
       "via": [
         {
           "output": "clossys/agents/publisher/*/candidates/*",
@@ -2439,6 +2678,11 @@
       "glob": "clossys/agents/*/*/slot.json#notNeeded"
     },
     {
+      "step": "pick",
+      "port": "output",
+      "glob": "clossys/agents/*/*/pin.json#basis"
+    },
+    {
       "step": "director.candidates",
       "port": "input",
       "glob": "clossys/agents/director/_evidence/*.md"
@@ -2457,6 +2701,16 @@
       "step": "designer.library",
       "port": "output",
       "glob": "clossys/library/**"
+    },
+    {
+      "step": "options",
+      "port": "output",
+      "glob": "clossys/agents/*/*/slot.json#options"
+    },
+    {
+      "step": "options",
+      "port": "output",
+      "glob": "clossys/agents/*/*/slot.json#varyOn"
     },
     {
       "step": "publish.install",
@@ -2586,8 +2840,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 725,
-      "after": 714
+      "before": 969,
+      "after": 969
     },
     "lanes": [
       {
@@ -2612,24 +2866,31 @@
         "height": 148
       },
       {
-        "id": "agent:publisher",
+        "id": "agent:judge",
         "index": 3,
         "x": -160,
         "y": 932,
         "height": 148
       },
       {
-        "id": "agent:writer",
+        "id": "agent:publisher",
         "index": 4,
         "x": -160,
         "y": 1128,
         "height": 148
       },
       {
-        "id": "code",
+        "id": "agent:writer",
         "index": 5,
         "x": -160,
         "y": 1324,
+        "height": 148
+      },
+      {
+        "id": "code",
+        "index": 6,
+        "x": -160,
+        "y": 1520,
         "height": 492
       }
     ],
@@ -2716,6 +2977,14 @@
       },
       "issues": []
     },
+    "pick": {
+      "path": "clossys/agents/producer/pick/seat.json",
+      "state": "unassigned",
+      "by": null,
+      "llm": "open",
+      "human": "open",
+      "issues": []
+    },
     "director.candidates": {
       "path": "clossys/agents/producer/director.candidates/seat.json",
       "state": "unassigned",
@@ -2782,6 +3051,40 @@
         },
         {
           "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        }
+      ],
+      "pick": [
+        {
+          "flag": "--at",
+          "value": null
+        },
+        {
+          "flag": "--by",
+          "value": null
+        },
+        {
+          "flag": "--check",
+          "value": null
+        },
+        {
+          "flag": "--classes",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--more",
           "value": null
         },
         {
@@ -2992,6 +3295,40 @@
         },
         {
           "flag": "--out",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        }
+      ],
+      "options": [
+        {
+          "flag": "--at",
+          "value": null
+        },
+        {
+          "flag": "--by",
+          "value": null
+        },
+        {
+          "flag": "--check",
+          "value": null
+        },
+        {
+          "flag": "--classes",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--more",
           "value": null
         },
         {

@@ -30,8 +30,18 @@ export const CANDIDATES_DIR = "candidates";
 /** Decision provenance for migrated pins (D6, and the decidedBy rewrite) and for the owner-cleared Director brief. */
 export const MIGRATION_DECIDED_BY = "migrated";
 export const DIRECTOR_DECIDED_BY = "owner:2026-10-31 all-approved";
-/** Who decided: owner, planner or migration (each optionally `:<ref>`), or `migrated`. Written by `clossys pin`. */
-export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/;
+/** Who decided: owner, planner or migration (each optionally `:<ref>`), `agent:<seat>` (a judge seat, `clossys pick`), or `migrated`. Written by `clossys pin` and `clossys pick`. */
+export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|agent:\S+|migrated)$/;
+/** How a pin was decided. `agent` = a judge seat picked it (`clossys pick`); Studio shows it as "confirm" until the owner picks. */
+export const PIN_BASES = ["picked", "bulk", "planner", "agent"] as const;
+export type PinBasis = typeof PIN_BASES[number];
+/** Pin bases Studio shows as "confirm" (not yet an owner pick). */
+export const CONFIRM_BASES: readonly PinBasis[] = ["bulk", "planner", "agent"];
+
+/** How many candidates a slot offers for choice (CANDIDATE-OPTIONS). */
+export const OPTION_COUNTS = [1, 2, 3] as const;
+/** A named variation axis (`varyOn`) or one of its values: lower-case words joined by hyphens. */
+export const VARY_ID = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 
 export interface IaLeafGroup { readonly id: string; readonly label: string; readonly slots: readonly string[] }
 export interface IaNode { readonly id: string; readonly label: string; readonly children: readonly IaLeafGroup[] }
@@ -67,6 +77,10 @@ export interface SlotDoc {
   readonly uses: readonly string[];
   /** The owner's decision that this slot is not needed. Present only for the `not-needed` state. */
   readonly notNeeded?: NotNeeded;
+  /** How many distinct candidates the slot must offer (1 to 3); written from the option-class mapping by `clossys options --classes`. */
+  readonly options?: typeof OPTION_COUNTS[number];
+  /** The axis candidates differ on (e.g. `tone`); required when options > 1. Each candidate tags its value as `vary: {"<axis>": "<value>"}`. */
+  readonly varyOn?: string;
 }
 
 /** Why a slot is not needed, since when (ISO date) and who decided. Written by `clossys pin --not-needed`, never by an agent fill. */
@@ -93,6 +107,8 @@ export interface PinDoc {
   /** Who decided (DECIDED_BY). */
   readonly decidedBy: string;
   readonly at: string;
+  /** How it was decided (PIN_BASES); absent = an owner pick. */
+  readonly basis?: PinBasis;
 }
 
 export const SOURCE_KINDS = ["registry", "derived", "original", "composition", "npm"] as const;

@@ -64,6 +64,13 @@ export const CLI_STEPS = [
     command: { cli: { verb: "compile", parser: "src/cli/compile.ts" }, entry: "src/cli/compile.ts#runCompileCli" }, checks: ["compile-pure"],
   }),
   defineStep({
+    id: "options", kind: "plumb", actor: "code", stage: "derive",
+    summary: "Candidate options: write slot.json options/varyOn from the class mapping, list a slot's options, or print the brief for fresh ones.",
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES],
+    outputs: ["clossys/agents/*/*/slot.json#options", "clossys/agents/*/*/slot.json#varyOn"],
+    command: { cli: { verb: "options", parser: "src/cli/options.ts" }, entry: "src/cli/options.ts#runOptionsCli" }, checks: ["slot-options"],
+  }),
+  defineStep({
     id: "decisions", kind: "plumb", actor: "code", stage: "check",
     summary: "List every slot's decision state: pinned, not needed or open (read-only).",
     inputs: [SLOTS, PINS], outputs: [],

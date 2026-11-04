@@ -54,4 +54,11 @@ export const DECISION_STEPS = [
     command: { cli: { verb: "pin", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state"],
     open: "slots-undecided",
   }),
+  defineStep({
+    id: "pick", kind: "decide:judgment", actor: "agent:judge", stage: "pin",
+    summary: "A judge seat picks one of a slot's options (pin basis agent); Studio shows confirm until the owner pins.",
+    inputs: [...CANDIDATES, SLOTS],
+    outputs: ["clossys/agents/*/*/pin.json#basis"],
+    command: { cli: { verb: "pick", parser: "src/cli/options.ts" }, entry: "src/cli/options.ts#runPickCli" }, checks: ["decisions", "slot-options"],
+  }),
 ];

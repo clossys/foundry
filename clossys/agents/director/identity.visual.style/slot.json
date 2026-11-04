@@ -29,5 +29,7 @@
     "identity.brand.essence",
     "identity.verbal.voice"
   ],
-  "uses": []
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
 }
