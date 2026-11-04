@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { parsePipelineArgs, runPipelineCli } from "../cli/pipeline.js";
 import { defineStep, StepDefinitionError } from "./define.js";
-import { buildGraph, deriveEdges } from "./graph.js";
+import { buildGraph, deriveEdges, graphJson, schemaMismatches, untypedPorts } from "./graph.js";
+import { computeLayout, LAYOUT_CONSTANTS } from "./layout.js";
 import { portsOverlap } from "./globs.js";
 import { stepOptions } from "./options.js";
 import { runPipeline, selectStep } from "./runner.js";
@@ -53,13 +54,43 @@ describe("step definitions", () => {
 });
 
 describe("derived graph", () => {
-  it("derives edges from glob overlap only", () => {
+  it("derives edges only from overlapping globs that name the same schema", () => {
     expect(portsOverlap("clossys/agents/*/*/pin.json", "clossys/agents/designer/*/pin.json")).toBe(true);
     expect(portsOverlap("clossys/agents/*/*/pin.json", "clossys/agents/*/*/slot.json")).toBe(false);
     const edges = deriveEdges(STEPS);
     expect(edges.some(edge => edge.from === "pin" && edge.to === "publish.install")).toBe(true);
-    expect(edges.some(edge => edge.from === "studio.map" && edge.to === "studio.checks")).toBe(true);
-    expect(edges.every(edge => edge.via.length > 0)).toBe(true);
+    expect(edges.every(edge => edge.via.length > 0 && edge.via.every(via => typeof via.schema === "string"))).toBe(true);
+    // studio-map.json names no schema yet: no edge, and the port is listed as untyped instead.
+    expect(edges.some(edge => edge.from === "studio.map" && edge.to === "studio.checks")).toBe(false);
+    expect(untypedPorts(STEPS)).toContainEqual({ step: "studio.map", port: "output", glob: "pkg:studio/generated/studio-map.json" });
+    const make = (id: string, inputs: { glob: string; schema?: string }[], outputs: { glob: string; schema?: string }[]) =>
+      defineStep({ id, kind: "plumb", actor: "code", stage: "check", summary: id, inputs, outputs, command: { npm: "x" }, checks: [] });
+    const a = make("a", [], [{ glob: "x/*.json", schema: "slot" }]);
+    expect(deriveEdges([a, make("b", [{ glob: "x/b.json", schema: "slot" }], [])])).toHaveLength(1);
+    expect(deriveEdges([a, make("b", [{ glob: "x/b.json" }], [])])).toHaveLength(0);
+    expect(deriveEdges([a, make("b", [{ glob: "x/b.json", schema: "pin" }], [])])).toHaveLength(0);
+    expect(schemaMismatches([a, make("b", [{ glob: "x/b.json", schema: "pin" }], [])])).toHaveLength(1);
+    expect(deriveEdges([a, make("b", [{ glob: "y/b.json", schema: "slot" }], [])])).toHaveLength(0);
+  });
+  it("lays out lanes by actor and ranks by longest path, breaking cycles in step id order from the sources", () => {
+    const make = (id: string, actor: string, inputs: string[], outputs: string[]) =>
+      defineStep({ id, kind: actor === "code" ? "plumb" : "decide:judgment", actor, stage: "check", summary: id,
+        inputs: inputs.map(glob => ({ glob, schema: "slot" })), outputs: outputs.map(glob => ({ glob, schema: "slot" })), command: { npm: "x" }, checks: [] });
+    const steps = [make("c", "code", ["q/*"], []), make("b", "owner", ["p/*"], ["q/1"]), make("a", "owner", ["q/*"], ["p/1"]), make("d", "agent:x", [], ["p/2"])];
+    const edges = deriveEdges(steps);
+    const layout = computeLayout(steps, edges);
+    expect(layout.lanes.map(lane => lane.id)).toEqual(["owner", "agent:x", "code"]);
+    expect(layout.cycleBreaks).toEqual([{ from: "a", to: "b" }]);
+    expect(Object.fromEntries(Object.entries(layout.nodes).map(([id, node]) => [id, node.rank]))).toEqual({ a: 2, b: 1, c: 2, d: 0 });
+    expect(layout.nodes.b).toEqual({ lane: "owner", rank: 1, x: LAYOUT_CONSTANTS.rankGap, y: 0 });
+    expect(layout.nodes.c!.y).toBe(layout.lanes[2]!.y);
+    expect(JSON.stringify(computeLayout([...steps].reverse(), [...edges].reverse()))).toBe(JSON.stringify(layout));
+  });
+  it("writes a layout for every node, byte-identical across builds", () => {
+    const root = workspace();
+    const graph = buildGraph(root);
+    expect(graph.nodes.every(node => Number.isInteger(node.layout.x) && Number.isInteger(node.layout.y) && node.layout.lane === node.actor)).toBe(true);
+    expect(graphJson(buildGraph(root))).toBe(graphJson(graph));
   });
   it("reads options from the verb's parser", () => {
     const flags = stepOptions(step("workspace.check"))!.map(option => option.flag);
@@ -111,7 +142,7 @@ describe("status", () => {
     const root = workspace();
     expect(() => parsePipelineArgs(["status", "--out", "x"])).toThrow(/--out requires pipeline graph/);
     const graph = await runPipelineCli(["graph", "--root", root], root);
-    expect(Object.keys(graph.output as object).sort()).toEqual(["edges", "nodes", "options", "rule", "schema", "seats", "status"]);
+    expect(Object.keys(graph.output as object).sort()).toEqual(["edges", "layout", "nodes", "options", "rule", "schema", "seats", "status", "untyped"]);
     expect((await runPipeline(["pipeline", "status", "--root", root], root)).exitCode).toBe(0);
     expect((await runPipelineCli(["status"], tmpdir())).exitCode).toBe(2);
   });

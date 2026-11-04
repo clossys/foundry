@@ -15,6 +15,12 @@
 //   step.invalid      a step definition does not load (defineStep refused it) or is malformed
 //   edge.declared     an edge, option or config listed by hand; edges are derived from output/input globs
 //   graph.stale       pipeline/graph.json differs from the graph built from the definitions
+//   edges.stale       its edges differ from the derived edges (an edge needs the same schema on
+//                     both ports and overlapping globs), named by from->to
+//   layout.stale      a node's layout {lane, rank, x, y}, the lanes or the cycle breaks differ from
+//                     the generator's deterministic layout, named by step id
+//   layout.nondeterministic  two builds of the graph from the same definitions differ
+//   edge.schema-mismatch  an output and an input overlap by glob but name different schemas
 //   schema.missing    a port names a schema with no file under pipeline/schemas/
 //   schema.invalid    a committed file an output glob matches fails its port schema (reported by step id)
 //   output.zero       a tracked data file, or a step input, that no step produces
@@ -32,6 +38,8 @@
 //   option.unknown    a flag the step's CLI parser does not define
 //
 // A missing seat file, or a seat part set to null, is listed as OPEN (unassigned), never as passing.
+// A workspace port that names no schema feeds no edge; each one is listed as UNTYPED (and in
+// graph.json "untyped"), never dropped silently. Cycle edges the layout skips are listed as CYCLE.
 //
 // Steps declared `pending` (they land on another branch) are reported as PENDING,
 // never as passing. A pending step's own entry may be absent; when it exists the
@@ -54,22 +62,27 @@ const GRAPH = argOf("--graph") ?? join(PKG, "pipeline", "graph.json");
 const failures = [];
 const pending = [];
 const open = [];
+let untyped = [];
+let cycleBreaks = [];
 const fail = (rule, message) => failures.push({ rule, message });
 const note = (step, message) => pending.push({ step, message });
 function report() {
-  const summary = { ok: failures.length === 0, steps: steps.length, pendingSteps: steps.filter(isPending).map(step => step.id), failures, pending, open, unscanned };
+  const summary = { ok: failures.length === 0, steps: steps.length, pendingSteps: steps.filter(isPending).map(step => step.id), failures, pending, open, untyped, cycleBreaks, unscanned };
   if (json) console.log(JSON.stringify(summary, null, 2));
   else {
     for (const { rule, message } of failures) console.log(`FAIL ${rule}: ${message}`);
     for (const { step, message } of pending) console.log(`PENDING ${step}: ${message}`);
     for (const { step, field } of open) console.log(`OPEN ${step}: ${field} is unassigned`);
+    for (const { step, port, glob } of untyped) console.log(`UNTYPED ${step}: ${port} ${glob} names no schema, so it feeds no edge`);
+    for (const { from, to } of cycleBreaks) console.log(`CYCLE ${from} -> ${to}: edge closes a cycle; the layout ranks without it (step id order)`);
     for (const { step, output } of unscanned) console.log(`INFO ${step}: ${output} has no file-name marker; its writers are found through the step's other outputs`);
-    console.log(failures.length ? `check:pipeline FAIL (${failures.length} findings, ${pending.length} pending)` : `check:pipeline PASS (${steps.length} steps, ${summary.pendingSteps.length} pending, ${pending.length} pending notes, ${open.length} open)`);
+    console.log(failures.length ? `check:pipeline FAIL (${failures.length} findings, ${pending.length} pending)` : `check:pipeline PASS (${steps.length} steps, ${edgeCount} edges, ${summary.pendingSteps.length} pending, ${pending.length} pending notes, ${open.length} open, ${untyped.length} untyped ports, ${cycleBreaks.length} cycle breaks)`);
   }
   // exitCode, not exit(): exit() can cut piped stdout at the 64 KiB pipe buffer.
   process.exitCode = failures.length ? 1 : 0;
 }
 let steps = [];
+let edgeCount = 0;
 let verbCache;
 const unscanned = [];
 const isPending = step => step.pending !== undefined;
@@ -136,6 +149,32 @@ else if (regenerated !== null && readFileSync(GRAPH, "utf8") !== regenerated) {
   const line = committed.findIndex((text, index) => text !== fresh[index]);
   fail("graph.stale", `${relative(REPO, GRAPH)} differs from the graph built from the step definitions (first at line ${line + 1}); run npm run generate:pipeline-graph`);
 }
+/** Edges and layout are compared field by field, so a hand-edited edge or position names itself. */
+if (lib) {
+  const fresh = JSON.parse(regenerated);
+  if (lib.graph.graphJson(lib.graph.buildGraph(REPO, defined, PKG)) !== regenerated) fail("layout.nondeterministic", "two builds of the graph from the same step definitions differ");
+  edgeCount = fresh.edges.length;
+  untyped = fresh.untyped ?? [];
+  cycleBreaks = fresh.layout?.cycleBreaks ?? [];
+  for (const m of lib.graph.schemaMismatches(defined)) fail("edge.schema-mismatch", `${m.from} -> ${m.to}: ${m.output} (${m.outputSchema}) overlaps ${m.input} (${m.inputSchema}); one file has one schema`);
+  let committed = null;
+  try { committed = existsSync(GRAPH) ? JSON.parse(readFileSync(GRAPH, "utf8")) : null; } catch { fail("graph.stale", `${relative(REPO, GRAPH)} is not valid JSON`); }
+  if (committed) {
+    const edgeKey = edge => `${edge?.from}->${edge?.to}`;
+    const edgeMap = list => new Map((Array.isArray(list) ? list : []).map(edge => [edgeKey(edge), JSON.stringify(edge)]));
+    const want = edgeMap(fresh.edges), have = edgeMap(committed.edges);
+    const missing = [...want.keys()].filter(key => !have.has(key));
+    const extra = [...have.keys()].filter(key => !want.has(key));
+    const changed = [...want.keys()].filter(key => have.has(key) && have.get(key) !== want.get(key));
+    if (missing.length || extra.length || changed.length) fail("edges.stale", `${relative(REPO, GRAPH)} edges differ from the derived edges (${fresh.edges.length} derived, ${have.size} committed): ${[...missing.map(k => `missing ${k}`), ...extra.map(k => `not derived ${k}`), ...changed.map(k => `changed ${k}`)].slice(0, 10).join(", ")}`);
+    const layoutOf = list => new Map((Array.isArray(list) ? list : []).map(node => [node?.id, JSON.stringify(node?.layout ?? null)]));
+    const wantLayout = layoutOf(fresh.nodes), haveLayout = layoutOf(committed.nodes);
+    const moved = [...wantLayout.keys()].filter(id => haveLayout.get(id) !== wantLayout.get(id));
+    for (const id of moved.slice(0, 10)) fail("layout.stale", `${id}: committed layout ${haveLayout.get(id) ?? "(none)"} differs from the generated ${wantLayout.get(id)}`);
+    if (moved.length > 10) fail("layout.stale", `${moved.length - 10} more nodes have a stale layout`);
+    for (const key of ["lanes", "cycleBreaks", "constants"]) if (JSON.stringify(committed.layout?.[key] ?? null) !== JSON.stringify(fresh.layout[key])) fail("layout.stale", `layout.${key} differs from the generated layout`);
+  }
+}
 
 // ---------------------------------------------------------------- globs
 const toRepoGlob = glob => glob.startsWith("pkg:") ? `${PKG_REL}/${glob.slice(4)}` : glob;
@@ -190,6 +229,10 @@ for (const step of steps) for (const input of step.inputs ?? []) {
 
 // ---------------------------------------------------------------- port schemas
 /** Every committed file an output glob matches must pass that port's schema. */
+for (const step of steps) for (const port of defined.find(def => def.id === step.id)?.inputs ?? []) {
+  if (!port.schema || !lib) continue;
+  if (!lib.schema.hasSchema(port.schema, PKG)) fail("schema.missing", `${step.id}: input ${port.glob} names schema ${port.schema}, which pipeline/schemas/${port.schema}.schema.json does not define`);
+}
 for (const step of steps) for (const port of step.ports) {
   if (!port.schema) continue;
   if (!lib) break;

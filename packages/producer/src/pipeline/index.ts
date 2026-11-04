@@ -1,7 +1,9 @@
 export * from "./define.js";
 export { STEPS, CHECKS } from "./steps/index.js";
-export { buildGraph, deriveEdges, graphJson, GRAPH_FILE, GRAPH_SCHEMA } from "./graph.js";
-export type { GraphEdge, PipelineGraph } from "./graph.js";
+export { buildGraph, deriveEdges, graphJson, schemaMismatches, untypedPorts, GRAPH_FILE, GRAPH_SCHEMA } from "./graph.js";
+export type { GraphEdge, GraphNode, PipelineGraph, SchemaMismatch, UntypedPort } from "./graph.js";
+export { computeLayout, laneOrder, LAYOUT_CONSTANTS } from "./layout.js";
+export type { CycleBreak, LaneLayout, NodeLayout, PipelineLayout } from "./layout.js";
 export { pipelineStatus, slotCounts, STATUS_SCHEMA } from "./status.js";
 export type { PipelineStatus, StepStatus } from "./status.js";
 export { readSeat, readSeats } from "./seats.js";

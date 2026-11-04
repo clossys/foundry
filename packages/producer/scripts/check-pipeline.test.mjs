@@ -51,7 +51,37 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     writeFileSync(file, `${JSON.stringify(graph, null, 2)}\n`);
     const result = run(["--graph", file]);
     assert.equal(result.code, 1);
-    assert.deepEqual([...rules(result)], ["graph.stale"]);
+    assert.deepEqual([...rules(result)].sort(), ["edges.stale", "graph.stale"]);
+    assert.ok(result.out.failures.some(failure => failure.rule === "edges.stale" && failure.message.includes("not derived pin->ia")));
+  });
+  it("commits a layout per node: lanes by actor, ranks over the derived edges", () => {
+    const graph = JSON.parse(readFileSync(join(PKG, "pipeline", "graph.json"), "utf8"));
+    assert.ok(graph.nodes.length > 0 && graph.nodes.every(node => node.layout && node.layout.lane === node.actor && Number.isInteger(node.layout.rank) && Number.isInteger(node.layout.x) && Number.isInteger(node.layout.y)), "every node carries {lane, rank, x, y}");
+    assert.deepEqual(graph.layout.lanes.map(lane => lane.id).slice(0, 1), ["owner"]);
+    assert.equal(graph.layout.lanes.at(-1).id, "code");
+    const rank = Object.fromEntries(graph.nodes.map(node => [node.id, node.layout.rank]));
+    const broken = new Set(graph.layout.cycleBreaks.map(edge => `${edge.from}->${edge.to}`));
+    for (const edge of graph.edges) if (!broken.has(`${edge.from}->${edge.to}`)) assert.ok(rank[edge.to] > rank[edge.from], `${edge.from}->${edge.to} ranks forward`);
+    assert.ok(graph.edges.every(edge => edge.via.every(via => typeof via.schema === "string")), "every edge names its schema");
+  });
+  it("fails a hand-edited node position (fixture), naming the node", () => {
+    const file = join(work, "graph-moved.json");
+    const graph = JSON.parse(readFileSync(join(PKG, "pipeline", "graph.json"), "utf8"));
+    const node = graph.nodes.find(each => each.id === "compile");
+    node.layout = { ...node.layout, x: node.layout.x + 1 };
+    writeFileSync(file, `${JSON.stringify(graph, null, 2)}\n`);
+    const result = run(["--graph", file]);
+    assert.equal(result.code, 1);
+    assert.ok(result.out.failures.some(failure => failure.rule === "layout.stale" && failure.message.startsWith("compile: ")), JSON.stringify(result.out.failures));
+  });
+  it("lists untyped ports instead of dropping them", () => {
+    const result = run([]);
+    assert.ok(result.out.untyped.some(port => port.step === "studio.map" && port.port === "output"));
+    assert.ok(result.out.untyped.every(port => !port.glob.startsWith("arg:")));
+  });
+  it("fails an output and input that overlap with different schemas", () => {
+    const result = run(["--steps", stepsModule("mismatch", extra(`command: { npm: "check:pipeline" }, inputs: [{ glob: "clossys/agents/designer/*/pin.json", schema: "slot" }]`))]);
+    assert.ok(rules(result).has("edge.schema-mismatch"), [...rules(result)].join(","));
   });
   it("fails committed files that do not match their port schema, by step id", () => {
     const result = run(["--steps", stepsModule("schema", extra(`command: { npm: "check:pipeline" }, outputs: [{ glob: "clossys/agents/director/*/pin.json", schema: "slot" }]`))]);
