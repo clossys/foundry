@@ -1,8 +1,9 @@
 // Mutation proofs for check-pipeline.mjs: each case loads mutated step definitions
-// (--steps) or a tampered graph (--graph) and must fail with the named rule.
+// (--steps), a tampered graph (--graph) or a writer fixture (--scan, under
+// scripts/rules/fixtures/R-PIPELINE-IS-CODE) and must fail with the named rule, or pass.
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
@@ -11,11 +12,13 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CHECK = join(PKG, "scripts", "check-pipeline.mjs");
 const DIST = pathToFileURL(join(PKG, "dist", "pipeline")).href;
+const REPO = resolve(PKG, "../..");
+const WRITER_FIXTURES = join(REPO, "scripts", "rules", "fixtures", "R-PIPELINE-IS-CODE");
 const work = mkdtempSync(join(tmpdir(), "check-pipeline-"));
 after(() => rmSync(work, { recursive: true, force: true }));
 
-function run(args) {
-  try { return { code: 0, out: JSON.parse(execFileSync(process.execPath, [CHECK, "--json", ...args], { encoding: "utf8", maxBuffer: 64 << 20 })) }; }
+function run(args, env = process.env) {
+  try { return { code: 0, out: JSON.parse(execFileSync(process.execPath, [CHECK, "--json", ...args], { encoding: "utf8", maxBuffer: 64 << 20, env })) }; }
   catch (error) { return { code: error.status, out: JSON.parse(error.stdout) }; }
 }
 /** A steps module: the real STEPS and CHECKS, changed by `body` (which may use defineStep). */
@@ -25,6 +28,7 @@ function stepsModule(name, body) {
   return file;
 }
 const rules = result => new Set(result.out.failures.map(failure => failure.rule));
+const foreignWriters = result => result.out.failures.filter(failure => failure.rule === "decide.foreign-writer").map(failure => failure.message);
 const extra = fields => `STEPS.push(defineStep({ id: "mutant", kind: "plumb", actor: "code", stage: "check", summary: "mutant", inputs: [], outputs: [], checks: [], ${fields} }));`;
 
 describe("check:pipeline", { concurrency: 3 }, () => {
@@ -32,7 +36,12 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     const result = run([]);
     assert.equal(result.code, 0, JSON.stringify(result.out.failures, null, 2));
     assert.ok(result.out.open.length > 0, "unassigned seats are listed as open");
-    assert.ok(result.out.pendingSteps.includes("pin"));
+  });
+  it("lists a step that lands on another branch as pending, never as passing", () => {
+    const result = run(["--steps", stepsModule("pending", extra(`command: { module: "src/not-landed-yet.ts#run" }, pending: { branch: "claude/not-landed-yet", change: "adds" }`))]);
+    // The added step is not in the committed graph; nothing else may fail, and its absent entry is not entry.missing.
+    assert.deepEqual([...rules(result)], ["graph.stale"], JSON.stringify(result.out.failures, null, 2));
+    assert.deepEqual(result.out.pendingSteps, ["mutant"]);
   });
   it("fails a hand-listed edge", () => {
     const result = run(["--steps", stepsModule("edge", extra(`command: { npm: "check:pipeline" }, edges: ["pin"]`))]);
@@ -91,6 +100,22 @@ describe("check:pipeline", { concurrency: 3 }, () => {
   it("fails a CLI verb that no step declares", () => {
     const result = run(["--steps", stepsModule("verb", `STEPS = STEPS.filter(step => step.id !== "workspace.check");`)]);
     assert.ok(rules(result).has("verb.undeclared"), [...rules(result)].join(","));
+  });
+  it("fails code that writes a decision file inside the repository", () => {
+    const result = run(["--scan", join(WRITER_FIXTURES, "repo-write")]);
+    assert.equal(result.code, 1);
+    assert.ok(foreignWriters(result).some(message => message.startsWith("workspace.config (decide) owns clossys/clossys.config.ts") && message.includes("R-PIPELINE-IS-CODE/repo-write/write-workspace-config.mjs")), JSON.stringify(result.out.failures, null, 2));
+  });
+  it("passes the same relative path written under os.tmpdir(): not a repository write", () => {
+    const result = run(["--scan", join(WRITER_FIXTURES, "temp-write")]);
+    assert.equal(result.code, 0, JSON.stringify(result.out.failures, null, 2));
+  });
+  it("judges a temp write by its real path: os.tmpdir() linked into the repository is a repository write", () => {
+    const link = join(work, "tmp-into-repo");
+    symlinkSync(REPO, link, "dir");
+    const result = run(["--scan", join(WRITER_FIXTURES, "temp-write")], { ...process.env, TMPDIR: link, TMP: link, TEMP: link });
+    assert.equal(result.code, 1);
+    assert.ok(foreignWriters(result).some(message => message.includes("R-PIPELINE-IS-CODE/temp-write/write-workspace-config.mjs")), JSON.stringify(result.out.failures, null, 2));
   });
   it("fails a pending marker on a step that already landed", () => {
     const body = `STEPS = STEPS.map(step => step.id === "director.check" ? { ...step, pending: { branch: "claude/x", change: "adds" } } : step);`;

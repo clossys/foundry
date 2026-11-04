@@ -387,6 +387,27 @@
         }
       ],
       "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape)."
+    },
+    {
+      "id": "R-PIPELINE-IS-CODE",
+      "owner_words": {
+        "quote": "anything that is deterministic need to be process driven by code and identifiers",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:pipeline"
+      ],
+      "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/repo-write",
+      "fixture_runs": [
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/repo-write/write-workspace-config\\.mjs can write it"
+        }
+      ],
+      "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write)."
     }
   ],
   "exemptions": [

@@ -5,10 +5,11 @@
 // reads source and tracked data, regenerates the graph in memory and compares it
 // with the committed pipeline/graph.json. It never runs a step and writes nothing.
 //
-//   node scripts/check-pipeline.mjs [--json] [--steps <module>] [--graph <file>]
+//   node scripts/check-pipeline.mjs [--json] [--steps <module>] [--graph <file>] [--scan <dir>]
 //
 // --steps loads STEPS and CHECKS from another module (mutation proofs); --graph
-// compares against another committed graph file.
+// compares against another committed graph file; --scan adds the source files
+// under a directory (a fixture) to the files the writer rules read.
 //
 // Failure rules (each finding names one):
 //   dist.missing      dist/pipeline is absent or older than src/pipeline; build first
@@ -32,7 +33,9 @@
 //   check.unknown     a step cites a check id the registry lacks; check.orphan: no step runs it
 //   runner.bypass     CLI code reaches a step entry without the pipeline runner
 //   plumb.model-client  a plumb step's code reaches an agent or model client
-//   decide.foreign-writer  code outside a decide step's declared entry can write its outputs
+//   decide.foreign-writer  code outside a decide step's declared entry can write its outputs inside
+//                     the repository (a write whose path resolves, symlinks included, outside the
+//                     repository root, such as a scratch copy under os.tmpdir(), is not a repo write)
 //   seat.invalid      a seat file (clossys/agents/producer/<step>/seat.json) fails the seat schema,
 //                     names a missing prompt file or an unknown clossys command, or has no decide step
 //   option.unknown    a flag the step's CLI parser does not define
@@ -45,8 +48,9 @@
 // never as passing. A pending step's own entry may be absent; when it exists the
 // pending marker is stale and fails.
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const PKG = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -58,6 +62,7 @@ const argOf = flag => { const at = argv.indexOf(flag); return at >= 0 ? resolve(
 const DIST = join(PKG, "dist", "pipeline");
 const STEPS_MODULE = argOf("--steps") ?? join(DIST, "steps", "index.js");
 const GRAPH = argOf("--graph") ?? join(PKG, "pipeline", "graph.json");
+const SCAN = argOf("--scan");
 
 const failures = [];
 const pending = [];
@@ -274,6 +279,10 @@ const repoRel = file => relative(REPO, file).split(sep).join("/");
 const pkgRel = file => relative(PKG, file).split(sep).join("/");
 const packageDirs = existsSync(join(REPO, "packages")) ? readdirSync(join(REPO, "packages")).map(name => join(REPO, "packages", name)).filter(dir => existsSync(join(dir, "package.json"))) : [];
 const scanFiles = [...packageDirs.flatMap(dir => ["src", "scripts", "bin", "studio"].flatMap(sub => walk(join(dir, sub)))), ...walk(join(REPO, "scripts"))];
+if (SCAN) {
+  if (!existsSync(SCAN) || !statSync(SCAN).isDirectory()) fail("step.invalid", `--scan ${SCAN} is not a directory`);
+  else for (const file of walk(SCAN)) if (!scanFiles.includes(file)) scanFiles.push(file);
+}
 
 // ---------------------------------------------------------------- entries
 function exportsName(file, name) {
@@ -571,10 +580,103 @@ for (const marker of markers) {
   }
 }
 /**
+ * Where a write lands. Only a write whose resolved real path is inside the repository root is a
+ * repository write; a scratch copy under os.tmpdir() is not. A path argument is traced to an
+ * absolute location only through tmpdir(), an absolute string literal, mkdtemp of a traced prefix,
+ * join/resolve of a traced base with plain relative literals (no ".."), a template literal
+ * `${base}/literal`, and a const declared once in the file that is never reassigned or shadowed by a
+ * parameter, loop variable or destructured name, and holds one of these. Anything else (the module's own
+ * directory, process.cwd(), a --root argument) is untraced and judged as a repository write.
+ */
+function realLocation(path) {
+  let head = resolve(path);
+  const rest = [];
+  while (!existsSync(head)) {
+    const parent = dirname(head);
+    if (parent === head) break;
+    rest.unshift(basename(head));
+    head = parent;
+  }
+  try { return join(realpathSync(head), ...rest); } catch { return resolve(path); }
+}
+const REPO_REAL = realLocation(REPO);
+const insideRepo = path => { const real = realLocation(path); return real === REPO_REAL || real.startsWith(REPO_REAL + sep); };
+const PLAIN_RELATIVE = /^(["'])((?!\/)(?:(?!\1)[^\\$`])*)\1$/;
+const plainRelative = arg => { const match = PLAIN_RELATIVE.exec(arg.trim()); return match && !match[2].split("/").includes("..") ? match[2] : null; };
+/** `callee(args)` when the whole expression is one call, else null. */
+function wholeCall(expr) {
+  const match = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\s*\(/.exec(expr);
+  if (!match) return null;
+  let depth = 0; let quote = null;
+  for (let i = match[0].length - 1; i < expr.length; i++) {
+    const c = expr[i];
+    if (quote) { if (c === "\\") i++; else if (c === quote) quote = null; continue; }
+    if (c === "'" || c === '"' || c === "`") { quote = c; continue; }
+    if (c === "(") depth++;
+    if (c === ")" && --depth === 0) return i === expr.length - 1 ? { callee: match[1], args: callArgs(expr, match[0].length) } : null;
+  }
+  return null;
+}
+/** The absolute path an expression stands for, or null when it cannot be traced. */
+function locate(expr, names) {
+  const source = expr.trim().replace(/^await\s+/, "");
+  if (/^(?:os\.)?tmpdir\(\s*\)$/.test(source)) return tmpdir();
+  if (/^[A-Za-z_$][\w$]*$/.test(source)) return names.get(source) ?? null;
+  const absolute = /^(["'])(\/(?:(?!\1)[^\\$`])*)\1$/.exec(source);
+  if (absolute) return absolute[2].split("/").includes("..") ? null : absolute[2];
+  const template = /^`\$\{([^{}`]+)\}((?:\/[^`$\\]*)?)`$/.exec(source);
+  if (template) {
+    const base = locate(template[1], names);
+    return base && !template[2].split("/").includes("..") ? join(base, template[2]) : null;
+  }
+  const call = wholeCall(source);
+  if (!call || !call.args.length) return null;
+  if (/^(?:[A-Za-z_$][\w$]*\.)?mkdtemp(?:Sync)?$/.test(call.callee)) {
+    // mkdtemp creates a fresh directory beside its prefix; the placeholder stands for the random suffix.
+    const prefix = locate(call.args[0], names);
+    return prefix ? `${prefix}XXXXXX` : null;
+  }
+  if (/^(?:(?:path|posix|nodePath)\.)?(?:join|resolve)$/.test(call.callee)) {
+    const base = locate(call.args[0], names);
+    const rest = call.args.slice(1).map(plainRelative);
+    return base && rest.every(part => part !== null) ? join(base, ...rest) : null;
+  }
+  return null;
+}
+/** Locations of a file's traceable consts (the comment above realLocation says what is traced). */
+function locations(source) {
+  const shadowed = new Set();
+  const identifiers = list => { for (const id of list.matchAll(IDENT)) shadowed.add(id[0]); };
+  for (const match of source.matchAll(/\(([^()]*)\)\s*(?:\{|=>)/g)) identifiers(match[1]);
+  for (const match of source.matchAll(/([A-Za-z_$][\w$]*)\s*=>/g)) shadowed.add(match[1]);
+  for (const match of source.matchAll(/\b(?:const|let|var)\s*[{[]([^=]*)=/g)) identifiers(match[1]);
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s+(?:of|in)\b/g)) shadowed.add(match[1]);
+  for (const match of source.matchAll(/\bcatch\s*\(\s*([A-Za-z_$][\w$]*)/g)) shadowed.add(match[1]);
+  const declared = new Map();
+  for (const match of source.matchAll(/\b(const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*([^;\n]*)/g)) {
+    declared.set(match[2], declared.has(match[2]) ? null : match[1] === "const" ? match[3] : null);
+  }
+  const assigned = name => [...source.matchAll(new RegExp(`(?<![\\w$.])${name.replace(/\$/g, "\\$")}\\s*(?:[-+*/%&|^]|\\*\\*|<<|>>>?|&&|\\|\\||\\?\\?)?=(?![=>])`, "g"))].length > 1
+    || new RegExp(`(?:\\+\\+|--)${name.replace(/\$/g, "\\$")}\\b|(?<![\\w$])${name.replace(/\$/g, "\\$")}(?:\\+\\+|--)`).test(source);
+  const names = new Map();
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const [name, value] of declared) {
+      if (names.has(name) || value === null || shadowed.has(name) || assigned(name)) continue;
+      const at = locate(value, names);
+      if (at !== null) { names.set(name, at); changed = true; }
+    }
+  }
+  return names;
+}
+/** True when an expression's traced location is outside the repository root. */
+const outsideRepo = (expr, names) => { const at = locate(expr, names); return at !== null && !insideRepo(at); };
+/**
  * Files that write each marker, with a local taint fixpoint and write wrappers. A local name is
  * tainted by a declaration whose value spells the marker, calls a tainted exported helper, or
  * reads (not calls) a tainted local. Outside this package a bare literal does not count: the
- * write must go through this package's layout helpers or spell a path under clossys/.
+ * write must go through this package's layout helpers or spell a path under clossys/. A write
+ * whose path traces to a location outside the repository root is not a writer.
  */
 function writersOf(marker) {
   const ownLiteral = quoted(marker);
@@ -607,6 +709,7 @@ function writersOf(marker) {
       if (name === "rm" || name === "rmSync") return true;
       return true;
     };
+    const names = locations(source);
     const calls = [...source.matchAll(WRITE_CALL)].map(call => [call[1], call.index + call[0].length]);
     for (const name of wrappers) for (const call of source.matchAll(new RegExp(`\\b${name.replace(/\$/g, "\\$")}\\s*\\(`, "g"))) calls.push([name, call.index + call[0].length]);
     for (const [name, at] of calls) {
@@ -614,7 +717,7 @@ function writersOf(marker) {
       const args = callArgs(source, at);
       if (!isWrite(name, args)) continue;
       const paths = ["cp", "cpSync", "copyFile", "copyFileSync", "rename", "renameSync"].includes(name) ? args.slice(0, 2) : args.slice(0, 1);
-      if (paths.some(arg => mentions(arg, local, inPackage))) { writers.add(file); break; }
+      if (paths.some(arg => mentions(arg, local, inPackage) && !outsideRepo(arg, names))) { writers.add(file); break; }
     }
   }
   return writers;
