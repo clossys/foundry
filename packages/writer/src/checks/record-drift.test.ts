@@ -3,6 +3,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { formatRef, openStrategy } from "@clossys/director";
+import { directorStoreReader } from "../../../producer/src/records/slots.js";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { checkWriterRecordDrift } from "./record-drift.js";
@@ -120,18 +121,18 @@ it("checks claim refs against actual active pointers, preserving current refs wh
     writeFileSync(join(root, "tree.json"), tree(1));
     writeFileSync(join(root, "cells", id, "v1.md"), cell(1, "active"));
     writeFileSync(join(root, "cells", id, "v2.md"), cell(2, "draft"));
-    const strategy = openStrategy(root);
+    const strategy = openStrategy(root, directorStoreReader);
     expect(strategy.getCell(id)?.version).toBe(2);
     expect(checkWriterRecordDrift(input, { strategy }).ok).toBe(true);
     writeFileSync(join(root, "tree.json"), tree(2));
     writeFileSync(join(root, "cells", id, "v1.md"), cell(1, "retired"));
     writeFileSync(join(root, "cells", id, "v2.md"), cell(2, "active"));
-    const report = checkWriterRecordDrift(input, { strategy: openStrategy(root) });
+    const report = checkWriterRecordDrift(input, { strategy: openStrategy(root, directorStoreReader) });
     expect(report.ok).toBe(false);
     expect(report.findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_STALE", recordId: claim.id, field: "strategy", message: expect.stringContaining(formatRef({ kind: "cell", ref: claim.strategy })) }));
     expect(report.approvalEvaluated).toBe(false);
     expect(JSON.stringify(input)).toBe(before);
-    expect(checkWriterRecordDrift(source(envelope([{ ...claim, strategy: { cell: id, version: 3 } }])), { strategy: openStrategy(root) }).findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_DANGLING" }));
+    expect(checkWriterRecordDrift(source(envelope([{ ...claim, strategy: { cell: id, version: 3 } }])), { strategy: openStrategy(root, directorStoreReader) }).findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_DANGLING" }));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

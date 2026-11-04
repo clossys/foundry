@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
  * Foundry's real director facts subject: clossys/evidence/director/findings/
- * checked against docs/PUBLISHING.md only. Invokes the compiled director
- * CLI by dist path so package-evidence can count a packages/director/dist
- * site.
+ * checked against docs/PUBLISHING.md only. Runs `clossys director check`
+ * through the compiled clossys CLI (packages/producer/dist/cli/index.js):
+ * @clossys/director is a library with no bin, and the clossys CLI injects
+ * its single slot-model store reader and writer.
  */
 
 import { spawnSync } from "node:child_process";
@@ -11,7 +12,7 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
-export const directorCli = join(repoRoot, "packages/director/dist/cli.js");
+export const directorCli = join(repoRoot, "packages/producer/dist/cli/index.js");
 
 const scanRoot = "docs";
 const otherRootMarkdown = [
@@ -38,10 +39,10 @@ const otherRootMarkdown = [
 // public-safety gates still scan every changelog.
 const excludeGlobs = ["contracts/**", "changelogs/**", ...otherRootMarkdown];
 
-// The director CLI argv this gate runs, relative to `cwd` (the repository
+// The `clossys director check` argv this gate runs, relative to `cwd` (the repository
 // root in real use; a fixture root in scripts/check-director-subject.test.mjs).
 export function directorSubjectArgs(cli = directorCli) {
-  return [cli, "clossys/evidence/director", scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
+  return [cli, "director", "check", "clossys/evidence/director", scanRoot, "--extensions", ".md", ...excludeGlobs.flatMap((glob) => ["--exclude", glob])];
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

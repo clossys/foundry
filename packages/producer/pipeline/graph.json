@@ -216,7 +216,7 @@
         "lane": "you",
         "stage": "design.select",
         "rank": 6,
-        "x": 3040,
+        "x": 3320,
         "y": 0
       }
     },
@@ -255,7 +255,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2440,
+        "x": 2720,
         "y": 344
       }
     },
@@ -365,7 +365,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 4,
-        "x": 2160,
+        "x": 2440,
         "y": 172
       }
     },
@@ -420,7 +420,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2440,
+        "x": 2720,
         "y": 172
       }
     },
@@ -475,7 +475,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 7,
-        "x": 3680,
+        "x": 3960,
         "y": 172
       }
     },
@@ -571,7 +571,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 4,
-        "x": 2160,
+        "x": 2440,
         "y": 0
       }
     },
@@ -619,7 +619,7 @@
         "lane": "you",
         "stage": "design.pin",
         "rank": 5,
-        "x": 2440,
+        "x": 2720,
         "y": 0
       }
     },
@@ -667,7 +667,7 @@
         "lane": "you",
         "stage": "publish.pin",
         "rank": 7,
-        "x": 3680,
+        "x": 3960,
         "y": 0
       }
     },
@@ -768,7 +768,7 @@
         "lane": "designer",
         "stage": "design.make",
         "rank": 3,
-        "x": 1560,
+        "x": 1840,
         "y": 736
       }
     },
@@ -823,7 +823,7 @@
         "lane": "writer",
         "stage": "design.make",
         "rank": 4,
-        "x": 1840,
+        "x": 2120,
         "y": 932
       }
     },
@@ -882,7 +882,7 @@
         "lane": "publisher",
         "stage": "publish.make",
         "rank": 6,
-        "x": 3360,
+        "x": 3640,
         "y": 1128
       }
     },
@@ -929,7 +929,7 @@
         "lane": "designer",
         "stage": "design.select",
         "rank": 5,
-        "x": 2760,
+        "x": 3040,
         "y": 736
       }
     },
@@ -969,8 +969,77 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 3,
-        "x": 5440,
+        "x": 5720,
         "y": 1668
+      }
+    },
+    {
+      "id": "director.store",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "direct.pin",
+      "summary": "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
+      "inputs": [
+        {
+          "glob": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        },
+        {
+          "glob": "clossys/agents/director/**"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "clossys/agents/director/tree.json"
+        },
+        {
+          "glob": "clossys/agents/director/cells/**"
+        },
+        {
+          "glob": "clossys/agents/director/sessions/**"
+        },
+        {
+          "glob": "clossys/agents/director/findings/**"
+        },
+        {
+          "glob": "clossys/agents/director/requests/**"
+        },
+        {
+          "glob": "clossys/agents/director/briefs/**"
+        },
+        {
+          "glob": "clossys/agents/director/citations.json"
+        },
+        {
+          "glob": "clossys/agents/director/reports/*.json"
+        }
+      ],
+      "command": {
+        "cli": {
+          "verb": "director",
+          "parser": "src/cli/director.ts"
+        },
+        "entry": "src/cli/director.ts#runDirectorVerb"
+      },
+      "checks": [
+        "workspace"
+      ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "publisher",
+        "stage": "direct.pin",
+        "rank": 3,
+        "x": 1200,
+        "y": 1128
       }
     },
     {
@@ -1012,7 +1081,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 3,
-        "x": 1240,
+        "x": 1520,
         "y": 1128
       }
     },
@@ -1059,7 +1128,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 5,
-        "x": 5720,
+        "x": 6000,
         "y": 1668
       }
     },
@@ -1107,7 +1176,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 5,
-        "x": 4000,
+        "x": 4280,
         "y": 1128
       }
     },
@@ -1150,7 +1219,7 @@
         "lane": "publisher",
         "stage": "design.brief",
         "rank": 3,
-        "x": 1240,
+        "x": 1520,
         "y": 1300
       }
     },
@@ -1197,7 +1266,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 6,
-        "x": 6000,
+        "x": 6280,
         "y": 1668
       }
     },
@@ -1245,7 +1314,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 6,
-        "x": 4280,
+        "x": 4560,
         "y": 1128
       }
     },
@@ -1314,7 +1383,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 10,
-        "x": 6840,
+        "x": 7120,
         "y": 1668
       }
     },
@@ -1376,7 +1445,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 4840,
+        "x": 5120,
         "y": 1128
       }
     },
@@ -1444,7 +1513,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 4840,
+        "x": 5120,
         "y": 1300
       }
     },
@@ -1485,7 +1554,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 8,
-        "x": 6280,
+        "x": 6560,
         "y": 1668
       }
     },
@@ -1549,7 +1618,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 9,
-        "x": 7440,
+        "x": 7720,
         "y": 1128
       }
     },
@@ -1602,7 +1671,7 @@
         "lane": "publisher",
         "stage": "publish.publish",
         "rank": 8,
-        "x": 7160,
+        "x": 7440,
         "y": 1128
       }
     },
@@ -1650,7 +1719,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 8,
-        "x": 6280,
+        "x": 6560,
         "y": 1840
       }
     },
@@ -1714,7 +1783,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 6,
-        "x": 4280,
+        "x": 4560,
         "y": 1300
       }
     },
@@ -1763,7 +1832,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 7,
-        "x": 4560,
+        "x": 4840,
         "y": 1128
       }
     },
@@ -1830,7 +1899,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 8,
-        "x": 6280,
+        "x": 6560,
         "y": 2012
       }
     },
@@ -1884,7 +1953,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 5120,
+        "x": 5400,
         "y": 1128
       }
     },
@@ -1969,7 +2038,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 8,
-        "x": 4840,
+        "x": 5120,
         "y": 1472
       }
     },
@@ -2036,7 +2105,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 9,
-        "x": 6560,
+        "x": 6840,
         "y": 1668
       }
     },
@@ -2074,7 +2143,7 @@
         "lane": "publisher",
         "stage": "publish.assemble",
         "rank": 5,
-        "x": 4000,
+        "x": 4280,
         "y": 1300
       }
     },
@@ -2131,7 +2200,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 9,
-        "x": 6560,
+        "x": 6840,
         "y": 2012
       }
     },
@@ -2169,7 +2238,7 @@
         "lane": "checks",
         "stage": "publish.check",
         "rank": 9,
-        "x": 6560,
+        "x": 6840,
         "y": 1840
       }
     }
@@ -2472,6 +2541,17 @@
     {
       "from": "pin.director",
       "to": "director.check",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/pin.json",
+          "input": "clossys/agents/director/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.director",
+      "to": "director.store",
       "via": [
         {
           "output": "clossys/agents/director/*/pin.json",
@@ -3143,6 +3223,17 @@
     {
       "from": "director.candidates",
       "to": "director.check",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/candidates/*",
+          "input": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        }
+      ]
+    },
+    {
+      "from": "director.candidates",
+      "to": "director.store",
       "via": [
         {
           "output": "clossys/agents/director/*/candidates/*",
@@ -3943,6 +4034,51 @@
       "glob": "clossys/library/**"
     },
     {
+      "step": "director.store",
+      "port": "input",
+      "glob": "clossys/agents/director/**"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/tree.json"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/cells/**"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/sessions/**"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/findings/**"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/requests/**"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/briefs/**"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/citations.json"
+    },
+    {
+      "step": "director.store",
+      "port": "output",
+      "glob": "clossys/agents/director/reports/*.json"
+    },
+    {
       "step": "options",
       "port": "output",
       "glob": "clossys/agents/*/*/slot.json#options"
@@ -4027,8 +4163,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 2696,
-      "after": 2585
+      "before": 2680,
+      "after": 2586
     },
     "lanes": [
       {
@@ -4098,14 +4234,14 @@
         "index": 2,
         "x": 920,
         "y": -72,
-        "width": 240,
+        "width": 520,
         "round": "direct",
         "name": "pin"
       },
       {
         "id": "design.brief",
         "index": 3,
-        "x": 1240,
+        "x": 1520,
         "y": -72,
         "width": 240,
         "round": "design",
@@ -4114,7 +4250,7 @@
       {
         "id": "design.make",
         "index": 4,
-        "x": 1560,
+        "x": 1840,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -4123,7 +4259,7 @@
       {
         "id": "design.pin",
         "index": 5,
-        "x": 2160,
+        "x": 2440,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -4132,7 +4268,7 @@
       {
         "id": "design.select",
         "index": 6,
-        "x": 2760,
+        "x": 3040,
         "y": -72,
         "width": 520,
         "round": "design",
@@ -4141,7 +4277,7 @@
       {
         "id": "publish.make",
         "index": 7,
-        "x": 3360,
+        "x": 3640,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -4150,7 +4286,7 @@
       {
         "id": "publish.pin",
         "index": 8,
-        "x": 3680,
+        "x": 3960,
         "y": -72,
         "width": 240,
         "round": "publish",
@@ -4159,7 +4295,7 @@
       {
         "id": "publish.assemble",
         "index": 9,
-        "x": 4000,
+        "x": 4280,
         "y": -72,
         "width": 1360,
         "round": "publish",
@@ -4168,7 +4304,7 @@
       {
         "id": "publish.check",
         "index": 10,
-        "x": 5440,
+        "x": 5720,
         "y": -72,
         "width": 1640,
         "round": "publish",
@@ -4177,7 +4313,7 @@
       {
         "id": "publish.publish",
         "index": 11,
-        "x": 7160,
+        "x": 7440,
         "y": -72,
         "width": 520,
         "round": "publish",
@@ -4190,7 +4326,7 @@
         "index": 0,
         "x": 0,
         "y": -128,
-        "width": 1160,
+        "width": 1440,
         "stages": [
           "direct.brief",
           "direct.make",
@@ -4200,7 +4336,7 @@
       {
         "id": "design",
         "index": 1,
-        "x": 1240,
+        "x": 1520,
         "y": -128,
         "width": 2040,
         "stages": [
@@ -4213,7 +4349,7 @@
       {
         "id": "publish",
         "index": 2,
-        "x": 3360,
+        "x": 3640,
         "y": -128,
         "width": 4320,
         "stages": [
@@ -4465,7 +4601,7 @@
         "ai",
         "code"
       ],
-      "steps": 14,
+      "steps": 15,
       "sources": [
         "derived"
       ],
@@ -4781,6 +4917,12 @@
         {
           "flag": "--root",
           "value": true
+        }
+      ],
+      "director.store": [
+        {
+          "flag": "--help",
+          "value": null
         }
       ],
       "designer.brief": [

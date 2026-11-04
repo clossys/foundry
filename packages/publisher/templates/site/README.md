@@ -177,7 +177,7 @@ Every page reads its records from the repository's own `clossys/`
 directory at build time and never copies them into this template. Four
 records, and one file, `app/site-records.ts`, reads them:
 
-- `clossys/director/brand-facts.json` — the brand name (the wordmark when
+- `clossys/publisher/site-identity.json` — the brand name (the wordmark when
   there is one), the registered legal entity, the contact address and the
   taglines. The first tagline's copy id is the landing heading.
 - `clossys/writer/copy-registry.json` — every visible word, by copy id. A
@@ -207,7 +207,7 @@ or refused by its owner's check is left out, and its section shows an empty
 label instead, so a repository with none of them still renders `/pack`.
 `resolvePackReviewSections` in `app/pack-review.ts` builds the three sections:
 
-- **Strategy brief** — `clossys/director/contract.json`, checked by
+- **Strategy brief** — `clossys/agents/director/briefs/publisher.launch.json`, checked by
   Director's `validateStrategyContract`: the first product record's
   summary, and each claim still marked `hypothesis` as an open question.
   `clossys/brief.json`, read through Director's

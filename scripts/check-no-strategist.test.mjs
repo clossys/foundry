@@ -23,7 +23,7 @@ test("dated history is left as written", () => {
 });
 
 test("a line recorded by digest in identity history stays unchanged", () => {
-  const line = "| `@vespeneventures/strategist` | retired |";
+  const line = "| `@example/strategist` | retired |";
   assert.deepEqual(fileFindings("docs/LIFECYCLE.md", `${line}\n`, new Set([sha256(line)])), []);
   assert.equal(fileFindings("docs/LIFECYCLE.md", `${line} edited\n`, new Set([sha256(line)])).length, 1);
 });

@@ -1,5 +1,5 @@
 /**
- * `director-check slots`: run the Director slot suite and print JSON.
+ * `clossys director check slots`: run the Director slot suite and print JSON.
  * Report-only: exit 0 even with findings, unless --strict (then 1).
  * Usage errors exit 2.
  */
@@ -7,7 +7,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { runDirectorSuite, type SuiteInput } from "./checks.js";
 
-export const SLOTS_USAGE = `Usage: director-check slots [--strict] [--downstream <file|dir>]... <cell-file|dir>...
+export const SLOTS_USAGE = `Usage: clossys director check slots [--strict] [--downstream <file|dir>]... <cell-file|dir>...
 
 Runs the director.cell.v1 suite (D-REQ, D-SPEC, D-COVER) and prints JSON.
 Directories are walked for .md files. --downstream adds Writer and Designer

@@ -13,7 +13,7 @@
  * Five more files are read here, and only by the dev-only pack review, each
  * at request time and never imported, so a repository without one still
  * builds: `clossys/publisher/pack.json` (`loadPackManifest`),
- * `clossys/director/briefs/publisher.launch.json` (`loadStrategyBrief`),
+ * `clossys/agents/director/briefs/publisher.launch.json` (`loadStrategyBrief`),
  * `clossys/brief.json` (`loadEngagementBrief`), `clossys/writer/voice.json`
  * (`loadVoiceRecord`) and `clossys/designer/brand.css`
  * (`loadBrandDeclarations`). Each throws when its file is absent or
@@ -121,7 +121,7 @@ function packRecordPath(...segments: string[]): string {
 
 /** The compiled publisher.launch brief, parsed and not yet validated. Read at request time; throws when absent or not JSON. */
 export function loadStrategyBrief(): unknown {
-  return JSON.parse(readFileSync(packRecordPath("director", "briefs", "publisher.launch.json"), "utf8"));
+  return JSON.parse(readFileSync(packRecordPath("agents", "director", "briefs", "publisher.launch.json"), "utf8"));
 }
 
 /** The engagement brief, parsed and not yet validated. Read at request time; throws when absent or not JSON. */
@@ -154,3 +154,4 @@ export function createPackReviewCopyResolver(): CopyResolver {
 export function siteCopyIds(): string[] {
   return copyRegistryRecord.entries.map((entry) => entry.id);
 }
+

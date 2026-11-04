@@ -4,9 +4,15 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
-import { stageCell, stageFinding, stageWontClaimCells } from "./ground/fixtures.js";
+// Director's own fixtures (test-only source import; @clossys/director ships them in no export).
+import { stageCell, stageFinding, stageWontClaimCells } from "../../../director/src/ground/fixtures.js";
 
-const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
+/**
+ * `clossys director check …` end to end through the compiled clossys CLI: @clossys/director is a
+ * library, and this verb injects the slot-model reader and writer, so every read and write here
+ * goes through records/slots.ts and records/slot-write.ts.
+ */
+const cli = fileURLToPath(new URL("../../dist/cli/index.js", import.meta.url));
 const projects: string[] = [];
 const id = "context.customer.need";
 function put(root: string, path: string, text: string) {
@@ -35,13 +41,13 @@ function project(marker: "directory" | "file" = "directory") {
   return { repo, nested, root: join(repo, "clossys/agents/director"), old: join(repo, "clossys/director") };
 }
 function run(cwd: string, ...args: string[]) {
-  const child = spawnSync(process.execPath, [cli, ...args, "--json"], { cwd, encoding: "utf8" });
+  const child = spawnSync(process.execPath, [cli, "director", "check", ...args, "--json"], { cwd, encoding: "utf8" });
   expect(child.error).toBeUndefined();
   return { code: child.status, output: child.stdout, error: child.stderr };
 }
 afterEach(() => projects.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
 
-it.each(["directory", "file"] as const)("compiled CLI shares repository-root reads and writes from nested cwd with .git %s", marker => {
+it.each(["directory", "file"] as const)("compiled clossys director check shares repository-root reads and writes from nested cwd with .git %s", marker => {
   const { repo, nested, root, old } = project(marker); strategy(root);
   expect(run(repo, "ground", "surfaces").code).toBe(0);
   expect(run(nested, "ground", "../../surfaces").code).toBe(0);
@@ -64,9 +70,9 @@ it.each(["directory", "file"] as const)("compiled CLI shares repository-root rea
   expect(JSON.parse(readFileSync(join(root, "requests/REQ-0001.json"), "utf8")).kind).toBe("tripwire");
   expect(existsSync(old)).toBe(false);
   expect(existsSync(join(nested, "clossys"))).toBe(false);
-});
+}, 30_000);
 
-it("compiled CLI never selects populated old roots or creates a missing default during reads", () => {
+it("compiled clossys director check never selects populated old roots or creates a missing default during reads", () => {
   const { repo, nested, root, old } = project(); strategy(old); strategy(join(repo, "director"));
   expect(run(nested, "ground", "../../surfaces").code).toBe(2);
   expect(run(nested, "status").code).toBe(2);
@@ -75,9 +81,9 @@ it("compiled CLI never selects populated old roots or creates a missing default 
   expect(run(nested, "propose", "focus.segment.core", "--root", "../../clossys/director").code).toBe(0);
   expect(existsSync(join(old, "cells/focus.segment.core/v1.md"))).toBe(true);
   expect(existsSync(root)).toBe(false);
-});
+}, 30_000);
 
-it("compiled CLI reports the prescribed empty product-saas interview tree as incomplete", () => {
+it("compiled clossys director check reports the prescribed empty product-saas interview tree as incomplete", () => {
   const { repo, nested, root } = project();
   const tree = { schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "product-saas", core: "archetype", active: {} };
   put(root, "tree.json", JSON.stringify(tree));
@@ -87,4 +93,4 @@ it("compiled CLI reports the prescribed empty product-saas interview tree as inc
   expect(JSON.parse(readFileSync(join(root, "tree.json"), "utf8"))).toEqual(tree);
   expect(existsSync(join(root, "cells"))).toBe(false);
   expect(existsSync(join(repo, "clossys/director"))).toBe(false);
-});
+}, 30_000);

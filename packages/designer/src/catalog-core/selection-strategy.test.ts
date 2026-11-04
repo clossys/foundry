@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { formatRef } from "@clossys/director";
 import { openStrategy } from "../../../director/src/api.js";
+import { directorStoreReader } from "../../../producer/src/records/slots.js";
 import { loadCatalog } from "../../../director/src/catalog.js";
 import { validateBriefContract } from "../../../director/src/brief-contracts.js";
 import { check } from "./check.js";
@@ -37,7 +38,7 @@ function fixture() {
     put(root, `cells/${id}/v${version}.md`, `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: [${refs.join(", ")}]\nfeeds: [designer.identity]\nfunctions: [brand]\n${status === "active" ? "confirmed: msg:2026-10-29-1#U3\n" : ""}---\n\n## Direction\n${keys.map(key => `- ${key.key}: Choose 1 bounded fixture approach over broader alternatives.`).join("\n")}\n\n## Because\n- The fixture user selected this approach (${refs.join(", ")})\n\n## Watch\n- If requests > 5 each month, then review.\n`);
   }
   ids.forEach(id => cell(id, 1));
-  function reader() { return openStrategy(root, { contracts: [contract] }); }
+  function reader() { return openStrategy(root, directorStoreReader, { contracts: [contract] }); }
   const assignable: SelectionStrategyReader = reader();
   expect(assignable.getBrief(contract.id).state).toBe("ready");
   const initial = reader(); const brief = initial.getBrief(contract.id);

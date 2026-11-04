@@ -22,6 +22,8 @@ export interface CliResult {
   decision?: unknown;
   /** decisions: every slot's state and the counts. */
   decisions?: unknown;
+  /** The command already printed its own output (clossys director); nothing more is printed. */
+  printed?: boolean;
 }
 
 /** Every command runs through the pipeline runner: only a defined step can run (src/pipeline/steps). */

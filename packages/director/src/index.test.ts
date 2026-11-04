@@ -12,6 +12,7 @@ loadCatalog validateCatalog openStrategy compileBrief validateBriefContract disc
 parseCell serializeCell parseRef formatRef parseSession parseFinding validateFinding validateRequest validateTree readStrategyRoot
 checkCell checkCoherence completion strategyStatus validWatch blocks cellJudgeId
 buildCitationIndex propose activate createRequest listRequests resolveRequest review
+runDirectorCli runDirectorRateCli storeFault
 `.trim().split(/\s+/).sort();
 
 const typeExports = `
@@ -24,6 +25,7 @@ Strategy StrategyInventoryReport Brief BriefCell BriefContract BriefContractDisc
 CellId CellRef Ref Bullet Cell FormatIssue FormatResult StrategyTreeNode StrategyTree SessionLine Session Finding StrategyRequest StrategyRootIssue StrategyModel
 Scope JudgeVerdict CheckOptions CheckContext CheckFinding CellFinding CoherenceFinding CellCompletion StorylineReport StatusReport CompletionReport
 CitationEntry CitationIndex ScanInput ProposeOptions ActivateOptions NewRequest ReviewReport ReviewRequest
+DirectorStore DirectorStoreChange DirectorStoreEntry DirectorStoreError DirectorStoreFault DirectorStoreReader DirectorStoreWriter
 `.trim().split(/\s+/).sort();
 
 it("pins the v2 runtime exports exactly", () => {

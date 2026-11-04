@@ -1,13 +1,14 @@
-import { closeSync, constants, fstatSync, ftruncateSync, lstatSync, openSync, readdirSync, realpathSync, statSync, writeFileSync } from "node:fs";
+import { readdirSync, realpathSync, statSync } from "node:fs";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { Brief } from "../brief.js";
-import { discoverBriefContracts, readBriefRootFile } from "../brief-contracts.js";
+import { discoverBriefContracts } from "../brief-contracts.js";
 import { DEFAULT_SKIP_DIRS, scanStrategyDirectory, type ScanOptions } from "../scan.js";
 import { readStrategyRoot } from "../store.js";
+import type { DirectorStore } from "../store-io.js";
 import { buildCitationIndex } from "./index.js";
 import { resolveStrategyRoot } from "../strategy-dir-default.js";
 
-const USAGE = `Usage: director-check index [--root <dir>] [--check] [--scan <dir>…] [--json]
+const USAGE = `Usage: clossys director check index [--root <dir>] [--check] [--scan <dir>…] [--json]
 
 Build citations.json, or check current sources without writing with --check.
 The root defaults to <repo root>/clossys/agents/director. Briefs are read from briefs/*.json.
@@ -46,18 +47,13 @@ function refuseScannedTarget(target: string, dirs: string[], skipDirs: string[])
   dirs.forEach(walk);
 }
 
-/** Read files through the confined ST-2 reader; reject unsafe brief directories. */
-function readBriefs(root: string): { path: string; brief: Brief }[] {
-  const directory = join(root, "briefs");
-  try {
-    const stat = lstatSync(directory);
-    if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Brief directory is unsafe");
-  } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; }
+/** Read files through the injected store reader; it refuses unsafe brief directories. */
+function readBriefs(root: string, store: DirectorStore): { path: string; brief: Brief }[] {
   const result: { path: string; brief: Brief }[] = [];
-  for (const name of readdirSync(directory).sort()) {
+  for (const name of store.reader.list(root, "briefs") ?? []) {
     if (!name.endsWith(".json")) continue;
     const path = `briefs/${name}`;
-    const bytes = readBriefRootFile(root, path);
+    const bytes = store.reader.read(root, path);
     if (bytes === undefined) throw new Error(`Brief disappeared while reading: ${path}`);
     const value: unknown = JSON.parse(bytes);
     // The generated inventory is not itself a compiled brief. Its refs are still
@@ -70,7 +66,7 @@ function readBriefs(root: string): { path: string; brief: Brief }[] {
 }
 
 /** Kept separate so the shared CLI dispatch only adds the index subcommand. */
-export function runCitationIndex(argv: string[]): number {
+export function runCitationIndex(argv: string[], store: DirectorStore): number {
   let json = false;
   try {
     let root = resolveStrategyRoot(); let check = false; let explicitRoot = false;
@@ -95,19 +91,19 @@ export function runCitationIndex(argv: string[]): number {
       else if (flag === "--skip-dirs") skipDirs.push(value);
       else excludeGlobs.push(value);
     }
-    const target = join(root, "citations.json");
-    const generated = (() => {
-      try { return lstatSync(target); }
-      catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
-    })();
-    if (generated?.isSymbolicLink()) throw new CitationIndexTargetError("citations.json must not be a symlink");
-    if (generated && (!generated.isFile() || generated.nlink > 1)) throw new CitationIndexTargetError("citations.json must be a regular file without hardlink aliases");
-    refuseScannedTarget(join(realpathSync(root), "citations.json"), dirs, [...DEFAULT_SKIP_DIRS, ...skipDirs]);
-    const model = readStrategyRoot(root);
+    // The output may never land inside a scanned surface, even through a symlinked root; the
+    // store refuses a symlinked root for every read after this one.
+    const strategyRoot = store.reader.stat(root, ".");
+    if (strategyRoot?.type !== "directory" && strategyRoot?.type !== "symlink") throw new Error("Strategy root is unreadable or invalid: .");
+    refuseScannedTarget(join(strategyRoot.real, "citations.json"), dirs, [...DEFAULT_SKIP_DIRS, ...skipDirs]);
+    const generated = store.reader.stat(root, "citations.json");
+    if (generated?.type === "symlink") throw new CitationIndexTargetError("citations.json must not be a symlink");
+    if (generated && (generated.type !== "file" || generated.links > 1)) throw new CitationIndexTargetError("citations.json must be a regular file without hardlink aliases");
+    const model = readStrategyRoot(root, store.reader);
     if (!model.tree || model.issues.length) throw new Error(`Strategy root is unreadable or invalid: ${model.issues.map(issue => issue.path).join(", ")}`);
-    const discovered = discoverBriefContracts(root, model.catalog);
+    const discovered = discoverBriefContracts(root, store.reader, model.catalog);
     if (discovered.issues.length) throw new Error(`Brief contracts are unreadable or invalid: ${discovered.issues.map(issue => issue.path).join(", ")}`);
-    const briefs = readBriefs(root);
+    const briefs = readBriefs(root, store);
     const options: ScanOptions = {
       extensions: extensions.length ? extensions : [".md", ".mdx", ".ts", ".tsx", ".js", ".jsx", ".json"],
       skipDirs: [...DEFAULT_SKIP_DIRS, ...skipDirs], excludeGlobs,
@@ -119,18 +115,11 @@ export function runCitationIndex(argv: string[]): number {
       }
       return { ...file, path: relative(root, join(dir, file.path)).split(sep).join("/") };
     }));
-    const inventory = readBriefRootFile(root, "briefs/index.json");
+    const inventory = store.reader.read(root, "briefs/index.json");
     if (inventory !== undefined) files.push({ path: "briefs/index.json", content: inventory });
     const result = buildCitationIndex(model, { files, briefs, contracts: discovered.contracts });
-    if (!check) {
-      // O_NOFOLLOW keeps a pre-existing symlink from redirecting this generated file.
-      const fd = openSync(target, constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK);
-      try {
-        const stat = fstatSync(fd);
-        if (!stat.isFile() || stat.nlink > 1) throw new CitationIndexTargetError("citations.json must be a regular file without hardlink aliases");
-        ftruncateSync(fd); writeFileSync(fd, `${JSON.stringify(result, null, 2)}\n`);
-      } finally { closeSync(fd); }
-    }
+    // The writer refuses a symlinked or hardlinked destination; nothing here opens the store.
+    if (!check) store.writer.replace(root, "citations.json", `${JSON.stringify(result, null, 2)}\n`);
     if (json) console.log(JSON.stringify(result));
     else {
       console.log(`Citation index: ${result.entries.length} entries; ${result.stale.length} stale; ${result.dangling.length} dangling; ${result.drift.length} brief fingerprint mismatches.`);

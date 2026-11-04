@@ -27,7 +27,7 @@ describe("loadLoopStates", () => {
 
   it("loads a valid loop.json per role directory, skipping a role with none", () => {
     write("clossys/advisor/loop.json", VALID_STATE);
-    write("clossys/director/facts.json", { x: 1 }); // no loop.json here
+    write("clossys/agents/director/facts.json", { x: 1 }); // no loop.json here
     const { roles, unreadable } = loadLoopStates(root);
     expect(Object.keys(roles)).toEqual(["advisor"]);
     expect(unreadable).toEqual([]);

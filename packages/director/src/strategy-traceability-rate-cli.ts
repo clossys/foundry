@@ -1,10 +1,13 @@
-#!/usr/bin/env node
-import { existsSync, readFileSync, realpathSync, statSync } from "node:fs";
+/**
+ * The strategy traceability rate command. Director ships no executable: the clossys
+ * CLI runs it as `clossys director rate-check`. The assessment file is caller-owned
+ * evidence named on the command line, not the strategy store.
+ */
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { assessStrategyTraceabilityRate } from "./strategy-traceability-rate.js";
 
-const USAGE = `Usage: director-rate-check <assessment.json>\n\nAssess strategy traceability rate from consumer-supplied independent observations.\nExit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or unreadable.\ndirector-check remains the multi-mode CLI and is not this assessment.`;
+const USAGE = `Usage: clossys director rate-check <assessment.json>\n\nAssess strategy traceability rate from consumer-supplied independent observations.\nExit codes: 0 = satisfied, 1 = violated, 2 = indeterminate or unreadable.\nclossys director check remains the multi-mode command and is not this assessment.`;
 
 export class DirectorRateCliInputError extends Error {}
 
@@ -33,23 +36,12 @@ export function main(argv: readonly string[]): number {
   return report.state === "satisfied" ? 0 : report.state === "violated" ? 1 : 2;
 }
 
-function run(): void {
+/** The argv-to-exit-code contract: argument and input errors print and map to 2. */
+export function runDirectorRateCli(argv: readonly string[]): number {
   try {
-    process.exitCode = main(process.argv.slice(2));
+    return main(argv);
   } catch (cause) {
-    console.error(`director-rate-check: ${cause instanceof Error ? cause.message : String(cause)}`);
-    process.exitCode = 2;
+    console.error(`clossys director rate-check: ${cause instanceof Error ? cause.message : String(cause)}`);
+    return 2;
   }
 }
-
-/** Resolves an npm/POSIX bin symlink before deciding whether this module is the entrypoint. */
-export function isDirectInvocation(moduleUrl: string, argvPath: string | undefined): boolean {
-  if (argvPath === undefined) return false;
-  try {
-    return realpathSync(fileURLToPath(moduleUrl)) === realpathSync(resolve(argvPath));
-  } catch {
-    return false;
-  }
-}
-
-if (isDirectInvocation(import.meta.url, process.argv[1])) run();

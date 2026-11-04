@@ -101,7 +101,7 @@ describe("Director slot contracts", () => {
   });
 });
 
-describe("director-check slots", () => {
+describe("clossys director check slots", () => {
   it("reports findings as JSON, exits 0 by default and 1 with --strict", () => {
     const dir = mkdtempSync(join(tmpdir(), "director-slots-"));
     try {

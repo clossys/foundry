@@ -1,16 +1,17 @@
 import { resolveStrategyRoot } from "../strategy-dir-default.js";
 import { activate, createRequest, listRequests, propose, resolveRequest, type NewRequest } from "./index.js";
+import type { DirectorStore } from "../store-io.js";
 
 const commands = new Set(["propose", "activate", "request"]);
-const help = `Usage: director-check propose <id> [--from N] [--option A] [--request REQ-NNNN,…]
-       director-check activate <id>@N[,…] --confirm msg:<session>#U<n>
-       director-check request new --raised-by <role> --kind <kind> --cells <id,…> --detail <text>
-       director-check request list
-       director-check request resolve <REQ-NNNN> --ref <id>@N --confirm msg:<session>#U<n>
+const help = `Usage: clossys director check propose <id> [--from N] [--option A] [--request REQ-NNNN,…]
+       clossys director check activate <id>@N[,…] --confirm msg:<session>#U<n>
+       clossys director check request new --raised-by <role> --kind <kind> --cells <id,…> --detail <text>
+       clossys director check request list
+       clossys director check request resolve <REQ-NNNN> --ref <id>@N --confirm msg:<session>#U<n>
 Options: --root <dir> (default <repo root>/clossys/agents/director), --json, --help`;
 
 /** Return undefined for another unit's command; all write flags are closed and explicit. */
-export function runWriteCli(argv: string[]): number | undefined {
+export function runWriteCli(argv: string[], store: DirectorStore): number | undefined {
   const command = argv[0];
   if (!command || !commands.has(command)) return undefined;
   const jsonMode = argv.includes("--json");
@@ -36,23 +37,23 @@ export function runWriteCli(argv: string[]): number | undefined {
       if (positional.length !== 1) throw new Error("propose requires one cell id");
       const from = flags.get("--from");
       if (from !== undefined && !/^[1-9]\d*$/.test(from)) throw new Error("--from requires a positive version");
-      emit(propose(root, positional[0]!, { from: from === undefined ? undefined : Number(from), option: flags.get("--option"), requestIds: flags.has("--request") ? split(required("--request")) : undefined }));
+      emit(propose(root, store, positional[0]!, { from: from === undefined ? undefined : Number(from), option: flags.get("--option"), requestIds: flags.has("--request") ? split(required("--request")) : undefined }));
     } else if (command === "activate") {
       if (positional.length !== 1) throw new Error("activate requires one comma-separated batch");
-      emit(activate(root, split(positional[0]!), { confirm: required("--confirm") }));
+      emit(activate(root, store, split(positional[0]!), { confirm: required("--confirm") }));
     } else {
       const action = positional[0];
       const valid = action === "new" ? ["--raised-by", "--kind", "--cells", "--detail"] : action === "resolve" ? ["--ref", "--confirm"] : [];
       if ([...flags.keys()].some(f => f !== "--root" && !valid.includes(f))) throw new Error("Option does not apply to this request action");
-      if (action === "list" && positional.length === 1) emit(listRequests(root));
-      else if (action === "new" && positional.length === 1) emit(createRequest(root, { raisedBy: required("--raised-by"), kind: required("--kind") as NewRequest["kind"], cells: split(required("--cells")), detail: required("--detail") }));
-      else if (action === "resolve" && positional.length === 2) emit(resolveRequest(root, positional[1]!, required("--ref"), required("--confirm")));
+      if (action === "list" && positional.length === 1) emit(listRequests(root, store));
+      else if (action === "new" && positional.length === 1) emit(createRequest(root, store, { raisedBy: required("--raised-by"), kind: required("--kind") as NewRequest["kind"], cells: split(required("--cells")), detail: required("--detail") }));
+      else if (action === "resolve" && positional.length === 2) emit(resolveRequest(root, store, positional[1]!, required("--ref"), required("--confirm")));
       else throw new Error("request requires new, list, or resolve <id>");
     }
     return 0;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    if (jsonMode) console.log(JSON.stringify({ error: message })); else console.error(`director-check: ${message}`);
+    if (jsonMode) console.log(JSON.stringify({ error: message })); else console.error(`clossys director check: ${message}`);
     return message.startsWith("Activation blocked:") ? 1 : 2;
   }
 }

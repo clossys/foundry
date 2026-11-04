@@ -1,12 +1,14 @@
-#!/usr/bin/env node
-/** CLI for strategy cells, grounding and active prohibitions. Exit 0 clean, 1 findings, 2 could not run. */
+/**
+ * Command layer for strategy cells, grounding and active prohibitions. Exit 0 clean,
+ * 1 findings, 2 could not run. Director ships no executable: the clossys CLI
+ * (`clossys director check`) calls runDirectorCli with its store reader and writer.
+ */
 import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
 import { runWriteCli } from "./write/cli.js";
 import { runSlotCheckCli } from "./slot-contracts/cli.js";
-import { existsSync, realpathSync, statSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
-import { fileURLToPath } from "node:url";
 import { checkGrounding, type FactsGateResult } from "./facts-gate.js";
 import { readGroundRoot } from "./ground/read.js";
 import { readStrategyRoot } from "./store.js";
@@ -17,21 +19,22 @@ import { executeChecksCommand } from "./cli/checks.js";
 import { isReadCommand, READ_USAGE, runReadCommand } from "./cli/read.js";
 import { persistReport } from "./cli/reports.js";
 import { resolveStrategyRoot } from "./strategy-dir-default.js";
+import type { DirectorStore } from "./store-io.js";
 
-const USAGE = `Usage: director-check ground [<strategy-dir>] <scan-dir> [options]
-   or: director-check <strategy-dir> <scan-dir> [options]
-   or: director-check wont-claim <strategy-dir> <scan-dir> [options]
+const USAGE = `Usage: clossys director check ground [<strategy-dir>] <scan-dir> [options]
+   or: clossys director check <strategy-dir> <scan-dir> [options]
+   or: clossys director check wont-claim <strategy-dir> <scan-dir> [options]
 
 The strategy root defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it.
 --json prints the result as JSON. --help prints usage.
 --extensions <ext>, --skip-dirs <name>, and --exclude <glob> are repeatable scan options.
 Grounding reads findings/*.md. Exit codes: 0 clean, 1 findings, 2 could not run.
-Run "director-check wont-claim --help" for active prohibitions.
+Run "clossys director check wont-claim --help" for active prohibitions.
 ${READ_USAGE}
 ${REVIEW_USAGE}
 `;
 
-const WONT_CLAIM_USAGE = `Usage: director-check wont-claim <strategy-dir> <scan-dir> [options]
+const WONT_CLAIM_USAGE = `Usage: clossys director check wont-claim <strategy-dir> <scan-dir> [options]
 
   strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it.
   scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
@@ -181,7 +184,9 @@ function parseGroundArgs(argv: string[]): ParsedArgs & { json: boolean } {
   return { ...args, json };
 }
 
-function requireDirectory(label: string, path: string): void {
+/** The scan directory is a surface tree, not the strategy store. */
+function requireScanDirectory(path: string): void {
+  const label = "scan-dir";
   if (!existsSync(path)) throw new CliInputError(`${label} "${path}" does not exist`);
   let stat;
   try {
@@ -192,12 +197,22 @@ function requireDirectory(label: string, path: string): void {
   if (!stat.isDirectory()) throw new CliInputError(`${label} "${path}" is not a directory`);
 }
 
+/** The strategy root is checked through the store reader; a symlink root is reported by the reader as a root issue. */
+function requireStrategyDirectory(store: DirectorStore, path: string): void {
+  let entry;
+  try { entry = store.reader.stat(path, "."); } catch (error) {
+    throw new CliInputError(`cannot read strategy-dir "${path}": ${error instanceof Error ? error.message : String(error)}`);
+  }
+  if (!entry) throw new CliInputError(`strategy-dir "${path}" does not exist`);
+  if (entry.type !== "directory" && entry.type !== "symlink") throw new CliInputError(`strategy-dir "${path}" is not a directory`);
+}
+
 function resolveStrategyDirArgument(explicit: string | undefined): { dir: string } {
   return { dir: resolveStrategyRoot(explicit) };
 }
 
-function readStrategyFacts(strategyDir: string) {
-  const read = readGroundRoot(strategyDir);
+function readStrategyFacts(store: DirectorStore, strategyDir: string) {
+  const read = readGroundRoot(strategyDir, store.reader);
   return { mode: "findings", facts: read.model.findings, issues: read.issues.map(detail => ({ file: "findings/", reason: "invalid-findings", detail })) };
 }
 
@@ -252,7 +267,7 @@ function printWontClaimReport(result: WontClaimResult): void {
  * a hit, so "could not fully check" is never masked by findings from the part
  * that did run.
  */
-function runWontClaim(argv: string[]): number {
+function runWontClaim(argv: string[], store: DirectorStore): number {
   const args = parseGroundArgs(argv);
   if (args.help) {
     console.log(args.json ? JSON.stringify({ command: "wont-claim", code: 0, help: WONT_CLAIM_USAGE }) : WONT_CLAIM_USAGE);
@@ -262,13 +277,13 @@ function runWontClaim(argv: string[]): number {
   const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
   const strategyDir = strategyDirResolution.dir;
   const scanDir = resolve(args.scanDir);
-  requireDirectory("strategy-dir", strategyDir);
-  requireDirectory("scan-dir", scanDir);
+  requireStrategyDirectory(store, strategyDir);
+  requireScanDirectory(scanDir);
 
   if (!args.json) console.log(`Strategy directory: ${strategyDir}`);
   if (!args.json) console.log(`Scan directory: ${scanDir}`);
 
-  const model = readStrategyRoot(strategyDir);
+  const model = readStrategyRoot(strategyDir, store.reader);
 
   const scanOptions: { extensions: string[]; skipDirs?: string[]; excludeGlobs?: string[] } = {
     extensions: args.extensions.length > 0 ? args.extensions : SURFACE_DEFAULT_EXTENSIONS,
@@ -279,7 +294,7 @@ function runWontClaim(argv: string[]): number {
 
   const surfaces = files.filter(file => !isWithinRoot(resolve(scanDir, file.path), strategyDir));
   const result = checkWontClaimDrift(surfaces, model);
-  persistReport(strategyDir, "wont-claim", result);
+  persistReport(strategyDir, store.writer, "wont-claim", result);
   const code = result.state === "indeterminate" ? 2 : result.state === "hit" ? 1 : 0;
   if (args.json) {
     console.log(JSON.stringify({ command: "wont-claim", code, result }));
@@ -294,24 +309,22 @@ function runWontClaim(argv: string[]): number {
 }
 
 /**
- * Exported (unlike a typical CLI `main`) so `cli.test.ts` can exercise the
- * whole argv-to-exit-code contract directly, against a real `mkdtemp` temp
- * directory, without spawning a subprocess for every case. Takes `argv`
- * as a parameter rather than reading `process.argv` itself for exactly
- * that reason — `run()` below is the only caller that reads the real
- * `process.argv`.
+ * Dispatch without the error boundary. Exported so `cli.test.ts` can exercise
+ * the argv-to-exit-code contract directly against a real `mkdtemp` temp
+ * directory; argument errors throw CliInputError here and become exit 2 in
+ * runDirectorCli.
  */
-export function main(argv: string[]): number {
+export function main(argv: string[], store: DirectorStore): number {
   if (argv[0] === "slots") return runSlotCheckCli(argv.slice(1));
-  if (argv[0] === "review") return runReviewCli(argv.slice(1));
-  const writeResult = runWriteCli(argv);
+  if (argv[0] === "review") return runReviewCli(argv.slice(1), store);
+  const writeResult = runWriteCli(argv, store);
   if (writeResult !== undefined) return writeResult;
-  if (argv[0] === "index") return runCitationIndex(argv.slice(1));
+  if (argv[0] === "index") return runCitationIndex(argv.slice(1), store);
   if (isReadCommand(argv)) {
-    return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args) : executeChecksCommand(args) });
+    return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args, store) : executeChecksCommand(args, store) });
   }
   if (argv[0] === "wont-claim") {
-    try { return runWontClaim(argv.slice(1)); } catch (error) {
+    try { return runWontClaim(argv.slice(1), store); } catch (error) {
       if (!argv.includes("--json")) throw error;
       console.log(JSON.stringify({ command: "wont-claim", code: 2, error: error instanceof Error ? error.message : String(error) }));
       return 2;
@@ -327,13 +340,13 @@ export function main(argv: string[]): number {
   const strategyDirResolution = resolveStrategyDirArgument(args.strategyDir);
   const strategyDir = strategyDirResolution.dir;
   const scanDir = resolve(args.scanDir ?? process.cwd());
-  requireDirectory("strategy-dir", strategyDir);
-  requireDirectory("scan-dir", scanDir);
+  requireStrategyDirectory(store, strategyDir);
+  requireScanDirectory(scanDir);
 
   if (!args.json) console.log(`Strategy directory: ${strategyDir}`);
   if (!args.json) console.log(`Scan directory: ${scanDir}`);
 
-  const loaded = readStrategyFacts(strategyDir);
+  const loaded = readStrategyFacts(store, strategyDir);
   const issues = loaded.issues;
   if (!args.json && issues.length > 0 && loaded.mode === "findings") {
     console.log(`\n${issues.length} strategy file issue(s):`);
@@ -398,43 +411,21 @@ function printGroundIndeterminate(indeterminateReasons: string[]): 2 {
   return 2;
 }
 
-function run(): void {
+/**
+ * The whole argv-to-exit-code contract with the caller's store. Argument errors
+ * print usage and map to 2, as unexpected errors do; nothing here reads
+ * process.argv or sets process.exitCode.
+ */
+export function runDirectorCli(argv: string[], store: DirectorStore): number {
   try {
-    process.exitCode = main(process.argv.slice(2));
+    return main(argv, store);
   } catch (error) {
     if (error instanceof CliInputError) {
-      console.error(`director-check: ${error.message}`);
+      console.error(`clossys director check: ${error.message}`);
       console.error(`\n${USAGE}`);
-      process.exitCode = 2;
     } else {
-      console.error(
-        `director-check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`,
-      );
-      process.exitCode = 2;
+      console.error(`clossys director check: unexpected error: ${error instanceof Error ? (error.stack ?? error.message) : String(error)}`);
     }
+    return 2;
   }
-}
-
-/**
- * Same real-path guard `@example/gates`' `cli.ts` uses, for the same
- * reason: `npm install` publishes `bin` entries as symlinks, so comparing
- * `process.argv[1]` to `import.meta.url` without resolving symlinks on both
- * sides fails the moment this file is actually invoked the only way it
- * ships — as an installed CLI — and does so silently (`run()` never fires,
- * nothing prints, exit code 0). See that file's doc comment for the full
- * story; this is the same fix, applied here.
- */
-function detectMainModule(): boolean {
-  const argvPath = process.argv[1];
-  if (argvPath === undefined) return false;
-  const modulePath = fileURLToPath(import.meta.url);
-  try {
-    return realpathSync(resolve(argvPath)) === realpathSync(modulePath);
-  } catch {
-    return resolve(argvPath) === modulePath;
-  }
-}
-
-if (detectMainModule()) {
-  run();
 }

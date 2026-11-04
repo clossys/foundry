@@ -1,3 +1,4 @@
+import { reader, store } from "../test/store.js";
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -181,34 +182,34 @@ describe('production review read graph', () => {
   }
   it('uses actual store and citation index, opens the citing-cell drift, and preserves every filesystem byte', () => {
     const root=fixture(); const before=snapshot(root);
-    const report=planReview(root,{today:'2026-10-29'});
+    const report=planReview(root, reader,{today:'2026-10-29'});
     expect(report.issues).toEqual([]);
     expect(report.requests.map(request=>request.kind)).toEqual(['tripwire','drift']);
     expect(report.requests.find(request=>request.kind==='drift')?.cells).toEqual([cell]);
     expect(snapshot(root)).toEqual(before);
-    expect(planReview(root,{today:'2026-10-28'}).requests.some(request=>request.kind==='tripwire')).toBe(false);
+    expect(planReview(root, reader,{today:'2026-10-28'}).requests.some(request=>request.kind==='tripwire')).toBe(false);
   });
   it('rejects a symlinked root without reading or writing the outside tree', () => {
     const outside=fixture(); const alias=join(temporary(),'alias'); symlinkSync(outside,alias);
     const before=snapshot(outside);
-    expect(()=>planReview(alias,{today:'2026-10-29'})).toThrow(/invalid/);
+    expect(()=>planReview(alias, reader,{today:'2026-10-29'})).toThrow(/invalid/);
     expect(snapshot(outside)).toEqual(before);
   });
   it('persists actual request IDs and confines every changed byte to requests/', () => {
     const root=fixture(); const before=snapshot(root);
-    const result=review(root,{today:'2026-10-29'});
+    const result=review(root, store,{today:'2026-10-29'});
     expect(result.created.map(request=>request.id)).toEqual(['REQ-0001','REQ-0002']);
     expect(result.created.map(request=>request.kind)).toEqual(['tripwire','drift']);
     expect(result.created.every(request=>request.raisedBy==='strategy-loop' && request.status==='open' && request.opened==='2026-10-29')).toBe(true);
     const after=snapshot(root);
     const changed=[...new Set([...Object.keys(before),...Object.keys(after)])].filter(path=>before[path]!==after[path]);
     expect(changed).toEqual(['requests/REQ-0001.json','requests/REQ-0002.json']);
-    expect(review(root,{today:'2026-10-29'}).created).toEqual([]);
+    expect(review(root, store,{today:'2026-10-29'}).created).toEqual([]);
     expect(snapshot(root)).toEqual(after);
-    expect(listRequests(root)).toHaveLength(2);
+    expect(listRequests(root, store)).toHaveLength(2);
   });
   it.each(['open','drafted','resolved','declined'] as const)('deduplicates persisted %s markers after an unchanged rule is re-cited', status => {
-    const root=fixture(); review(root,{today:'2026-10-29'});
+    const root=fixture(); review(root, store,{today:'2026-10-29'});
     for (const name of ['REQ-0001','REQ-0002']) {
       const path=join(root,'requests',`${name}.json`), request=JSON.parse(readFileSync(path,'utf8'));
       request.status=status; if (status==='resolved') request.resolvedBy=formatRef({kind:'cell',ref:{cell,version:2}}); writeFileSync(path,JSON.stringify(request));
@@ -219,24 +220,24 @@ describe('production review read graph', () => {
     const treePath=join(root,'tree.json'), tree=JSON.parse(readFileSync(treePath,'utf8'));
     tree.active[cell]=3; writeFileSync(treePath,JSON.stringify(tree));
     const before=snapshot(root);
-    expect(review(root,{today:'2026-10-29'}).created).toEqual([]);
+    expect(review(root, store,{today:'2026-10-29'}).created).toEqual([]);
     expect(snapshot(root)).toEqual(before);
   });
   it('fails visibly at the actual request ID limit without changing any source bytes', () => {
     const root=fixture(); mkdirSync(join(root,'requests'),{recursive:true});
     writeFileSync(join(root,'requests/REQ-9999.json'),JSON.stringify({id:'REQ-9999',raisedBy:'researcher',kind:'reading',cells:[cell],detail:'Existing review',status:'open',opened:'2026-10-01',resolvedBy:null}));
     const before=snapshot(root);
-    expect(()=>review(root,{today:'2026-10-29'})).toThrow(/limit/);
+    expect(()=>review(root, store,{today:'2026-10-29'})).toThrow(/limit/);
     expect(snapshot(root)).toEqual(before);
     const errors=vi.spyOn(console,'error').mockImplementation(()=>{});
-    try { expect(runReviewCli(['--root',root,'--today','2026-10-29'])).toBe(2); }
+    try { expect(runReviewCli(['--root',root,'--today','2026-10-29'], store)).toBe(2); }
     finally { errors.mockRestore(); }
     expect(snapshot(root)).toEqual(before);
   });
   it('reports malformed watches without persisting partial review output', () => {
     const root=fixture(), path=join(root,`cells/${cell}/v2.md`);
     writeFileSync(path,readFileSync(path,'utf8')+'- If signups > 10 each fortnight, then review.\n');
-    const before=snapshot(root), result=review(root,{today:'2026-10-29'});
+    const before=snapshot(root), result=review(root, store,{today:'2026-10-29'});
     expect(result.issues).toHaveLength(1);
     expect(result.created).toEqual([]);
     expect(snapshot(root)).toEqual(before);
@@ -246,22 +247,22 @@ describe('production review read graph', () => {
     writeFileSync(join(outside,'sentinel'),'unchanged');
     rmSync(join(root,'requests'),{recursive:true,force:true}); symlinkSync(outside,join(root,'requests'));
     const before=snapshot(outside);
-    expect(()=>review(root,{today:'2026-10-29'})).toThrow();
+    expect(()=>review(root, store,{today:'2026-10-29'})).toThrow();
     expect(snapshot(outside)).toEqual(before);
   });
   it('exposes CLI findings, clean reruns, invalid arguments and persistence failures as 1/0/2', () => {
     const root=fixture(); const output=vi.spyOn(console,'log').mockImplementation(()=>{});
     const errors=vi.spyOn(console,'error').mockImplementation(()=>{});
     try {
-      expect(main(['review','--root',root,'--today','2026-10-29','--json'])).toBe(1);
-      expect(runReviewCli(['--root',root,'--today','2026-10-29'])).toBe(0);
-      expect(runReviewCli(['--root',root,'--today','2026-02-30'])).toBe(2);
-      expect(runReviewCli(['--force'])).toBe(2);
-      expect(runReviewCli(['--root',root,'--root',root])).toBe(2);
-      expect(runReviewCli(['--root',join(root,'missing')])).toBe(2);
+      expect(main(['review','--root',root,'--today','2026-10-29','--json'], store)).toBe(1);
+      expect(runReviewCli(['--root',root,'--today','2026-10-29'], store)).toBe(0);
+      expect(runReviewCli(['--root',root,'--today','2026-02-30'], store)).toBe(2);
+      expect(runReviewCli(['--force'], store)).toBe(2);
+      expect(runReviewCli(['--root',root,'--root',root], store)).toBe(2);
+      expect(runReviewCli(['--root',join(root,'missing')], store)).toBe(2);
       const failedRoot=fixture(); rmSync(join(failedRoot,'requests'),{recursive:true,force:true});
       symlinkSync(temporary(),join(failedRoot,'requests'));
-      expect(runReviewCli(['--root',failedRoot,'--today','2026-10-29'])).toBe(2);
+      expect(runReviewCli(['--root',failedRoot,'--today','2026-10-29'], store)).toBe(2);
     } finally { output.mockRestore(); errors.mockRestore(); }
   });
 

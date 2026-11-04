@@ -25,12 +25,15 @@ const PLAN_DIGEST = "sha256:834434fb2b492ac904029841194f4cacec1acd4ce4f422c8f873
 const SETUP_BUNDLE = "sha256:b691c17edfebd0845db222af53e88de778d87017d5c10c469a807ab15f8ea43c";
 const APPLY_BUNDLE = "sha256:c257dad4e121a84e9d533fc613413f326ddf320c83ca4e781b86faee279adc02";
 
+/** The direction package's pinned version in the fixture apply items. */
+const DIRECTION_VERSION = "1.4.0";
+
 const APPLY_ITEMS = [
   "- `brief` `write-record`",
   "- `caller-workflow` `add-caller-workflow`",
   "- `ci-template` `add-ci-template`",
   "- `example-owner/site:@example/starter` `pin-starter` `@example/starter@0.9.2`",
-  `- \`${DIRECTOR}\` \`install\` \`${DIRECTION_PACKAGE}@1.4.0\``,
+  `- \`${DIRECTOR}\` \`install\` \`${DIRECTION_PACKAGE}@${DIRECTION_VERSION}\``,
   "- `example-owner/site:@example/writer` `install` `@example/writer@0.7.0`",
   "- `ledger` `write-ledger`",
   "- `path-scope-job` `add-path-scope-job`",

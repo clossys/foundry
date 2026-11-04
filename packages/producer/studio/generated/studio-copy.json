@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "7812abe108ed864e33f684a5534fe1579d9557018a15d1aae6716d98a5adc201",
+  "revision": "03af60d2de97926f16f3f4955ac64773b49e48ec8660b7505603e04365e06f28",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2020,6 +2020,12 @@
     {
       "id": "studio.pipeline.node.director.check",
       "text": "Check direction",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.director.store",
+      "text": "Run Director commands",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },

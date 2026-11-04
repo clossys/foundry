@@ -3,7 +3,8 @@ import { readStrategyRoot } from "../store.js";
 import { parseRef, formatRef } from "../format/ref.js";
 import { checkCell } from "../checks/index.js";
 import type { StrategyRequest } from "../format/types.js";
-import { commitChanges, metadata, readBytes, withWriteLock, type Change } from "./transaction.js";
+import type { DirectorStore } from "../store-io.js";
+import { metadata, type Change } from "./transaction.js";
 
 export interface ProposeOptions { from?: number; option?: string; requestIds?: string[]; today?: string }
 export interface ActivateOptions { confirm?: string; judgeVerdicts?: Record<string, "pass" | "fail"> }
@@ -15,8 +16,8 @@ function date(today = new Date().toISOString().slice(0, 10)): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(today) || !Number.isFinite(Date.parse(today)) || new Date(today).toISOString().slice(0, 10) !== today) throw new Error("Expected an ISO date");
   return today;
 }
-function modelAt(root: string) {
-  const model = readStrategyRoot(root);
+function modelAt(root: string, store: DirectorStore) {
+  const model = readStrategyRoot(root, store.reader);
   if (!model.tree || model.issues.length) throw new Error(`Cannot write an invalid strategy root: ${model.issues.map(i => i.reason).join("; ")}`);
   return model as typeof model & { tree: NonNullable<typeof model.tree> };
 }
@@ -38,38 +39,38 @@ function json(value: unknown): string { return `${JSON.stringify(value, null, 2)
 function requestJson(request: StrategyRequest): string {
   return json({ ...request, resolvedBy: request.resolvedBy ? formatRef(request.resolvedBy) : null });
 }
-function assertSnapshot(model: Model): void {
+function assertSnapshot(model: Model, store: DirectorStore): void {
   for (const [path, bytes] of Object.entries(model.files)) {
-    if (readBytes(model.root, path) !== bytes) throw new Error(`Strategy source changed during validation: ${path}`);
+    if (store.reader.read(model.root, path) !== bytes) throw new Error(`Strategy source changed during validation: ${path}`);
   }
 }
-function linkedDrafts(model: Model, requestIds: string[], id: string, ref: string): Change[] {
+function linkedDrafts(model: Model, store: DirectorStore, requestIds: string[], id: string, ref: string): Change[] {
   if (new Set(requestIds).size !== requestIds.length) throw new Error("Duplicate request id");
   return requestIds.map(requestId => {
     const request = model.requests.find(r => r.id === requestId);
     if (!request || !["open", "drafted"].includes(request.status) || !request.cells.includes(id)) throw new Error("Request cannot be linked to this draft");
     const path = requestPath(requestId);
-    return { path, before: readBytes(model.root, path), after: requestJson({ ...request, status: "drafted", resolvedBy: parseRef(ref)! }) };
+    return { path, before: store.reader.read(model.root, path), after: requestJson({ ...request, status: "drafted", resolvedBy: parseRef(ref)! }) };
   });
 }
 
 /** Allocate a fresh version; --from selects the source, never the destination. */
-export function propose(root: string, id: string, options: ProposeOptions = {}) {
-  return withWriteLock(root, () => {
-    const model = modelAt(root); cellId(model, id);
+export function propose(root: string, store: DirectorStore, id: string, options: ProposeOptions = {}) {
+  return store.writer.locked(root, () => {
+    const model = modelAt(root, store); cellId(model, id);
     const versions = model.cells.filter(c => c.id === id).map(c => c.version);
     const version = Math.max(0, ...versions) + 1;
     if (!Number.isSafeInteger(version)) throw new Error("Cell version limit reached");
     if (options.from !== undefined && (!Number.isSafeInteger(options.from) || options.from < 1)) throw new Error("Expected a positive source version");
     if (options.option !== undefined && !/^[A-Z]$/.test(options.option)) throw new Error("Expected one option letter A–Z");
     const path = cellPath(id, version), today = date(options.today);
-    if (readBytes(root, path) !== undefined) throw new Error("Draft destination already exists");
+    if (store.reader.read(root, path) !== undefined) throw new Error("Draft destination already exists");
     let text: string;
     const sourceVersion = options.from ?? (versions.length ? Math.max(...versions) : undefined);
     if (sourceVersion !== undefined) {
       const source = model.cells.find(c => c.id === id && c.version === sourceVersion);
       if (!source) throw new Error("Source cell version does not exist");
-      const bytes = readBytes(root, cellPath(id, source.version));
+      const bytes = store.reader.read(root, cellPath(id, source.version));
       if (bytes === undefined) throw new Error("Source file is unreadable");
       text = metadata(bytes, { version: String(version), status: "draft", updated: today, confirmed: undefined, ...(options.option ? { note: `option ${options.option}` } : {}) });
     } else {
@@ -77,9 +78,9 @@ export function propose(root: string, id: string, options: ProposeOptions = {}) 
       text = `---\nid: ${id}\nversion: ${version}\nstatus: draft\nupdated: ${today}\ncites: []\nfeeds: []\nfunctions: [${contract.functions.join(", ")}]\n${options.option ? `note: option ${options.option}\n` : ""}---\n\n## Direction\n${contract.mustContain.map(k => `- ${k.key}: <${k.hint}>`).join("\n")}\n\n## Because\n- <Add a reason and its evidence refs.>\n\n## Watch\n- If <signal> <comparator> <threshold> by <date>, then <action>.\n`;
     }
     const ref = `${id}@${version}`;
-    const changes = [{ path, after: text }, ...linkedDrafts(model, options.requestIds ?? [], id, ref)];
-    assertSnapshot(model);
-    commitChanges(root, changes);
+    const changes = [{ path, after: text }, ...linkedDrafts(model, store, options.requestIds ?? [], id, ref)];
+    assertSnapshot(model, store);
+    store.writer.commit(root, changes);
     return { cell: id, version, path, status: "draft" as const };
   });
 }
@@ -97,9 +98,9 @@ function confirmation(model: Model, refs: string[], confirm: string | undefined)
   if (!listed.length || new Set(listed).size !== listed.length || listed.length !== refs.length || listed.some(ref => !refs.includes(ref))) throw new Error("Activation must match the exact playback batch");
 }
 
-export function activate(root: string, refs: string[], options: ActivateOptions) {
-  return withWriteLock(root, () => {
-    const model = modelAt(root);
+export function activate(root: string, store: DirectorStore, refs: string[], options: ActivateOptions) {
+  return store.writer.locked(root, () => {
+    const model = modelAt(root, store);
     if (!refs.length || new Set(refs).size !== refs.length) throw new Error("Expected unique activation refs");
     const targets = refs.map(text => {
       const ref = cellRef(text); cellId(model, ref.cell);
@@ -125,28 +126,28 @@ export function activate(root: string, refs: string[], options: ActivateOptions)
     if (findings.some(f => f.severity === "hard" || (f.severity === "judge" && f.verdict === "fail"))) throw new Error(`Activation blocked: ${findings.filter(f => f.severity === "hard" || f.verdict === "fail").map(f => f.rule).join(", ")}`);
     const changes: Change[] = [];
     for (const cell of model.cells.filter(cell => targets.some(t => t.id === cell.id))) {
-      const path = cellPath(cell.id, cell.version), before = readBytes(root, path);
+      const path = cellPath(cell.id, cell.version), before = store.reader.read(root, path);
       if (before === undefined) throw new Error("Cell file disappeared");
       if (targets.includes(cell)) changes.push({ path, before, after: metadata(before, { status: "active", confirmed: options.confirm! }) });
       else if (retires(cell)) changes.push({ path, before, after: metadata(before, { status: "retired" }) });
     }
-    changes.push({ path: "tree.json", before: readBytes(root, "tree.json"), after: json(prospective.tree) });
+    changes.push({ path: "tree.json", before: store.reader.read(root, "tree.json"), after: json(prospective.tree) });
     for (const request of model.requests) {
       if (request.status === "drafted" && request.resolvedBy && refs.includes(formatRef(request.resolvedBy))) {
         const path = requestPath(request.id);
-        changes.push({ path, before: readBytes(root, path), after: requestJson({ ...request, status: "resolved" }) });
+        changes.push({ path, before: store.reader.read(root, path), after: requestJson({ ...request, status: "resolved" }) });
       }
     }
-    assertSnapshot(model);
-    commitChanges(root, changes);
+    assertSnapshot(model, store);
+    store.writer.commit(root, changes);
     return { activated: refs, findings };
   });
 }
 
-export function listRequests(root: string) { return modelAt(root).requests; }
-export function createRequest(root: string, input: NewRequest) {
-  return withWriteLock(root, () => {
-    const model = modelAt(root);
+export function listRequests(root: string, store: DirectorStore) { return modelAt(root, store).requests; }
+export function createRequest(root: string, store: DirectorStore, input: NewRequest) {
+  return store.writer.locked(root, () => {
+    const model = modelAt(root, store);
     if (!input.raisedBy?.trim() || !input.detail?.trim() || !["missing", "contradiction", "tripwire", "drift", "reading", "change"].includes(input.kind) || !Array.isArray(input.cells) || !input.cells.length || new Set(input.cells).size !== input.cells.length) throw new Error("Invalid new request");
     input.cells.forEach(id => cellId(model, id));
     const next = Math.max(0, ...model.requests.map(r => Number(r.id.slice(4)))) + 1;
@@ -154,24 +155,24 @@ export function createRequest(root: string, input: NewRequest) {
     const id = `REQ-${String(next).padStart(4, "0")}`;
     const request = { id, raisedBy: input.raisedBy, kind: input.kind, cells: input.cells, detail: input.detail, status: "open" as const, opened: date(input.today), resolvedBy: null };
     const path = requestPath(id);
-    if (readBytes(root, path) !== undefined) throw new Error("Request destination already exists");
-    assertSnapshot(model);
-    commitChanges(root, [{ path, after: json(request) }]);
+    if (store.reader.read(root, path) !== undefined) throw new Error("Request destination already exists");
+    assertSnapshot(model, store);
+    store.writer.commit(root, [{ path, after: json(request) }]);
     return request;
   });
 }
 /** Repair a linked request after activation; this cannot activate or invent a confirmation. */
-export function resolveRequest(root: string, id: string, target: string, confirm: string) {
-  return withWriteLock(root, () => {
-    const model = modelAt(root), request = model.requests.find(r => r.id === id), ref = cellRef(target);
+export function resolveRequest(root: string, store: DirectorStore, id: string, target: string, confirm: string) {
+  return store.writer.locked(root, () => {
+    const model = modelAt(root, store), request = model.requests.find(r => r.id === id), ref = cellRef(target);
     const cell = model.cells.find(c => c.id === ref.cell && c.version === ref.version);
     if (!request || request.status !== "drafted" || (!request.resolvedBy || formatRef(request.resolvedBy) !== target) || !request.cells.includes(ref.cell) || cell?.status !== "active" || model.tree.active[ref.cell] !== ref.version || !cell.confirmed || formatRef(cell.confirmed) !== confirm) throw new Error("Request resolution requires its linked, user-confirmed active draft");
     // Check Q7 against the original full listing, which may include other active cells.
     const findings = checkCell(cell, { model });
     if (findings.some(f => f.rule === "Q7" && f.severity === "hard")) throw new Error("Invalid activation confirmation");
     const path = requestPath(id), resolved = { ...request, status: "resolved" as const };
-    assertSnapshot(model);
-    commitChanges(root, [{ path, before: readBytes(root, path), after: requestJson(resolved) }]);
+    assertSnapshot(model, store);
+    store.writer.commit(root, [{ path, before: store.reader.read(root, path), after: requestJson(resolved) }]);
     return resolved;
   });
 }

@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
 import { isAbsolute, relative } from "node:path";
-import { readBriefRootFile, validateBriefContract, type BriefContract } from "./brief-contracts.js";
+import { validateBriefContract, type BriefContract } from "./brief-contracts.js";
 import { formatRef } from "./format/ref.js";
 import type { Bullet, Cell, CellId, CellRef, Ref, StrategyModel } from "./format/types.js";
+import type { DirectorStoreReader } from "./store-io.js";
 
 export interface BriefCell extends CellRef {
   direction: Bullet[]; watch: Bullet[];
@@ -25,8 +26,10 @@ function active(model: StrategyModel, id: CellId): Cell | undefined {
  * refs and exact UTF-8 source bytes of selected cells and recursively cited files.
  * Missing C1 citations mark the downstream ref stale; superseded citations list
  * the cited ref. Required dependency cycles terminate without dropping evidence.
+ * With a store reader, a previously written brief whose fingerprint differs marks
+ * the result stale; without one, no prior brief is consulted.
  */
-export function compileBrief(model: StrategyModel, contract: BriefContract): Brief {
+export function compileBrief(model: StrategyModel, contract: BriefContract, store?: DirectorStoreReader): Brief {
   const validated = validateBriefContract(contract, model.catalog);
   if (!validated.ok) throw new Error("Invalid brief contract");
   const required = new Set(contract.requires);
@@ -80,7 +83,7 @@ export function compileBrief(model: StrategyModel, contract: BriefContract): Bri
   }
   const fingerprint = hash.digest("hex"); let priorChanged = false;
   try {
-    const bytes = readBriefRootFile(model.root, `briefs/${contract.id}.json`);
+    const bytes = store?.read(model.root, `briefs/${contract.id}.json`);
     if (bytes !== undefined) {
       const previous: unknown = JSON.parse(bytes);
       priorChanged = typeof previous !== "object" || previous === null || !("fingerprint" in previous) || previous.fingerprint !== fingerprint;

@@ -1,3 +1,4 @@
+import { store } from "../../test/store.js";
 import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -46,14 +47,14 @@ function snapshot(root: string): Record<string, string> {
 }
 function invoke(argv: string[]) {
   const print = vi.spyOn(console, "log").mockImplementation(() => {});
-  try { const code = main([...argv, "--json"]); return { code, value: JSON.parse(print.mock.calls[0]![0]), calls: print.mock.calls.length }; }
+  try { const code = main([...argv, "--json"], store); return { code, value: JSON.parse(print.mock.calls[0]![0]), calls: print.mock.calls.length }; }
   finally { print.mockRestore(); }
 }
 afterEach(() => { vi.restoreAllMocks(); roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })); });
 describe("production check CLI adapters", () => {
   it("lists the cell commands in the actual top-level help", () => {
     const print = vi.spyOn(console, "log").mockImplementation(() => {});
-    expect(main(["--help"])).toBe(0);
+    expect(main(["--help"], store)).toBe(0);
     expect(print.mock.calls.flat().join("\n")).toContain("Read commands: status, cell, check, cohere, complete, brief, handoff");
   });
   for (const [command, targets] of [["status", []], ["cell", [id, "--verb", "create"]], ["check", [id]], ["cohere", ["context.customer"]], ["complete", []]] as const) {
@@ -107,7 +108,7 @@ describe("production check CLI adapters", () => {
   });
   it("status prints the skill progress shape from canonical reports", () => {
     const root = fixture(true); const print = vi.fn();
-    expect(runReadCommand(["status", "--root", root], { execute: executeChecksCommand }, print)).toBe(0);
+    expect(runReadCommand(["status", "--root", root], { execute: args => executeChecksCommand(args, store) }, print)).toBe(0);
     expect(print.mock.calls[0]![0]).toMatch(/^MVS 24\/24 · L1 unlocked \d\/7 \(.+\) · L2 coherent \d+\/28 · active 57\/57 · requests 0 open · next: .+$/);
     expect(invoke(["status", "--scope", "full", "--root", root]).value.result.scope).toBe("full");
   });

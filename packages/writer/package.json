@@ -145,7 +145,7 @@
       {
         "id": "claims-to-copy-traceability",
         "subQuestion": "Does every claim-shaped or numeric sentence in shipped copy trace to an approved registry claim, by citation?",
-        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one -- checked on the COPY side. Whether Director's own facts/markers gate should stop scanning shipped surfaces at all (leaving this the one place that check happens) is a decision pending #1271, not yet a settled boundary -- today `director-check` still scans authored prose too (its own facts-clean fixture is an announcement.md).",
+        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one -- checked on the COPY side. Whether Director's own facts/markers gate should stop scanning shipped surfaces at all (leaving this the one place that check happens) is a decision pending #1271, not yet a settled boundary -- today `clossys director check` still scans authored prose too (its own facts-clean fixture is an announcement.md).",
         "inputs": [
           {
             "producerRole": "@clossys/director",

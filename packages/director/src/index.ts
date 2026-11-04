@@ -30,6 +30,10 @@ export { parseFinding, validateFinding } from "./format/finding.js";
 export { validateRequest } from "./format/request.js";
 export { validateTree } from "./format/tree.js";
 export { readStrategyRoot } from "./store.js";
+export { storeFault } from "./store-io.js";
+export type { DirectorStore, DirectorStoreChange, DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader, DirectorStoreWriter } from "./store-io.js";
+export { runDirectorCli } from "./cli.js";
+export { runDirectorRateCli } from "./strategy-traceability-rate-cli.js";
 export type {
   CellId, CellRef, Ref, Bullet, Cell, FormatIssue, FormatResult,
   StrategyTreeNode, StrategyTree, SessionLine, Session, Finding,

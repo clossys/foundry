@@ -16,6 +16,19 @@ export const CLI_STEPS = [
     command: { cli: { verb: "direct" }, entry: "src/cli/direct.ts#runDirect" }, checks: ["workspace"],
   }),
   defineStep({
+    id: "director.store", kind: "plumb", actor: "code", stage: "direct.pin",
+    summary: "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
+    // The pinned Director slots, then the whole strategy store under the default root (--root may name
+    // another); outputs are @clossys/director's foundry.outputs.
+    inputs: [...DIRECTOR_PINS, "clossys/agents/director/**"],
+    outputs: [
+      "clossys/agents/director/tree.json", "clossys/agents/director/cells/**", "clossys/agents/director/sessions/**",
+      "clossys/agents/director/findings/**", "clossys/agents/director/requests/**", "clossys/agents/director/briefs/**",
+      "clossys/agents/director/citations.json", "clossys/agents/director/reports/*.json",
+    ],
+    command: { cli: { verb: "director", parser: "src/cli/director.ts" }, entry: "src/cli/director.ts#runDirectorVerb" }, checks: ["workspace"],
+  }),
+  defineStep({
     id: "designer.brief", kind: "plumb", actor: "code", stage: "design.brief",
     summary: "Print the Designer derivation brief (read-only).",
     inputs: BRIEF_INPUTS, outputs: [],

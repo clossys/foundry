@@ -4,7 +4,7 @@
  *
  * This module does not invent observations and does not relabel
  * `checkFactsTraceability`. An empty evaluated set is indeterminate, never
- * a perfect rate of 1. `director-check` remains the multi-mode CLI.
+ * a perfect rate of 1. `clossys director check` remains the multi-mode CLI.
  */
 const METRIC = "strategy traceability rate" as const;
 const RESERVED_OBSERVERS = new Set(["director", "@clossys/director"]);

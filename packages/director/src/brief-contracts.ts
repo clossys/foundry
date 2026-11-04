@@ -1,6 +1,7 @@
 import { closeSync, constants, fstatSync, lstatSync, openSync, readFileSync, readdirSync, realpathSync } from "node:fs";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { loadCatalog, type StrategyCatalog } from "./catalog.js";
+import { storeFault, type DirectorStoreReader } from "./store-io.js";
 import type { CellId } from "./format/types.js";
 import { isPlainObject, type ValidationIssue, type ValidationResult } from "./validation.js";
 
@@ -40,7 +41,11 @@ export function validateBriefContract(value: unknown, catalog: StrategyCatalog =
   return issues.length ? { ok: false, issues } : { ok: true, value: value as unknown as BriefContract };
 }
 
-/** Resolve every path component before use. No symlink in a strategy-root path is followed. */
+/**
+ * Installed package roots are not the strategy store: they are discovered by the
+ * normal node_modules lookup. Resolve every component; no symlink below the
+ * real package root is followed.
+ */
 function confined(root: string, path: string): string {
   if (lstatSync(root).isSymbolicLink()) throw new Error("Symlink root is not allowed");
   const anchor = realpathSync(root);
@@ -56,8 +61,8 @@ function confined(root: string, path: string): string {
 }
 function absent(error: unknown): boolean { return (error as NodeJS.ErrnoException).code === "ENOENT"; }
 
-/** Internal shared reader for contract/cache files; undefined means absent, other failures throw. */
-export function readBriefRootFile(root: string, path: string): string | undefined {
+/** Reads one installed package file; undefined means absent, other failures throw. */
+function readPackageFile(root: string, path: string): string | undefined {
   let fd: number | undefined;
   try {
     const full = confined(resolve(root), path);
@@ -93,23 +98,24 @@ export function mergeBriefContracts(values: unknown[], catalog: StrategyCatalog 
 }
 
 /**
- * Discovers local contracts plus installed @clossys package-root files using normal
- * ancestor node_modules lookup. Installed package links are an explicit external
- * discovery source; their real package root is confined separately. No package is imported.
+ * Discovers local contracts (read through the store reader) plus installed @clossys
+ * package-root files using normal ancestor node_modules lookup. Installed package
+ * links are an explicit external discovery source; their real package root is
+ * confined separately. No package is imported.
  */
-export function discoverBriefContracts(root: string, catalog: StrategyCatalog = loadCatalog()): BriefContractDiscovery {
+export function discoverBriefContracts(root: string, store: DirectorStoreReader, catalog: StrategyCatalog = loadCatalog()): BriefContractDiscovery {
   const values: unknown[] = []; const issues: ValidationIssue[] = []; const seen = new Set<string>();
   const issue = (path: string, message: string) => issues.push({ path, message });
-  function read(anchor: string, path: string) {
+  function parse(path: string, read: () => string | undefined) {
     try {
-      const bytes = readBriefRootFile(anchor, path); if (bytes === undefined) return;
+      const bytes = read(); if (bytes === undefined) return;
       try { values.push(JSON.parse(bytes)); } catch { issue(path, "Invalid brief contract JSON"); }
     } catch { issue(path, "Brief contract path is unreadable or unsafe"); }
   }
+  const base = resolve(root);
   try {
-    const local = confined(resolve(root), "contracts");
-    for (const name of readdirSync(local).sort()) if (name.endsWith(".json")) read(resolve(root), `contracts/${name}`);
-  } catch (error) { if (!absent(error)) issue("contracts", "Brief contract directory is unreadable or unsafe"); }
+    for (const name of store.list(base, "contracts") ?? []) if (name.endsWith(".json")) parse(`contracts/${name}`, () => store.read(base, `contracts/${name}`));
+  } catch (error) { if (storeFault(error) !== "root-unreadable") issue("contracts", "Brief contract directory is unreadable or unsafe"); }
   for (let ancestor = resolve(root); ; ancestor = dirname(ancestor)) {
     const scope = join(ancestor, "node_modules", "@clossys");
     try {
@@ -118,7 +124,7 @@ export function discoverBriefContracts(root: string, catalog: StrategyCatalog = 
         try {
           const packageRoot = realpathSync(join(scope, name));
           if (!lstatSync(packageRoot).isDirectory() || seen.has(packageRoot)) continue;
-          seen.add(packageRoot); read(packageRoot, "strategy-brief.json");
+          seen.add(packageRoot); parse("strategy-brief.json", () => readPackageFile(packageRoot, "strategy-brief.json"));
         } catch { issue(join(scope, name), "Installed contract package is unreadable"); }
       }
     } catch (error) { if (!absent(error)) issue(scope, "Installed brief contract scope is unreadable or unsafe"); }

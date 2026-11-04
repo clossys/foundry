@@ -19,13 +19,13 @@ export interface ReadArgs {
 export interface ReadResult { code: 0 | 1 | 2; data: unknown; text: string[] }
 export interface ReadServices { execute(args: ReadArgs): ReadResult }
 export const READ_USAGE = `Read commands: ${READ_COMMANDS.join(", ")}
-Usage: director-check status [--scope core|full]
-       director-check cell <id> --verb create|cohere|unlock|normalize
-       director-check check [<id>[@N]...]
-       director-check cohere [<l2-id>...]
-       director-check complete [--level mvs|l0|full]
-       director-check brief <contract> [--write] [--request]
-       director-check handoff <contract>
+Usage: clossys director check status [--scope core|full]
+       clossys director check cell <id> --verb create|cohere|unlock|normalize
+       clossys director check check [<id>[@N]...]
+       clossys director check cohere [<l2-id>...]
+       clossys director check complete [--level mvs|l0|full]
+       clossys director check brief <contract> [--write] [--request]
+       clossys director check handoff <contract>
 Aliases: cell-quality = check, coherence = cohere, completion = complete.
 Quality, coherence and completion commands save their returned report under <root>/reports/.
 All read commands accept --root <dir> (default <repo root>/clossys/agents/director), --json and --help.
@@ -98,7 +98,7 @@ export function runReadCommand(argv: string[], services: ReadServices, print: (t
     return result.code;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    print(json ? JSON.stringify({ command: argv[0], code: 2, error: message }) : `director-check: ${message}`);
+    print(json ? JSON.stringify({ command: argv[0], code: 2, error: message }) : `clossys director check: ${message}`);
     return 2;
   }
 }

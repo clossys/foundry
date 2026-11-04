@@ -59,6 +59,7 @@ import type { CopyResolver } from "@clossys/writer";
 import { parseVoiceRecord } from "@clossys/writer/voice";
 import type { PackReviewText } from "./pack-review-copy";
 import { packReviewAvailable, packReviewHref, resolveSiteTarget } from "./site-wiring";
+import { siteStrategyReader } from "./strategy-store";
 
 export type PackReviewPageModel =
   | { kind: "not-found" }
@@ -132,7 +133,7 @@ export function resolvePackReviewPage(input: PackReviewPageInput): PackReviewPag
 
 export interface PackReviewSectionsInput {
   env: PackReviewEnv;
-  /** Reads `clossys/director/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
+  /** Reads `clossys/agents/director/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
   loadStrategyBrief: () => unknown;
   /** Explicit Director root; defaults to the repository root used by site-records. */
   strategyRoot?: string;
@@ -187,10 +188,10 @@ function copyText(resolve: CopyResolver, id: string): string | undefined {
 }
 
 /** Compile the Publisher-owned contract against one read-only strategy snapshot. */
-export function publisherLaunchBrief(root = resolve(process.cwd(), "..", "..", "clossys", "director")): Brief {
+export function publisherLaunchBrief(root = resolve(process.cwd(), "..", "..", "clossys", "agents", "director")): Brief {
   const contract = validateBriefContract(launchContract);
   if (!contract.ok) throw new Error("Invalid publisher.launch brief contract");
-  return openStrategy(root, { contracts: [contract.value] }).getBrief("publisher.launch");
+  return openStrategy(root, siteStrategyReader, { contracts: [contract.value] }).getBrief("publisher.launch");
 }
 
 function strategySection(input: PackReviewSectionsInput, brief: Brief | undefined): { strategy: PackReviewViewStrategy; strategyState: "ready" | "stale" } | undefined {

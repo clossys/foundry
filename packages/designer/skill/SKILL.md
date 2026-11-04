@@ -43,7 +43,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    `src/catalog/slot-contracts/` of the installed `@clossys/designer` (one file per layer: themes, assets, components, sections, frames; every Designer slot has a row).
    Note every required input: copy keys (`kind: copy`), theme variables
    (`themes.*`) and assets. Read the Director brief:
-   `npx director-check handoff designer.identity --root clossys/agents/director`.
+   `npx clossys director check handoff designer.identity --root clossys/agents/director`.
    A missing brief blocks the slot; open a Director request instead of guessing.
 2. **Read the references.** Each `references[]` row names a registry, item and
    version (shadcn, Magic UI, Tailark and other trusted free registries). Read

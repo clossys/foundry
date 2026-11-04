@@ -6,6 +6,7 @@ import { compileBrief } from "./brief.js";
 import { discoverBriefContracts, validateBriefContract } from "./brief-contracts.js";
 import { openStrategy } from "./api.js";
 import { readStrategyRoot } from "./store.js";
+import { reader } from "../test/store.js";
 
 const roots: string[] = [];
 const need = "context.customer.need", promise = "advantage.proposition.promise", differentiator = "advantage.defensibility.differentiator";
@@ -21,7 +22,7 @@ function fixture(active: Record<string, number | null> = { [need]: 1 }) {
   for (const [id, version] of Object.entries(active)) if (version) put(root, `cells/${id}/v${version}.md`, cell(id, version));
   return { root, project };
 }
-function brief(root: string, selected = contract) { return openStrategy(root, { contracts: [selected] }).getBrief(selected.id); }
+function brief(root: string, selected = contract) { return openStrategy(root, reader, { contracts: [selected] }).getBrief(selected.id); }
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe("brief compilation", () => {
@@ -76,7 +77,7 @@ describe("brief compilation", () => {
     put(root, "findings/fixture-survey.md", evidence);
     put(root, "sessions/2026-10-29-1.md", "- S1: Playback.\n- U2: Yes.\n");
     put(root, `cells/${need}/v1.md`, cell(need, 1, ["finding:fixture-survey", "msg:2026-10-29-1#U2"]));
-    const model = readStrategyRoot(root); const first = compileBrief(model, contract);
+    const model = readStrategyRoot(root, reader); const first = compileBrief(model, contract);
     const reordered = { ...model, cells: [...model.cells].reverse(), files: Object.fromEntries(Object.entries(model.files).reverse()) };
     expect(compileBrief(reordered, contract).fingerprint).toBe(first.fingerprint);
     put(root, "findings/fixture-survey.md", evidence.replace("Five", "Six"));
@@ -105,27 +106,27 @@ describe("brief contracts", () => {
     const { root, project } = fixture();
     put(project, "node_modules/@clossys/fixture-role/strategy-brief.json", JSON.stringify(contract));
     put(root, "contracts/local.json", JSON.stringify({ ...contract, id: "fixture.local" }));
-    const found = discoverBriefContracts(root);
+    const found = discoverBriefContracts(root, reader);
     expect(found.issues).toEqual([]);
     expect(found.contracts.map(c => c.id)).toEqual(["fixture.brief", "fixture.local"]);
-    expect(openStrategy(root).getBrief(contract.id).state).toBe("ready");
+    expect(openStrategy(root, reader).getBrief(contract.id).state).toBe("ready");
   });
   it("reports invalid contracts and conflicting ids rather than picking an arbitrary source", () => {
     const { root, project } = fixture();
     put(project, "node_modules/@clossys/fixture-role/strategy-brief.json", JSON.stringify(contract));
     put(root, "contracts/duplicate.json", JSON.stringify({ ...contract, requires: [] }));
     put(root, "contracts/broken.json", "{broken");
-    const found = discoverBriefContracts(root);
+    const found = discoverBriefContracts(root, reader);
     expect(found.contracts).toEqual([]);
     expect(found.issues.some(i => /conflict/i.test(i.message))).toBe(true);
     expect(found.issues.some(i => /JSON/i.test(i.message))).toBe(true);
-    expect(() => openStrategy(root)).toThrow(/contract/i);
+    expect(() => openStrategy(root, reader)).toThrow(/contract/i);
   });
   it("rejects symlink escapes in local discovery and cached brief reads", () => {
     const { root, project } = fixture();
     put(project, "outside/contract.json", JSON.stringify(contract));
     symlinkSync(join(project, "outside"), join(root, "contracts"));
-    expect(discoverBriefContracts(root).issues.length).toBeGreaterThan(0);
+    expect(discoverBriefContracts(root, reader).issues.length).toBeGreaterThan(0);
     rmSync(join(root, "contracts"));
     put(project, "outside/brief.json", JSON.stringify({ fingerprint: "0".repeat(64) }));
     mkdirSync(join(root, "briefs")); symlinkSync(join(project, "outside/brief.json"), join(root, `briefs/${contract.id}.json`));

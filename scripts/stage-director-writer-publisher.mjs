@@ -3,7 +3,8 @@
  * Reproducible author-side staging evidence for the expression quartet:
  * director, writer, designer, and publisher.
  *
- * Each case invokes the package's compiled CLI through its dist path, first
+ * Each case invokes the package's compiled CLI through its dist path (Director's
+ * through the compiled clossys CLI, `clossys director check`), first
  * on a genuine consumer-shaped violation (exit 1), then on a clean control
  * (exit 0). Fixtures are temporary: they prove the executable artifacts
  * discriminate without adding product claims to Foundry's documentation.
@@ -54,15 +55,16 @@ function run(label, cli, args, expectedStatus, requiredOutput) {
 }
 
 try {
-  const directorCli = join(repoRoot, "packages/director/dist/cli.js");
+  // @clossys/director has no bin: `clossys director check` runs it with the clossys CLI's store.
+  const directorCli = join(repoRoot, "packages/producer/dist/cli/index.js");
   const directorStrategy = fixtureDir("director-strategy");
   writeJson(directorStrategy, "facts.json", [{ key: "active-customers", label: "Active customers", value: 3, source: "catalogue", lastUpdatedAt: "2026-08-22", aliases: ["3 customers"] }]);
   const directorRed = fixtureDir("director-red");
   const directorControl = fixtureDir("director-control");
   writeText(directorRed, "announcement.md", "We serve 9 customers.\n");
   writeText(directorControl, "announcement.md", "We serve 3 customers.\n");
-  run("director red", directorCli, [directorStrategy, directorRed], 1, "finding(s)");
-  run("director control", directorCli, [directorStrategy, directorControl], 0, "No findings.");
+  run("director red", directorCli, ["director", "check", directorStrategy, directorRed], 1, "finding(s)");
+  run("director control", directorCli, ["director", "check", directorStrategy, directorControl], 0, "No findings.");
 
   const writerCli = join(repoRoot, "packages/writer/dist/cli.js");
   const writerRecord = writeJson(fixtureDir("writer-record"), "copy.json", { id: "writer-stage", entries: [{ id: "empty.no-results", text: "No results", context: "Empty result state" }] });

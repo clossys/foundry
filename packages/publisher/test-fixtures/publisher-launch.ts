@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStrategy, validateBriefContract } from "@clossys/director";
 import contract from "../strategy-brief.json";
+import { directorStoreReader } from "../../producer/src/records/slots.js";
 export function launchRoot(ready = true): string {
   const root = mkdtempSync(join(tmpdir(), "publisher-launch-"));
   const ids = ready ? ["focus.segment.core", "focus.reach.channel", "focus.offer.included"] : [];
@@ -18,5 +19,5 @@ export function launchRoot(ready = true): string {
 export function launchBrief(root: string) {
   const validated = validateBriefContract(contract);
   if (!validated.ok) throw new Error("Invalid Publisher test contract");
-  return openStrategy(root, { contracts: [validated.value] }).getBrief("publisher.launch");
+  return openStrategy(root, directorStoreReader, { contracts: [validated.value] }).getBrief("publisher.launch");
 }

@@ -4,6 +4,7 @@ import type { StrategyModel } from "../format/types.js";
 import { readStrategyRoot } from "../store.js";
 import type { ReadArgs, ReadResult } from "./read.js";
 import { persistReport } from "./reports.js";
+import type { DirectorStore } from "../store-io.js";
 
 function result(data: unknown, ready: boolean, text: string[]): ReadResult { return { code: ready ? 0 : 1, data, text }; }
 function findingText(findings: readonly CheckFinding[]): string[] {
@@ -29,15 +30,15 @@ function related(finding: CheckFinding, ids: Set<string>): boolean {
 }
 
 /** Presentation and CLI report persistence around the canonical pure checks. */
-export function executeChecksCommand(args: ReadArgs): ReadResult {
-  const model = readStrategyRoot(args.root);
+export function executeChecksCommand(args: ReadArgs, store: DirectorStore): ReadResult {
+  const model = readStrategyRoot(args.root, store.reader);
   if (model.issues.length) throw new Error(model.issues.map(issue => `${issue.path}:${issue.line}: ${issue.message}`).join("; "));
-  const discovered = discoverBriefContracts(args.root, model.catalog);
+  const discovered = discoverBriefContracts(args.root, store.reader, model.catalog);
   if (discovered.issues.length) throw new Error(discovered.issues.map(issue => `${issue.path}: ${issue.message}`).join("; "));
   const options = { contracts: discovered.contracts };
   if (args.command === "check" || args.command === "cell" && args.verb === "create") {
     const report = quality(model, args.targets);
-    if (args.command === "check") persistReport(args.root, "cell-quality", report);
+    if (args.command === "check") persistReport(args.root, store.writer, "cell-quality", report);
     return result(report, !report.findings.some(blocks), [`Quality: ${report.cells.length} cell version(s).`, ...findingText(report.findings)]);
   }
   if (args.command === "cohere") {
@@ -45,12 +46,12 @@ export function executeChecksCommand(args: ReadArgs): ReadResult {
     for (const id of args.targets) if (!groups.some(group => group.id === id)) throw new Error(`Unknown L2 id: ${id}`);
     const ids = new Set(groups.filter(group => !args.targets.length || args.targets.includes(group.id)).flatMap(group => group.leaves));
     const report = checkCoherence(model, "full", options).filter(finding => finding.rule !== "C4" && related(finding, ids));
-    persistReport(args.root, "coherence", report);
+    persistReport(args.root, store.writer, "coherence", report);
     return result(report, !report.some(blocks), ["Coherence: C1–C3.", ...findingText(report)]);
   }
   if (args.command === "complete") {
     const report = completion(model, options);
-    persistReport(args.root, "completion", report);
+    persistReport(args.root, store.writer, "completion", report);
     const ready = args.level === "mvs" ? report.mvs : args.level === "l0" ? report.l0Clean : report.complete;
     return result(report, ready, [`${args.level}: ${ready ? "ready" : "not ready"}`, `Storyline critic: ${report.storyline.critic}`, ...findingText(report.findings)]);
   }

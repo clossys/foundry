@@ -2,6 +2,7 @@ import { compileBrief, type Brief } from "./brief.js";
 import { discoverBriefContracts, mergeBriefContracts, type BriefContract } from "./brief-contracts.js";
 import type { Cell, CellId, CellRef, StrategyRootIssue } from "./format/types.js";
 import { readStrategyRoot } from "./store.js";
+import type { DirectorStoreReader } from "./store-io.js";
 import { strategyStatus, type CheckOptions, type StatusReport } from "./checks/index.js";
 
 /** Structural inventory only: quality, coherence and completion are separate checks. */
@@ -17,9 +18,9 @@ export interface Strategy {
   status(options?: { scope?: "core" | "full" }, checks?: CheckOptions): StatusReport;
 }
 
-/** Opens one read-only snapshot; reopen after activation to observe pointer changes. */
-export function openStrategy(root: string, options: { contracts?: BriefContract[]; archetype?: string } = {}): Strategy {
-  const model = readStrategyRoot(root);
+/** Opens one read-only snapshot through the injected store reader; reopen after activation to observe pointer changes. */
+export function openStrategy(root: string, store: DirectorStoreReader, options: { contracts?: BriefContract[]; archetype?: string } = {}): Strategy {
+  const model = readStrategyRoot(root, store);
   const archetype = options.archetype ?? model.tree?.archetype ?? "default";
   if (archetype !== "default" && !Object.hasOwn(model.catalog.archetypes.extras, archetype)) throw new Error("Unknown strategy archetype");
   // An explicit archetype changes only core selection; persisted custom cores win.
@@ -31,7 +32,7 @@ export function openStrategy(root: string, options: { contracts?: BriefContract[
       default: [...new Set([...model.catalog.archetypes.default, ...(model.catalog.archetypes.extras[archetype] ?? [])])],
     } },
   };
-  const discovered = discoverBriefContracts(root, model.catalog);
+  const discovered = discoverBriefContracts(root, store, model.catalog);
   const merged = mergeBriefContracts([...discovered.contracts, ...(options.contracts ?? [])], model.catalog);
   const issues = [...discovered.issues, ...merged.issues];
   if (issues.length) throw new Error(`Invalid brief contracts: ${issues.map(issue => `${issue.path}: ${issue.message}`).join("; ")}`);
@@ -51,7 +52,7 @@ export function openStrategy(root: string, options: { contracts?: BriefContract[
     getBrief(contractId) {
       const contract = contracts.get(contractId);
       if (!contract) throw new Error(`Unknown brief contract: ${contractId}`);
-      return compileBrief(model, contract);
+      return compileBrief(model, contract, store);
     },
     status({ scope = "core" } = {}, checks = {}) {
       return strategyStatus(statusModel, { scope }, { contracts: merged.contracts, ...checks });

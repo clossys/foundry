@@ -1,3 +1,4 @@
+import { reader } from "../../test/store.js";
 import { describe, expect, it } from 'vitest';
 import { loadCatalog } from '../catalog.js';
 import { openStrategy } from '../api.js';
@@ -386,10 +387,10 @@ it('actual root reader feeds completion and catches an unlisted confirm', () => 
     const playback = model.sessions[0]!.lines[0]!.text;
     write('sessions/2026-10-29-1.md', `- S1: ${playback}\n- U2: Yes, all listed.\n`);
     write('findings/sample.md', '---\nid: sample\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Sample observations for 20 teams.\n');
-    const read = readStrategyRoot(root);
+    const read = readStrategyRoot(root, reader);
     expect(read.issues).toEqual([]);
     expect(completion(read, judgePass).complete).toBe(true);
-    const strategy = openStrategy(root);
+    const strategy = openStrategy(root, reader);
     for (const scope of ['core', 'full'] as const) {
       const status = strategy.status({ scope }, judgePass);
       expect(status).toEqual(strategyStatus(read, { scope }, judgePass));
@@ -401,11 +402,11 @@ it('actual root reader feeds completion and catches an unlisted confirm', () => 
     }
     expect(strategy.status()).toEqual(strategyStatus(read, { scope: 'core' }));
     write('sessions/2026-10-29-1.md', '- S1: Playback for confirm: advantage.proposition.promise@1\n- U2: Yes.\n');
-    const unlisted = readStrategyRoot(root);
+    const unlisted = readStrategyRoot(root, reader);
     expect(unlisted.issues).toEqual([]);
     expect(checkCell(get(unlisted), { model:unlisted }).some(f => f.rule === 'Q7' && f.severity === 'hard')).toBe(true);
     expect(completion(unlisted, judgePass).mvs).toBe(false);
-    expect(openStrategy(root).status({ scope: 'core' }, judgePass).l0Clean).toBe(false);
+    expect(openStrategy(root, reader).status({ scope: 'core' }, judgePass).l0Clean).toBe(false);
     expect(strategy.status({ scope: 'core' }, judgePass).l0Clean).toBe(true);
   } finally {
     rmSync(root, { recursive:true, force:true });

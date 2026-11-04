@@ -1,3 +1,4 @@
+import { reader, store } from "../../test/store.js";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -31,7 +32,7 @@ it.each([
   stageWontClaimCells(root);
   stageCell(root, "advantage.proposition.proof", 1, "Never-claim", proof);
   stageCell(root, "identity.verbal.voice", 1, "Never", voice);
-  const result = checkWontClaimDrift([{ path: "page.md", content: "guaranteed results; risk-free" }], readStrategyRoot(root));
+  const result = checkWontClaimDrift([{ path: "page.md", content: "guaranteed results; risk-free" }], readStrategyRoot(root, reader));
   expect(result.state).toBe("hit");
   expect(result.findings.map(finding => finding.found)).toEqual(["guaranteed results", "risk-free"]);
   expect(result.unchecked).toEqual([]);
@@ -42,7 +43,7 @@ it.each(["'", '"', "‘", "“"])("does not treat a %s delimiter within a word a
   stageWontClaimCells(root);
   stageCell(root, "advantage.proposition.proof", 1, "Never-claim", `prefix${opening}guaranteed results${closing}`);
   stageCell(root, "identity.verbal.voice", 1, "Never", `${opening}risk-free${closing}suffix`);
-  const result = checkWontClaimDrift([{ path: "page.md", content: "guaranteed results; risk-free" }], readStrategyRoot(root));
+  const result = checkWontClaimDrift([{ path: "page.md", content: "guaranteed results; risk-free" }], readStrategyRoot(root, reader));
   expect(result.state).toBe("clean");
   expect(result.findings).toEqual([]);
   expect(result.unchecked).toHaveLength(2);
@@ -55,7 +56,7 @@ it.each([
 ])("finds the full quoted prohibition containing an apostrophe: %s", (proof, surface) => {
   stageWontClaimCells(root);
   stageCell(root, "advantage.proposition.proof", 1, "Never-claim", proof);
-  const model = readStrategyRoot(root);
+  const model = readStrategyRoot(root, reader);
   expect(model.issues).toEqual([]);
   const result = checkWontClaimDrift([{ path: "page.md", content: surface }], model);
   expect(result.state).toBe("hit");
@@ -73,7 +74,7 @@ it.each(["missing-findings", "malformed-findings", "partial-findings", "empty-sc
     if (scenario !== "empty-scan") writeFileSync(join(scan, "page.md"), "4,200 customers");
     const scanRoot = scenario === "evidence-only-scan" ? root : scan;
     const flags = scenario === "filtered-scan" ? ["--extensions", ".html"] : [];
-    expect(main(["ground", root, scanRoot, "--json", ...flags])).toBe(2);
+    expect(main(["ground", root, scanRoot, "--json", ...flags], store)).toBe(2);
     const calls = vi.mocked(console.log).mock.calls;
     expect(calls).toHaveLength(1);
     expect(calls[0]).toHaveLength(1);
@@ -91,7 +92,7 @@ it.each(["missing-findings", "malformed-findings", "partial-findings", "empty-sc
 
 it("infers Finding lookup types and uses Finding as the default", () => {
   stageFinding(root);
-  const findings: Finding[] = readStrategyRoot(root).findings;
+  const findings: Finding[] = readStrategyRoot(root, reader).findings;
   const findingIndex: FactIndex = buildFactIndex(findings);
   const finding: Finding | undefined = findingIndex.byKey.get("active-customers");
   const id: string | undefined = findingIndex.byKey.get("active-customers")?.id;

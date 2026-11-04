@@ -1,3 +1,4 @@
+import { store } from "../../test/store.js";
 import { existsSync, linkSync, mkdtempSync, mkdirSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
@@ -31,7 +32,7 @@ describe("production brief CLI adapter", () => {
   function run(root: string, flags: string[] = [], contract = "fixture.brief") {
     const print = vi.spyOn(console, "log").mockImplementation(() => {});
     try {
-      const code = main(["brief", contract, ...flags, "--root", root, "--json"]);
+      const code = main(["brief", contract, ...flags, "--root", root, "--json"], store);
       return { code, output: JSON.parse(print.mock.calls[0]![0]) };
     } finally { print.mockRestore(); }
   }
@@ -50,7 +51,7 @@ describe("production brief CLI adapter", () => {
     for (const [path, bytes] of Object.entries(before)) expect(readFileSync(join(root, path), "utf8")).toBe(bytes);
     const print = vi.spyOn(console, "log").mockImplementation(() => {});
     try {
-      expect(main(["index", "--root", root, "--scan", join(root, "briefs"), "--json"])).toBe(0);
+      expect(main(["index", "--root", root, "--scan", join(root, "briefs"), "--json"], store)).toBe(0);
       const index = read(root, "citations.json");
       expect(index).toMatchObject({ stale: [], dangling: [], drift: [] });
       expect(index.entries).toContainEqual(expect.objectContaining({ ref: { cell: id, version: 1 }, by: expect.objectContaining({ path: "briefs/fixture.brief.json", kind: "brief" }) }));
@@ -143,31 +144,31 @@ describe("production brief CLI adapter", () => {
     it(`${command} is reachable from the production CLI`, () => {
       const root = fixture(); const before = snapshot(root); const print = vi.spyOn(console, "log").mockImplementation(() => {});
       try {
-        expect(main([command, "fixture.brief", "--root", root, "--json"])).toBe(0);
+        expect(main([command, "fixture.brief", "--root", root, "--json"], store)).toBe(0);
         expect(JSON.parse(print.mock.calls[0]![0])).toMatchObject({ command, code: 0, result: { state: "ready" } });
         expect(snapshot(root)).toEqual(before);
       } finally { print.mockRestore(); }
     });
     it(`${command} returns ready with JSON and does not write`, () => {
       const root = fixture(); const before = snapshot(root); const print = vi.fn();
-      expect(runReadCommand([command, "fixture.brief", "--root", root, "--json"], { execute: executeBriefCommand }, print)).toBe(0);
+      expect(runReadCommand([command, "fixture.brief", "--root", root, "--json"], { execute: args => executeBriefCommand(args, store) }, print)).toBe(0);
       expect(JSON.parse(print.mock.calls[0]![0])).toMatchObject({ command, code: 0, result: { state: "ready", contract: "fixture.brief" } });
       expect(snapshot(root)).toEqual(before);
     });
     it(`${command} lists missing cells and returns 1`, () => {
       const root = fixture(null); const before = snapshot(root); const print = vi.fn();
-      expect(runReadCommand([command, "fixture.brief", "--root", root], { execute: executeBriefCommand }, print)).toBe(1);
+      expect(runReadCommand([command, "fixture.brief", "--root", root], { execute: args => executeBriefCommand(args, store) }, print)).toBe(1);
       expect(print).toHaveBeenCalledWith(`Missing: ${id}`); expect(snapshot(root)).toEqual(before);
     });
     it(`${command} reports stale stored briefs and returns 1`, () => {
       const root = fixture(); put(root, "briefs/fixture.brief.json", JSON.stringify({ fingerprint: "old" }));
       const before = snapshot(root); const print = vi.fn();
-      expect(runReadCommand([command, "fixture.brief", "--root", root, "--json"], { execute: executeBriefCommand }, print)).toBe(1);
+      expect(runReadCommand([command, "fixture.brief", "--root", root, "--json"], { execute: args => executeBriefCommand(args, store) }, print)).toBe(1);
       expect(JSON.parse(print.mock.calls[0]![0]).result.state).toBe("stale"); expect(snapshot(root)).toEqual(before);
     });
     it(`${command} returns 2 for an unreadable root`, () => {
       const root = fixture(); const print = vi.fn();
-      expect(runReadCommand([command, "fixture.brief", "--root", join(root, "absent"), "--json"], { execute: executeBriefCommand }, print)).toBe(2);
+      expect(runReadCommand([command, "fixture.brief", "--root", join(root, "absent"), "--json"], { execute: args => executeBriefCommand(args, store) }, print)).toBe(2);
       expect(JSON.parse(print.mock.calls[0]![0])).toMatchObject({ command, code: 2, error: expect.any(String) });
     });
   }

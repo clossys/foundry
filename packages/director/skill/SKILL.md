@@ -52,7 +52,7 @@ a finding.
 
 1. **Read the brief.** Log the owner's words to
    `sessions/<date>-<n>.md` as `- U<n>: ...` bullets. Run
-   `npx director-check status --root clossys/agents/director` to see which
+   `npx clossys director check status --root clossys/agents/director` to see which
    core cells are missing.
 2. **Pick the nearest unlock.** Choose the one missing core cell that blocks
    the most downstream briefs (`designer.identity`, `writer.messaging`).
@@ -68,15 +68,15 @@ a finding.
    a change is a new draft `v<N+1>`.
 6. **Check.**
    ```sh
-   npx director-check check --root clossys/agents/director
-   npx director-check slots --strict clossys/agents/director/cells
+   npx clossys director check check --root clossys/agents/director
+   npx clossys director check slots --strict clossys/agents/director/cells
    ```
    Fix every finding in the draft; never weaken a cell to pass.
 7. **Compile the briefs** downstream agents read:
    ```sh
-   npx director-check brief writer.messaging --root clossys/agents/director --write
-   npx director-check brief designer.identity --root clossys/agents/director --write
-   npx director-check handoff writer.messaging --root clossys/agents/director
+   npx clossys director check brief writer.messaging --root clossys/agents/director --write
+   npx clossys director check brief designer.identity --root clossys/agents/director --write
+   npx clossys director check handoff writer.messaging --root clossys/agents/director
    ```
    A `missing` line names the next cell to draft; go back to step 2.
 8. **Commit** the cells, `tree.json`, findings and session log together:
@@ -91,7 +91,7 @@ Downstream agents cite cells as `strategy:<cell-id>@<N>`.
 
 ## Done when
 
-- `npx director-check handoff writer.messaging --root clossys/agents/director`
+- `npx clossys director check handoff writer.messaging --root clossys/agents/director`
   and the same for `designer.identity` exit 0 (state `ready`).
 - `npx clossys check --suites --strict` reports no Director slot findings.
 - Every active cell has `confirmed:` and every Because bullet has a ref.

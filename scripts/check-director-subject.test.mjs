@@ -1,5 +1,5 @@
 // check-director-subject: the facts gate's scan scope. Runs the REAL,
-// compiled director CLI (packages/director/dist/cli.js), so it needs
+// compiled `clossys director check` (packages/producer/dist/cli/index.js), so it needs
 // `npm run build` first -- excluded from check:gates in
 // scripts/lib/gate-test-set.mjs and run by `npm run check:director-subject`
 // in ci.yml's build job instead, after the build.
@@ -31,8 +31,8 @@ function withFixture(docs, fn) {
   }
 }
 
-test("the compiled director CLI this suite needs exists (run `npm run build` first)", () => {
-  assert.ok(existsSync(directorCli), `${directorCli} is missing -- build packages/director before this suite`);
+test("the compiled clossys CLI this suite needs exists (run `npm run build` first)", () => {
+  assert.ok(existsSync(directorCli), `${directorCli} is missing -- build packages/producer before this suite`);
 });
 
 test("a claim in a package changelog under docs/changelogs/ is outside the facts gate's scope", () => {
