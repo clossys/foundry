@@ -8,9 +8,9 @@ import { afterEach, beforeEach, expect, it } from "vitest";
 import { agentModule, agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
 import { createServer, type Server } from "node:http";
-import { publication, previewRoot, servePreview, staticPage, themePage, type ServedApp } from "./publication.js";
+import { PREVIEW_PAGE_CSP, publication, previewRoot, sandboxSpecimenFrames, servePreview, specimenHostCsp, staticPage, themePage, type ServedApp } from "./publication.js";
 import { publishNext } from "../publish/install-next.js";
-import { SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
+import { opaqueSpecimenRequest, SPECIMEN_FRAME_SCRIPT_HASH } from "./specimen-frame.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { renderNativePreview } from "./publisher-preview-render.js";
 import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
@@ -276,7 +276,10 @@ it("lists the Studio publication's installed pages as ready with frame previews 
   const install = await publishNext({ root, publication: "studio", app, assembly: "../components/StudioInstalledPage.tsx", live: true, out: join(outs, "next-studio") });
   expect(install.findings).toEqual([]);
   const rendered: string[] = [];
-  const served: ServedApp = { app, render: async path => { rendered.push(path); return `<!doctype html><html><head><title>${path}</title></head><body><h1>Rendered ${path}</h1><script src="/_next/static/chunks/app.js" async=""></script></body></html>`; } };
+  // Studio's Designer and Publisher pages carry specimen frames: a Designer card, a Publisher page card, and frames no preview may load.
+  const FRAMES = '<iframe src="/__specimen?element=components.button%2Fbutton&amp;theme=light&amp;width=1280" sandbox="allow-same-origin allow-scripts" class="opacity-0"></iframe>'
+    + '<iframe src="/preview/studio/frame/home.html?theme=dark&amp;width=1280" title="Home"></iframe><iframe src="/api/config"></iframe><iframe sandbox src="https://example.test/"></iframe><iframe srcdoc="x"></iframe>';
+  const served: ServedApp = { app, render: async path => { rendered.push(path); return `<!doctype html><html><head><title>${path}</title></head><body><h1>Rendered ${path}</h1>${FRAMES}<script src="/_next/static/chunks/app.js" async=""></script></body></html>`; } };
   // Home plus one parameterized record per agent top group; the tabs they expand to carry no page slot.
   const ids = ["home",
     ...["context", "aspiration", "focus", "advantage", "identity", "capability", "execution"].map(group => `director-${group}`),
@@ -296,9 +299,11 @@ it("lists the Studio publication's installed pages as ready with frame previews 
   const elsewhere = await publication(root, "studio", outs, { app: join(root, "other"), render: served.render });
   expect(elsewhere.pages?.every(page => !page.emitted)).toBe(true);
   // The preview page is the served app's own render of the installed route, under the no-script sandbox.
+  // Producer passes the request's own guarded origin; without one a served page keeps the strict policy.
+  let withOrigin = false;
   const host: Server = createServer((request, response) => {
     const url = new URL(request.url!, "http://127.0.0.1");
-    void servePreview(root, url.pathname, request.method!, response, outs, url.searchParams, served);
+    void servePreview(root, url.pathname, request.method!, response, outs, url.searchParams, served, withOrigin ? `http://${request.headers.host}` : undefined);
   });
   await new Promise<void>(accept => host.listen(0, "127.0.0.1", accept));
   try {
@@ -314,10 +319,91 @@ it("lists the Studio publication's installed pages as ready with frame previews 
     expect(page.text).not.toContain("/_next/");
     expect(page.headers["content-security-policy"]).not.toContain("allow-scripts");
     expect(rendered).toContain("/designer/themes");
-    expect((await fetchText("/preview/studio/frame/designer-themes.html")).text).toContain("/preview/studio/pages/designer-themes.html");
+    expect(page.headers["content-security-policy"]).toBe(PREVIEW_PAGE_CSP);
+    const frame = (await fetchText("/preview/studio/frame/designer-themes.html")).text;
+    expect(frame).toContain('sandbox="allow-same-origin" src="/preview/studio/pages/designer-themes.html"');
+
+    // With the origin, the served page frames its specimens: exactly two same-origin paths, specimens opaque.
+    withOrigin = true;
+    const origin = `http://127.0.0.1:${port}`;
+    const hosted = await fetchText("/preview/studio/pages/designer-themes.html");
+    expect(hosted.status).toBe(200);
+    const csp = hosted.headers["content-security-policy"] as string;
+    expect(csp).toBe(`sandbox allow-same-origin allow-scripts; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-src ${origin}/__specimen ${origin}/preview/studio/pages/; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'`);
+    const directives = (policy: string) => new Map(policy.split(";").map(part => part.trim().split(/\s+/)).map(([name, ...values]) => [name!, values.join(" ")]));
+    const strict = directives(PREVIEW_PAGE_CSP), hostPolicy = directives(csp);
+    // frame-src: path-scoped host-sources only, never a wildcard, 'self' or another scheme.
+    expect(hostPolicy.get("frame-src")!.split(" ")).toEqual([`${origin}/__specimen`, `${origin}/preview/studio/pages/`]);
+    expect(hostPolicy.get("frame-src")).not.toMatch(/\*|'self'|data:|blob:|https:/);
+    // The page still runs no script: no script-src (default-src 'none' blocks every script); the sandbox only adds allow-scripts for nested specimens.
+    expect(hostPolicy.has("script-src")).toBe(false);
+    expect(hostPolicy.get("sandbox")).toBe("allow-same-origin allow-scripts");
+    // Every other directive is the strict preview policy's, unchanged and complete.
+    expect([...hostPolicy.keys()].filter(name => name !== "frame-src").sort()).toEqual([...strict.keys()].sort());
+    for (const [name, value] of strict) if (name !== "sandbox") expect(hostPolicy.get(name), name).toBe(value);
+    expect(hosted.headers["cross-origin-resource-policy"]).toBe("same-origin");
+    expect(hosted.text).not.toContain("<script");
+    // Every frame carries exactly one sandbox; a specimen runs script without Studio's origin.
+    const frames = hosted.text.match(/<iframe\b[^>]*>/g)!;
+    expect(frames).toHaveLength(5);
+    for (const tag of frames) expect(tag.match(/\ssandbox\b/g), tag).toHaveLength(1);
+    expect(frames[0]).toBe('<iframe sandbox="allow-scripts" src="/__specimen?element=components.button%2Fbutton&amp;theme=light&amp;width=1280" class="opacity-0">');
+    for (const tag of frames.filter(tag => tag.includes("/__specimen"))) expect(tag).not.toContain("allow-same-origin");
+    // A nested page preview loads the static page itself (no frame-page script on this origin), scripts off.
+    expect(frames[1]).toBe('<iframe sandbox="allow-same-origin" src="/preview/studio/pages/home.html?theme=dark" title="Home">');
+    expect(frames.slice(2)).toEqual(['<iframe sandbox="" src="/api/config">', '<iframe sandbox="" src="https://example.test/">', '<iframe sandbox="" srcdoc="x">']);
+    // The frame page around a served page passes allow-scripts down; the page's CSP still blocks its own scripts.
+    expect((await fetchText("/preview/studio/frame/designer-themes.html")).text).toContain('sandbox="allow-same-origin allow-scripts" src="/preview/studio/pages/designer-themes.html"');
+    withOrigin = false;
     // A hand-edited route file is no longer Publisher's install, so it is not previewed.
     await writeFile(join(app, "writer", "lexicon", "page.tsx"), "export default function Page() { return null; }\n");
     expect((await publication(root, "studio", outs, served)).pages?.find(row => row.id === "writer-lexicon")?.emitted).toBe(false);
     expect((await fetchText("/preview/studio/pages/writer-lexicon.html")).status).toBe(404);
   } finally { await new Promise(accept => host.close(accept)); }
 });
+
+it("pins every frame a served page nests and falls back to the strict policy without a local origin", () => {
+  // A specimen is opaque whatever sandbox the render carried (including none or a bare attribute).
+  expect(sandboxSpecimenFrames('<iframe src="/__specimen?element=a%2Fb"></iframe><IFRAME sandbox=allow-same-origin src=\'/__specimen\'>', "studio"))
+    .toBe('<iframe sandbox="allow-scripts" src="/__specimen?element=a%2Fb"></iframe><iframe sandbox="allow-scripts" src=\'/__specimen\'>');
+  // Only this publication's previews nest, as static pages; a look-alike path or another publication gets every restriction.
+  expect(sandboxSpecimenFrames('<iframe src="/preview/studio/pages/home.html"><iframe src="/preview/other/frame/home.html"><iframe src="/__specimen/assets/x.js"><iframe src="/__specimen-site/k/index.html"><iframe data-src="/__specimen" src="/x">', "studio"))
+    .toBe('<iframe sandbox="allow-same-origin" src="/preview/studio/pages/home.html"><iframe sandbox="" src="/preview/other/frame/home.html"><iframe sandbox="" src="/__specimen/assets/x.js"><iframe sandbox="" src="/__specimen-site/k/index.html"><iframe sandbox="" data-src="/__specimen" src="/x">');
+  for (const origin of ["*", "http://example.test:80", "https://127.0.0.1:1", "http://127.0.0.1:1 *", "'self'"]) expect(specimenHostCsp(origin, "studio")).toBe(PREVIEW_PAGE_CSP);
+  expect(specimenHostCsp("http://localhost:4621", "../x")).toBe(PREVIEW_PAGE_CSP);
+  expect(specimenHostCsp("http://localhost:4621", "studio")).toContain("; frame-src http://localhost:4621/__specimen http://localhost:4621/preview/studio/pages/; ");
+  // The strict preview policy itself is unchanged.
+  expect(PREVIEW_PAGE_CSP).toBe("sandbox allow-same-origin; default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; frame-ancestors 'self'; base-uri 'none'; form-action 'none'; connect-src 'none'");
+});
+
+it("answers an opaque origin only for a built specimen file fetched as a script, style or font", async () => {
+  const opaque = (url: string, headers: Record<string, string> = {}, method = "GET") => {
+    const all = { origin: "null", "sec-fetch-mode": "cors", "sec-fetch-dest": "script", ...headers };
+    return opaqueSpecimenRequest({ method, url, headers: all, rawHeaders: Object.entries(all).flat() });
+  };
+  expect(opaque("/__specimen-site/0123abcd/assets/index-a.js")).toBe(true);
+  expect(opaque("/__specimen-site/0123abcd-o1/assets/a.woff2", { "sec-fetch-dest": "font" })).toBe(true);
+  expect(opaque("/__specimen/assets/0123456789abcdef01234567.js?x=1")).toBe(true);
+  expect(opaque("/__specimen/assets/0123456789abcdef01234567.css", { "sec-fetch-dest": "style" })).toBe(true);
+  for (const [url, headers, method] of [
+    ["/__specimen-site/0123abcd/index.html", { "sec-fetch-dest": "iframe", "sec-fetch-mode": "navigate" }],
+    ["/__specimen-site/0123abcd/assets/a.js", { "sec-fetch-dest": "empty" }],
+    ["/__specimen-site/0123abcd/assets/a.js", { "sec-fetch-mode": "no-cors" }],
+    ["/__specimen-site/0123abcd/assets/a.js", { origin: "http://example.test" }],
+    ["/__specimen-site/0123abcd/assets/a.js", {}, "POST"],
+    ["/__specimen-site/0123abcd/../../api/config", {}],
+    ["/__specimen-site/0123abcd/.env", {}],
+    ["/__specimen?element=a", {}],
+    ["/api/config", {}],
+    ["/preview/studio/pages/home.html", {}],
+    ["/__specimen/assets/0123.js", {}],
+  ] as [string, Record<string, string>, string?][]) expect(opaque(url, headers, method), url).toBe(false);
+  // Two Origin headers are never one opaque request.
+  expect(opaqueSpecimenRequest({ method: "GET", url: "/__specimen/assets/0123456789abcdef01234567.js", headers: { origin: "null", "sec-fetch-mode": "cors", "sec-fetch-dest": "script" }, rawHeaders: ["Origin", "null", "origin", "null"] })).toBe(false);
+  // Through the server: the guard still refuses every other opaque request; an unknown specimen file is a 404 without the CORS grant.
+  await launch();
+  expect((await get("/api/config", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "script" })).status).toBe(403);
+  expect((await get("/__specimen-site/0123abcd/assets/a.js", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty" })).status).toBe(403);
+  const unknown = await get("/__specimen-site/0123abcd/assets/a.js", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "script" });
+  expect(unknown.status).toBe(404); expect(unknown.headers["access-control-allow-origin"]).toBeUndefined();
+}, 45_000);

@@ -339,7 +339,22 @@ async function captureShot(browser, contextId, origin, job, outDir) {
   const inflight = new Map();
   let lastActivity = Date.now();
   let loaded = false;
-  browser.on(sessionId, (method, params) => {
+  // A sandboxed opaque iframe runs out of process, as its own target: the page session sees its
+  // navigation start and the frame's session sees it finish. Every such frame (and frame within it)
+  // is attached paused, given the same listener, then resumed, so its requests count toward network
+  // idle and its console errors and failed loads are findings like the page's own.
+  const children = new Set();
+  const attachChild = async child => {
+    children.add(child);
+    browser.on(child, listener);
+    const sendChild = (method, params) => browser.send(method, params, child);
+    try {
+      await Promise.all([sendChild("Runtime.enable"), sendChild("Log.enable"), sendChild("Network.enable"), sendChild("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true })]);
+    } finally { await sendChild("Runtime.runIfWaitingForDebugger").catch(() => {}); }
+  };
+  function listener(method, params) {
+    if (method === "Target.attachedToTarget") { attachChild(params.sessionId).catch(() => {}); return; }
+    if (method === "Target.detachedFromTarget") { browser.off(params.sessionId); children.delete(params.sessionId); return; }
     if (method === "Runtime.consoleAPICalled" && params.type === "error") consoleErrors.push(params.args.map(arg => arg.value ?? arg.description ?? "").join(" "));
     else if (method === "Runtime.exceptionThrown") consoleErrors.push(params.exceptionDetails?.exception?.description ?? params.exceptionDetails?.text ?? "exception");
     else if (method === "Log.entryAdded" && params.entry.level === "error" && params.entry.source !== "console-api") consoleErrors.push(`${params.entry.source}: ${params.entry.text} ${params.entry.url ?? ""}`.trim());
@@ -355,9 +370,10 @@ async function captureShot(browser, contextId, origin, job, outDir) {
       // A request the page itself cancelled (navigation, aborted prefetch) is not a failed load.
       if (!params.canceled) failed.push({ url: url ?? params.requestId, errorText: params.errorText });
     } else if (method === "Page.loadEventFired") loaded = true;
-  });
+  }
+  browser.on(sessionId, listener);
   try {
-    await Promise.all([send("Page.enable"), send("Runtime.enable"), send("Log.enable"), send("Network.enable")]);
+    await Promise.all([send("Page.enable"), send("Runtime.enable"), send("Log.enable"), send("Network.enable"), send("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true })]);
     await send("Emulation.setDeviceMetricsOverride", { width: job.width, height: 900, deviceScaleFactor: 1, mobile: job.width < 768 });
     await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: job.theme }, { name: "prefers-reduced-motion", value: "reduce" }] });
     loaded = false;
@@ -390,6 +406,7 @@ async function captureShot(browser, contextId, origin, job, outDir) {
     return { png, findings, counts: { consoleErrors: consoleErrors.length, failedRequests: failed.length }, overflow: facts ? facts.scrollWidth > facts.clientWidth : null };
   } finally {
     browser.off(sessionId);
+    for (const child of children) browser.off(child);
     await browser.send("Target.closeTarget", { targetId }).catch(() => {});
   }
 }
