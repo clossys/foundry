@@ -539,6 +539,7 @@
         "source": {
           "frameId": "frames.studio-shell",
           "sectionIds": [
+            "sections.studio.page-header",
             "sections.producer.system-empty"
           ]
         },
@@ -573,6 +574,7 @@
         "source": {
           "frameId": "frames.studio-shell",
           "sectionIds": [
+            "sections.studio.page-header",
             "sections.producer.system-empty"
           ]
         },
@@ -6011,6 +6013,7 @@
       "title": "Overview",
       "frameId": "frames.studio-shell",
       "sectionIds": [
+        "sections.studio.page-header",
         "sections.producer.system-empty"
       ],
       "body": "plain",
@@ -6023,6 +6026,7 @@
         }
       },
       "inputs": {
+        "sections.studio.page-header": "header",
         "sections.producer.system-empty": "empty"
       },
       "manifest": {
@@ -6086,6 +6090,7 @@
       "title": "Overview",
       "frameId": "frames.studio-shell",
       "sectionIds": [
+        "sections.studio.page-header",
         "sections.producer.system-empty"
       ],
       "body": "plain",
@@ -6098,6 +6103,7 @@
         }
       },
       "inputs": {
+        "sections.studio.page-header": "header",
         "sections.producer.system-empty": "empty"
       },
       "manifest": {

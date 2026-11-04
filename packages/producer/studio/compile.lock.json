@@ -3590,16 +3590,16 @@
       "sha256": "7f55136bc8185021ad0cd83e8cc04c830856017bb0a3d200232ee752308007a9"
     },
     {
-      "path": "clossys/agents/publisher/page.build-overview/candidates/page-v1.json",
-      "sha256": "45bb2661da2f734473cdfc1a5b91fc6719c2de6efa1aa06eed7568d5b9a0be41"
+      "path": "clossys/agents/publisher/page.build-overview/candidates/page-v2.json",
+      "sha256": "ee624076c98c7fbd775394745049877304a50772e34faac88249e7359388a3cb"
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/pin.json",
-      "sha256": "c2ce78d724e60ae6426d0fd192b62ad98a6c03af664c5a92c7c99832c8444113"
+      "sha256": "2eb5cc05adde9312272fb1a09d854f05fa0160921eca349e986d54ed0f4f512e"
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/slot.json",
-      "sha256": "97428bba3da266b7dece8bfb3fe10b3ed386fb8b49691d7e766cd2b52cfb3e88"
+      "sha256": "8f9836d271988b408c9cec77416d1ccceae1bafd168ddf174cf1fbe0afb2e10f"
     },
     {
       "path": "clossys/agents/publisher/page.designer-assets/candidates/page-v3.json",
@@ -3782,16 +3782,16 @@
       "sha256": "46950ac132f2edf7d6154498e99f34ef6bedc54c765e723242b8f9ecac9efa69"
     },
     {
-      "path": "clossys/agents/publisher/page.run-overview/candidates/page-v1.json",
-      "sha256": "034805894bedf55df6879390ea343a67e1f049802e6ea7122b02a6d38e6faf64"
+      "path": "clossys/agents/publisher/page.run-overview/candidates/page-v2.json",
+      "sha256": "4bcde7ad04638ca7160764b02faa2d34a6f1f13d1d67294d74b15e5db281ec5a"
     },
     {
       "path": "clossys/agents/publisher/page.run-overview/pin.json",
-      "sha256": "75ca0aa7117b875e23f5de9aea033e392d3b5f883e8f988aea2879c0f5a1fc1d"
+      "sha256": "180070b1233fe6e1f1debbfdcfd2babdf60e19fe3a4fd66bd50dbfbba2a964f9"
     },
     {
       "path": "clossys/agents/publisher/page.run-overview/slot.json",
-      "sha256": "cb9e5502909966706a188900038d662cda7585be8a8ed6054e98c0bfe344b31f"
+      "sha256": "039906cd173738c1ad4659bbaa2ca00788eee966c46685e7e41bf0fb3239f6b7"
     },
     {
       "path": "clossys/agents/publisher/page.writer-lexicon/candidates/page-v3.json",
@@ -6345,7 +6345,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "81c950b23d5ed24ae8de567fe818c2cef88ce337227108d6d6e60ab68694acbd"
+      "sha256": "8f105c22b461fac20dd8e3b2f2d418d02a85812c96253fadbea20fbb120651a3"
     },
     {
       "path": "generated/studio-map.ts",
