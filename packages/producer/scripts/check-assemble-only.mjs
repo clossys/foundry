@@ -12,7 +12,9 @@
  *                    draws its own DOM blocks between the frame and the sections
  *   explorer         a page renders the retired page-level explorer
  *   hard-coded-route nav, tab or API routes are string literals instead of content-map projections
- *   tabs-projected   a record page has no group-tab page routes projected from the agent's ia.json
+ *   tabs-projected   a record page has no group-tab page routes projected from the agent's ia.json (an
+ *                    agent group is a content-map group whose id has clossys/agents/<id>/ia.json, at any
+ *                    depth: under a system group such as Content, or at the nav root)
  *   page-header      a pinned page record does not declare the page-header section first
  *
  * Usage: node scripts/check-assemble-only.mjs [--root <repository>] [--json]. `--root` checks another
@@ -205,19 +207,22 @@ function checkRecords(repositoryRoot, studioRoot) {
 }
 
 /** (e) tabs are content-map routes projected from ia.json: every record page that places page-tabs has tab sections. */
-function checkTabs(studioRoot) {
+function checkTabs(studioRoot, repositoryRoot) {
   const findings = [];
   const generated = path.join(studioRoot, 'generated', 'studio-map.json');
   if (!fs.existsSync(generated)) return [{ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: 'no generated Studio map' }];
-  const { map } = JSON.parse(fs.readFileSync(generated, 'utf8'));
-  const groups = map.entries.filter(entry => entry.kind === 'group' && entry.parentId == null && entry.id !== 'home');
-  if (!groups.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: 'no agent groups at the nav root' });
+  const { map, tabs: projected = [] } = JSON.parse(fs.readFileSync(generated, 'utf8'));
+  // The Publisher's projected tabs name their record: a web content map holds three levels, so under a
+  // system group (Content > Designer > record) a record's tabs sit beside it with `record` naming it.
+  const tabOf = new Map(projected.map(tab => [tab.id, tab.record]));
+  const groups = map.entries.filter(entry => entry.kind === 'group' && entry.id !== 'home' && fs.existsSync(path.join(repositoryRoot, 'clossys', 'agents', entry.id, 'ia.json')));
+  if (!groups.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: 'no agent groups (a group whose id has clossys/agents/<id>/ia.json) in the nav' });
   for (const group of groups) {
-    const records = map.entries.filter(entry => entry.parentId === group.id && entry.kind === 'page');
+    const records = map.entries.filter(entry => entry.parentId === group.id && entry.kind === 'page' && !tabOf.has(entry.id));
     if (!records.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${group.id}: no top-group record pages under the agent` });
     for (const record of records) {
-      // A tab is a content-map entry under the record whose path extends the record's path (a group-tab route).
-      const tabs = map.entries.filter(entry => entry.parentId === record.id && entry.kind === 'page' && typeof entry.path === 'string' && entry.path.startsWith(`${record.path}/`));
+      // A tab is a content-map entry under the record (or projected as the record's tab) whose path extends the record's path (a group-tab route).
+      const tabs = map.entries.filter(entry => (entry.parentId === record.id || tabOf.get(entry.id) === record.id) && entry.kind === 'page' && typeof entry.path === 'string' && entry.path.startsWith(`${record.path}/`));
       if (record.source?.sectionIds?.includes(PAGE_TABS) && !tabs.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${record.id}: places page-tabs but projects no tab routes` });
       if (!record.source?.sectionIds?.includes(PAGE_TABS)) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${record.id}: places no page-tabs section` });
     }
@@ -237,7 +242,7 @@ export function checkAssembleOnly({ producerRoot = PRODUCER_ROOT, repositoryRoot
     ...checkSources(studioRoot),
     ...checkProvenance(studioRoot),
     ...checkRecords(repositoryRoot, studioRoot),
-    ...checkTabs(studioRoot),
+    ...checkTabs(studioRoot, repositoryRoot),
   ];
 }
 

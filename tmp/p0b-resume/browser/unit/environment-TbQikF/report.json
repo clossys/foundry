@@ -1,0 +1,18 @@
+{
+  "check": "studio:check",
+  "status": "ENV",
+  "phase": "browser-launch",
+  "executed": false,
+  "browser": "chromium",
+  "checks": [],
+  "diagnostics": [
+    {
+      "rule": "browser-unavailable",
+      "message": "Fixture browser launch unavailable"
+    },
+    {
+      "rule": "blocked-no-browser",
+      "message": "BLOCKED no browser: channel chrome: Fixture browser launch unavailable; CLOSSYS_CHROME unset"
+    }
+  ]
+}

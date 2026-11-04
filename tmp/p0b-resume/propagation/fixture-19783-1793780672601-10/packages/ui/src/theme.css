@@ -1,0 +1,2 @@
+:root { --primary: oklch(0.42 0.09 243); }
+.dark { --primary: #ffffff; }

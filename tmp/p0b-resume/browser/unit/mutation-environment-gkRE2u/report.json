@@ -1,0 +1,13 @@
+{
+  "check": "studio:mutation-proof",
+  "status": "ENV",
+  "executed": false,
+  "phase": "browser-launch",
+  "results": [],
+  "diagnostics": [
+    {
+      "rule": "browser-unavailable",
+      "message": "Fixture runtime unavailable"
+    }
+  ]
+}

@@ -11,7 +11,8 @@
   "contract": {},
   "inputs": [
     "frames.studio-shell",
-    "sections.producer.system-empty"
+    "sections.producer.system-empty",
+    "sections.studio.page-header"
   ],
   "uses": [
     "assets.icon-settings",
@@ -19,6 +20,7 @@
     "sections.module.checks",
     "sections.module.outline",
     "sections.producer.system-empty",
+    "sections.studio.page-header",
     "strings.common"
   ]
 }

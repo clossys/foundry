@@ -230,13 +230,13 @@ function usePipelineInputs({ page }: LoaderProps): Loaded {
 }
 
 /** A system that is not set up yet: the record's empty state, its words Writer keys. */
-function useEmptyInputs({ spec }: LoaderProps): Loaded {
+function useEmptyInputs({ page, spec }: LoaderProps): Loaded {
   return useMemo((): Loaded => {
     const keys = spec.data.empty;
     if (!keys) return { state: 'notice', notice: { title: studioCopy("studio.this-page-cannot-load"), description: studioCopy("studio.studio-has-no-loader-named", { value0: String(spec.data.loader) }) } };
     const empty: SystemEmptyInput = { title: studioCopy(keys.title), description: studioCopy(keys.description) };
-    return { state: 'ready', inputs: { empty }, modules: { checks: checksInput([], [], []) } };
-  }, [spec]);
+    return { state: 'ready', inputs: { header: pageHeader(page), empty }, modules: { checks: checksInput([], [], []) } };
+  }, [page, spec]);
 }
 
 /* Assembly. */
