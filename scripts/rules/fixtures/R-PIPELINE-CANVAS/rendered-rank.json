@@ -1,0 +1,70 @@
+{
+  "//": "A page that draws the make stage with design.card (rank 1) left of design.hero (rank 0), so the edge between them runs right to left.",
+  "nodes": [
+    "design.hero",
+    "design.card",
+    "publish.compile"
+  ],
+  "edges": [
+    "design.hero->design.card",
+    "design.card->publish.compile"
+  ],
+  "boxes": [
+    {
+      "id": "make",
+      "kind": "stage",
+      "x": 120,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "publish",
+      "kind": "stage",
+      "x": 420,
+      "y": -40,
+      "width": 60,
+      "height": 20
+    },
+    {
+      "id": "designer",
+      "kind": "lane",
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "id": "publisher",
+      "kind": "lane",
+      "x": 0,
+      "y": 200,
+      "width": 80,
+      "height": 20
+    },
+    {
+      "id": "design.card",
+      "kind": "step",
+      "x": 130,
+      "y": 10,
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "design.hero",
+      "kind": "step",
+      "x": 250,
+      "y": 10,
+      "width": 100,
+      "height": 100
+    },
+    {
+      "id": "publish.compile",
+      "kind": "step",
+      "x": 430,
+      "y": 210,
+      "width": 200,
+      "height": 100
+    }
+  ]
+}

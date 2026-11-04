@@ -9,15 +9,17 @@
  *         fails it as stage.missing)
  *   rank  longest-path topological rank over the derived edges; cycles are broken in step id
  *         order (a depth-first walk from the sources, then every step, successors by id, drops
- *         each edge back into the walk) and every edge it skips is listed in `cycleBreaks`. Rank
- *         orders nothing on screen; it is the starting order inside a cell
- *   order inside each lane/stage cell: rank then id order, then `BARYCENTER_SWEEPS` alternating
+ *         each edge back into the walk) and every edge it skips is listed in `cycleBreaks`. Inside
+ *         one stage column the ranks run left to right: each rank present in the stage gets its own
+ *         block of sub-columns, in rank order, so a lower rank always starts further left
+ *   order inside each lane/stage/rank cell: id order, then `BARYCENTER_SWEEPS` alternating
  *         barycenter sweeps (left to right over predecessors, right to left over successors; ties
  *         by id); the order with the fewest edge crossings seen is kept, and both counts are in
  *         `crossings`
  *   x, y  from fixed constants: a cell stacks at most `cellRows` steps; more wrap into sub-columns
- *         inside the stage column, so a column is as wide as its widest cell. x by stage column
- *         plus sub-column, y by lane top plus the step's row. Each lane's label sits once at the
+ *         inside its rank block, so a block is as wide as its widest cell and a stage column as wide
+ *         as its blocks together. x by stage column plus rank block plus sub-column, y by lane top
+ *         plus the step's row. Each lane's label sits once at the
  *         row's start (x = -laneLabelWidth); each stage's label sits once above its column
  *         (y = -stageLabelHeight)
  *   crossings  pairs of edges whose straight segments (source right middle to target left middle)
@@ -135,17 +137,26 @@ export function computeLayout(steps: readonly LayoutStep[], edges: readonly { re
   const stageOf = new Map(steps.map(step => [step.id, axes.stages.includes(step.stage) ? step.stage : UNSTAGED]));
   const stages = [...axes.stages, ...(steps.some(step => !axes.stages.includes(step.stage)) ? [UNSTAGED] : [])];
   const C = LAYOUT_CONSTANTS;
-  // Cells in lane then stage order; each holds its steps in rank then id order to start.
-  const cellOf = (lane: string, stage: string): string => `${lane}\0${stage}`;
+  // Cells in lane, stage, then rank order; each holds its steps in id order to start.
+  const cellOf = (lane: string, stage: string, at: number): string => `${lane}\0${stage}\0${at}`;
+  const ranksIn = new Map(stages.map(stage => [stage, [...new Set(ids.filter(id => stageOf.get(id) === stage).map(id => rank.get(id)!))].sort((a, b) => a - b)]));
   const cells = new Map<string, string[]>();
-  for (const lane of lanes) for (const stage of stages) cells.set(cellOf(lane, stage), []);
-  for (const id of [...ids].sort((a, b) => rank.get(a)! - rank.get(b)! || byId(a, b))) cells.get(cellOf(laneOf.get(id)!, stageOf.get(id)!))!.push(id);
+  for (const lane of lanes) for (const stage of stages) for (const at of ranksIn.get(stage)!) cells.set(cellOf(lane, stage, at), []);
+  for (const id of ids) cells.get(cellOf(laneOf.get(id)!, stageOf.get(id)!, rank.get(id)!))!.push(id);
   for (const [key, members] of [...cells]) if (!members.length) cells.delete(key);
-  const keyLane = (key: string): string => key.slice(0, key.indexOf("\0"));
-  const keyStage = (key: string): string => key.slice(key.indexOf("\0") + 1);
+  const keyParts = (key: string): [string, string, number] => { const [lane, stage, at] = key.split("\0"); return [lane!, stage!, Number(at)]; };
+  const keyLane = (key: string): string => keyParts(key)[0];
+  const keyStage = (key: string): string => keyParts(key)[1];
 
   const laneRows = (lane: string): number => Math.max(1, ...[...cells].filter(([key]) => keyLane(key) === lane).map(([, members]) => Math.min(members.length, C.cellRows)));
-  const stageColumns = (stage: string): number => Math.max(1, ...[...cells].filter(([key]) => keyStage(key) === stage).map(([, members]) => Math.ceil(members.length / C.cellRows)));
+  // A rank block is as wide as its widest cell; a stage column holds its rank blocks side by side.
+  const blockColumns = (stage: string, at: number): number => Math.max(1, ...[...cells].filter(([key]) => keyStage(key) === stage && keyParts(key)[2] === at).map(([, members]) => Math.ceil(members.length / C.cellRows)));
+  const blockOffset = new Map<string, number>();
+  const stageColumns = (stage: string): number => {
+    let columns = 0;
+    for (const at of ranksIn.get(stage)!) { blockOffset.set(`${stage}\0${at}`, columns); columns += blockColumns(stage, at); }
+    return Math.max(1, columns);
+  };
   const laneTops = new Map<string, number>();
   const laneLayouts: LaneLayout[] = [];
   let top = 0;
@@ -168,9 +179,10 @@ export function computeLayout(steps: readonly LayoutStep[], edges: readonly { re
   const place = (order: ReadonlyMap<string, readonly string[]>): Record<string, NodeLayout> => {
     const nodes: Record<string, NodeLayout> = {};
     for (const [key, members] of order) {
-      const lane = keyLane(key), stage = keyStage(key);
+      const [lane, stage, block] = keyParts(key);
+      const offset = blockOffset.get(`${stage}\0${block}`)!;
       members.forEach((id, at) => {
-        nodes[id] = { lane, stage, rank: rank.get(id)!, x: stageX.get(stage)! + Math.floor(at / C.cellRows) * C.columnGap, y: laneTops.get(lane)! + (at % C.cellRows) * C.rowGap };
+        nodes[id] = { lane, stage, rank: rank.get(id)!, x: stageX.get(stage)! + (offset + Math.floor(at / C.cellRows)) * C.columnGap, y: laneTops.get(lane)! + (at % C.cellRows) * C.rowGap };
       });
     }
     return nodes;

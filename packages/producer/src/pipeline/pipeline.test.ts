@@ -12,7 +12,8 @@ import { holderOf, laneIds, laneOf, ROSTER, UNASSIGNED } from "./roster.js";
 import { portsOverlap } from "./globs.js";
 import { stepOptions } from "./options.js";
 import { runPipeline, selectStep } from "./runner.js";
-import { validateFile } from "./schema.js";
+import { loadSchema, validateFile } from "./schema.js";
+import { ELEMENT_SCHEMA, SELECTION_SCHEMA } from "../records/schemas.js";
 import { readSeat } from "./seats.js";
 import { pipelineStatus, slotCounts } from "./status.js";
 import { STEPS } from "./steps/index.js";
@@ -62,9 +63,11 @@ describe("derived graph", () => {
     const edges = deriveEdges(STEPS);
     expect(edges.some(edge => edge.from === "pin" && edge.to === "publish.install")).toBe(true);
     expect(edges.every(edge => edge.via.length > 0 && edge.via.every(via => typeof via.schema === "string"))).toBe(true);
-    // studio-map.json names no schema yet: no edge, and the port is listed as untyped instead.
-    expect(edges.some(edge => edge.from === "studio.map" && edge.to === "studio.checks")).toBe(false);
-    expect(untypedPorts(STEPS)).toContainEqual({ step: "studio.map", port: "output", glob: "pkg:studio/generated/studio-map.json" });
+    // studio-map.json is typed, so it feeds the Studio checks; a port with no schema feeds no edge and is listed as untyped.
+    expect(edges.some(edge => edge.from === "studio.map" && edge.to === "studio.checks")).toBe(true);
+    expect(edges.some(edge => edge.from === "studio.map" && edge.to === "capture")).toBe(true);
+    expect(untypedPorts(STEPS)).not.toContainEqual({ step: "studio.map", port: "output", glob: "pkg:studio/generated/studio-map.json" });
+    expect(untypedPorts(STEPS)).toContainEqual({ step: "studio.map", port: "output", glob: "pkg:studio/generated/assembly-bindings.ts" });
     const make = (id: string, inputs: { glob: string; schema?: string }[], outputs: { glob: string; schema?: string }[]) =>
       defineStep({ id, kind: "plumb", actor: "code", stage: "check", summary: id, inputs, outputs, command: { npm: "x" }, checks: [] });
     const a = make("a", [], [{ glob: "x/*.json", schema: "slot" }]);
@@ -73,6 +76,19 @@ describe("derived graph", () => {
     expect(deriveEdges([a, make("b", [{ glob: "x/b.json", schema: "pin" }], [])])).toHaveLength(0);
     expect(schemaMismatches([a, make("b", [{ glob: "x/b.json", schema: "pin" }], [])])).toHaveLength(1);
     expect(deriveEdges([a, make("b", [{ glob: "y/b.json", schema: "slot" }], [])])).toHaveLength(0);
+  });
+  it("gives each rank in a stage its own block of sub-columns, lower ranks further left", () => {
+    // r0a..r0d wrap into two sub-columns at rank 0 in one cell; s1 (rank 1, another lane) starts after both.
+    const steps = [...["r0a", "r0b", "r0c", "r0d"].map(id => ({ id, lane: "you", stage: "make" })), { id: "s1", lane: "checks", stage: "make" }, { id: "t2", lane: "you", stage: "make" }];
+    const layout = computeLayout(steps, [{ from: "r0a", to: "s1" }, { from: "s1", to: "t2" }], { lanes: ROSTER, stages: STAGES });
+    const n = layout.nodes, C = LAYOUT_CONSTANTS;
+    expect([n.r0a!.rank, n.s1!.rank, n.t2!.rank]).toEqual([0, 1, 2]);
+    const rank0 = Math.max(...["r0a", "r0b", "r0c", "r0d"].map(id => n[id]!.x));
+    expect(rank0).toBe(n.r0a!.x + C.columnGap);
+    expect(n.s1!.x).toBe(rank0 + C.columnGap);
+    expect(n.t2!.x).toBe(n.s1!.x + C.columnGap);
+    const make = layout.stages.find(stage => stage.id === "make")!;
+    expect(make.width).toBe(3 * C.columnGap + C.nodeWidth);
   });
   it("lays out lanes by holder and columns by stage, ranking by longest path and breaking cycles in step id order", () => {
     const make = (id: string, stage: Stage, inputs: string[], outputs: string[]) => ({ id, stage, inputs: inputs.map(glob => ({ glob, schema: "slot" })), outputs: outputs.map(glob => ({ glob, schema: "slot" })) });
@@ -204,5 +220,13 @@ describe("port schemas", () => {
     expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "a.json" })).length).toBeGreaterThan(0);
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: null, human: null }))).toEqual([]);
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: { model: "m", tier: "max", promptFile: "p" }, human: null })).length).toBeGreaterThan(0);
+  });
+  it("keeps the library element and selection port schemas equal to the record schemas", () => {
+    expect(loadSchema("library-element")).toEqual(JSON.parse(JSON.stringify(ELEMENT_SCHEMA)));
+    expect(loadSchema("selection")).toEqual(JSON.parse(JSON.stringify(SELECTION_SCHEMA)));
+  });
+  it("validates the source receipt", () => {
+    expect(validateFile("source-receipt", "x/source-receipt.json", JSON.stringify({ schemaVersion: 1, sourceHead: "a".repeat(40), sourceDirty: false }))).toEqual([]);
+    expect(validateFile("source-receipt", "x/source-receipt.json", JSON.stringify({ schemaVersion: 1, sourceHead: "HEAD", sourceDirty: false })).length).toBeGreaterThan(0);
   });
 });

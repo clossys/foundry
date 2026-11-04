@@ -107,7 +107,7 @@
         "stage": "brief",
         "rank": 0,
         "x": 280,
-        "y": 0
+        "y": 172
       }
     },
     {
@@ -141,8 +141,8 @@
         "lane": "you",
         "stage": "brief",
         "rank": 0,
-        "x": 0,
-        "y": 344
+        "x": 280,
+        "y": 0
       }
     },
     {
@@ -174,8 +174,8 @@
         "lane": "you",
         "stage": "brief",
         "rank": 0,
-        "x": 280,
-        "y": 172
+        "x": 0,
+        "y": 344
       }
     },
     {
@@ -186,12 +186,17 @@
       "summary": "The consumer's component selection and release events.",
       "inputs": [
         {
+          "glob": "clossys/library/*/*/v*/element.json",
+          "schema": "library-element"
+        },
+        {
           "glob": "clossys/library/**"
         }
       ],
       "outputs": [
         {
-          "glob": "clossys/selection.json"
+          "glob": "clossys/selection.json",
+          "schema": "selection"
         }
       ],
       "command": {
@@ -210,8 +215,8 @@
       "layout": {
         "lane": "you",
         "stage": "select",
-        "rank": 0,
-        "x": 600,
+        "rank": 5,
+        "x": 1440,
         "y": 0
       }
     },
@@ -250,8 +255,8 @@
         "lane": "you",
         "stage": "pin",
         "rank": 5,
-        "x": 1240,
-        "y": 172
+        "x": 3200,
+        "y": 0
       }
     },
     {
@@ -314,7 +319,7 @@
         "lane": "you",
         "stage": "pin",
         "rank": 3,
-        "x": 1240,
+        "x": 2920,
         "y": 0
       }
     },
@@ -363,7 +368,7 @@
         "lane": "director",
         "stage": "make",
         "rank": 1,
-        "x": 920,
+        "x": 1760,
         "y": 540
       }
     },
@@ -415,7 +420,7 @@
         "lane": "designer",
         "stage": "make",
         "rank": 2,
-        "x": 920,
+        "x": 2040,
         "y": 736
       }
     },
@@ -470,7 +475,7 @@
         "lane": "writer",
         "stage": "make",
         "rank": 4,
-        "x": 920,
+        "x": 2320,
         "y": 932
       }
     },
@@ -529,7 +534,7 @@
         "lane": "publisher",
         "stage": "make",
         "rank": 5,
-        "x": 920,
+        "x": 2600,
         "y": 1128
       }
     },
@@ -551,7 +556,8 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/library/*/*/v*/element.json"
+          "glob": "clossys/library/*/*/v*/element.json",
+          "schema": "library-element"
         },
         {
           "glob": "clossys/library/**"
@@ -575,7 +581,7 @@
         "lane": "designer",
         "stage": "select",
         "rank": 4,
-        "x": 600,
+        "x": 1160,
         "y": 736
       }
     },
@@ -615,8 +621,8 @@
         "lane": "checks",
         "stage": "check",
         "rank": 4,
-        "x": 2440,
-        "y": 1840
+        "x": 4680,
+        "y": 2012
       }
     },
     {
@@ -662,7 +668,7 @@
         "lane": "publisher",
         "stage": "brief",
         "rank": 4,
-        "x": 0,
+        "x": 560,
         "y": 1128
       }
     },
@@ -709,8 +715,8 @@
         "lane": "checks",
         "stage": "check",
         "rank": 4,
-        "x": 2440,
-        "y": 2012
+        "x": 4680,
+        "y": 1840
       }
     },
     {
@@ -757,7 +763,7 @@
         "lane": "publisher",
         "stage": "assemble",
         "rank": 4,
-        "x": 1560,
+        "x": 3520,
         "y": 1128
       }
     },
@@ -804,8 +810,8 @@
         "lane": "publisher",
         "stage": "brief",
         "rank": 5,
-        "x": 0,
-        "y": 1300
+        "x": 840,
+        "y": 1128
       }
     },
     {
@@ -851,7 +857,7 @@
         "lane": "checks",
         "stage": "check",
         "rank": 5,
-        "x": 2720,
+        "x": 4960,
         "y": 1668
       }
     },
@@ -899,7 +905,7 @@
         "lane": "publisher",
         "stage": "assemble",
         "rank": 5,
-        "x": 1560,
+        "x": 3800,
         "y": 1300
       }
     },
@@ -937,6 +943,10 @@
         {
           "glob": "clossys/agents/publisher/*/candidates/*",
           "schema": "candidate-publisher"
+        },
+        {
+          "glob": "pkg:dist/check/source-receipt.json",
+          "schema": "source-receipt"
         }
       ],
       "outputs": [
@@ -963,8 +973,8 @@
       "layout": {
         "lane": "checks",
         "stage": "check",
-        "rank": 6,
-        "x": 3000,
+        "rank": 8,
+        "x": 5800,
         "y": 1668
       }
     },
@@ -1026,8 +1036,8 @@
         "lane": "publisher",
         "stage": "assemble",
         "rank": 6,
-        "x": 1560,
-        "y": 1472
+        "x": 4080,
+        "y": 1128
       }
     },
     {
@@ -1067,7 +1077,7 @@
         "lane": "checks",
         "stage": "check",
         "rank": 4,
-        "x": 2440,
+        "x": 4680,
         "y": 1668
       }
     },
@@ -1105,6 +1115,10 @@
         {
           "glob": "clossys/agents/publisher/*/candidates/*",
           "schema": "candidate-publisher"
+        },
+        {
+          "glob": "pkg:pipeline/graph.json",
+          "schema": "pipeline-graph"
         }
       ],
       "outputs": [],
@@ -1126,9 +1140,9 @@
       "layout": {
         "lane": "publisher",
         "stage": "publish",
-        "rank": 6,
-        "x": 3600,
-        "y": 1300
+        "rank": 7,
+        "x": 6400,
+        "y": 1128
       }
     },
     {
@@ -1180,7 +1194,7 @@
         "lane": "publisher",
         "stage": "publish",
         "rank": 6,
-        "x": 3600,
+        "x": 6120,
         "y": 1128
       }
     },
@@ -1228,8 +1242,8 @@
         "lane": "checks",
         "stage": "check",
         "rank": 6,
-        "x": 2720,
-        "y": 2012
+        "x": 5240,
+        "y": 1840
       }
     },
     {
@@ -1240,7 +1254,28 @@
       "summary": "Serve or snapshot a library element specimen.",
       "inputs": [
         {
-          "glob": "clossys/library/**"
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/designer/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        },
+        {
+          "glob": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
         }
       ],
       "outputs": [
@@ -1270,8 +1305,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "assemble",
-        "rank": 0,
-        "x": 2120,
+        "rank": 5,
+        "x": 3800,
         "y": 1128
       }
     },
@@ -1320,7 +1355,7 @@
         "lane": "publisher",
         "stage": "assemble",
         "rank": 6,
-        "x": 1840,
+        "x": 4080,
         "y": 1472
       }
     },
@@ -1362,7 +1397,8 @@
       ],
       "outputs": [
         {
-          "glob": "pkg:pipeline/graph.json"
+          "glob": "pkg:pipeline/graph.json",
+          "schema": "pipeline-graph"
         }
       ],
       "command": {
@@ -1386,8 +1422,8 @@
         "lane": "checks",
         "stage": "check",
         "rank": 6,
-        "x": 2720,
-        "y": 1840
+        "x": 5240,
+        "y": 1668
       }
     },
     {
@@ -1440,7 +1476,7 @@
         "lane": "publisher",
         "stage": "assemble",
         "rank": 6,
-        "x": 1840,
+        "x": 4080,
         "y": 1300
       }
     },
@@ -1488,10 +1524,11 @@
       ],
       "outputs": [
         {
-          "glob": "pkg:studio/generated/studio-copy.json"
+          "glob": "pkg:studio/generated/studio-map.json",
+          "schema": "studio-map"
         },
         {
-          "glob": "pkg:studio/generated/studio-map.json"
+          "glob": "pkg:studio/generated/studio-copy.json"
         },
         {
           "glob": "pkg:studio/generated/studio-map.ts"
@@ -1530,7 +1567,7 @@
         "lane": "publisher",
         "stage": "assemble",
         "rank": 6,
-        "x": 1840,
+        "x": 4360,
         "y": 1128
       }
     },
@@ -1542,12 +1579,42 @@
       "summary": "Record the page-check source receipt in the build output.",
       "inputs": [
         {
-          "glob": "pkg:studio/generated/studio-map.json"
+          "glob": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "glob": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        },
+        {
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        },
+        {
+          "glob": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        },
+        {
+          "glob": "clossys/agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        },
+        {
+          "glob": "pkg:studio/compile.lock.json",
+          "schema": "compile-lock"
         }
       ],
       "outputs": [
         {
-          "glob": "pkg:dist/check/source-receipt.json"
+          "glob": "pkg:dist/check/source-receipt.json",
+          "schema": "source-receipt"
         }
       ],
       "command": {
@@ -1566,9 +1633,9 @@
       "layout": {
         "lane": "checks",
         "stage": "check",
-        "rank": 0,
-        "x": 3000,
-        "y": 1840
+        "rank": 7,
+        "x": 5520,
+        "y": 1668
       }
     },
     {
@@ -1579,10 +1646,12 @@
       "summary": "Compose the actual Studio runtime for the Studio checks.",
       "inputs": [
         {
-          "glob": "pkg:studio/generated/studio-map.json"
+          "glob": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
         },
         {
-          "glob": "clossys/library/**"
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
         }
       ],
       "outputs": [],
@@ -1602,8 +1671,8 @@
       "layout": {
         "lane": "publisher",
         "stage": "assemble",
-        "rank": 0,
-        "x": 2120,
+        "rank": 4,
+        "x": 3520,
         "y": 1300
       }
     },
@@ -1615,7 +1684,8 @@
       "summary": "Studio render, routing, assembly and propagation checks.",
       "inputs": [
         {
-          "glob": "pkg:studio/generated/studio-map.json"
+          "glob": "pkg:studio/generated/studio-map.json",
+          "schema": "studio-map"
         },
         {
           "glob": "pkg:studio/generated/assembly-bindings.ts"
@@ -1658,9 +1728,9 @@
       "layout": {
         "lane": "checks",
         "stage": "check",
-        "rank": 0,
-        "x": 3280,
-        "y": 1668
+        "rank": 7,
+        "x": 5520,
+        "y": 2012
       }
     },
     {
@@ -1671,7 +1741,8 @@
       "summary": "Capture every Studio route as screenshots and a contact sheet.",
       "inputs": [
         {
-          "glob": "pkg:studio/generated/studio-map.json"
+          "glob": "pkg:studio/generated/studio-map.json",
+          "schema": "studio-map"
         }
       ],
       "outputs": [
@@ -1695,9 +1766,9 @@
       "layout": {
         "lane": "checks",
         "stage": "check",
-        "rank": 0,
-        "x": 3000,
-        "y": 2012
+        "rank": 7,
+        "x": 5520,
+        "y": 1840
       }
     }
   ],
@@ -1813,6 +1884,22 @@
     },
     {
       "from": "ia",
+      "to": "specimen",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/designer/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
       "to": "pipeline",
       "via": [
         {
@@ -1825,6 +1912,22 @@
     {
       "from": "ia",
       "to": "studio.map",
+      "via": [
+        {
+          "output": "clossys/agents/*/ia.json",
+          "input": "clossys/agents/*/ia.json",
+          "schema": "ia"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json",
+          "schema": "slot"
+        }
+      ]
+    },
+    {
+      "from": "ia",
+      "to": "build.receipt",
       "via": [
         {
           "output": "clossys/agents/*/ia.json",
@@ -2083,6 +2186,22 @@
     },
     {
       "from": "pin",
+      "to": "specimen",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin",
       "to": "pipeline",
       "via": [
         {
@@ -2110,6 +2229,28 @@
         {
           "output": "clossys/agents/*/*/pin.json",
           "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin",
+      "to": "studio.compose",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/designer/*/pin.json",
           "schema": "pin"
         }
       ]
@@ -2236,6 +2377,17 @@
       ]
     },
     {
+      "from": "director.candidates",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/candidates/*",
+          "input": "clossys/agents/director/*/candidates/*",
+          "schema": "candidate-brief"
+        }
+      ]
+    },
+    {
       "from": "designer.candidates",
       "to": "pin",
       "via": [
@@ -2347,6 +2499,17 @@
     },
     {
       "from": "designer.candidates",
+      "to": "specimen",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
       "to": "migrate",
       "via": [
         {
@@ -2381,6 +2544,28 @@
     {
       "from": "designer.candidates",
       "to": "studio.map",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
+      "to": "studio.compose",
       "via": [
         {
           "output": "clossys/agents/designer/*/candidates/*",
@@ -2490,6 +2675,17 @@
     },
     {
       "from": "writer.candidates",
+      "to": "specimen",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/candidates/*",
+          "input": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        }
+      ]
+    },
+    {
+      "from": "writer.candidates",
       "to": "migrate",
       "via": [
         {
@@ -2524,6 +2720,17 @@
     {
       "from": "writer.candidates",
       "to": "studio.map",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/candidates/*",
+          "input": "clossys/agents/writer/*/candidates/*",
+          "schema": "candidate-strings"
+        }
+      ]
+    },
+    {
+      "from": "writer.candidates",
+      "to": "build.receipt",
       "via": [
         {
           "output": "clossys/agents/writer/*/candidates/*",
@@ -2641,6 +2848,83 @@
           "schema": "candidate-publisher"
         }
       ]
+    },
+    {
+      "from": "publisher.candidates",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/candidates/*",
+          "input": "clossys/agents/publisher/*/candidates/*",
+          "schema": "candidate-publisher"
+        }
+      ]
+    },
+    {
+      "from": "designer.library",
+      "to": "selection",
+      "via": [
+        {
+          "output": "clossys/library/*/*/v*/element.json",
+          "input": "clossys/library/*/*/v*/element.json",
+          "schema": "library-element"
+        }
+      ]
+    },
+    {
+      "from": "compile",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "pkg:studio/compile.lock.json",
+          "input": "pkg:studio/compile.lock.json",
+          "schema": "compile-lock"
+        }
+      ]
+    },
+    {
+      "from": "pipeline",
+      "to": "studio.produce",
+      "via": [
+        {
+          "output": "pkg:pipeline/graph.json",
+          "input": "pkg:pipeline/graph.json",
+          "schema": "pipeline-graph"
+        }
+      ]
+    },
+    {
+      "from": "studio.map",
+      "to": "studio.checks",
+      "via": [
+        {
+          "output": "pkg:studio/generated/studio-map.json",
+          "input": "pkg:studio/generated/studio-map.json",
+          "schema": "studio-map"
+        }
+      ]
+    },
+    {
+      "from": "studio.map",
+      "to": "capture",
+      "via": [
+        {
+          "output": "pkg:studio/generated/studio-map.json",
+          "input": "pkg:studio/generated/studio-map.json",
+          "schema": "studio-map"
+        }
+      ]
+    },
+    {
+      "from": "build.receipt",
+      "to": "workspace.check",
+      "via": [
+        {
+          "output": "pkg:dist/check/source-receipt.json",
+          "input": "pkg:dist/check/source-receipt.json",
+          "schema": "source-receipt"
+        }
+      ]
     }
   ],
   "untyped": [
@@ -2670,11 +2954,6 @@
       "glob": "clossys/library/**"
     },
     {
-      "step": "selection",
-      "port": "output",
-      "glob": "clossys/selection.json"
-    },
-    {
       "step": "writer.approve",
       "port": "output",
       "glob": "clossys/agents/writer/*/candidates/*#status"
@@ -2697,11 +2976,6 @@
     {
       "step": "designer.library",
       "port": "output",
-      "glob": "clossys/library/*/*/v*/element.json"
-    },
-    {
-      "step": "designer.library",
-      "port": "output",
       "glob": "clossys/library/**"
     },
     {
@@ -2711,18 +2985,8 @@
     },
     {
       "step": "specimen",
-      "port": "input",
-      "glob": "clossys/library/**"
-    },
-    {
-      "step": "specimen",
       "port": "output",
       "glob": "node_modules/.cache/clossys/specimen-thumbs/**"
-    },
-    {
-      "step": "pipeline",
-      "port": "output",
-      "glob": "pkg:pipeline/graph.json"
     },
     {
       "step": "derive.uses",
@@ -2743,11 +3007,6 @@
       "step": "studio.map",
       "port": "output",
       "glob": "pkg:studio/generated/studio-copy.json"
-    },
-    {
-      "step": "studio.map",
-      "port": "output",
-      "glob": "pkg:studio/generated/studio-map.json"
     },
     {
       "step": "studio.map",
@@ -2780,31 +3039,6 @@
       "glob": "pkg:studio/generated/studio-flow-theme.css"
     },
     {
-      "step": "build.receipt",
-      "port": "input",
-      "glob": "pkg:studio/generated/studio-map.json"
-    },
-    {
-      "step": "build.receipt",
-      "port": "output",
-      "glob": "pkg:dist/check/source-receipt.json"
-    },
-    {
-      "step": "studio.compose",
-      "port": "input",
-      "glob": "pkg:studio/generated/studio-map.json"
-    },
-    {
-      "step": "studio.compose",
-      "port": "input",
-      "glob": "clossys/library/**"
-    },
-    {
-      "step": "studio.checks",
-      "port": "input",
-      "glob": "pkg:studio/generated/studio-map.json"
-    },
-    {
       "step": "studio.checks",
       "port": "input",
       "glob": "pkg:studio/generated/assembly-bindings.ts"
@@ -2813,11 +3047,6 @@
       "step": "studio.checks",
       "port": "input",
       "glob": "clossys/library/**"
-    },
-    {
-      "step": "capture",
-      "port": "input",
-      "glob": "pkg:studio/generated/studio-map.json"
     }
   ],
   "layout": {
@@ -2833,8 +3062,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 724,
-      "after": 687
+      "before": 1111,
+      "after": 1111
     },
     "lanes": [
       {
@@ -2886,49 +3115,49 @@
         "index": 0,
         "x": 0,
         "y": -72,
-        "width": 520
+        "width": 1080
       },
       {
         "id": "select",
         "index": 1,
-        "x": 600,
+        "x": 1160,
         "y": -72,
-        "width": 240
+        "width": 520
       },
       {
         "id": "make",
         "index": 2,
-        "x": 920,
-        "y": -72,
-        "width": 240
-      },
-      {
-        "id": "pin",
-        "index": 3,
-        "x": 1240,
-        "y": -72,
-        "width": 240
-      },
-      {
-        "id": "assemble",
-        "index": 4,
-        "x": 1560,
-        "y": -72,
-        "width": 800
-      },
-      {
-        "id": "check",
-        "index": 5,
-        "x": 2440,
+        "x": 1760,
         "y": -72,
         "width": 1080
       },
       {
+        "id": "pin",
+        "index": 3,
+        "x": 2920,
+        "y": -72,
+        "width": 520
+      },
+      {
+        "id": "assemble",
+        "index": 4,
+        "x": 3520,
+        "y": -72,
+        "width": 1080
+      },
+      {
+        "id": "check",
+        "index": 5,
+        "x": 4680,
+        "y": -72,
+        "width": 1360
+      },
+      {
         "id": "publish",
         "index": 6,
-        "x": 3600,
+        "x": 6120,
         "y": -72,
-        "width": 240
+        "width": 520
       }
     ],
     "cycleBreaks": [

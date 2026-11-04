@@ -1,5 +1,5 @@
 import { defineStep } from "../define.js";
-import { CANDIDATES, IA, PINS, SEATS, SLOTS, candidatesOf, pinsOf } from "./ports.js";
+import { CANDIDATES, IA, PINS, PIPELINE_GRAPH, SEATS, SLOTS, SOURCE_RECEIPT, candidatesOf, pinsOf, slotsOf } from "./ports.js";
 import type { Agent } from "./ports.js";
 
 const DIRECTOR_PINS = [pinsOf("director"), candidatesOf("director")];
@@ -52,7 +52,7 @@ export const CLI_STEPS = [
   defineStep({
     id: "workspace.check", kind: "plumb", actor: "code", stage: "check",
     summary: "Slot model, page and record-suite checks over the workspace.",
-    inputs: [IA, SLOTS, PINS, ...CANDIDATES],
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES, SOURCE_RECEIPT],
     outputs: [{ glob: "arg:--report", schema: "check-report" }],
     command: { cli: { verb: "check" }, entry: "src/cli/check.ts#runCheck" }, checks: ["workspace"],
   }),
@@ -72,7 +72,7 @@ export const CLI_STEPS = [
   defineStep({
     id: "studio.produce", kind: "plumb", actor: "code", stage: "publish",
     summary: "Serve the local Studio over the live slot model (no compile step).",
-    inputs: [IA, SLOTS, PINS, ...CANDIDATES], outputs: [],
+    inputs: [IA, SLOTS, PINS, ...CANDIDATES, PIPELINE_GRAPH], outputs: [],
     command: { cli: { verb: "produce" }, entry: "src/cli/produce.ts#runProduce" }, checks: ["studio-p0"],
   }),
   defineStep({
@@ -91,7 +91,8 @@ export const CLI_STEPS = [
   defineStep({
     id: "specimen", kind: "plumb", actor: "code", stage: "assemble",
     summary: "Serve or snapshot a library element specimen.",
-    inputs: ["clossys/library/**"], outputs: ["node_modules/.cache/clossys/specimen-thumbs/**", "arg:--out"],
+    // libraryRecordSource reads the Designer slot model and the pinned Writer copy, not the legacy library store.
+    inputs: [IA, slotsOf("designer"), pinsOf("designer"), candidatesOf("designer"), pinsOf("writer"), candidatesOf("writer")], outputs: ["node_modules/.cache/clossys/specimen-thumbs/**", "arg:--out"],
     command: { cli: { verb: "specimen", parser: "src/cli/specimen.ts" }, entry: "src/cli/specimen.ts#runSpecimenCli" }, checks: ["studio-dom"],
   }),
   defineStep({
@@ -104,7 +105,7 @@ export const CLI_STEPS = [
     id: "pipeline", kind: "plumb", actor: "code", stage: "check",
     summary: "Report pipeline status (read-only) and the step graph built from these definitions.",
     inputs: [SEATS, SLOTS, PINS, ...CANDIDATES],
-    outputs: ["pkg:pipeline/graph.json"],
+    outputs: [PIPELINE_GRAPH],
     command: { cli: { verb: "pipeline", parser: "src/cli/pipeline.ts" }, entry: "src/cli/pipeline.ts#runPipelineCli", npm: "generate:pipeline-graph" }, checks: ["pipeline"],
   }),
 ];

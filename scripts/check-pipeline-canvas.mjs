@@ -13,7 +13,11 @@
  *   layout     at the initial view in 1440x900 no two node boxes (steps and lane labels, on screen or
  *              not: the whole graph is measured, it is not expected to fit the window) intersect, each
  *              lane has exactly one label, every step sits inside its lane's swim row (from its label
- *              down to the next lane's label) and ranks run left to right (a lower rank starts further left);
+ *              down to the next lane's label);
+ *   flow       every edge flows forward: the source's stage is the target's stage or an earlier one, and an
+ *              edge inside one stage runs left to right (its source box starts left of its target box);
+ *   rank       inside one stage column a lower graph rank starts further left (rank order per stage);
+ *   orphan     only a first-stage step may start the flow: every step in a later stage has an edge into it;
  *   stage      each stage has exactly one header, and every step sits inside its stage's column (from its
  *              header across to the next stage's header);
  *   roster     the drawn lane rows, top to bottom, equal graph.json's roster in order, plus `unassigned`
@@ -86,6 +90,20 @@ const inside = (part, box) => part.x >= box.x - 0.5 && part.y >= box.y - 0.5 && 
 export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
   const findings = [];
   const boxes = rendered.boxes;
+  const nodeOf = new Map((graph.nodes ?? []).map(node => [node.id, node]));
+  const stageIndex = new Map((graph.layout?.stages ?? []).map(stage => [stage.id, stage.index]));
+  const first = [...stageIndex].sort((a, b) => a[1] - b[1])[0]?.[0];
+  // R-a (data half): every edge flows forward, never into an earlier stage.
+  for (const edge of graph.edges ?? []) {
+    const from = stageIndex.get(nodeOf.get(edge.from)?.layout?.stage), to = stageIndex.get(nodeOf.get(edge.to)?.layout?.stage);
+    if (from !== undefined && to !== undefined && from > to) findings.push({ rule: "flow", message: `edge ${edge.from}->${edge.to} runs backward: ${edge.from} (${nodeOf.get(edge.from).layout.stage}) feeds ${edge.to} (${nodeOf.get(edge.to).layout.stage})` });
+  }
+  // R-c: only a first-stage step may start the flow; every later step has an edge into it.
+  const fed = new Set((graph.edges ?? []).map(edge => edge.to));
+  for (const node of graph.nodes ?? []) {
+    const stage = node.layout?.stage;
+    if (stage !== undefined && stageIndex.has(stage) && stage !== first && !fed.has(node.id)) findings.push({ rule: "orphan", message: `step ${node.id} (${stage}) has no edge into it, so it starts the flow outside ${first}` });
+  }
   if (Array.isArray(boxes)) {
     for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
       if (intersects(boxes[i], boxes[j])) findings.push({ rule: "layout", message: `${boxes[i].kind} ${boxes[i].id} intersects ${boxes[j].kind} ${boxes[j].id}` });
@@ -130,9 +148,15 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
       if (declared.join(",") !== want.join(",")) findings.push({ rule: "roster", message: `graph.json lanes (${declared.join(", ")}) are not the roster (${want.join(", ")})` });
       if (drawn.join(",") !== want.join(",")) findings.push({ rule: "roster", message: `the drawn lane rows (${drawn.join(", ")}) are not the roster (${want.join(", ")})` });
     }
+    // R-a (drawn half): an edge inside one stage runs left to right.
+    for (const edge of graph.edges ?? []) {
+      const a = nodeOf.get(edge.from), b = nodeOf.get(edge.to), boxA = steps.get(edge.from), boxB = steps.get(edge.to);
+      if (a && b && boxA && boxB && a.layout?.stage === b.layout?.stage && !(boxA.x < boxB.x)) findings.push({ rule: "flow", message: `edge ${edge.from}->${edge.to} inside the ${a.layout.stage} stage does not run left to right (${edge.from} is not left of ${edge.to})` });
+    }
+    // R-b: inside one stage column, a lower rank sits further left.
     for (const a of graph.nodes ?? []) for (const b of graph.nodes ?? []) {
       const boxA = steps.get(a.id), boxB = steps.get(b.id);
-      if (boxA && boxB && a.layout?.rank < b.layout?.rank && !(boxA.x < boxB.x)) findings.push({ rule: "layout", message: `step ${a.id} (rank ${a.layout.rank}) is not left of ${b.id} (rank ${b.layout.rank})` });
+      if (boxA && boxB && a.layout?.stage === b.layout?.stage && a.layout?.rank < b.layout?.rank && !(boxA.x < boxB.x)) findings.push({ rule: "rank", message: `in the ${a.layout.stage} stage, step ${a.id} (rank ${a.layout.rank}) is not left of ${b.id} (rank ${b.layout.rank})` });
     }
   }
   if (rendered.titlePx !== undefined) {

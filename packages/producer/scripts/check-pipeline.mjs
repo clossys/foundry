@@ -18,6 +18,9 @@
 //                     the canvas's columns)
 //   lane.unrostered   a step's seat holder (its seat file's `by`, else derived from its kind; WHO:
 //                     the canvas's lanes) is not a roster entry (roster.ts ROSTER)
+//   stage.orphan      a step outside the first stage (brief) that no derived edge feeds: it reads
+//                     nothing another step produces, so it starts the flow mid-way. Only a brief
+//                     step may start it; declare the typed files the step really reads
 //   edge.declared     an edge, option or config listed by hand; edges are derived from output/input globs
 //   graph.stale       pipeline/graph.json differs from the graph built from the definitions
 //   edges.stale       its edges differ from the derived edges (an edge needs the same schema on
@@ -170,6 +173,12 @@ if (lib) {
   const fresh = JSON.parse(regenerated);
   if (lib.graph.graphJson(lib.graph.buildGraph(REPO, defined, PKG)) !== regenerated) fail("layout.nondeterministic", "two builds of the graph from the same step definitions differ");
   edgeCount = fresh.edges.length;
+  // WHEN: only a first-stage step may start the flow; every later step is fed by a derived edge.
+  const fed = new Set(fresh.edges.map(edge => edge.to));
+  for (const step of defined) {
+    if (step.stage === undefined || !lib.define.STAGES.includes(step.stage) || step.stage === lib.define.STAGES[0] || fed.has(step.id)) continue;
+    fail("stage.orphan", `step ${JSON.stringify(step.id)} (${step.stage}): no derived edge feeds it, so it starts the flow outside ${lib.define.STAGES[0]}; declare the typed files it reads`);
+  }
   untyped = fresh.untyped ?? [];
   cycleBreaks = fresh.layout?.cycleBreaks ?? [];
   crossings = fresh.layout?.crossings ?? null;

@@ -29,7 +29,8 @@ function stepsModule(name, body) {
 }
 const rules = result => new Set(result.out.failures.map(failure => failure.rule));
 const foreignWriters = result => result.out.failures.filter(failure => failure.rule === "decide.foreign-writer").map(failure => failure.message);
-const extra = fields => `STEPS.push(defineStep({ id: "mutant", kind: "plumb", actor: "code", stage: "check", summary: "mutant", inputs: [], outputs: [], checks: [], ${fields} }));`;
+// A mutant reads nothing, so it sits in the first stage (a later step with no feeding edge is stage.orphan).
+const extra = fields => `STEPS.push(defineStep({ id: "mutant", kind: "plumb", actor: "code", stage: "brief", summary: "mutant", inputs: [], outputs: [], checks: [], ${fields} }));`;
 
 describe("check:pipeline", { concurrency: 3 }, () => {
   it("passes on the committed definitions and graph", () => {
@@ -85,6 +86,11 @@ describe("check:pipeline", { concurrency: 3 }, () => {
     const result = run(["--steps", join(WRITER_FIXTURES, "stage-missing", "steps.mjs")]);
     assert.equal(result.code, 1);
     assert.ok(result.out.failures.some(failure => failure.rule === "stage.missing" && failure.message.startsWith('step "ia"')), JSON.stringify(result.out.failures));
+  });
+  it("fails a later-stage step that no derived edge feeds (fixture)", () => {
+    const result = run(["--steps", join(WRITER_FIXTURES, "stage-orphan", "steps.mjs")]);
+    assert.equal(result.code, 1);
+    assert.ok(result.out.failures.some(failure => failure.rule === "stage.orphan" && failure.message.startsWith('step "capture"')), JSON.stringify(result.out.failures));
   });
   it("fails a step whose holder is not a roster entry (fixture)", () => {
     const result = run(["--steps", join(WRITER_FIXTURES, "lane-unrostered", "steps.mjs")]);

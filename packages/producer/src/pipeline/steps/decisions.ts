@@ -1,5 +1,5 @@
 import { defineStep } from "../define.js";
-import { CANDIDATES, IA, PINS, SEATS, SLOTS, candidatesOf } from "./ports.js";
+import { CANDIDATES, IA, LIBRARY_ELEMENTS, PINS, SEATS, SELECTION, SLOTS, candidatesOf } from "./ports.js";
 
 /** Owner and agent decisions: the only steps that may write decision files (decision-boundary.md). */
 export const DECISION_STEPS = [
@@ -37,7 +37,8 @@ export const DECISION_STEPS = [
   defineStep({
     id: "selection", kind: "decide:judgment", actor: "owner", stage: "select",
     summary: "The consumer's component selection and release events.",
-    inputs: ["clossys/library/**"], outputs: ["clossys/selection.json"],
+    // The pin gate reads each element record and verifies its payload bytes.
+    inputs: [LIBRARY_ELEMENTS, "clossys/library/**"], outputs: [SELECTION],
     command: { module: "src/records/selection.ts#writeSelection" }, checks: ["workspace"],
   }),
   defineStep({
