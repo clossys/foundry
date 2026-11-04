@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/seat.schema.json",
+  "title": "Decide-step seat (clossys/agents/producer/<step>/seat.json)",
+  "description": "Derived from src/pipeline/seats.ts Seat.",
+  "type": "object",
+  "required": [
+    "by",
+    "llm",
+    "human"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "by": {
+      "type": "string",
+      "pattern": "^(owner|planner|agent:[a-z][a-z0-9-]*)$"
+    },
+    "llm": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "model",
+            "tier",
+            "promptFile"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "tier": {
+              "enum": [
+                "low",
+                "mid",
+                "high"
+              ]
+            },
+            "promptFile": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          }
+        }
+      ]
+    },
+    "human": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "required": [
+            "procedure",
+            "command"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "procedure": {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "command": {
+              "type": "string",
+              "pattern": "^clossys [a-z][a-z-]*( .*)?$"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

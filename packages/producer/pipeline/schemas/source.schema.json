@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/source.schema.json",
+  "title": "Candidate source",
+  "description": "Derived from src/records/slot-model/validate.ts validateSource and SourceDoc (types.ts).",
+  "type": "object",
+  "required": [
+    "kind",
+    "ref"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "kind": {
+      "enum": [
+        "registry",
+        "derived",
+        "original"
+      ]
+    },
+    "ref": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "hash": {
+      "type": "string"
+    },
+    "license": {
+      "type": "string"
+    }
+  },
+  "anyOf": [
+    {
+      "properties": {
+        "kind": {
+          "const": "original"
+        }
+      }
+    },
+    {
+      "properties": {
+        "ref": {
+          "type": "array",
+          "minItems": 1
+        }
+      }
+    }
+  ]
+}

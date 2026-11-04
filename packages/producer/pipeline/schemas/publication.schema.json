@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/publication.schema.json",
+  "title": "Publication record",
+  "description": "Derived from src/records/slot-model/validate.ts validateJsonCandidate kind publication (PUBLICATION_SCHEMA).",
+  "type": "object",
+  "required": [
+    "schema",
+    "format",
+    "entryOrder"
+  ],
+  "properties": {
+    "schema": {
+      "const": "clossys.publication/1"
+    },
+    "format": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "entryOrder": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "routePack": {
+      "type": "object"
+    }
+  }
+}

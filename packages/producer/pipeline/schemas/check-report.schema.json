@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/check-report.schema.json",
+  "title": "Page check report (clossys check --report)",
+  "description": "Derived from src/check/page-types.ts PageLintReport.",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "gate",
+    "sourceHead",
+    "sourceDirty",
+    "startedAt",
+    "finishedAt",
+    "status",
+    "exitCode",
+    "pages",
+    "findings"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "gate": {
+      "const": "PROC-5"
+    },
+    "sourceHead": {
+      "type": "string"
+    },
+    "sourceDirty": {
+      "type": "boolean"
+    },
+    "startedAt": {
+      "type": "string"
+    },
+    "finishedAt": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL",
+        "ERROR"
+      ]
+    },
+    "exitCode": {
+      "enum": [
+        0,
+        1,
+        2
+      ]
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "url",
+          "inspected",
+          "findings"
+        ],
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "inspected": {
+            "type": "boolean"
+          },
+          "findings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/finding"
+            }
+          }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "required": [
+        "rule",
+        "url",
+        "message"
+      ],
+      "properties": {
+        "rule": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

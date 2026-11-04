@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/candidate-element.schema.json",
+  "title": "Designer element candidate (shadcn registry item)",
+  "description": "Derived from src/records/slot-model/validate.ts validateJsonCandidate kind element.",
+  "type": "object",
+  "required": [
+    "name",
+    "type",
+    "files",
+    "meta"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "type": {
+      "enum": [
+        "registry:ui",
+        "registry:block",
+        "registry:component",
+        "registry:lib",
+        "registry:hook",
+        "registry:page",
+        "registry:file",
+        "registry:style",
+        "registry:theme",
+        "registry:item",
+        "registry:base",
+        "registry:font"
+      ]
+    },
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "type",
+          "content"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "registryDependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "cssVars": {
+      "type": "object"
+    },
+    "meta": {
+      "$ref": "candidate-meta.schema.json"
+    }
+  },
+  "not": {
+    "anyOf": [
+      {
+        "required": [
+          "status"
+        ]
+      },
+      {
+        "required": [
+          "active"
+        ]
+      },
+      {
+        "required": [
+          "confirmed"
+        ]
+      },
+      {
+        "required": [
+          "pinned"
+        ]
+      },
+      {
+        "required": [
+          "lineage"
+        ]
+      },
+      {
+        "required": [
+          "cites"
+        ]
+      },
+      {
+        "required": [
+          "links"
+        ]
+      },
+      {
+        "required": [
+          "sources"
+        ]
+      },
+      {
+        "required": [
+          "originKinds"
+        ]
+      },
+      {
+        "required": [
+          "origin"
+        ]
+      },
+      {
+        "required": [
+          "original"
+        ]
+      }
+    ]
+  }
+}
