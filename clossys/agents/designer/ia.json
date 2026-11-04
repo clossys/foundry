@@ -992,7 +992,9 @@
             "sections.producer.pipeline-header",
             "sections.producer.pipeline-flow",
             "sections.producer.step-sheet",
-            "sections.producer.pipeline-legend"
+            "sections.producer.pipeline-legend",
+            "sections.producer.team-strip",
+            "sections.producer.system-empty"
           ]
         }
       ]

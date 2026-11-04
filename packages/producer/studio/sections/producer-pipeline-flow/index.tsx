@@ -14,6 +14,20 @@ export interface StepFacts {
   seat: string | null;
   /** graph.json's step state; the node's status border and the sheet's Writer label follow it. */
   status: StepStatus;
+  /** The step's stage (its column), as its Writer label. */
+  stage: string;
+  /** Who holds the step (its lane), as resolved Writer labels. */
+  holder: StepHolder;
+}
+
+/** A step's seat holder: its name, seat kind, AI tier (null when none is named) and where the hold comes from. */
+export interface StepHolder {
+  name: string;
+  kind: string | null;
+  tier: string | null;
+  /** The source label: named in the step's seat file, or derived from the step. */
+  source: string;
+  derived: boolean;
 }
 
 /** A step's state as `clossys pipeline status` names it. */
@@ -25,20 +39,25 @@ export interface StepData {
   label: string;
   kind: StepKind;
   lane: string;
+  stage: string;
   facts: StepFacts;
 }
 
-/** One swim row: its lane id and the position graph.json gives its label. */
+/** One swim row (WHO): its lane id, a roster entry or `unassigned`, and the position graph.json gives its label. */
 export interface PipelineLane { id: string; position: { x: number; y: number } }
 
-/** graph.json: the steps with their positions, the lanes, and the edges between steps. */
-export interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[]; lanes: readonly PipelineLane[] }
+/** One column (WHEN): its stage id and the position graph.json gives its header. */
+export interface PipelineStage { id: string; position: { x: number; y: number } }
+
+/** graph.json: the steps with their positions, the lanes, the stages, and the edges between steps. */
+export interface PipelineGraph { nodes: readonly Node<StepData>[]; edges: readonly Edge[]; lanes: readonly PipelineLane[]; stages: readonly PipelineStage[] }
 
 /** Writer copy of the flow and its step sheet (studio.pipeline.*). */
 export interface PipelineFlowCopy {
   label: string;
   kinds: Readonly<Record<StepKind, string>>;
   lanes: Readonly<Record<string, string>>;
+  stages: Readonly<Record<string, string>>;
   emptyTitle: string;
   emptyDescription: string;
   command: string;
@@ -47,16 +66,19 @@ export interface PipelineFlowCopy {
   options: string;
   seat: string;
   status: string;
+  stage: string;
+  holder: string;
   none: string;
   openSeat: string;
   statuses: Readonly<Record<StepStatus, string>>;
 }
 
-/** The `flow` input of `sections.producer.pipeline-flow`. */
-export interface PipelineFlowInput { graph: PipelineGraph; copy: PipelineFlowCopy }
+/** The `flow` input of `sections.producer.pipeline-flow`. `seat` is the highlighted lane (the page's `?seat=<id>`), or null. */
+export interface PipelineFlowInput { graph: PipelineGraph; copy: PipelineFlowCopy; seat: string | null }
 
-type StepNodeData = StepData & { kindLabel: string; inputsLabel: string; outputsLabel: string; copy: PipelineFlowCopy };
-type LaneNodeData = { [key: string]: unknown; label: string };
+type StepNodeData = StepData & { kindLabel: string; inputsLabel: string; outputsLabel: string; copy: PipelineFlowCopy; active: boolean };
+type LaneNodeData = { [key: string]: unknown; label: string; active: boolean };
+type StageNodeData = { [key: string]: unknown; label: string };
 
 /** Each kind's stock Badge variant; the legend uses the same mapping. */
 const KIND_VARIANT = { plumb: 'outline', 'decide:creative': 'secondary', 'decide:judgment': 'default' } as const;
@@ -70,13 +92,14 @@ const STATUS_INDICATOR = { ready: 'success', pending: 'loading' } as const;
  * Badge in ItemActions, so the badge stays inside the card at any title length (Item wraps the
  * actions under the title when both do not fit). One labeled handle per side carries the port count.
  * The step's sheet follows React Flow's own selection: a click anywhere on the node, or Enter on the
- * focused node, selects it and opens the sheet; closing the sheet clears the selection.
+ * focused node, selects it and opens the sheet; closing the sheet clears the selection. A step in the
+ * highlighted lane shows the stock muted Item.
  */
 function StepNode({ id, data, selected }: NodeProps<Node<StepNodeData, 'step'>>) {
   const { updateNode } = useReactFlow();
   return <NodeStatusIndicator status={STATUS_INDICATOR[data.facts.status]}>
     <BaseNode>
-      <Item size="sm">
+      <Item size="sm" variant={data.active ? 'muted' : 'default'} data-seat-active={data.active ? '' : undefined}>
         <ItemContent>
           <ItemTitle>{data.label}</ItemTitle>
         </ItemContent>
@@ -93,12 +116,17 @@ function StepNode({ id, data, selected }: NodeProps<Node<StepNodeData, 'step'>>)
   </NodeStatusIndicator>;
 }
 
-/** One swim row's label, placed once at the row's start. */
+/** One swim row's label (WHO), placed once at the row's start; the highlighted lane's label is the stock default Badge. */
 function LaneNode({ data }: NodeProps<Node<LaneNodeData, 'lane'>>) {
-  return <Badge variant="ghost">{data.label}</Badge>;
+  return <Badge variant={data.active ? 'default' : 'ghost'}>{data.label}</Badge>;
 }
 
-const NODE_TYPES = { step: StepNode, lane: LaneNode };
+/** One column's header (WHEN), placed once above the column's start. */
+function StageNode({ data }: NodeProps<Node<StageNodeData, 'stage'>>) {
+  return <Badge variant="outline">{data.label}</Badge>;
+}
+
+const NODE_TYPES = { step: StepNode, lane: LaneNode, stage: StageNode };
 /** The pinned components.flow.edge smoothstep edge between a step's right handle and the next step's left handle. */
 const EDGE_TYPES = { smoothstep: SmoothStepEdge };
 const EDGE_OPTIONS = { type: 'smoothstep' };
@@ -122,9 +150,17 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
   return <Sheet isDismissable isOpen={isOpen} onOpenChange={onOpenChange}>
     <SheetHeader>
       <SheetTitle>{step.label}</SheetTitle>
-      <SheetDescription>{copy.lanes[step.lane] ?? step.lane}</SheetDescription>
+      <SheetDescription>{facts.holder.name}</SheetDescription>
     </SheetHeader>
     <FieldGroup className="px-4">
+      <Field data-fact="stage"><FieldTitle>{copy.stage}</FieldTitle><FieldDescription>{facts.stage}</FieldDescription></Field>
+      <Field data-fact="holder"><FieldTitle>{copy.holder}</FieldTitle><FieldDescription>{facts.holder.name}</FieldDescription>
+        <ItemActions>
+          {facts.holder.kind ? <Badge variant="secondary">{facts.holder.kind}</Badge> : null}
+          {facts.holder.tier ? <Badge variant="outline">{facts.holder.tier}</Badge> : null}
+          <Badge variant="outline" data-derived={facts.holder.derived ? '' : undefined}>{facts.holder.source}</Badge>
+        </ItemActions>
+      </Field>
       <Field data-fact="command"><FieldTitle>{copy.command}</FieldTitle><FieldDescription><code>{facts.command}</code></FieldDescription></Field>
       <Field data-fact="inputs"><FieldTitle>{copy.inputs}</FieldTitle><FieldDescription>{list(facts.inputs, copy.none)}</FieldDescription></Field>
       <Field data-fact="outputs"><FieldTitle>{copy.outputs}</FieldTitle><FieldDescription>{list(facts.outputs, copy.none)}</FieldDescription></Field>
@@ -135,9 +171,9 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
   </Sheet>;
 }
 
-/** `sections.producer.pipeline-flow`: the standard canvas-app layout. graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
+/** `sections.producer.pipeline-flow`: the standard canvas-app layout, as a swimlane: lanes are WHO (one per seat holder), columns are WHEN (one per stage). graph.json rendered by @xyflow/react in a stock Card that fills the content area: components.flow.* step nodes with their status, one lane label per swim row, one stage header per column, the pinned smoothstep edge, the stock Background, Controls (bottom left) and MiniMap (bottom right). It opens at the top left at a readable zoom; a click on a step (or Enter on a focused step) opens its read-only sheet on the right. Its --xy-* theme is the generated studio-flow-theme.css, not a mapping here. */
 export default function PipelineFlowSection({ flow, ...provenance }: { flow: PipelineFlowInput } & { [marker: `data-clossys-${string}`]: string }) {
-  const { graph, copy } = flow;
+  const { graph, copy, seat } = flow;
   if (!graph.nodes.length) return <Card size="sm" {...provenance}>
     <CardHeader>
       <CardTitle role="heading" aria-level={2}>{copy.emptyTitle}</CardTitle>
@@ -146,21 +182,25 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   </Card>;
   const steps: Node[] = graph.nodes.map(node => ({
     ...node, type: 'step',
-    data: { ...node.data, kindLabel: copy.kinds[node.data.kind], inputsLabel: `${copy.inputs} ${node.data.facts.inputs.length}`, outputsLabel: `${copy.outputs} ${node.data.facts.outputs.length}`, copy },
+    data: { ...node.data, kindLabel: copy.kinds[node.data.kind], inputsLabel: `${copy.inputs} ${node.data.facts.inputs.length}`, outputsLabel: `${copy.outputs} ${node.data.facts.outputs.length}`, copy, active: node.data.lane === seat },
   }));
+  const fixed = { selectable: false, focusable: false, draggable: false, connectable: false } as const;
   const lanes: Node[] = graph.lanes.map(lane => ({
-    id: `lane:${lane.id}`, type: 'lane', position: lane.position, data: { label: copy.lanes[lane.id] ?? lane.id },
-    selectable: false, focusable: false, draggable: false, connectable: false,
+    id: `lane:${lane.id}`, type: 'lane', position: lane.position, data: { label: copy.lanes[lane.id] ?? lane.id, active: lane.id === seat }, ...fixed,
   }));
-  // Open at the lane labels' top left corner at the readable zoom.
+  const stages: Node[] = graph.stages.map(stage => ({
+    id: `stage:${stage.id}`, type: 'stage', position: stage.position, data: { label: copy.stages[stage.id] ?? stage.id }, ...fixed,
+  }));
+  // Open at the lane labels' and stage headers' top left corner at the readable zoom.
   const left = Math.min(...graph.lanes.map(lane => lane.position.x), ...graph.nodes.map(node => node.position.x));
-  const top = Math.min(...graph.lanes.map(lane => lane.position.y), ...graph.nodes.map(node => node.position.y));
+  const top = Math.min(...graph.stages.map(stage => stage.position.y), ...graph.lanes.map(lane => lane.position.y), ...graph.nodes.map(node => node.position.y));
   const viewport = { x: INSET - left * READABLE_ZOOM, y: INSET - top * READABLE_ZOOM, zoom: READABLE_ZOOM };
   // Uncontrolled (defaultNodes, defaultEdges): React Flow keeps the measured node sizes, which the stock MiniMap draws from.
   // The flow is read-only and mounts once graph.json has loaded (the empty state renders until then).
   // The stock Card is the canvas's frame and fills the content area below the page's header rows (flex-1); the canvas fills the Card.
+  // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.
   return <Card size="sm" className="flex-1" {...provenance}>
-    <ReactFlow aria-label={copy.label} defaultNodes={[...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
+    <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
       nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>
       <Background />
       <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_ALL} />
