@@ -1,5 +1,7 @@
+import { redirect } from 'next/navigation';
 import { StudioPage } from './StudioPage';
-import { studioPages } from '../generated/studio-map';
+import { studioLeaves, studioPages } from '../generated/studio-map';
+import { studioLanding } from '../lib/studio-route-map';
 import { loadPageSeed } from '../lib/studio-seed';
 
 /**
@@ -7,7 +9,6 @@ import { loadPageSeed } from '../lib/studio-seed';
  * --next`). An installed route names only the page id, and for a leaf its slug; this module turns
  * that into the served segments the generic StudioPage assembles (frame + sections from the map).
  */
-const LEAF_SLUG = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 const pageById = new Map(studioPages.map(page => [page.id, page]));
 const segmentsOf = (path: string) => path.split('/').filter(Boolean);
 
@@ -15,21 +16,15 @@ const segmentsOf = (path: string) => path.split('/').filter(Boolean);
 export async function PublishedPage({ page, slug }: { page: string; slug?: string }) {
   const record = pageById.get(page);
   if (!record) throw new Error(`Studio has no installed page ${page}`);
-  const seed = await loadPageSeed(record, slug);
+  // A record with group tabs opens on its first tab: the tabs are the record's content-map children.
+  const landing = slug === undefined ? studioLanding(record.id) : undefined;
+  if (landing && landing !== record.path) redirect(landing);
+  const spec = slug === undefined ? record : record.leaf;
+  const seed = spec ? await loadPageSeed(spec, slug) : undefined;
   return <StudioPage segments={[...segmentsOf(record.path), ...(slug === undefined ? [] : [slug])]} {...(seed ? { seed } : {})} />;
 }
 
-/** Whether the gallery's record store holds a leaf, asked of Producer's library API at request time. */
+/** Whether a tab serves a leaf: the content map's expansion lists every one. */
 export async function publishedLeaf(page: string, slug: string): Promise<boolean> {
-  const record = pageById.get(page);
-  if (!record?.leaf || !LEAF_SLUG.test(slug)) return false;
-  const origin = process.env.CLOSSYS_PRODUCER_ORIGIN;
-  // Outside Producer there is no record store to ask; the client resolves the leaf against the map.
-  if (!origin) return true;
-  const agent = record.leaf.data.agent ?? record.id;
-  const response = await fetch(`${origin}/api/${agent === 'designer' ? 'designer' : `agents/${encodeURIComponent(agent)}`}/library`, { cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (response.status === 404) return false;
-  if (!response.ok) throw new Error('Producer could not load the library');
-  const gallery = await response.json() as { sections?: readonly { cards?: readonly { slug?: unknown }[] }[] };
-  return (gallery.sections ?? []).some(section => (section.cards ?? []).some(card => card.slug === slug));
+  return studioLeaves.some(leaf => leaf.page === page && leaf.slug === slug);
 }

@@ -5,22 +5,50 @@
   "ia": {
     "l1": "studio",
     "l2": "publication",
-    "order": 5
+    "order": 19
   },
   "kind": "publication",
   "contract": {},
   "inputs": [
-    "page.designer",
-    "page.director",
+    "page.designer-assets",
+    "page.designer-components",
+    "page.designer-frames",
+    "page.designer-sections",
+    "page.designer-themes",
+    "page.director-advantage",
+    "page.director-aspiration",
+    "page.director-capability",
+    "page.director-context",
+    "page.director-execution",
+    "page.director-focus",
+    "page.director-identity",
     "page.home",
-    "page.publisher",
-    "page.writer"
+    "page.publisher-studio",
+    "page.writer-lexicon",
+    "page.writer-narratives",
+    "page.writer-passages",
+    "page.writer-patterns",
+    "page.writer-strings"
   ],
   "uses": [
-    "page.designer",
-    "page.director",
+    "page.designer-assets",
+    "page.designer-components",
+    "page.designer-frames",
+    "page.designer-sections",
+    "page.designer-themes",
+    "page.director-advantage",
+    "page.director-aspiration",
+    "page.director-capability",
+    "page.director-context",
+    "page.director-execution",
+    "page.director-focus",
+    "page.director-identity",
     "page.home",
-    "page.publisher",
-    "page.writer"
+    "page.publisher-studio",
+    "page.writer-lexicon",
+    "page.writer-narratives",
+    "page.writer-passages",
+    "page.writer-patterns",
+    "page.writer-strings"
   ]
 }

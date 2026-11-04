@@ -1,5 +1,3 @@
-import { headers } from 'next/headers';
-import { RECORD_SPECIMEN_THEME_HEADER, RECORD_SPECIMEN_WIDTH_HEADER } from '../../src/server/record-specimen-viewport';
 import { studioCopy } from '../lib/studio-copy';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
@@ -15,15 +13,6 @@ export const dynamic = 'force-dynamic';
  * Studio's stock component layer, so the consumer's brand is what renders.
  */
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const requestHeaders = await headers();
-  const theme = requestHeaders.get(RECORD_SPECIMEN_THEME_HEADER);
-  const width = Number(requestHeaders.get(RECORD_SPECIMEN_WIDTH_HEADER));
-  if ((theme === 'light' || theme === 'dark') && (width === 375 || width === 768 || width === 1280)) {
-    return <html lang="en" className={theme === 'dark' ? 'dark' : undefined} data-theme={theme} style={{ colorScheme: theme }}>
-      <head><link rel="stylesheet" href="/api/designer/globals.css" precedence="consumer" /></head>
-      <body className="bg-background font-sans text-foreground antialiased" style={{ width, maxWidth: '100%' }}>{children}</body>
-    </html>;
-  }
   // Every route's shared Producer data, so the first paint is the page rather than a loading state.
   const seed = await loadStudioSeed();
   return <html lang="en" suppressHydrationWarning>

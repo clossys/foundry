@@ -4,17 +4,18 @@
   "extensions": [
     "frames.studio-shell",
     "sections.module.checks",
-    "sections.module.explorer",
     "sections.module.outline",
-    "sections.studio.agent-gallery",
     "sections.studio.checks",
     "sections.studio.contract",
     "sections.studio.history",
     "sections.studio.home",
     "sections.studio.leaf-header",
     "sections.studio.options",
+    "sections.studio.page-header",
+    "sections.studio.page-tabs",
     "sections.studio.publications",
     "sections.studio.references",
+    "sections.studio.slot-groups",
     "sections.studio.specimen"
   ],
   "nodes": [
@@ -921,17 +922,18 @@
           "label": "Signed extensions",
           "slots": [
             "sections.module.checks",
-            "sections.module.explorer",
             "sections.module.outline",
-            "sections.studio.agent-gallery",
             "sections.studio.checks",
             "sections.studio.contract",
             "sections.studio.history",
             "sections.studio.home",
             "sections.studio.leaf-header",
             "sections.studio.options",
+            "sections.studio.page-header",
+            "sections.studio.page-tabs",
             "sections.studio.publications",
             "sections.studio.references",
+            "sections.studio.slot-groups",
             "sections.studio.specimen"
           ]
         }

@@ -12,11 +12,13 @@
   "inputs": [
     "frames.studio-shell",
     "sections.studio.home",
+    "sections.studio.page-header",
     "sections.task-list"
   ],
   "uses": [
     "frames.studio-shell",
     "sections.studio.home",
+    "sections.studio.page-header",
     "sections.task-list"
   ]
 }

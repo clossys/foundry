@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-home-v4.json",
-  "sha256": "52f0c4830a2c66bbc8c9827b4917e68eb5e1027954dfa3981e42dd0b9249214a",
-  "pinnedBy": "owner:2026-11-03 fix-all",
-  "at": "2026-11-03T08:47:06Z"
+  "candidate": "studio-home-v5.json",
+  "sha256": "31b443bc893993ce0f8d4b8a2fae426fa2d3242a9d76875ea1a9188821069fb2",
+  "pinnedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
+  "at": "2026-11-03T12:00:00Z"
 }

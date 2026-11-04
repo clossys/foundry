@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import HomeSection, { type HomeCensus, type HomeInput } from './index';
 
 function render(census?: HomeCensus) {
-  const home: HomeInput = { title: 'Home', description: 'Workspace agents', agentsLabel: 'Agents', agents: [{
+  const home: HomeInput = { agentsLabel: 'Agents', agents: [{
     id: 'designer', label: 'Designer', purpose: 'Build interface parts', icon: <svg className="size-4" />,
     href: '/library', openLabel: 'Open library', census,
     // An old renderer count must never masquerade as a slot census.

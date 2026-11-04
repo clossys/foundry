@@ -262,6 +262,17 @@ export function themePage(html: string, theme: PreviewTheme): string {
   open = /\sstyle\s*=/i.test(open) ? open.replace(/\sstyle\s*=\s*("([^"]*)"|'([^']*)')/i, (_all, _q, a, b) => ` style="color-scheme:${theme};${a ?? b ?? ""}"`) : open.replace(/>$/, ` style="color-scheme:${theme}">`);
   return html.slice(0, tag.index) + open + html.slice(tag.index + tag[0].length);
 }
+/**
+ * A served route's render as the static page a preview publishes: the app's client runtime (its
+ * script tags, inline bootstrap and script preloads) is not part of the page. The preview runs no
+ * script, so emitting chunk references would only ask the sandbox to block them.
+ */
+export function staticPage(html: string): string {
+  return html
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, "")
+    .replace(/<script\b[^>]*\/>/gi, "")
+    .replace(/<link\b(?=[^>]*\brel\s*=\s*["']?(?:modulepreload|preload)\b)(?=[^>]*\bas\s*=\s*["']?script\b|[^>]*\brel\s*=\s*["']?modulepreload\b)[^>]*>/gi, "");
+}
 const FRAME_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP, "Referrer-Policy": "no-referrer", "Cross-Origin-Resource-Policy": "same-origin" };
 /** Called after the server's existing Host, Origin and run-token guards. */
 export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams(), served?: ServedApp): Promise<void> {
@@ -314,7 +325,7 @@ async function serveInstall(root: string, selected: string, kind: string, file: 
     const html = found.pages.find(page => page.id === install.id)?.emitted && served ? await served.render(install.next.route) : undefined;
     if (html === undefined) { fail(404, "Publication page is unavailable"); return; }
     type = TYPES[".html"]!;
-    bytes = Buffer.from(themePage(html, theme));
+    bytes = Buffer.from(themePage(staticPage(html), theme));
   } else if (kind === "pages") {
     if (!install?.html) { fail(404, "Publication page is unavailable"); return; }
     const links = install.css.map(css => `<link rel="stylesheet" href="${PREVIEW_PREFIX}${encodeURIComponent(selected)}/assets/${css.split("/").map(encodeURIComponent).join("/")}">`).join("");

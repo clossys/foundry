@@ -1,4 +1,4 @@
-import { Badge, Card, CardContent, CardDescription, CardTitle, HomeStockGrid, HomeStockCensusCard, HomeStockHeader, HomeStockNeedsHeader } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardTitle, HomeStockGrid, HomeStockCensusCard, HomeStockNeedsHeader } from '@clossys/designer-ui';
 
 export type HomeTone = 'secondary' | 'outline' | 'destructive';
 
@@ -12,10 +12,8 @@ export type HomeCensus =
 export interface HomeAgent { id: string; label: string; purpose: string; icon: React.ReactNode; census?: HomeCensus; count?: { label: string; tone: HomeTone }; href: string; openLabel: string; openIcon?: React.ReactNode }
 export interface HomeNeed { id: string; severity: string; tone: HomeTone; title: string; detail: string }
 
-/** The `home` input of `sections.studio.home`. `needs` is present while the page's Needs module is open. */
+/** The `home` input of `sections.studio.home`. `needs` is present while the page's Needs module is open; the page head is `sections.studio.page-header`. */
 export interface HomeInput {
-  title: string;
-  description: string;
   agentsLabel: string;
   agents: readonly HomeAgent[];
   needs?: { title: string; description: string; empty: string; rows: readonly HomeNeed[]; closeLabel: string; closeIcon?: React.ReactNode; onClose: () => void };
@@ -27,8 +25,7 @@ export interface HomeInput {
  * Canonical candidate qualification remains separate. Navigation stays in the shared frame.
  */
 export default function HomeSection({ home }: { home: HomeInput }) {
-  return <section data-studio-section="home" aria-labelledby="home-heading">
-    <HomeStockHeader id="home-heading" title={home.title} description={home.description} />
+  return <section data-studio-section="home" aria-label={home.agentsLabel}>
     <CardContent>
       <CardTitle role="heading" aria-level={2}>{home.agentsLabel}</CardTitle>
       <HomeStockGrid>

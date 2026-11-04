@@ -1,0 +1,41 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.page-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 248
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.page-header",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The head of every Studio page: its title and one-line purpose, the stock shadcn card header.",
+    "inputs": [
+      {
+        "name": "header",
+        "kind": "data",
+        "required": true,
+        "description": "The page title and its one-line purpose."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "text"
+  },
+  "inputs": [],
+  "uses": []
+}

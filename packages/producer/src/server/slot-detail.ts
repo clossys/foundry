@@ -1,6 +1,6 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
-import { recordSpecimenHref } from "./slot-gallery.js";
+import { recordSpecimenInput, type RecordSpecimenInput } from "./slot-gallery.js";
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, type SlotAgent } from "../records/slot-model/index.js";
 
@@ -8,7 +8,8 @@ export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
   content: string; source: unknown; issues: string[];
   specimen?: string;
-  specimenUrl?: string;
+  /** A Director brief or Writer strings pin, as the specimen section's record rows (rendered inline, no frame). */
+  record?: RecordSpecimenInput;
 }
 export interface SlotDetail {
   agent: SlotAgent; id: string; kind: string; trail: string[];
@@ -55,10 +56,10 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     if (validPin && agent === "designer" && doc.kind === "element" && name.endsWith(".json")) {
       specimen = `${id}/${element}`;
     }
-    const specimenUrl = validPin && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenHref(agent, id, name) : undefined;
+    const record = validPin && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenInput(consumer, agent, id, name) : undefined;
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
-      ...(specimen ? { specimen } : {}), ...(specimenUrl ? { specimenUrl } : {}),
+      ...(specimen ? { specimen } : {}), ...(record ? { record } : {}),
       issues };
   });
   const pinCandidate = candidates.find(candidate => candidate.pinned);

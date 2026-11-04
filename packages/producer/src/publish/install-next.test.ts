@@ -8,49 +8,70 @@ import { NEXT_ROUTE_MARKER } from "@clossys/publisher/install";
 import { nextFailed, publishNext } from "./install-next.js";
 
 let root: string;
-const leaves = { director: [], designer: [{ slug: "sections.hero", title: "Hero" }, { slug: "frames.studio-shell", title: "Studio shell" }], writer: [], publisher: [{ slug: "page.home", title: "Home" }] };
+const agentsDir = (agent: string) => fileURLToPath(new URL(`../../../../clossys/agents/${agent}/`, import.meta.url));
+const designerIa = () => join(root, "clossys", "agents", "designer", "ia.json");
 beforeEach(async () => {
   root = await mkdtemp(join(tmpdir(), "producer-install-next-"));
-  await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), join(root, "clossys", "agents", "publisher"), { recursive: true });
+  await cp(agentsDir("publisher"), join(root, "clossys", "agents", "publisher"), { recursive: true });
+  // Parameterized page records expand through each agent's IA: tabs and leaves are IA data.
+  for (const agent of ["director", "designer", "writer"]) {
+    await mkdir(join(root, "clossys", "agents", agent), { recursive: true });
+    await cp(join(agentsDir(agent), "ia.json"), join(root, "clossys", "agents", agent, "ia.json"));
+  }
 });
 afterEach(async () => { await rm(root, { recursive: true, force: true }); });
-const install = (extra: Partial<Parameters<typeof publishNext>[0]> = {}) => publishNext({ root, publication: "studio", app: join(root, "app"), assembly: "../components/Page.tsx", live: true, out: join(root, "out"), leaves, ...extra });
+const install = (extra: Partial<Parameters<typeof publishNext>[0]> = {}) => publishNext({ root, publication: "studio", app: join(root, "app"), assembly: "../components/Page.tsx", live: true, out: join(root, "out"), ...extra });
 
-it("installs every page of the pinned publication and a dynamic leaf route per gallery, fed by the record store's leaves", async () => {
+it("installs every page of the pinned publication, expanded into IA tabs, and a dynamic leaf route per tab over its IA slots", async () => {
   const result = await install();
   expect(nextFailed(result)).toBe(false);
-  expect(result.files.map(row => [row.file, row.kind, row.state])).toEqual([
-    ["page.tsx", "page", "written"], ["director/page.tsx", "page", "written"], ["designer/page.tsx", "page", "written"], ["writer/page.tsx", "page", "written"], ["publisher/page.tsx", "page", "written"],
-    ["director/[slug]/page.tsx", "leaf", "written"], ["designer/[slug]/page.tsx", "leaf", "written"], ["writer/[slug]/page.tsx", "leaf", "written"], ["publisher/[slug]/page.tsx", "leaf", "written"],
-  ]);
-  const leaf = await readFile(join(root, "app", "designer", "[slug]", "page.tsx"), "utf8");
+  expect(result.findings).toEqual([]);
+  expect(result.files.every(row => row.state === "written")).toBe(true);
+  const files = (kind: "page" | "leaf") => result.files.filter(row => row.kind === kind).map(row => row.file);
+  // Home, one page per parameterized record (agent top group), then the tabs each record expands to.
+  expect(files("page").slice(0, 2)).toEqual(["page.tsx", "director/context/page.tsx"]);
+  expect(files("page")).toEqual(expect.arrayContaining(["designer/themes/page.tsx", "writer/lexicon/page.tsx", "publisher/studio/page.tsx", "designer/themes/colors/page.tsx", "publisher/studio/pages/page.tsx"]));
+  // Leaf routes live under tabs only; no flat per-agent [slug] route survives.
+  expect(files("leaf")).toContain("designer/themes/colors/[slug]/page.tsx");
+  expect(files("leaf").every(file => file.split("/").length === 5 && file.endsWith("/[slug]/page.tsx"))).toBe(true);
+  for (const agent of ["director", "designer", "writer", "publisher"]) {
+    expect(files("page")).not.toContain(`${agent}/page.tsx`);
+    expect(files("leaf")).not.toContain(`${agent}/[slug]/page.tsx`);
+  }
+  const leaf = await readFile(join(root, "app", "designer", "themes", "colors", "[slug]", "page.tsx"), "utf8");
   expect(leaf.split("\n", 1)[0]).toBe(NEXT_ROUTE_MARKER);
-  expect(leaf).toContain('{ slug: "sections.hero" },');
-  expect(leaf).toContain('{ slug: "frames.studio-shell" },');
+  expect(leaf).toContain('{ slug: "themes.background" },');
+  expect(leaf).not.toContain('{ slug: "sections.hero" },');
   expect(leaf).toContain("export function generateStaticParams()");
-  expect(leaf).toContain('if (!(await publishedLeaf("designer", slug))) notFound();');
+  expect(leaf).toContain('if (!(await publishedLeaf("designer-themes.colors", slug))) notFound();');
   expect(await readFile(join(root, "app", "page.tsx"), "utf8")).toContain('from "../components/Page"');
   const report = JSON.parse(await readFile(join(root, "out", "install-report.json"), "utf8"));
-  expect(report).toMatchObject({ kind: "next", publication: "studio", pages: [{ page: "home", route: "/", file: "page.tsx" }, { page: "director" }, { page: "designer" }, { page: "writer" }, { page: "publisher" }], findings: [] });
-  expect(report.leaves.map((row: { route: string }) => row.route)).toEqual(["/director/[slug]", "/designer/[slug]", "/writer/[slug]", "/publisher/[slug]"]);
+  expect(report).toMatchObject({ kind: "next", publication: "studio", findings: [] });
+  expect(report.pages.slice(0, 2)).toEqual([{ page: "home", route: "/", file: "page.tsx" }, { page: "director-context", route: "/director/context", file: "director/context/page.tsx" }]);
+  expect(report.pages).toHaveLength(files("page").length);
+  expect(report.leaves.map((row: { route: string }) => row.route)).toContain("/designer/themes/colors/[slug]");
   expect((await install()).files.every(row => row.state === "unchanged")).toBe(true);
 });
 
-it("check mode reports drift for a changed record store without writing", async () => {
+it("check mode reports drift for a changed IA without writing", async () => {
   await install();
-  const result = await install({ check: true, leaves: { ...leaves, designer: [{ slug: "sections.hero", title: "Hero" }] } });
+  const ia = JSON.parse(await readFile(designerIa(), "utf8")) as { nodes: { id: string; children: { id: string; slots: string[] }[] }[] };
+  const colors = ia.nodes.find(node => node.id === "themes.colors")!.children[0]!;
+  const dropped = colors.slots.shift()!;
+  await writeFile(designerIa(), JSON.stringify(ia));
+  const result = await install({ check: true });
   expect(nextFailed(result)).toBe(true);
-  expect(result.files.filter(row => row.state === "drift").map(row => row.file)).toEqual(["designer/[slug]/page.tsx"]);
-  expect(await readFile(join(root, "app", "designer", "[slug]", "page.tsx"), "utf8")).toContain("frames.studio-shell");
+  expect(result.files.filter(row => row.state === "drift").map(row => row.file)).toEqual([`designer/themes/colors/[slug]/page.tsx`]);
+  expect(await readFile(join(root, "app", "designer", "themes", "colors", "[slug]", "page.tsx"), "utf8")).toContain(`{ slug: "${dropped}" },`);
 });
 
 it("never overwrites a route file Publisher did not install", async () => {
-  await mkdir(join(root, "app", "writer"), { recursive: true });
-  await writeFile(join(root, "app", "writer", "page.tsx"), "export default function Page() { return null; }\n");
+  await mkdir(join(root, "app", "writer", "lexicon"), { recursive: true });
+  await writeFile(join(root, "app", "writer", "lexicon", "page.tsx"), "export default function Page() { return null; }\n");
   const result = await install();
   expect(nextFailed(result)).toBe(true);
-  expect(result.findings).toEqual([expect.objectContaining({ code: "site-contract", slot: "writer", detail: "writer/page.tsx exists and was not installed by Publisher" })]);
-  expect(await readFile(join(root, "app", "writer", "page.tsx"), "utf8")).not.toContain(NEXT_ROUTE_MARKER);
+  expect(result.findings).toEqual([expect.objectContaining({ code: "site-contract", slot: "writer-lexicon", detail: "writer/lexicon/page.tsx exists and was not installed by Publisher" })]);
+  expect(await readFile(join(root, "app", "writer", "lexicon", "page.tsx"), "utf8")).not.toContain(NEXT_ROUTE_MARKER);
   expect(existsSync(join(root, "out", "install-report.json"))).toBe(false);
 });
 

@@ -19,9 +19,13 @@ const ASSET_ICONS: Record<string, Icon> = {
   'assets.icon-link': LinkIcon,
   'assets.icon-request': MessageSquarePlusIcon,
   'assets.icon-versions': HistoryIcon,
+  'assets.icon-guide': CompassIcon,
+  'assets.icon-layers': PaletteIcon,
+  'assets.icon-document': PenLineIcon,
+  'assets.icon-website': SendIcon,
 };
-const AGENT_ICONS: Record<string, Icon> = { director: CompassIcon, designer: PaletteIcon, writer: PenLineIcon, publisher: SendIcon };
 
-export function studioIcon(asset: string | undefined, id?: string): Icon {
-  return (asset ? ASSET_ICONS[asset] : undefined) ?? (id ? AGENT_ICONS[id] : undefined) ?? (asset ? CircleAlertIcon : BotIcon);
+/** The icon a content-map entry names; an entry without one gets the generic agent mark. */
+export function studioIcon(asset: string | undefined): Icon {
+  return (asset ? ASSET_ICONS[asset] : undefined) ?? (asset ? CircleAlertIcon : BotIcon);
 }

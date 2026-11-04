@@ -18,9 +18,7 @@ import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals 
 import { installedSpecimens } from "./installed-specimens.js";
 import { designerGallery, designerLeaf } from "./designer-library.js";
 import { agentGallery, agentLeaf, isLibraryAgent } from "./agent-library.js";
-import { recordSpecimenViewport, RECORD_SPECIMEN_THEME_HEADER, RECORD_SPECIMEN_WIDTH_HEADER } from "./record-specimens.js";
-import { recordSpecimenInput } from "./slot-gallery.js";
-import { specimenFramePage, SPECIMEN_FRAME_CSP } from "./specimen-frame.js";
+import { slotGallery } from "./slot-gallery.js";
 import { slotDetail } from "./slot-detail.js";
 import { hasSlotModel } from "../records/slots.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
@@ -62,7 +60,7 @@ function equalToken(actual: unknown, token: string): boolean {
 }
 function cleanHeaders(headers: IncomingMessage["headers"]): IncomingMessage["headers"] {
   const blocked = new Set([...HOP, ...String(headers.connection ?? "").toLowerCase().split(",").map(value => value.trim())]);
-  return Object.fromEntries(Object.entries(headers).filter(([name]) => !blocked.has(name) && name !== TOKEN_HEADER.toLowerCase() && name !== RECORD_SPECIMEN_THEME_HEADER && name !== RECORD_SPECIMEN_WIDTH_HEADER && !name.startsWith("x-forwarded-") && name !== "forwarded"));
+  return Object.fromEntries(Object.entries(headers).filter(([name]) => !blocked.has(name) && name !== TOKEN_HEADER.toLowerCase() && !name.startsWith("x-forwarded-") && name !== "forwarded"));
 }
 
 /** Where payload npm imports resolve: the library workspace's own install when it has React, else Producer's. */
@@ -129,10 +127,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (request.method !== "GET") { json(response, 405, { error: "API is read-only" }); return; }
       if (pathname === "/api/slots/census") { json(response, 200, slotCensus(library)); return; }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
-      const recordMatch = /^\/api\/slots\/(director|writer)\/([a-z0-9][a-z0-9.-]*)\/specimen$/.exec(pathname);
-      if (recordMatch) {
-        const input = recordSpecimenInput(library, recordMatch[1] as "director" | "writer", recordMatch[2]!, new URL(raw, origin).searchParams.get("candidate") ?? undefined);
-        json(response, input ? 200 : 404, input ?? { state: "missing" }); return;
+      // One agent's slots in IA order, grouped as the Studio tabs place them (`<l1>/<l2>` sections).
+      const galleryMatch = /^\/api\/slots\/([a-z]+)$/.exec(pathname);
+      if (galleryMatch) {
+        if (!(SLOT_AGENTS as readonly string[]).includes(galleryMatch[1]!)) { json(response, 404, { state: "missing" }); return; }
+        json(response, 200, { state: "ready", ...slotGallery(library, galleryMatch[1] as SlotAgent) }); return;
       }
       const slotMatch = /^\/api\/slots\/([a-z]+)\/([a-z0-9][a-z0-9.-]*)$/.exec(pathname);
       if (slotMatch) {
@@ -245,24 +244,11 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     // Run tokens are header-only; do not forward a token accidentally placed in a URL.
     const decodedQuery = [...new URL(raw, origin).searchParams].flat().join(" ");
     if (raw.includes(token) || decodedQuery.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
-    const specimenParams = new URL(raw, origin).searchParams;
-    const recordAgent = specimenParams.get("agent");
-    const recordSpecimen = pathname === "/__specimen" && (recordAgent === "director" || recordAgent === "writer");
-    if (recordSpecimen && request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
-    if (recordSpecimen && specimenParams.get("view") !== "record") {
-      const viewport = recordSpecimenViewport(specimenParams);
-      const params = new URLSearchParams({ agent: recordAgent!, slot: specimenParams.get("slot") ?? "",
-        ...(specimenParams.has("candidate") ? { candidate: specimenParams.get("candidate")! } : {}),
-        width: String(viewport.width), theme: viewport.theme, view: "record" });
-      const html = specimenFramePage({ src: `/__specimen?${params}`, width: viewport.width, title: "Record specimen" });
-      response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": SPECIMEN_FRAME_CSP });
-      response.end(request.method === "HEAD" ? undefined : html); return;
-    }
-    if (!recordSpecimen && installed && (pathname === "/__specimen" || pathname.startsWith("/__specimen-site/"))) {
+    if (installed && (pathname === "/__specimen" || pathname.startsWith("/__specimen-site/"))) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await installed.handle(request, response, pathname)) return;
     }
-    if (!recordSpecimen && specimen && (pathname === "/__specimen" || pathname.startsWith("/__specimen/"))) {
+    if (specimen && (pathname === "/__specimen" || pathname.startsWith("/__specimen/"))) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await specimen(request, response)) return;
     }
@@ -280,11 +266,6 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams, served); return; }
     if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
     const headers = cleanHeaders(request.headers);
-    if (recordSpecimen) {
-      const viewport = recordSpecimenViewport(new URL(raw, origin).searchParams);
-      headers[RECORD_SPECIMEN_THEME_HEADER] = viewport.theme;
-      headers[RECORD_SPECIMEN_WIDTH_HEADER] = String(viewport.width);
-    }
     headers.host = `127.0.0.1:${child.port}`;
     const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers }, upstreamResponse => {
       response.writeHead(upstreamResponse.statusCode ?? 502, cleanHeaders(upstreamResponse.headers)); upstreamResponse.pipe(response);

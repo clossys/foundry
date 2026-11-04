@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cp, mkdir, mkdtemp, readFile, realpath, writeFile, rm } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readdir, readFile, realpath, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -12,8 +12,8 @@ import { pinnedBindings } from './studio-draft-items.mjs';
 
 const clossys = fileURLToPath(new URL('../../../clossys/', import.meta.url));
 /** Every Designer slot the Studio pages assemble. */
-const STUDIO_SLOTS = ['frames.studio-shell', ...['checks', 'explorer', 'outline'].map(id => `sections.module.${id}`),
-  ...['agent-gallery', 'checks', 'contract', 'history', 'home', 'leaf-header', 'options', 'publications', 'references', 'specimen'].map(id => `sections.studio.${id}`)];
+const STUDIO_SLOTS = ['frames.studio-shell', ...['checks', 'outline'].map(id => `sections.module.${id}`),
+  ...['checks', 'contract', 'history', 'home', 'leaf-header', 'options', 'page-header', 'page-tabs', 'references', 'slot-groups', 'specimen'].map(id => `sections.studio.${id}`)];
 /** The route files Publisher installs for one Studio page: its page and, for a gallery, its leaf template. */
 const installedEntry = (instanceId, path, label, leaf = true) => {
   const folder = path === '/' ? '' : `${path.slice(1)}/`;
@@ -34,6 +34,11 @@ async function fixture(t) {
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {
     await cp(join(designer, slot), join(copy, slot), { recursive: true });
   }
+  // Parameterized page records expand through each agent's IA, so the fixture carries every ia.json.
+  for (const agent of ['director', 'writer']) {
+    await mkdir(join(clossysRoot, 'agents', agent), { recursive: true });
+    await cp(join(clossys, 'agents', agent, 'ia.json'), join(clossysRoot, 'agents', agent, 'ia.json'));
+  }
   return { clossysRoot, outputDir, appDir: join(dir, 'app'), installOut: join(dir, 'install'), publisherRoot: join(clossysRoot, 'agents', 'publisher') };
 }
 async function replace(path, before, after) {
@@ -53,33 +58,33 @@ async function designerSlot(options, id) {
 test('canonical Designer contracts work without the retired map and ignore a conflicting map', async t => {
   const options = await fixture(t);
   const expected = await run(options, { payloads: false });
-  assert.ok(expected.pages.some(page => page.manifest.modules.some(module => module.section === 'sections.module.explorer')));
+  assert.ok(expected.pages.some(page => page.manifest.modules.some(module => module.section === 'sections.module.outline')));
   for (const page of expected.pages) for (const module of page.manifest.modules) {
-    if (module.section === 'sections.module.explorer') assert.equal(module.input, 'explorer');
+    if (module.section === 'sections.module.outline') assert.equal(module.input, 'outline');
   }
   const legacy = join(options.clossysRoot, 'agents/designer/slot-contracts');
   await mkdir(legacy, { recursive: true });
-  await writeFile(join(legacy, 'studio.json'), JSON.stringify([{ slot: 'sections.module.explorer', inputs: [{ name: 'poison' }] }]));
+  await writeFile(join(legacy, 'studio.json'), JSON.stringify([{ slot: 'sections.module.outline', inputs: [{ name: 'poison' }] }]));
   assert.deepEqual(await run(options, { payloads: false }), expected);
-  await editSlot(await designerSlot(options, 'sections.module.explorer'), doc => {
+  await editSlot(await designerSlot(options, 'sections.module.outline'), doc => {
     doc.contract.inputs.unshift({ name: 'first', kind: 'data', required: true, description: 'First input' });
   });
   const changed = await run(options, { payloads: false });
-  assert.ok(changed.pages.flatMap(page => page.manifest.modules).filter(module => module.section === 'sections.module.explorer').every(module => module.input === 'first'));
+  assert.ok(changed.pages.flatMap(page => page.manifest.modules).filter(module => module.section === 'sections.module.outline').every(module => module.input === 'first'));
 });
 
 test('missing, malformed or foreign Designer slots and contracts refuse assembly', async t => {
   for (const [label, id, edit] of [
-    ['missing slot', 'sections.module.explorer', async path => rm(path)],
-    ['malformed slot', 'sections.module.explorer', async path => writeFile(path, '{')],
-    ['foreign id', 'sections.module.explorer', async path => editSlot(path, doc => { doc.id = 'sections.module.outline'; })],
-    ['foreign agent', 'sections.module.explorer', async path => editSlot(path, doc => { doc.agent = 'publisher'; })],
-    ['foreign position', 'sections.module.explorer', async path => editSlot(path, doc => { doc.ia.order++; })],
-    ['malformed slot schema', 'sections.module.explorer', async path => editSlot(path, doc => { doc.schema = 'wrong'; })],
-    ['foreign contract', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.slot = 'sections.module.outline'; })],
-    ['malformed contract', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.inputs = []; })],
-    ['missing contract purpose', 'sections.module.explorer', async path => editSlot(path, doc => { delete doc.contract.purpose; })],
-    ['invalid input kind', 'sections.module.explorer', async path => editSlot(path, doc => { doc.contract.inputs[0].kind = 'invalid'; })],
+    ['missing slot', 'sections.module.outline', async path => rm(path)],
+    ['malformed slot', 'sections.module.outline', async path => writeFile(path, '{')],
+    ['foreign id', 'sections.module.outline', async path => editSlot(path, doc => { doc.id = 'sections.module.checks'; })],
+    ['foreign agent', 'sections.module.outline', async path => editSlot(path, doc => { doc.agent = 'publisher'; })],
+    ['foreign position', 'sections.module.outline', async path => editSlot(path, doc => { doc.ia.order++; })],
+    ['malformed slot schema', 'sections.module.outline', async path => editSlot(path, doc => { doc.schema = 'wrong'; })],
+    ['foreign contract', 'sections.module.outline', async path => editSlot(path, doc => { doc.contract.slot = 'sections.module.checks'; })],
+    ['malformed contract', 'sections.module.outline', async path => editSlot(path, doc => { doc.contract.inputs = []; })],
+    ['missing contract purpose', 'sections.module.outline', async path => editSlot(path, doc => { delete doc.contract.purpose; })],
+    ['invalid input kind', 'sections.module.outline', async path => editSlot(path, doc => { doc.contract.inputs[0].kind = 'invalid'; })],
     ['missing frame contract', 'frames.studio-shell', async path => editSlot(path, doc => { doc.contract = {}; })],
   ]) {
     const options = await fixture(t);
@@ -92,7 +97,7 @@ test('missing or malformed Designer IA refuses assembly', async t => {
   for (const edit of [path => rm(path), path => writeFile(path, '{}')]) {
     const options = await fixture(t);
     await edit(join(options.clossysRoot, 'agents/designer/ia.json'));
-    await assert.rejects(run(options, { payloads: false }), /Designer IA is missing|Invalid designer IA/);
+    await assert.rejects(run(options, { payloads: false }), /Designer IA is missing|Invalid designer IA|designer has no ia\.json/);
   }
 });
 
@@ -102,20 +107,22 @@ async function editSlot(path, edit) {
   await writeFile(path, JSON.stringify(doc));
 }
 
+/** The Writer slots Studio copy reads (generate-studio-map STUDIO_COPY_SLOTS). */
+const STUDIO_COPY = ['strings.descriptions', 'strings.statuses', 'strings.common', 'strings.field-labels'];
 async function writerCallerFixture(t) {
   const options = await fixture(t);
   const writer = join(options.clossysRoot, 'agents/writer');
   const placement = 'strings.interface/interface-field-labels/strings.common';
   const dir = join(writer, 'strings.common');
   await mkdir(join(dir, 'candidates'), { recursive: true });
-  // A valid Writer IA: the Studio install lists the Writer record store's leaves.
-  await writeFile(join(writer, 'ia.json'), JSON.stringify({ schema: 'clossys.ia/1', source: '@clossys/writer#test', extensions: [], nodes: [
-    { id: 'strings.interface', label: 'Interface', children: [{ id: 'interface-field-labels', label: 'Field labels', slots: ['strings.common'] }] },
-  ] }));
+  // The real Writer IA expands the Writer tabs; the test keeps strings.common as the only Studio copy slot it places.
+  const ia = JSON.parse(await readFile(join(writer, 'ia.json'), 'utf8'));
+  for (const node of ia.nodes) for (const group of node.children) group.slots = group.slots.filter(slot => slot === 'strings.common' || !STUDIO_COPY.includes(slot));
+  await writeFile(join(writer, 'ia.json'), JSON.stringify(ia));
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, 14);
-  // Draft binds what the slot model pins: the owner-approved options v3 and specimen v5.
-  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 3], ['sections.studio.specimen', 5]]);
+  // Draft binds what the slot model pins: the owner-approved options v4 and specimen v7.
+  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 4], ['sections.studio.specimen', 7]]);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
     const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
@@ -207,50 +214,44 @@ async function nativeFixture(t) {
   return options;
 }
 
-const PAGE_NAMES = ['home', 'director', 'designer', 'writer', 'publisher'];
+/** The pinned Publisher page records: one per Studio page, parameterized records expand into tabs and leaves. */
+const PAGE_NAMES = ['home',
+  ...['context', 'aspiration', 'focus', 'advantage', 'identity', 'capability', 'execution'].map(ns => `director-${ns}`),
+  ...['themes', 'assets', 'components', 'sections', 'frames'].map(ns => `designer-${ns}`),
+  ...['lexicon', 'strings', 'patterns', 'passages', 'narratives'].map(ns => `writer-${ns}`),
+  'publisher-studio'];
 const pageSlot = name => `page.${name}`;
-const withoutCopyLink = route => {
-  const next = structuredClone(route);
-  for (const manifest of [next.manifest, ...(next.leaf ? [next.leaf.manifest] : [])]) {
-    manifest.actions = manifest.actions.filter(action => action.id !== 'copy-link');
-    manifest.wiring = manifest.wiring.filter(line => !['open copy-link', 'copy copy-link'].includes(line.do));
-  }
-  return next;
-};
+/** Every route the pinned publication declares, with its content-map entry. */
+async function pinnedRoutes(options) {
+  const { map, routePack } = await readPinnedPublication(options.publisherRoot, 'studio');
+  return routePack.routes.map(route => ({ route, entry: map.entries.find(entry => entry.id === route.instanceId) }));
+}
 
-test('L16 v3 records remove only Copy link and retain the request-change prompt and other popovers', async t => {
-  const options = await nativeFixture(t), root = options.publisherRoot;
-  const { routePack } = await readPinnedPublication(root, 'studio');
+test('L16 pinned records carry no Copy link and keep the request-change prompt on every leaf', async t => {
+  const options = await nativeFixture(t);
   const contracts = designerContracts(clossys);
   assert.deepEqual(HANDLERS, ['copy-prompt']);
-  for (const name of PAGE_NAMES) {
-    const oldCandidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v2.json'), 'utf8'));
-    const candidate = JSON.parse(await readFile(join(root, pageSlot(name), 'candidates/page-v3.json'), 'utf8'));
-    const expected = structuredClone(oldCandidate);
-    expected.meta.entry.blocks.Route = withoutCopyLink(expected.meta.entry.blocks.Route);
-    assert.deepEqual(candidate, expected, `${name}: all other candidate data is preserved`);
-    assert.equal((await selected(options, `page.${name}`)).pin.candidate, 'page-v3.json');
-    const route = candidate.meta.entry.blocks.Route;
-    assert.deepEqual(route, withoutCopyLink(oldCandidate.meta.entry.blocks.Route), `${name}: all other Route data is preserved`);
-    const { instanceId, path, label, keywords, ...projectedRoute } = routePack.routes.find(route => route.instanceId === name);
-    assert.deepEqual(projectedRoute, route, `${name}: native projection retains canonical Route metadata`);
-    const entry = { id: name, path: candidate.path, title: candidate.title, source: { frameId: candidate.frame, sectionIds: candidate.sections } };
+  const routes = await pinnedRoutes(options);
+  assert.deepEqual(routes.map(({ route }) => route.instanceId), PAGE_NAMES);
+  for (const { route, entry } of routes) {
     const page = assemblyOf(entry, route, contracts);
     assert.doesNotMatch(JSON.stringify(page), /copy-link/);
-    assert.deepEqual(page.manifest.actions, []);
+    assert.deepEqual(page.manifest.actions, [], `${entry.id}: pages are action-free`);
     if (page.leaf) {
       assert.deepEqual(page.leaf.manifest.actions.map(action => action.id), ['request-change']);
       assert.equal(page.leaf.manifest.actions[0].handler.kind, 'copy-prompt');
       assert.match(page.leaf.manifest.actions[0].handler.prompt, /What should change/);
       assert.ok(page.leaf.manifest.wiring.some(line => line.do === 'copy request-change' && line.expect === 'clipboard prompt'));
-    }
+    } else assert.equal(entry.id, 'home', 'only Home has no leaf template');
   }
 });
 
-test('L16 active generation contains no copy-link and leaves native candidate history and pins byte-identical', async t => {
+test('L16 active generation contains no copy-link and leaves native candidates and pins byte-identical', async t => {
   const options = await nativeFixture(t);
-  const paths = PAGE_NAMES.flatMap(name => [1, 2, 3].map(version =>
-    join(options.publisherRoot, pageSlot(name), 'candidates', `page-v${version}.json`)));
+  const paths = (await Promise.all(PAGE_NAMES.map(async name => {
+    const dir = join(options.publisherRoot, pageSlot(name), 'candidates');
+    return (await readdir(dir)).map(file => join(dir, file));
+  }))).flat();
   const pinsBefore = await selectedBytes(options);
   const before = await Promise.all(paths.map(path => readFile(path)));
   const projection = await run(options);
@@ -264,8 +265,8 @@ test('L16 active generation contains no copy-link and leaves native candidate hi
 test('L16 rejects a restored copy-link kind, a renamed copy-link action and stale wiring on every page and leaf', async t => {
   const options = await nativeFixture(t);
   const contracts = designerContracts(clossys);
-  for (const name of PAGE_NAMES) {
-    const route = (await selected(options, `page.${name}`)).record.meta.entry.blocks.Route;
+  for (const { route } of await pinnedRoutes(options)) {
+    const name = route.instanceId;
     for (const original of [route.manifest, ...(route.leaf ? [route.leaf.manifest] : [])]) {
       const restored = structuredClone(original);
       restored.actions.push({ id: 'restored-link', label: 'Copy link', icon: 'assets.icon-link', shortcut: 'l', handler: { kind: 'copy-link' } });
@@ -284,10 +285,8 @@ test('L16 rejects a restored copy-link kind, a renamed copy-link action and stal
 test('L16 browser manifest preflight permits action-free pages and detects copy-link restoration', async t => {
   const options = await nativeFixture(t);
   const { manifestFindings } = await import('../studio/checks/studio-modules-check.mjs');
-  const pages = await Promise.all(PAGE_NAMES.map(async name => {
-    const route = (await selected(options, `page.${name}`)).record.meta.entry.blocks.Route;
-    return { id: name, manifest: route.manifest, ...(route.leaf ? { leaf: { manifest: route.leaf.manifest } } : {}) };
-  }));
+  const pages = (await pinnedRoutes(options)).map(({ route }) =>
+    ({ id: route.instanceId, manifest: route.manifest, ...(route.leaf ? { leaf: { manifest: route.leaf.manifest } } : {}) }));
   assert.deepEqual(manifestFindings(pages), []);
   for (const page of pages) {
     for (const leaf of [false, ...(page.leaf ? [true] : [])]) {
@@ -303,38 +302,40 @@ test('L16 browser manifest preflight permits action-free pages and detects copy-
   }
 });
 
-test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the native pinned map', async t => {
+test('every Studio page is a Publisher assembly: frame + ordered sections + bindings, from the expanded native pinned map', async t => {
   const options = await fixture(t), projection = await run(options);
-  const { map, routePack } = await readPinnedPublication(options.publisherRoot, 'studio');
+  const { routePack } = await readPinnedPublication(options.publisherRoot, 'studio');
   assert.deepEqual(projection.root, routePack.root);
   assert.equal(projection.homeId, routePack.homeRouteId);
-  assert.deepEqual(projection.map, map);
-  assert.deepEqual(projection.pages.map(page => [page.id, page.path, page.frameId]), [
-    ['home', '/', 'frames.studio-shell'], ['director', '/director', 'frames.studio-shell'], ['designer', '/designer', 'frames.studio-shell'],
-    ['writer', '/writer', 'frames.studio-shell'], ['publisher', '/publisher', 'frames.studio-shell'],
-  ]);
-  assert.deepEqual(projection.pages.find(page => page.id === 'publisher').sectionIds, ['sections.studio.agent-gallery', 'sections.studio.publications']);
-  for (const page of projection.pages.filter(row => row.id !== 'home')) {
+  // The map is the content-map expansion: every authored record, one page per IA group (tab) beneath it.
+  const pageIds = projection.map.entries.filter(row => row.kind === 'page').map(row => row.id);
+  assert.deepEqual(projection.pages.map(page => page.id), pageIds);
+  assert.deepEqual(pageIds.slice(0, PAGE_NAMES.length), PAGE_NAMES);
+  for (const page of projection.pages) assert.equal(page.frameId, 'frames.studio-shell', page.id);
+  assert.deepEqual(projection.map.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id), ['director', 'designer', 'writer', 'publisher']);
+  assert.deepEqual(projection.pages.find(page => page.id === 'home').sectionIds, ['sections.studio.page-header', 'sections.studio.home']);
+  assert.deepEqual(projection.pages.find(page => page.id === 'publisher-studio').sectionIds, ['sections.studio.page-header', 'sections.studio.page-tabs', 'sections.studio.slot-groups']);
+  const leafPages = projection.pages.filter(page => page.leaf);
+  assert.ok(leafPages.length && leafPages.every(page => PAGE_NAMES.some(name => page.id.startsWith(`${name}.`))), 'leaf templates sit on the expanded tabs');
+  for (const page of leafPages) {
     assert.equal(page.leaf.body, 'detail');
     assert.equal(page.leaf.sectionIds[0], 'sections.studio.leaf-header');
     for (const slot of ['sections.studio.specimen', 'sections.studio.options', 'sections.studio.history', 'sections.studio.references']) assert.ok(page.leaf.sectionIds.includes(slot));
   }
-  // Publisher installs every route: one marked page per map page and a dynamic leaf route per gallery.
-  assert.deepEqual(projection.routes.map(({ instanceId, path, label, entry, leaf }) => ({ instanceId, path, label, entry, ...(leaf ? { leaf } : {}) })), [
-    installedEntry('home', '/', 'Home', false), installedEntry('director', '/director', 'Director'), installedEntry('designer', '/designer', 'Designer'),
-    installedEntry('writer', '/writer', 'Writer'), installedEntry('publisher', '/publisher', 'Publisher'),
-  ]);
+  // Publisher installs every route: one marked page per map page and a dynamic leaf route per tab.
+  assert.deepEqual(projection.routes.map(({ instanceId, path, label, entry, leaf }) => ({ instanceId, path, label, entry, ...(leaf ? { leaf } : {}) })),
+    projection.pages.map(page => installedEntry(page.id, page.path, page.title, Boolean(page.leaf))));
+  assert.deepEqual(projection.routes.find(row => row.instanceId === 'designer-themes.colors'), installedEntry('designer-themes.colors', '/designer/themes/colors', 'Colors'));
+  assert.ok(projection.leaves.some(row => row.page === 'designer-themes.colors' && row.path === `/designer/themes/colors/${row.slug}`));
   const { NEXT_ROUTE_MARKER } = await import('@clossys/publisher/install');
   for (const route of projection.routes) for (const file of [route.entry.file, route.leaf?.entry.file].filter(Boolean)) {
     assert.equal((await readFile(join(options.appDir, file.slice('studio/app/'.length)), 'utf8')).split('\n', 1)[0], NEXT_ROUTE_MARKER, file);
   }
   const report = JSON.parse(await readFile(join(options.installOut, 'install-report.json'), 'utf8'));
-  assert.deepEqual([report.kind, report.publication, report.pages.map(row => row.page)], ['next', 'studio', ['home', 'director', 'designer', 'writer', 'publisher']]);
-  for (const page of map.entries.filter(row => row.kind === 'page')) assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
-  assert.deepEqual(projection.items.map(item => item.slot).sort(), [
-    'frames.studio-shell', 'sections.module.checks', 'sections.module.explorer', 'sections.module.outline', 'sections.studio.agent-gallery', 'sections.studio.checks', 'sections.studio.contract', 'sections.studio.history', 'sections.studio.home',
-    'sections.studio.leaf-header', 'sections.studio.options', 'sections.studio.publications', 'sections.studio.references', 'sections.studio.specimen',
-  ]);
+  assert.deepEqual([report.kind, report.publication], ['next', 'studio']);
+  assert.deepEqual([...new Set(report.pages.map(row => row.page))], pageIds);
+  for (const page of projection.map.entries.filter(row => row.kind === 'page')) assert.deepEqual(projection.pageActions[page.id], page.actions ?? []);
+  assert.deepEqual(projection.items.map(item => item.slot).sort(), [...STUDIO_SLOTS].sort());
   const bindings = await readFile(join(options.outputDir, 'assembly-bindings.ts'), 'utf8');
   assert.match(bindings, /"frames\.studio-shell": Frame0/);
   for (const item of projection.items.filter(row => row.slot.startsWith('sections.'))) assert.match(bindings, new RegExp(`from "\\.\\./sections/${item.element}"`));
@@ -346,34 +347,35 @@ test('every Studio page is a Publisher assembly: frame + ordered sections + bind
 test('active title and path edits drive the map, the page records and the commands', async t => {
   const options = await fixture(t);
   await run(options);
-  await editPinned(options, 'page.designer', record => { record.title = 'Visual design'; record.path = '/design'; });
+  await editPinned(options, 'page.designer-themes', record => { record.title = 'Visual design'; record.path = '/designer/design'; });
   await assert.rejects(run(options, { check: true }), /drift/i);
   const changed = await run(options);
-  assert.deepEqual(changed.routes.find(row => row.instanceId === 'designer'), installedEntry('designer', '/design', 'Visual design'));
-  // The reinstall moves the page and its leaf template, and removes the stale marked files.
-  await readFile(join(options.appDir, 'design/[slug]/page.tsx'), 'utf8');
-  await assert.rejects(readFile(join(options.appDir, 'designer/page.tsx'), 'utf8'), { code: 'ENOENT' });
-  assert.equal(changed.pages.find(page => page.id === 'designer').path, '/design');
-  assert.ok(projectCommands(changed.map).flatMap(row => row.items).some(row => row.id === 'designer' && row.label === 'Visual design' && row.href === '/design'));
+  assert.deepEqual(changed.routes.find(row => row.instanceId === 'designer-themes'), installedEntry('designer-themes', '/designer/design', 'Visual design', false));
+  // The reinstall moves the tab and the leaf templates beneath it, and removes the stale marked files.
+  await readFile(join(options.appDir, 'designer/design/page.tsx'), 'utf8');
+  await readFile(join(options.appDir, 'designer/design/colors/[slug]/page.tsx'), 'utf8');
+  await assert.rejects(readFile(join(options.appDir, 'designer/themes/page.tsx'), 'utf8'), { code: 'ENOENT' });
+  assert.equal(changed.pages.find(page => page.id === 'designer-themes').path, '/designer/design');
+  assert.ok(projectCommands(changed.map).flatMap(row => row.items).some(row => row.id === 'designer-themes' && row.label === 'Visual design' && row.href === '/designer/design'));
   await run(options, { check: true });
 });
 
 test('pin changes select navigation without hiding command discovery', async t => {
   const options = await fixture(t);
-  await editPinned(options, 'page.writer', record => {
+  await editPinned(options, 'page.writer-lexicon', record => {
     delete record.nav;
     if (record.meta.entry.entryMeta) delete record.meta.entry.entryMeta.pin;
   });
   const changed = await run(options);
   const nav = projectNavigation(changed.map, 'home');
-  assert.ok(!nav.tree.flatMap(row => [row, ...(row.children ?? [])]).some(row => row.id === 'writer'));
-  assert.ok(projectCommands(changed.map).flatMap(row => row.items).some(row => row.id === 'writer'));
+  assert.ok(!nav.tree.flatMap(row => [row, ...(row.children ?? [])]).some(row => row.id === 'writer-lexicon'));
+  assert.ok(projectCommands(changed.map).flatMap(row => row.items).some(row => row.id === 'writer-lexicon'));
 });
 
 test('a section bound to anything but its contract input fails closed', async t => {
   const options = await fixture(t);
-  await editPinned(options, 'page.designer', record => { record.meta.entry.blocks.Route.inputs['sections.studio.agent-gallery'] = 'cards'; });
-  await assert.rejects(run(options), /contract input is "gallery"/);
+  await editPinned(options, 'page.designer-themes', record => { record.meta.entry.blocks.Route.inputs['sections.studio.slot-groups'] = 'cards'; });
+  await assert.rejects(run(options), /contract input is "groups"/);
 });
 
 /** The fixture folder of one Designer slot, with its pin and the pinned candidate's path. */
@@ -415,11 +417,11 @@ test('Draft assembly requires an explicit preview target and complete native bin
 });
 
 
-test('a page manifest missing its explorer, modules or actions array fails closed (mutation proof)', async t => {
+test('a page manifest missing its outline, modules or actions array fails closed (mutation proof)', async t => {
   const mutations = [
     ['no manifest', route => { delete route.manifest; }, /declares no page manifest/],
-    ['no explorer', route => { delete route.manifest.navigator; }, /needs an explorer or an outline/],
-    ['explorer module removed', route => { route.manifest.modules = route.manifest.modules.filter(module => module.id !== 'explorer'); }, /explorer/],
+    ['no navigator', route => { delete route.manifest.navigator; }, /needs an outline navigator/],
+    ['outline module removed', route => { route.manifest.modules = route.manifest.modules.filter(module => module.id !== 'outline'); }, /outline/],
     ['no modules', route => { route.manifest.modules = []; }, /declares no modules/],
     ['no actions array', route => { delete route.manifest.actions; }, /needs an actions array/],
     ['an action with no wiring line', route => { route.leaf.manifest.wiring = route.leaf.manifest.wiring.filter(line => !line.do.startsWith('copy ')); }, /wiring/],
@@ -428,20 +430,20 @@ test('a page manifest missing its explorer, modules or actions array fails close
     ['a shared shortcut', route => { route.leaf.manifest.actions[0].shortcut = route.leaf.manifest.modules[0].shortcut; }, /reuses the shortcut/],
     ['a retired module frame', route => { route.manifest.frame = 'frames.module'; }, /names frame/],
     ['a leaf with no request-change', route => { route.leaf.manifest.actions = []; route.leaf.manifest.wiring = route.leaf.manifest.wiring.filter(line => !line.do.includes('request-change')); }, /needs the request-change prompt action/],
-    ['a leaf with no outline', route => { delete route.leaf.manifest.navigator; }, /needs an explorer or an outline/],
+    ['a leaf with no outline', route => { delete route.leaf.manifest.navigator; }, /needs an outline navigator/],
   ];
   const clean = await fixture(t);
   await run(clean);
   for (const [label, edit, error] of mutations) {
     const options = await fixture(t);
-    await editPinned(options, 'page.designer', record => edit(record.meta.entry.blocks.Route));
+    await editPinned(options, 'page.designer-themes', record => edit(record.meta.entry.blocks.Route));
     await assert.rejects(run(options), error, label);
   }
 });
 
 test('checkManifest names what a manifest lacks', () => {
   assert.throws(() => checkManifest('page.x', undefined, {}), /declares no page manifest/);
-  assert.throws(() => checkManifest('page.x', { navigator: 'explorer', modules: [], actions: [], wiring: [] }, {}), /declares no modules/);
+  assert.throws(() => checkManifest('page.x', { navigator: 'outline', modules: [], actions: [], wiring: [] }, {}), /declares no modules/);
 });
 
 test('Studio runs exactly the pinned payload: code that drifts from the pinned candidate fails', async t => {
@@ -476,14 +478,14 @@ test('intact native pins generate without legacy stores and preserve selected by
 });
 
 test('a missing native page pin rejects despite intact legacy stores', async t => {
-  const options = await fixture(t), record = await selected(options, 'page.designer');
+  const options = await fixture(t), record = await selected(options, 'page.designer-themes');
   await rm(record.pinPath);
   await assert.rejects(run(options), /pin.json.*Missing native record/);
 });
 
 test('selected candidate hash drift rejects despite intact legacy stores', async t => {
-  const options = await fixture(t), record = await selected(options, 'page.designer');
-  await replace(record.path, '"title": "Designer"', '"title": "Tampered"');
+  const options = await fixture(t), record = await selected(options, 'page.designer-themes');
+  await replace(record.path, '"title": "Themes"', '"title": "Tampered"');
   await assert.rejects(run(options), /hash drift/);
 });
 
@@ -495,9 +497,10 @@ test('unselected legacy compiled output cannot replace the pinned publication', 
   assert.deepEqual(await run(options, { check: true }), expected);
 });
 
-test('Foundry pinned Publisher inventory exposes the Studio publication and five authored pages', async () => {
+test('Foundry pinned Publisher inventory exposes the Studio publication and its authored page records', async () => {
   const { map, routePack } = await readPinnedPublication(join(clossys, 'agents', 'publisher'), 'studio');
   assert.equal(map.publicationId, 'studio');
   assert.equal(routePack.packId, 'studio');
-  assert.deepEqual(map.entries.filter(entry => entry.kind === 'page').map(entry => entry.id).sort(), ['designer', 'director', 'home', 'publisher', 'writer']);
+  assert.deepEqual(map.entries.filter(entry => entry.kind === 'page').map(entry => entry.id), PAGE_NAMES);
+  assert.deepEqual(map.entries.filter(entry => entry.kind === 'group').map(entry => entry.id), ['director', 'designer', 'writer', 'publisher']);
 });

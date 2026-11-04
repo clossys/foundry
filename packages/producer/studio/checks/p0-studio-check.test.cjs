@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { test } = require('node:test');
-const { ROUTE_MARKER } = require('./check-studio-routes.cjs');
+const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
 const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, expandContentRoutes, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
@@ -18,12 +18,12 @@ function write(root, name, content) {
 }
 function projectionFixture() {
   const root = directory('routes'), studio = path.join(root, 'studio');
-  const routes = [{ path: '/' }, { path: '/agents/publisher' }];
+  const routes = [{ path: '/' }, { path: '/publisher/studio' }];
   write(root, 'studio/generated/studio-map.json', JSON.stringify({ routes }));
-  const publication = { routePack: { routes }, map: { entries: [{ kind: 'page', path: '/', id: 'home' }, { kind: 'page', path: '/agents/publisher', id: 'publisher', parentId: 'agents' }] } };
+  const publication = { routePack: { routes }, map: { entries: [{ kind: 'page', path: '/', id: 'home' }, { kind: 'group', path: '/publisher', id: 'publisher' }, { kind: 'page', path: '/publisher/studio', id: 'publisher-studio', parentId: 'publisher' }] } };
   write(root, 'studio/app/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
-  write(root, 'studio/app/agents/publisher/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
-  write(root, 'studio/app/agents/publisher/[slug]/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
+  write(root, 'studio/app/publisher/studio/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
+  write(root, 'studio/app/publisher/studio/[slug]/page.tsx', `${ROUTE_MARKER}\nPublishedPage`);
   write(root, 'studio/app/content/[agent]/[id]/page.tsx', 'StandaloneCellContent');
   return { root, studio, publication, options: { repositoryRoot: root, studioRoot: studio, publication } };
 }
@@ -33,9 +33,15 @@ test('checked-in publication and every real App Router route are discovered', as
   const plan = await discoverRoutePlan();
   assert.ok(plan.routes.includes('/'));
   assert.ok(plan.routes.length > 1);
-  assert.deepEqual(plan.templates, ['/', '/%5F_specimen', ...['designer', 'director', 'publisher', 'writer'].flatMap(agent => [`/${agent}`, `/${agent}/[slug]`])].sort(), 'Publisher-installed pages and leaf templates plus query-dependent record transport');
-  assert.deepEqual(plan.leafTemplates, ['/designer/[slug]', '/director/[slug]', '/publisher/[slug]', '/writer/[slug]']);
-  assert.ok(!plan.routes.includes('/%5F_specimen'), 'record transport needs agent and slot query parameters');
+  // Every content-map page (home, agent top groups and their nested tabs) plus one `[slug]` leaf template per tab.
+  const { map, routePack } = await readStudioPublication(repositoryRoot);
+  const pages = map.entries.filter(row => row.kind === 'page').map(row => row.path);
+  const leaves = routePack.routes.filter(row => row.leaf).map(row => `${row.path}/[slug]`);
+  assert.deepEqual(plan.routes, [...pages].sort());
+  assert.deepEqual(plan.leafTemplates, [...leaves].sort());
+  assert.deepEqual(plan.templates, [...pages, ...leaves].sort(), 'Publisher-installed pages and leaf templates only');
+  assert.ok(plan.leafTemplates.includes('/designer/themes/colors/[slug]') && !plan.templates.includes('/designer/[slug]'));
+  assert.deepEqual(plan.agents, ['designer', 'director', 'publisher', 'writer']);
   assert.equal(plan.contentRoute, false, 'the standalone content route is retired');
 });
 
@@ -56,7 +62,7 @@ test('new static pages join coverage, unknown dynamic pages and publication drif
   write(fixture.root, 'studio/app/projects/[project]/page.tsx', 'Project');
   await assert.rejects(discoverRoutePlan(fixture.options), /Unexpanded App Router route/);
   const unmarked = projectionFixture();
-  write(unmarked.root, 'studio/app/agents/publisher/[slug]/page.tsx', 'PublishedPage');
+  write(unmarked.root, 'studio/app/publisher/studio/[slug]/page.tsx', 'PublishedPage');
   await assert.rejects(discoverRoutePlan(unmarked.options), /Unexpanded App Router route/);
   const drift = projectionFixture();
   drift.publication.routePack.routes = [{ path: '/' }];
@@ -141,11 +147,11 @@ test('an empty native library needs its loaded empty state, not a heading with a
   assert.throws(() => initialExpectation({ kind: 'gallery', agent: 'writer', route: '/writer' }, { state: 'ready', count: 1, sections: [] }), /count differs/);
 });
 
-test('only the exact record transport page is excluded from static UI coverage', async () => {
+test('a Next specimen page gets no exemption: /__specimen is a Producer server route', async () => {
   const fixture = projectionFixture();
   write(fixture.root, 'studio/app/%5F_specimen/page.tsx', 'Record specimen transport');
   write(fixture.root, 'studio/app/specimen-help/page.tsx', 'Specimen help');
   const plan = await discoverRoutePlan(fixture.options);
-  assert.ok(!plan.routes.includes('/%5F_specimen'));
+  assert.ok(plan.routes.includes('/%5F_specimen'));
   assert.ok(plan.routes.includes('/specimen-help'));
 });

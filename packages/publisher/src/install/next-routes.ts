@@ -29,7 +29,11 @@ export const NEXT_LEAF_EXPORT = "publishedLeaf";
 /** One leaf the record store holds under a gallery page. */
 export interface NextRouteLeaf { readonly slug: string; readonly title: string }
 /** A page whose leaves install as one dynamic route. */
-export interface NextRouteLeafTemplate { readonly pageId: string; readonly param: "slug"; readonly leaves: readonly NextRouteLeaf[] }
+export interface NextRouteLeafTemplate {
+  readonly pageId: string; readonly param: "slug"; readonly leaves: readonly NextRouteLeaf[];
+  /** The map entry the leaves hang under, when not the page itself (a tab's leaves under its record, keeping the map within its depth). */
+  readonly parentId?: string;
+}
 export interface NextRoutesOptions {
   readonly map: ContentMap;
   readonly leafTemplates?: readonly NextRouteLeafTemplate[];
@@ -123,7 +127,7 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
       if (!LEAF_SLUG.test(leaf.slug)) { findings.push({ code: "site-contract", slot: page.id, detail: `${page.id}: leaf slug "${leaf.slug}" is not one path segment` }); return; }
       if (slugs.has(leaf.slug)) return;
       slugs.add(leaf.slug);
-      extra.push({ id: `${page.id}:${leaf.slug}`, parentId: page.id, order, title: leaf.title.trim() || leaf.slug, kind: "page", path: `${base}/${leaf.slug}`, ...(page.source ? { source: page.source } : {}) } as ContentMapEntry);
+      extra.push({ id: `${page.id}:${leaf.slug}`, parentId: template.parentId ?? page.id, order, title: leaf.title.trim() || leaf.slug, kind: "page", path: `${base}/${leaf.slug}`, ...(page.source ? { source: page.source } : {}) } as ContentMapEntry);
     });
     templates.push({ page, segments: segmentsOf(base) });
   }

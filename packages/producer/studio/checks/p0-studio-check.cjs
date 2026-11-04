@@ -105,9 +105,6 @@ async function discoverRoutePlan(options = {}) {
     if (leafOf && source.split('\n', 1)[0] === ROUTE_MARKER && routes.includes(leafOf[1] || '/')) {
       // A Publisher-installed leaf template; its leaves are the record store's, served live.
       leafTemplates.push(page.template);
-    } else if (page.template === '/%5F_specimen') {
-      // Query-dependent record transport, exercised by record-specimen-mount.test.ts.
-      continue;
     } else if (page.template === '/content/[agent]/[id]') {
       assert.match(source, /(?:cellContentHref|StandaloneCellContent)/, 'The content route no longer uses the known content port');
       contentRoute = true;
@@ -116,9 +113,11 @@ async function discoverRoutePlan(options = {}) {
     } else represented.add(page.template);
   }
   for (const route of routes) assert.ok(represented.has(route), `Published route has no App Router page: ${route}`);
-  const agents = content.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').map(row => row.id).sort();
+  // Each agent is a top-level content-map group whose tab pages expand from its `page.<agent>-<ns>` records.
+  const agents = content.entries.filter(row => row.kind === 'group' && !row.parentId).map(row => row.id).sort();
   assert.equal(new Set(agents).size, agents.length, 'Duplicate agent identities in content map');
-  const galleries = Object.fromEntries(content.entries.filter(row => row.kind === 'page' && row.parentId === 'agents').map(row => [row.path, row.id]));
+  // The per-agent gallery pages were retired: tab pages assemble slot groups and are covered as ordinary pages.
+  const galleries = {};
   const home = content.entries.find(row => row.kind === 'page' && row.id === 'home')?.path;
   return { routes: [...represented].sort(), templates: templates.sort(), leafTemplates: leafTemplates.sort(), agents, galleries, home, contentRoute };
 }

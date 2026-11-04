@@ -124,6 +124,35 @@ A page candidate (`clossys.page/1`):
    git commit -m "publisher: page.<id> <name> v<N>"
    ```
 
+## Tab pages (parameterized records)
+
+A page record whose Route block declares `"expand": { "agent": "<agent>", "namespace": "<ns>" }`
+stands for one agent top group. You never write a tab page: the content map
+expands the record into one tab route per IA group of that namespace
+(`<record path>/<group slug>`) and one leaf route per slot of the group
+(`<tab path>/<slot id>`). A new tab page is therefore one IA group, and
+publishing it is one command. This loop is mechanical and runs at low tier.
+
+1. **The group exists.** The agent that owns the namespace adds the group to
+   its `clossys/agents/<agent>/ia.json`: either a child of the namespace node
+   (`{ "id": "<ns>.<slug>", "label": "<Label>", "slots": [...] }`) or a node
+   whose id starts with `<ns>.`. The slug is one lowercase path segment. For
+   the Publisher's own namespace you add it yourself; otherwise raise a NEED to
+   the owning agent and stop.
+2. **Install the routes.** From the consumer root:
+   ```sh
+   npx clossys publish --install --site <publication> --next <app dir> --assembly <assembly module> --live
+   ```
+   It prints `Routes: <n> (written …)` and `Findings: 0`, and writes
+   `<app dir>/<record path>/<slug>/page.tsx` plus its `[slug]/page.tsx` leaf
+   route. Add `--check` to report drift without writing.
+3. **Verify.** The new `page.tsx` exists, names the page
+   `<record id without "page.">.<slug>`, and carries the Publisher install
+   marker on its first line. Never edit an installed route file; reinstall.
+
+Report: the record, the new tab path, the route count before and after, and
+`Findings`.
+
 ## Done when
 
 - The page slot has a candidate whose frame and sections all exist as Designer

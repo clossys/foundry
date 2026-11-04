@@ -6,18 +6,16 @@
  * assembly (frame + ordered sections + bindings) that `components/StudioPage.tsx` renders from
  * the Studio map. The App Router tree holds the root layout, the route files Publisher installs
  * (`clossys publish --install --next`, which mount `components/StudioInstalledPage.tsx` and so the
- * renderer) and the internal specimen frame route; `check-studio-routes.cjs` owns which routes
- * exist. Those files render only the document shell, the providers and the renderer.
+ * renderer); `check-studio-routes.cjs` owns which routes exist. The record-specimen frame is
+ * `/__specimen`, served by the Producer server, so app/ holds no specimen page. Those files render only the document shell, the providers and the renderer.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 
 const STUDIO_ROOT = path.resolve(__dirname, '..');
-/** The App Router files Publisher does not install: the root layout, the stylesheet and the specimen frame. */
-const APP_FILES = ['app/%5F_specimen/page.tsx', 'app/globals.css', 'app/layout.tsx'];
-/** The specimen frame renders one record specimen, not a page; it is the named exemption from page-jsx. */
-const SPECIMEN_FRAME = 'app/%5F_specimen/page.tsx';
+/** The App Router files Publisher does not install: the root layout and the stylesheet. */
+const APP_FILES = ['app/globals.css', 'app/layout.tsx'];
 /** The first line of every route file Publisher installs. */
 const { ROUTE_MARKER } = require('./check-studio-routes.cjs');
 /** JSX the App Router files may render: the HTML document shell, the providers and the one renderer. */
@@ -65,7 +63,7 @@ function checkNoPageJsx({ studioRoot = STUDIO_ROOT } = {}) {
   const installed = files.filter(file => /\.[jt]sx?$/.test(file) && source(file).split('\n', 1)[0] === ROUTE_MARKER);
   for (const file of files) if (!APP_FILES.includes(file) && !installed.includes(file)) findings.push({ rule: 'extra-app-route-file', file });
   for (const file of APP_FILES) if (!files.includes(file)) findings.push({ rule: 'missing-app-file', file });
-  for (const file of files.filter(name => /\.[jt]sx?$/.test(name) && name !== SPECIMEN_FRAME)) findings.push(...inspectAppSource(source(file), file));
+  for (const file of files.filter(name => /\.[jt]sx?$/.test(name))) findings.push(...inspectAppSource(source(file), file));
   const assembly = path.relative(studioRoot, path.join(studioRoot, ASSEMBLY)).replace(/\.tsx$/, '');
   for (const file of installed) {
     const specifier = path.relative(path.dirname(path.join(studioRoot, file)), path.join(studioRoot, assembly)).split(path.sep).join('/');
@@ -84,5 +82,5 @@ if (require.main === module) {
   if (findings.length) {
     console.error(JSON.stringify({ check: 'Studio no-page-jsx', findings }, null, 2));
     process.exitCode = 1;
-  } else console.log('Studio no-page-jsx: app/ holds the root layout, the specimen frame and Publisher-installed routes; every page renders through components/StudioPage.tsx.');
+  } else console.log('Studio no-page-jsx: app/ holds the root layout and Publisher-installed routes; every page renders through components/StudioPage.tsx.');
 }

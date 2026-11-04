@@ -74,7 +74,7 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(card?.files.some(file => file.path === SPECIMEN_STATE_FILE)).toBe(false);
   });
 
-  it.each(["frames.studio-shell/studio-shell", "sections.studio.agent-gallery/studio-agent-gallery", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {
+  it.each(["frames.studio-shell/studio-shell", "sections.studio.home/studio-home", "sections.studio.checks/studio-checks"])("reads actual canonical Studio %s from its pin or remains unresolved", async id => {
     const consumer = fileURLToPath(new URL("../../../../clossys", import.meta.url));
     const source = libraryRecordSource({ roots: [consumer] });
     const [slot] = id.split("/");

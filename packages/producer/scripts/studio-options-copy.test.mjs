@@ -82,18 +82,17 @@ test('Writer input preserves exact Options markup across all conditional branche
   assert.deepEqual(optionCopy('Example', { version: 1000, pinned: true }), { frameTitle: 'Example v1000, pinned', stringsLabel: 'Example v1000 strings' });
   assert.equal(optionCopy('Example', { version: 0, pinned: false }).frameTitle, 'Example v0, option');
   const callersBundle = join(dir, 'callers.mjs');
-  await build({ stdin: { contents: `export { agentOptionsInput } from './packages/producer/studio/lib/agent-library.ts'; export { slotDetailInputs } from './packages/producer/studio/lib/slot-detail.ts';`, resolveDir: root },
+  await build({ stdin: { contents: `export { slotDetailInputs } from './packages/producer/studio/lib/slot-detail.ts';`, resolveDir: root },
     outfile: callersBundle, bundle: true, platform: 'node', format: 'esm', packages: 'external', nodePaths: [join(root, 'node_modules')] });
-  const { agentOptionsInput, slotDetailInputs } = await import(callersBundle);
-  const leaf = { card: { name: 'Example' }, history: [] };
-  assert.equal(agentOptionsInput(leaf, new Map()), undefined);
-  const active = { ...leaf, history: [{ version: 1, status: 'active', active: true, note: 'Pinned note' }, { version: 2, status: 'draft', active: false, note: '' }] };
-  const projected = agentOptionsInput(active, new Map());
-  assert.deepEqual(projected.copy, copy);
-  assert.equal(projected.rows[0].copy.frameTitle, 'Example v1, pinned');
-  assert.equal(projected.rows[1].copy.frameTitle, 'Example v2, option');
+  const { slotDetailInputs } = await import(callersBundle);
+  const links = { leaf: () => '/leaf', back: { href: '/writer', label: 'Writer' } };
   const detail = { agent: 'writer', id: 'strings.example', kind: 'strings', trail: [], contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, history: [], checks: [], candidates: [], shown: null };
-  const canonical = slotDetailInputs(detail, { gallery: () => '/', leaf: () => '/leaf' }, 'light').options;
+  const canonical = slotDetailInputs(detail, links, 'light').options;
   assert.deepEqual(canonical.copy, copy);
   assert.deepEqual(canonical.rows, []);
+  // The pinned candidate leads, then options by version, each with its own frame title.
+  const row = (version, pinned) => ({ name: `example-v${version}.json`, version, pinned, content: '', issues: [], sha256: '' });
+  const projected = slotDetailInputs({ ...detail, candidates: [row(2, false), row(1, true)], shown: 'example-v1.json' }, links, 'light').options;
+  assert.deepEqual(projected.copy, copy);
+  assert.deepEqual(projected.rows.map(entry => entry.copy.frameTitle), ['strings.example v1, pinned', 'strings.example v2, option']);
 });

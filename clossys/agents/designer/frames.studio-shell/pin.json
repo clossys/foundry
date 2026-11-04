@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-shell-v8.json",
-  "sha256": "1940c8d4a2333d3575c47c391d0d148fe095bb2f28cb0fceaf1c40f0ed5cbabc",
-  "pinnedBy": "owner:2026-11-03 fix-all",
-  "at": "2026-11-03T08:47:06Z"
+  "candidate": "studio-shell-v10.json",
+  "sha256": "3f81dffc6769e8151aa2a645d2436f90ee7002c5ec8b5109f86c52d1b3f74309",
+  "pinnedBy": "owner:2026-11-03 STUDIO-TEMPLATE-FIX go",
+  "at": "2026-11-03T15:00:00Z"
 }

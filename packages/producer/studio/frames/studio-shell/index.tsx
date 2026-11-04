@@ -99,7 +99,7 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
       <CommandList aria-label="Pages" renderEmptyState={() => <CommandEmpty>No matching pages</CommandEmpty>}>
         {pageCommands.length > 0 && <CommandGroup id="page" heading="This page">
           {pageCommands.map(command => {
-            const Icon = studioIcon(command.icon, command.id);
+            const Icon = studioIcon(command.icon);
             return <CommandItem key={command.id} id={`page:${command.id}`} textValue={command.label} data-page-command={command.id} onAction={() => { onOpenChange(false); command.run(); }}>
               <Icon />{command.label}{command.shortcut && <CommandShortcut>{command.shortcut.toUpperCase()}</CommandShortcut>}
             </CommandItem>;
@@ -108,7 +108,7 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
         {commands.map(group => <CommandGroup key={group.id} id={group.id} heading={sentence(group.label)}>
           {group.items.flatMap(item => {
             if (!item.href) return [];
-            const Icon = studioIcon(item.icon, item.id);
+            const Icon = studioIcon(item.icon);
             const href = item.href;
             return [<CommandItem key={item.id} id={`${group.id}:${item.id}`} textValue={item.label} onAction={() => { onOpenChange(false); router.push(href); }}>
               <Icon />{item.label}
@@ -121,7 +121,7 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange }: { commands:
 }
 
 /** Desktop navigation and mobile dismissal follow the native Sidebar boundary. */
-function StudioNavigation({ navigation }: { navigation: ContentMapNavigation }) {
+function StudioNavigation({ navigation, navigationLabel }: { navigation: ContentMapNavigation; navigationLabel?: string }) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   useEffect(() => {
@@ -129,7 +129,7 @@ function StudioNavigation({ navigation }: { navigation: ContentMapNavigation }) 
     // The content column is the scroller, so a new page starts at its top.
     document.getElementById('studio-main')?.scrollTo({ top: 0 });
   }, [pathname, setOpenMobile]);
-  return !isMobile ? <AppSidebar navigation={navigation} /> : null;
+  return !isMobile ? <AppSidebar navigation={navigation} navigationLabel={navigationLabel} /> : null;
 }
 
 /** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
@@ -181,6 +181,8 @@ function useScrollSpy(targets: readonly string[]) {
 export interface StudioShellProps {
   homeHref: string;
   navigation: ContentMapNavigation;
+  /** The sidebar label over the map's group rows (Writer copy). */
+  navigationLabel?: string;
   commands: readonly ContentMapCommandGroup[];
   breadcrumbs: readonly { id: string; label: string; href?: string }[];
   popovers?: readonly PopoverSpec[];
@@ -200,12 +202,12 @@ export interface StudioShellProps {
 export default function StudioShellFrame(props: StudioShellProps) {
   const [leftOpen, setLeftOpen] = useState(true);
   useEffect(() => { setLeftOpen(readCookie(LEFT_COOKIE) ?? true); }, []);
-  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} />}>
+  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} navigationLabel={props.navigationLabel} />}>
     <StudioShellContent {...props} />
   </StudioAppFrame>;
 }
 
-function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
+function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs, popovers = [], body = 'plain', head, children }: StudioShellProps) {
   const pathname = usePathname();
   const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -288,7 +290,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
             </BreadcrumbList>
           </Breadcrumb>
           {popovers.map(spec => {
-            const Icon = studioIcon(spec.icon, spec.id);
+            const Icon = studioIcon(spec.icon);
             return <HeaderPopover key={spec.id} label={spec.label} open={open === spec.id} onOpenChange={value => show(value ? spec.id : undefined)}
               data-popover-trigger={spec.id} aria-keyshortcuts={spec.shortcut} content={<>
                 <PopoverHeader>
@@ -311,7 +313,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, popovers = [], 
     </StudioPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} />
     {isMobile && <StockSidebarSheet panel={mobilePanel} isOpen={openMobile} onOpenChange={setOpenMobile}>
-      {mobilePanel === 'chat' ? <ChatContent /> : <AppSidebar navigation={navigation} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
+      {mobilePanel === 'chat' ? <ChatContent /> : <AppSidebar navigation={navigation} navigationLabel={navigationLabel} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
     </StockSidebarSheet>}
   </>;
 }
