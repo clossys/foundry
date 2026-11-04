@@ -19,7 +19,7 @@
 //   edges.stale       its edges differ from the derived edges (an edge needs the same schema on
 //                     both ports and overlapping globs), named by from->to
 //   layout.stale      a node's layout {lane, rank, x, y}, the lanes or the cycle breaks differ from
-//                     the generator's deterministic layout, named by step id
+//                     the generator's deterministic layout, named by step id (layout.crossings too)
 //   layout.nondeterministic  two builds of the graph from the same definitions differ
 //   edge.schema-mismatch  an output and an input overlap by glob but name different schemas
 //   schema.missing    a port names a schema with no file under pipeline/schemas/
@@ -42,7 +42,8 @@
 //
 // A missing seat file, or a seat part set to null, is listed as OPEN (unassigned), never as passing.
 // A workspace port that names no schema feeds no edge; each one is listed as UNTYPED (and in
-// graph.json "untyped"), never dropped silently. Cycle edges the layout skips are listed as CYCLE.
+// graph.json "untyped"), never dropped silently. Cycle edges the layout skips are listed as CYCLE;
+// the layout's edge crossings before and after its barycenter ordering are listed as CROSSINGS.
 //
 // Steps declared `pending` (they land on another branch) are reported as PENDING,
 // never as passing. A pending step's own entry may be absent; when it exists the
@@ -69,10 +70,11 @@ const pending = [];
 const open = [];
 let untyped = [];
 let cycleBreaks = [];
+let crossings = null;
 const fail = (rule, message) => failures.push({ rule, message });
 const note = (step, message) => pending.push({ step, message });
 function report() {
-  const summary = { ok: failures.length === 0, steps: steps.length, pendingSteps: steps.filter(isPending).map(step => step.id), failures, pending, open, untyped, cycleBreaks, unscanned };
+  const summary = { ok: failures.length === 0, steps: steps.length, pendingSteps: steps.filter(isPending).map(step => step.id), failures, pending, open, untyped, cycleBreaks, crossings, unscanned };
   if (json) console.log(JSON.stringify(summary, null, 2));
   else {
     for (const { rule, message } of failures) console.log(`FAIL ${rule}: ${message}`);
@@ -80,6 +82,7 @@ function report() {
     for (const { step, field } of open) console.log(`OPEN ${step}: ${field} is unassigned`);
     for (const { step, port, glob } of untyped) console.log(`UNTYPED ${step}: ${port} ${glob} names no schema, so it feeds no edge`);
     for (const { from, to } of cycleBreaks) console.log(`CYCLE ${from} -> ${to}: edge closes a cycle; the layout ranks without it (step id order)`);
+    if (crossings) console.log(`CROSSINGS ${crossings.before} -> ${crossings.after}: edge crossings with steps in id order, then after the layout's barycenter ordering`);
     for (const { step, output } of unscanned) console.log(`INFO ${step}: ${output} has no file-name marker; its writers are found through the step's other outputs`);
     console.log(failures.length ? `check:pipeline FAIL (${failures.length} findings, ${pending.length} pending)` : `check:pipeline PASS (${steps.length} steps, ${edgeCount} edges, ${summary.pendingSteps.length} pending, ${pending.length} pending notes, ${open.length} open, ${untyped.length} untyped ports, ${cycleBreaks.length} cycle breaks)`);
   }
@@ -161,6 +164,7 @@ if (lib) {
   edgeCount = fresh.edges.length;
   untyped = fresh.untyped ?? [];
   cycleBreaks = fresh.layout?.cycleBreaks ?? [];
+  crossings = fresh.layout?.crossings ?? null;
   for (const m of lib.graph.schemaMismatches(defined)) fail("edge.schema-mismatch", `${m.from} -> ${m.to}: ${m.output} (${m.outputSchema}) overlaps ${m.input} (${m.inputSchema}); one file has one schema`);
   let committed = null;
   try { committed = existsSync(GRAPH) ? JSON.parse(readFileSync(GRAPH, "utf8")) : null; } catch { fail("graph.stale", `${relative(REPO, GRAPH)} is not valid JSON`); }
@@ -177,7 +181,7 @@ if (lib) {
     const moved = [...wantLayout.keys()].filter(id => haveLayout.get(id) !== wantLayout.get(id));
     for (const id of moved.slice(0, 10)) fail("layout.stale", `${id}: committed layout ${haveLayout.get(id) ?? "(none)"} differs from the generated ${wantLayout.get(id)}`);
     if (moved.length > 10) fail("layout.stale", `${moved.length - 10} more nodes have a stale layout`);
-    for (const key of ["lanes", "cycleBreaks", "constants"]) if (JSON.stringify(committed.layout?.[key] ?? null) !== JSON.stringify(fresh.layout[key])) fail("layout.stale", `layout.${key} differs from the generated layout`);
+    for (const key of ["lanes", "cycleBreaks", "constants", "crossings"]) if (JSON.stringify(committed.layout?.[key] ?? null) !== JSON.stringify(fresh.layout[key])) fail("layout.stale", `layout.${key} differs from the generated layout`);
   }
 }
 

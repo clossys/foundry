@@ -10,16 +10,23 @@
  *   flow-theme the generated --xy-* theme resolves to the pinned tokens (--xy-node-background-color
  *              equals --card on the canvas);
  *   page       the page renders without an uncaught error (an unresolved Writer key is one);
- *   layout     at fit-view in 1440x900 no two node boxes (steps and lane labels) intersect, each lane
- *              has exactly one label, every step sits inside its lane's swim row (from its label down
- *              to the next lane's label) and ranks run left to right (a lower rank starts further left);
+ *   layout     at the initial view in 1440x900 no two node boxes (steps and lane labels, on screen or
+ *              not: the whole graph is measured, it is not expected to fit the window) intersect, each
+ *              lane has exactly one label, every step sits inside its lane's swim row (from its label
+ *              down to the next lane's label) and ranks run left to right (a lower rank starts further left);
+ *   readable   at the initial view every step title renders at READABLE_PX (12px) or more: its computed
+ *              font size times the React Flow viewport scale;
+ *   fill       the canvas reaches the bottom of the 1440x900 window (it fills the remaining content
+ *              height) and sits fully inside it;
  *   legend     the pipeline legend is fully inside the 1440x900 viewport without scrolling.
  *
  * `--rendered <file>` compares a recorded rendering (`{ nodes: [...], edges: [...] }`, optionally
- * `boxes` and `legend`) instead of opening a browser: the same comparison, for the rule fixture.
+ * `boxes`, `legend`, `titlePx` and `canvas`) instead of opening a browser: the same comparison, for the rule fixture.
  *
  * Usage: node scripts/check-pipeline-canvas.mjs [--root CLOSSYS_DIR] [--graph FILE] [--port N]
- *        [--screenshot FILE] [--rendered FILE] [--json]
+ *        [--screenshot FILE] [--sheet-screenshot FILE] [--color-scheme light|dark] [--rendered FILE] [--json]
+ * `--sheet-screenshot` also clicks the first step title and captures the open step sheet;
+ * `--color-scheme` emulates prefers-color-scheme for the run (default light).
  * Exit 0 when every condition holds, 1 on any finding, 2 when Producer, Studio or a browser is missing.
  */
 import { spawn } from "node:child_process";
@@ -33,6 +40,10 @@ const producerDir = join(repo, "packages/producer");
 export const DEFAULT_PORT = 4619;
 export const ROUTE = "/producer/pipeline";
 export const VIEWPORT = Object.freeze({ width: 1440, height: 900 });
+/** The smallest on-screen step title size at the initial view, in CSS pixels. */
+export const READABLE_PX = 12;
+/** How far above the window's bottom edge the canvas may stop and still count as filling it (frame padding). */
+export const FILL_SLACK_PX = 48;
 
 /** The ids a graph.json defines: step ids, and edges as `from->to`. */
 export function graphIds(graph) {
@@ -87,6 +98,14 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
       if (boxA && boxB && a.layout.rank < b.layout.rank && !(boxA.x < boxB.x)) findings.push({ rule: "layout", message: `step ${a.id} (rank ${a.layout.rank}) is not left of ${b.id} (rank ${b.layout.rank})` });
     }
   }
+  if (rendered.titlePx !== undefined) {
+    if (!(rendered.titlePx >= READABLE_PX)) findings.push({ rule: "readable", message: `the smallest step title renders at ${Number(rendered.titlePx).toFixed(2)}px at the initial view, under ${READABLE_PX}px` });
+  }
+  const canvas = rendered.canvas;
+  if (canvas !== undefined) {
+    if (!canvas || canvas.x < 0 || canvas.y < 0 || canvas.x + canvas.width > viewport.width || canvas.y + canvas.height > viewport.height) findings.push({ rule: "fill", message: canvas ? `the canvas (${Math.round(canvas.y)}-${Math.round(canvas.y + canvas.height)}px) is not inside the ${viewport.width}x${viewport.height} viewport` : "the canvas is not on the page" });
+    else if (canvas.y + canvas.height < viewport.height - FILL_SLACK_PX) findings.push({ rule: "fill", message: `the canvas stops at ${Math.round(canvas.y + canvas.height)}px, more than ${FILL_SLACK_PX}px above the ${viewport.height}px window bottom` });
+  }
   const legend = rendered.legend;
   if (legend !== undefined && (!legend || legend.x < 0 || legend.y < 0 || legend.x + legend.width > viewport.width || legend.y + legend.height > viewport.height)) {
     findings.push({ rule: "legend", message: legend ? `the legend (${Math.round(legend.y)}-${Math.round(legend.y + legend.height)}px) is not inside the ${viewport.width}x${viewport.height} viewport` : "the legend is not on the page" });
@@ -103,10 +122,13 @@ function parseArgs(argv) {
     else if (flag === "--graph") args.graph = resolve(value());
     else if (flag === "--port") args.port = Number(value());
     else if (flag === "--screenshot") args.screenshot = resolve(value());
+    else if (flag === "--sheet-screenshot") args.sheetScreenshot = resolve(value());
+    else if (flag === "--color-scheme") args.colorScheme = value();
     else if (flag === "--rendered") args.rendered = resolve(value());
     else if (flag === "--json") args.json = true;
     else throw new Error(`unknown argument: ${flag}`);
   }
+  if (args.colorScheme !== undefined && !["light", "dark"].includes(args.colorScheme)) throw new Error("--color-scheme must be light or dark");
   if (!Number.isInteger(args.port) || args.port < 1 || args.port > 65535) throw new Error("--port must be 1-65535");
   return args;
 }
@@ -144,7 +166,7 @@ async function startProducer({ port, root }) {
 }
 
 /** Open the page and read what React Flow drew, after the node and edge counts settle. */
-async function renderPage({ origin, expected, screenshot }) {
+async function renderPage({ origin, expected, screenshot, sheetScreenshot, colorScheme = "light" }) {
   const require = createRequire(join(producerDir, "package.json"));
   const { launchChrome } = require("./studio/checks/chrome-launch.cjs");
   let browser;
@@ -152,7 +174,7 @@ async function renderPage({ origin, expected, screenshot }) {
   catch (error) { throw envError(error instanceof Error ? error.message : String(error)); }
   const errors = [];
   try {
-    const page = await browser.newPage({ viewport: VIEWPORT });
+    const page = await browser.newPage({ viewport: VIEWPORT, colorScheme });
     page.on("pageerror", error => errors.push(error.message));
     page.on("console", message => { if (message.type() === "error") errors.push(message.text()); });
     const response = await page.goto(`${origin}${ROUTE}`, { waitUntil: "networkidle", timeout: 60_000 });
@@ -164,6 +186,11 @@ async function renderPage({ origin, expected, screenshot }) {
       const style = canvas ? getComputedStyle(canvas) : undefined;
       const box = element => { const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height }; };
       const legend = document.querySelector('[data-clossys-slot="sections.producer.pipeline-legend"]');
+      // The viewport transform is translate(x, y) scale(k); a title's on-screen size is its font size times k.
+      const transform = document.querySelector(".react-flow__viewport");
+      const scale = transform ? new DOMMatrixReadOnly(getComputedStyle(transform).transform).a : NaN;
+      const titles = [...document.querySelectorAll('.react-flow__node-step [data-slot="base-node-title"] button')];
+      const titlePx = titles.length ? Math.min(...titles.map(title => parseFloat(getComputedStyle(title).fontSize) * scale)) : null;
       return {
         nodes: ids('.react-flow__node-step[data-testid^="rf__node-"]', "rf__node-"), edges: ids('[data-testid^="rf__edge-"]', "rf__edge-"),
         boxes: [...document.querySelectorAll('.react-flow__node[data-testid^="rf__node-"]')].map(element => {
@@ -172,6 +199,8 @@ async function renderPage({ origin, expected, screenshot }) {
           return { id: lane ? id.replace(/^lane:/, "") : id, kind: lane ? "lane" : "step", ...box(element) };
         }),
         legend: legend ? box(legend) : null,
+        canvas: canvas ? box(canvas) : null,
+        titlePx,
         nodePosition: node ? getComputedStyle(node).position : undefined,
         xyNodeBackground: style?.getPropertyValue("--xy-node-background-color").trim(),
         card: style?.getPropertyValue("--card").trim(),
@@ -187,10 +216,17 @@ async function renderPage({ origin, expected, screenshot }) {
       drawn = next;
       if (stable >= 12 && drawn.nodes.length > 0) break;
     }
-    // fitView runs once the nodes are measured; let the viewport transform settle before measuring boxes.
+    // Let the measured nodes and the initial viewport transform settle before measuring boxes.
     await page.waitForTimeout(500);
     drawn = await read();
     if (screenshot) { mkdirSync(dirname(screenshot), { recursive: true }); await page.screenshot({ path: screenshot }); }
+    if (sheetScreenshot) {
+      await page.locator('.react-flow__node-step [data-slot="base-node-title"] button').first().click();
+      await page.locator('[role="dialog"]').first().waitFor({ state: "visible", timeout: 10_000 });
+      await page.waitForTimeout(500);
+      mkdirSync(dirname(sheetScreenshot), { recursive: true });
+      await page.screenshot({ path: sheetScreenshot });
+    }
     return { status, errors, ...drawn };
   } finally {
     await browser.close();
@@ -206,7 +242,7 @@ export async function checkPipelineCanvas(args) {
   }
   const producer = await startProducer(args);
   try {
-    const rendered = await renderPage({ origin: producer.origin, expected, screenshot: args.screenshot });
+    const rendered = await renderPage({ origin: producer.origin, expected, screenshot: args.screenshot, sheetScreenshot: args.sheetScreenshot, colorScheme: args.colorScheme });
     const findings = [];
     if (rendered.status !== 200) findings.push({ rule: "page", message: `${ROUTE} answered ${rendered.status}` });
     for (const error of rendered.errors) findings.push({ rule: "page", message: error.split("\n")[0] });
@@ -230,7 +266,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     for (const finding of result.findings) console.log(`FAIL ${finding.rule}: ${finding.message}`);
     const drawn = `${result.rendered.nodes?.length ?? 0}/${result.expected.nodes.length} nodes, ${result.rendered.edges?.length ?? 0}/${result.expected.edges.length} edges`;
     if (result.findings.length) { console.log(`check:pipeline-canvas: FAIL (${result.findings.length}) ${drawn}`); process.exit(1); }
-    console.log(`check:pipeline-canvas: PASS ${drawn}${args.screenshot ? `; screenshot ${args.screenshot}` : ""}`);
+    console.log(`check:pipeline-canvas: PASS ${drawn}, smallest title ${Number(result.rendered.titlePx ?? NaN).toFixed(2)}px${args.screenshot ? `; screenshot ${args.screenshot}` : ""}${args.sheetScreenshot ? `; sheet ${args.sheetScreenshot}` : ""}`);
   } catch (error) {
     console.error(`check:pipeline-canvas: ${error.env ? "BLOCKED" : "ERROR"} ${error.message}`);
     process.exit(error.env ? 2 : 1);

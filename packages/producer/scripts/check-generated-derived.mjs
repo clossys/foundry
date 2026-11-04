@@ -366,6 +366,16 @@ const XY_FROM_THEMES = [
   ['--xy-handle-background-color', 'themes.secondary'],
   ['--xy-handle-border-color', 'themes.border'],
   ['--xy-attribution-background-color', 'themes.background'],
+  // The stock Controls and MiniMap, so both follow the theme (light and dark) instead of xyflow's light defaults.
+  ['--xy-controls-button-background-color', 'themes.card'],
+  ['--xy-controls-button-background-color-hover', 'themes.accent'],
+  ['--xy-controls-button-color', 'themes.card-foreground'],
+  ['--xy-controls-button-color-hover', 'themes.accent-foreground'],
+  ['--xy-controls-button-border-color', 'themes.border'],
+  ['--xy-minimap-background-color', 'themes.card'],
+  ['--xy-minimap-node-background-color', 'themes.muted'],
+  // xyflow's default mask is the background at 60% opacity; the same, from the pinned background.
+  ['--xy-minimap-mask-background-color', 'themes.background', value => `color-mix(in oklab, ${value} 60%, transparent)`],
 ];
 
 /**

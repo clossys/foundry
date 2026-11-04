@@ -1,6 +1,6 @@
 {
-  "candidate": "canvas-v2.json",
-  "sha256": "0cffe04f3c70451bfb761d247d191c22692755db9bdf0fcf94667c644581f5e5",
+  "candidate": "canvas-v3.json",
+  "sha256": "b2464bdc4ed0e904ccad14b5c8d6d193a802839a1dba1a53101d2633d1278e25",
   "decidedBy": "planner:PIPELINE-CANVAS",
-  "at": "2026-11-04T04:28:30.263Z"
+  "at": "2026-11-04T06:27:28.675Z"
 }

@@ -152,7 +152,7 @@
       "version": "20261103",
       "versionBasis": "React Flow UI registry endpoint (the URL `shadcn add https://ui.reactflow.dev/<name>` redirects to), served at fetchedAt; the registry publishes no version or source commit, so the version is the fetch date; licence file from github.com/xyflow/xyflow at the commit recorded in upstream",
       "upstream": "github.com/xyflow/xyflow@1bc405cd113618c17fd181b931a9fe573bec9fee",
-      "fetchedAt": "2026-11-04T02:08:31Z",
+      "fetchedAt": "2026-11-04T06:08:36Z",
       "license": "MIT",
       "licenseFiles": [
         "reactflow/LICENSE"
@@ -2119,6 +2119,37 @@
           "sha256": "4a200cad1bd5f72c07715ba81eb7c475b468ce71ea6fdce2e7d57f463e6b4e8c",
           "bytes": 1056,
           "origin": "labeled-handle.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "node-status-indicator",
+      "version": "20261103",
+      "dir": "reactflow/node-status-indicator@20261103",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.reactflow.dev/registry/node-status-indicator.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.flow.node-status"
+      ],
+      "dependencies": [
+        "@xyflow/react"
+      ],
+      "hash": "sha256:0761456a110f126d8f1601e7e4799c1c0f45629c72a25d50f6616a7d34515166",
+      "files": [
+        {
+          "path": "node-status-indicator.json",
+          "sha256": "f864c3017a8698725fcffe50fee40b31d679bdbab0d01c7bbdfe30e9fd607251",
+          "bytes": 3524,
+          "origin": "https://ui.reactflow.dev/registry/node-status-indicator.json"
+        },
+        {
+          "path": "node-status-indicator.tsx",
+          "sha256": "80be95a19731eb6571c24366d121dce5711c759ad42def5ef9ed123096d59046",
+          "bytes": 3010,
+          "origin": "node-status-indicator.json#files[0].content"
         }
       ]
     },

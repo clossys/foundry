@@ -12,7 +12,6 @@
   "inputs": [
     "frames.studio-shell",
     "sections.producer.pipeline-flow",
-    "sections.producer.pipeline-header",
     "sections.producer.pipeline-legend",
     "sections.studio.page-header",
     "sections.studio.page-tabs"
@@ -22,7 +21,6 @@
     "sections.module.checks",
     "sections.module.outline",
     "sections.producer.pipeline-flow",
-    "sections.producer.pipeline-header",
     "sections.producer.pipeline-legend",
     "sections.studio.checks",
     "sections.studio.contract",

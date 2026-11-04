@@ -1853,6 +1853,13 @@
       "slots": [
         "components.flow.labeled-handle"
       ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "node-status-indicator",
+      "slots": [
+        "components.flow.node-status"
+      ]
     }
   ],
   "skipped": [

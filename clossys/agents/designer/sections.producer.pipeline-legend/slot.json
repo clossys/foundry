@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.producer",
     "l2": "producer-pipeline",
-    "order": 263
+    "order": 264
   },
   "kind": "element",
   "contract": {
@@ -14,13 +14,13 @@
     "slot": "sections.producer.pipeline-legend",
     "package": "producer",
     "layer": "sections",
-    "purpose": "What each pipeline node kind (plumb, decide:creative, decide:judgment) means, as stock Badges in a stock Table.",
+    "purpose": "One compact row: the step and edge counts, and one stock Badge per node kind (plumb, decide:creative, decide:judgment) with its meaning in a stock Tooltip.",
     "inputs": [
       {
         "name": "legend",
         "kind": "data",
         "required": true,
-        "description": "One row per node kind with its Writer label and meaning, and the legend headings."
+        "description": "One row per node kind with its Writer label and meaning, the resolved counts line and the untyped file count."
       }
     ],
     "limits": {},
@@ -38,13 +38,6 @@
         "version": "4.23.0",
         "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
         "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
-      },
-      {
-        "registry": "shadcn",
-        "item": "table",
-        "version": "4.23.0",
-        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
-        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
       }
     ],
     "checkSuite": "studio",
@@ -54,6 +47,6 @@
   "uses": [
     "components.badge",
     "components.card",
-    "components.table"
+    "components.tooltip"
   ]
 }

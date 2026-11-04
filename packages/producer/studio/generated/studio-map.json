@@ -500,7 +500,6 @@
           "sectionIds": [
             "sections.studio.page-header",
             "sections.studio.page-tabs",
-            "sections.producer.pipeline-header",
             "sections.producer.pipeline-legend",
             "sections.producer.pipeline-flow"
           ]
@@ -1963,7 +1962,6 @@
           "sectionIds": [
             "sections.studio.page-header",
             "sections.studio.page-tabs",
-            "sections.producer.pipeline-header",
             "sections.producer.pipeline-legend",
             "sections.producer.pipeline-flow"
           ]
@@ -3084,6 +3082,11 @@
       {
         "from": "/designer/components.flow.labeled-handle",
         "to": "/designer/components/flow/components.flow.labeled-handle",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.flow.node-status",
+        "to": "/designer/components/flow/components.flow.node-status",
         "permanent": false
       },
       {
@@ -5881,7 +5884,6 @@
       "sectionIds": [
         "sections.studio.page-header",
         "sections.studio.page-tabs",
-        "sections.producer.pipeline-header",
         "sections.producer.pipeline-legend",
         "sections.producer.pipeline-flow"
       ],
@@ -5894,7 +5896,6 @@
       "inputs": {
         "sections.studio.page-header": "header",
         "sections.studio.page-tabs": "tabs",
-        "sections.producer.pipeline-header": "header",
         "sections.producer.pipeline-flow": "flow",
         "sections.producer.pipeline-legend": "legend"
       },
@@ -23715,7 +23716,6 @@
       "sectionIds": [
         "sections.studio.page-header",
         "sections.studio.page-tabs",
-        "sections.producer.pipeline-header",
         "sections.producer.pipeline-legend",
         "sections.producer.pipeline-flow"
       ],
@@ -23731,7 +23731,6 @@
       "inputs": {
         "sections.studio.page-header": "header",
         "sections.studio.page-tabs": "tabs",
-        "sections.producer.pipeline-header": "header",
         "sections.producer.pipeline-flow": "flow",
         "sections.producer.pipeline-legend": "legend"
       },
@@ -25245,6 +25244,12 @@
       "slug": "components.flow.labeled-handle",
       "title": "Flow labeled handle",
       "path": "/designer/components/flow/components.flow.labeled-handle"
+    },
+    {
+      "page": "designer-components.flow",
+      "slug": "components.flow.node-status",
+      "title": "Flow node status",
+      "path": "/designer/components/flow/components.flow.node-status"
     },
     {
       "page": "designer-components.flow",
@@ -27226,6 +27231,11 @@
     {
       "source": "/designer/components.flow.node-header",
       "destination": "/designer/components/flow/components.flow.node-header",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.node-status",
+      "destination": "/designer/components/flow/components.flow.node-status",
       "permanent": false
     },
     {
@@ -29286,19 +29296,14 @@
       "version": 4
     },
     {
-      "slot": "sections.producer.pipeline-header",
-      "element": "producer-pipeline-header",
-      "version": 1
-    },
-    {
       "slot": "sections.producer.pipeline-legend",
       "element": "producer-pipeline-legend",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.studio.leaf-header",

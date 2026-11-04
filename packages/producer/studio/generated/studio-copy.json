@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "76ef4da1c962d8627dca1f5c91c14bb3b9afab47e338cb81ff40ce834e23d842",
+  "revision": "433e220cab2aa4b4b7ea3ff9b814eda783349a1bf1d715b38b0471969f41f8d7",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2092,6 +2092,18 @@
     {
       "id": "studio.pipeline.legend.untyped",
       "text": "{count, plural, one {# file is} other {# files are}} read or written by no typed step yet.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.ready",
+      "text": "Ready",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.status.pending",
+      "text": "Pending",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },

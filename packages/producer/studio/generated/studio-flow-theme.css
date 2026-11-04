@@ -10,4 +10,12 @@
   --xy-handle-background-color: var(--secondary); /* themes.secondary secondary-v1.json */
   --xy-handle-border-color: var(--border); /* themes.border border-v1.json */
   --xy-attribution-background-color: var(--background); /* themes.background background-v1.json */
+  --xy-controls-button-background-color: var(--card); /* themes.card card-v1.json */
+  --xy-controls-button-background-color-hover: var(--accent); /* themes.accent accent-v1.json */
+  --xy-controls-button-color: var(--card-foreground); /* themes.card-foreground card-foreground-v1.json */
+  --xy-controls-button-color-hover: var(--accent-foreground); /* themes.accent-foreground accent-foreground-v1.json */
+  --xy-controls-button-border-color: var(--border); /* themes.border border-v1.json */
+  --xy-minimap-background-color: var(--card); /* themes.card card-v1.json */
+  --xy-minimap-node-background-color: var(--muted); /* themes.muted muted-v1.json */
+  --xy-minimap-mask-background-color: color-mix(in oklab, var(--background) 60%, transparent); /* themes.background background-v1.json */
 }

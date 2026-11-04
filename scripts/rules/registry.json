@@ -452,7 +452,7 @@
           "expect": "^FAIL edge-ids: edge missing from the page: design\\.hero->publish\\.compile"
         }
       ],
-      "note": "The Studio page /producer/pipeline draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at fit-view in 1440x900, one label per lane, every step inside its lane's swim row, ranks left to right, and the legend inside the viewport. The fixture is a recorded rendering that drops an edge."
+      "note": "The Studio page /producer/pipeline draws graph.json only: check:pipeline-canvas renders it headless in the installed Chrome and fails unless the drawn node ids equal the step ids and the drawn edge ids equal the graph edges (from->to), with React Flow's pinned stylesheet and the generated --xy-* theme applied, no two node boxes (steps and lane labels) intersecting at the initial view in 1440x900, one label per lane, every step inside its lane's swim row, ranks left to right, every step title at 12px or more on screen at the initial view, the canvas filling the window's remaining height, and the legend inside the viewport. The fixture is a recorded rendering that drops an edge."
     }
   ],
   "exemptions": [

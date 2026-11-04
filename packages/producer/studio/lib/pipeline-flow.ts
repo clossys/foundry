@@ -5,8 +5,7 @@
  * (studio.pipeline.*); step ids, globs and lanes are data and pass through unchanged.
  * Server-safe: no hooks and no client-only imports.
  */
-import type { PipelineFlowInput, StepKind } from '../sections/producer-pipeline-flow';
-import type { PipelineHeaderInput } from '../sections/producer-pipeline-header';
+import type { PipelineFlowInput, StepKind, StepStatus } from '../sections/producer-pipeline-flow';
 import type { PipelineLegendInput } from '../sections/producer-pipeline-legend';
 import type { PageHeaderInput } from '../sections/studio-page-header';
 import { studioCopy } from './studio-copy';
@@ -45,26 +44,18 @@ const words = (value: unknown): string[] => typeof value === 'string' ? [value] 
 /** A step's command as graph.json records it, one `<form> <value>` part per field (`cli compile`, `entry src/cli/compile.ts#runCompileCli`). */
 export const commandLine = (command: Readonly<Record<string, unknown>>) => Object.entries(command).map(([form, value]) => [form, ...words(value)].join(' ')).join('; ');
 /** A step's state as `clossys pipeline status` names it from graph.json alone: pending until its step is declared, otherwise ready. */
-const stepStatus = (step: PipelineGraphStep) => step.pending ? 'pending' : 'ready';
+const stepStatus = (step: PipelineGraphStep): StepStatus => step.pending ? 'pending' : 'ready';
+const STATUSES: readonly StepStatus[] = ['ready', 'pending'];
 
 /** The edge identity the page renders and `check:pipeline-canvas` compares: `from->to`. */
 export const edgeId = (edge: { from: string; to: string }) => `${edge.from}->${edge.to}`;
 
-/** The shared `header` input: the page head (title, purpose) and the pipeline counts card. */
-export type PipelinePageHeader = PageHeaderInput & PipelineHeaderInput;
-
-export interface PipelineInputs { header: PipelinePageHeader; flow: PipelineFlowInput; legend: PipelineLegendInput }
+/** The section inputs: the page head (title, purpose), the flow, and the counts and legend row. */
+export interface PipelineInputs { header: PageHeaderInput; flow: PipelineFlowInput; legend: PipelineLegendInput }
 
 /** The section inputs for one graph.json; `title` and `description` head the page. */
 export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput): PipelineInputs {
   const open = graph.nodes.filter(step => step.open).length;
-  const header: PipelinePageHeader = {
-    ...head,
-    copy: {
-      title: studioCopy('studio.pipeline.counts.title'),
-      description: studioCopy('studio.pipeline.counts', { steps: graph.nodes.length, edges: graph.edges.length, open }),
-    },
-  };
   const flow: PipelineFlowInput = {
     graph: {
       nodes: graph.nodes.map(step => ({
@@ -93,8 +84,6 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput):
       lanes: Object.fromEntries(graph.layout.lanes.map(lane => [lane.id, studioCopy(`studio.pipeline.lane.${laneKey(lane.id)}`)])),
       emptyTitle: studioCopy('studio.pipeline.empty.title'),
       emptyDescription: studioCopy('studio.pipeline.empty.description'),
-      field: studioCopy('studio.pipeline.step.field'),
-      value: studioCopy('studio.pipeline.step.value'),
       command: studioCopy('studio.pipeline.step.command'),
       inputs: studioCopy('studio.pipeline.step.inputs'),
       outputs: studioCopy('studio.pipeline.step.outputs'),
@@ -103,17 +92,18 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput):
       status: studioCopy('studio.pipeline.step.status'),
       none: studioCopy('studio.pipeline.step.none'),
       openSeat: studioCopy('studio.pipeline.seat.open'),
+      statuses: Object.fromEntries(STATUSES.map(status => [status, studioCopy(`studio.pipeline.status.${status}`)])) as Record<StepStatus, string>,
     },
   };
   const legend: PipelineLegendInput = {
     rows: KINDS.map(kind => ({ kind, label: studioCopy(`studio.pipeline.kind.${kindKey(kind)}`), meaning: studioCopy(`studio.pipeline.legend.${kindKey(kind)}`) })),
     untypedCount: graph.untyped.length,
     copy: {
-      title: studioCopy('studio.pipeline.legend.title'),
-      kind: studioCopy('studio.pipeline.legend.kind'),
-      meaning: studioCopy('studio.pipeline.legend.meaning'),
+      title: studioCopy('studio.pipeline.counts.title'),
+      counts: studioCopy('studio.pipeline.counts', { steps: graph.nodes.length, edges: graph.edges.length, open }),
+      legend: studioCopy('studio.pipeline.legend.title'),
       untyped: studioCopy('studio.pipeline.legend.untyped', { count: graph.untyped.length }),
     },
   };
-  return { header, flow, legend };
+  return { header: head, flow, legend };
 }

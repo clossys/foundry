@@ -29,20 +29,15 @@
     "data-clossys-candidate": "studio-slot-groups-v4.json",
     "data-clossys-hash": "sha256:e1340410cf9d47f9eae8aa427552840403b6ffe7bba568e902284c5262a0644a"
   },
-  "sections.producer.pipeline-header": {
-    "data-clossys-slot": "sections.producer.pipeline-header",
-    "data-clossys-candidate": "producer-pipeline-header-v1.json",
-    "data-clossys-hash": "sha256:27450afb95ff15cdc20be402bab856039f85002b4120396918aed1da77c22ebc"
-  },
   "sections.producer.pipeline-legend": {
     "data-clossys-slot": "sections.producer.pipeline-legend",
-    "data-clossys-candidate": "producer-pipeline-legend-v2.json",
-    "data-clossys-hash": "sha256:54b21fa5996786c5eafa33e9dfb6ed42494dc4cc5bf91a3a8bc5a8a2a6e887e8"
+    "data-clossys-candidate": "producer-pipeline-legend-v3.json",
+    "data-clossys-hash": "sha256:41fc6a637ad8ad4dac154506a8b97c86d0b283d7157799b1ff0676c4eee95525"
   },
   "sections.producer.pipeline-flow": {
     "data-clossys-slot": "sections.producer.pipeline-flow",
-    "data-clossys-candidate": "producer-pipeline-flow-v4.json",
-    "data-clossys-hash": "sha256:032db8a638f017f89ddab1429a414dd575eabbcb36402b1310eafbf363e292b8"
+    "data-clossys-candidate": "producer-pipeline-flow-v5.json",
+    "data-clossys-hash": "sha256:244b9377df351b15658d14d30a81b2d1b19fe8aa95fb5688fd5d0897595055fb"
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",

@@ -86,6 +86,22 @@ describe("derived graph", () => {
     expect(layout.nodes.c!.y).toBe(layout.lanes[2]!.y);
     expect(JSON.stringify(computeLayout([...steps].reverse(), [...edges].reverse()))).toBe(JSON.stringify(layout));
   });
+  it("orders cells by barycenter and wraps a cell past cellRows into sub-columns", () => {
+    const make = (id: string, inputs: string[], outputs: string[]) =>
+      defineStep({ id, kind: "plumb", actor: "code", stage: "check", summary: id,
+        inputs: inputs.map(glob => ({ glob, schema: "slot" })), outputs: outputs.map(glob => ({ glob, schema: "slot" })), command: { npm: "x" }, checks: [] });
+    // s1..s5 share one code/rank-1 cell: three rows, the rest wrap into a second sub-column.
+    const steps = [make("t1", [], ["a/1"]), make("t2", [], ["b/1"]), ...["s1", "s2", "s3", "s4"].map(id => make(id, ["a/*"], [])), make("s5", ["b/*"], [])];
+    const layout = computeLayout(steps, deriveEdges(steps));
+    const C = LAYOUT_CONSTANTS;
+    const cell = ["s1", "s2", "s3", "s4", "s5"].map(id => layout.nodes[id]!);
+    expect(new Set(cell.map(node => node.rank))).toEqual(new Set([1]));
+    expect(Math.max(...cell.map(node => node.y)) - layout.lanes[0]!.y).toBe((C.cellRows - 1) * C.rowGap);
+    expect(new Set(cell.map(node => node.x - C.rankGap))).toEqual(new Set([0, C.columnGap]));
+    expect(new Set(cell.map(node => `${node.x},${node.y}`)).size).toBe(5);
+    expect(layout.crossings.after).toBeLessThanOrEqual(layout.crossings.before);
+    expect(JSON.stringify(computeLayout([...steps].reverse(), deriveEdges([...steps].reverse())))).toBe(JSON.stringify(layout));
+  });
   it("writes a layout for every node, byte-identical across builds", () => {
     const root = workspace();
     const graph = buildGraph(root);

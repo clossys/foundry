@@ -8,6 +8,7 @@
     "components.flow.edge",
     "components.flow.labeled-handle",
     "components.flow.node-header",
+    "components.flow.node-status",
     "frames.studio-shell",
     "sections.module.checks",
     "sections.module.outline",
@@ -960,7 +961,8 @@
             "components.flow.base-node",
             "components.flow.node-header",
             "components.flow.base-handle",
-            "components.flow.labeled-handle"
+            "components.flow.labeled-handle",
+            "components.flow.node-status"
           ]
         },
         {

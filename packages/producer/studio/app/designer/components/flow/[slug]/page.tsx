@@ -9,6 +9,7 @@ const leaves: { slug: string }[] = [
   { slug: "components.flow.node-header" },
   { slug: "components.flow.base-handle" },
   { slug: "components.flow.labeled-handle" },
+  { slug: "components.flow.node-status" },
   { slug: "components.flow.edge" },
   { slug: "components.flow.canvas" },
 ];
