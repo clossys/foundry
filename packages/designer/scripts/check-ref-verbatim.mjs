@@ -31,6 +31,8 @@ import { ADAPTATION_KINDS, adaptationHash, recordedHunk, staticSingleOptionRow }
 export { ADAPTATION_KINDS, adaptationHash };
 import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
 import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
+import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents } from "./ref-verbatim/ds-only.mjs";
+export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents };
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
@@ -49,6 +51,12 @@ export const CODES = [
   "REF-ADAPTATION",
   "REF-PART-PROOF",
   "REF-PART-CLOSURE",
+  "REF-SELF-CITE",
+  "REF-COMP-PART",
+  "REF-COMP-IMPORT",
+  "REF-COMP-UNUSED",
+  "REF-COMP-MARKUP",
+  "REF-COMP-USES",
 ];
 
 /**
@@ -120,6 +128,7 @@ export function defaults(overrides = {}) {
     ceiling: overrides.ceiling ?? BASELINE_CEILING,
     components: overrides.components,
     linkComponents: overrides.linkComponents ?? [],
+    ui: overrides.ui,
   };
 }
 
@@ -783,6 +792,11 @@ export function checkElement(root, target, options = {}) {
  * and adaptation reasons live in meta.refVerbatim. Missing evidence fails closed.
  */
 export function checkRegistryItem(root, slot, candidate, options = {}) {
+  if (candidate.meta?.source?.kind === "composition") return checkComposition(root, slot, candidate, options);
+  return withSelfCitation(checkLineageItem(root, slot, candidate, options), candidate.meta?.source?.ref);
+}
+
+function checkLineageItem(root, slot, candidate, options = {}) {
   const opts = defaults(options);
   const refs = candidate.meta?.source?.ref ?? [];
   const source = candidate.meta?.source;
@@ -798,6 +812,288 @@ export function checkRegistryItem(root, slot, candidate, options = {}) {
     ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
   return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files });
+}
+
+// ---- self-citation ----------------------------------------------------------
+
+/** A lineage reference into Foundry's own package folders (or the `foundry` registry) is no proof: it cites the code it is meant to check. */
+const FOUNDRY_PACKAGE_PATH = /(?:^|[/"'@])packages\/[a-z0-9][a-z0-9-]*(?:[/"'@]|$)/;
+export function selfCitation(ref) {
+  if (typeof ref !== "string") return false;
+  if (/^foundry\//.test(ref) || FOUNDRY_PACKAGE_PATH.test(ref)) return true;
+  let rows = [];
+  if (/^\s*[[{]/.test(ref)) {
+    try { const value = JSON.parse(ref); rows = Array.isArray(value) ? value : [value]; } catch { rows = []; }
+  }
+  return rows.some(row => !!row && typeof row === "object" && (row.registry === "foundry" || Object.values(row).some(value => typeof value === "string" && FOUNDRY_PACKAGE_PATH.test(value))));
+}
+const refLabel = ref => (ref.length > 120 ? `${ref.slice(0, 117)}...` : ref);
+const selfCiteFinding = (key, ref) => ({ element: key, code: "REF-SELF-CITE", detail: `lineage source ${refLabel(ref)} points into Foundry's own package folders; a pin cannot be proved against Foundry's own code` });
+
+function withSelfCitation(checked, refs) {
+  if (checked.status === "exempt" || !Array.isArray(refs)) return checked;
+  for (const ref of refs) if (selfCitation(ref)) checked.findings.push(selfCiteFinding(checked.key, ref));
+  if (checked.findings.length) checked.status = "fail";
+  return checked;
+}
+
+// ---- composition ------------------------------------------------------------
+
+const sameSet = (a, b) => JSON.stringify([...new Set(a)].sort()) === JSON.stringify([...new Set(b)].sort());
+
+/** Every Designer slot directory under agents/designer, by slot id (flat or nested layouts). */
+function designerSlotDirs(root) {
+  const dirs = new Map();
+  const walk = dir => {
+    if (!existsSync(dir)) return;
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.isSymbolicLink() || entry.name === "candidates") continue;
+      const child = join(dir, entry.name);
+      if (existsSync(join(child, "slot.json"))) {
+        const id = json(join(child, "slot.json")).id;
+        if (typeof id === "string" && !dirs.has(id)) dirs.set(id, child);
+      }
+      walk(child);
+    }
+  };
+  walk(join(root, "agents", "designer"));
+  return dirs;
+}
+
+/** The pinned candidate of one slot, with its pin hash verified; `error` says why there is none. */
+function pinnedCandidate(dir) {
+  if (!dir) return { error: "is not a Designer slot in this consumer" };
+  if (!existsSync(join(dir, "pin.json"))) return { error: "is not pinned" };
+  const pin = json(join(dir, "pin.json"));
+  if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/.test(pin.candidate ?? "") || !existsSync(join(dir, "candidates", pin.candidate))) return { error: "pins a missing candidate" };
+  const bytes = readFileSync(join(dir, "candidates", pin.candidate));
+  if (sha256(bytes) !== pin.sha256) return { error: "has a pin sha256 that does not match its candidate" };
+  return { pin, item: JSON.parse(bytes.toString("utf8")) };
+}
+
+/**
+ * A stock part: pinned with registry lineage, verbatim (no recorded adaptations
+ * or extra parts), passing the strict ref-verbatim check itself, with code.
+ */
+function stockPart(root, slot, dir, options) {
+  const { error, item } = pinnedCandidate(dir);
+  if (error) return { error };
+  const kind = item.meta?.source?.kind;
+  if (kind !== "registry") return { error: `is pinned with ${kind ?? "no"} lineage, not registry` };
+  const mapping = item.meta?.refVerbatim ?? {};
+  // Additional source parts are verbatim too (each is diffed against its own vendored file); recorded adaptations, or the byte-proof format, are not stock.
+  if ((Array.isArray(mapping.adaptations) && mapping.adaptations.length) || Object.hasOwn(mapping, "exactParts")) return { error: "is pinned with recorded adaptations, not verbatim" };
+  const checked = checkRegistryItem(root, slot, item, { ...options, strict: true, slotDoc: undefined });
+  if (checked.status !== "pass") return { error: checked.status === "fail" ? `fails ref-verbatim itself (${[...new Set(checked.findings.map(f => f.code))].join(", ")})` : `has no checked code (${checked.status})` };
+  const files = { ...(mapping.files ?? {}) };
+  for (const extra of Array.isArray(mapping.parts) ? mapping.parts : []) Object.assign(files, extra?.files ?? {});
+  const codeFiles = (item.files ?? []).filter(file => isCode(file.path) && files[file.path] !== undefined);
+  return { item, vendored: Object.values(files), codeFiles };
+}
+
+const resolveModuleFile = base => {
+  for (const path of [base, `${base}.tsx`, `${base}.ts`, join(base, "index.tsx"), join(base, "index.ts")]) {
+    if (existsSync(path) && statSync(path).isFile()) return path;
+  }
+  return undefined;
+};
+
+/** The component layer package (@clossys/designer-ui) whose barrel and `@/` alias a composition's imports resolve through. */
+function componentLayer(opts, componentsPath) {
+  for (const dir of [opts.ui, componentsPath && dirname(componentsPath), join(packageRoot, "ui")].filter(Boolean)) {
+    if (!existsSync(join(dir, "package.json"))) continue;
+    const pkg = json(join(dir, "package.json"));
+    const entry = typeof pkg.exports === "string" ? pkg.exports : pkg.exports?.["."] ?? pkg.main;
+    if (pkg.name !== DS_COMPONENT_LAYER || typeof entry !== "string") continue;
+    let aliasRoot;
+    try {
+      const target = json(join(dir, "tsconfig.json")).compilerOptions?.paths?.["@/*"]?.[0];
+      if (typeof target === "string" && target.endsWith("/*")) aliasRoot = resolve(dir, target.slice(0, -2));
+    } catch { aliasRoot = undefined; }
+    return { dir, entry: resolve(dir, entry), aliasRoot, exports: new Map() };
+  }
+  return undefined;
+}
+
+/** Exported name -> the file that defines it, following re-exports inside the layer; null when ambiguous, `external:<spec>` outside it. */
+function moduleExports(file, cache) {
+  if (cache.has(file)) return cache.get(file);
+  const map = new Map();
+  cache.set(file, map);
+  const ts = loadTypeScript();
+  const source = ts.createSourceFile(file, readFileSync(file, "utf8"), ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const set = (name, defined) => map.set(name, map.has(name) && map.get(name) !== defined ? null : defined);
+  const target = spec => (spec.startsWith(".") ? resolveModuleFile(resolve(dirname(file), spec)) : undefined);
+  const imported = new Map();
+  for (const st of source.statements) {
+    if (ts.isImportDeclaration(st) && ts.isStringLiteral(st.moduleSpecifier) && st.importClause?.namedBindings && ts.isNamedImports(st.importClause.namedBindings)) {
+      for (const e of st.importClause.namedBindings.elements) imported.set(e.name.text, { spec: st.moduleSpecifier.text, name: (e.propertyName ?? e.name).text });
+    }
+  }
+  const viaImport = local => {
+    const imp = imported.get(local);
+    if (!imp) return file;
+    const inner = target(imp.spec);
+    return inner ? moduleExports(inner, cache).get(imp.name) ?? null : `external:${imp.spec}`;
+  };
+  for (const st of source.statements) {
+    if (ts.isExportDeclaration(st)) {
+      const spec = st.moduleSpecifier && ts.isStringLiteral(st.moduleSpecifier) ? st.moduleSpecifier.text : undefined;
+      const inner = spec !== undefined ? target(spec) : undefined;
+      if (spec !== undefined && !inner) {
+        if (st.exportClause && ts.isNamedExports(st.exportClause)) for (const e of st.exportClause.elements) set(e.name.text, `external:${spec}`);
+        continue;
+      }
+      if (!st.exportClause) { for (const [name, defined] of moduleExports(inner, cache)) if (name !== "default") set(name, defined); continue; }
+      if (!ts.isNamedExports(st.exportClause)) { set(st.exportClause.name.text, inner); continue; }
+      for (const e of st.exportClause.elements) {
+        const local = (e.propertyName ?? e.name).text;
+        set(e.name.text, inner ? moduleExports(inner, cache).get(local) ?? null : viaImport(local));
+      }
+      continue;
+    }
+    if (!(ts.canHaveModifiers?.(st) ? ts.getModifiers(st) ?? [] : st.modifiers ?? []).some(m => m.kind === ts.SyntaxKind.ExportKeyword)) continue;
+    if (ts.isVariableStatement(st)) { for (const d of st.declarationList.declarations) if (ts.isIdentifier(d.name)) set(d.name.text, file); }
+    else if (st.name && ts.isIdentifier(st.name)) set(st.name.text, file);
+  }
+  return map;
+}
+
+/**
+ * A `composition` source: the candidate's code only arranges declared stock parts.
+ * - each part is a pinned registry slot, verbatim (no recorded adaptations) and
+ *   strict-clean, and `files` names exactly the vendored reference paths its pin
+ *   maps, additional source parts included (REF-COMP-PART);
+ * - every UI import resolves (through the component layer's barrel or its `@/`
+ *   alias) to a declared part's file, AST-identical to that part's pinned copy
+ *   (zero ref-verbatim hunks of any class); any other import fails (REF-COMP-IMPORT);
+ * - every declared part is imported (REF-COMP-UNUSED), and the slot's `uses`
+ *   equal the declared parts (REF-COMP-USES);
+ * - the ds-only markup rule (section form) holds: no styled raw element (REF-COMP-MARKUP);
+ * - no lineage ref points into Foundry's package folders (REF-SELF-CITE).
+ */
+function checkComposition(root, slot, candidate, options = {}) {
+  const opts = defaults(options);
+  const element = candidate.name ?? "unknown";
+  const key = `${slot}/${element}@v1`;
+  const findings = [];
+  const files = [];
+  const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
+  const source = candidate.meta?.source ?? {};
+  const payload = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
+  if (Object.values(payload).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
+  const hash = treeHash(Object.entries(payload).map(([path, content]) => ({ path, sha256: sha256(content) })));
+  const result = () => ({ key, slot, element, version: 1, status: findings.length ? "fail" : "pass", files, findings, hash, ref: "composition" });
+
+  for (const ref of Array.isArray(source.ref) ? source.ref : []) if (selfCitation(ref)) findings.push(selfCiteFinding(key, ref));
+  if (candidate.meta?.refVerbatim !== undefined) fail("REF-ADAPTATION", "a composition records no refVerbatim mappings or adaptations: its code is checked against its parts");
+
+  // Code: payload code files, plus code embedded in a registry JSON payload; a path-only entry must name a payload file.
+  const code = new Map(Object.entries(payload).filter(([path]) => isCode(path)));
+  for (const [path, text] of Object.entries(payload).filter(([path]) => path.endsWith(".json"))) {
+    let value;
+    try { value = JSON.parse(text); } catch { continue; }
+    if (!Array.isArray(value?.files)) continue;
+    for (const entry of value.files) {
+      if (!isCode(entry?.path ?? "")) continue;
+      if (typeof entry.content !== "string") { if (!code.has(entry.path) || !Object.hasOwn(payload, entry.path)) fail("REF-NO-SOURCE", `embedded code ${entry.path} has no content and is not a payload file`, { file: path }); }
+      else if (code.has(entry.path)) { if (code.get(entry.path) !== entry.content) fail("REF-FILE-UNMAPPED", `embedded code ${entry.path} differs from the file of the same path`, { file: path }); }
+      else code.set(entry.path, entry.content);
+    }
+  }
+
+  const slotDirs = designerSlotDirs(root);
+  const parts = Array.isArray(source.parts) ? source.parts : [];
+  if (!parts.length) fail("REF-COMP-PART", "composition lineage needs parts: [{slot, files: [vendored reference paths]}]");
+  const declared = new Map();
+  for (const part of parts) {
+    if (!part || typeof part.slot !== "string" || !Array.isArray(part.files) || !part.files.length || part.files.some(file => typeof file !== "string")) { fail("REF-COMP-PART", "each part must be {slot, files: [vendored reference paths]}"); continue; }
+    if (declared.has(part.slot)) { fail("REF-COMP-PART", `${part.slot} is declared twice`); continue; }
+    const stock = stockPart(root, part.slot, slotDirs.get(part.slot), options);
+    if (stock.error) { fail("REF-COMP-PART", `${part.slot} ${stock.error}; a composition places only stock parts`); continue; }
+    if (!sameSet(part.files, stock.vendored)) { fail("REF-COMP-PART", `${part.slot} files ${JSON.stringify(part.files)} are not its pin's vendored reference paths ${JSON.stringify(stock.vendored)}`); continue; }
+    declared.set(part.slot, { ...stock, used: false });
+  }
+
+  const components = loadComponents(root, opts.components);
+  const layer = componentLayer(opts, components?.path);
+  const compared = new Map();
+  let owners;
+  const stockOwners = name => {
+    if (!owners) {
+      owners = new Map();
+      for (const [id, dir] of slotDirs) {
+        const { item } = pinnedCandidate(dir);
+        if (item?.meta?.source?.kind !== "registry") continue;
+        for (const file of item.files ?? []) if (isCode(file.path)) owners.set(basename(file.path), [...(owners.get(basename(file.path)) ?? []), id]);
+      }
+    }
+    return owners.get(name) ?? [];
+  };
+  const shown = path => (layer && path.startsWith(layer.dir) ? `${DS_COMPONENT_LAYER}/${path.slice(layer.dir.length + 1)}` : path);
+  const claim = (resolved, label, file) => {
+    if (typeof resolved !== "string" || resolved.startsWith("external:")) {
+      fail("REF-COMP-IMPORT", `${label} ${resolved === null ? "is exported ambiguously" : resolved ? `is re-exported from ${resolved.slice(9)}` : "does not resolve"} in the component layer; it is no declared part's vendored file`, { file });
+      return;
+    }
+    const name = basename(resolved);
+    const matches = [...declared].filter(([, part]) => part.codeFiles.some(entry => basename(entry.path) === name));
+    if (matches.length !== 1) {
+      const others = stockOwners(name);
+      fail("REF-COMP-IMPORT", matches.length ? `${label} resolves to ${shown(resolved)}, which ${matches.map(([id]) => id).join(" and ")} all ship; declare one` : `${label} resolves to ${shown(resolved)}, ${others.length ? `the vendored file of ${others.join(" / ")}, which is not a declared part` : "which is not a stock part's vendored file"}`, { file });
+      return;
+    }
+    const [id, part] = matches[0];
+    const pinned = part.codeFiles.find(entry => basename(entry.path) === name);
+    const at = `${id}:${resolved}`;
+    if (!compared.has(at)) {
+      let hunks;
+      try { hunks = diffSources(pinned.content, pinned.path, readFileSync(resolved, "utf8"), name).hunks.length; } catch (error) { hunks = error.message; }
+      compared.set(at, hunks);
+    }
+    const hunks = compared.get(at);
+    if (hunks !== 0) fail("REF-COMP-IMPORT", `${label} resolves to ${shown(resolved)}, which differs from ${id}'s pinned copy (${typeof hunks === "number" ? `${hunks} hunk(s)` : hunks})`, { file });
+    else part.used = true;
+  };
+
+  if (code.size && !layer) fail("REF-COMP-IMPORT", `no component layer package (${DS_COMPONENT_LAYER}) to resolve a composition's imports against`);
+  for (const [file, text] of [...code].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
+    const before = findings.length;
+    let events = [];
+    try { events = dsOnlyEvents(text, file, { kind: "section" }); } catch (error) { fail("REF-NORMALIZE", error.message, { file }); }
+    for (const event of events) {
+      if (event.type === "markup") { fail("REF-COMP-MARKUP", `<${event.tag} ${event.attr}>: styled raw markup is not composition; a composition renders only its stock parts`, { file }); continue; }
+      if (event.type === "dynamic") { fail("REF-COMP-IMPORT", `dynamic import ${event.specifier}: a composition imports only its declared parts`, { file }); continue; }
+      const { specifier, names } = event;
+      if (specifier.startsWith("./") || specifier.startsWith("../")) {
+        const local = posix.normalize(posix.join(posix.dirname(file), specifier));
+        if (![local, `${local}.tsx`, `${local}.ts`, `${local}/index.tsx`, `${local}/index.ts`].some(path => code.has(path))) fail("REF-COMP-IMPORT", `${specifier} is neither a declared part nor a file of this composition`, { file });
+        continue;
+      }
+      if (!layer) continue;
+      if (specifier === DS_COMPONENT_LAYER) {
+        for (const name of names) {
+          if (name === "*" || name === "default") { fail("REF-COMP-IMPORT", `${name === "*" ? "a namespace import" : "a default import"} of ${DS_COMPONENT_LAYER} does not name the parts it places`, { file }); continue; }
+          claim(moduleExports(layer.entry, layer.exports).get(name), `${name} from ${DS_COMPONENT_LAYER}`, file);
+        }
+        continue;
+      }
+      if (specifier.startsWith("@/") && layer.aliasRoot) {
+        claim(resolveModuleFile(join(layer.aliasRoot, specifier.slice(2))), specifier, file);
+        continue;
+      }
+      fail("REF-COMP-IMPORT", `${specifier} is not a declared stock part; a composition imports only parts of ${DS_COMPONENT_LAYER}`, { file });
+    }
+    const codes = [...new Set(findings.slice(before).map(f => f.code))];
+    files.push({ file, mapping: "composition", hunks: [], codes, status: codes.length ? "fail" : "pass" });
+  }
+  for (const [id, part] of declared) if (!part.used) fail("REF-COMP-UNUSED", `${id} is a declared part, but no import resolves to its vendored files`);
+
+  const doc = options.slotDoc ?? (slotDirs.get(slot) ? json(join(slotDirs.get(slot), "slot.json")) : undefined);
+  const partSlots = parts.filter(part => typeof part?.slot === "string").map(part => part.slot);
+  if (!doc) fail("REF-COMP-USES", `${slot} has no slot.json whose uses could match the declared parts`);
+  else if (!Array.isArray(doc.uses) || !sameSet(doc.uses, partSlots)) fail("REF-COMP-USES", `slot.json uses ${JSON.stringify(doc.uses ?? [])} must equal the declared parts ${JSON.stringify([...partSlots].sort())}`);
+  return result();
 }
 
 /** The pin gate: strict findings for one element version (an empty array means it may be pinned). */
@@ -878,10 +1174,11 @@ export function refVerbatimReport(root, { all = false, ...options } = {}) {
       const pinPath = join(child, "pin.json");
       if (existsSync(pinPath)) {
         const pin = json(pinPath);
-        const slot = json(join(child, "slot.json")).id;
+        const slotDoc = json(join(child, "slot.json"));
+        const slot = slotDoc.id;
         if (!/^[a-z0-9][a-z0-9.-]*-v[1-9][0-9]*\.json$/.test(pin.candidate ?? "")) throw new Error(`invalid Designer pin candidate in ${slot}`);
         const bytes = readFileSync(join(child, "candidates", pin.candidate));
-        const checked = checkRegistryItem(root, slot, JSON.parse(bytes.toString("utf8")), { ...options, strict: true });
+        const checked = checkRegistryItem(root, slot, JSON.parse(bytes.toString("utf8")), { ...options, strict: true, slotDoc });
         if (sha256(bytes) !== pin.sha256) checked.findings.push({ element: checked.key, code: "REF-NO-SOURCE", detail: "slot pin sha256 does not match candidate bytes" });
         if (checked.findings.length) checked.status = "fail";
         elements.push(checked);

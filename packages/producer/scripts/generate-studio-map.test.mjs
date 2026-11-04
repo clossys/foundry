@@ -401,10 +401,14 @@ async function editCandidate(options, id, edit) {
 test('a slot with no pin, a tampered candidate, or an item with no trusted reference fails closed', async t => {
   const options = await fixture(t);
   const slot = await pinnedDesignerSlot(options, 'sections.studio.history');
-  await replace(slot.candidate, '"kind": "derived"', '"kind": "original"');
+  await replace(slot.candidate, '"kind": "composition"', '"kind": "original"');
   await assert.rejects(run(options), /pin hash/);
   await editCandidate(options, 'sections.studio.history', item => { item.meta.source = { kind: 'original', ref: [] }; });
   await assert.rejects(run(options), /trusted reference/);
+  await editCandidate(options, 'sections.studio.history', item => { item.meta.source = { kind: 'composition', ref: [], parts: [] }; });
+  await assert.rejects(run(options), /must declare its stock parts/);
+  await editCandidate(options, 'sections.studio.history', item => { item.meta.source = { kind: 'composition', ref: [], parts: [{ slot: 'sections.studio.home', files: ['index.tsx'] }] }; });
+  await assert.rejects(run(options), /not pinned with registry \(stock\) lineage/);
   await rm(join(slot.dir, 'pin.json'));
   await assert.rejects(run(options), /no pin/);
 });

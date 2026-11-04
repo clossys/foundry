@@ -67,7 +67,8 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   it("declares five allowed kinds and four hunk failure codes", () => {
     expect(ALLOWED).toEqual(["H-IMPORT", "H-TOKEN", "H-DATA", "H-PROPS", "H-LINK"]);
     expect(HUNK_CODES).toEqual(["REF-HUNK-CLASS", "REF-HUNK-STRUCTURE", "REF-HUNK-LOGIC", "REF-HUNK-TEXT"]);
-    expect(CODES).toHaveLength(13);
+    expect(CODES).toHaveLength(19);
+    expect(CODES).toEqual(expect.arrayContaining(["REF-SELF-CITE", "REF-COMP-PART", "REF-COMP-IMPORT", "REF-COMP-UNUSED", "REF-COMP-MARKUP", "REF-COMP-USES"]));
     expect(CODES).toEqual(expect.arrayContaining(HUNK_CODES));
   });
 
@@ -726,5 +727,71 @@ describe("finite data-fit and additional source parts", () => {
     expect(gate(make([part]), "frames.example/example/v1")).toEqual([]);
     expect(gate(make([{ ...part, hash: `sha256:${"0".repeat(64)}` }]), "frames.example/example/v1")).toContain("REF-NOT-VENDORED");
     expect(gate(make([part, part]), "frames.example/example/v1")).toContain("REF-FILE-UNMAPPED");
+  });
+});
+
+describe("composition lineage (W6)", () => {
+  const ui = (name: string) => read(`ui/src/components/ui/${name}.tsx`);
+  const vendored = (name: string) => `registry/aria-nova/ui/${name}.tsx`;
+  const writeSlot = (root: string, id: string, item: unknown, uses?: string[]) => {
+    const dir = join(root, "agents/designer", id);
+    mkdirSync(join(dir, "candidates"), { recursive: true });
+    writeFileSync(join(dir, "slot.json"), JSON.stringify(uses ? { id, uses } : { id }));
+    const bytes = JSON.stringify(item);
+    writeFileSync(join(dir, "candidates/item-v1.json"), bytes);
+    writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: "item-v1.json", sha256: sha(bytes) }));
+  };
+  const stockItem = (name: string, patch: Record<string, unknown> = {}) => ({ name, type: "registry:ui", files: [{ path: `${name}.tsx`, content: ui(name) }], meta: {
+    source: { kind: "registry", ref: [`shadcn-aria/${name}@4.23.0`] }, refVerbatim: { files: { [`${name}.tsx`]: vendored(name) } }, ...patch,
+  } });
+  const part = (name: string) => ({ slot: `components.${name}`, files: [vendored(name)] });
+  const SECTION = 'import { Badge, Card, CardContent } from "@clossys/designer-ui"\n\nexport function Checks({ items }: { items: readonly string[] }) {\n  return (\n    <Card>\n      <CardContent className="flex gap-2">{items.map((item) => <Badge key={item}>{item}</Badge>)}</CardContent>\n    </Card>\n  )\n}\n';
+  const composed = (content: string, parts = [part("badge"), part("card")], ref: string[] = []) => ({ name: "checks", type: "registry:block", files: [{ path: "index.tsx", content }], meta: { source: { kind: "composition", ref, parts } } });
+  const setup = () => {
+    const root = consumer([]);
+    for (const name of ["badge", "card", "button", "table"]) writeSlot(root, `components.${name}`, stockItem(name));
+    return root;
+  };
+  const check = (root: string, item: unknown, uses = ["components.badge", "components.card"]) => {
+    writeSlot(root, "sections.checks", item, uses);
+    return codes(checkRegistryItem(root, "sections.checks", item, { strict: true }).findings);
+  };
+
+  it("passes a composition whose every import resolves to a declared, pinned, verbatim stock part", () => {
+    const root = setup();
+    expect(check(root, composed(SECTION))).toEqual([]);
+    expect(refVerbatimReport(root).findings).toEqual([]);
+  });
+  it("fails an undeclared import, even of another pinned stock part", () => {
+    const text = SECTION.replace("Badge, Card, CardContent", "Badge, Button, Card, CardContent").replace("</CardContent>", "</CardContent>\n      <Button>Open</Button>");
+    expect(check(setup(), composed(text))).toEqual(["REF-COMP-IMPORT"]);
+    expect(check(setup(), composed(SECTION.replace('from "@clossys/designer-ui"', 'from "@clossys/designer-ui"\nimport { cn } from "@/lib/utils"')))).toEqual(["REF-COMP-IMPORT"]);
+  });
+  it("fails a declared part that no import resolves to", () => {
+    const parts = [part("badge"), part("card"), part("table")];
+    expect(check(setup(), composed(SECTION, parts), ["components.badge", "components.card", "components.table"])).toEqual(["REF-COMP-UNUSED"]);
+  });
+  it("fails styled raw markup: a composition renders only its parts", () => {
+    expect(check(setup(), composed(SECTION.replace("<Card>", '<Card>\n      <div className="grid gap-4" />')))).toEqual(["REF-COMP-MARKUP"]);
+    expect(check(setup(), composed(SECTION.replace("<Card>", "<Card>\n      <span style={{ color: \"red\" }} />")))).toEqual(["REF-COMP-MARKUP"]);
+  });
+  it("fails self-citation of Foundry's own package folders, for every lineage kind", () => {
+    expect(check(setup(), composed(SECTION, undefined, ['{"path":"packages/designer/ui/src/components/ui/card.tsx"}']))).toEqual(["REF-SELF-CITE"]);
+    const root = setup();
+    const derived = { ...stockItem("badge"), meta: { source: { kind: "derived", ref: ["foundry/badge"] } } };
+    expect(codes(checkRegistryItem(root, "components.badge", derived, { strict: true }).findings)).toContain("REF-SELF-CITE");
+  });
+  it("fails a part that is not pinned stock: derived lineage, unpinned, adapted or a failing pin", () => {
+    const root = setup();
+    writeSlot(root, "components.card", { ...stockItem("card"), meta: { source: { kind: "derived", ref: ['{"registry":"shadcn-aria","item":"card"}'] } } });
+    expect(check(root, composed(SECTION))).toEqual(["REF-COMP-IMPORT", "REF-COMP-PART"]);
+    const drifted = setup();
+    writeSlot(drifted, "components.card", { ...stockItem("card"), files: [{ path: "card.tsx", content: ui("card").replace("rounded-xl", "rounded-xl shadow-2xl") }] });
+    expect(check(drifted, composed(SECTION))).toContain("REF-COMP-PART");
+    expect(check(setup(), composed(SECTION, [part("badge"), { slot: "components.card", files: ["registry/aria-nova/ui/table.tsx"] }]))).toContain("REF-COMP-PART");
+    expect(check(setup(), composed(SECTION, [part("badge"), part("card"), { slot: "components.missing", files: [vendored("missing")] }]), ["components.badge", "components.card", "components.missing"])).toContain("REF-COMP-PART");
+  });
+  it("checks slot.json uses against the declared parts", () => {
+    expect(check(setup(), composed(SECTION), ["components.badge"])).toEqual(["REF-COMP-USES"]);
   });
 });

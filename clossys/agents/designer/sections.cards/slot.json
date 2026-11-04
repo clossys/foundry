@@ -300,7 +300,7 @@
     "components.semantic-content"
   ],
   "notNeeded": {
-    "reason": "no approved-registry source; composition lineage pending (W6). The only direct item, shadcn/card@4.23.0, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF); no registry:block or registry:example; candidate v1 fails ref-verbatim. shadcn-app/card-example fails REF-FLAVOR (unstyled).",
+    "reason": "no approved-registry source; W6 composition check (strict, cards-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 9 styled raw element attribute(s); imports outside the stock parts: @/components/ui/semantic-content (absent from the component layer). The only direct item, shadcn/card@4.23.0, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF); no registry:block or registry:example; candidate v1 fails ref-verbatim. shadcn-app/card-example fails REF-FLAVOR (unstyled).",
     "since": "2026-11-03"
   }
 }

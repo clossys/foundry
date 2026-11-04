@@ -121,11 +121,22 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
 
 export function validateSource(value: unknown, path: string): SlotModelIssue[] {
   const fail = (message: string): SlotModelIssue[] => [{ code: "candidate-source", path, message }];
-  if (!object(value)) return fail("source must be {kind, ref, hash?, license?}");
-  for (const key of Object.keys(value)) if (!["kind", "ref", "hash", "license"].includes(key)) return fail(`source has unknown key ${key}`);
-  if (!SOURCE_KINDS.includes(value.kind as SourceDoc["kind"])) return fail("source.kind must be registry, derived or original");
+  if (!object(value)) return fail("source must be {kind, ref, parts?, hash?, license?}");
+  for (const key of Object.keys(value)) if (!["kind", "ref", "parts", "hash", "license"].includes(key)) return fail(`source has unknown key ${key}`);
+  if (!SOURCE_KINDS.includes(value.kind as SourceDoc["kind"])) return fail("source.kind must be registry, derived, original or composition");
   if (!strings(value.ref)) return fail("source.ref must be a list");
-  if (value.kind !== "original" && value.ref.length === 0) return fail(`source.kind ${value.kind} needs at least one ref`);
+  if (value.kind === "composition") {
+    // A composition cites no reference of its own: its proof is the parts list, checked by ref-verbatim.
+    if (!Array.isArray(value.parts) || value.parts.length === 0) return fail("source.kind composition needs a non-empty parts list");
+    const seen = new Set<string>();
+    for (const part of value.parts) {
+      if (!object(part) || Object.keys(part).some(key => key !== "slot" && key !== "files")) return fail("each source part must be {slot, files}");
+      if (typeof part.slot !== "string" || !SLOT_ID.test(part.slot) || seen.has(part.slot)) return fail("each source part names one distinct slot id");
+      if (!strings(part.files) || part.files.length === 0 || part.files.some(file => !file)) return fail(`source part ${part.slot} needs its vendored reference paths`);
+      seen.add(part.slot);
+    }
+  } else if (value.parts !== undefined) return fail(`source.kind ${value.kind} takes no parts`);
+  else if (value.kind !== "original" && value.ref.length === 0) return fail(`source.kind ${value.kind} needs at least one ref`);
   if (value.hash !== undefined && typeof value.hash !== "string") return fail("source.hash must be a string");
   if (value.license !== undefined && typeof value.license !== "string") return fail("source.license must be a string");
   return [];

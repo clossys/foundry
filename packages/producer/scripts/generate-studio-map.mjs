@@ -154,7 +154,16 @@ function pinnedItem(clossysRoot, entries, slot) {
   if (candidate.sha256 !== pin.sha256) fail(`${slot} pin hash does not match its candidate`);
   const item = JSON.parse(candidate.bytes);
   const source = item.meta?.source;
-  if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${slot} must come from a trusted reference (source registry or derived with a ref)`);
+  if (source?.kind === 'composition') {
+    // A composition is trusted through its parts: each one a pinned registry (stock) slot. ref-verbatim proves the code only places them.
+    if (!Array.isArray(source.parts) || !source.parts.length) fail(`${slot} composition must declare its stock parts`);
+    for (const part of source.parts) {
+      const owner = entries.get(part?.slot);
+      if (!owner?.pin || !owner.candidates.includes(owner.pin.candidate)) fail(`${slot} composes ${part?.slot}, which is not a pinned Designer slot`);
+      const bytes = readCandidate(clossysRoot, 'designer', part.slot, owner.pin.candidate);
+      if (bytes.sha256 !== owner.pin.sha256 || JSON.parse(bytes.bytes).meta?.source?.kind !== 'registry') fail(`${slot} composes ${part.slot}, which is not pinned with registry (stock) lineage`);
+    }
+  } else if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${slot} must come from a trusted reference (source registry or derived with a ref, or a composition of stock parts)`);
   if (!nonEmpty(item.name) || !Array.isArray(item.files) || !item.files.length) fail(`${slot} candidate ${pin.candidate} carries no files`);
   const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
   if (!version) fail(`${slot} pins a non-element candidate ${pin.candidate}`);

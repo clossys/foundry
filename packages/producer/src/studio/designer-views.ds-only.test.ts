@@ -8,6 +8,7 @@ import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { listSlots, readCandidate, readSlot } from '../records/slots.js';
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from '../records/slot-model/index.js';
+import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS } from '@clossys/designer/ref-verbatim';
 
 /**
  * AMEND-1 ds-only check for every Studio section and frame the page records place: each folder
@@ -33,9 +34,9 @@ const FRAMES = join(STUDIO, 'frames');
 const folders = (root: string) => readdirSync(root, { withFileTypes: true }).filter(entry => entry.isDirectory()).map(entry => entry.name).sort();
 const FOLDERS = folders(VIEWS);
 const FRAME_FOLDERS = folders(FRAMES);
-const COMPONENT_LAYER = '@clossys/designer-ui';
+const COMPONENT_LAYER = DS_COMPONENT_LAYER;
+const FRAME_LANDMARKS = DS_FRAME_LANDMARKS;
 const FRAME_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react', '../../components/StudioProviders', '../../lib/studio-icons']);
-const FRAME_LANDMARKS = new Set(['header', 'main', 'aside']);
 const CLOSSYS = resolve(STUDIO, '../../../clossys');
 const REFERENCES = resolve(STUDIO, '../../designer/references/shadcn');
 
