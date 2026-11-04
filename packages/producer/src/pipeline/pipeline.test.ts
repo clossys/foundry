@@ -66,7 +66,7 @@ describe("derived graph", () => {
     expect(flags).toContain("--report");
     expect(flags).not.toContain("--install");
     expect(stepOptions(step("workspace.check"))!.find(option => option.flag === "--report")!.value).toBe(true);
-    expect(stepOptions(step("pin"))).toBeNull();
+    expect(stepOptions(step("pin"))!.map(option => option.flag)).toContain("--by");
   });
   it("reads an unassigned seat as open and the pin seat as owner-held", () => {
     const root = workspace();
@@ -89,9 +89,10 @@ describe("runner", () => {
   });
   it("refuses a pending step and a verb no step declares", async () => {
     const root = workspace();
-    const pin = await runPipeline(["pin"], root);
-    expect(pin.exitCode).toBe(2);
-    expect(pin.message).toMatch(/pending; it lands on claude\/pin-cli/);
+    const later = defineStep({ id: "later", kind: "plumb", actor: "code", stage: "operate", summary: "x", inputs: [], outputs: [], command: { cli: { verb: "later" }, entry: "src/cli/later.ts#runLater" }, checks: [], pending: { branch: "claude/later", change: "adds" } });
+    const pending = await runPipeline(["later"], root, [...STEPS, later]);
+    expect(pending.exitCode).toBe(2);
+    expect(pending.message).toMatch(/pending; it lands on claude\/later/);
     const without = await runPipeline(["check"], root, STEPS.filter(each => each.id !== "workspace.check"));
     expect([without.exitCode, without.message]).toEqual([2, "check: no pipeline step declares this command"]);
   });
@@ -103,7 +104,7 @@ describe("status", () => {
     expect(slotCounts(root).designer).toMatchObject({ slots: 2, candidates: 3, pinned: 1, notNeeded: 0, open: 1 });
     expect(slotCounts(root).writer).toMatchObject({ slots: 1, candidates: 0, pinned: 0, open: 1 });
     const status = pipelineStatus(root);
-    expect(status.steps.find(each => each.id === "pin")!.state).toBe("pending");
+    expect(status.steps.find(each => each.id === "pin")!.state).toBe("ready");
     expect(status.steps.every(each => each.checks.every(check => check.state !== "pass" as never))).toBe(true);
   });
   it("prints status and graph through the pipeline verb", async () => {
@@ -118,7 +119,8 @@ describe("status", () => {
 
 describe("port schemas", () => {
   it("validates pins and seats against their schemas", () => {
-    expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), pinnedBy: "owner:me", at: "2026-11-03T00:00:00Z" }))).toEqual([]);
+    expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), decidedBy: "owner:me", at: "2026-11-03T00:00:00Z" }))).toEqual([]);
+    expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), pinnedBy: "owner:me", at: "2026-11-03T00:00:00Z" })).length).toBeGreaterThan(0);
     expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "a.json" })).length).toBeGreaterThan(0);
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: null, human: null }))).toEqual([]);
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: { model: "m", tier: "max", promptFile: "p" }, human: null })).length).toBeGreaterThan(0);

@@ -25,9 +25,9 @@ export const CLI_STEPS = [
   }),
   defineStep({
     id: "designer.compile", kind: "plumb", actor: "code", stage: "compile",
-    summary: "Compile Designer cells into the agent's compiled projection.",
-    inputs: agentInputs("designer"), outputs: ["clossys/agents/designer/compiled/**"],
-    command: { cli: { verb: "design" }, entry: "src/cli/design.ts#runDesign", module: "src/server/cells.ts#compileAgentCells" }, checks: ["workspace"],
+    summary: "Print the pinned Designer projection (read-only; written only to --out).",
+    inputs: agentInputs("designer"), outputs: ["arg:--out"],
+    command: { cli: { verb: "design" }, entry: "src/cli/design.ts#runDesign" }, checks: ["workspace"],
   }),
   defineStep({
     id: "writer.brief", kind: "plumb", actor: "code", stage: "derive",
@@ -43,9 +43,9 @@ export const CLI_STEPS = [
   }),
   defineStep({
     id: "writer.compile", kind: "plumb", actor: "code", stage: "compile",
-    summary: "Compile Writer cells into the agent's compiled projection.",
-    inputs: agentInputs("writer"), outputs: ["clossys/agents/writer/compiled/**"],
-    command: { cli: { verb: "write" }, entry: "src/cli/write.ts#runWrite", module: "src/server/cells.ts#compileAgentCells" }, checks: ["workspace"],
+    summary: "Print the pinned Writer projection (read-only; written only to --out).",
+    inputs: agentInputs("writer"), outputs: ["arg:--out"],
+    command: { cli: { verb: "write" }, entry: "src/cli/write.ts#runWrite" }, checks: ["workspace"],
   }),
   defineStep({
     id: "workspace.check", kind: "plumb", actor: "code", stage: "check",
@@ -59,14 +59,19 @@ export const CLI_STEPS = [
     summary: "Compile the Studio from decision files only into the compile lock.",
     inputs: ["clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*", "clossys/agents/*/*/slot.json"],
     outputs: [{ glob: "pkg:studio/compile.lock.json", schema: "compile-lock" }],
-    command: { cli: { verb: "compile" }, entry: "src/cli/compile.ts#runCompile" }, checks: ["compile-pure"],
-    pending: { branch: "claude/compile-pure", change: "adds" },
+    command: { cli: { verb: "compile", parser: "src/cli/compile.ts" }, entry: "src/cli/compile.ts#runCompileCli" }, checks: ["compile-pure"],
+  }),
+  defineStep({
+    id: "decisions", kind: "plumb", actor: "code", stage: "check",
+    summary: "List every slot's decision state: pinned, not needed or open (read-only).",
+    inputs: ["clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json"], outputs: [],
+    command: { cli: { verb: "decisions", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runDecisionsCli" }, checks: ["decisions"],
   }),
   defineStep({
     id: "studio.produce", kind: "plumb", actor: "code", stage: "operate",
-    summary: "Compile Designer and Writer, then serve the local Studio.",
-    inputs: ["clossys/agents/designer/compiled/**", "clossys/agents/writer/compiled/**"], outputs: [],
-    command: { cli: { verb: "produce" }, entry: "src/cli/produce.ts#runProduce", steps: ["designer.compile", "writer.compile"] }, checks: ["studio-p0"],
+    summary: "Serve the local Studio over the live slot model (no compile step).",
+    inputs: ["clossys/agents/*/ia.json", "clossys/agents/*/*/slot.json", "clossys/agents/*/*/pin.json", "clossys/agents/*/*/candidates/*"], outputs: [],
+    command: { cli: { verb: "produce" }, entry: "src/cli/produce.ts#runProduce" }, checks: ["studio-p0"],
   }),
   defineStep({
     id: "publish.install", kind: "plumb", actor: "code", stage: "compile",
@@ -77,9 +82,9 @@ export const CLI_STEPS = [
   }),
   defineStep({
     id: "publish.page", kind: "plumb", actor: "code", stage: "compile",
-    summary: "Bare publish: not implemented in this build.",
-    inputs: [], outputs: [],
-    command: { cli: { verb: "publish" }, entry: "src/pipeline/handlers.ts#runNotImplemented" }, checks: [],
+    summary: "Bare publish: dry-run check of every pinned page against pinned Designer slots and Writer copy (read-only).",
+    inputs: ["clossys/agents/publisher/*/pin.json", "clossys/agents/publisher/*/candidates/*", "clossys/agents/designer/*/pin.json", "clossys/agents/writer/*/pin.json"], outputs: [],
+    command: { cli: { verb: "publish" }, entry: "src/cli/publish.ts#runPublishCheck" }, checks: ["workspace"],
   }),
   defineStep({
     id: "specimen", kind: "plumb", actor: "code", stage: "capture",
@@ -89,10 +94,9 @@ export const CLI_STEPS = [
   }),
   defineStep({
     id: "migrate", kind: "plumb", actor: "code", stage: "derive",
-    summary: "Legacy: migrate cell trees into flat slot folders.",
-    inputs: ["clossys/agents/*/ia.json"], outputs: [],
+    summary: "One-shot codemod: migrate copy keys to port ids (--check reports only).",
+    inputs: ["clossys/agents/*/*/candidates/*"], outputs: [],
     command: { cli: { verb: "migrate", parser: "src/cli/migrate.ts" }, entry: "src/cli/migrate.ts#runMigrateCli" }, checks: ["workspace"],
-    pending: { branch: "claude/w3-cli-flat-slots", change: "removes" },
   }),
   defineStep({
     id: "pipeline", kind: "plumb", actor: "code", stage: "operate",

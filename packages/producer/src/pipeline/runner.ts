@@ -3,7 +3,6 @@ import { CliUsageError, parseArgs, USAGE, VERBS } from "../cli/args.js";
 import type { CliArgs } from "../cli/args.js";
 import type { CliResult } from "../cli/main.js";
 import { discoverRoot } from "../cli/root.js";
-import type { CompileResult } from "../server/cells.js";
 import type { Step } from "./define.js";
 import { HANDLERS, MODULE_HANDLERS } from "./handlers.js";
 import type { StepContext } from "./handlers.js";
@@ -34,7 +33,7 @@ async function dispatch(step: Step, context: Omit<StepContext, "step">, steps: r
   if (step.pending?.change === "adds") return pendingRefusal(step);
   const handler = step.command.entry ? HANDLERS[step.command.entry] : undefined;
   if (!handler) return { exitCode: 2, message: `${step.id}: no handler is registered for ${step.command.entry ?? "this step"}` };
-  let composed: CompileResult[] | undefined;
+  let composed: unknown[] | undefined;
   if (step.command.steps) {
     composed = [];
     for (const id of step.command.steps) {

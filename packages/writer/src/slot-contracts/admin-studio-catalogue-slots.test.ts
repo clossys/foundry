@@ -4,8 +4,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { listSlots, readCandidate, readSlot } from "../../../producer/src/records/slots.js";
 import { parseFrontmatter, validateCandidate } from "../../../producer/src/records/slot-model/index.js";
-import { writerRecords } from "../../../producer/src/migrate/sources.js";
 import { recordSpecimenInput, slotGallery } from "../../../producer/src/server/slot-gallery.js";
+import { parseWriterSlotBody } from "../slot-body.js";
+
+/** Rows in source order through the canonical Writer slot-body parser (the legacy migrate reader is gone). */
+const writerRecords = (body: string, locales: readonly string[]) => parseWriterSlotBody(body, locales)
+  .map(({ locale, record: { context, text, ...meta }, bindings }) => ({ locale, key: context, meta: { ...meta, bindings } as Record<string, unknown>, text: text ?? "" }));
 
 const consumer = fileURLToPath(new URL("../../../../clossys/", import.meta.url));
 const sourcePath = "packages/writer/src/catalog/records/admin-studio.r1.en.json";
@@ -29,7 +33,7 @@ describe("Studio catalogue draft Writer specimens", () => {
       });
       expect(parsed.value.fields.locales).toEqual([catalogue.locale]);
       const expected = catalogue.records.filter((row: { leaf: string }) => row.leaf === slot);
-      const records = writerRecords(parsed.value.body);
+      const records = writerRecords(parsed.value.body, parsed.value.fields.locales as string[]);
       expect(records).toHaveLength(count);
       expect(records.map(row => ({ ...((row.meta.catalogue as { record: object }).record), text: row.text }))).toEqual(expected);
       expect(records.map(row => row.key)).toEqual(expected.map((row: { context: string }) => row.context));
@@ -53,7 +57,7 @@ describe("Studio catalogue draft Writer specimens", () => {
     const contract = readSlot(consumer, "writer", slot).contract;
     const parsed = parseFrontmatter(readCandidate(consumer, "writer", slot, candidate).bytes);
     if (!parsed.ok) throw new Error(parsed.message);
-    for (const row of writerRecords(parsed.value.body)) {
+    for (const row of writerRecords(parsed.value.body, parsed.value.fields.locales as string[])) {
       expect([...row.text].length).toBeLessThanOrEqual(Number(contract.maxChars));
       expect(row.text.trim().split(/\s+/).length).toBeLessThanOrEqual(Number(contract.maxWords));
     }

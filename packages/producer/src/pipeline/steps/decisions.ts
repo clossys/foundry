@@ -30,9 +30,8 @@ export const DECISION_STEPS = [
   defineStep({
     id: "rules", kind: "decide:judgment", actor: "owner", stage: "direct",
     summary: "Rule registry rows and gate yes/no.",
-    inputs: [], outputs: ["rules/registry.json"],
+    inputs: [], outputs: ["scripts/rules/registry.json"],
     command: { manual: "owner approves rule rows and gates" }, checks: ["rules"],
-    pending: { branch: "claude/w0-rule-registry", change: "adds" },
   }),
   defineStep({
     id: "selection", kind: "decide:judgment", actor: "owner", stage: "pin",
@@ -51,7 +50,7 @@ export const DECISION_STEPS = [
     summary: "Pin one candidate per L3 slot, or mark the slot not needed.",
     inputs: ["clossys/agents/*/*/candidates/*", "clossys/agents/*/*/slot.json"],
     outputs: [{ glob: "clossys/agents/*/*/pin.json", schema: "pin" }, { glob: "clossys/agents/*/*/slot.json#notNeeded" }],
-    command: { cli: { verb: "pin" }, entry: "src/cli/pin.ts#runPin" }, checks: ["decisions"],
-    pending: { branch: "claude/pin-cli", change: "adds" }, open: "slots-undecided",
+    command: { cli: { verb: "pin", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state"],
+    open: "slots-undecided",
   }),
 ];

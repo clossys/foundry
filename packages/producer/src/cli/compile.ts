@@ -9,7 +9,7 @@
 import { resolve } from "node:path";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
-import { discoverWorkspace } from "./migrate.js";
+import { discoverRoot } from "./root.js";
 
 export const COMPILE_USAGE = "Usage: clossys compile [--root <dir>] [--out <dir>] [--json]\n"
   + "  Render Studio from the decision files in decision-inputs.json only (deterministic, offline).\n"
@@ -32,7 +32,7 @@ export async function runCompileCli(argv: readonly string[], cwd: string): Promi
   }
   // Loaded on use: the generators import the built package and are not needed by other verbs.
   const { compileStudio } = await import("../../scripts/compile-studio.mjs");
-  const workspace = discoverWorkspace(resolve(cwd, root ?? "."));
+  const workspace = discoverRoot(resolve(cwd, root ?? "."));
   const result = await compileStudio({ root: workspace, ...(out ? { out: resolve(cwd, out) } : {}) });
   return {
     exitCode: 0,

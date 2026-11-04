@@ -102,7 +102,7 @@
       "inputs": [],
       "outputs": [
         {
-          "glob": "rules/registry.json"
+          "glob": "scripts/rules/registry.json"
         }
       ],
       "command": {
@@ -111,10 +111,6 @@
       "checks": [
         "rules"
       ],
-      "pending": {
-        "branch": "claude/w0-rule-registry",
-        "change": "adds"
-      },
       "seat": "clossys/agents/producer/rules/seat.json"
     },
     {
@@ -191,17 +187,15 @@
       ],
       "command": {
         "cli": {
-          "verb": "pin"
+          "verb": "pin",
+          "parser": "src/cli/pin.ts"
         },
-        "entry": "src/cli/pin.ts#runPin"
+        "entry": "src/cli/pin.ts#runPinCli"
       },
       "checks": [
-        "decisions"
+        "decisions",
+        "slot-state"
       ],
-      "pending": {
-        "branch": "claude/pin-cli",
-        "change": "adds"
-      },
       "open": "slots-undecided",
       "seat": "clossys/agents/producer/pin/seat.json"
     },
@@ -478,7 +472,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "compile",
-      "summary": "Compile Designer cells into the agent's compiled projection.",
+      "summary": "Print the pinned Designer projection (read-only; written only to --out).",
       "inputs": [
         {
           "glob": "clossys/agents/designer/*/pin.json"
@@ -492,15 +486,14 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/designer/compiled/**"
+          "glob": "arg:--out"
         }
       ],
       "command": {
         "cli": {
           "verb": "design"
         },
-        "entry": "src/cli/design.ts#runDesign",
-        "module": "src/server/cells.ts#compileAgentCells"
+        "entry": "src/cli/design.ts#runDesign"
       },
       "checks": [
         "workspace"
@@ -573,7 +566,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "compile",
-      "summary": "Compile Writer cells into the agent's compiled projection.",
+      "summary": "Print the pinned Writer projection (read-only; written only to --out).",
       "inputs": [
         {
           "glob": "clossys/agents/writer/*/pin.json"
@@ -587,15 +580,14 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/writer/compiled/**"
+          "glob": "arg:--out"
         }
       ],
       "command": {
         "cli": {
           "verb": "write"
         },
-        "entry": "src/cli/write.ts#runWrite",
-        "module": "src/server/cells.ts#compileAgentCells"
+        "entry": "src/cli/write.ts#runWrite"
       },
       "checks": [
         "workspace"
@@ -662,30 +654,59 @@
       ],
       "command": {
         "cli": {
-          "verb": "compile"
+          "verb": "compile",
+          "parser": "src/cli/compile.ts"
         },
-        "entry": "src/cli/compile.ts#runCompile"
+        "entry": "src/cli/compile.ts#runCompileCli"
       },
       "checks": [
         "compile-pure"
+      ]
+    },
+    {
+      "id": "decisions",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "check",
+      "summary": "List every slot's decision state: pinned, not needed or open (read-only).",
+      "inputs": [
+        {
+          "glob": "clossys/agents/*/*/slot.json"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json"
+        }
       ],
-      "pending": {
-        "branch": "claude/compile-pure",
-        "change": "adds"
-      }
+      "outputs": [],
+      "command": {
+        "cli": {
+          "verb": "decisions",
+          "parser": "src/cli/pin.ts"
+        },
+        "entry": "src/cli/pin.ts#runDecisionsCli"
+      },
+      "checks": [
+        "decisions"
+      ]
     },
     {
       "id": "studio.produce",
       "kind": "plumb",
       "actor": "code",
       "stage": "operate",
-      "summary": "Compile Designer and Writer, then serve the local Studio.",
+      "summary": "Serve the local Studio over the live slot model (no compile step).",
       "inputs": [
         {
-          "glob": "clossys/agents/designer/compiled/**"
+          "glob": "clossys/agents/*/ia.json"
         },
         {
-          "glob": "clossys/agents/writer/compiled/**"
+          "glob": "clossys/agents/*/*/slot.json"
+        },
+        {
+          "glob": "clossys/agents/*/*/pin.json"
+        },
+        {
+          "glob": "clossys/agents/*/*/candidates/*"
         }
       ],
       "outputs": [],
@@ -693,11 +714,7 @@
         "cli": {
           "verb": "produce"
         },
-        "entry": "src/cli/produce.ts#runProduce",
-        "steps": [
-          "designer.compile",
-          "writer.compile"
-        ]
+        "entry": "src/cli/produce.ts#runProduce"
       },
       "checks": [
         "studio-p0"
@@ -746,16 +763,31 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "compile",
-      "summary": "Bare publish: not implemented in this build.",
-      "inputs": [],
+      "summary": "Bare publish: dry-run check of every pinned page against pinned Designer slots and Writer copy (read-only).",
+      "inputs": [
+        {
+          "glob": "clossys/agents/publisher/*/pin.json"
+        },
+        {
+          "glob": "clossys/agents/publisher/*/candidates/*"
+        },
+        {
+          "glob": "clossys/agents/designer/*/pin.json"
+        },
+        {
+          "glob": "clossys/agents/writer/*/pin.json"
+        }
+      ],
       "outputs": [],
       "command": {
         "cli": {
           "verb": "publish"
         },
-        "entry": "src/pipeline/handlers.ts#runNotImplemented"
+        "entry": "src/cli/publish.ts#runPublishCheck"
       },
-      "checks": []
+      "checks": [
+        "workspace"
+      ]
     },
     {
       "id": "specimen",
@@ -792,10 +824,10 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "derive",
-      "summary": "Legacy: migrate cell trees into flat slot folders.",
+      "summary": "One-shot codemod: migrate copy keys to port ids (--check reports only).",
       "inputs": [
         {
-          "glob": "clossys/agents/*/ia.json"
+          "glob": "clossys/agents/*/*/candidates/*"
         }
       ],
       "outputs": [],
@@ -808,11 +840,7 @@
       },
       "checks": [
         "workspace"
-      ],
-      "pending": {
-        "branch": "claude/w3-cli-flat-slots",
-        "change": "removes"
-      }
+      ]
     },
     {
       "id": "pipeline",
@@ -1021,7 +1049,8 @@
         "no-page-jsx",
         "studio-template",
         "assemble-only",
-        "copy-source"
+        "copy-source",
+        "studio"
       ]
     },
     {
@@ -1046,11 +1075,7 @@
       },
       "checks": [
         "studio-capture"
-      ],
-      "pending": {
-        "branch": "claude/visual-harness",
-        "change": "adds"
-      }
+      ]
     }
   ],
   "edges": [
@@ -1130,25 +1155,25 @@
     },
     {
       "from": "ia",
-      "to": "studio.produce",
+      "to": "decisions",
       "via": [
         {
           "output": "clossys/agents/*/*/slot.json",
-          "input": "clossys/agents/designer/compiled/**"
-        },
-        {
-          "output": "clossys/agents/*/*/slot.json",
-          "input": "clossys/agents/writer/compiled/**"
+          "input": "clossys/agents/*/*/slot.json"
         }
       ]
     },
     {
       "from": "ia",
-      "to": "migrate",
+      "to": "studio.produce",
       "via": [
         {
           "output": "clossys/agents/*/ia.json",
           "input": "clossys/agents/*/ia.json"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json",
+          "input": "clossys/agents/*/*/slot.json"
         }
       ]
     },
@@ -1286,7 +1311,17 @@
       "via": [
         {
           "output": "clossys/agents/writer/*/candidates/*#status",
-          "input": "clossys/agents/writer/compiled/**"
+          "input": "clossys/agents/*/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "writer.approve",
+      "to": "migrate",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/candidates/*#status",
+          "input": "clossys/agents/*/*/candidates/*"
         }
       ]
     },
@@ -1510,23 +1545,29 @@
     },
     {
       "from": "pin",
+      "to": "decisions",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json"
+        },
+        {
+          "output": "clossys/agents/*/*/slot.json#notNeeded",
+          "input": "clossys/agents/*/*/slot.json"
+        }
+      ]
+    },
+    {
+      "from": "pin",
       "to": "studio.produce",
       "via": [
         {
           "output": "clossys/agents/*/*/pin.json",
-          "input": "clossys/agents/designer/compiled/**"
-        },
-        {
-          "output": "clossys/agents/*/*/pin.json",
-          "input": "clossys/agents/writer/compiled/**"
+          "input": "clossys/agents/*/*/pin.json"
         },
         {
           "output": "clossys/agents/*/*/slot.json#notNeeded",
-          "input": "clossys/agents/designer/compiled/**"
-        },
-        {
-          "output": "clossys/agents/*/*/slot.json#notNeeded",
-          "input": "clossys/agents/writer/compiled/**"
+          "input": "clossys/agents/*/*/slot.json"
         }
       ]
     },
@@ -1537,6 +1578,24 @@
         {
           "output": "clossys/agents/*/*/pin.json",
           "input": "clossys/agents/publisher/*/pin.json"
+        }
+      ]
+    },
+    {
+      "from": "pin",
+      "to": "publish.page",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/publisher/*/pin.json"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/designer/*/pin.json"
+        },
+        {
+          "output": "clossys/agents/*/*/pin.json",
+          "input": "clossys/agents/writer/*/pin.json"
         }
       ]
     },
@@ -1631,6 +1690,26 @@
     {
       "from": "director.candidates",
       "to": "compile",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/candidates/*",
+          "input": "clossys/agents/*/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "director.candidates",
+      "to": "studio.produce",
+      "via": [
+        {
+          "output": "clossys/agents/director/*/candidates/*",
+          "input": "clossys/agents/*/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "director.candidates",
+      "to": "migrate",
       "via": [
         {
           "output": "clossys/agents/director/*/candidates/*",
@@ -1764,7 +1843,17 @@
       "via": [
         {
           "output": "clossys/agents/designer/*/candidates/*",
-          "input": "clossys/agents/designer/compiled/**"
+          "input": "clossys/agents/*/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
+      "to": "migrate",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/*/*/candidates/*"
         }
       ]
     },
@@ -1884,7 +1973,17 @@
       "via": [
         {
           "output": "clossys/agents/writer/*/candidates/*",
-          "input": "clossys/agents/writer/compiled/**"
+          "input": "clossys/agents/*/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "writer.candidates",
+      "to": "migrate",
+      "via": [
+        {
+          "output": "clossys/agents/writer/*/candidates/*",
+          "input": "clossys/agents/*/*/candidates/*"
         }
       ]
     },
@@ -1950,11 +2049,41 @@
     },
     {
       "from": "publisher.candidates",
+      "to": "studio.produce",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/candidates/*",
+          "input": "clossys/agents/*/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
       "to": "publish.install",
       "via": [
         {
           "output": "clossys/agents/publisher/*/candidates/*",
           "input": "clossys/agents/publisher/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
+      "to": "publish.page",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/candidates/*",
+          "input": "clossys/agents/publisher/*/candidates/*"
+        }
+      ]
+    },
+    {
+      "from": "publisher.candidates",
+      "to": "migrate",
+      "via": [
+        {
+          "output": "clossys/agents/publisher/*/candidates/*",
+          "input": "clossys/agents/*/*/candidates/*"
         }
       ]
     },
@@ -2073,364 +2202,6 @@
       ]
     },
     {
-      "from": "designer.compile",
-      "to": "pin",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "designer.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/slot.json"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "writer.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "publisher.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "designer.library",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "designer.brief",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "designer.check",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "workspace.check",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "compile",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "studio.produce",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/designer/compiled/**"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "pipeline",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "derive.uses",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "designer.compile",
-      "to": "studio.map",
-      "via": [
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/designer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "writer.approve",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "pin",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "writer.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/slot.json"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "publisher.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "writer.brief",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "writer.check",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "workspace.check",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "compile",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "studio.produce",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/writer/compiled/**"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "pipeline",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "derive.uses",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
-      "from": "writer.compile",
-      "to": "studio.map",
-      "via": [
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/slot.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/pin.json"
-        },
-        {
-          "output": "clossys/agents/writer/compiled/**",
-          "input": "clossys/agents/*/*/candidates/*"
-        }
-      ]
-    },
-    {
       "from": "derive.uses",
       "to": "pin",
       "via": [
@@ -2502,15 +2273,21 @@
     },
     {
       "from": "derive.uses",
+      "to": "decisions",
+      "via": [
+        {
+          "output": "clossys/agents/*/*/slot.json#uses",
+          "input": "clossys/agents/*/*/slot.json"
+        }
+      ]
+    },
+    {
+      "from": "derive.uses",
       "to": "studio.produce",
       "via": [
         {
           "output": "clossys/agents/*/*/slot.json#uses",
-          "input": "clossys/agents/designer/compiled/**"
-        },
-        {
-          "output": "clossys/agents/*/*/slot.json#uses",
-          "input": "clossys/agents/writer/compiled/**"
+          "input": "clossys/agents/*/*/slot.json"
         }
       ]
     },
@@ -2690,8 +2467,41 @@
   },
   "options": {
     "cli": {
-      "pin": null,
+      "pin": [
+        {
+          "flag": "--at",
+          "value": null
+        },
+        {
+          "flag": "--by",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--not-needed",
+          "value": null
+        },
+        {
+          "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        }
+      ],
       "director.check": [
+        {
+          "flag": "--brief",
+          "value": false
+        },
         {
           "flag": "--check",
           "value": false
@@ -2703,6 +2513,10 @@
         {
           "flag": "--json",
           "value": false
+        },
+        {
+          "flag": "--out",
+          "value": true
         },
         {
           "flag": "--root",
@@ -2719,6 +2533,10 @@
           "value": false
         },
         {
+          "flag": "--out",
+          "value": true
+        },
+        {
           "flag": "--root",
           "value": true
         }
@@ -2731,6 +2549,10 @@
         {
           "flag": "--json",
           "value": false
+        },
+        {
+          "flag": "--out",
+          "value": true
         },
         {
           "flag": "--root",
@@ -2755,6 +2577,10 @@
           "value": false
         },
         {
+          "flag": "--out",
+          "value": true
+        },
+        {
           "flag": "--root",
           "value": true
         }
@@ -2769,6 +2595,10 @@
           "value": false
         },
         {
+          "flag": "--out",
+          "value": true
+        },
+        {
           "flag": "--root",
           "value": true
         }
@@ -2781,6 +2611,10 @@
         {
           "flag": "--json",
           "value": false
+        },
+        {
+          "flag": "--out",
+          "value": true
         },
         {
           "flag": "--root",
@@ -2803,6 +2637,10 @@
         {
           "flag": "--json",
           "value": false
+        },
+        {
+          "flag": "--out",
+          "value": true
         },
         {
           "flag": "--root",
@@ -2851,7 +2689,54 @@
           "value": false
         }
       ],
-      "compile": null,
+      "compile": [
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--out",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        }
+      ],
+      "decisions": [
+        {
+          "flag": "--at",
+          "value": null
+        },
+        {
+          "flag": "--by",
+          "value": null
+        },
+        {
+          "flag": "--help",
+          "value": null
+        },
+        {
+          "flag": "--json",
+          "value": null
+        },
+        {
+          "flag": "--not-needed",
+          "value": null
+        },
+        {
+          "flag": "--reason",
+          "value": null
+        },
+        {
+          "flag": "--root",
+          "value": null
+        }
+      ],
       "studio.produce": [
         {
           "flag": "--check",
@@ -3059,10 +2944,6 @@
       "migrate": [
         {
           "flag": "--check",
-          "value": null
-        },
-        {
-          "flag": "--compare",
           "value": null
         },
         {

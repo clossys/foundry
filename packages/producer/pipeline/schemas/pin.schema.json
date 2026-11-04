@@ -7,7 +7,7 @@
   "required": [
     "candidate",
     "sha256",
-    "pinnedBy",
+    "decidedBy",
     "at"
   ],
   "additionalProperties": false,
@@ -20,9 +20,9 @@
       "type": "string",
       "pattern": "^[a-f0-9]{64}$"
     },
-    "pinnedBy": {
+    "decidedBy": {
       "type": "string",
-      "pattern": "^(owner:.+|migration:SLOT-MODEL)$"
+      "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|migrated)$"
     },
     "at": {
       "type": "string",

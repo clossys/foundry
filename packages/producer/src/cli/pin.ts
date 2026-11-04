@@ -12,7 +12,7 @@ import { listSlots, readSlotEntry } from "../records/slots.js";
 import { writeNotNeeded, writePin } from "../records/slot-write.js";
 import { CliUsageError } from "./args.js";
 import type { CliResult } from "./main.js";
-import { discoverWorkspace } from "./migrate.js";
+import { discoverRoot } from "./root.js";
 
 export const PIN_USAGE = "Usage: clossys pin <agent>/<slot> <candidate-id> [--by <who>] [--at <iso timestamp>] [--root <dir>] [--json]\n"
   + "       clossys pin <agent>/<slot> --not-needed --reason <text> [--by <who>] [--at <iso>] [--root <dir>] [--json]\n"
@@ -57,7 +57,7 @@ function parse(argv: readonly string[], usage: string): Flags {
 }
 
 function consumerOf(cwd: string, root: string | undefined): string {
-  return join(discoverWorkspace(resolve(cwd, root ?? ".")), "clossys");
+  return join(discoverRoot(resolve(cwd, root ?? ".")), "clossys");
 }
 
 /** Resolve a candidate id to its file name, or undefined when the slot has no such candidate. */

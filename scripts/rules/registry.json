@@ -373,12 +373,20 @@
         "quote": "process driven by code and identifiers so that we decide which candidate goes in which slot",
         "date": "2026-11-03"
       },
-      "status": "pending-wire",
-      "pending_wire": {
-        "check": "check:decisions",
-        "branch": "claude/pin-cli"
-      },
-      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; the check is built on claude/pin-cli."
+      "status": "enforced",
+      "checks": [
+        ".#check:decisions"
+      ],
+      "fixture": "scripts/rules/fixtures/R-DECISIONS-BY-CLI",
+      "fixture_runs": [
+        {
+          "check": ".#check:decisions",
+          "cwd": ".",
+          "run": "node scripts/check-decisions.mjs --repo {fixture}",
+          "expect": "\\[pin-shape\\] missing decidedBy"
+        }
+      ],
+      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape)."
     }
   ],
   "exemptions": [

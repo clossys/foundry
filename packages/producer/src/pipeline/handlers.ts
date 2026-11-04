@@ -1,17 +1,16 @@
-import { resolveAgent } from "../agents.js";
 import type { CliArgs } from "../cli/args.js";
 import { runCheck } from "../cli/check.js";
+import { runCompileCli } from "../cli/compile.js";
 import { runDesign } from "../cli/design.js";
 import { runDirect } from "../cli/direct.js";
 import type { CliResult } from "../cli/main.js";
 import { runMigrateCli } from "../cli/migrate.js";
+import { runDecisionsCli, runPinCli } from "../cli/pin.js";
 import { runPipelineCli } from "../cli/pipeline.js";
 import { runProduce } from "../cli/produce.js";
-import { runPublish } from "../cli/publish.js";
+import { runPublish, runPublishCheck } from "../cli/publish.js";
 import { runSpecimenCli } from "../cli/specimen.js";
 import { runWrite } from "../cli/write.js";
-import { compileAgentCells } from "../server/cells.js";
-import type { CompileResult } from "../server/cells.js";
 import type { Step } from "./define.js";
 
 /**
@@ -27,43 +26,31 @@ export interface StepContext {
   readonly cwd: string;
   /** The workspace root, discovered on first use. */
   readonly root: () => string;
-  readonly composed?: readonly CompileResult[];
+  readonly composed?: readonly unknown[];
 }
 export type Handler = (context: StepContext) => Promise<CliResult>;
-export type ModuleHandler = (context: StepContext) => Promise<CompileResult>;
+export type ModuleHandler = (context: StepContext) => Promise<unknown>;
 
 const shared = (context: StepContext): CliArgs => {
   if (!context.args) throw new Error(`${context.step.id}: expected parsed arguments`);
   return context.args;
 };
 
-/** Bare `clossys publish` (no --install): the agent must resolve, then the step reports it is not built. */
-export async function runNotImplemented(context: StepContext): Promise<CliResult> {
-  const args = shared(context);
-  const root = context.root();
-  resolveAgent("publisher");
-  return { exitCode: 2, message: `${args.verb}: not implemented in this build`, verb: args.verb, root, check: args.check };
-}
-
 export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/direct.ts#runDirect": async context => runDirect(shared(context), context.root()),
   "src/cli/design.ts#runDesign": async context => runDesign(shared(context), context.root()),
   "src/cli/write.ts#runWrite": async context => runWrite(shared(context), context.root()),
   "src/cli/check.ts#runCheck": async context => runCheck(shared(context), context.cwd),
-  "src/cli/produce.ts#runProduce": async context => runProduce(shared(context), context.root(), context.composed),
+  "src/cli/produce.ts#runProduce": async context => runProduce(shared(context), context.root()),
   "src/cli/publish.ts#runPublish": async context => runPublish(shared(context), context.root(), context.cwd),
-  "src/pipeline/handlers.ts#runNotImplemented": runNotImplemented,
+  "src/cli/publish.ts#runPublishCheck": async context => runPublishCheck(shared(context), context.root()),
+  "src/cli/compile.ts#runCompileCli": async context => runCompileCli(context.argv, context.cwd),
+  "src/cli/pin.ts#runPinCli": async context => runPinCli(context.argv, context.cwd),
+  "src/cli/pin.ts#runDecisionsCli": async context => runDecisionsCli(context.argv, context.cwd),
   "src/cli/specimen.ts#runSpecimenCli": async context => runSpecimenCli(context.argv, context.cwd),
   "src/cli/migrate.ts#runMigrateCli": async context => runMigrateCli(context.argv, context.cwd),
   "src/cli/pipeline.ts#runPipelineCli": async context => runPipelineCli(context.argv, context.cwd),
 };
 
-const compileAgent = (step: Step): "designer" | "writer" => {
-  const agent = step.id.split(".")[0];
-  if (agent !== "designer" && agent !== "writer") throw new Error(`${step.id}: compileAgentCells compiles designer or writer`);
-  return agent;
-};
-
-export const MODULE_HANDLERS: Readonly<Record<string, ModuleHandler>> = {
-  "src/server/cells.ts#compileAgentCells": async context => compileAgentCells(context.root(), compileAgent(context.step), context.args?.check ?? false),
-};
+/** Modules a composed step runs (command.steps). No step composes modules in this build. */
+export const MODULE_HANDLERS: Readonly<Record<string, ModuleHandler>> = {};
