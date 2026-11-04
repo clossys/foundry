@@ -66,7 +66,8 @@ function report() {
     for (const { step, output } of unscanned) console.log(`INFO ${step}: ${output} has no file-name marker; its writers are found through the step's other outputs`);
     console.log(failures.length ? `check:pipeline FAIL (${failures.length} findings, ${pending.length} pending)` : `check:pipeline PASS (${steps.length} steps, ${summary.pendingSteps.length} pending, ${pending.length} pending notes, ${open.length} open)`);
   }
-  process.exit(failures.length ? 1 : 0);
+  // exitCode, not exit(): exit() can cut piped stdout at the 64 KiB pipe buffer.
+  process.exitCode = failures.length ? 1 : 0;
 }
 let steps = [];
 let verbCache;
