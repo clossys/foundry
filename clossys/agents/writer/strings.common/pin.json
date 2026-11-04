@@ -2,5 +2,6 @@
   "candidate": "studio-v11.md",
   "sha256": "1be2d29db6ef3aefa877eaa11787e1e1807478394f6057754e7ce525568eb85d",
   "decidedBy": "planner:SYSTEMS-IA",
+  "basis": "planner",
   "at": "2026-11-04T09:30:59.787Z"
 }

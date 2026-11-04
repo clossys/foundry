@@ -2,5 +2,6 @@
   "candidate": "page-v2.json",
   "sha256": "ee624076c98c7fbd775394745049877304a50772e34faac88249e7359388a3cb",
   "decidedBy": "planner:SYSTEMS-IA",
+  "basis": "planner",
   "at": "2026-11-04T08:30:23.928Z"
 }

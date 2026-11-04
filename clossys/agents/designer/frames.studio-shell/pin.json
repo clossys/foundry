@@ -2,5 +2,6 @@
   "candidate": "studio-shell-v12.json",
   "sha256": "2d26ba356a0ff82169bb4c7c2ff35545e9d03841a6cd3bf68c444d8994521506",
   "decidedBy": "planner:SYSTEMS-IA",
+  "basis": "planner",
   "at": "2026-11-04T08:08:08.067Z"
 }

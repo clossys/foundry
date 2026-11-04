@@ -2,5 +2,6 @@
   "candidate": "producer-team-strip-v1.json",
   "sha256": "f30b003e93a38409db438f9145df77b2475f7c635db69db2bfbfaea08cebded9",
   "decidedBy": "planner:SYSTEMS-IA",
+  "basis": "planner",
   "at": "2026-11-04T07:58:28.405Z"
 }
