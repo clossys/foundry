@@ -1,0 +1,4 @@
+{
+  "//": "By-design exemptions for scripts/check-orphan-checks.mjs: a governed check or test file that root `check` and `test` never reach on purpose. Only real one-offs (a migrator, a one-shot importer) belong here, each with a one-line reason. A listed file that becomes reachable fails as stale.",
+  "exemptions": []
+}
