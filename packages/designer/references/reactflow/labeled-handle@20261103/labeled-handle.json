@@ -1,0 +1,21 @@
+{
+  "name": "labeled-handle",
+  "type": "registry:component",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "devDependencies": [],
+  "registryDependencies": [
+    "https://ui.reactflow.dev/base-handle"
+  ],
+  "files": [
+    {
+      "type": "registry:component",
+      "path": "labeled-handle.tsx",
+      "content": "import React, { type ComponentProps } from \"react\";\nimport { type HandleProps } from \"@xyflow/react\";\n\nimport { cn } from \"@/lib/utils\";\nimport { BaseHandle } from \"@/registry/components/base-handle\";\n\nconst flexDirections = {\n  top: \"flex-col\",\n  right: \"flex-row-reverse justify-end\",\n  bottom: \"flex-col-reverse justify-end\",\n  left: \"flex-row\",\n};\n\nexport function LabeledHandle({\n  className,\n  labelClassName,\n  handleClassName,\n  title,\n  position,\n  ...props\n}: HandleProps &\n  ComponentProps<\"div\"> & {\n    title: string;\n    handleClassName?: string;\n    labelClassName?: string;\n  }) {\n  const { ref, ...handleProps } = props;\n\n  return (\n    <div\n      title={title}\n      className={cn(\n        \"relative flex items-center\",\n        flexDirections[position],\n        className,\n      )}\n      ref={ref}\n    >\n      <BaseHandle\n        position={position}\n        className={handleClassName}\n        {...handleProps}\n      />\n      <label className={cn(\"text-foreground px-3\", labelClassName)}>\n        {title}\n      </label>\n    </div>\n  );\n}\n"
+    }
+  ],
+  "tailwind": {},
+  "cssVars": {},
+  "meta": {}
+}

@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.flow.node-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.flow",
+    "l2": "flow-nodes",
+    "order": 255
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.card-foreground"
+      ],
+      "assets": []
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.flow.base-node"
+  ]
+}

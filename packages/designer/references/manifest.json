@@ -140,11 +140,23 @@
       "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
       "versionBasis": "Published registry JSON supplied as original raw bytes; every embedded source matches the immutable upstream commit recorded in upstream. The upstream registry/default sources use Radix Slot; default denotes that upstream source directory and native Radix engine family, not radix-nova.",
       "upstream": "github.com/KevinGirelli/corsair-ui@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "style": "default",
       "license": "MIT",
       "licenseFiles": [
         "corsair-ui/LICENSE"
-      ],
-      "style": "default"
+      ]
+    },
+    "reactflow": {
+      "namespace": "@reactflow",
+      "source": "https://ui.reactflow.dev/registry/{name}.json",
+      "version": "20261103",
+      "versionBasis": "React Flow UI registry endpoint (the URL `shadcn add https://ui.reactflow.dev/<name>` redirects to), served at fetchedAt; the registry publishes no version or source commit, so the version is the fetch date; licence file from github.com/xyflow/xyflow at the commit recorded in upstream",
+      "upstream": "github.com/xyflow/xyflow@1bc405cd113618c17fd181b931a9fe573bec9fee",
+      "fetchedAt": "2026-11-04T02:08:31Z",
+      "license": "MIT",
+      "licenseFiles": [
+        "reactflow/LICENSE"
+      ]
     }
   },
   "licenses": [
@@ -189,6 +201,12 @@
       "sha256": "0147b84235ed916b8b4e89c1f80655351c5afe7d211b629be61f553a227b34ba",
       "bytes": 1060,
       "sourceUrl": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/LICENSE.md"
+    },
+    {
+      "path": "reactflow/LICENSE",
+      "sha256": "023119ac20fb1c8c9930abe0bcd196989a1960388529a96fc43cebf96f07c9ff",
+      "bytes": 1073,
+      "sourceUrl": "https://raw.githubusercontent.com/xyflow/xyflow/1bc405cd113618c17fd181b931a9fe573bec9fee/LICENSE"
     },
     {
       "path": "shadcn-app/LICENSE.md",
@@ -2001,6 +2019,106 @@
           "sha256": "8e50e929a19b82cc70930b1572d37179ffc2516174892e12b56bc39b15d801aa",
           "bytes": 13864,
           "origin": "https://magicui.design/r/safari.json"
+        }
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "base-handle",
+      "version": "20261103",
+      "dir": "reactflow/base-handle@20261103",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.reactflow.dev/registry/base-handle.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.flow.base-handle"
+      ],
+      "dependencies": [
+        "@xyflow/react"
+      ],
+      "hash": "sha256:696394e672cd88bb6ae5c5680fb5ccdc884cfafb85e8062911fc8dde77759055",
+      "files": [
+        {
+          "path": "base-handle.json",
+          "sha256": "d2850e710d757b29dc18abf4d22b9d8b531324e673590e42b5d7aa0124666b1e",
+          "bytes": 906,
+          "origin": "https://ui.reactflow.dev/registry/base-handle.json"
+        },
+        {
+          "path": "base-handle.tsx",
+          "sha256": "e88066ec9bdb1e7daab5ebbf36ffa7b6515bde0efed3fae8b7152fdefc59d176",
+          "bytes": 547,
+          "origin": "base-handle.json#files[0].content"
+        }
+      ],
+      "requiredBy": [
+        "@reactflow/labeled-handle"
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "base-node",
+      "version": "20261103",
+      "dir": "reactflow/base-node@20261103",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.reactflow.dev/registry/base-node.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.flow.base-node",
+        "components.flow.node-header"
+      ],
+      "dependencies": [
+        "@xyflow/react"
+      ],
+      "hash": "sha256:4c5125009f11fb4fdb99bd2643f273317197bdc1248007ac4fdb02c2c2e7378b",
+      "files": [
+        {
+          "path": "base-node.json",
+          "sha256": "e12440be5d17d378218d4543bdda431f02bf694dadf27266958b2b97ef3196df",
+          "bytes": 2622,
+          "origin": "https://ui.reactflow.dev/registry/base-node.json"
+        },
+        {
+          "path": "base-node.tsx",
+          "sha256": "affc655bfc1945cf3936d48729b40d5dcec2f744e92c57f42d9729fee9155c9d",
+          "bytes": 2175,
+          "origin": "base-node.json#files[0].content"
+        }
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "labeled-handle",
+      "version": "20261103",
+      "dir": "reactflow/labeled-handle@20261103",
+      "type": "registry:component",
+      "sourceUrl": "https://ui.reactflow.dev/registry/labeled-handle.json",
+      "license": "MIT",
+      "direct": true,
+      "slots": [
+        "components.flow.labeled-handle"
+      ],
+      "registryDependencies": [
+        "https://ui.reactflow.dev/base-handle"
+      ],
+      "dependencies": [
+        "@xyflow/react"
+      ],
+      "hash": "sha256:9c4819063fbba809fef0d40f35552f73c5a350d202cfff03d18a44f9c179bdf2",
+      "files": [
+        {
+          "path": "labeled-handle.json",
+          "sha256": "39d67fa50be9241e3b13578dee263c4c3ac865e42180a054e7c15198c87d817f",
+          "bytes": 1506,
+          "origin": "https://ui.reactflow.dev/registry/labeled-handle.json"
+        },
+        {
+          "path": "labeled-handle.tsx",
+          "sha256": "4a200cad1bd5f72c07715ba81eb7c475b468ce71ea6fdce2e7d57f463e6b4e8c",
+          "bytes": 1056,
+          "origin": "labeled-handle.json#files[0].content"
         }
       ]
     },
