@@ -10,6 +10,7 @@ import { loadBuildCatalog, type BuildCatalogData, type PlacementNode } from "@cl
 import { candidateVersion, hasAgentSlots, slotGallery, type SlotEmptyState } from "./slot-gallery.js";
 import { listSlots, readCandidate, readSlot } from "../records/slots.js";
 import { validateCandidate } from "../records/slot-model/index.js";
+import { keyLabel } from "../records/slot-labels.js";
 import { workspaceSlotStatus, type SlotStatus } from "../records/status.js";
 
 export interface DesignerCard {
@@ -73,7 +74,6 @@ export interface DesignerLeaf {
 
 let catalog: BuildCatalogData | undefined;
 function buildCatalog(): BuildCatalogData { return catalog ??= loadBuildCatalog(); }
-const humanize = (value: string) => value.replace(/[-_.]+/g, " ").replace(/^\w/, letter => letter.toUpperCase());
 const LAYER_LABELS: Record<string, string> = { themes: "Themes", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames" };
 const object = (value: unknown): value is Record<string, any> => typeof value === "object" && value !== null && !Array.isArray(value);
 
@@ -149,7 +149,7 @@ export function designerLeaf(root: string, key: string): DesignerLeaf | undefine
   });
   const status = workspaceSlotStatus(root, { slots: [card.slot], referenceHash: source => source.hash }).find(row => row.slot === card.slot);
   const placement = placementPaths().get(card.slot);
-  const trail = [LAYER_LABELS[card.layer] ?? humanize(card.layer), ...(placement?.groups.map(group => group.label) ?? [])];
+  const trail = [LAYER_LABELS[card.layer] ?? keyLabel(card.layer), ...(placement?.groups.map(group => group.label) ?? [])];
   const contract = buildCatalog().slots.find(slot => slot.id === card.slot)?.contract as
     | { kind?: string; root?: string; slots?: readonly { name: string; type: string; required: boolean }[]; props?: readonly { name: string; type?: string; required?: boolean }[]; allowedComposes?: readonly string[] }
     | undefined;

@@ -3,10 +3,18 @@ import { JSDOM } from 'jsdom';
 import { describe, expect, it } from 'vitest';
 import HomeSection, { type HomeCensus, type HomeInput } from './index';
 
+/** The page resolves these from Writer keys (studio.slot-count, studio.slots-with-candidates, studio.pinned-slots, ...). */
+function labels(census?: HomeCensus) {
+  if (census?.state === 'ready') return { total: `${census.total} slots`, candidates: `${census.withCandidate} slots with candidates`, pinned: `${census.pinned} pinned slots` };
+  const loading = census?.state === 'loading';
+  const status = loading ? 'Loading' : 'Unavailable';
+  return { total: loading ? 'Designer slot census loading' : 'Designer slot census unavailable', candidates: status, pinned: status };
+}
+
 function render(census?: HomeCensus) {
   const home: HomeInput = { agentsLabel: 'Agents', agents: [{
     id: 'designer', label: 'Designer', purpose: 'Build interface parts', icon: <svg className="size-4" />,
-    href: '/library', openLabel: 'Open library', census,
+    href: '/library', openLabel: 'Open library', census, censusLabels: labels(census),
     // An old renderer count must never masquerade as a slot census.
     count: { label: '999 rendered cards', tone: 'secondary' },
   }] };

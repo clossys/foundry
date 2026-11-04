@@ -5,13 +5,14 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { slotDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
+import { resolveCopy } from '../../studio/lib/studio-copy';
 import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
 import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot-model/index.js';
 import { parseWriterCell, serializeWriterCell } from '../../../writer/src/cells/parse.js';
 
 const roots: string[] = [];
 const id = 'passages.example';
-const links = { leaf: (agent: string, slot: string) => `/${agent}/${slot}`, back: { href: '/writer', label: 'Writer' } };
+const links = { leaf: (agent: string, slot: string) => `/${agent}/${slot}`, label: () => undefined, back: { href: '/writer', label: 'Writer' } };
 function fixture() {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'slot-detail-'))); roots.push(root);
   const agent = join(root, 'clossys/agents/writer');
@@ -57,11 +58,11 @@ describe('slot details', () => {
     writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, pinnedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.shown).toBe(first.name);
-    expect(detail.checks.filter(check => check.label !== 'Inputs ready' && check.detail !== 'inputs-undeclared').every(check => check.ok)).toBe(true);
+    expect(detail.checks.filter(check => JSON.stringify(check.label) !== JSON.stringify({ copy: 'studio.check-inputs-ready' }) && check.detail !== 'inputs-undeclared').every(check => check.ok)).toBe(true);
     expect(detail.history).toEqual([expect.objectContaining({ candidate: first.name, commit: 'working-tree' })]);
     const inputs = slotDetailInputs(detail, links, 'dark');
     // A pinned Writer strings record is its own specimen: the record rows, inline.
-    expect(inputs.specimen).toEqual(detail.candidates[0]!.record);
+    expect(inputs.specimen).toMatchObject(resolveCopy(detail.candidates[0]!.record));
     expect(inputs.specimen).toMatchObject({ kind: 'record', title: 'Strings', rows: [expect.objectContaining({ text: expect.stringContaining(full) })] });
     expect(detail.candidates[0]!.content).toContain(full);
     expect(inputs.options).toMatchObject({ rows: [{ pinned: true, preview: { rows: [{ text: full }] } }, { pinned: false, preview: { rows: [{ text: 'An unapproved alternative' }] } }] });
@@ -87,7 +88,7 @@ describe('slot details', () => {
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.usedBy).toEqual([{ agent: 'writer', id }]);
     expect(detail.checks).toEqual(expect.arrayContaining([
-      expect.objectContaining({ label: 'Pin matches candidate bytes', ok: false }),
+      expect.objectContaining({ label: { copy: 'studio.check-pin-matches' }, ok: false }),
       expect.objectContaining({ label: 'identity.missing', ok: false }),
     ]));
     expect(slotDetailInputs(detail, links, 'light')).toMatchObject({ references: { usedBy: [{ label: id, href: `/writer/${id}` }] } });
@@ -118,7 +119,7 @@ describe('slot details', () => {
       const detail = slotDetail(root, 'writer', id)!;
       expect(detail.inputs).toEqual([upstream]); expect(detail.uses).toEqual([id]);
       expect(detail.links).toEqual([{ agent: 'director', id: upstream }, { agent: 'writer', id }]);
-      expect(detail.checks).toContainEqual({ label: upstream, ok: true, detail: 'Slot reference resolves' });
+      expect(detail.checks).toContainEqual({ label: upstream, ok: true, detail: { copy: 'studio.check-reference-resolves' } });
       const checks = slotDetailInputs(detail, links, 'light').checks.rows;
       expect(checks).toContainEqual(expect.objectContaining({ label: 'Inputs ready', ok: !reason }));
       if (reason) expect(checks).toContainEqual(expect.objectContaining({ label: upstream, ok: false, detail: reason }));
@@ -135,11 +136,11 @@ describe('slot details', () => {
     writeFileSync(docPath, JSON.stringify({ ...doc, inputs: ['brief.missing'], uses: [id] }));
     const missing = slotDetail(root, 'writer', id)!;
     expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: 'missing' });
-    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: 'Unknown slot reference' });
+    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: { copy: 'studio.check-reference-unknown' } });
     writeFileSync(docPath, JSON.stringify(doc));
     expect(slotDetail(root, 'writer', id)!.checks).toContainEqual({ label: id, ok: false, detail: 'inputs-undeclared' });
     writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify(upstreamDoc));
-    expect(slotDetail(root, 'director', upstream)!.checks).toContainEqual({ label: 'Inputs ready', ok: true, detail: 'Inputs ready' });
+    expect(slotDetail(root, 'director', upstream)!.checks).toContainEqual({ label: { copy: 'studio.check-inputs-ready' }, ok: true, detail: { copy: 'studio.check-inputs-ready' } });
   });
 
   it('keeps locale identities distinct and does not emit metadata as Writer copy', () => {
@@ -174,7 +175,7 @@ describe('slot details', () => {
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.candidates[0]!.issues).toEqual([]);
     const inputs = slotDetailInputs(detail, links, 'light');
-    expect(inputs.specimen).toEqual(detail.candidates[0]!.record);
+    expect(inputs.specimen).toMatchObject(resolveCopy(detail.candidates[0]!.record));
     expect((inputs.specimen as { rows: { text: string }[] }).rows.map(row => row.text)).toEqual([original, 'Bonjour\nEncore']);
     expect(inputs.options).toMatchObject({ rows: [{ preview: { rows: [
       { key: 'en/heading', text: original }, { key: 'fr/heading', text: 'Bonjour\nEncore' },
@@ -246,7 +247,7 @@ describe('slot details', () => {
     expect(detail.candidates[0]!.record).toBeDefined();
     expect(detail.candidates[1]!.record).toBeUndefined();
     const inputs = slotDetailInputs(detail, links, 'light');
-    expect(inputs.specimen).toEqual(detail.candidates[0]!.record);
+    expect(inputs.specimen).toMatchObject(resolveCopy(detail.candidates[0]!.record));
     expect(inputs.specimen).toMatchObject({ kind: 'record', title: 'Strings', rows: [{ text: full }] });
     expect(inputs.options).toMatchObject({ rows: [{ pinned: true, preview: { rows: [{ text: full }] } }, { pinned: false, preview: { rows: [{ text: 'Newer draft' }] } }] });
     expect(inputs.contract).toMatchObject({ facts: expect.arrayContaining([{ label: 'purpose', value: 'Example copy' }]) });
@@ -290,11 +291,11 @@ describe('slot details', () => {
     const detail = slotDetail(root, 'director', id)!;
     expect(detail.shown).toBe('brief-v1.md');
     expect(detail.candidates[0]!.issues).toEqual([]);
-    expect(detail.candidates[0]!.record).toMatchObject({ kind: 'record', title: 'Direction' });
+    expect(detail.candidates[0]!.record).toMatchObject({ kind: 'record', title: { copy: 'studio.direction' } });
     expect(JSON.stringify(detail.candidates[0]!.record)).toContain('Pinned demand');
     expect(detail.candidates[1]!.record).toBeUndefined();
     const inputs = slotDetailInputs(detail, links, 'dark');
-    expect(inputs.specimen).toEqual(detail.candidates[0]!.record);
+    expect(inputs.specimen).toMatchObject(resolveCopy(detail.candidates[0]!.record));
     expect(inputs.options).toMatchObject({ rows: [{ label: 'brief-v1.md', pinned: true }, { label: 'brief-v2.md', pinned: false }] });
     const noPreview = () => {
       const detail = slotDetail(root, 'director', id)!;
@@ -314,11 +315,11 @@ describe('slot details', () => {
       }),
     ]) { restore(); mutation(); noPreview(); }
     restore();
-    expect(slotDetail(root, 'director', id)!.checks).toContainEqual(expect.objectContaining({ label: 'Slot record matches its IA position', ok: true }));
+    expect(slotDetail(root, 'director', id)!.checks).toContainEqual(expect.objectContaining({ label: { copy: 'studio.check-slot-placed' }, ok: true }));
     writeFileSync(join(dir, 'slot.json'), JSON.stringify({ ...doc, id: 'context.foreign' }));
     const misplaced = slotDetail(root, 'director', id)!;
-    expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: 'Slot record matches its IA position', ok: false }));
-    expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: 'Inputs ready', ok: false }));
+    expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: { copy: 'studio.check-slot-placed' }, ok: false }));
+    expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: { copy: 'studio.check-inputs-ready' }, ok: false }));
     expect(misplaced.checks).toContainEqual({ label: id, ok: false, detail: 'invalid-slot' });
     expect(slotDetail(root, 'director', 'context.unknown')).toBeUndefined();
   });

@@ -8,8 +8,10 @@ export type HomeCensus =
   | { state: 'loading' }
   | { state: 'error'; message: string };
 
+/** A census card's accessible count labels (Writer copy), for the census state the agent carries. */
+export interface HomeCensusLabels { total: string; candidates: string; pinned: string }
 /** One agent on Home. Navigation belongs to the shared frame; counts use the independent native census. */
-export interface HomeAgent { id: string; label: string; purpose: string; icon: React.ReactNode; census?: HomeCensus; count?: { label: string; tone: HomeTone }; href: string; openLabel: string; openIcon?: React.ReactNode }
+export interface HomeAgent { id: string; label: string; purpose: string; icon: React.ReactNode; census?: HomeCensus; censusLabels: HomeCensusLabels; count?: { label: string; tone: HomeTone }; href: string; openLabel: string; openIcon?: React.ReactNode }
 export interface HomeNeed { id: string; severity: string; tone: HomeTone; title: string; detail: string }
 
 /** The `home` input of `sections.studio.home`. `needs` is present while the page's Needs module is open; the page head is `sections.studio.page-header`. */
@@ -32,12 +34,11 @@ export default function HomeSection({ home }: { home: HomeInput }) {
         {home.agents.map(agent => {
           const census = agent.census;
           const ready = census?.state === 'ready' ? census : undefined;
-          const status = census?.state === 'loading' ? 'Loading' : 'Unavailable';
           return <HomeStockCensusCard key={agent.id} id={agent.id} state={census?.state ?? 'missing'}
             label={agent.label} total={ready ? ready.total : '—'}
-            totalLabel={ready ? `${ready.total} slots` : `${agent.label} slot census ${status.toLowerCase()}`}
-            candidates={ready ? ready.withCandidate : '—'} candidatesLabel={ready ? `${ready.withCandidate} slots with candidates` : status}
-            pinnedLabel={ready ? `${ready.pinned} pinned slots` : status} icon={agent.icon}
+            totalLabel={agent.censusLabels.total}
+            candidates={ready ? ready.withCandidate : '—'} candidatesLabel={agent.censusLabels.candidates}
+            pinnedLabel={agent.censusLabels.pinned} icon={agent.icon}
             detail={census?.state === 'error' ? census.message : agent.purpose} />;
         })}
       </HomeStockGrid>

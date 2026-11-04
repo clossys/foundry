@@ -11,8 +11,13 @@ import { recordLead, recordSpecimenInput, slotGallery } from './slot-gallery.js'
 import { slotDetail } from './slot-detail.js';
 import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
 import { sha256Hex } from '../records/hash.js';
-import { specimenHref } from '../../studio/lib/slot-detail';
+import { slotSpecimen, specimenHref } from '../../studio/lib/slot-detail';
+import { resolveCopy } from '../../studio/lib/studio-copy';
 import { SpecimenContent } from '../../studio/sections/studio-specimen';
+
+/** A server record as Studio draws it: its Writer keys resolved, through the detail page's specimen path. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const drawn = (record: any) => { const resolved = resolveCopy(record); return slotSpecimen({ name: resolved.name, description: '', record: resolved, fallback: resolved }); };
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const consumer = join(repo, 'clossys');
@@ -205,7 +210,7 @@ describe('IA-first gallery data', () => {
       expect(gallery.count).toBe(wanted.length);
       expect(ids(gallery.sections)).toEqual(wanted);
       const cards = gallery.sections.flatMap(section => section.cards);
-      expect(cards[0]).toMatchObject({ id: wanted[0], status: 'missing', emptyState: 'No candidate', records: 0 });
+      expect(cards[0]).toMatchObject({ id: wanted[0], status: 'missing', emptyState: 'no-candidate', records: 0 });
       expect(cards[1]).toMatchObject({ id: wanted[1], status: 'failing', candidate: 'element-v1.json', version: 1, records: 0 });
       expect(cards[1]!.element).toBeUndefined();
       expect(cards[1]!.specimen).toBeUndefined();
@@ -238,8 +243,8 @@ describe('IA-first gallery data', () => {
       const assertNoPreview = (noPin: boolean) => {
         const cards = slotGallery(root, 'designer').sections.flatMap(section => section.cards);
         expect(cards.map(card => card.id)).toEqual(wanted);
-        expect(cards[0]).toMatchObject({ emptyState: 'No candidate', records: 0 });
-        if (noPin) expect(cards[1]).toMatchObject({ emptyState: 'No pin', status: 'draft', records: 1 });
+        expect(cards[0]).toMatchObject({ emptyState: 'no-candidate', records: 0 });
+        if (noPin) expect(cards[1]).toMatchObject({ emptyState: 'no-pin', status: 'draft', records: 1 });
         expect(cards[1]!.element).toBeUndefined();
         expect(cards[1]!.specimen).toBeUndefined();
         if (noPin) expect(cards[1]!.options).toBe(2);
@@ -290,15 +295,15 @@ describe('IA-first gallery data', () => {
         expect(cards().map(card => card.id)).toEqual(expected(root, 'writer'));
         expect(detailRecord(repo, 'writer', 'strings.label')).toBeUndefined();
       };
-      expect(cards()).toMatchObject([{ id: 'strings.label', emptyState: 'No candidate', records: 0 }]);
+      expect(cards()).toMatchObject([{ id: 'strings.label', emptyState: 'no-candidate', records: 0 }]);
       noFrame();
       mkdirSync(join(dir, 'candidates'));
       const content = serializeFrontmatter({ slot: 'strings.label', locales: ['en'], source: { kind: 'original', ref: [] } }, '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script> & welcome\n');
       writeFileSync(join(dir, 'candidates/label-v1.md'), content);
-      expect(cards()).toMatchObject([{ emptyState: 'No pin', candidate: 'label-v1.md', version: 1, records: 1 }]);
+      expect(cards()).toMatchObject([{ emptyState: 'no-pin', candidate: 'label-v1.md', version: 1, records: 1 }]);
       expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows).toEqual([{ key: '0', label: 'en: greeting', text: 'Hello <script> & welcome' }]);
       writeFileSync(join(dir, 'candidates/label-v2.md'), content.replace('Hello <script> & welcome', 'Newer draft'));
-      expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'No pin' });
+      expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'no-pin' });
       noFrame();
       expect(cards()[0]!.options).toBe(2);
       const pin = { candidate: 'label-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:gallery-pin', at: '2026-01-01T00:00:00Z' };
@@ -310,7 +315,7 @@ describe('IA-first gallery data', () => {
       expect(cards()[0]!.excerpt).toEqual(['Hello <script> & welcome']);
       const specimen = detailRecord(repo, 'writer', 'strings.label')!;
       expect(specimen).toEqual(recordSpecimenInput(root, 'writer', 'strings.label', 'label-v1.md'));
-      const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen }));
+      const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen: drawn(specimen) }));
       expect(html).toContain('Hello &lt;script&gt; &amp; welcome');
       expect(html).not.toContain('<iframe');
       for (const invalid of [{}, { ...pin, candidate: 'absent-v1.md' }]) {
@@ -350,7 +355,7 @@ describe('IA-first gallery data', () => {
       const served = (slot = id, candidate?: string) => detailRecord(repo, 'director', slot, candidate);
       expect(served()).toBeUndefined();
       const card = () => slotGallery(root, 'director').sections.flatMap(section => section.cards)[0]!;
-      expect(card()).toMatchObject({ emptyState: 'No pin', records: 1 });
+      expect(card()).toMatchObject({ emptyState: 'no-pin', records: 1 });
       writeFileSync(join(dir, 'pin.json'), JSON.stringify(pin));
       expect(served()).toEqual(recordSpecimenInput(root, 'director', id));
       expect(JSON.stringify(served())).toContain('Pinned demand');
@@ -398,7 +403,7 @@ describe('IA-first gallery data', () => {
         writeFileSync(join(dir, 'candidates/record-v1.md'), content);
         if (agent === 'director') writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: 'record-v1.md', sha256: sha256Hex(content), pinnedBy: 'owner:synthetic-test-only:specimen', at: '2026-01-01T00:00:00Z' }));
         const input = recordSpecimenInput(root, agent, id)!;
-        const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen: input }));
+        const html = renderToStaticMarkup(createElement(SpecimenContent, { specimen: drawn(input) }));
         expect(html).toContain('<table');
         expect(html).toContain(agent === 'director' ? 'Measure demand' : 'Hello &lt;script&gt;');
         expect(recordSpecimenInput(root, agent, id, 'absent-v1.md')).toBeUndefined();

@@ -44,7 +44,22 @@ export function slotIdLabel(id: string): string {
   return words ? words.replace(/^\w/, c => c.toUpperCase()) : id;
 }
 
+/**
+ * A record key (a lexicon rule, a cell tail, a layer) as words: the fallback label for a key the
+ * Writer has not named. The one id-to-words rule outside the Writer names, kept here with the slot
+ * fallback so no other module derives a label from an id.
+ */
+export function keyLabel(key: string): string {
+  return key.replace(/[-_.]+/g, " ").trim().replace(/^\w/, c => c.toUpperCase());
+}
+
 /** The display label of one slot. `consumer` is the consumer root (`<root>/clossys`). */
 export function slotLabel(consumer: string, agent: SlotAgent | string, id: string): string {
   return pinnedNames(consumer).get(`${agent}.item.${id}`) ?? slotIdLabel(id);
+}
+
+/** `slotLabel` for many slots at once: the Writer names are read once, for a whole gallery. */
+export function slotLabels(consumer: string): (agent: SlotAgent | string, id: string) => string {
+  const names = pinnedNames(consumer);
+  return (agent, id) => names.get(`${agent}.item.${id}`) ?? slotIdLabel(id);
 }

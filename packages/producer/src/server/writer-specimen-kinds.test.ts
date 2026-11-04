@@ -19,7 +19,7 @@ describe("Writer specimen kinds", () => {
     expect(voice.tables.map(table => table.id)).toEqual(["principles", "do", "dont"]);
     expect(voice.tables[0]!.rows[0]!.cells.map(cell => cell.text)).toEqual(["Sentence length", "Use short sentences."]);
     expect(voice.tables[2]!.rows[0]!.cells.map(cell => cell.text)).toEqual(["CLI", "terminal", "Plain words."]);
-    expect(voice.excerpt).toEqual(["Use short sentences.", "Avoid: CLI"]);
+    expect(voice.excerpt).toEqual(["Use short sentences.", { copy: "studio.avoid-terms", values: { terms: "CLI" } }]);
   });
 
   it("renders each claim with its Director evidence and an honest status", () => {
@@ -30,13 +30,13 @@ describe("Writer specimen kinds", () => {
     const [sourced, unsourced] = claims.tables[0]!.rows;
     expect(sourced!.cells[2]).toEqual({ text: "advantage.proposition.promise v4", ref: { label: "advantage.proposition.promise", agent: "director", slug: "advantage.proposition.promise" } });
     expect(sourced!.cells[0]).toEqual({ text: "Promise", status: "draft" });
-    expect(unsourced!.cells[2]).toEqual({ text: "Citation required, no source recorded", status: "missing" });
-    expect(claims.summary).toBe("2 claims: 2 require a citation, 1 have a recorded Director source.");
+    expect(unsourced!.cells[2]).toEqual({ text: { copy: "studio.citation-required-no-source" }, status: "missing" });
+    expect(claims.summary).toEqual({ copy: "studio.claims-summary", values: { claims: 2, cited: 2, sourced: 1 } });
   });
 
   it("renders names with their forms and usage rules", () => {
     const names = writerKindSpecimen("brand.naming", [term("name", "Clossys", "brand", { context: "brand.naming.name", reason: "Clossys" }), term("casing", "Clossys", "brand", { context: "brand.naming.casing", reason: "One capital C.", casing: "Clossys" })])!;
-    expect(names.tables[0]!.rows.map(row => row.cells.map(cell => cell.text))).toEqual([["Name", "Clossys", "None", "No usage rule recorded"], ["Casing", "Clossys", "None", "One capital C. Casing: Clossys"]]);
+    expect(names.tables[0]!.rows.map(row => row.cells.map(cell => cell.text))).toEqual([["Name", "Clossys", { copy: "studio.contract-none" }, { copy: "studio.no-usage-rule-recorded" }], ["Casing", "Clossys", { copy: "studio.contract-none" }, { copy: "studio.usage-rule-casing", values: { rule: "One capital C.", casing: "Clossys" } }]]);
     expect(names.excerpt).toEqual(["Clossys"]);
   });
 });

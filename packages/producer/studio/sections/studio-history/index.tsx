@@ -2,10 +2,13 @@ import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Table
 
 /** How a version came to be: its mode (`verbatim`, `customized`, ...) and, when it has one, its source. */
 export interface HistoryLineage { mode: string; source?: string }
-/** One recorded version; `lineage` and `hash` columns show only when some row carries them. */
-export interface HistoryRow { version: number; date: string; note: string; marks: readonly string[]; lineage?: HistoryLineage; hash?: string }
-/** The `history` input of `sections.studio.history`: rows newest first. */
-export interface HistoryInput { rows: readonly HistoryRow[] }
+/* `lineage` and `hash` columns show only when some row carries them. */
+/** One recorded version; `versionLabel` is its version as shown (Writer copy). */
+export interface HistoryRow { version: number; versionLabel: string; date: string; note: string; marks: readonly string[]; lineage?: HistoryLineage; hash?: string }
+/** The section's words (Writer copy): its title, the row-count summary, the table label and column headings. */
+export interface HistoryCopy { title: string; summary: string; label: string; version: string; date: string; note: string; lineage: string; hash: string; marks: string }
+/** The `history` input of `sections.studio.history`: rows newest first, and the section's copy. */
+export interface HistoryInput { rows: readonly HistoryRow[]; copy: HistoryCopy }
 
 /** A content hash as its first 8 characters after the `sha256:` prefix; the full value stays in the title. */
 export const shortHash = (hash: string) => hash.replace(/^sha256:/, '').slice(0, 8);
@@ -24,27 +27,27 @@ function LineageCell({ lineage }: { lineage: HistoryRow['lineage'] }) {
  * the columns are wider than the card. `sections.studio.history` reads only its `history` input.
  */
 export default function HistorySection({ history }: { history: HistoryInput }) {
-  const { rows } = history;
+  const { rows, copy } = history;
   const lineage = rows.some(row => row.lineage);
   const hash = rows.some(row => row.hash);
   return <Card size="sm" data-studio-section="history">
     <CardHeader>
-      <CardTitle role="heading" aria-level={2}>History</CardTitle>
-      <CardDescription>{rows.length === 1 ? '1 recorded version' : `${rows.length} recorded versions`}, newest first.</CardDescription>
+      <CardTitle role="heading" aria-level={2}>{copy.title}</CardTitle>
+      <CardDescription>{copy.summary}</CardDescription>
     </CardHeader>
     <CardContent className="min-w-0">
-      <Table aria-label="History">
+      <Table aria-label={copy.label}>
         <TableHeader>
-          <TableHead isRowHeader>Version</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Note</TableHead>
-          {lineage && <TableHead>Lineage</TableHead>}
-          {hash && <TableHead>Hash</TableHead>}
-          <TableHead>Marks</TableHead>
+          <TableHead isRowHeader>{copy.version}</TableHead>
+          <TableHead>{copy.date}</TableHead>
+          <TableHead>{copy.note}</TableHead>
+          {lineage && <TableHead>{copy.lineage}</TableHead>}
+          {hash && <TableHead>{copy.hash}</TableHead>}
+          <TableHead>{copy.marks}</TableHead>
         </TableHeader>
         <TableBody>
           {rows.map(row => <TableRow key={row.version} id={String(row.version)}>
-            <TableCell>v{row.version}</TableCell>
+            <TableCell>{row.versionLabel}</TableCell>
             <TableCell>{row.date}</TableCell>
             <TableCell className="min-w-64 whitespace-normal">{row.note}</TableCell>
             {lineage && <LineageCell lineage={row.lineage} />}

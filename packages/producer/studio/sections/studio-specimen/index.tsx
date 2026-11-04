@@ -7,6 +7,8 @@ export type SpecimenTone = 'secondary' | 'outline' | 'destructive';
 /** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px and scales it to fit. */
 export interface ViewportSpecimen {
   viewport: 375 | 768 | 1280; light: string; dark?: string;
+  /** The row's heading (Writer copy), and each frame's accessible title: the light frame, and the dark one when there is one. */
+  heading: string; title: string; darkTitle?: string;
   /** False for a preview in a list (a gallery card): the frame is view-only so the page scrolls past it. */
   interactive?: boolean;
 }
@@ -31,6 +33,8 @@ export type SpecimenInput = { name: string; title: string; description: string }
     /** A gallery card's text while its frame loads, and for a frame whose specimen failed to render. */
     loading?: string; unavailable?: string }
   | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[];
+    /** The rows table's accessible label and column headings (Writer copy). */
+    rowsCopy: { label: string; key: string; content: string };
     /** A gallery card's lead: the record's first lines as text that reads at card size. */
     lead?: readonly string[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }
 );
@@ -46,14 +50,14 @@ function Viewports({ name, specimens, empty, loading, unavailable }: { name: str
   const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);
   // A gallery card's single view-only frame: skeleton until sized, no body when it paints nothing.
   const card = rows.length === 1 && rows[0]!.interactive === false && !rows[0]!.dark ? rows[0]! : undefined;
-  if (card) return <BlockViewerCardIframe iframeKey={`${name}:${card.viewport}:card`} viewport={card.viewport} title={`${name} at ${card.viewport} px`} src={card.light}
+  if (card) return <BlockViewerCardIframe iframeKey={`${name}:${card.viewport}:card`} viewport={card.viewport} title={card.title} src={card.light}
     loadingLabel={loading ?? name} failedLabel={unavailable} wrap={frame => <CardContent data-specimen-viewport={card.viewport}>{frame}</CardContent>} />;
   return <CardContent className="flex flex-col gap-4">
     {rows.map(row => <CardContent key={row.viewport} className="flex flex-col gap-2 px-0" data-specimen-viewport={row.viewport}>
-      {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.viewport} px</CardDescription>}
+      {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.heading}</CardDescription>}
       <CardGrid density={row.dark ? 'specimens' : undefined} className={row.dark ? undefined : 'grid-cols-1'}>
-        <BlockViewerIframe iframeKey={`${name}:${row.viewport}:light`} viewport={row.viewport} interactive={row.interactive ?? true} title={`${name} at ${row.viewport} px${row.dark ? ', light' : ''}`} src={row.light} />
-        {row.dark && <BlockViewerIframe iframeKey={`${name}:${row.viewport}:dark`} viewport={row.viewport} interactive={row.interactive ?? true} title={`${name} at ${row.viewport} px, dark`} src={row.dark} />}
+        <BlockViewerIframe iframeKey={`${name}:${row.viewport}:light`} viewport={row.viewport} interactive={row.interactive ?? true} title={row.title} src={row.light} />
+        {row.dark && <BlockViewerIframe iframeKey={`${name}:${row.viewport}:dark`} viewport={row.viewport} interactive={row.interactive ?? true} title={row.darkTitle ?? row.title} src={row.dark} />}
       </CardGrid>
     </CardContent>)}
   </CardContent>;
@@ -86,10 +90,10 @@ export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
   </CardContent>;
   if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;
   if (specimen.rows?.length) return <CardContent className="min-w-0">
-    <Table aria-label={`${specimen.name} specimen`}>
+    <Table aria-label={specimen.rowsCopy.label}>
       <TableHeader>
-        <TableHead isRowHeader>Key</TableHead>
-        <TableHead>Content</TableHead>
+        <TableHead isRowHeader>{specimen.rowsCopy.key}</TableHead>
+        <TableHead>{specimen.rowsCopy.content}</TableHead>
       </TableHeader>
       <TableBody>
         {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>

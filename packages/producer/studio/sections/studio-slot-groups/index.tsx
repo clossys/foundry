@@ -11,6 +11,8 @@ export interface SlotCard {
   statusLabel: string;
   statusTone: SlotTone;
   version?: number;
+  /** The shown version as displayed (Writer copy), when there is one. */
+  versionLabel?: string;
   /** What the slot's pin produces, drawn by the detail page's specimen renderer: a view-only frame or the record's lead lines. */
   specimen: SpecimenInput;
 }
@@ -38,7 +40,7 @@ export default function SlotGroupsSection({ groups }: { groups: SlotGroupsInput 
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2">
               <LinkButton href={card.href} variant="link" size="sm" className="h-auto px-0">{card.name}</LinkButton>
-              {card.version ? <Badge variant="ghost">v{card.version}</Badge> : null}
+              {card.versionLabel ? <Badge variant="ghost">{card.versionLabel}</Badge> : null}
               <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
             </CardTitle>
             <CardDescription className="font-mono text-xs">{card.id}</CardDescription>

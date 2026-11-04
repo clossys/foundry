@@ -1,6 +1,6 @@
 {
-  "candidate": "studio-specimen-v7.json",
-  "sha256": "b4bea350e971d127cd6f78e4166c73b01b85681b71162b9fc21e0926b5f558c5",
-  "pinnedBy": "owner:2026-11-03 fix-all",
-  "at": "2026-11-03T09:51:04Z"
+  "candidate": "studio-specimen-v8.json",
+  "sha256": "1153d033f1a68912498594386fc0cd10f874d4659e528fbcb4a618193ce2cc6f",
+  "pinnedBy": "owner:2026-11-03 W2-COPY-THROUGH-WRITER go",
+  "at": "2026-11-03T13:45:00Z"
 }
