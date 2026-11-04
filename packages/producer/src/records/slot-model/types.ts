@@ -5,7 +5,8 @@
  *   <consumer>/agents/<agent>/<slot>/slot.json          generated from the IA
  *   <consumer>/agents/<agent>/<slot>/candidates/<name>-v<n>.<ext>
  *   <consumer>/agents/<agent>/<slot>/pin.json           absent = no pin
- *   <consumer>/agents/<agent>/_<name>/                  `_`-prefixed: never a slot (e.g. `_evidence`)
+ *   <consumer>/agents/<agent>/_<name>/                  `_`-prefixed: never read as a slot, but check:git-cms
+ *                                                       (R-GIT-CMS) fails on it: evidence lives in <consumer>/evidence/
  *
  * Slot folders are flat: grouping (L1/L2) lives only in ia.json and slot.json
  * `ia`, so the IA can be regrouped without moving a file.
@@ -32,6 +33,16 @@ export const MIGRATION_DECIDED_BY = "migrated";
 export const DIRECTOR_DECIDED_BY = "owner:2026-10-31 all-approved";
 /** Who decided: owner, planner or migration (each optionally `:<ref>`), or `migrated`. Written by `clossys pin`. */
 export const DECIDED_BY = /^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/;
+/**
+ * How a pin was decided, so Studio can show what the owner still has to confirm:
+ * `picked` the owner chose this candidate; `bulk` a blanket owner approval; `planner` the planner chose it.
+ * Written by `clossys pin` (`--by planner:*` is `planner`; any other decider needs an explicit `--basis`).
+ */
+export const PIN_BASES = ["picked", "bulk", "planner"] as const;
+export type PinBasis = typeof PIN_BASES[number];
+/** A pin's review status: `confirm` until the owner picked it (basis bulk or planner), else `pinned`. */
+export type PinStatus = "pinned" | "confirm";
+export const pinStatus = (basis: PinBasis): PinStatus => basis === "bulk" || basis === "planner" ? "confirm" : "pinned";
 
 export interface IaLeafGroup { readonly id: string; readonly label: string; readonly slots: readonly string[] }
 export interface IaNode { readonly id: string; readonly label: string; readonly children: readonly IaLeafGroup[] }
@@ -92,6 +103,8 @@ export interface PinDoc {
   readonly sha256: string;
   /** Who decided (DECIDED_BY). */
   readonly decidedBy: string;
+  /** How it was decided (PIN_BASES). */
+  readonly basis: PinBasis;
   readonly at: string;
 }
 

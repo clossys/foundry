@@ -2,5 +2,6 @@
   "candidate": "audit-log-v2.json",
   "sha256": "7444dd5b8dc54d8c1ace09ea8aba4eb8754ca8b10a322e5436684e2f4c5de4b1",
   "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "basis": "planner",
   "at": "2026-11-03T14:00:13Z"
 }

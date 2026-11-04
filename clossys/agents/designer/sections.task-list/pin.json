@@ -2,5 +2,6 @@
   "candidate": "task-list-v2.json",
   "sha256": "48af51cebe1c15006e53f14b5976ace8b145fbb9dcb6c35cf2baef23fddbb372",
   "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "basis": "planner",
   "at": "2026-11-03T14:00:21Z"
 }

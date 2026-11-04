@@ -63,7 +63,7 @@ function candidateRows(candidate: DetailCandidate): { key: string; label: string
 export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 'light' | 'dark', publication?: PublicationResponse): Record<string, unknown> {
   const shown = detail.candidates.find(candidate => candidate.name === detail.shown);
   const pinned = !!shown?.pinned;
-  const statusLabel = !shown ? studioCopy("studio.no-candidate") : pinned ? studioCopy("studio.pinned") : detail.pin ? studioCopy("studio.pin-unavailable") : studioCopy("studio.no-pin");
+  const statusLabel = !shown ? studioCopy("studio.no-candidate") : pinned ? (detail.status === "confirm" ? studioCopy("studio.confirm") : studioCopy("studio.pinned")) : detail.pin ? studioCopy("studio.pin-unavailable") : studioCopy("studio.no-pin");
   // The page this slot's pin published, when the publication emitted one: the specimen is the page itself.
   const name = links.label(detail.agent, detail.id) ?? detail.name;
   const page = shown?.pinned && !shown.issues.length && shown.sha256 === detail.pin?.sha256 && publication?.state === 'ready'

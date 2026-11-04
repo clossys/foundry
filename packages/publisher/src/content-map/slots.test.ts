@@ -22,7 +22,7 @@ async function edit(path: string, change: (value: JsonObject) => void) { const v
 async function repin(path: string, id: string) {
   await put(join(dir(path, id), "pin.json"), {
     candidate: "record-v1.json", sha256: createHash("sha256").update(await readFile(candidatePath(path, id))).digest("hex"),
-    decidedBy: "migrated", at: "2026-10-31T00:00:00Z",
+    decidedBy: "migrated", basis: "bulk", at: "2026-10-31T00:00:00Z",
   });
 }
 function ordinary(): ContentMap {

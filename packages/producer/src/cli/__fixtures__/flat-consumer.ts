@@ -21,6 +21,8 @@ export function flatConsumer(agents: readonly SlotAgent[]): string {
   mkdirSync(join(root, "clossys", "agents"), { recursive: true });
   writeFileSync(join(root, "clossys", "clossys.config.ts"), "throw new Error('Config must not execute');\n");
   for (const agent of agents) cpSync(join(repoConsumer, "agents", agent), join(root, "clossys", "agents", agent), { recursive: true });
+  // Director evidence lives outside the agent tree (clossys/evidence/director, rule R-GIT-CMS).
+  if (agents.includes("director")) cpSync(join(repoConsumer, "evidence", "director"), join(root, "clossys", "evidence", "director"), { recursive: true });
   return root;
 }
 

@@ -2,5 +2,6 @@
   "candidate": "font-heading-v1.json",
   "sha256": "d3f2c567bd1ab8604cd199ed16052e7f2a56c7f52c4dbb2589102a1da0e916b3",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

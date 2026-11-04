@@ -2,5 +2,6 @@
   "candidate": "icon-document-v1.json",
   "sha256": "41504eaeffe8bfa4cf6499f7c1583bb3cd2f08618c1ad7c2ba1dfdd04a9bdb11",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

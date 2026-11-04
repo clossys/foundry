@@ -4,7 +4,7 @@ import { LIBRARY_ELEMENTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
 
 const SKILL = { director: "packages/strategist/skill/SKILL.md", designer: "packages/designer/skill/SKILL.md", writer: "packages/writer/skill/SKILL.md", publisher: "packages/publisher/skill/SKILL.md" } as const;
 const UPSTREAM = {
-  director: ["clossys/agents/director/_evidence/*.md", "clossys/agents/strategist/findings/*.md"],
+  director: ["clossys/evidence/director/*.md", "clossys/evidence/strategist/findings/*.md"],
   designer: [pinsOf("director"), candidatesOf("director")],
   writer: [pinsOf("director"), candidatesOf("director"), candidatesOf("designer")],
   publisher: [pinsOf("designer"), candidatesOf("designer"), pinsOf("writer"), candidatesOf("writer")],

@@ -2,5 +2,6 @@
   "candidate": "icon-warning-v1.json",
   "sha256": "e1a81439f1e552e1d167e4ca96259ceae8f2f316790a5192c345968dad8af0c9",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

@@ -2,5 +2,6 @@
   "candidate": "sidebar-v2.json",
   "sha256": "83ad2d6e01eeea45d2fcf9a4cec848d8f064115166e37b901b822c65824dd5a4",
   "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "basis": "planner",
   "at": "2026-11-03T12:00:00Z"
 }

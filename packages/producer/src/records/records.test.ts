@@ -384,7 +384,7 @@ describe("slot status derivation", () => {
     const bytes = jsonBytes({ name: "hero", type: "registry:block", files: [{ path: "hero.tsx", type: "registry:file", content: "export const x = 1\n" }],
       meta: { slot: "sections.hero", source: { kind: "registry", ref: [ref] }, element: { id: "hero", slot: "sections.hero", checks: [], deps: { npm: {}, elements: [] } } } });
     put(join(candidatesDir(dirOf("sections.hero")), "hero-v1.json"), bytes);
-    put(pinFile(dirOf("sections.hero")), jsonBytes({ candidate: "hero-v1.json", sha256: sha256Hex(bytes), decidedBy: "owner:fixture", at: AT(1) }));
+    put(pinFile(dirOf("sections.hero")), jsonBytes({ candidate: "hero-v1.json", sha256: sha256Hex(bytes), decidedBy: "owner:fixture", basis: "bulk", at: AT(1) }));
     const read = (hashes = referenceHash) => workspaceSlotStatus(root, { referenceHash: hashes });
     expect(read().map((row) => [row.slot, row.status])).toEqual([
       ["sections.hero", "pinned"],

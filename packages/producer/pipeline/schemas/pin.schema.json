@@ -8,6 +8,7 @@
     "candidate",
     "sha256",
     "decidedBy",
+    "basis",
     "at"
   ],
   "additionalProperties": false,
@@ -23,6 +24,14 @@
     "decidedBy": {
       "type": "string",
       "pattern": "^(?:(?:owner|planner|migration)(?::\\S.*)?|migrated)$"
+    },
+    "basis": {
+      "description": "How the pin was decided: picked (the owner chose this candidate), bulk (a blanket owner approval) or planner (the planner chose it). Studio shows bulk and planner pins as confirm.",
+      "enum": [
+        "picked",
+        "bulk",
+        "planner"
+      ]
     },
     "at": {
       "type": "string",

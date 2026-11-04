@@ -2,5 +2,6 @@
   "candidate": "inspector-v2.json",
   "sha256": "8d8198706560a649ab94254723be8a4e82bd976354e8d3724dbd4b91c4e23a6b",
   "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "basis": "planner",
   "at": "2026-11-03T14:00:22Z"
 }

@@ -2,5 +2,6 @@
   "candidate": "field-v3.json",
   "sha256": "fe25907d85880077137deea696e25920f01c718a1bc3b60319043c087ce0e75a",
   "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-DEPS)",
+  "basis": "planner",
   "at": "2026-11-03T16:18:32.357Z"
 }

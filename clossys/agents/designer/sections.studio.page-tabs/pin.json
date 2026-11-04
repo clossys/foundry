@@ -2,5 +2,6 @@
   "candidate": "studio-page-tabs-v5.json",
   "sha256": "3a11e9363ff01c75af9d72874a3ec4b300f9476d1c8c98aa49b33e97769d44dc",
   "decidedBy": "planner:CONVERGE-R2",
+  "basis": "planner",
   "at": "2026-11-04T00:50:35.119Z"
 }

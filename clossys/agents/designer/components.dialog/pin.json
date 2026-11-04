@@ -2,5 +2,6 @@
   "candidate": "dialog-v2.json",
   "sha256": "2a98e2ea3a8a2b6e9df4f9c3bdf4481be20024cb64b35c488da9ae0b27c1f038",
   "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "basis": "planner",
   "at": "2026-11-03T12:00:00Z"
 }

@@ -55,9 +55,9 @@ export async function readPinnedDirector(consumer: string): Promise<PinnedDirect
 
 export const directorRef = (cell: Pick<Cell, "id" | "version">) => `director:${cell.id}@${cell.version}`;
 
-/** Director evidence (`agents/director/_evidence/<id>.md`), read by the Director's own finding parser. */
+/** Director evidence (`evidence/director/<id>.md`, outside the agent tree), read by the Director's own finding parser. */
 export async function readDirectorEvidence(consumer: string): Promise<{ findings: Finding[]; issues: { file: string; line: number; detail: string }[] }> {
-  const dir = join(consumer, "agents", "director", "_evidence");
+  const dir = join(consumer, "evidence", "director");
   const files: Record<string, string> = {};
   let names: string[] = [];
   try { names = readdirSync(dir); } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }

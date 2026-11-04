@@ -75,11 +75,11 @@ export async function runDirect(args: CliArgs, root: string): Promise<DirectResu
     }
     // Evidence: every finding a pinned candidate cites exists and parses.
     const evidence = await readDirectorEvidence(consumer);
-    for (const issue of evidence.issues) findings.push({ code: "invalid-evidence", slot: "_evidence", path: `clossys/agents/director/_evidence/${issue.file}`, line: issue.line, message: issue.detail });
+    for (const issue of evidence.issues) findings.push({ code: "invalid-evidence", slot: "evidence", path: `clossys/evidence/director/${issue.file}`, line: issue.line, message: issue.detail });
     const known = new Set(evidence.findings.map(finding => finding.id));
     for (const cell of director.cells) {
       const cited = [...cell.cites, ...bullets(cell).flatMap(bullet => bullet.refs)];
-      for (const ref of cited) if (ref.kind === "finding" && !known.has(ref.id)) findings.push({ code: "unknown-evidence", slot: cell.id, path: cell.path, message: `finding:${ref.id} is not in clossys/agents/director/_evidence` });
+      for (const ref of cited) if (ref.kind === "finding" && !known.has(ref.id)) findings.push({ code: "unknown-evidence", slot: cell.id, path: cell.path, message: `finding:${ref.id} is not in clossys/evidence/director` });
     }
     // Grounding and won't-claim over the pinned copy that ships: the Writer's pinned candidates.
     // Lexicon slots hold the prohibited terms themselves, so the Writer's own derivation rule skips them.

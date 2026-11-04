@@ -27,7 +27,7 @@ function workspace(): string {
     meta: { slot, source: { kind: 'registry', ref: ['fontsource:pinned-face'] } },
   });
   put(join(candidatesDir(dir), 'font-heading-pinned-v1.json'), candidate);
-  put(pinFile(dir), jsonBytes({ candidate: 'font-heading-pinned-v1.json', sha256: sha256Hex(candidate), decidedBy: 'owner:fixture', at: '2026-10-31T00:00:00Z' }));
+  put(pinFile(dir), jsonBytes({ candidate: 'font-heading-pinned-v1.json', sha256: sha256Hex(candidate), decidedBy: 'owner:fixture', basis: 'bulk', at: '2026-10-31T00:00:00Z' }));
   const pkg = join(lib, 'node_modules/@fontsource-variable/pinned-face');
   put(join(pkg, 'package.json'), '{"name":"@fontsource-variable/pinned-face","version":"5.0.0","main":"index.css"}');
   put(join(pkg, 'index.css'), "@font-face { font-family: 'Pinned Face Variable'; src: url(./files/pinned-face.woff2) format('woff2'); }\n");

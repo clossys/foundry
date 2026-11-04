@@ -2,5 +2,6 @@
   "candidate": "testimonials-v1.json",
   "sha256": "709233bda1176040e321e936e615fa8a3671a1b46d86d8e3779c76cb34758aef",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

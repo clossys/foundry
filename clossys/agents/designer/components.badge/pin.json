@@ -2,5 +2,6 @@
   "candidate": "badge-v2.json",
   "sha256": "bab59597c9da4337d7ae250b68eae0ef3f7e21c2677f2f401cdc35cd3d3d63eb",
   "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "basis": "planner",
   "at": "2026-11-03T12:00:00Z"
 }

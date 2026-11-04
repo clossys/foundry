@@ -15,6 +15,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { basisFor } from './backfill-pin-basis.mjs';
 
 export const DEFAULT_BASE = '452003304';
 
@@ -55,6 +56,8 @@ export async function migratePins({ repo, base = DEFAULT_BASE, runPin, dryRun = 
       const at = typeof original?.at === 'string' && original?.candidate === before.candidate ? original.at : before.at;
       if (before.decidedBy === by && before.at === at && !('pinnedBy' in before)) { skipped++; continue; }
       const args = ['pin', `${agent}/${slot}`, before.candidate, '--by', by, '--at', at, '--root', repo, '--json'];
+      // `clossys pin` needs a basis for a non-planner decider: keep the pin's own, else the backfill mapping.
+      if (!/^planner(?::|$)/.test(by)) args.push('--basis', before.basis ?? basisFor(by).basis);
       if (dryRun) { planned.push(args); migrated++; continue; }
       const result = await runPin(args);
       if (!result.ok) { failures.push(`${agent}/${slot}: ${String(result.output).trim()}`); continue; }

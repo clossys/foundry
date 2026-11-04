@@ -42,7 +42,7 @@ function fixture(agent: SlotAgent, ids = [`${agent}.empty`, `${agent}.options`],
       expect(validateCandidate(kind, id, name, bytes)).toEqual([]);
       writeFileSync(join(dir, 'candidates', name), bytes);
       if (version === 1 && id.endsWith('.options')) {
-        const pin = { candidate: name, sha256: sha256Hex(bytes), decidedBy: 'owner:synthetic-test-only:slot-census', at: '2026-01-01T00:00:00Z' };
+        const pin = { candidate: name, sha256: sha256Hex(bytes), decidedBy: 'owner:synthetic-test-only:slot-census', basis: 'bulk', at: '2026-01-01T00:00:00Z' };
         expect(validatePin(pin)).toEqual([]);
         save(join(dir, 'pin.json'), pin);
       }
@@ -69,7 +69,7 @@ describe('authoritative slot census', () => {
     // The options slot pins v1 while v2 exists. Empty inputs never establish readiness.
     expect(agentSlotCensus(root, 'director')).toMatchObject({ state: 'ready', total: 2, withCandidate: 1, pinned: 1 });
     const empty = join(root, 'agents/director/director.empty');
-    save(join(empty, 'pin.json'), { candidate: 'missing-v1.md', sha256: '0'.repeat(64), decidedBy: 'owner:synthetic-test-only:missing-candidate', at: '2026-01-01T00:00:00Z' });
+    save(join(empty, 'pin.json'), { candidate: 'missing-v1.md', sha256: '0'.repeat(64), decidedBy: 'owner:synthetic-test-only:missing-candidate', basis: 'bulk', at: '2026-01-01T00:00:00Z' });
     expect(agentSlotCensus(root, 'director')).toMatchObject({ state: 'ready', total: 2, withCandidate: 1, pinned: 2 });
     writeFileSync(join(root, 'agents/director/director.options/candidates/sample-v1.md'), 'changed bytes');
     expect(agentSlotCensus(root, 'director')).toMatchObject({ state: 'ready', total: 2, withCandidate: 1, pinned: 2 });
@@ -86,8 +86,8 @@ describe('authoritative slot census', () => {
       rmSync(join(dir('empty'), 'candidates'), { recursive: true });
       writeFileSync(join(dir('bad-slot'), 'slot.json'), '{');
       writeFileSync(join(dir('bad-pin'), 'pin.json'), '{');
-      const pin = (name: string, candidate: string, sha256: string) => save(join(dir(name), 'pin.json'), {
-        candidate, sha256, decidedBy: 'owner:synthetic-test-only:census', at: '2026-01-01T00:00:00Z',
+      const pin = (name: string, candidate: string, sha256: string, basis = 'bulk') => save(join(dir(name), 'pin.json'), {
+        candidate, sha256, decidedBy: 'owner:synthetic-test-only:census', basis, at: '2026-01-01T00:00:00Z',
       });
       const extension = agent === 'director' || agent === 'writer' ? 'md' : 'json';
       const candidate = `sample-v1.${extension}`;
@@ -100,20 +100,21 @@ describe('authoritative slot census', () => {
       rmSync(unreadablePath);
       mkdirSync(unreadablePath);
       const bytes = readFileSync(join(dir('valid'), 'candidates', candidate), 'utf8');
-      pin('valid', candidate, sha256Hex(bytes));
+      pin('valid', candidate, sha256Hex(bytes), 'picked');
       const census = agentSlotCensus(root, agent);
       expect(census.state).toBe('ready');
       if (census.state !== 'ready') throw new Error('expected census');
-      expect(census).toMatchObject({ total: 8, withCandidate: 6, pinned: 4 });
+      // A bulk or planner pin is `confirm`; only an owner-picked pin is `pinned`.
+      expect(census).toMatchObject({ total: 8, withCandidate: 6, pinned: 4, confirm: 3 });
       expect(census.rows).toEqual([
         { id: ids[0], agent, folder: 'missing', candidates: [], slot: 'missing', pin: 'missing' },
         { id: ids[1], agent, folder: 'present', candidates: [], slot: 'missing', pin: 'missing' },
         { id: ids[2], agent, folder: 'present', candidates: [candidate], slot: 'invalid', pin: 'missing' },
         { id: ids[3], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'invalid' },
-        { id: ids[4], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'missing-candidate' },
-        { id: ids[5], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'hash-drift' },
-        { id: ids[6], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'error' },
-        { id: ids[7], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'valid' },
+        { id: ids[4], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'missing-candidate', basis: 'bulk', status: 'confirm' },
+        { id: ids[5], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'hash-drift', basis: 'bulk', status: 'confirm' },
+        { id: ids[6], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'error', basis: 'bulk', status: 'confirm' },
+        { id: ids[7], agent, folder: 'present', candidates: [candidate], slot: 'valid', pin: 'valid', basis: 'picked', status: 'pinned' },
       ]);
       expect(JSON.stringify(census)).not.toContain(root);
       expect(JSON.stringify(census)).not.toContain(bytes);

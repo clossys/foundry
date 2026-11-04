@@ -2,5 +2,6 @@
   "candidate": "banner-v2.json",
   "sha256": "21e443fbea0a4fbe68153d91e6b4bf36d751ba1f93395423375663a2da8fe5d7",
   "decidedBy": "owner:2026-11-03 planner-pin COMPONENT-FIXTURES",
+  "basis": "planner",
   "at": "2026-11-03T12:00:00Z"
 }

@@ -92,7 +92,7 @@ test('newest is never inferred: the explicit older version wins and an explicit 
 
 test('an existing pin remains a validated factual claim and never becomes preview approval', async t => {
   const f = await fixture(t);
-  const pin = { candidate: `${element}-v1.json`, sha256: f.binding.hash.slice('sha256:'.length), decidedBy: 'owner:fixture-owner', at };
+  const pin = { candidate: `${element}-v1.json`, sha256: f.binding.hash.slice('sha256:'.length), decidedBy: 'owner:fixture-owner', basis: 'bulk', at };
   await writeFile(join(f.slotDir, 'pin.json'), JSON.stringify(pin));
   const [item] = await f.run();
   assert.deepEqual(item.previewEvidence.pinClaim, { candidate: pin.candidate, hash: f.binding.hash, at });

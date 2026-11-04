@@ -226,7 +226,7 @@ describe("status", () => {
 
 describe("port schemas", () => {
   it("validates pins and seats against their schemas", () => {
-    expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), decidedBy: "owner:me", at: "2026-11-03T00:00:00Z" }))).toEqual([]);
+    expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), decidedBy: "owner:me", basis: "bulk", at: "2026-11-03T00:00:00Z" }))).toEqual([]);
     expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "hero-v1.json", sha256: "0".repeat(64), pinnedBy: "owner:me", at: "2026-11-03T00:00:00Z" })).length).toBeGreaterThan(0);
     expect(validateFile("pin", "x/pin.json", JSON.stringify({ candidate: "a.json" })).length).toBeGreaterThan(0);
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: null, human: null }))).toEqual([]);

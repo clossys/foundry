@@ -2,5 +2,6 @@
   "candidate": "studio-v1.md",
   "sha256": "af9640016e4f2331f35c44fa70f3850a0059c0afb1d354de7d42e914af502477",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:39Z"
 }

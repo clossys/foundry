@@ -2,5 +2,6 @@
   "candidate": "page-v3.json",
   "sha256": "bf899e8dc2637622bba03365894710d4fab83896ed8804d2b08eaa4f01b95928",
   "decidedBy": "owner:2026-11-03 W2-COPY-THROUGH-WRITER go",
+  "basis": "bulk",
   "at": "2026-11-03T13:45:00Z"
 }

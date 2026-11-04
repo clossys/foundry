@@ -8,7 +8,7 @@ import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
-  type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc,
+  type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { listSlots, readCandidate, readSlot } from "./slots.js";
 
@@ -38,15 +38,16 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
 
 /**
  * Pin one existing, valid candidate. `decidedBy` names who decided (owner or planner, optionally
- * `:<message ref>`, or `migrated`). A `notNeeded` marker on the slot is cleared: the pin replaces it.
+ * `:<message ref>`, or `migrated`); `basis` how (picked, bulk or planner). A `notNeeded` marker on
+ * the slot is cleared: the pin replaces it.
  */
-export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; at: string }): PinDoc {
+export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }): PinDoc {
   const { doc, entry } = located(consumer, agent, id);
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
   const read = readCandidate(consumer, agent, id, candidate);
   const issues = validateCandidate(doc.kind, id, candidate, read.bytes);
   if (issues.length) throw new Error(`pin refused: ${issues.map(issue => issue.message).join("; ")}`);
-  const pin: PinDoc = { candidate, sha256: read.sha256, decidedBy: input.decidedBy, at: input.at };
+  const pin: PinDoc = { candidate, sha256: read.sha256, decidedBy: input.decidedBy, basis: input.basis, at: input.at };
   const pinIssues = validatePin(pin);
   if (pinIssues.length) throw new Error(`pin refused: ${pinIssues.map(issue => issue.message).join("; ")}`);
   if (doc.notNeeded) {
