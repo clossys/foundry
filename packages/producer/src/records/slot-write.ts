@@ -4,8 +4,8 @@
  * Candidates are immutable (a change is the next version); a decision is replaced, and its
  * history is git. Decisions are written through `clossys pin` (rule R-DECISIONS-BY-CLI).
  */
-import { existsSync, mkdirSync, unlinkSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, lstatSync, mkdirSync, realpathSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
@@ -19,11 +19,21 @@ function located(consumer: string, agent: SlotAgent, id: string) {
   return { doc, entry };
 }
 
+/** Refuse a candidate directory reached through an alias, or one that leaves its canonical path. */
+function canonicalDirectory(directory: string): void {
+  for (let cursor = resolve(directory); ; cursor = dirname(cursor)) {
+    try { if (lstatSync(cursor).isSymbolicLink()) throw new Error("candidate refused: symbolic link in candidate path"); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    if (dirname(cursor) === cursor) break;
+  }
+}
+
 /**
  * Write `<name>-v<next>` into the slot's candidates. JSON kinds take the item object
  * (serialized as two-space JSON); Markdown kinds take the file text. Invalid candidates are refused.
+ * `canonical` also refuses aliased candidate paths (no ancestor may be a symbolic link).
  */
-export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown): { name: string; sha256: string } {
+export function writeCandidate(consumer: string, agent: SlotAgent, id: string, name: string, content: unknown, options: { readonly canonical?: boolean } = {}): { name: string; sha256: string } {
   const { doc, entry } = located(consumer, agent, id);
   const ext = KIND_EXT[doc.kind];
   const versions = entry.candidates.map(file => CANDIDATE_NAME.exec(file)).filter(match => match?.[1] === name).map(match => Number(match![2]));
@@ -31,8 +41,11 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
   const bytes = ext === "md" ? String(content) : jsonBytes(content);
   const issues = validateCandidate(doc.kind, id, file, bytes);
   if (issues.length) throw new Error(`candidate refused: ${issues.map(issue => issue.message).join("; ")}`);
-  mkdirSync(candidatesDir(entry.dir), { recursive: true });
-  writeFileSync(join(candidatesDir(entry.dir), file), bytes, { flag: "wx" });
+  const directory = candidatesDir(entry.dir);
+  if (options.canonical) canonicalDirectory(directory);
+  mkdirSync(directory, { recursive: true });
+  if (options.canonical && realpathSync(directory) !== resolve(directory)) throw new Error("candidate refused: candidate directory leaves its canonical path");
+  writeFileSync(join(directory, file), bytes, { flag: "wx" });
   return { name: file, sha256: readCandidate(consumer, agent, id, file).sha256 };
 }
 

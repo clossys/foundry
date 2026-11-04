@@ -1,36 +1,17 @@
-import { watch, type FSWatcher } from "node:fs";
-import { lstat } from "node:fs/promises";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { join, resolve } from "node:path";
 import type { AgentKind } from "../agents.js";
+import { watchSlotModel } from "../records/slots.js";
 import { AGENT_KINDS, CELL_ID } from "./cells.js";
 import type { ChangeEvent } from "./contract.js";
 
-/** One recursive watcher per server, including when the agents directory is absent. */
+/** One recursive watcher per server, including when the agents directory is absent (the one reader's watcher). */
 export async function watchCells(root: string, onChange: (event: ChangeEvent) => void): Promise<() => void> {
-  const target = join(resolve(root), "clossys", "agents");
-  let watched = target;
-  for (;;) {
-    try {
-      const stat = await lstat(watched);
-      if (stat.isSymbolicLink() || !stat.isDirectory()) throw new Error("Expected a regular agents directory");
-      break;
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-      const parent = dirname(watched); if (parent === watched) throw error; watched = parent;
-    }
-  }
-  let closed = false;
-  const watcher: FSWatcher = watch(watched, { recursive: true }, (_type, filename) => {
-    if (closed || filename === null) return;
-    const changed = resolve(watched, String(filename));
-    const rel = relative(target, changed);
-    if (rel === ".." || rel.startsWith(`..${sep}`)) return;
+  return watchSlotModel(join(resolve(root), "clossys"), segments => {
+    if (segments === null) { onChange({ agent: null, id: null, reload: true }); return; }
     // Flat slot model: agents/<agent>/<slot-id>/{slot.json,candidates/,pin.json}.
-    const [kind, slot] = rel.split(sep);
+    const [kind, slot] = segments;
     const agent = AGENT_KINDS.includes(kind as AgentKind) ? kind as AgentKind : null;
     const id = agent && slot && CELL_ID.test(slot) ? slot : null;
     onChange({ agent, id, reload: true });
   });
-  watcher.on("error", () => { if (!closed) onChange({ agent: null, id: null, reload: true }); });
-  return () => { closed = true; watcher.close(); };
 }

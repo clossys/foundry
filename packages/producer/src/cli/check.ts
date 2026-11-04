@@ -6,6 +6,7 @@ import { lintPages } from "../check/page-lint.js";
 import { readPageCheckSource, readPageManifest } from "../check/page-manifest.js";
 import type { PageLintReport } from "../check/page-types.js";
 import { recordSuitesSummary, refVerbatimSuite, runRecordSuites } from "../check/record-suites.js";
+import { hasModelRoot } from "../records/slots.js";
 import { discoverWorkspace } from "./workspace.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
@@ -82,7 +83,7 @@ export async function runCheck(args: CliArgs, cwd: string): Promise<CliResult> {
   const start = resolve(cwd, args.root ?? ".");
   let root = start;
   let consumer = start;
-  if (statSync(join(start, "agents"), { throwIfNoEntry: false })?.isDirectory()) {
+  if (hasModelRoot(start)) {
     root = dirname(start);
   } else {
     try { root = discoverWorkspace(start); } catch { /* Missing model inputs fail below. */ }

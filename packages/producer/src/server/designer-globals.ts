@@ -1,10 +1,9 @@
 import { createHash } from "node:crypto";
-import { constants } from "node:fs";
-import { open, readFile, realpath } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { dirname, extname, isAbsolute, join, relative, sep } from "node:path";
 import { compile } from "tailwindcss";
-import { listSlots, readCandidate } from "../records/slots.js";
+import { listSlots, readAgentFile, readCandidate } from "../records/slots.js";
 import { agentRoot } from "./cells.js";
 import { pinnedBrand, type ConsumerBrand } from "./consumer-brand.js";
 import { specimenSubstrate } from "./specimen-substrate.js";
@@ -28,13 +27,6 @@ const producerRequire = createRequire(import.meta.url);
 const FONT_FILE = /\.(?:woff2?|ttf|otf)$/;
 const FONT_TYPES: Record<string, string> = { ".woff2": "font/woff2", ".woff": "font/woff", ".ttf": "font/ttf", ".otf": "font/otf" };
 export const DESIGNER_FONT_PREFIX = "/api/designer/fonts/";
-
-async function readNoFollow(path: string): Promise<string | undefined> {
-  let handle;
-  try { handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return undefined; throw error; }
-  try { return await handle.readFile("utf8"); } finally { await handle.close(); }
-}
 
 function packageName(id: string): string | undefined {
   const match = /^(@[a-z0-9][\w.-]*\/[a-z0-9][\w.-]*|[a-z0-9][\w.-]*)(?:\/|$)/.exec(id);
@@ -90,7 +82,7 @@ let cached: { key: string; value: ConsumerGlobals } | undefined;
 /** Compile the consumer's Designer globals. Undefined when the consumer has none. */
 export async function consumerGlobals(root: string): Promise<ConsumerGlobals | undefined> {
   const designer = agentRoot(root, "designer");
-  const authored = await readNoFollow(join(designer, "globals.css"));
+  const authored = readAgentFile(join(root, "clossys"), "designer", "globals.css");
   if (authored === undefined) return undefined;
   const pinned = pinnedFonts(root);
   // Packages resolve from the consumer workspace that owns the Designer output, then from the specimen substrate.

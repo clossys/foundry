@@ -233,7 +233,7 @@ describe('slot details', () => {
     expect(slotDetailInputs(slotDetail(root, 'publisher', id)!, links, 'light', publication).specimen).toMatchObject({ kind: 'record', status: { label: 'No pin', tone: 'destructive' } });
   });
 
-  it('binds only the native Writer strings pin to the inline record specimen while preserving source and options', () => {
+  it('binds the native Writer strings pin to the inline record specimen and renders every other valid candidate as a preview', () => {
     const { root, dir } = fixture();
     const full = 'First line.\nSecond line.';
     const first = candidate(dir, 1, full);
@@ -250,7 +250,8 @@ describe('slot details', () => {
     expect(detail.shown).toBe(first.name);
     expect(detail.candidates[0]!.content).toContain(full);
     expect(detail.candidates[0]!.record).toBeDefined();
-    expect(detail.candidates[1]!.record).toBeUndefined();
+    expect(JSON.stringify(detail.candidates[1]!.record)).toContain('Newer draft');
+    expect(detail.candidates.map(candidate => [candidate.pinned, candidate.preview])).toEqual([[true, false], [false, true]]);
     const inputs = slotDetailInputs(detail, links, 'light');
     expect(inputs.specimen).toMatchObject(resolveCopy(detail.candidates[0]!.record));
     expect(inputs.specimen).toMatchObject({ kind: 'record', title: 'Strings', rows: [{ text: full }] });
@@ -269,12 +270,13 @@ describe('slot details', () => {
     ]) {
       restore(); mutation();
       const detail = slotDetail(root, 'writer', id)!;
-      expect(detail.candidates.every(candidate => candidate.record === undefined)).toBe(true);
+      // No valid pin: every candidate is a preview, and a preview is never the slot's specimen.
+      expect(detail.candidates.every(candidate => candidate.preview)).toBe(true);
       expect(slotDetailInputs(detail, links, 'dark')).toMatchObject({ specimen: { kind: 'record', status: { tone: 'destructive' } }, options: { rows: [{ version: 1 }, { version: 2 }] } });
     }
   });
 
-  it('binds only the validated native Director pin to the inline record specimen', () => {
+  it('binds the validated native Director pin to the inline record specimen and renders other valid briefs as previews', () => {
     const { root } = fixture();
     const id = 'context.market.size', agent = join(root, 'clossys/agents/director');
     const dir = join(agent, id);
@@ -298,13 +300,14 @@ describe('slot details', () => {
     expect(detail.candidates[0]!.issues).toEqual([]);
     expect(detail.candidates[0]!.record).toMatchObject({ kind: 'record', title: { copy: 'studio.direction' } });
     expect(JSON.stringify(detail.candidates[0]!.record)).toContain('Pinned demand');
-    expect(detail.candidates[1]!.record).toBeUndefined();
+    expect(JSON.stringify(detail.candidates[1]!.record)).toContain('Newer draft');
+    expect(detail.candidates.map(candidate => [candidate.pinned, candidate.preview])).toEqual([[true, false], [false, true]]);
     const inputs = slotDetailInputs(detail, links, 'dark');
     expect(inputs.specimen).toMatchObject(resolveCopy(detail.candidates[0]!.record));
     expect(inputs.options).toMatchObject({ rows: [{ label: 'brief-v1.md', pinned: true }, { label: 'brief-v2.md', pinned: false }] });
     const noPreview = () => {
       const detail = slotDetail(root, 'director', id)!;
-      expect(detail.candidates.every(candidate => candidate.record === undefined)).toBe(true);
+      expect(detail.candidates.every(candidate => candidate.preview)).toBe(true);
       expect(slotDetailInputs(detail, links, 'light').specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
     };
     for (const mutation of [
@@ -329,7 +332,7 @@ describe('slot details', () => {
     expect(slotDetail(root, 'director', 'context.unknown')).toBeUndefined();
   });
 
-  it('links all six viewports only to the exact canonical pin without any legacy artifact', () => {
+  it('links all six viewports to the exact canonical pin and every other valid candidate to its own preview, without any legacy artifact', () => {
     const { root } = fixture();
     const consumer = join(root, 'clossys');
     const designer = join(consumer, 'agents/designer');
@@ -353,7 +356,10 @@ describe('slot details', () => {
       dark: `/__specimen?element=sections.example%2Fexample&theme=dark&width=${viewport}&v=1`,
     })) });
     writeFileSync(join(dir, 'candidates/example-v2.json'), bytes);
-    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[1]!.specimen).toBeUndefined();
+    const preview = slotDetail(root, 'designer', 'sections.example')!;
+    expect(preview.candidates.map(candidate => [candidate.name, candidate.specimen, candidate.preview])).toEqual([['example-v1.json', 'sections.example/example', false], ['example-v2.json', 'sections.example/example', true]]);
+    // The slot's own specimen stays the pin; the preview renders only in its option row, by version.
+    expect(slotDetailInputs(preview, links, 'dark')).toMatchObject({ specimen: { specimens: [375, 768, 1280].map(viewport => ({ viewport, light: expect.stringContaining('&v=1') })) }, options: { rows: [{ pinned: true }, { pinned: false, preview: { kind: 'frame', src: expect.stringContaining('&v=2') } }] } });
     writeFileSync(file, bytes + '\n');
     expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.specimen).toBeUndefined();
     // Even a matching hash cannot grant a candidate with another element identity.

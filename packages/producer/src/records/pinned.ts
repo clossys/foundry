@@ -3,11 +3,10 @@
  * whose pin names intact, valid candidate bytes. This is what the agent verbs (`direct`,
  * `design`, `write`, `publish`) read; nothing here writes into the consumer.
  */
-import { existsSync } from "node:fs";
 import { join, relative, sep } from "node:path";
-import { listSlots, readCandidate, readSlot } from "./slots.js";
+import { hasPinFile, listSlots, readCandidate, readSlot } from "./slots.js";
 import {
-  CANDIDATE_NAME, candidatesDir, parseFrontmatter, pinFile, validateCandidate,
+  CANDIDATE_NAME, candidatesDir, parseFrontmatter, validateCandidate,
   type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 
@@ -44,7 +43,7 @@ export function readPinned(consumer: string, agent: SlotAgent): PinnedSet {
   const issue = (slot: string, reason: PinnedIssueReason, message: string) => { issues.push({ agent, slot, reason, message }); };
   for (const entry of listSlots(consumer, agent)) {
     if (!entry.pin) {
-      if (existsSync(pinFile(entry.dir))) issue(entry.id, "invalid-pin", `${agent}/${entry.id}: pin.json is not a valid pin`);
+      if (hasPinFile(entry.dir)) issue(entry.id, "invalid-pin", `${agent}/${entry.id}: pin.json is not a valid pin`);
       else unpinned.push(entry.id);
       continue;
     }

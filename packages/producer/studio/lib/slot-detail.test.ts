@@ -6,7 +6,7 @@ const links = { leaf: (agent: string, id: string) => `/${agent}/${id}`, label: (
 const detail: SlotDetail = {
   agent: 'designer', id: 'sections.example', name: 'Example', kind: 'element', trail: ['Sections', 'Examples'],
   contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, state: { state: 'pinned' }, history: [], checks: [],
-  candidates: [{ name: 'example-v2.json', version: 2, sha256: 'a'.repeat(64), pinned: false, content: '{}', source: undefined, issues: [], specimen: 'sections.example/example' }], shown: 'example-v2.json',
+  candidates: [{ name: 'example-v2.json', version: 2, sha256: 'a'.repeat(64), pinned: true, preview: false, content: '{}', source: undefined, issues: [], specimen: 'sections.example/example' }], shown: 'example-v2.json',
 };
 
 describe('native detail viewport data for stock iframe consumers', () => {
@@ -26,6 +26,13 @@ describe('native detail viewport data for stock iframe consumers', () => {
     expect(input.specimen).toMatchObject({ kind: 'record', status: { tone: 'destructive' } });
     expect(input.specimen).not.toHaveProperty('rows');
     expect(input.options).toMatchObject({ rows: [{ preview: { kind: 'strings', rows: [] } }] });
+  });
+
+  it('never shows a preview candidate as the slot specimen; it renders only in its option row', () => {
+    const preview = { ...detail, candidates: detail.candidates.map(candidate => ({ ...candidate, pinned: false, preview: true })) };
+    const input = slotDetailInputs(preview, links, 'light');
+    expect(input.specimen).not.toHaveProperty('specimens');
+    expect(input.options).toMatchObject({ rows: [{ version: 2, pinned: false, preview: { kind: 'frame', src: '/__specimen?element=sections.example%2Fexample&theme=light&width=1280&v=2' } }] });
   });
 
   it('draws Not needed with the reason and No pin as an error', () => {

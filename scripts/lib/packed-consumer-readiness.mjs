@@ -88,7 +88,6 @@ const publisherLandedExports = [
   "@clossys/publisher/content",
   "@clossys/publisher/content-map",
   "@clossys/publisher/content-map/cells",
-  "@clossys/publisher/content-map/slots",
   "@clossys/publisher/content/node",
   "@clossys/publisher/install",
   "@clossys/publisher/specimen",

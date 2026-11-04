@@ -26,5 +26,7 @@ export const CHECKS = [
   defineCheck({ id: "studio-capture", files: ["scripts/capture-studio.mjs"], npm: ["check:studio-capture", "test:studio-capture"] }),
   defineCheck({ id: "rules", rootNpm: ["check:rules"] }),
   defineCheck({ id: "slot-state", files: ["scripts/check-slot-state.mjs"], npm: ["check:slot-state"] }),
+  defineCheck({ id: "pin-propagation", rootNpm: ["check:pin-propagation"] }),
+  defineCheck({ id: "every-candidate-previewable", rootNpm: ["check:every-candidate-previewable"] }),
   defineCheck({ id: "studio", files: ["scripts/check-studio.mjs"], npm: ["check:studio"], rootNpm: ["check"] }),
 ];

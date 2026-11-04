@@ -1,11 +1,10 @@
 /** Canonical, unpinned Designer candidates emitted from registered package implementations. */
-import { lstatSync, mkdirSync, realpathSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
 import { emitSurfacePackageCandidate, runtimeHash, runtimeSnapshot, type CompositeCatalogData, type RuntimeJson, type SurfacePackageEvidence, type SurfaceSlot } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/node";
 import { specimenRecordFrom } from "@clossys/publisher/specimen";
 import { listSlots, readCandidate, readSlot } from "../records/slots.js";
-import { CANDIDATE_NAME, candidateName, candidatesDir, jsonBytes, sameJson, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { writeCandidate } from "../records/slot-write.js";
+import { CANDIDATE_NAME, candidateName, jsonBytes, sameJson, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
 import { sha256Hex } from "../records/hash.js";
 import { libraryRecordStore } from "./library-source.js";
@@ -29,13 +28,6 @@ export interface CatalogCandidateInput {
 }
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 function fail(message: string): never { throw new TypeError(`catalog candidate: ${message}`); }
-function ordinaryPath(path: string): void {
-  for (let cursor = resolve(path); ; cursor = dirname(cursor)) {
-    try { if (lstatSync(cursor).isSymbolicLink()) fail("symbolic link in candidate path"); }
-    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
-    if (dirname(cursor) === cursor) break;
-  }
-}
 function unresolved(value: unknown): boolean {
   return Array.isArray(value) ? value.some(unresolved) : object(value) && (Object.hasOwn(value, "$copy") || Object.hasOwn(value, "$asset") || Object.values(value).some(unresolved));
 }
@@ -106,11 +98,11 @@ export async function materializeCatalogCandidate(input: CatalogCandidateInput) 
   if (findings.length) throw new RecordError(`candidate ${candidate}`, findings);
   // Exercise the common payload/preview validator before the exclusive write.
   specimenRecordFrom({ id: `${input.slot}/${input.element}`, version, kind: item.type, files: [{ path: `${input.element}.json`, content: bytes }], preview: item.meta.preview, contentHash: sha256Hex(bytes) });
-  const directory = candidatesDir(entry.dir);
-  ordinaryPath(directory);
-  mkdirSync(directory, { recursive: true });
-  if (realpathSync(directory) !== resolve(directory)) fail("candidate directory leaves its canonical path");
-  writeFileSync(join(directory, candidate), bytes, { flag: "wx" });
+  // The one slot-model writer allocates the same next version and refuses aliased paths.
+  let written: { name: string };
+  try { written = writeCandidate(input.root, "designer", input.slot, input.element, item, { canonical: true }); }
+  catch (error) { fail(error instanceof Error ? error.message.replace(/^candidate refused: /, "") : String(error)); }
+  if (written.name !== candidate) fail("candidate version allocation differs");
   const read = readCandidate(input.root, "designer", input.slot, candidate);
   const record = await libraryRecordStore([input.root]).load(`${input.slot}/${input.element}`, version);
   if (!record || read.bytes !== bytes) fail("canonical candidate readback differs");

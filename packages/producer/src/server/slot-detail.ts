@@ -10,8 +10,13 @@ export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
   content: string; source: unknown; issues: string[];
   specimen?: string;
-  /** A Director brief or Writer strings pin, as the specimen section's record rows (rendered inline, no frame). */
+  /** A Director brief or Writer strings candidate, as the specimen section's record rows (rendered inline, no frame). */
   record?: RecordSpecimenInput;
+  /**
+   * True for every candidate that is not the valid pin: it renders from its own bytes for review,
+   * and no page uses it (pages install pins only).
+   */
+  preview: boolean;
 }
 export interface SlotDetail {
   agent: SlotAgent; id: string; kind: string; trail: string[];
@@ -58,18 +63,17 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
         || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) issues.push("candidate-identity: element identity differs from the candidate name or slot");
     }
-    let specimen: string | undefined;
-    // The specimen source reads these same native bytes. Only the exact valid pin
-    // grants a preview; legacy selections and installed artifacts are irrelevant.
+    // Every placed, valid candidate renders from its own native bytes (the specimen route takes the
+    // slot and the candidate). Only the exact valid pin is the pin; every other one is a preview.
     const validPin = placed && !issues.length && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256;
-    if (validPin && agent === "designer" && doc.kind === "element" && name.endsWith(".json")) {
-      specimen = `${id}/${element}`;
-    }
-    const record = validPin && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenInput(consumer, agent, id, name) : undefined;
+    // A pinned candidate whose bytes drifted from its pin renders nothing: the pin check flags it.
+    const renders = placed && !issues.length && (entry.pin?.candidate !== name || validPin);
+    const specimen = renders && agent === "designer" && doc.kind === "element" && name.endsWith(".json") ? `${id}/${element}` : undefined;
+    const record = renders && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenInput(consumer, agent, id, name) : undefined;
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
       ...(specimen ? { specimen } : {}), ...(record ? { record } : {}),
-      issues };
+      preview: !validPin, issues };
   });
   const pinCandidate = candidates.find(candidate => candidate.pinned);
   const ia = readIa(consumer, agent)!;

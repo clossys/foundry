@@ -4,10 +4,10 @@
  * Publisher renders the validated inline registry item and its recorded preview.
  */
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
 import { adaptTheme, installedPath, recordStoreSource, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
-import { listSlots, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
+import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
 import { dependencyPart, fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues, treeDependencyParts } from "../server/specimen-tree.js";
@@ -133,7 +133,7 @@ function registryBaseItem(base: string, alias: string, context: SpecimenAliasCon
 /** A fingerprint of every Designer pin (path + mtime + size), so an edited pin rebuilds the index. */
 function pinFingerprint(roots: readonly string[]): string {
   return roots.flatMap(root => listSlots(root, "designer").map(entry => {
-    try { const stat = statSync(join(entry.dir, "pin.json")); return `${entry.id}:${stat.mtimeMs}:${stat.size}`; } catch { return `${entry.id}:-`; }
+    return `${entry.id}:${pinStamp(entry.dir)}`;
   })).join("|");
 }
 

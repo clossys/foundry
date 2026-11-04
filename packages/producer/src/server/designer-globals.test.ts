@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -11,7 +11,7 @@ function put(path: string, content: string) { mkdirSync(dirname(path), { recursi
 
 /** A consumer whose globals name a hand-picked family and whose Designer slot model pins a different font item. */
 function workspace(): string {
-  const root = mkdtempSync(join(tmpdir(), 'designer-globals-'));
+  const root = realpathSync(mkdtempSync(join(tmpdir(), 'designer-globals-')));
   roots.push(root);
   const lib = join(root, 'clossys');
   put(join(lib, 'package.json'), '{"name":"consumer","private":true}');

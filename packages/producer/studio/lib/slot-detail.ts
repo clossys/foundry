@@ -71,8 +71,9 @@ export function slotDetailInputs(detail: SlotDetail, links: StudioLinks, theme: 
   const specimen = slotSpecimen({
     name, description: shown ? shown.name : studioCopy("studio.this-slot-has-no-candidate-yet"),
     state: detail.state, kind: detail.kind, options: detail.candidates.length,
-    ...(page ? { page } : {}), ...(shown?.specimen ? { element: { specimen: shown.specimen, version: shown.version } } : {}),
-    ...(shown?.record ? { record: resolveCopy(shown.record) as RecordDraft } : {}),
+    // A preview (any candidate that is not the valid pin) never stands as the slot's specimen; it renders in its option row.
+    ...(page ? { page } : {}), ...(shown?.specimen && !shown.preview ? { element: { specimen: shown.specimen, version: shown.version } } : {}),
+    ...(shown?.record && !shown.preview ? { record: resolveCopy(shown.record) as RecordDraft } : {}),
   });
   const options: OptionsInput = {
     copy: optionsCopy(),

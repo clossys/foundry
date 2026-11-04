@@ -47,10 +47,10 @@ const installed = file => { try { return fs.readFileSync(file, 'utf8').split('\n
  * through each agent's ia.json into tab pages and leaf templates, exactly as `publishNext` installs.
  */
 async function readStudioPublication(repositoryRoot = REPOSITORY_ROOT) {
-  const { readPinnedPublication } = await import('@clossys/publisher/content-map/slots');
+  const { readPinnedPublication } = await import(require('node:url').pathToFileURL(path.join(STUDIO_ROOT, '../dist/publish/pinned-publication.js')).href);
   const { expandPublication } = await import(require('node:url').pathToFileURL(path.join(STUDIO_ROOT, '../dist/publish/expand-tabs.js')).href);
   const consumer = path.join(repositoryRoot, 'clossys');
-  const { map, routePack } = await readPinnedPublication(path.join(consumer, 'agents/publisher'), 'studio');
+  const { map, routePack } = await readPinnedPublication(consumer, 'studio');
   if (!routePack) throw new Error('publication.studio has no route pack');
   const expansion = expandPublication(consumer, map, routePack.routes);
   return { map: expansion.map, routePack: { ...routePack, routes: expansion.routes } };

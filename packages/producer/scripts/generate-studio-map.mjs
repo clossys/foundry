@@ -2,12 +2,12 @@ import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { readPinnedPublication } from '@clossys/publisher/content-map/slots';
 import { projectRedirects } from '@clossys/publisher/content-map';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
+import { readPinnedPublication } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
 import { checkPayload } from './studio-payload.mjs';
 import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
@@ -261,8 +261,7 @@ export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, ap
 
 export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), appDir = join(outputDir, '..', 'app'), installOut, check = false, payloads = true, target, previewItems } = {}) {
   if ((target !== undefined && target !== 'preview') || (target !== 'preview' && previewItems !== undefined)) fail('Draft bindings require an explicit preview target');
-  const publisherRoot = join(clossysRoot, 'agents', 'publisher');
-  const pinned = await readPinnedPublication(publisherRoot, 'studio');
+  const pinned = await readPinnedPublication(resolve(clossysRoot), 'studio');
   const routePack = pinned.routePack;
   if (!routePack) fail('the studio publication has no route metadata');
   // Parameterized records expand through the content map: one tab page per IA group, one leaf template per tab.

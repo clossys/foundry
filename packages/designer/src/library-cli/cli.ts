@@ -28,9 +28,9 @@ import { selectStarter } from "./select.js";
 const USAGE = `Usage: designer-library <command> --root <consumer-library>
 
 Commands:
-  cells migrate --from <library> [--to <cell-root>]  Migrate into clossys/agents/designer at the repository root.
-  cells compile|check [--root <cell-root>] --out <library> [--check]  Compile active cells or check generated drift.
-  cells propose <slot> | activate <slot@version...> --confirm <ref> [--root <cell-root>]
+  cells migrate --from <library> --to <cell-root>  Migrate a library into an explicit cell root.
+  cells compile|check --root <cell-root> --out <library> [--check]  Compile active cells or check generated drift.
+  cells propose <slot> | activate <slot@version...> --confirm <ref> --root <cell-root>
   surfaces --refresh <surfaceId> [--observations <file>] [--json]  Refresh one held package surface from its same upstream.
   status [--json]                         Describe consumer-owned fills and baseHash.
   check [--layer themes|assets|components|sections|frames] [--observations <file>] [--json]

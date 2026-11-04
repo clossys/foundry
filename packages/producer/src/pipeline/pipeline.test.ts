@@ -1,6 +1,7 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { parsePipelineArgs, runPipelineCli } from "../cli/pipeline.js";
@@ -13,7 +14,7 @@ import { portsOverlap } from "./globs.js";
 import { stepOptions } from "./options.js";
 import { runPipeline, selectStep } from "./runner.js";
 import { loadSchema, validateFile } from "./schema.js";
-import { ELEMENT_SCHEMA, SELECTION_SCHEMA } from "../records/schemas.js";
+import { ELEMENT_SCHEMA } from "../records/schemas.js";
 import { readSeat } from "./seats.js";
 import { pipelineStatus, slotCounts } from "./status.js";
 import { STEPS } from "./steps/index.js";
@@ -232,9 +233,12 @@ describe("port schemas", () => {
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: null, human: null }))).toEqual([]);
     expect(validateFile("seat", "x/seat.json", JSON.stringify({ by: "owner", llm: { model: "m", tier: "max", promptFile: "p" }, human: null })).length).toBeGreaterThan(0);
   });
-  it("keeps the library element and selection port schemas equal to the record schemas", () => {
+  it("keeps the library element port schema equal to the record schema, and the frozen selection valid against its port schema", () => {
     expect(loadSchema("library-element")).toEqual(JSON.parse(JSON.stringify(ELEMENT_SCHEMA)));
-    expect(loadSchema("selection")).toEqual(JSON.parse(JSON.stringify(SELECTION_SCHEMA)));
+    // The selection record schema went with its writer (SLOT-WIRING-LOCK); the port schema is the one left, and the frozen file still matches it.
+    const selection = fileURLToPath(new URL("../../../../clossys/selection.json", import.meta.url));
+    expect(validateFile("selection", "clossys/selection.json", readFileSync(selection, "utf8"))).toEqual([]);
+    expect(validateFile("selection", "clossys/selection.json", JSON.stringify({ unexpected: true })).length).toBeGreaterThan(0);
   });
   it("validates the source receipt", () => {
     expect(validateFile("source-receipt", "x/source-receipt.json", JSON.stringify({ schemaVersion: 1, sourceHead: "a".repeat(40), sourceDirty: false }))).toEqual([]);

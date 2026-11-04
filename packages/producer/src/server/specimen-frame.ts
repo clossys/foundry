@@ -74,7 +74,7 @@ export function specimenFramePage(options: { src: string; width: number; title: 
 }
 
 /** Built specimen files: an installed specimen build (`/__specimen-site/<key>/...`) or a Publisher specimen bundle. */
-const SPECIMEN_ASSET = /^(?:\/__specimen-site\/[a-z0-9]+(?:-o\d+)?\/[A-Za-z0-9._/-]+|\/__specimen\/assets\/[0-9a-f]{24}\.(?:js|css))$/;
+const SPECIMEN_ASSET = /^(?:\/__specimen-site\/[a-z0-9]+(?:-[a-f0-9]{12})?\/[A-Za-z0-9._/-]+|\/__specimen\/assets\/[0-9a-f]{24}\.(?:js|css))$/;
 const SPECIMEN_ASSET_DEST = new Set(["script", "style", "font"]);
 /**
  * The one cross-origin read the server answers: a specimen running in a served preview page is

@@ -100,7 +100,7 @@ describe('specimen route policies', () => {
     writeFileSync(join(dist, 'index.html'), '<!doctype html><script type="module" crossorigin src="/__specimen-site/0123abcd/assets/index.js"></script>');
     writeFileSync(join(dist, 'assets/index.js'), 'export {};');
     const site = { key: '0123abcd', builds: [{ key: '0123abcd', dist }], findings: [],
-      pages: new Map([['components.button@v2', { page: 'specimen-components-button-v2', element: 'button', version: 2, build: '0123abcd' }]]) };
+      pages: new Map([['components.button/button@v2', { page: 'specimen-components-button-v2', element: 'button', version: 2, build: '0123abcd' }]]) };
     const routes = installedSpecimenRoutes(Promise.resolve(site));
     const server = createServer((req, res) => { void routes.handle(req, res, new URL(req.url!, 'http://x').pathname).then(handled => { if (!handled) { res.writeHead(404); res.end(); } }); });
     await new Promise<void>(accept => server.listen(0, '127.0.0.1', accept));

@@ -4,7 +4,6 @@
  * check: folder == agents/<agent>/<slot-id> for every IA slot, slot.json ia == ia.json position, one pin, pin hash matches, a single `source`
  * key, no candidate-side status, inputs/uses name real slots, no orphans.
  */
-import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { sha256Hex } from "./hash.js";
 import {
@@ -12,13 +11,13 @@ import {
   slotPositions, validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotModelIssue,
 } from "./slot-model/index.js";
-import { listSlots, readiness, slotIndex, type Readiness } from "./slots.js";
+import { isModelDir, listModelDir, listSlots, modelExists, readModelBytes, readModelText, readiness, slotIndex, type Readiness } from "./slots.js";
 
 const cmp = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-const readJsonFile = (path: string): any => JSON.parse(readFileSync(path, "utf8"));
+const readJsonFile = (path: string): any => JSON.parse(readModelText(path));
 
-const isDir = (path: string) => { try { const stat = lstatSync(path); return stat.isDirectory() && !stat.isSymbolicLink(); } catch { return false; } };
-const list = (path: string) => isDir(path) ? readdirSync(path).sort(cmp) : [];
+const isDir = isModelDir;
+const list = (path: string) => listModelDir(path).sort(cmp);
 
 // ---------------- check ----------------
 export function checkSlotModel(consumer: string): SlotModelIssue[] {
@@ -26,7 +25,7 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
   const ias = new Map<SlotAgent, IaDoc>();
   for (const agent of SLOT_AGENTS) {
     const path = iaPath(consumer, agent);
-    if (!existsSync(path)) continue;
+    if (!modelExists(path)) continue;
     let ia: unknown;
     try { ia = readJsonFile(path); } catch { issues.push({ code: "ia-invalid", path: `agents/${agent}/${IA_FILE}`, message: "ia.json is not JSON" }); continue; }
     const found = validateIa(ia, `agents/${agent}/${IA_FILE}`);
@@ -60,7 +59,7 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
       }
       const names = list(candidatesDir(dir));
       if (doc) for (const name of names) {
-        const bytes = readFileSync(join(candidatesDir(dir), name), "utf8");
+        const bytes = readModelText(join(candidatesDir(dir), name));
         issues.push(...validateCandidate(doc.kind, id, name, bytes, `${rel}/${CANDIDATES_DIR}/${name}`));
       }
       const pins = list(dir).filter(name => /^pin.*\.json$/.test(name));
@@ -75,7 +74,7 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
         } catch { issues.push({ code: "pin-invalid", path: `${rel}/${PIN_FILE}`, message: "pin.json is not JSON" }); }
         if (pin) {
           if (!names.includes(pin.candidate)) issues.push({ code: "pin-candidate", path: `${rel}/${PIN_FILE}`, message: `pinned candidate ${pin.candidate} does not exist` });
-          else if (sha256Hex(readFileSync(join(candidatesDir(dir), pin.candidate))) !== pin.sha256) issues.push({ code: "pin-hash", path: `${rel}/${PIN_FILE}`, message: `${pin.candidate} bytes do not match the pinned sha256` });
+          else if (sha256Hex(readModelBytes(join(candidatesDir(dir), pin.candidate))) !== pin.sha256) issues.push({ code: "pin-hash", path: `${rel}/${PIN_FILE}`, message: `${pin.candidate} bytes do not match the pinned sha256` });
         }
       }
       for (const name of list(dir)) if (![SLOT_FILE, PIN_FILE, CANDIDATES_DIR].includes(name) && !/^pin.*\.json$/.test(name)) issues.push({ code: "orphan", path: `${rel}/${name}`, message: `unexpected entry in slot folder ${id}` });
@@ -99,12 +98,12 @@ export function checkSlotModel(consumer: string): SlotModelIssue[] {
 export interface AgentCoverage { readonly agent: SlotAgent; readonly slots: number; readonly withCandidate: number; readonly pinned: number; readonly inputsUndeclared: number; readonly blocked: readonly { slot: string; readiness: Readiness }[] }
 export function slotCoverage(consumer: string): AgentCoverage[] {
   const index = slotIndex(consumer);
-  return SLOT_AGENTS.filter(agent => existsSync(iaPath(consumer, agent))).map(agent => {
+  return SLOT_AGENTS.filter(agent => modelExists(iaPath(consumer, agent))).map(agent => {
     const entries = listSlots(consumer, agent);
     const blocked: { slot: string; readiness: Readiness }[] = [];
     let undeclared = 0;
     for (const entry of entries) {
-      if (!existsSync(join(entry.dir, SLOT_FILE))) continue;
+      if (!modelExists(join(entry.dir, SLOT_FILE))) continue;
       const ready = readiness(consumer, agent, entry.id, index);
       if (ready.blockedBy.some(row => row.reason === "inputs-undeclared")) undeclared++;
       if (!ready.ready) blocked.push({ slot: entry.id, readiness: ready });

@@ -325,7 +325,7 @@ describe('IA-first gallery data', () => {
     } finally { rmSync(repo, { recursive: true, force: true }); }
   });
 
-  it('gives the detail only the valid pinned Director brief, rejecting drafts, foreign slots and invalid native records', () => {
+  it('gives the detail the valid pinned Director brief as the pin and every other valid candidate as a preview, rejecting foreign slots and invalid native records', () => {
     const repo = realpathSync(mkdtempSync(join(tmpdir(), 'director-specimen-pin-')));
     const root = join(repo, 'clossys');
     try {
@@ -351,7 +351,11 @@ describe('IA-first gallery data', () => {
       expect(JSON.stringify(served())).toContain('Pinned demand');
       expect(JSON.stringify(served())).not.toContain('Newer draft');
       expect(card()).toMatchObject({ status: 'active', candidate: 'record-v1.md' });
-      for (const [slot, candidate] of [[id, 'record-v2.md'], [id, 'absent-v1.md'], ['foreign.slot', undefined]] as const) expect(served(slot, candidate)).toBeUndefined();
+      // A recorded draft renders its own bytes as a preview; it never becomes the card or the pin.
+      expect(JSON.stringify(served(id, 'record-v2.md'))).toContain('Newer draft');
+      expect(slotDetail(repo, 'director', id)!.candidates.map(row => [row.name, row.pinned, row.preview])).toEqual([['record-v1.md', true, false], ['record-v2.md', false, true]]);
+      expect(card()).toMatchObject({ status: 'active', candidate: 'record-v1.md' });
+      for (const [slot, candidate] of [[id, 'absent-v1.md'], ['foreign.slot', undefined]] as const) expect(served(slot, candidate)).toBeUndefined();
       for (const change of [
         () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, candidate: 'absent-v1.md' })),
         () => writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: '0'.repeat(64) })),

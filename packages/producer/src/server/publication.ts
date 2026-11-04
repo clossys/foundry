@@ -3,7 +3,7 @@ import type { ServerResponse } from "node:http";
 import { extname, join, relative } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
-import { readPinnedPublication } from "@clossys/publisher/content-map/slots";
+import { readPinnedPublication } from "../publish/pinned-publication.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { isInstalledRoute, NEXT_INSTALL_KIND, NEXT_INSTALL_REPORT } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
@@ -147,7 +147,7 @@ async function nativeInstallPublication(root: string, base: string, installs: In
   const consumer = join(root, "clossys"), installed = new Map(installs.map(page => [page.id, page]));
   const slots = listSlots(consumer, "publisher");
   const publications = await Promise.all(slots.filter(slot => slot.id.startsWith("publication.")).map(async slot => ({
-    ...await readPinnedPublication(join(consumer, "agents", "publisher"), slot.id.slice("publication.".length)), slot,
+    ...await readPinnedPublication(consumer, slot.id.slice("publication.".length)), slot,
   })));
   const web = publications.filter(value => value.map.format === "web.page.responsive");
   const matches = web.filter(value => value.map.entries.some(entry => entry.kind === "page" && installed.has(entry.id)));

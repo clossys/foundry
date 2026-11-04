@@ -9,6 +9,10 @@
  * `/__specimen-site/<key>/`; the key changes with the selection (every pinned item version and
  * hash), the Writer copy and the Publisher page cells, so each item version is built once.
  *
+ * Only pins reach the pinned build. Every other recorded candidate of a slot is a preview: Studio
+ * names it as (slot, candidate) and it builds on first request from its own bytes, every other
+ * slot kept at its pin, in its own `/__specimen-site/<key>-<option>/` build.
+ *
  * `/__specimen?element=<slot>/<element>&theme=&width=&v=` answers with a small frame page that
  * loads the built page at `width` CSS px and scales it to the frame, so breakpoints follow the
  * specimen's own viewport rather than the thumbnail's size, and reports the page's natural height
@@ -31,7 +35,7 @@ import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
 
 /** Bumped when the generated specimen pages change shape. */
-const SPECIMEN_FORMAT = "studio-specimens/6";
+const SPECIMEN_FORMAT = "studio-specimens/7";
 const SITE_PREFIX = "/__specimen-site/";
 const TYPES: Record<string, string> = {
   ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8",
@@ -46,9 +50,9 @@ export interface SpecimenPage { readonly page: string; readonly element: string;
 
 export interface InstalledSpecimenSite {
   readonly key: string;
-  /** Pass 0 is the pinned selection; pass n swaps in each slot's n-th option (a newer, unpinned version). */
+  /** The pinned selection: the one build pages agree with. Unpinned candidates build on demand (`buildOption`). */
   readonly builds: readonly SpecimenBuild[];
-  /** `<slot>@v<version>` -> its built page, element and build key. */
+  /** `<slot>/<element>@v<version>` -> its built page, element and build key. */
   readonly pages: ReadonlyMap<string, SpecimenPage>;
   readonly findings: readonly InstallFinding[];
 }
@@ -60,8 +64,9 @@ export interface InstalledSpecimens {
   handle(request: IncomingMessage, response: ServerResponse, pathname: string): Promise<boolean>;
 }
 
-const specimenPageId = (slot: string, version: number) => `specimen-${slot.replace(/\./g, "-")}-v${version}`;
-const pageKey = (slot: string, version: number) => `${slot}@v${version}`;
+const specimenPageId = (slot: string, element: string, version: number) => `specimen-${slot.replace(/\./g, "-")}--${element}-v${version}`;
+/** One candidate's page: the slot, the candidate's element and its version (`<element>-v<version>`). */
+const pageKey = (slot: string, element: string, version: number) => `${slot}/${element}@v${version}`;
 const hash = (...parts: string[]) => { const h = createHash("sha256"); for (const part of parts) h.update(part).update("\0"); return h.digest("hex"); };
 
 /** Pinned Publisher page slots (legacy active cells without IA), home first. */
@@ -170,7 +175,7 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   let dependencies: Record<string, string> = {};
   // Theme items first: every other page installs them through `include`.
   for (const slot of [...options.slots].sort((a, b) => Number(!a.startsWith("themes.")) - Number(!b.startsWith("themes.")) || a.localeCompare(b))) {
-    const pin = pins[slot]!, page = specimenPageId(slot, pin.version);
+    const pin = pins[slot]!, page = specimenPageId(slot, pin.element, pin.version);
     if (slot.startsWith("themes.")) {
       // The pinned candidate itself, through the same slot reader every other page installs from.
       const record = await source.read(`${slot}/${pin.element}`, pin.version).catch(() => undefined);
@@ -180,7 +185,7 @@ async function buildPass(options: { library: string; substrate: string; pins: In
       // The item itself installs through the `include` of every other page in the pass; this page only reads its variables.
       if (item.type === "registry:font" && item.font?.variable) await writeFile(join(pagesDir, `${page}.tsx`), fontPage(item.font.variable, String(item.title ?? item.font.family ?? pin.element)));
       else await writeFile(join(pagesDir, `${page}.tsx`), themePage(Object.keys({ ...item.cssVars?.light, ...item.cssVars?.dark }).filter(name => name !== "radius" && !name.startsWith("chart-") && !name.startsWith("sidebar"))));
-      pages.set(pageKey(slot, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
+      pages.set(pageKey(slot, pin.element, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
       continue;
     }
     const record: InstallPageRecord = { id: page, frame: slot, sections: [], ...(include.length ? { include } : {}), copy: copyFor(slot, records) };
@@ -211,7 +216,7 @@ async function buildPass(options: { library: string; substrate: string; pins: In
       await writeFile(join(pagesDir, `${page}--item.tsx`), pageModule(result.page, substrate, { host: false }));
       await writeFile(join(pagesDir, `${page}.tsx`), componentPage(`./${page}--item`, state));
     } else await writeFile(join(pagesDir, `${page}.tsx`), pageModule(result.page, substrate, { host: false }));
-    pages.set(pageKey(slot, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
+    pages.set(pageKey(slot, pin.element, pin.version), { page, element: pin.element, version: pin.version, build: build.key });
   }
   if (!pages.size) return { pages, findings, built: false };
   const failed = await ensureSubstrateDependencies(substrate, dependencies, npmRunner());
@@ -222,40 +227,63 @@ async function buildPass(options: { library: string; substrate: string; pins: In
   return { pages, findings, built: true };
 }
 
-async function buildSite(root: string, library: string): Promise<InstalledSpecimenSite | undefined> {
+interface SiteInputs {
+  readonly root: string; readonly library: string; readonly key: string; readonly substrate: string; readonly base: string;
+  readonly pins: InstallPins; readonly unpinned: InstallPins; readonly options: ReadonlyMap<string, readonly { element: string; version: number }[]>;
+  readonly records: readonly InstallPageRecord[]; readonly copy: Record<string, string>;
+}
+
+async function siteInputs(root: string, library: string): Promise<SiteInputs | undefined> {
   const inputs = slotInstallInputs(library);
   if (!inputs) return undefined;
-  const { pins, options, unpinned } = inputs;
-  const passes = Math.max(Object.keys(unpinned).length ? 1 : 0, ...[...options.values()].map(list => list.length));
   // Compiled Writer copy wins; the pinned Writer slots fill a consumer that has not compiled yet.
   const copy = { ...pinnedWriterCopy(library), ...await writerCopy(root).catch(() => ({} as Record<string, string>)) };
-  const records = await pageRecords(root, pins);
+  const records = await pageRecords(root, inputs.pins);
   const key = hash(SPECIMEN_FORMAT, root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records)).slice(0, 16);
-  const substrate = specimenSubstrate(root), base = dirname(substrate), manifest = join(base, `site-${key}.json`);
-  if (existsSync(manifest)) {
-    const saved = await readJson(manifest);
-    if ((saved.builds as SpecimenBuild[]).every(build => existsSync(join(build.dist, "index.html")))) return { key, builds: saved.builds, pages: new Map(Object.entries(saved.pages)), findings: saved.findings };
-  }
+  const substrate = specimenSubstrate(root);
+  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, records, copy };
+}
+
+/** A saved build is reused while every dist it names is still on disk. */
+async function savedSite(manifest: string): Promise<{ builds: SpecimenBuild[]; pages: Map<string, SpecimenPage>; findings: InstallFinding[] } | undefined> {
+  if (!existsSync(manifest)) return undefined;
+  const saved = await readJson(manifest);
+  if (!(saved.builds as SpecimenBuild[]).every(build => existsSync(join(build.dist, "index.html")))) return undefined;
+  return { builds: saved.builds, pages: new Map(Object.entries(saved.pages)), findings: saved.findings };
+}
+
+/** The pinned selection: one pass, every pinned slot, exactly the pins pages install. */
+async function buildSite(inputs: SiteInputs): Promise<InstalledSpecimenSite> {
+  const { key, base, substrate, pins, library, records, copy } = inputs;
+  const manifest = join(base, `site-${key}.json`);
+  const saved = await savedSite(manifest);
+  if (saved) return { key, ...saved };
   await ensureSubstrate(substrate);
-  const builds: SpecimenBuild[] = [];
-  const pages = new Map<string, SpecimenPage>();
-  const findings: InstallFinding[] = [];
-  for (let pass = 0; pass <= passes; pass++) {
-    const swapped = pass === 0 ? Object.keys(pins) : [...options].filter(([, list]) => list.length >= pass).map(([slot]) => slot);
-    if (pass === 1) swapped.push(...Object.keys(unpinned));
-    const passPins: InstallPins = pass === 0 ? pins : {
-      ...unpinned, ...pins,
-      ...Object.fromEntries(swapped.filter(slot => pins[slot]).map(slot => [slot, { element: pins[slot]!.element, version: options.get(slot)![pass - 1]! }])),
-    };
-    const build = { key: pass === 0 ? key : `${key}-o${pass}`, dist: join(base, pass === 0 ? `dist-${key}` : `dist-${key}-o${pass}`) };
-    const result = await buildPass({ library, substrate, pins: passPins, slots: swapped, records, copy, build });
-    findings.push(...result.findings);
-    if (!result.built) continue;
-    builds.push(build);
-    for (const [name, page] of result.pages) pages.set(name, page);
-  }
-  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(pages), findings }, null, 2)}\n`);
-  return { key, builds, pages, findings };
+  const build = { key, dist: join(base, `dist-${key}`) };
+  const result = await buildPass({ library, substrate, pins, slots: Object.keys(pins), records, copy, build });
+  const builds = result.built ? [build] : [];
+  const pages = result.built ? result.pages : new Map<string, SpecimenPage>();
+  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(pages), findings: result.findings }, null, 2)}\n`);
+  return { key, builds, pages, findings: result.findings };
+}
+
+/**
+ * One recorded candidate that is not the pin, rendered from its own bytes: the slot swaps in this
+ * (element, version) and every other slot keeps its pin. Built when Studio first asks for it.
+ */
+async function buildOption(inputs: SiteInputs, slot: string, option: { element: string; version: number }): Promise<{ build?: SpecimenBuild; page?: SpecimenPage; findings: InstallFinding[] }> {
+  const { base, substrate, pins, unpinned, library, records, copy } = inputs;
+  const key = `${inputs.key}-${hash(slot, option.element, String(option.version)).slice(0, 12)}`;
+  const manifest = join(base, `site-${key}.json`);
+  const saved = await savedSite(manifest);
+  if (saved) return { ...(saved.builds[0] ? { build: saved.builds[0] } : {}), ...(saved.pages.get(pageKey(slot, option.element, option.version)) ? { page: saved.pages.get(pageKey(slot, option.element, option.version))! } : {}), findings: saved.findings };
+  await ensureSubstrate(substrate);
+  const build = { key, dist: join(base, `dist-${key}`) };
+  const result = await buildPass({ library, substrate, pins: { ...unpinned, ...pins, [slot]: option }, slots: [slot], records, copy, build });
+  const builds = result.built ? [build] : [];
+  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(result.built ? result.pages : []), findings: result.findings }, null, 2)}\n`);
+  const page = result.built ? result.pages.get(pageKey(slot, option.element, option.version)) : undefined;
+  return { ...(result.built ? { build } : {}), ...(page ? { page } : {}), findings: result.findings };
 }
 
 const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
@@ -276,7 +304,7 @@ const LOCAL_ORIGIN = /^http:\/\/(?:127\.0\.0\.1|localhost):\d{1,5}$/;
  * matches an opaque ancestor. That parent (`/__specimen`) carries `frame-ancestors 'self'`.
  */
 export function specimenSiteCsp(origin: string, build: string): string {
-  const site = LOCAL_ORIGIN.test(origin) && /^[a-z0-9]+(?:-o\d+)?$/.test(build) ? `${origin}${SITE_PREFIX}${build}/` : "'none'";
+  const site = LOCAL_ORIGIN.test(origin) && /^[a-z0-9]+(?:-[a-f0-9]{12})?$/.test(build) ? `${origin}${SITE_PREFIX}${build}/` : "'none'";
   return [
     "sandbox allow-scripts allow-same-origin", "default-src 'none'", `script-src ${site}`, `style-src ${site} 'unsafe-inline'`,
     `font-src ${site} data:`, `img-src ${site} data:`, "connect-src 'none'", "base-uri 'none'", "form-action 'none'",
@@ -284,26 +312,56 @@ export function specimenSiteCsp(origin: string, build: string): string {
 }
 
 export function installedSpecimens(options: { root: string; library: string }): InstalledSpecimens {
-  return installedSpecimenRoutes(buildSite(resolve(options.root), resolve(options.library)).catch(error => {
+  const warn = (error: unknown) => {
     console.warn("Producer specimens could not be built:", error instanceof Error ? error.message.split("\n")[0] : String(error));
     return undefined;
-  }));
+  };
+  const inputs = siteInputs(resolve(options.root), resolve(options.library)).catch(warn);
+  return installedSpecimenRoutes(inputs.then(value => value ? buildSite(value) : undefined).catch(warn), inputs);
 }
 
-/** The `/__specimen` and `/__specimen-site/*` routes over a (being) built site. */
-export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | undefined>): InstalledSpecimens {
+/**
+ * The `/__specimen` and `/__specimen-site/*` routes over a (being) built pinned site. With the
+ * site's inputs, a recorded candidate that is not the pin is built on first request.
+ */
+export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | undefined>, inputs: Promise<SiteInputs | undefined> = Promise.resolve(undefined)): InstalledSpecimens {
+  const warn = (error: unknown) => {
+    console.warn("Producer specimens could not be built:", error instanceof Error ? error.message.split("\n")[0] : String(error));
+    return undefined;
+  };
+  // Option builds share the one substrate with the pinned build, so they run one at a time after it.
+  let queue: Promise<unknown> = ready;
+  const optionBuilds = new Map<string, Promise<{ build?: SpecimenBuild; page?: SpecimenPage }>>();
+  const builtOptions: SpecimenBuild[] = [];
+  const option = (site: SiteInputs, slot: string, element: string, version: number) => {
+    const name = pageKey(slot, element, version);
+    let pending = optionBuilds.get(name);
+    if (!pending) {
+      pending = queue.then(() => buildOption(site, slot, { element, version })).then(result => { if (result.build) builtOptions.push(result.build); return result; }, error => { warn(error); return {}; });
+      optionBuilds.set(name, pending);
+      queue = pending;
+    }
+    return pending;
+  };
   return {
     ready,
     async handle(request, response, pathname) {
       if (pathname === "/__specimen") {
         const params = new URL(request.url ?? "", "http://studio.invalid").searchParams;
         const [slot, element] = (params.get("element") ?? "").split("/");
-        const site = await ready;
+        const site = await ready, given = await inputs;
         const version = params.get("v");
-        // Without `v` the pinned version answers: the pass-0 page of this slot.
-        const entry = !site || !slot ? undefined : version !== null ? site.pages.get(pageKey(slot, Number(version)))
-          : [...site.pages.entries()].find(([name, page]) => name.startsWith(`${slot}@v`) && page.build === site.key)?.[1];
-        if (!site || !entry || entry.element !== element) return false;
+        if (!site || !slot || !element) return false;
+        // Without `v` the pinned candidate answers. With `v` the named candidate answers: the pin from
+        // the pinned build, any other recorded candidate from its own preview build.
+        let entry: SpecimenPage | undefined;
+        if (version === null) entry = [...site.pages].find(([name]) => name.startsWith(`${slot}/`))?.[1];
+        else {
+          const v = Number(version);
+          entry = site.pages.get(pageKey(slot, element, v));
+          if (!entry && given && given.options.get(slot)?.some(row => row.element === element && row.version === v)) entry = (await option(given, slot, element, v)).page;
+        }
+        if (!entry || entry.element !== element) return false;
         const width = Number(params.get("width"));
         const theme = params.get("theme") === "dark" ? "dark" : "light";
         const src = `${SITE_PREFIX}${entry.build}/index.html?${new URLSearchParams({ page: entry.page, ...(theme === "dark" ? { theme } : {}) })}`;
@@ -314,7 +372,8 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
       if (!pathname.startsWith(SITE_PREFIX)) return false;
       const site = await ready;
       const rest = pathname.slice(SITE_PREFIX.length);
-      const build = site?.builds.find(candidate => rest.startsWith(`${candidate.key}/`));
+      // Longest key first: an option build's key extends the pinned build's key.
+      const build = [...(site?.builds ?? []), ...builtOptions].sort((a, b) => b.key.length - a.key.length).find(candidate => rest.startsWith(`${candidate.key}/`));
       if (!build) { response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }); response.end("Specimen build is not available\n"); return true; }
       const file = resolve(build.dist, rest.slice(build.key.length + 1) || "index.html");
       const inside = relative(build.dist, file);

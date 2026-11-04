@@ -224,33 +224,27 @@ describe("Designer cell profile parser", () => {
   });
 });
 
-describe("Designer repository cell root", () => {
-  it("finds the nearest repository root from a nested app and uses clossys/agents/designer", async () => {
+describe("Designer cell root", () => {
+  it("requires an explicit root and never defaults into the slot model", async () => {
     const repository = join(temporary, "repository"), nested = join(repository, "apps/admin/src");
-    await fs.mkdir(join(repository, ".git"), { recursive: true });
-    await fs.mkdir(nested, { recursive: true });
-    expect(await resolveDesignerCellRoot(undefined, nested)).toBe(join(repository, "clossys/agents/designer"));
-    const subrepository = join(repository, "apps/admin");
-    await fs.writeFile(join(subrepository, ".git"), "gitdir: ignored-worktree-metadata\n");
-    expect(await resolveDesignerCellRoot(undefined, nested)).toBe(join(subrepository, "clossys/agents/designer"));
+    await fs.mkdir(join(repository, ".git"), { recursive: true }); await fs.mkdir(nested, { recursive: true });
+    await expect(resolveDesignerCellRoot(undefined, nested)).rejects.toThrow(/explicit --root/);
+    const cwd = join(temporary, "unversioned"); await fs.mkdir(cwd);
+    await expect(resolveDesignerCellRoot(undefined, cwd)).rejects.toThrow(/explicit --root/);
   });
 
-  it("falls back to cwd outside a repository and resolves explicit overrides from cwd", async () => {
+  it("resolves explicit roots from cwd", async () => {
     const cwd = join(temporary, "unversioned"); await fs.mkdir(cwd);
-    expect(await resolveDesignerCellRoot(undefined, cwd)).toBe(join(cwd, "clossys/agents/designer"));
     expect(await resolveDesignerCellRoot("../custom-cells", cwd)).toBe(join(temporary, "custom-cells"));
     expect(await resolveDesignerCellRoot(cells, cwd)).toBe(cells);
   });
 
-  it("migrates and compiles through the CLI with the repository root default", async () => {
+  it("refuses CLI verbs without a root and writes nothing into clossys/agents", async () => {
     const repository = join(temporary, "repository"), nested = join(repository, "apps/admin");
     await fs.mkdir(join(repository, ".git"), { recursive: true }); await fs.mkdir(nested, { recursive: true });
-    const root = join(repository, "clossys/agents/designer");
     const messages: string[] = [], io = { out: (text: string) => messages.push(text), error: (text: string) => messages.push(text) };
-    expect(await runCellsCli(["migrate", "--from", input], io, nested), messages.join("\n")).toBe(0);
-    expect(Object.keys((await json(root, "tree.json")).active)).toHaveLength(103);
-    expect(await runCellsCli(["compile", "--out", output], io, nested), messages.join("\n")).toBe(0);
-    expect(await readLibrary(output, catalog)).toEqual(await readLibrary(input, catalog));
-    expect(await runCellsCli(["check", "--out", output], io, nested), messages.join("\n")).toBe(0);
+    expect(await runCellsCli(["migrate", "--from", input], io, nested)).toBe(2);
+    expect(await runCellsCli(["compile", "--out", output], io, nested)).toBe(2);
+    await expect(fs.stat(join(repository, "clossys"))).rejects.toThrow(/ENOENT/);
   });
 });

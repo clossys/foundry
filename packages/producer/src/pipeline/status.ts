@@ -6,6 +6,7 @@ import type { OpenCounter, Port, Step } from "./define.js";
 import { globRegex, parseGlob, staticPrefix } from "./globs.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
+import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
 import type { SeatReport } from "./seats.js";
 
 /**
@@ -75,23 +76,23 @@ function portStatus(files: Files, ports: readonly Port[]): PortStatus & { paths:
   return { files: matched.size, sha256: matched.size ? hash.digest("hex") : null, paths: [...matched.values()] };
 }
 
-const readJson = (file: string): unknown => { try { return JSON.parse(readFileSync(file, "utf8")); } catch { return undefined; } };
+const readJson = (file: string): unknown => { try { return JSON.parse(readModelText(file)); } catch { return undefined; } };
 
 /** Per agent, per slot: candidate files, pin, not-needed (slot.json notNeeded), open (neither). */
 export function slotCounts(root: string): PipelineStatus["agents"] {
   const agents: Record<string, SlotCounts & { bySlot: SlotRow[] }> = {};
   const dir = join(root, "clossys", "agents");
-  if (!existsSync(dir)) return agents;
-  for (const agent of readdirSync(dir).sort()) {
+  if (!modelExists(dir)) return agents;
+  for (const agent of listModelDir(dir).sort()) {
     const agentDir = join(dir, agent);
-    if (!statSync(agentDir).isDirectory()) continue;
+    if (!isModelDir(agentDir)) continue;
     const bySlot: SlotRow[] = [];
-    for (const slot of readdirSync(agentDir).sort()) {
+    for (const slot of listModelDir(agentDir).sort()) {
       const slotDir = join(agentDir, slot);
-      if (!existsSync(join(slotDir, "slot.json"))) continue;
+      if (!modelExists(join(slotDir, "slot.json"))) continue;
       const doc = readJson(join(slotDir, "slot.json")) as { notNeeded?: unknown } | undefined;
-      const candidates = existsSync(join(slotDir, "candidates")) ? readdirSync(join(slotDir, "candidates")).filter(name => !name.startsWith(".")).length : 0;
-      bySlot.push({ slot, candidates, pinned: existsSync(join(slotDir, "pin.json")), notNeeded: Boolean(doc?.notNeeded) });
+      const candidates = listModelDir(join(slotDir, "candidates")).filter(name => !name.startsWith(".")).length;
+      bySlot.push({ slot, candidates, pinned: modelExists(join(slotDir, "pin.json")), notNeeded: Boolean(doc?.notNeeded) });
     }
     if (!bySlot.length) continue;
     agents[agent] = {
@@ -110,13 +111,12 @@ function iaSlots(root: string, agent: string): string[] {
 
 function writerKeysUnapproved(root: string): number {
   const dir = join(root, "clossys", "agents", "writer");
-  if (!existsSync(dir)) return 0;
+  if (!modelExists(dir)) return 0;
   let count = 0;
-  for (const slot of readdirSync(dir)) {
+  for (const slot of listModelDir(dir)) {
     const candidates = join(dir, slot, "candidates");
-    if (!existsSync(candidates)) continue;
-    for (const name of readdirSync(candidates).filter(name => name.endsWith(".md"))) {
-      for (const match of readFileSync(join(candidates, name), "utf8").matchAll(/^<!-- (\{.*\}) -->$/gm)) {
+    for (const name of listModelDir(candidates).filter(name => name.endsWith(".md"))) {
+      for (const match of readModelText(join(candidates, name)).matchAll(/^<!-- (\{.*\}) -->$/gm)) {
         let meta: { record?: { status?: unknown }; status?: unknown } | undefined;
         try { meta = JSON.parse(match[1]!); } catch { meta = undefined; }
         const status = meta?.record?.status ?? meta?.status;
@@ -133,8 +133,8 @@ function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["a
   if (counter === "seats-open") return Object.values(seats).filter(seat => seat.state !== "assigned").length;
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
-    if (!existsSync(dir)) return 0;
-    return readdirSync(dir).reduce((sum, agent) => sum + iaSlots(root, agent).filter(slot => !existsSync(join(dir, agent, slot, "slot.json"))).length, 0);
+    if (!modelExists(dir)) return 0;
+    return listModelDir(dir).reduce((sum, agent) => sum + iaSlots(root, agent).filter(slot => !modelExists(join(dir, agent, slot, "slot.json"))).length, 0);
   }
   const agent = counter.slice("slots-without-candidates:".length);
   return (agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).length;

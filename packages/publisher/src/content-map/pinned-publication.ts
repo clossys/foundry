@@ -1,10 +1,21 @@
-/** Node-only, read-only authoring projection. A pin is data, never serving approval. */
-import { createHash } from "node:crypto";
-import { lstat, readFile } from "node:fs/promises";
-import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+/** Pure projection of a pinned publication from slot records the one slot-model
+ * reader supplies (Producer `records/slots.ts`). Publisher opens no files: the
+ * source hands it raw record text and the reader's sha256 of each candidate.
+ * A pin is data, never serving approval. */
 import { checkContentMap } from "./check.js";
 import type { ContentMap } from "./contract.js";
 import { PAGE_ID, pageId } from "./page-identity.js";
+
+/** Raw slot records for one consumer's `agents/publisher`, as the slot-model reader reads them.
+ * Each returns `undefined` when the record is absent; aliases and irregular files throw. */
+export interface PinnedPublicationSource {
+  /** `agents/publisher/ia.json` text. */
+  ia(): string | undefined;
+  /** One slot folder's `slot.json` or `pin.json` text. */
+  record(slotId: string, file: "slot.json" | "pin.json"): string | undefined;
+  /** One candidate's text and the reader's sha256 of its bytes. */
+  candidate(slotId: string, name: string): { readonly bytes: string; readonly sha256: string } | undefined;
+}
 
 type JsonObject = Record<string, any>;
 interface Position { l1: string; l2: string; order: number }
@@ -25,31 +36,18 @@ function keys(value: JsonObject, allowed: readonly string[], path: string) {
 function safeSegment(value: unknown, pattern: RegExp, path: string): asserts value is string {
   if (typeof value !== "string" || !pattern.test(value) || value.includes("..")) fail(path, "Unsafe identity or path");
 }
-async function bytes(root: string, path: string): Promise<Buffer> {
-  const base = resolve(root), target = resolve(base, path), rel = relative(base, target);
-  if (isAbsolute(rel) || rel === ".." || rel.startsWith(`..${sep}`)) fail(path, "Path escapes Publisher root");
-  let cursor = target;
-  for (;;) {
-    try { if ((await lstat(cursor)).isSymbolicLink()) fail(path, "Symbolic links are not followed"); }
-    catch (cause) { if ((cause as NodeJS.ErrnoException).code !== "ENOENT") throw cause; }
-    const parent = dirname(cursor); if (parent === cursor) break; cursor = parent;
-  }
-  try {
-    if (!(await lstat(target)).isFile()) fail(path, "Expected a regular native record");
-    return await readFile(target);
-  } catch (cause) {
-    if ((cause as NodeJS.ErrnoException).code === "ENOENT") fail(path, "Missing native record (no legacy fallback)");
-    throw cause;
-  }
+function present<T>(value: T | undefined, path: string): T {
+  if (value === undefined) fail(path, "Missing native record (no legacy fallback)");
+  return value;
 }
-function parse(source: Buffer, path: string): JsonObject {
+function parse(source: string, path: string): JsonObject {
   let value: unknown;
-  try { value = JSON.parse(source.toString("utf8")); } catch { fail(path, "Malformed JSON"); }
+  try { value = JSON.parse(source); } catch { fail(path, "Malformed JSON"); }
   if (!object(value)) fail(path, "Expected an object");
   return value;
 }
-async function positions(root: string): Promise<Map<string, Position>> {
-  const ia = parse(await bytes(root, "ia.json"), "ia.json");
+function positions(records: PinnedPublicationSource): Map<string, Position> {
+  const ia = parse(present(records.ia(), "ia.json"), "ia.json");
   if (ia.schema !== "clossys.ia/1" || !text(ia.source) || !ia.source.includes("#") || !strings(ia.extensions) || !Array.isArray(ia.nodes)) fail("ia.json", "Invalid Publisher IA");
   const result = new Map<string, Position>(), nodes = new Set<string>();
   let order = 0;
@@ -92,27 +90,27 @@ function candidate(value: JsonObject, kind: "page" | "publication", path: string
       || !object(value.copy) || Object.values(value.copy).some(ref => typeof ref !== "string" || !/^[^#\s]+#[^#\s]+$/.test(ref))) fail(path, "Invalid page contract");
   }
 }
-async function pinned(root: string, index: Map<string, Position>, id: string, kind: "page" | "publication") {
+function pinned(records: PinnedPublicationSource, index: Map<string, Position>, id: string, kind: "page" | "publication") {
   const position = index.get(id); if (!position) fail(id, "Slot is not declared in Publisher IA");
   // Flat layout: agents/publisher/<slot-id>; grouping lives only in ia.json + slot.json ia.
-  const dir = id, slotPath = join(dir, "slot.json");
-  const slot = parse(await bytes(root, slotPath), slotPath);
+  const dir = id, slotPath = `${dir}/slot.json`;
+  const slot = parse(present(records.record(id, "slot.json"), slotPath), slotPath);
   keys(slot, ["schema", "id", "agent", "ia", "kind", "contract", "inputs", "uses"], slotPath);
   if (slot.schema !== "clossys.slot/1" || slot.id !== id || slot.agent !== "publisher" || slot.kind !== kind || !object(slot.ia)
     || slot.ia.l1 !== position.l1 || slot.ia.l2 !== position.l2 || slot.ia.order !== position.order || slot.ia.l0 !== undefined
     || !object(slot.contract) || !strings(slot.inputs) || !strings(slot.uses)
     || [...slot.inputs, ...slot.uses].some(ref => !SLOT_ID.test(ref))) fail(slotPath, "Invalid slot identity, kind or IA position");
   keys(slot.ia, ["l1", "l2", "order"], slotPath);
-  const pinPath = join(dir, "pin.json"), pin = parse(await bytes(root, pinPath), pinPath);
+  const pinPath = `${dir}/pin.json`, pin = parse(present(records.record(id, "pin.json"), pinPath), pinPath);
   keys(pin, ["candidate", "sha256", "decidedBy", "basis", "at"], pinPath);
   safeSegment(pin.candidate, CANDIDATE, pinPath);
   if (typeof pin.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(pin.sha256)
     || typeof pin.decidedBy !== "string" || !/^(?:(?:owner|planner|migration)(?::\S.*)?|migrated)$/.test(pin.decidedBy)
     || (pin.basis !== undefined && !["picked", "bulk", "planner"].includes(pin.basis as string))
     || typeof pin.at !== "string" || !/^\d{4}-\d{2}-\d{2}T/.test(pin.at) || Number.isNaN(Date.parse(pin.at))) fail(pinPath, "Invalid pin");
-  const path = join(dir, "candidates", pin.candidate), raw = await bytes(root, path);
-  if (createHash("sha256").update(raw).digest("hex") !== pin.sha256) fail(path, "Pinned candidate hash drift");
-  const value = parse(raw, path); candidate(value, kind, path);
+  const path = `${dir}/candidates/${pin.candidate}`, raw = present(records.candidate(id, pin.candidate), path);
+  if (raw.sha256 !== pin.sha256) fail(path, "Pinned candidate hash drift");
+  const value = parse(raw.bytes, path); candidate(value, kind, path);
   if (value.meta.slot !== undefined && value.meta.slot !== id) fail(path, "Conflicting candidate slot identity");
   return { slot, value };
 }
@@ -146,13 +144,12 @@ function page(value: JsonObject, id: string, publicationId: string, parentId: st
   if (blocks.Route !== undefined && !object(blocks.Route)) fail(id, "Route metadata must be an object");
   return { entry, route: blocks.Route as JsonObject | undefined };
 }
-/** Read only the native publication and page candidates named by intact pins.
- * Publisher roots are `<consumer>/agents/publisher`. No generated or legacy
- * store is consulted, and no candidate or pin is written by this projection. */
-export async function readPinnedPublication(publisherRoot: string, publicationId: string): Promise<PinnedPublication> {
+/** Project only the native publication and page candidates named by intact pins.
+ * No generated or legacy store is consulted, and nothing is written. */
+export function projectPinnedPublication(records: PinnedPublicationSource, publicationId: string): PinnedPublication {
   safeSegment(publicationId, /^[a-z][a-z0-9.-]*$/, "publication");
-  const index = await positions(publisherRoot);
-  const { slot, value: publication } = await pinned(publisherRoot, index, `publication.${publicationId}`, "publication");
+  const index = positions(records);
+  const { slot, value: publication } = pinned(records, index, `publication.${publicationId}`, "publication");
   const tree = publication.meta.tree;
   if (!object(tree) || tree.id !== publicationId) fail(publicationId, "Missing or conflicting publication tree snapshot");
   const groups = new Set<string>(), nodeIds = new Set<string>();
@@ -175,20 +172,20 @@ export async function readPinnedPublication(publisherRoot: string, publicationId
   }
   for (const id of groups) if (!entryIds.has(id)) fail(id, "Group missing from entryOrder");
   const entries: JsonObject[] = [], routes = new Map<string, JsonObject>(), placed = new Set<string>();
-  const walk = async (node: JsonObject, parentId?: string, order = 0) => {
+  const walk = (node: JsonObject, parentId?: string, order = 0) => {
     let parent = parentId;
     if (node.entry !== undefined) { entries.push({ ...node.entry, id: node.id, title: node.name, order, ...(parentId ? { parentId } : {}) }); parent = node.id; }
     for (const [order, slotId] of (node.cells ?? []).entries()) {
       if (!PAGE_ID.test(slotId) || !identities.has(slotId)) fail(slotId, "Page reference has no stable entryOrder identity");
       if (placed.has(slotId)) fail(slotId, "Duplicate page placement"); placed.add(slotId);
       if (!slot.inputs.includes(slotId) || !slot.uses.includes(slotId)) fail(slotId, "Page is not declared by this publication");
-      const { value } = await pinned(publisherRoot, index, slotId, "page"), id = identities.get(slotId)!;
+      const { value } = pinned(records, index, slotId, "page"), id = identities.get(slotId)!;
       const parsed = page(value, id, publicationId, parent, order); entries.push(parsed.entry);
       if (parsed.route !== undefined) routes.set(id, parsed.route);
     }
-    for (const [order, child] of (node.children ?? []).entries()) await walk(child, parent, order);
+    for (const [order, child] of (node.children ?? []).entries()) walk(child, parent, order);
   };
-  await walk(tree);
+  walk(tree);
   for (const id of identities.keys()) if (!placed.has(id)) fail(id, "Unplaced publication page");
   entries.sort((a, b) => entryOrder.indexOf(a.id) - entryOrder.indexOf(b.id));
   const map: unknown = { version: 1, publicationId, format: publication.format, entries,

@@ -1,13 +1,18 @@
 /** Runtime specimen inputs: canonical Designer slots; a consumer without the slot model has none. */
 import { createHash } from "node:crypto";
-import { existsSync } from "node:fs";
 import type { InstallPins } from "@clossys/publisher/install";
-import { hasSlotModel, listSlots, readCandidate, readSlot } from "../records/slots.js";
-import { CANDIDATE_NAME, pinFile, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
+import { hasPinFile, hasSlotModel, listSlots, readCandidate, readSlot } from "../records/slots.js";
+import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 
+/** One recorded candidate of a slot, by element and version (its file is `<element>-v<version>.json`). */
+export interface SlotOption { readonly element: string; readonly version: number }
 export interface SlotInstallInputs {
   readonly pins: InstallPins;
-  readonly options: ReadonlyMap<string, readonly number[]>;
+  /**
+   * Every other valid candidate of each slot: a preview only. Pages install `pins` alone; the
+   * specimen route renders an option's own bytes when Studio asks for that (slot, candidate).
+   */
+  readonly options: ReadonlyMap<string, readonly SlotOption[]>;
   readonly unpinned: InstallPins;
   /** Includes actual valid candidate bytes, not just names or declared pin hashes. */
   readonly fingerprint: string;
@@ -18,11 +23,11 @@ const fingerprint = (value: unknown) => createHash("sha256").update(JSON.stringi
 export function slotInstallInputs(consumer: string): SlotInstallInputs | undefined {
   if (!hasSlotModel(consumer)) return undefined;
   const pins: MutablePins = {}, unpinned: MutablePins = {};
-  const options = new Map<string, number[]>();
+  const options = new Map<string, SlotOption[]>();
   const evidence: unknown[] = [];
   for (const entry of listSlots(consumer, "designer")) {
     const fail = (reason: string): never => { throw new Error(`Specimen slot ${entry.id}: ${reason}`); };
-    const pinPresent = existsSync(pinFile(entry.dir));
+    const pinPresent = hasPinFile(entry.dir);
     if (pinPresent && !entry.pin) fail("invalid native pin");
     let doc: ReturnType<typeof readSlot>;
     try { doc = readSlot(consumer, "designer", entry.id); }
@@ -52,8 +57,10 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
       if (!chosen) throw new Error(`Specimen slot ${entry.id}: missing or invalid pinned candidate`);
       if (chosen.sha256 !== entry.pin.sha256) fail("native pin hash drift");
       pins[entry.id] = { element: chosen.element, version: chosen.version };
-      options.set(entry.id, [...valid.values()].filter(row => row.element === chosen.element && row.version > chosen.version).map(row => row.version));
+      const others = [...valid].filter(([name]) => name !== entry.pin!.candidate).map(([, row]) => ({ element: row.element, version: row.version }));
+      if (others.length) options.set(entry.id, others);
     } else {
+      if (valid.size) options.set(entry.id, [...valid.values()].map(row => ({ element: row.element, version: row.version })));
       const elements = new Set([...valid.values()].map(row => row.element));
       if (elements.size === 1) {
         const newest = [...valid.values()].at(-1)!;

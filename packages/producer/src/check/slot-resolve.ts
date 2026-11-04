@@ -1,5 +1,5 @@
 /** Slot integrity over the common IA / slot / candidate / pin model. */
-import { existsSync, lstatSync, readdirSync, readFileSync } from "node:fs";
+import { lstatSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { createRequire } from "node:module";
 import type { AgentKind } from "../agents.js";
@@ -7,7 +7,7 @@ import { resolveAgent } from "../agents.js";
 import { buildCheckOutputEnvelope, envelopeToExitCode } from "../generated/check-output-envelope.js";
 import { sha256Hex } from "../records/hash.js";
 import { loadReferencesManifest } from "../records/validate.js";
-import { listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
+import { assertModelTree, listSlots, readCandidate, readIa, readSlot } from "../records/slots.js";
 import { checkSlotModel, formatCoverage, slotCoverage, writerRecords, type AgentCoverage } from "../records/slot-check.js";
 import {
   SLOT_AGENTS, parseFrontmatter, validateIa, validateSource,
@@ -71,8 +71,8 @@ export function resolveSlots(stores: readonly SlotStore[], writer: ReadonlyMap<s
   }));
 }
 
-// Reject aliases before the common reader or validator opens any model file.
-// Legacy stores are never opened and never supply a fallback candidate or pin.
+// Reject aliases on non-model inputs (the references manifest); the model tree is
+// checked by the one reader (`assertModelTree`). Legacy stores are never opened.
 function safe(path: string): string {
   let cursor = resolve(path);
   for (;;) {
@@ -82,25 +82,6 @@ function safe(path: string): string {
   }
   return path;
 }
-function safeTree(path: string): void {
-  safe(path);
-  if (!existsSync(path)) return;
-  const stat = lstatSync(path);
-  if (stat.isDirectory()) for (const name of readdirSync(path)) {
-    if (name === ".env" || name.startsWith(".env.")) throw new Error("Secret-like input is unsupported.");
-    safeTree(join(path, name));
-  }
-  else if (!stat.isFile()) throw new Error("Model input must be a regular file or directory.");
-}
-function secureModel(root: string): void {
-  safe(root);
-  for (const agent of SLOT_AGENTS) {
-    const base = safe(join(root, "agents", agent));
-    if (!existsSync(base)) continue;
-    for (const name of readdirSync(base)) safeTree(join(base, name));
-  }
-}
-
 function document(bytes: string, markdown: boolean): Record<string, any> {
   if (!markdown) return JSON.parse(bytes);
   const parsed = parseFrontmatter(bytes);
@@ -168,7 +149,7 @@ export async function runSlotResolve(rootIn: string) {
   let referenceHash: string | undefined;
   let referenceSource = "not required (no registry sources)";
   try {
-    secureModel(root);
+    assertModelTree(root);
     modelIssues = checkSlotModel(root);
     stores = modelStores(root, writer);
     if (stores.some(store => Object.values(store.candidates).flat().some(candidate => candidate.source?.kind === "registry"))) {

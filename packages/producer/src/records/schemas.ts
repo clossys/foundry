@@ -10,8 +10,9 @@ import type { JsonSchema } from "./schema.js";
  *   library/<slot>/<element>/v<n>/element.json   immutable once written
  *   library/<slot>/<element>/v<n>/preview.json   immutable once written
  *   library/<slot>/<element>/v<n>/<payload...>   the record's native payload
- *   selection.json                               pins plus append-only history
- *   releases/<n>.json                            snapshot of the pins
+ *
+ * Pins live in the slot model (`agents/<agent>/<slot>/pin.json`), read only
+ * through records/slots.ts.
  */
 
 const HASH = "^sha256:[0-9a-f]{64}$";
@@ -24,8 +25,6 @@ const REL_PATH = "^(?!/)(?!.*(?:^|/)\\.\\.(?:/|$))[^\\\\\\u0000]+$";
 export const RECORD_SCHEMA_IDS = {
   element: "clossys.element/1",
   preview: "clossys.preview/1",
-  selection: "clossys.selection/1",
-  release: "clossys.release/1",
   slotContract: "clossys.slot-contract/1",
   referencesManifest: "clossys.references-manifest/1",
 } as const;
@@ -382,24 +381,6 @@ const exactParts: JsonSchema = {
   }
 };
 
-const pinState: JsonSchema = {
-  type: "object",
-  required: ["element", "version", "hash", "event"],
-  additionalProperties: false,
-  properties: {
-    element: { type: "string", pattern: ID },
-    version: { type: "integer", minimum: 1 },
-    hash: { type: "string", pattern: HASH },
-    event: { type: "string", minLength: 1 },
-  },
-};
-
-const pinMap: JsonSchema = {
-  type: "object",
-  propertyNames: { type: "string", pattern: SLOT },
-  additionalProperties: { $ref: "#/$defs/pinState" },
-};
-
 export const ELEMENT_SCHEMA: JsonSchema = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: RECORD_SCHEMA_IDS.element,
@@ -559,61 +540,6 @@ export const PREVIEW_SCHEMA: JsonSchema = {
     container: { enum: ["canvas", "section-in-frame", "page"] },
     theme: { enum: ["light", "dark"] },
     width: { type: "integer", minimum: 240, maximum: 3840 },
-  },
-};
-
-export const SELECTION_SCHEMA: JsonSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: RECORD_SCHEMA_IDS.selection,
-  title: "Selection (selection.json): pins plus append-only pin history",
-  type: "object",
-  required: ["schema", "pins", "history"],
-  additionalProperties: false,
-  $defs: { pinState },
-  properties: {
-    schema: { const: RECORD_SCHEMA_IDS.selection },
-    pins: pinMap,
-    history: {
-      type: "array",
-      items: {
-        type: "object",
-        required: ["id", "at", "by", "action", "slot"],
-        additionalProperties: false,
-        properties: {
-          id: { type: "string", minLength: 1 },
-          at: { type: "string", pattern: ISO },
-          by: { type: "string", minLength: 1 },
-          action: { enum: ["pin", "restore", "unpin"] },
-          slot: { type: "string", pattern: SLOT },
-          element: { type: "string", pattern: ID },
-          version: { type: "integer", minimum: 1 },
-          hash: { type: "string", pattern: HASH },
-          from: { enum: ["option", "saved", "version", "reference"] },
-          approval: { type: "string", minLength: 1 },
-          restores: { type: "string", minLength: 1, description: "Id of the earlier pin event a restore re-applies." },
-          reason: { type: "string" },
-        },
-      },
-    },
-  },
-};
-
-export const RELEASE_SCHEMA: JsonSchema = {
-  $schema: "https://json-schema.org/draft/2020-12/schema",
-  $id: RECORD_SCHEMA_IDS.release,
-  title: "Release snapshot (releases/<n>.json)",
-  type: "object",
-  required: ["schema", "number", "at", "by", "pins", "selectionEvent"],
-  additionalProperties: false,
-  $defs: { pinState },
-  properties: {
-    schema: { const: RECORD_SCHEMA_IDS.release },
-    number: { type: "integer", minimum: 1 },
-    at: { type: "string", pattern: ISO },
-    by: { type: "string", minLength: 1 },
-    pins: pinMap,
-    selectionEvent: { type: ["string", "null"], description: "Last selection history event included in the snapshot." },
-    notes: { type: "string" },
   },
 };
 

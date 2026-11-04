@@ -9,10 +9,13 @@
  * write step so a caller (`./cli.js`) can run in report mode -- compute,
  * but never touch disk -- by simply not calling the write half.
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { roleFolderPrefix } from "../loop/artifacts.js";
 import { isValidLoopState } from "../loop/state.js";
+
+const AGENT_ROLES = ["director", "designer", "writer", "publisher"] as const;
+const isRealDirectory = (path: string): boolean => { try { return lstatSync(path).isDirectory(); } catch { return false; } };
 import type { LoopState } from "../loop/types.js";
 import { computeHeartbeat, renderDigest } from "./digest.js";
 import type { HeartbeatDigest } from "./types.js";
@@ -45,15 +48,15 @@ export function loadLoopStates(repoRoot: string): LoadedLoopStates {
   const names = entries
     .filter((entry) => entry.isDirectory() && entry.name !== ".state" && entry.name !== "agents" && roleFolderPrefix(entry.name) === `clossys/${entry.name}/`)
     .map((entry) => entry.name);
-  const agentsDir = join(clossysDir, "agents");
-  if (entries.some((entry) => entry.name === "agents" && entry.isDirectory())) {
-    names.push(...readdirSync(agentsDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && roleFolderPrefix(entry.name) === `clossys/agents/${entry.name}/`)
-      .map((entry) => entry.name));
-  }
+  // The agent roles are a closed set nested under clossys/agents/; that folder is the Git CMS
+  // slot model, which only Producer's slot reader enumerates, so probe each role's own loop.json.
+  // A clossys/agents that is a file or a symbolic link holds no agent role.
+  if (entries.some((entry) => entry.name === "agents" && entry.isDirectory())) names.push(...AGENT_ROLES);
   for (const name of names.sort((a, b) => a.localeCompare(b))) {
     const relPath = `${roleFolderPrefix(name)}loop.json`;
     const loopPath = join(repoRoot, relPath);
+    // An agent role folder that is a file or a symbolic link is skipped, as a listing would.
+    if ((AGENT_ROLES as readonly string[]).includes(name) && !isRealDirectory(join(repoRoot, roleFolderPrefix(name).slice(0, -1)))) continue;
     if (!existsSync(loopPath)) continue;
     let parsed: unknown;
     try {

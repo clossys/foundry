@@ -333,7 +333,7 @@ test("the repository omission matrix is closed against every current publishable
 
 const addedRuntimeSpecifiers = {
   "@clossys/designer": ["catalog", "catalog/server", "studio", "studio/queries", "studio/state", "catalog-bundles", "frames", "ref-verbatim"],
-  "@clossys/publisher": ["content-map/slots", "web/registered-route", "web/registered-route-check", "web/registered-route-wiring"],
+  "@clossys/publisher": ["web/registered-route", "web/registered-route-check", "web/registered-route-wiring"],
 };
 test("each added runtime export is required in every optional-peer row", async () => {
   const packages = await discoverPublishablePackages(process.cwd());
@@ -464,7 +464,7 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
   // client peers, and content-route follows the web entry's two conditions.
   const landedSpecifiers = [
     "@clossys/publisher/archetypes", "@clossys/publisher/content", "@clossys/publisher/content-map",
-    "@clossys/publisher/content-map/cells", "@clossys/publisher/content-map/slots", "@clossys/publisher/content/node", "@clossys/publisher/install",
+    "@clossys/publisher/content-map/cells", "@clossys/publisher/content/node", "@clossys/publisher/install",
     "@clossys/publisher/specimen", "@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview",
     "@clossys/publisher/web/publisher-v2",
   ];
