@@ -170,7 +170,8 @@ export function slotSpecimen(source: SpecimenSource, card?: { theme: 'light' | '
   const status = (label: string, tone: 'secondary' | 'destructive', description: string): SpecimenInput =>
     withRowsCopy({ name: source.name, title: head.title, description: source.description, kind: 'record', empty: label, status: { label, tone, description } });
   const state = source.state;
-  if (state.state === 'not-needed') return status(studioCopy("studio.not-needed"), 'secondary', state.notNeeded.reason);
+  // The pinned Writer key carries the reason (`Not needed: {reason}`), so the badge states the decision and the description stays the slot's own.
+  if (state.state === 'not-needed') return status(studioCopy("studio.not-needed", { reason: state.notNeeded.reason }), 'secondary', source.description);
   if (state.state === 'rejected') return state.reason === 'no-pin'
     ? status(studioCopy("studio.no-pin"), 'destructive', source.options ? studioCopy("studio.no-pin-candidates-await-approval") : studioCopy("studio.this-slot-has-no-candidate-yet"))
     : status(studioCopy("studio.pin-unavailable"), 'destructive', studioCopy("studio.no-pin-87eb19"));
