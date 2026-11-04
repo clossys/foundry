@@ -2,5 +2,6 @@
   "candidate": "labeled-handle-v1.json",
   "sha256": "c70e7810b6cc83d787a7e483185787eeb0dd46a4d593ea680e4fada5bc9f21c9",
   "decidedBy": "planner:CANVAS-PARTS",
+  "basis": "planner",
   "at": "2026-11-04T02:24:44.514Z"
 }

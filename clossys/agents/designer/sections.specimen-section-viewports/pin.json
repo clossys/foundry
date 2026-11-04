@@ -2,5 +2,6 @@
   "candidate": "specimen-section-viewports-v2.json",
   "sha256": "eeaca068fe9f4951972fc0603a955af3871208322aa07de7dfef441e7bd6a036",
   "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "basis": "planner",
   "at": "2026-11-03T14:00:19Z"
 }

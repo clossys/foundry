@@ -2,5 +2,6 @@
   "candidate": "node-status-v1.json",
   "sha256": "763a8319ad05f68352728c3679dcef770c38e40429b0182f50052ddac67f1a16",
   "decidedBy": "planner:PIPELINE-CANVAS",
+  "basis": "planner",
   "at": "2026-11-04T06:09:56.489Z"
 }

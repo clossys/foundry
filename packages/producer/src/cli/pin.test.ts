@@ -24,6 +24,7 @@ beforeEach(() => {
   const agents = join(workspace, "clossys", "agents", "designer");
   const ia: IaDoc = { schema: "clossys.ia/1", source: "synthetic#fixture", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "group", label: "Group", slots: [ID, OTHER] }] }] };
   mkdirSync(agents, { recursive: true });
+  writeFileSync(join(workspace, "clossys", "clossys.config.ts"), "export default {};\n");
   writeFileSync(join(agents, "ia.json"), jsonBytes(ia));
   for (const id of [ID, OTHER]) {
     const dir = join(agents, id);
@@ -40,58 +41,75 @@ afterEach(() => rmSync(workspace, { recursive: true, force: true }));
 const pin = (...args: string[]) => runCli(["pin", ...args], workspace);
 
 describe("clossys pin <agent>/<slot> <candidate-id>", () => {
-  it("writes pin.json {candidate, sha256, decidedBy, at} for a known candidate", async () => {
-    const result = await pin(`designer/${ID}`, "example-v1.json", "--at", "2026-11-03T12:00:00.000Z");
+  it("writes pin.json {candidate, sha256, decidedBy, basis, at} for a known candidate", async () => {
+    const result = await pin(`designer/${ID}`, "example-v1.json", "--basis", "picked", "--at", "2026-11-03T12:00:00.000Z");
     expect(result.exitCode).toBe(0);
-    expect(load(join(slotDir, "pin.json"))).toEqual({ candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: "owner", at: "2026-11-03T12:00:00.000Z" });
+    expect(load(join(slotDir, "pin.json"))).toEqual({ candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: "owner", basis: "picked", at: "2026-11-03T12:00:00.000Z" });
+  });
+
+  it("records basis planner for --by planner:*, and refuses another basis with it", async () => {
+    expect((await pin(`designer/${ID}`, "example-v1", "--by", "planner:G15")).exitCode).toBe(0);
+    expect(load(join(slotDir, "pin.json")).basis).toBe("planner");
+    expect((await pin(`designer/${ID}`, "example-v2", "--by", "planner:G15", "--basis", "picked")).exitCode).toBe(2);
+    expect(load(join(slotDir, "pin.json")).candidate).toBe("example-v1.json");
+  });
+
+  it("requires an explicit --basis for an owner pin, and only picked, bulk or planner", async () => {
+    const missing = await pin(`designer/${ID}`, "example-v1.json", "--by", "owner:2026-11-03 go");
+    expect(missing).toMatchObject({ exitCode: 2, message: expect.stringMatching(/needs an explicit --basis/) });
+    expect((await pin(`designer/${ID}`, "example-v1.json", "--basis", "maybe")).exitCode).toBe(2);
+    expect((await pin(`designer/${ID}`, "--not-needed", "--reason", "x", "--basis", "bulk")).exitCode).toBe(2);
+    expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
+    expect((await pin(`designer/${ID}`, "example-v1.json", "--by", "owner:2026-11-03 go", "--basis", "bulk")).exitCode).toBe(0);
+    expect(load(join(slotDir, "pin.json"))).toMatchObject({ decidedBy: "owner:2026-11-03 go", basis: "bulk" });
   });
 
   it("takes the candidate id without its extension and a --by decider", async () => {
     const result = await pin(`designer/${ID}`, "example-v2", "--by", "planner:PIN-CLI");
     expect(result.exitCode).toBe(0);
     const written = load(join(slotDir, "pin.json"));
-    expect(written).toMatchObject({ candidate: "example-v2.json", sha256: sha256Hex(second), decidedBy: "planner:PIN-CLI" });
+    expect(written).toMatchObject({ candidate: "example-v2.json", sha256: sha256Hex(second), decidedBy: "planner:PIN-CLI", basis: "planner" });
     expect(Date.parse(written.at)).not.toBeNaN();
   });
 
   it("refuses an unknown agent", async () => {
-    const result = await pin(`stylist/${ID}`, "example-v1.json");
+    const result = await pin(`stylist/${ID}`, "example-v1.json", "--basis", "bulk");
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/unknown agent stylist/) });
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
   });
 
   it("refuses an unknown slot", async () => {
-    const result = await pin("designer/components.missing", "example-v1.json");
+    const result = await pin("designer/components.missing", "example-v1.json", "--basis", "bulk");
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/unknown slot designer\/components\.missing/) });
   });
 
   it("refuses an unknown candidate", async () => {
-    const result = await pin(`designer/${ID}`, "example-v9.json");
+    const result = await pin(`designer/${ID}`, "example-v9.json", "--basis", "bulk");
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/has no candidate example-v9\.json/) });
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
   });
 
   it("refuses a candidate that fails the pin rules", async () => {
-    const result = await pin(`designer/${ID}`, "broken-v1.json");
+    const result = await pin(`designer/${ID}`, "broken-v1.json", "--basis", "bulk");
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/^pin refused: .*pin state/) });
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
   });
 
   it("refuses a decider outside owner, planner or migrated", async () => {
-    const result = await pin(`designer/${ID}`, "example-v1.json", "--by", "someone");
+    const result = await pin(`designer/${ID}`, "example-v1.json", "--by", "someone", "--basis", "bulk");
     expect(result).toMatchObject({ exitCode: 1, message: expect.stringMatching(/decidedBy must be/) });
     expect(existsSync(join(slotDir, "pin.json"))).toBe(false);
   });
 
   it("refuses a malformed target or a candidate together with --not-needed", async () => {
-    expect((await pin(ID, "example-v1.json")).exitCode).toBe(2);
+    expect((await pin(ID, "example-v1.json", "--basis", "bulk")).exitCode).toBe(2);
     expect((await pin(`designer/${ID}`, "example-v1.json", "--not-needed", "--reason", "x")).exitCode).toBe(2);
     expect((await pin(`designer/${ID}`)).exitCode).toBe(2);
   });
 
   it("replaces an earlier pin and clears a not-needed marker", async () => {
     await pin(`designer/${ID}`, "--not-needed", "--reason", "No toolbar.");
-    expect((await pin(`designer/${ID}`, "example-v2.json")).exitCode).toBe(0);
+    expect((await pin(`designer/${ID}`, "example-v2.json", "--basis", "bulk")).exitCode).toBe(0);
     expect(load(join(slotDir, "slot.json")).notNeeded).toBeUndefined();
     expect(load(join(slotDir, "pin.json")).candidate).toBe("example-v2.json");
   });
@@ -99,7 +117,7 @@ describe("clossys pin <agent>/<slot> <candidate-id>", () => {
 
 describe("clossys pin <agent>/<slot> --not-needed --reason <text>", () => {
   it("writes slot.json notNeeded {reason, since, decidedBy} and removes the pin", async () => {
-    await pin(`designer/${ID}`, "example-v1.json");
+    await pin(`designer/${ID}`, "example-v1.json", "--basis", "bulk");
     const result = await pin(`designer/${ID}`, "--not-needed", "--reason", "The site has no toolbar.", "--at", "2026-11-03T08:00:00.000Z");
     expect(result.exitCode).toBe(0);
     expect(load(join(slotDir, "slot.json")).notNeeded).toEqual({ reason: "The site has no toolbar.", since: "2026-11-03", decidedBy: "owner" });
@@ -116,13 +134,13 @@ describe("clossys pin <agent>/<slot> --not-needed --reason <text>", () => {
 
 describe("clossys decisions", () => {
   it("lists every slot as pinned, not-needed or open, with counts", async () => {
-    await pin(`designer/${ID}`, "example-v1.json");
+    await pin(`designer/${ID}`, "example-v1.json", "--basis", "picked");
     let result = await runCli(["decisions", "--json"], workspace);
     expect(result.exitCode).toBe(0);
     expect(result.decisions).toEqual({
       counts: { pinned: 1, "not-needed": 0, open: 1 },
       slots: [
-        { slot: `designer/${ID}`, state: "pinned", candidate: "example-v1.json", decidedBy: "owner" },
+        { slot: `designer/${ID}`, state: "pinned", candidate: "example-v1.json", decidedBy: "owner", basis: "picked" },
         { slot: `designer/${OTHER}`, state: "open", rejection: "no-pin" },
       ],
     });
@@ -150,7 +168,31 @@ describe("migrate-pin-decided-by", () => {
     const runPin = async (args: string[]) => { const result = await runCli(args, workspace); return { ok: result.exitCode === 0, output: result.message }; };
     const outcome = await migratePins({ repo: workspace, base, runPin });
     expect(outcome).toMatchObject({ migrated: 1, failures: [] });
-    expect(load(pinPath)).toEqual({ candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: pinnedBy, at: "2026-11-01T09:00:00Z" });
+    expect(load(pinPath)).toEqual({ candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: pinnedBy, basis: "planner", at: "2026-11-01T09:00:00Z" });
     expect(await migratePins({ repo: workspace, base, runPin })).toMatchObject({ migrated: 0, failures: [] });
+  });
+});
+
+describe("backfill-pin-basis", () => {
+  it("maps decidedBy to a basis deterministically and writes it through clossys pin", async () => {
+    const script = fileURLToPath(new URL("../../scripts/backfill-pin-basis.mjs", import.meta.url));
+    const { basisFor, backfill } = await import(script) as {
+      basisFor: (decidedBy: string) => { basis: string };
+      backfill: (options: object) => Promise<{ written: number; skipped: number; failures: string[] }>;
+    };
+    expect(basisFor("planner:CONVERGE-R2").basis).toBe("planner");
+    expect(basisFor("owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)").basis).toBe("planner");
+    expect(basisFor("owner:2026-11-03 planner-pin SPECIMEN-THEME").basis).toBe("planner");
+    expect(basisFor("owner:2026-11-03 pin-if-agree").basis).toBe("bulk");
+    expect(basisFor("owner:2026-11-03 GEN-DERIVED go").basis).toBe("bulk");
+    expect(basisFor("owner:2026-11-03 one-brand clossys asterisk").basis).toBe("picked");
+    expect(basisFor("owner:2026-11-03 fix-all").basis).toBe("bulk");
+    const pinPath = join(slotDir, "pin.json");
+    const before = { candidate: "example-v1.json", sha256: sha256Hex(good), decidedBy: "owner:2026-11-03 pin-if-agree", at: "2026-11-01T09:00:00Z" };
+    writeFileSync(pinPath, jsonBytes(before));
+    const runPin = async (args: string[]) => { const result = await runCli(args, workspace); return { ok: result.exitCode === 0, output: result.message }; };
+    expect(await backfill({ repo: workspace, runPin })).toMatchObject({ written: 1, failures: [] });
+    expect(load(pinPath)).toEqual({ ...before, basis: "bulk" });
+    expect(await backfill({ repo: workspace, runPin })).toMatchObject({ written: 0, skipped: 1, failures: [] });
   });
 });

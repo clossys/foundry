@@ -2,5 +2,6 @@
   "candidate": "chart-2-v1.json",
   "sha256": "42ff354caa7642fc1e3c33ffb9f53ec1a0e5d2b01af31696196ef0cd70b048ed",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

@@ -2,5 +2,6 @@
   "candidate": "icon-chevron-left-v1.json",
   "sha256": "226415a3adb6225bd82769ab4f147538976bcb9ffdd458f57f299781764e9bbf",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

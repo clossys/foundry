@@ -410,6 +410,45 @@
       "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape)."
     },
     {
+      "id": "R-GIT-CMS",
+      "owner_words": {
+        "quote": "ok clean up and harden",
+        "date": "2026-11-03"
+      },
+      "status": "enforced",
+      "checks": [
+        ".#check:git-cms"
+      ],
+      "fixture": "scripts/rules/fixtures/R-GIT-CMS",
+      "fixture_runs": [
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL stray-entry designer/_evidence"
+        },
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL pin-attribution designer/components\\.button/pin\\.json: pin has no basis"
+        },
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL missing-ia notes/ia\\.json"
+        },
+        {
+          "check": ".#check:git-cms",
+          "cwd": ".",
+          "run": "node scripts/check-git-cms.mjs --repo {fixture}",
+          "expect": "FAIL no-candidates designer/components\\.card"
+        }
+      ],
+      "note": "Agent trees under clossys/agents/<agent>/ hold only ia.json and slot folders; a slot folder holds only slot.json, candidates/ and pin.json, matches ia.json, has a candidate, and a pin names an existing candidate by exact sha256 with decidedBy and basis (picked | bulk | planner). Evidence lives in clossys/evidence/. No agent is exempt."
+    },
+    {
       "id": "R-PIPELINE-IS-CODE",
       "owner_words": {
         "quote": "anything that is deterministic need to be process driven by code and identifiers",

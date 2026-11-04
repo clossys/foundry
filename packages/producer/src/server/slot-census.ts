@@ -1,8 +1,8 @@
 import { lstatSync } from 'node:fs';
 import { listCandidateNames, readCandidate, readIa, readPin, readSlot } from '../records/slots.js';
 import {
-  SLOT_AGENTS, pinFile, slotDir, slotFile, slotPositions, validateCandidate, validateSlotDoc,
-  type SlotAgent, type SlotDoc, type SlotPosition,
+  SLOT_AGENTS, pinFile, pinStatus, slotDir, slotFile, slotPositions, validateCandidate, validateSlotDoc,
+  type PinBasis, type PinStatus, type SlotAgent, type SlotDoc, type SlotPosition,
 } from '../records/slot-model/index.js';
 
 export interface SlotCensusRow {
@@ -12,12 +12,15 @@ export interface SlotCensusRow {
   candidates: string[];
   slot: 'valid' | 'missing' | 'invalid' | 'error';
   pin: 'valid' | 'missing' | 'invalid' | 'missing-candidate' | 'hash-drift' | 'invalid-candidate' | 'unvalidated-candidate' | 'error';
+  /** How a readable pin was decided, and its review status (`confirm` for basis bulk or planner). */
+  basis?: PinBasis;
+  status?: PinStatus;
   /** The candidate directory could not be read safely. */
   candidatesError?: true;
 }
 
 export type SlotCensus =
-  | { state: 'ready'; total: number; withCandidate: number; pinned: number; rows: SlotCensusRow[] }
+  | { state: 'ready'; total: number; withCandidate: number; pinned: number; confirm: number; rows: SlotCensusRow[] }
   | { state: 'error'; message: string };
 
 function presence(path: string): 'present' | 'missing' | 'error' {
@@ -59,6 +62,8 @@ function censusRow(consumer: string, agent: SlotAgent, id: string, position: Slo
       if (!pin) row.pin = 'invalid';
       else {
         countedPin = true;
+        row.basis = pin.basis;
+        row.status = pinStatus(pin.basis);
         try {
           const candidate = readCandidate(consumer, agent, id, pin.candidate);
           if (candidate.sha256 !== pin.sha256) row.pin = 'hash-drift';
@@ -84,6 +89,7 @@ export function agentSlotCensus(consumer: string, agent: SlotAgent): SlotCensus 
       state: 'ready', total: entries.length,
       withCandidate: entries.filter(entry => entry.row.candidates.length > 0).length,
       pinned: entries.filter(entry => entry.countedPin).length,
+      confirm: entries.filter(entry => entry.row.status === 'confirm').length,
       rows: entries.map(entry => entry.row),
     };
   } catch {

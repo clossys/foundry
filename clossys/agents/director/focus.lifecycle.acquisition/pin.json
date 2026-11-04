@@ -2,5 +2,6 @@
   "candidate": "studio-acquisition-v1.md",
   "sha256": "5859adb792a25ca24703b8487e01b6b8ccb5eb252f96102ec104df7365683826",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:39Z"
 }

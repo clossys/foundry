@@ -1,6 +1,7 @@
 {
-  "candidate": "studio-v6.md",
-  "sha256": "1d0c473dbb446b648ed31051d4f4f7d52a8c687158a63e32c8316819a4607bf7",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "at": "2026-11-03T08:51:28Z"
+  "candidate": "studio-v7.md",
+  "sha256": "6fa7d34f96de11a345e5552b73805693dd87c332100ab78679995cfb68451988",
+  "decidedBy": "planner:G15-GITCMS-HARDEN",
+  "basis": "planner",
+  "at": "2026-11-04T07:59:14.890Z"
 }

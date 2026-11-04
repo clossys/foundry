@@ -2,5 +2,6 @@
   "candidate": "image-ratio-v1.json",
   "sha256": "cb992bee4b75353dedb996b52f4353c9d21798f90d3f05021bca5162774cd5ff",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

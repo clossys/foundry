@@ -2,12 +2,13 @@
 /**
  * Decision records check (rule R-DECISIONS-BY-CLI).
  *
- * A slot's decision is written by `clossys pin` only: pin.json {candidate, sha256, decidedBy, at}
+ * A slot's decision is written by `clossys pin` only: pin.json {candidate, sha256, decidedBy, basis, at}
  * or slot.json `notNeeded: {reason, since, decidedBy}`. This check reads the files directly (no
  * build needed) and fails on any decision record a hand edit could leave behind:
  *
- *   pin-shape          pin.json is not JSON, has keys other than {candidate, sha256, decidedBy, at},
- *                      or is missing decidedBy / at
+ *   pin-shape          pin.json is not JSON, has keys other than {candidate, sha256, decidedBy, basis, at},
+ *                      is missing decidedBy / at, or has a basis other than picked | bulk | planner
+ *                      (a missing basis is check:git-cms's finding, rule R-GIT-CMS)
  *   pin-candidate      the pinned candidate file does not exist
  *   pin-hash           sha256 in pin.json differs from the candidate file's bytes
  *   both               the slot is pinned and marked not needed at once
@@ -21,7 +22,7 @@ import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PIN_KEYS = ['candidate', 'sha256', 'decidedBy', 'at'];
+const PIN_KEYS = ['candidate', 'sha256', 'decidedBy', 'basis', 'at'];
 const NOT_NEEDED_KEYS = ['reason', 'since', 'decidedBy'];
 const ISO_TIME = /^\d{4}-\d{2}-\d{2}T/;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}/;
@@ -70,6 +71,7 @@ export function checkDecisions(consumer) {
       if (!object(pin)) { add('pin-shape', `${where}/pin.json`, 'pin.json must be an object'); continue; }
       for (const key of Object.keys(pin)) if (!PIN_KEYS.includes(key)) add('pin-shape', `${where}/pin.json`, `unknown key ${key}`);
       if (!nonEmpty(pin.decidedBy)) add('pin-shape', `${where}/pin.json`, 'missing decidedBy');
+      if (pin.basis !== undefined && !['picked', 'bulk', 'planner'].includes(pin.basis)) add('pin-shape', `${where}/pin.json`, `basis ${JSON.stringify(pin.basis)} is not picked | bulk | planner`);
       if (typeof pin.at !== 'string' || !ISO_TIME.test(pin.at) || Number.isNaN(Date.parse(pin.at))) add('pin-shape', `${where}/pin.json`, 'missing at (ISO timestamp)');
       if (!nonEmpty(pin.candidate) || pin.candidate.includes('/') || pin.candidate.includes('\\')) { add('pin-candidate', `${where}/pin.json`, 'pin names no candidate file'); continue; }
       const candidatePath = join(dir, 'candidates', pin.candidate);

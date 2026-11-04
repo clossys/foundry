@@ -4,7 +4,7 @@ import { deriveRefs, parseFrontmatter, serializeFrontmatter, toSlotId, validateC
 const codes = (issues: readonly { code: string }[]) => issues.map(issue => issue.code);
 const ia = { schema: "clossys.ia/1", source: "@clossys/designer#leaf-freeze", extensions: [], nodes: [{ id: "components", label: "Components", children: [{ id: "actions", label: "Actions", slots: ["components.button"] }] }] };
 const slot = { schema: "clossys.slot/1", id: "components.button", agent: "designer", ia: { l1: "components", l2: "actions", order: 0 }, kind: "element", contract: {}, inputs: [], uses: [] };
-const pin = { candidate: "button-v1.json", sha256: "a".repeat(64), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" };
+const pin = { candidate: "button-v1.json", sha256: "a".repeat(64), decidedBy: "migrated", basis: "bulk", at: "2026-10-31T00:00:00Z" };
 const page = { schema: "clossys.page/1", path: "/", title: "Home", frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] } } };
 
 describe("slot model schema (F1)", () => {

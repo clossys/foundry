@@ -2,5 +2,6 @@
   "candidate": "muted-foreground-v1.json",
   "sha256": "76eb1455bd46183429ae4d9cb91f1f5a9aff858fc3eb86b49c6384bda6091161",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

@@ -473,7 +473,7 @@ CLI 0.6 modes:
 | `packages/builder/README.md`:838, `builder/src/deployment/branch-binding.ts`:19 | comments cite `BrandDerivation` as precedent | Comment-only rewording to cite `validateBriefContract` | TI-X |
 | bouncer, butler, giver, keeper `src/validation.ts` header comments | cite strategist `validation.ts` | unchanged (kept) | none |
 | `evals/scenarios/single-role-strategist-only.json`, `single-role-designer-pulls-strategist.json` | resolve via the feeds above | expectations re-pointed to `strategy-brief` in the same commit as the rename | ST-11 |
-| `clossys/strategist/facts.json` (foundry's own subject, one fact) | facts mode | `clossys/agents/strategist/findings/publishable-package-count.md`. A207 mechanically retargets the subject wrapper root and fixture path; the engine, scan extensions, exclusions and finding bytes stay unchanged | ST-7 |
+| `clossys/strategist/facts.json` (foundry's own subject, one fact) | facts mode | `clossys/agents/strategist/findings/publishable-package-count.md`, now `clossys/evidence/strategist/findings/publishable-package-count.md` (evidence moved out of the agent trees, rule R-GIT-CMS). A207 mechanically retargets the subject wrapper root and fixture path; the engine, scan extensions, exclusions and finding bytes stay unchanged | ST-7 |
 | `scripts/check-package-skills.mjs` strategist rules | regexes on the skill text | **No edit.** The v2 skill satisfies every existing rule truthfully: pre-auth bar, `prove 3 only`, `never treat gate-green as keep`, `stops at 3 is a defect`, `necessary, not sufficient`, `do-not language`, `not keep`, the 0.6 file names in its migration section, `strategist-check handoff` and `clossys-customer`. `name: clossys-strategist` and `disable-model-invocation: true` are kept | ST-8 |
 | `docs/contracts/consumer-layout.json` | `clossys/strategist` owned by strategist | unchanged | none |
 
@@ -669,7 +669,7 @@ Two scopes apply to every unit unless the unit says otherwise:
   - `packages/strategist/src/ground/**`
   - `facts-gate.ts`, `fact-index.ts`, `facts-dir.ts`, `scan.ts`, `wont-claim-drift.ts`
   - `cli.ts` (the default mode, `ground`, `wont-claim`)
-  - `clossys/agents/strategist/findings/publishable-package-count.md` (A207 target)
+  - `clossys/agents/strategist/findings/publishable-package-count.md` (A207 target; now `clossys/evidence/strategist/findings/`, rule R-GIT-CMS)
   - `clossys/strategist/facts.json` (delete)
 - Tests first:
   - grounding traces a numeric claim to a finding's `value` and `aliases`;

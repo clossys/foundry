@@ -38,7 +38,7 @@ beforeEach(() => {
           : { schema: "clossys.page/1", path: "/", title: "example.title", frame: null, sections: [], copy: {}, meta: { source } });
     const name = `sample-v1.${agent === "director" || agent === "writer" ? "md" : "json"}`;
     writeFileSync(join(dir, "candidates", name), bytes);
-    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), decidedBy: "migrated", at: "2026-10-31T00:00:00Z" });
+    save(join(dir, "pin.json"), { candidate: name, sha256: sha256Hex(bytes), decidedBy: "migrated", basis: "bulk", at: "2026-10-31T00:00:00Z" });
   }
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));

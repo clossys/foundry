@@ -4,7 +4,7 @@ import { copyRef, type CopyText } from "./copy-ref.js";
 import { slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
-import { CANDIDATE_NAME, parseFrontmatter, validateCandidate, type SlotAgent } from "../records/slot-model/index.js";
+import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
@@ -22,6 +22,8 @@ export interface SlotDetail {
   links: { agent: SlotAgent; id: string }[];
   candidates: DetailCandidate[]; shown?: string;
   pin: ReturnType<typeof listSlots>[number]["pin"];
+  /** The pin's review status: `confirm` when its basis is bulk or planner. Absent without a pin. */
+  status?: PinStatus;
   /** The loader's slot state: pinned, not-needed, or rejected (an error state). */
   state: SlotCardState;
   history: ReturnType<typeof pinHistory>;
@@ -79,7 +81,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     agent, id, name: slotLabel(consumer, agent, id), kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
     contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedByPlaced(consumer, id),
     links: refs.flatMap(ref => { const target = index.get(ref); return target ? [{ agent: target.agent, id: ref }] : []; }),
-    candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin, state: cardState(entry),
+    candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin, ...(entry.pin ? { status: pinStatus(entry.pin.basis) } : {}), state: cardState(entry),
     history: pinHistory(consumer, agent, id),
     checks: [
       { label: copyRef("studio.check-candidate-recorded"), ok: candidates.length > 0, detail: copyRef("studio.check-candidate-count", { count: candidates.length }) },

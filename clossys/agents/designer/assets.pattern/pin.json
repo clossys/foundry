@@ -2,5 +2,6 @@
   "candidate": "pattern-v1.json",
   "sha256": "ee88917e3a007ad0e3ea20c90bba145d3983d28c06639266d87cc0b1bf0d52a5",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

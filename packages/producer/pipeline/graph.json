@@ -43,10 +43,10 @@
       "inputs": [],
       "outputs": [
         {
-          "glob": "clossys/agents/director/_evidence/*.md"
+          "glob": "clossys/evidence/director/*.md"
         },
         {
-          "glob": "clossys/agents/strategist/findings/*.md"
+          "glob": "clossys/evidence/strategist/findings/*.md"
         }
       ],
       "command": {
@@ -270,10 +270,10 @@
       "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
       "inputs": [
         {
-          "glob": "clossys/agents/director/_evidence/*.md"
+          "glob": "clossys/evidence/director/*.md"
         },
         {
-          "glob": "clossys/agents/strategist/findings/*.md"
+          "glob": "clossys/evidence/strategist/findings/*.md"
         },
         {
           "glob": "clossys/agents/director/*/slot.json",
@@ -2401,12 +2401,12 @@
     {
       "step": "evidence",
       "port": "output",
-      "glob": "clossys/agents/director/_evidence/*.md"
+      "glob": "clossys/evidence/director/*.md"
     },
     {
       "step": "evidence",
       "port": "output",
-      "glob": "clossys/agents/strategist/findings/*.md"
+      "glob": "clossys/evidence/strategist/findings/*.md"
     },
     {
       "step": "workspace.config",
@@ -2441,12 +2441,12 @@
     {
       "step": "director.candidates",
       "port": "input",
-      "glob": "clossys/agents/director/_evidence/*.md"
+      "glob": "clossys/evidence/director/*.md"
     },
     {
       "step": "director.candidates",
       "port": "input",
-      "glob": "clossys/agents/strategist/findings/*.md"
+      "glob": "clossys/evidence/strategist/findings/*.md"
     },
     {
       "step": "designer.library",
@@ -2765,6 +2765,10 @@
           "value": null
         },
         {
+          "flag": "--basis",
+          "value": null
+        },
+        {
           "flag": "--by",
           "value": null
         },
@@ -3002,6 +3006,10 @@
       "decisions": [
         {
           "flag": "--at",
+          "value": null
+        },
+        {
+          "flag": "--basis",
           "value": null
         },
         {

@@ -1,6 +1,6 @@
 import { parseFrontmatter } from "./frontmatter.js";
 import {
-  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
+  AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, PIN_BASES, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
   PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
@@ -111,10 +111,11 @@ export function validatePin(value: unknown, path = "pin.json"): SlotModelIssue[]
   const issues: SlotModelIssue[] = [];
   const fail = (message: string) => issues.push({ code: "pin-invalid", path, message });
   if (!object(value)) { fail("expected an object"); return issues; }
-  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "at"].includes(key)) fail(`unknown key ${key}`);
+  for (const key of Object.keys(value)) if (!["candidate", "sha256", "decidedBy", "basis", "at"].includes(key)) fail(`unknown key ${key}`);
   if (!nonEmpty(value.candidate) || !CANDIDATE_NAME.test(value.candidate)) fail("candidate must be a candidate file name");
   if (typeof value.sha256 !== "string" || !/^[a-f0-9]{64}$/.test(value.sha256)) fail("sha256 must be 64 lowercase hex");
   if (typeof value.decidedBy !== "string" || !DECIDED_BY.test(value.decidedBy)) fail("decidedBy must be owner[:<ref>], planner[:<ref>], migration[:<ref>] or migrated");
+  if (!(PIN_BASES as readonly unknown[]).includes(value.basis)) fail("basis must be picked, bulk or planner");
   if (typeof value.at !== "string" || Number.isNaN(Date.parse(value.at)) || !/^\d{4}-\d{2}-\d{2}T/.test(value.at)) fail("at must be an ISO timestamp");
   return issues;
 }

@@ -2,5 +2,6 @@
   "candidate": "popover-v1.json",
   "sha256": "d23c921b4479bb2497d5e94896fff49dcec0998c02ad3f3651eb2cda35b4e1cd",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:58:02Z"
 }

@@ -2,5 +2,6 @@
   "candidate": "studio-contract-v5.md",
   "sha256": "4cb09172dac1afa6781eb44919186a555a9b667526fb5b1ebbbabf723ceff1cc",
   "decidedBy": "owner:2026-11-03 pin-if-agree",
+  "basis": "bulk",
   "at": "2026-11-03T08:51:28Z"
 }

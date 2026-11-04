@@ -2,5 +2,6 @@
   "candidate": "studio-leaf-header-v6.json",
   "sha256": "3865f280bc35af5961d9bb560f38e185cb04f0d1e4e55e3f4fa5ca71f58cc0c9",
   "decidedBy": "planner:CONVERGE-R2",
+  "basis": "planner",
   "at": "2026-11-04T00:50:34.405Z"
 }

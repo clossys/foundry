@@ -31,7 +31,7 @@ describe("clossys direct over the flat slot model", () => {
   }, 60_000);
 
   it("cites evidence only by known finding ids", () => {
-    rmSync(join(root, "clossys", "agents", "director", "_evidence"), { recursive: true, force: true });
+    rmSync(join(root, "clossys", "evidence", "director"), { recursive: true, force: true });
     const result = runVerb(["direct", "--check"], root);
     expect([1, 2]).toContain(result.status);
   }, 60_000);
