@@ -79,10 +79,10 @@ beforeEach(() => {
   installRole("@clossys/advisor", ASSESSING_ROLE, true);
   installRole("@clossys/observer", ASSESSING_ROLE, true);
   // One is installed and ships a CLI but declares no assessment surface at all.
-  installRole("@clossys/strategist", ASSESSING_ROLE, false);
+  installRole("@clossys/director", ASSESSING_ROLE, false);
   // One declares a surface, runs, and cannot conclude.
   installRole("@clossys/architect", INDETERMINATE_ROLE, true);
-  for (const role of ["@clossys/advisor", "@clossys/observer", "@clossys/strategist", "@clossys/architect"]) writeEvidence(role, ["synthetic-operating-surface"]);
+  for (const role of ["@clossys/advisor", "@clossys/observer", "@clossys/director", "@clossys/architect"]) writeEvidence(role, ["synthetic-operating-surface"]);
 });
 afterEach(() => { rmSync(fixture, { recursive: true, force: true }); });
 
@@ -112,16 +112,16 @@ describe("first-day onboarding, end to end, against a synthetic consumer", () =>
 
   it("topology B: a role with no assessment surface is named in the output and blocks the ledger", { timeout: 30_000 }, () => {
     const run = runFirstDayOnboarding(topologyB, { installRoot, evidenceDirectory: evidence });
-    expect(run.selection.filter((item) => item.outcome === "selected").map((item) => item.role)).toEqual(["@clossys/advisor", "@clossys/architect", "@clossys/observer", "@clossys/strategist"]);
-    expect(run.gaps).toEqual([{ role: "@clossys/strategist", reason: "no-assessment-declaration" }]);
-    expect(run.assessments.find((item) => item.role === "@clossys/strategist")?.outcome).toBe("no-assessment-surface");
+    expect(run.selection.filter((item) => item.outcome === "selected").map((item) => item.role)).toEqual(["@clossys/advisor", "@clossys/architect", "@clossys/director", "@clossys/observer"]);
+    expect(run.gaps).toEqual([{ role: "@clossys/director", reason: "no-assessment-declaration" }]);
+    expect(run.assessments.find((item) => item.role === "@clossys/director")?.outcome).toBe("no-assessment-surface");
     expect(run.assessments.find((item) => item.role === "@clossys/architect")?.outcome).toBe("assessment-indeterminate");
     expect(run.state).toBe("indeterminate");
 
     const proposal = proposeInstalledPositionLedger(run, roles);
     expect(proposal.ledger).toBeNull();
     // The blocked roles are named, and neither is quietly dispositioned away.
-    expect(proposal.findings.filter((item) => item.rule === "ledger-blocked-by-unassessed-role").map((item) => item.path)).toEqual(["@clossys/architect", "@clossys/strategist"]);
+    expect(proposal.findings.filter((item) => item.rule === "ledger-blocked-by-unassessed-role").map((item) => item.path)).toEqual(["@clossys/architect", "@clossys/director"]);
     const approval = { decisionOwner: "decision-owner-alpha", approvedRunDigest: onboardingRunDigest(run), approvedAt: "2026-08-18T00:00:00.000Z" };
     expect(authorizeMutation(run, proposal.ledger, approval).authorized).toBe(false);
   });

@@ -1,7 +1,7 @@
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
-import { readActive, validateGenericTree } from '@clossys/strategist/cell-format';
+import { readActive, validateGenericTree } from '@clossys/director/cell-format';
 import { parseWriterCell, WRITER_CELL_ID, type CellRecord, type JsonRecord } from './parse.js';
 import { assertNoSymlinkPath, canonical, isObject, pointerKey, safeRelativePath, sourceRecordCount, type CompileManifest, type RecordPointer } from './migrate.js';
 import { WRITER_LAYERS } from '../catalog-core/ids.js';
@@ -98,7 +98,7 @@ export async function compileWriterCells(root: string, out?: string, options: Co
     }
     for(const path of Object.keys(files))delete files[path];
     const meta=checked.value.meta;
-    const manifestValue=meta?.libraryManifest??{consumer:'consumer',messageSyntax:'icu-mf1',defaultLocale:recordsByLocale.has('en')?'en':[...recordsByLocale.keys()][0],locales:[...recordsByLocale.keys()].map(tag=>({tag,dir:/^(ar|fa|he|ur)(-|$)/.test(tag)?'rtl':'ltr',state:'active'})),fallback:{},strategist:{path:'../strategist'},leafFreeze:Object.fromEntries(WRITER_LAYERS.map(layer=>[layer,'']))};
+    const manifestValue=meta?.libraryManifest??{consumer:'consumer',messageSyntax:'icu-mf1',defaultLocale:recordsByLocale.has('en')?'en':[...recordsByLocale.keys()][0],locales:[...recordsByLocale.keys()].map(tag=>({tag,dir:/^(ar|fa|he|ur)(-|$)/.test(tag)?'rtl':'ltr',state:'active'})),fallback:{},director:{path:'../director'},leafFreeze:Object.fromEntries(WRITER_LAYERS.map(layer=>[layer,'']))};
     files['writer.json']=manifestValue;
     for(const [locale,records] of recordsByLocale)for(const layer of WRITER_LAYERS){const layerRecords=[...records.values()].filter(r=>String(r.leaf).startsWith(`${layer}.`));if(layerRecords.length)files[`${locale}/${layer}/cells.json`]=layerRecords;}
   }

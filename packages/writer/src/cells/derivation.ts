@@ -1,8 +1,8 @@
 /** Read-only Director handoff. Interpretation and drafting belong to the Writer session. */
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
-import { checkWontClaimDrift, loadCatalog, parseCell, type Cell, type StrategyModel } from '@clossys/strategist';
-import { listCells, readActive, parseLinkRef, type StoredCell } from '@clossys/strategist/cell-format';
+import { checkWontClaimDrift, loadCatalog, parseCell, type Cell, type StrategyModel } from '@clossys/director';
+import { listCells, readActive, parseLinkRef, type StoredCell } from '@clossys/director/cell-format';
 import { loadWriterCatalog } from '../catalog/ia/index.js';
 import { WRITER_LAYERS } from '../catalog-core/ids.js';
 import { checkVoiceDerivationCoverage, type VoiceDerivationCoverageResult } from '../voice/derivation-coverage.js';

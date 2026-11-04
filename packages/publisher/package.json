@@ -218,7 +218,7 @@
     ],
     "needs": [
       {
-        "producerRole": "@clossys/strategist",
+        "producerRole": "@clossys/director",
         "artifact": "strategy-brief"
       },
       {
@@ -251,7 +251,7 @@
         "worldClass": "Every new product gets one declared inventory (clossys/publisher/pack.json, #1204) of what the v0 Launch pack owes it and what state each item is actually in \u2014 status, condition, version, source pins \u2014 never assembled ad hoc per product. Today: `src/pack/` ships the manifest contract (#1204) \u2014 `validatePackManifest` (schema, needs-graph, and lifecycle-vocabulary validation), `computePackReadiness`/`planPackOrder`/`sealableItemIds` (readiness and sealing order derived from the needs graph), and `detectExistingPackItems`/`foundPackItem` (adopt-don't-override detection with sha256 fingerprints) \u2014 as library functions over `PackManifest`; no CLI yet assembles or checks a real product's `clossys/publisher/pack.json` from them. No qualification case exercises this capability yet, so it is `planned` with no `proofCase` (#1272).",
         "inputs": [
           {
-            "producerRole": "@clossys/strategist",
+            "producerRole": "@clossys/director",
             "artifact": "strategy-brief"
           },
           {
@@ -485,7 +485,7 @@
     "@clossys/writer": "^0.6.0",
     "@clossys/designer": "^0.12.0",
     "@clossys/controller": "^0.10.0",
-    "@clossys/strategist": "0.6.0",
+    "@clossys/director": "0.6.0",
     "typescript": "~6.0.0"
   },
   "peerDependencies": {

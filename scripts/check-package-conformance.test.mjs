@@ -738,8 +738,8 @@ test("CLI: a plain file directly under packages/ (not a directory, not a symlink
 });
 
 
-const NATIVE_OUTPUT_ROLES = ["strategist", "writer", "designer", "publisher"];
-const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["director", "clossys/agents/director/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"]];
+const NATIVE_OUTPUT_ROLES = ["director", "writer", "designer", "publisher"];
+const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["advisor", "clossys/agents/advisor/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"]];
 function ownedOutputDescriptor(short, path) {
   const role = `@scope/${short}`;
   return descriptor({ role, packageDir: short, manifest: manifest({ name: role, foundry: {
@@ -764,9 +764,9 @@ for (const [short, path] of INVALID_OWNED_OUTPUTS) {
     assert.equal(result.findings.filter(item => item.rule.includes("outside-role-folder")).length, 3);
   });
 }
-test("the actual Strategist manifest declares its native output layout", () => {
-  const actual = JSON.parse(readFileSync(join(repoRoot, "packages/strategist/package.json"), "utf8"));
-  const result = evaluateConformance(repoRoot, [descriptor({ role: actual.name, packageDir: "strategist", manifest: actual })]);
+test("the actual Director manifest declares its native output layout", () => {
+  const actual = JSON.parse(readFileSync(join(repoRoot, "packages/director/package.json"), "utf8"));
+  const result = evaluateConformance(repoRoot, [descriptor({ role: actual.name, packageDir: "director", manifest: actual })]);
   assert.equal(result.table[0].layout, "declared");
   assert.equal(result.findings.some(item => item.rule.includes("outside-role-folder")), false);
 });

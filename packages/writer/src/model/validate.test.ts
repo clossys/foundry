@@ -149,10 +149,10 @@ describe("strategy cell migration", () => {
       expect(validateWriterRecord({ ...claim(), strategy }, "lexicon").length).toBeGreaterThan(0);
     }
   });
-  it("rejects the removed strategistClaimKey with actionable migration guidance, including mixed records", () => {
+  it("rejects the removed directorClaimKey with actionable migration guidance, including mixed records", () => {
     const { strategy, ...legacy } = claim();
-    for (const value of [{ ...legacy, strategistClaimKey: "old-key" }, { ...claim(), strategistClaimKey: "old-key" }]) {
-      expect(validateWriterRecord(value, "lexicon")).toContainEqual(expect.objectContaining({ path: "record.strategistClaimKey", message: expect.stringMatching(/removed.*strategy.*cell.*version/i) }));
+    for (const value of [{ ...legacy, directorClaimKey: "old-key" }, { ...claim(), directorClaimKey: "old-key" }]) {
+      expect(validateWriterRecord(value, "lexicon")).toContainEqual(expect.objectContaining({ path: "record.directorClaimKey", message: expect.stringMatching(/removed.*strategy.*cell.*version/i) }));
     }
     expect(validateWriterRecord({ ...legacy }, "lexicon")).toContainEqual(expect.objectContaining({ path: "record.strategy", message: "Required field" }));
   });
@@ -166,9 +166,9 @@ describe("strategy cell migration", () => {
       expect(validateWriterManifest({ ...value, strategy }).length).toBeGreaterThan(0);
     }
   });
-  it("rejects the legacy manifest rather than falling back to strategist.path", () => {
+  it("rejects the legacy manifest rather than falling back to director.path", () => {
     const { strategy, ...legacy } = manifest();
-    expect(validateWriterManifest({ ...legacy, strategist: { path: "strategy" } })).toContainEqual(expect.objectContaining({ path: "writer.json.strategist", message: expect.stringMatching(/removed.*strategy.*root.*writer.messaging/i) }));
-    expect(validateWriterManifest({ ...manifest(), strategist: { path: "strategy" } }).length).toBeGreaterThan(0);
+    expect(validateWriterManifest({ ...legacy, director: { path: "strategy" } })).toContainEqual(expect.objectContaining({ path: "writer.json.director", message: expect.stringMatching(/removed.*strategy.*root.*writer.messaging/i) }));
+    expect(validateWriterManifest({ ...manifest(), director: { path: "strategy" } }).length).toBeGreaterThan(0);
   });
 });

@@ -225,8 +225,8 @@ export function loadBrandAssetRoster(rosterPath: string): BrandAssetRosterLoadRe
  * Renders the public brand guide and the internal system audit from a brand
  * file's declarations and a complete brand-asset roster (issue #1111). Both
  * pages cite the same brand.css and asset roster the gallery is written
- * against; Strategist facts are cited beside the tokens and this package
- * does not change Strategist.
+ * against; Director facts are cited beside the tokens and this package
+ * does not change Director.
  */
 export function renderCertificationPages(declarations: Record<string, string>, roster: readonly BrandAssetEntry[]): { guideHtml: string; auditHtml: string } {
   const colors = Object.entries(declarations)

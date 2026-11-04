@@ -46,14 +46,14 @@
       "kind": "decide:judgment",
       "actor": "owner",
       "stage": "direct.brief",
-      "summary": "Owner answers and strategist findings the Director cites.",
+      "summary": "Owner answers and director findings the Director cites.",
       "inputs": [],
       "outputs": [
         {
           "glob": "clossys/evidence/director/*.md"
         },
         {
-          "glob": "clossys/evidence/strategist/findings/*.md"
+          "glob": "clossys/evidence/director/findings/*.md"
         }
       ],
       "command": {
@@ -682,7 +682,7 @@
           "glob": "clossys/evidence/director/*.md"
         },
         {
-          "glob": "clossys/evidence/strategist/findings/*.md"
+          "glob": "clossys/evidence/director/findings/*.md"
         },
         {
           "glob": "clossys/agents/director/*/slot.json",
@@ -696,7 +696,7 @@
         }
       ],
       "command": {
-        "skill": "packages/strategist/skill/SKILL.md",
+        "skill": "packages/director/skill/SKILL.md",
         "module": [
           "src/records/slot-write.ts#writeCandidate"
         ]
@@ -3865,7 +3865,7 @@
     {
       "step": "evidence",
       "port": "output",
-      "glob": "clossys/evidence/strategist/findings/*.md"
+      "glob": "clossys/evidence/director/findings/*.md"
     },
     {
       "step": "workspace.config",
@@ -3935,7 +3935,7 @@
     {
       "step": "director.candidates",
       "port": "input",
-      "glob": "clossys/evidence/strategist/findings/*.md"
+      "glob": "clossys/evidence/director/findings/*.md"
     },
     {
       "step": "designer.library",

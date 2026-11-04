@@ -1,7 +1,7 @@
 /** Node-side authoring boundary. Runtime consumers keep reading checked ContentMaps. */
 import { readFile, writeFile, mkdir, readdir, lstat } from "node:fs/promises";
 import { join, resolve, dirname, relative, isAbsolute, sep } from "node:path";
-import { readActive, serializeScalar, parseLinkRef, isoDate, type GenericTreeNode, type StoredCell } from "@clossys/strategist/cell-format";
+import { readActive, serializeScalar, parseLinkRef, isoDate, type GenericTreeNode, type StoredCell } from "@clossys/director/cell-format";
 import { checkContentMap, checkedContentMap } from "./check.js";
 import type { ContentMap, ContentMapNode } from "./contract.js";
 import { PAGE_ID, pageId } from "./page-identity.js";

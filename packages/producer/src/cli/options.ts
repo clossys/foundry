@@ -89,7 +89,7 @@ export function optionsBrief(consumer: string, view: SlotOptions): Record<string
     },
     reference: reference?.name ?? null,
     held: view.candidates.map(c => ({ name: c.name, vary: c.vary ? c.vary.value : "baseline", pinned: c.pinned })),
-    writer: view.agent === "director" ? "Director skill (packages/strategist/skill)" : view.agent === "writer" ? "Writer skill (packages/writer/skill)" : `${view.agent} skill`,
+    writer: view.agent === "director" ? "Director skill (packages/director/skill)" : view.agent === "writer" ? "Writer skill (packages/writer/skill)" : `${view.agent} skill`,
     how: "one pass per L2 group with shared context; write each through writeCandidate (records/slot-write.ts)",
   };
 }

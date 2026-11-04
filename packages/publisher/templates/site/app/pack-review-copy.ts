@@ -21,7 +21,7 @@
  * the view's own widths, never from the request.
  */
 import type { PackReviewViewLabels } from "@clossys/publisher/web";
-import type { EngagementContextFieldId } from "@clossys/strategist";
+import type { EngagementContextFieldId } from "@clossys/director";
 import type { CopyRegistry, CopyRegistryEntry, CopyResolver } from "@clossys/writer";
 
 const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string]> = [
@@ -36,7 +36,7 @@ const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string
   ["front-door.pack-review-strategy-summary.label", "Summary", "pack review page: strategy brief, the product summary"],
   ["front-door.pack-review-strategy-context.label", "Context from the owner", "pack review page: strategy brief, the engagement context already answered"],
   ["front-door.pack-review-strategy-questions.label", "Open questions for the owner", "pack review page: strategy brief, what the owner still has to decide"],
-  ["front-door.pack-review-strategy-hypothesis.label", "Claim to approve", "pack review page: open question, a claim the Strategist contract still marks as a hypothesis"],
+  ["front-door.pack-review-strategy-hypothesis.label", "Claim to approve", "pack review page: open question, a claim the Director contract still marks as a hypothesis"],
   ["front-door.pack-review-context-business.label", "Business", "pack review page: engagement context field, business"],
   ["front-door.pack-review-context-business.notice", "What kind of business is this?", "pack review page: open question, the business field is unanswered"],
   ["front-door.pack-review-context-product.label", "Product", "pack review page: engagement context field, product"],
@@ -123,7 +123,7 @@ export const PACK_REVIEW_COPY: CopyRegistry = {
 export interface PackReviewSectionText {
   /** The line naming the strategy brief's source. */
   strategySource: { contract: string; brief: string; stale: string };
-  /** Leads each claim the Strategist contract still marks as a hypothesis. */
+  /** Leads each claim the Director contract still marks as a hypothesis. */
   hypothesis: string;
   /** Each engagement-context field's name, and the question shown while it is unanswered. */
   contextFields: Readonly<Record<EngagementContextFieldId, { label: string; question: string }>>;

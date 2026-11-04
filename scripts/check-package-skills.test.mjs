@@ -535,7 +535,7 @@ I am the named Audience. Invoke @clossys-customer before seal. I am not a review
 });
 
 test("content-agent skills need a Loop and a Done when section", () => {
-  for (const [packageDir, expectedName] of [["strategist", "clossys-strategist"], ["designer", "clossys-designer"], ["writer", "clossys-writer"], ["publisher", "clossys-publisher"]]) {
+  for (const [packageDir, expectedName] of [["director", "clossys-director"], ["designer", "clossys-designer"], ["writer", "clossys-writer"], ["publisher", "clossys-publisher"]]) {
     const result = evaluatePackageSkills([{ packageDir, skillPath: "/tmp/ignored", expectedName, skillText: validSkill(expectedName, "Agent loop.") }]);
     assert.equal(result.exitCode, 1, packageDir);
     assert.ok(result.findings.some((f) => f.rule === "content-agent-loop"), packageDir);
@@ -565,10 +565,10 @@ test("launcher catalogue drift is a finding", () => {
   assert.ok(result.findings.some((f) => f.rule === "catalogue-drift"));
 });
 
-test("strategist package.json files includes skill for npm pack", () => {
-  const manifest = JSON.parse(readFileSync(join(repoRoot, "packages/strategist/package.json"), "utf8"));
-  assert.ok(Array.isArray(manifest.files), "strategist package.json must declare files");
-  assert.ok(manifest.files.includes("skill"), "strategist tarball must pack skill/SKILL.md");
+test("director package.json files includes skill for npm pack", () => {
+  const manifest = JSON.parse(readFileSync(join(repoRoot, "packages/director/package.json"), "utf8"));
+  assert.ok(Array.isArray(manifest.files), "director package.json must declare files");
+  assert.ok(manifest.files.includes("skill"), "director tarball must pack skill/SKILL.md");
 });
 
 test("live repository package skills pass", () => {

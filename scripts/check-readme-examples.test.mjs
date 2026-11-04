@@ -520,7 +520,7 @@ test("TS7006 with NO accompanying elided reference: still a real finding", () =>
 });
 
 test("TS18046 riding with a genuine elided reference: whole block skipped", () => {
-  // packages/strategist/README.md:638-649's real shape: `TOKENS` is
+  // packages/director/README.md:638-649's real shape: `TOKENS` is
   // explicitly documented in the README's own prose as "the consumer's own
   // tokens dependency — NOT imported by this package," so `Object.values
   // (TOKENS).filter((def) => def.brandable)` produces TS2304 for TOKENS

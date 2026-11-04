@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createAdminCopy, type AdminCopyEnvelope } from "../admin-copy.js";
 import { validateWriterRecord } from "../model/validate.js";
 import { compileWriterCells } from "./compile.js";
-import { propose, readActive } from "@clossys/strategist/cell-format";
+import { propose, readActive } from "@clossys/director/cell-format";
 import { resolveWriterCellRoot, runCellsCli } from "./cli.js";
 import { migrateWriterCells } from "./migrate.js";
 import { parseWriterCell, serializeWriterCell } from "./parse.js";

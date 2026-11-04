@@ -1,4 +1,4 @@
-import type { CellRef } from "@clossys/strategist";
+import type { CellRef } from "@clossys/director";
 import type { CopyApproval, CopyTranslationProvenance } from "../types.js";
 import type { WriterLayer } from "../catalog-core/ids.js";
 

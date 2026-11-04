@@ -152,7 +152,7 @@ to pin and check the bytes you downloaded.
 
 ## Consumer cohort pack
 
-A consumer that vendors all six packages (`producer`, `strategist`,
+A consumer that vendors all six packages (`producer`, `director`,
 `designer`, `writer`, `publisher`, `controller`) packs them locally from any
 clean checkout, including an integration branch:
 

@@ -47,7 +47,7 @@ are updated to cover the site.
 
 - `package.json` — Next.js (App Router), `@clossys/publisher/web` and
   `@clossys/designer` as real dependencies once instantiated, plus
-  `@clossys/writer` (the copy resolver), `@clossys/strategist` (the
+  `@clossys/writer` (the copy resolver), `@clossys/director` (the
   contract checks the pack review reads the strategy brief through),
   `@clossys/messenger` and its `resend` peer (the contact delivery), plus
   Tailwind (`tailwindcss`, and `@tailwindcss/postcss` for the build) and
@@ -177,7 +177,7 @@ Every page reads its records from the repository's own `clossys/`
 directory at build time and never copies them into this template. Four
 records, and one file, `app/site-records.ts`, reads them:
 
-- `clossys/strategist/brand-facts.json` — the brand name (the wordmark when
+- `clossys/director/brand-facts.json` — the brand name (the wordmark when
   there is one), the registered legal entity, the contact address and the
   taglines. The first tagline's copy id is the landing heading.
 - `clossys/writer/copy-registry.json` — every visible word, by copy id. A
@@ -207,13 +207,13 @@ or refused by its owner's check is left out, and its section shows an empty
 label instead, so a repository with none of them still renders `/pack`.
 `resolvePackReviewSections` in `app/pack-review.ts` builds the three sections:
 
-- **Strategy brief** — `clossys/strategist/contract.json`, checked by
-  Strategist's `validateStrategyContract`: the first product record's
+- **Strategy brief** — `clossys/director/contract.json`, checked by
+  Director's `validateStrategyContract`: the first product record's
   summary, and each claim still marked `hypothesis` as an open question.
-  `clossys/brief.json`, read through Strategist's
+  `clossys/brief.json`, read through Director's
   `readEngagementContextFromBriefData`: each answered engagement-context
   field, and each unanswered one as an open question. Either record alone is
-  enough; with only the brief, the section says there is no Strategist
+  enough; with only the brief, the section says there is no Director
   contract yet. The brief's `problem` is not shown.
 - **Brand kit** — rendered by Publisher's `BrandGuideView`: the `--color-*`
   and `--font-*` tokens of `clossys/designer/brand.css`, read through

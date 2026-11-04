@@ -24,7 +24,6 @@ export const SITE_ID = "example-owner/site";
 export const SITE_NODE_ID = "R_exampleSite1";
 export const DOCS_ID = "example-owner/docs";
 export const STARTER = "example-owner/site:@example/starter";
-export const STRATEGIST = "example-owner/site:@example/strategist";
 export const WRITER = "example-owner/site:@example/writer";
 export const PLAN_FILE = "clossys/advisor/plan.json";
 export const ASSESSMENT_FILE = "clossys/advisor/assessment-input.json";
@@ -46,6 +45,17 @@ export function reseal(set: Loose): RepositoryChangeSet {
 
 const CORPUS = JSON.parse(readRepo("docs/contracts/apply-change-set-digest.fixture.json")) as { changeSets: { name: string; changeSet: RepositoryChangeSet }[] };
 const PLAN_CORPUS = JSON.parse(readRepo("docs/contracts/advisor-plan-digest.fixture.json")) as { plans: { name: string; plan: AdvisorPlan }[] };
+/**
+ * The corpus's direction role and its package's plan item, read from the sealed corpora rather
+ * than typed here: the corpora (#1178, #1475) are compared byte for byte and keep the role name
+ * they were sealed with, so every plan, brief, skill and package this support builds names that
+ * role exactly as the corpus mandate does.
+ */
+export const DIRECTION_ROLE: string = PLAN_CORPUS.plans.find((entry) => entry.name === "staffed-with-packages")!.plan.mandate.roles[0]!;
+export const DIRECTION_PACKAGE = `@example/${DIRECTION_ROLE}`;
+export const DIRECTOR = `${SITE_ID}:${DIRECTION_PACKAGE}`;
+/** The composed skill text the corpus goldens were computed over for that role: its title as a heading. */
+export const DIRECTION_SKILL = `# ${DIRECTION_ROLE.charAt(0).toUpperCase()}${DIRECTION_ROLE.slice(1)}\n`;
 export const corpusSet = (name: string): Loose => clone(CORPUS.changeSets.find((entry) => entry.name === name)!.changeSet) as unknown as Loose;
 
 // ---------------------------------------------------------------------------

@@ -1,6 +1,6 @@
 import { lstat, mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join, parse, resolve, sep, win32 } from 'node:path';
-import { cellPath, isoDate } from '@clossys/strategist/cell-format';
+import { cellPath, isoDate } from '@clossys/director/cell-format';
 import { serializeWriterCell, writerCellId, type WriterCell, type JsonRecord } from './parse.js';
 
 export type RecordPointer = [cellId: string, locale: string, recordId: string];

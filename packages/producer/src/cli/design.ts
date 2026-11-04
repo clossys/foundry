@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { Cell, Bullet } from "@clossys/strategist";
+import type { Cell, Bullet } from "@clossys/director";
 import { agentModule } from "../server/cells.js";
 import { libraryTheme } from "../server/library-selection.js";
 import { directorRef, readPinnedDirector } from "../records/director-pinned.js";

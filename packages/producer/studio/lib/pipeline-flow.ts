@@ -60,6 +60,8 @@ const STATUSES: readonly StepStatus[] = ['ready', 'pending'];
 const stageKey = (stage: string) => stage.slice(stage.indexOf('.') + 1);
 /** A stage's round id (`design.make` is `design`). */
 const roundKey = (stage: string) => stage.slice(0, Math.max(0, stage.indexOf('.')));
+/** A step's canvas label: its resolved Writer copy (`studio.pipeline.node.<id>`), never the raw id. */
+const stepLabel = (id: string) => studioCopy(`studio.pipeline.node.${id}`);
 const stageLabel = (stage: string) => studioCopy(`studio.pipeline.stage.${stageKey(stage)}`);
 const roundLabel = (round: string) => studioCopy(`studio.pipeline.round.${round}`);
 
@@ -123,7 +125,7 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, 
         position: { x: step.layout.x, y: step.layout.y },
         width: graph.layout.constants.nodeWidth,
         data: {
-          label: step.id, kind: step.kind, lane: step.layout.lane, stage: step.layout.stage,
+          label: stepLabel(step.id), kind: step.kind, lane: step.layout.lane, stage: step.layout.stage,
           facts: {
             command: commandLine(step.command),
             inputs: unique(step.inputs.map(port => port.glob)),

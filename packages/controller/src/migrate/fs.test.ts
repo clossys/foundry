@@ -23,7 +23,7 @@ describe("discoverRecords", () => {
   it("finds records by basename anywhere under clossys/, sorted, and skips clossys/.state", () => {
     write("clossys/coverage.json", { schemaVersion: 1 });
     write("clossys/advisor/loop.json", { schemaVersion: 1 });
-    write("clossys/strategist/loop.json", { schemaVersion: 1 });
+    write("clossys/director/loop.json", { schemaVersion: 1 });
     write("clossys/.state/schema-backups/advisor/loop.json.v1.json", { schemaVersion: 1 });
     write("clossys/advisor/brief.json", { schemaVersion: 1 }); // not a known basename
 
@@ -31,7 +31,7 @@ describe("discoverRecords", () => {
     expect(discovered).toEqual([
       { kind: "loop-state", path: "clossys/advisor/loop.json" },
       { kind: "coverage-declaration", path: "clossys/coverage.json" },
-      { kind: "loop-state", path: "clossys/strategist/loop.json" },
+      { kind: "loop-state", path: "clossys/director/loop.json" },
     ]);
   });
 

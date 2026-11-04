@@ -20,7 +20,7 @@ import { publicNpmVersionUrl, PUBLIC_NPM_REGISTRY } from "./public-npm-registry.
 import { exactSubjectName } from "./provenance-join.mjs";
 
 const sourceSha = "6".repeat(40);
-const name = "@clossys/strategist";
+const name = "@clossys/director";
 const version = "0.1.1";
 const runId = 999;
 const runAttempt = 1;
@@ -58,14 +58,14 @@ function provenanceFixture({ name: pkgName = name, version: pkgVersion = version
 
 test("attestationUrl exactly matches release-later-publication.mjs's exactAttestationUrl expectation", () => {
   assert.equal(
-    attestationUrl("@clossys/strategist", "0.1.1"),
-    `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fstrategist@0.1.1`,
+    attestationUrl("@clossys/director", "0.1.1"),
+    `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fdirector@0.1.1`,
   );
 });
 
 test("buildPublicationEvidenceInput emits the closed trusted-publisher shape from measured inputs only", () => {
   const publication = buildPublicationEvidenceInput({
-    runId: 123, runAttempt: 1, sourceSha, publishedAt: "2026-09-23T18:11:07.143Z", name: "@clossys/strategist", version: "0.1.1",
+    runId: 123, runAttempt: 1, sourceSha, publishedAt: "2026-09-23T18:11:07.143Z", name: "@clossys/director", version: "0.1.1",
   });
   assert.deepEqual(publication, {
     mode: "trusted-publisher",
@@ -79,13 +79,13 @@ test("buildPublicationEvidenceInput emits the closed trusted-publisher shape fro
       sourceSha,
       builder: "https://github.com/actions/runner/github-hosted",
       invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
-      attestationUrl: `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fstrategist@0.1.1`,
+      attestationUrl: `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fdirector@0.1.1`,
     },
   });
 });
 
 test("buildPublicationEvidenceInput refuses every unmeasured or malformed field", () => {
-  const base = { runId: 123, runAttempt: 1, sourceSha, publishedAt: "2026-09-23T18:11:07.143Z", name: "@clossys/strategist", version: "0.1.1" };
+  const base = { runId: 123, runAttempt: 1, sourceSha, publishedAt: "2026-09-23T18:11:07.143Z", name: "@clossys/director", version: "0.1.1" };
   assert.throws(() => buildPublicationEvidenceInput({ ...base, runId: 0 }), /runId/);
   assert.throws(() => buildPublicationEvidenceInput({ ...base, runId: 1.5 }), /runId/);
   assert.throws(() => buildPublicationEvidenceInput({ ...base, runAttempt: 0 }), /runAttempt/);
@@ -100,17 +100,17 @@ test("findQualifiedCandidateArtifact selects the exact package-named artifact an
     assert.equal(url, "https://api.github.com/repos/clossys/foundry/actions/runs/456/artifacts?per_page=100");
     return { ok: true, status: 200, json: async () => ({ artifacts: [
       { id: 1, name: "qualified-candidate-other" },
-      { id: 2, name: "qualified-candidate-strategist" },
+      { id: 2, name: "qualified-candidate-director" },
     ] }) };
   };
-  const artifact = await findQualifiedCandidateArtifact({ fetchImpl, runId: 456, packageKey: "strategist" });
+  const artifact = await findQualifiedCandidateArtifact({ fetchImpl, runId: 456, packageKey: "director" });
   assert.equal(artifact.id, 2);
 
   const emptyFetch = async () => ({ ok: true, status: 200, json: async () => ({ artifacts: [] }) });
-  await assert.rejects(findQualifiedCandidateArtifact({ fetchImpl: emptyFetch, runId: 456, packageKey: "strategist" }), /no qualified-candidate-strategist artifact/);
+  await assert.rejects(findQualifiedCandidateArtifact({ fetchImpl: emptyFetch, runId: 456, packageKey: "director" }), /no qualified-candidate-director artifact/);
 
   const failedFetch = async () => ({ ok: false, status: 404 });
-  await assert.rejects(findQualifiedCandidateArtifact({ fetchImpl: failedFetch, runId: 456, packageKey: "strategist" }), /404/);
+  await assert.rejects(findQualifiedCandidateArtifact({ fetchImpl: failedFetch, runId: 456, packageKey: "director" }), /404/);
 });
 
 test("downloadArtifactZip returns the exact raw bytes and fails closed on a bad response", async () => {
@@ -128,26 +128,26 @@ test("downloadArtifactZip returns the exact raw bytes and fails closed on a bad 
 
 test("fetchPackument and fetchPublishedAt read the exact packument and its measured publish instant, refusing a version with no measured time", async () => {
   const fetchImpl = async (url) => {
-    assert.equal(url, `${PUBLIC_NPM_REGISTRY}/%40clossys%2Fstrategist`);
+    assert.equal(url, `${PUBLIC_NPM_REGISTRY}/%40clossys%2Fdirector`);
     return { ok: true, status: 200, json: async () => ({ time: { "0.1.1": "2026-09-23T18:11:07.143Z" } }) };
   };
-  const packument = await fetchPackument({ fetchImpl, name: "@clossys/strategist" });
+  const packument = await fetchPackument({ fetchImpl, name: "@clossys/director" });
   assert.deepEqual(packument, { time: { "0.1.1": "2026-09-23T18:11:07.143Z" } });
 
-  const publishedAt = await fetchPublishedAt({ fetchImpl, name: "@clossys/strategist", version: "0.1.1" });
+  const publishedAt = await fetchPublishedAt({ fetchImpl, name: "@clossys/director", version: "0.1.1" });
   assert.equal(publishedAt, "2026-09-23T18:11:07.143Z");
 
   // A caller that already fetched the packument (verifyPublicationProvenance
   // and the CLI both do) must be able to pass it straight through with no
   // second fetch.
-  const publishedAtFromPackument = await fetchPublishedAt({ fetchImpl: async () => { throw new Error("must not be called"); }, name: "@clossys/strategist", version: "0.1.1", packument });
+  const publishedAtFromPackument = await fetchPublishedAt({ fetchImpl: async () => { throw new Error("must not be called"); }, name: "@clossys/director", version: "0.1.1", packument });
   assert.equal(publishedAtFromPackument, "2026-09-23T18:11:07.143Z");
 
   const noTimeFetch = async () => ({ ok: true, status: 200, json: async () => ({ time: {} }) });
-  await assert.rejects(fetchPublishedAt({ fetchImpl: noTimeFetch, name: "@clossys/strategist", version: "0.1.1" }), /no measured publish time/);
+  await assert.rejects(fetchPublishedAt({ fetchImpl: noTimeFetch, name: "@clossys/director", version: "0.1.1" }), /no measured publish time/);
 
   const failedFetch = async () => ({ ok: false, status: 500 });
-  await assert.rejects(fetchPublishedAt({ fetchImpl: failedFetch, name: "@clossys/strategist", version: "0.1.1" }), /unavailable/);
+  await assert.rejects(fetchPublishedAt({ fetchImpl: failedFetch, name: "@clossys/director", version: "0.1.1" }), /unavailable/);
 });
 
 test("verifyPublicationProvenance accepts an exactly-matching SLSA attestation and rejects malformed identity fields before any network call", async () => {
@@ -305,7 +305,7 @@ test("buildPublicationEvidenceInput exactly reproduces a real retained record's 
 test("a publication block buildPublicationEvidenceInput builds is accepted by the real validateLaterPublication()", () => {
   const hex = (value, length) => value.repeat(length);
   const candidate = {
-    name: "@clossys/strategist", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
+    name: "@clossys/director", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
     policySha256: hex("c", 64), adapterSha256: hex("d", 64), fixtureSetSha256: hex("e", 64),
     tarball: { sha1: hex("f", 40), sha256: hex("1", 64), sha512: hex("2", 128) },
   };
@@ -316,14 +316,14 @@ test("a publication block buildPublicationEvidenceInput builds is accepted by th
     transcript: { canonicalSha256: hex("b", 64) },
   };
   const qualificationBytes = Buffer.from("qualification bytes\n");
-  const catalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["strategist"] }] };
+  const catalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["director"] }] };
   const catalogBytes = Buffer.from("catalog bytes\n");
   const candidateBytes = Buffer.from("candidate bytes");
   const proof = {
     schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
       registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: candidate.name, version: candidate.version,
       metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
-      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.1.tgz`, integrity: `sha512-${Buffer.from(candidate.tarball.sha512, "hex").toString("base64")}`,
+      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/director/-/director-0.1.1.tgz`, integrity: `sha512-${Buffer.from(candidate.tarball.sha512, "hex").toString("base64")}`,
       shasum: candidate.tarball.sha1, sha256: candidate.tarball.sha256, sha512: candidate.tarball.sha512, packedManifestSha256: candidate.packageManifestSha256, size: candidateBytes.length,
     },
   };
@@ -334,9 +334,9 @@ test("a publication block buildPublicationEvidenceInput builds is accepted by th
   });
 
   const built = buildLaterPublicationRecord({
-    packageKey: "strategist", qualificationPath: "governance/release-qualifications/clossys-strategist-0.1.1.json", qualification,
+    packageKey: "director", qualificationPath: "governance/release-qualifications/clossys-director-0.1.1.json", qualification,
     qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication,
-    recordPath: "governance/release-publications/later/strategist-0.1.1.json", provenanceSourceValid: true,
+    recordPath: "governance/release-publications/later/director-0.1.1.json", provenanceSourceValid: true,
   });
   assert.equal(built.record.schemaVersion, 2);
   assert.deepEqual(built.record.publication, publication);
@@ -344,10 +344,10 @@ test("a publication block buildPublicationEvidenceInput builds is accepted by th
   // The real validator, called directly and independently of the fixture
   // buildLaterPublicationRecord itself already runs.
   const findings = validateLaterPublication(built.record, {
-    recordPath: "governance/release-publications/later/strategist-0.1.1.json",
+    recordPath: "governance/release-publications/later/director-0.1.1.json",
     recordBytes: built.recordBytes.toString("utf8"),
     qualification, qualificationBytes: qualificationBytes.toString("utf8"),
-    qualificationPath: "governance/release-qualifications/clossys-strategist-0.1.1.json",
+    qualificationPath: "governance/release-qualifications/clossys-director-0.1.1.json",
     catalogBytes: catalogBytes.toString("utf8"), catalog, provenanceSourceValid: true,
   });
   assert.deepEqual(findings, []);
@@ -355,14 +355,14 @@ test("a publication block buildPublicationEvidenceInput builds is accepted by th
 
 test("buildPublicationRecordWithFallback returns the direct join once verifyProvenance passes, without ever touching the replay path", async () => {
   const calls = { createRecord: [], findArtifact: 0, downloadZip: 0, verifyProvenance: 0 };
-  const createRecord = async (options) => { calls.createRecord.push(options); return { path: "governance/release-publications/later/strategist-0.1.1.json", record: { schemaVersion: 2 } }; };
+  const createRecord = async (options) => { calls.createRecord.push(options); return { path: "governance/release-publications/later/director-0.1.1.json", record: { schemaVersion: 2 } }; };
   const findArtifact = async () => { calls.findArtifact += 1; throw new Error("must not be called"); };
   const downloadZip = async () => { calls.downloadZip += 1; throw new Error("must not be called"); };
-  const verifyProvenance = async (options) => { calls.verifyProvenance += 1; assert.equal(options.name, "strategist-name"); assert.equal(options.sourceSha, sourceSha); };
+  const verifyProvenance = async (options) => { calls.verifyProvenance += 1; assert.equal(options.name, "director-name"); assert.equal(options.sourceSha, sourceSha); };
 
   const result = await buildPublicationRecordWithFallback({
-    root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
-    name: "strategist-name", version: "0.1.1", sourceSha,
+    root: "/repo", packageKey: "director", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
+    name: "director-name", version: "0.1.1", sourceSha,
     findArtifact, downloadZip, createRecord, verifyProvenance,
   });
   assert.equal(result.record.schemaVersion, 2);
@@ -394,8 +394,8 @@ test("buildPublicationRecordWithFallback never calls createRecord — direct OR 
 
   await assert.rejects(
     buildPublicationRecordWithFallback({
-      root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
-      name: "strategist-name", version: "0.1.1", sourceSha,
+      root: "/repo", packageKey: "director", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
+      name: "director-name", version: "0.1.1", sourceSha,
       findArtifact, downloadZip, createRecord, verifyProvenance,
     }),
     /attestation does not corroborate this run/,
@@ -449,12 +449,12 @@ test("buildPublicationRecordWithFallback falls back to a replay build using this
       const replayEvidence = JSON.parse(readFileSync(options.replayEvidencePath, "utf8"));
       assert.deepEqual(replayEvidence, { schemaVersion: 1, kind: "foundry-trusted-publication-replay-input-v1", runId: 999, artifactId: 42 });
       assert.equal(readFileSync(options.artifactArchivePath, "utf8"), "zip bytes");
-      return { path: "governance/release-publications/later/strategist-0.1.1.json", record: { schemaVersion: 3 } };
+      return { path: "governance/release-publications/later/director-0.1.1.json", record: { schemaVersion: 3 } };
     };
     const findArtifact = async ({ runId: gotRunId, packageKey }) => {
       assert.equal(gotRunId, 999);
-      assert.equal(packageKey, "strategist");
-      return { id: 42, name: "qualified-candidate-strategist" };
+      assert.equal(packageKey, "director");
+      return { id: 42, name: "qualified-candidate-director" };
     };
     const downloadZip = async ({ artifactId }) => {
       assert.equal(artifactId, 42);
@@ -462,8 +462,8 @@ test("buildPublicationRecordWithFallback falls back to a replay build using this
     };
 
     const result = await buildPublicationRecordWithFallback({
-      root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 999, tempDir: root,
-      name: "strategist-name", version: "0.1.1", sourceSha,
+      root: "/repo", packageKey: "director", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 999, tempDir: root,
+      name: "director-name", version: "0.1.1", sourceSha,
       findArtifact, downloadZip, createRecord, verifyProvenance: async () => {},
     });
     assert.equal(result.record.schemaVersion, 3);
@@ -478,14 +478,14 @@ test("buildPublicationRecordWithFallback throws a combined error and writes noth
   const findArtifact = async () => { throw new Error("no artifact"); };
   await assert.rejects(
     buildPublicationRecordWithFallback({
-      root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
-      name: "strategist-name", version: "0.1.1", sourceSha,
+      root: "/repo", packageKey: "director", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: "/tmp/x",
+      name: "director-name", version: "0.1.1", sourceSha,
       findArtifact, downloadZip: async () => { throw new Error("must not be called"); }, createRecord, verifyProvenance: async () => {},
     }),
     /direct publication evidence failed \(first failure\).*replay fallback could not locate the qualified-candidate artifact \(no artifact\)/s,
   );
 
-  const findArtifactOk = async () => ({ id: 1, name: "qualified-candidate-strategist" });
+  const findArtifactOk = async () => ({ id: 1, name: "qualified-candidate-director" });
   const downloadZipOk = async () => Buffer.from("zip bytes");
   const root = mkdtempSync(join(tmpdir(), "publication-evidence-fallback-both-fail-"));
   try {
@@ -496,8 +496,8 @@ test("buildPublicationRecordWithFallback throws a combined error and writes noth
     };
     await assert.rejects(
       buildPublicationRecordWithFallback({
-        root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: root,
-        name: "strategist-name", version: "0.1.1", sourceSha,
+        root: "/repo", packageKey: "director", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: root,
+        name: "director-name", version: "0.1.1", sourceSha,
         findArtifact: findArtifactOk, downloadZip: downloadZipOk, createRecord: createRecordSecondFails, verifyProvenance: async () => {},
       }),
       /direct publication evidence failed \(first failure\).*replay publication evidence also failed \(second failure\)/s,
@@ -519,8 +519,8 @@ test("buildPublicationRecordWithFallback prefers the direct join and surfaces th
     };
     await assert.rejects(
       buildPublicationRecordWithFallback({
-        root: "/repo", packageKey: "strategist", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: root,
-        name: "strategist-name", version: "0.1.1", sourceSha,
+        root: "/repo", packageKey: "director", qualificationPath: "q.json", publicationPath: "p.json", fetchImpl: async () => {}, env: {}, runId: 1, tempDir: root,
+        name: "director-name", version: "0.1.1", sourceSha,
         findArtifact: async () => ({ id: 7 }), downloadZip: async () => Buffer.from("zip bytes"), createRecord, verifyProvenance: async () => {},
       }),
       /direct publication evidence failed \(direct join refused\).*replay v3 is reserved for drift in at least one root resolution hash/s,

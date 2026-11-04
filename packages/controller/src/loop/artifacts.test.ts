@@ -9,17 +9,17 @@ describe("role ownership boundary", () => {
   });
 
   it("rejects a path under a different role's folder", () => {
-    expect(isOwnedByRole("@clossys/advisor", "clossys/strategist/direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys/director/direction.json")).toBe(false);
   });
 
   it("rejects a path escaping with a .. segment", () => {
-    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/../strategist/direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/../director/direction.json")).toBe(false);
   });
 
   it("rejects a path escaping with a Windows-style ..\\ segment", () => {
-    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/..\\strategist\\direction.json")).toBe(false);
-    expect(isOwnedByRole("@clossys/advisor", "clossys\\advisor\\..\\strategist\\direction.json")).toBe(false);
-    expect(planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/..\\strategist\\direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] }).kind).toBe("refused");
+    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/..\\director\\direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys\\advisor\\..\\director\\direction.json")).toBe(false);
+    expect(planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/..\\director\\direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] }).kind).toBe("refused");
   });
 });
 
@@ -55,7 +55,7 @@ describe("create/update planning", () => {
   });
 
   it("refuses a path outside the role's own folder", () => {
-    const plan = planCreateOrUpdate({ role: "@clossys/advisor", path: "clossys/strategist/direction.json", existing: null });
+    const plan = planCreateOrUpdate({ role: "@clossys/advisor", path: "clossys/director/direction.json", existing: null });
     expect(plan.kind).toBe("refused");
   });
 });
@@ -86,13 +86,13 @@ describe("move planning", () => {
   });
 
   it("refuses a destination outside the role's own folder", () => {
-    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/a.json", toPath: "clossys/strategist/a.json", candidateReferrers: [] });
+    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/a.json", toPath: "clossys/director/a.json", candidateReferrers: [] });
     expect(plan.kind).toBe("refused");
   });
 
   it("refuses a source outside the role's own folder, before it ever proposes removing that file", () => {
-    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/strategist/direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] });
-    expect(plan).toMatchObject({ kind: "refused", path: "clossys/strategist/direction.json" });
+    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/director/direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] });
+    expect(plan).toMatchObject({ kind: "refused", path: "clossys/director/direction.json" });
   });
 });
 
@@ -106,7 +106,7 @@ describe("supersede planning", () => {
   });
 
   it("refuses a path outside the role's own folder", () => {
-    const plan = planSupersede({ role: "@clossys/advisor", path: "clossys/strategist/proof.json", supersededEntryId: "entry-7" });
+    const plan = planSupersede({ role: "@clossys/advisor", path: "clossys/director/proof.json", supersededEntryId: "entry-7" });
     expect(plan.kind).toBe("refused");
   });
 });
@@ -127,7 +127,7 @@ describe("retire planning", () => {
       role: "@clossys/advisor",
       path: "clossys/advisor/legacy.json",
       manifestOutputs: ["clossys/advisor/legacy.json"],
-      dependents: [{ role: "@clossys/strategist", path: "clossys/strategist/direction.json" }],
+      dependents: [{ role: "@clossys/director", path: "clossys/director/direction.json" }],
     });
     expect(plan.kind).toBe("blocked");
     expect((plan as { dependents: unknown[] }).dependents).toHaveLength(1);
@@ -140,11 +140,11 @@ describe("retire planning", () => {
       manifestOutputs: ["clossys/advisor/legacy.json"],
       dependents: [
         { role: "@clossys/writer", path: "clossys/writer/voice.json" },
-        { role: "@clossys/strategist", path: "clossys/strategist/direction.json" },
+        { role: "@clossys/director", path: "clossys/director/direction.json" },
       ],
     });
     expect(plan.kind).toBe("blocked");
-    expect((plan as { dependents: { role: string }[] }).dependents.map((d) => d.role)).toEqual(["@clossys/strategist", "@clossys/writer"]);
+    expect((plan as { dependents: { role: string }[] }).dependents.map((d) => d.role)).toEqual(["@clossys/director", "@clossys/writer"]);
   });
 });
 
@@ -183,7 +183,7 @@ describe("agent and non-agent ownership", () => {
     expect(planCreateOrUpdate({ role, path: `clossys/${agent}/tree.json`, existing: null })).toMatchObject({ kind: "refused", reason: expect.stringContaining(`clossys/agents/${agent}/`) });
   });
 
-  it.each(["advisor", "customer", "controller", "strategist"])("preserves the %s role folder", (role) => {
+  it.each(["advisor", "customer", "controller"])("preserves the %s role folder", (role) => {
     expect(isOwnedByRole(`@clossys/${role}`, `clossys/${role}/record.json`)).toBe(true);
     expect(isOwnedByRole(`@clossys/${role}`, `clossys/agents/${role}/record.json`)).toBe(false);
   });

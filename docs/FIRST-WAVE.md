@@ -69,7 +69,7 @@ Flattened, and checked against the manifests' first-party runtime graph:
 7. **Agreements and custody** — `bouncer`, `butler`, `messenger`, `giver`,
    `keeper`. Person-facing operating integrity, still ahead of frontend
    surfaces.
-8. **Strategy and expression** — `strategist`, `writer`, `designer`,
+8. **Strategy and expression** — `director`, `writer`, `designer`,
    `customer`, `publisher`, `influencer`. Designer and publisher are frontend work and
    wait. Customer inhabits a named audience for keep-or-fail before seal and
    can supply on-demand first-person testimony on feedback, alternatives,

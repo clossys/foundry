@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { activate, propose } from '@clossys/strategist/cell-format';
+import { activate, propose } from '@clossys/director/cell-format';
 import { compileWriterCells } from './compile.js';
 import { migrateWriterCells } from './migrate.js';
 import { parseWriterCell } from './parse.js';

@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
+import { publishedName, samePackage, workspaceDirectory } from "./lib/package-renames.mjs";
 
 export const INVENTORY_PATH = "governance/release-cleanup/clossys-npmjs-affected.json";
 export const OBSERVED_BASE_COMMIT = "811bd25d9449037728a11504c7fcf3d90723d01a";
@@ -35,7 +36,7 @@ const REPLACEMENTS = new Map([
   ["@clossys/advisor", "0.1.6"],
   ["@clossys/starter", "0.1.5"],
   ["@clossys/controller", "0.8.24"],
-  ["@clossys/strategist", "0.1.2"],
+  [publishedName("@clossys/director"), "0.1.2"],
 ]);
 
 function parseVersion(version) {
@@ -62,7 +63,7 @@ const SEALED_TUPLES = new Map([
   ["@clossys/controller\u00000.8.23", { replacementVersion: "0.8.24", metadataSha256: "0691ebaaaff6486044d13fa781d0de6499f176e7a19b4af32abdac23111ac0cf", tarball: { sha1: "9d61d760701204712d84a3e710677c4b36900c9a", sha256: "d3d7176dc043faeabb96336f1c29ce230a1d63f4f03721ddd3e4cfce26d988f5", sha512: "ffc76c870fcf4a7d95ba17adee5dc264ee508efc9e2f7dcbfb7265e6501c66a39f8cbe57fc584b5f5c4c10da0fc37664cbcb9a15bb1886a8316bc81c3309fbff" } }],
   ["@clossys/starter\u00000.1.2", { replacementVersion: "0.1.5", metadataSha256: "43473b7b674e3188393fd9409bbdf7a962a209754dc251b916c1f5447e2fa06f", tarball: { sha1: "7222feb7c91f021e8479e720a0b8ebcce912f91b", sha256: "7690826525ff4f3fc336ba4a0bf9ffaedf265a217f5eabf369d7074fdcca6835", sha512: "fe11440f85ef69d2f66cc5a9d95673e0d5cff318392f47dd97b8c297ad0b8f7cde4622918203af2772099d67eae6889be87a15d4f0ae7ba347ce55e003acd05c" } }],
   ["@clossys/starter\u00000.1.4", { replacementVersion: "0.1.5", metadataSha256: "ac16ca9de2ed46a1c48f88656a1baa9f72d8fbd155a9b3ecb306047ea64d14c0", tarball: { sha1: "86b2d453a0107c5a62e7e0437c9cc3982584ae1f", sha256: "10fd0d0d406f94d080c78e6e842c4a878872f1bb9d8d620e39477f2c86491568", sha512: "5b0ef9862fe9a5126e2367c8f10f786c6a6d97bf89f158fcc58237a1ea9ed582c25e65790cde3964a5de3bf3441c0036f8629fccabd805844c7d3d948da17d5a" } }],
-  ["@clossys/strategist\u00000.1.1", { replacementVersion: "0.1.2", metadataSha256: "2294db813aab514c8d5e35b8761edadd80739f973a34715ba9e54758f3ef150c", tarball: { sha1: "06d7618e03ea58651feb4ba872e6c351de5c0f79", sha256: "b3db2c551bd2aa0e98ce5da4e3bd82655da135c6b0b666521a3143bdded24205", sha512: "a972d02967e33dd253d892157a70a4cbf9eb46366648d90126c75fe06382d110e82886f1a6113391d332c42b6c5b85438b9440c0bc2058a63c4388465af7bdee" } }],
+  [`${publishedName("@clossys/director")}\u00000.1.1`, { replacementVersion: "0.1.2", metadataSha256: "2294db813aab514c8d5e35b8761edadd80739f973a34715ba9e54758f3ef150c", tarball: { sha1: "06d7618e03ea58651feb4ba872e6c351de5c0f79", sha256: "b3db2c551bd2aa0e98ce5da4e3bd82655da135c6b0b666521a3143bdded24205", sha512: "a972d02967e33dd253d892157a70a4cbf9eb46366648d90126c75fe06382d110e82886f1a6113391d332c42b6c5b85438b9440c0bc2058a63c4388465af7bdee" } }],
 ]);
 
 const object = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
@@ -131,13 +132,13 @@ export function validateReleaseCleanupInventory({ root = process.cwd(), inventor
   if (JSON.stringify([...seen].sort()) !== JSON.stringify(expected) || seen.size !== SEALED_TUPLES.size) fail("inventory rows do not exactly match the transition policy version set");
   for (const [name, version] of REPLACEMENTS) {
     try {
-      const manifest = JSON.parse(readFileSync(`${root}/packages/${name.slice(name.indexOf("/") + 1)}/package.json`, "utf8"));
+      const manifest = JSON.parse(readFileSync(`${root}/packages/${workspaceDirectory(name.slice(name.indexOf("/") + 1))}/package.json`, "utf8"));
       const floor = parseVersion(version);
       const live = VERSION.test(manifest.version ?? "") ? parseVersion(manifest.version) : null;
       // The manifest must never be the wrong package (name) and must never
       // regress below the sealed replacement floor (version). It is free to
       // be at or above that floor — advancing past it is the point.
-      if (manifest.name !== name || !live || compareVersions(live, floor) < 0) fail(`replacement manifest mismatch for ${name}`);
+      if (!samePackage(manifest.name, name) || !live || compareVersions(live, floor) < 0) fail(`replacement manifest mismatch for ${name}`);
     } catch { fail(`replacement manifest unavailable for ${name}`); }
   }
   return errors;

@@ -1,6 +1,6 @@
 {
   "schema": "clossys.ia/1",
-  "source": "@clossys/strategist#leaf-freeze:2026-10-28",
+  "source": "@clossys/director#leaf-freeze:2026-10-28",
   "extensions": [],
   "nodes": [
     {

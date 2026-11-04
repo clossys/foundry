@@ -57,7 +57,7 @@ async function startLoopbackRegistry(t, root) {
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), "qualified-directory-test-"));
   t.after(() => rm(root, { recursive: true, force: true }));
-  const packageRoot = join(root, "packages", "strategist");
+  const packageRoot = join(root, "packages", "designer");
   await mkdir(join(packageRoot, "dist"), { recursive: true });
   await mkdir(join(root, "governance", "release-qualifications"), { recursive: true });
   await writeFile(join(root, "package-scope.json"), JSON.stringify({ scope: "@clossys", registry: "https://registry.npmjs.org", access: "public" }));
@@ -71,7 +71,7 @@ async function fixture(t) {
     { id: "current-github-packages", status: historicalStatus, scope: historicalScope, registry: historicalRegistry, packages: "all" },
     { id: "clossys-npmjs", status: "active", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public", packages: [...ALL_PACKAGE_RELEASE_ORDER] },
   ] }));
-  const manifest = { name: "@clossys/strategist", version: "0.1.1", type: "module", files: ["dist", "README.md", "LICENSE"], publishConfig: { registry: "https://registry.npmjs.org", access: "public" } };
+  const manifest = { name: "@clossys/designer", version: "0.1.1", type: "module", files: ["dist", "README.md", "LICENSE"], publishConfig: { registry: "https://registry.npmjs.org", access: "public" } };
   await writeFile(join(packageRoot, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
   await writeFile(join(packageRoot, "README.md"), "Public package\n");
   await writeFile(join(packageRoot, "LICENSE"), "MIT\n");
@@ -81,23 +81,23 @@ async function fixture(t) {
   const filename = JSON.parse(output.stdout)[0].filename;
   const candidate = join(packed, filename), bytes = await readFile(candidate);
   const record = { timing: "pre-publication", candidate: { name: manifest.name, version: manifest.version, packageManifestSha256: hash("sha256", await readFile(join(packageRoot, "package.json"))), tarball: Object.fromEntries(["sha1", "sha256", "sha512"].map((algorithm) => [algorithm, hash(algorithm, bytes)])) } };
-  const recordPath = join(root, "governance", "release-qualifications", "clossys-strategist-0.1.1.json"); await writeFile(recordPath, `${JSON.stringify(record)}\n`);
+  const recordPath = join(root, "governance", "release-qualifications", "clossys-designer-0.1.1.json"); await writeFile(recordPath, `${JSON.stringify(record)}\n`);
   const denylist = join(root, "denylist.json"); await writeFile(denylist, JSON.stringify({ version: 1, terms: [{ pattern: "never-match-qualified-wrapper", why: "fixture" }] }));
   return { root, candidate, recordPath, denylist, bytes };
 }
 
 test("owner-present wrapper has a closed CLI", () => {
-  const argv = ["node", "script", "--package", "strategist", "--candidate", "candidate.tgz", "--record", "record.json"];
-  assert.deepEqual(argsFrom(argv), { package: "strategist", candidate: "candidate.tgz", record: "record.json", mode: "owner-present", dryRun: false });
-  assert.deepEqual(argsFrom([...argv, "--mode", "oidc", "--dry-run"]), { package: "strategist", candidate: "candidate.tgz", record: "record.json", mode: "oidc", dryRun: true });
-  for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../strategist"], ["--dry-run"], ["--mode", "owner-present", "--dry-run"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
-  for (const missing of ["--package", "strategist", "--candidate", "candidate.tgz", "--record", "record.json"]) assert.throws(() => argsFrom(argv.filter((value) => value !== missing)), /Usage:/);
+  const argv = ["node", "script", "--package", "designer", "--candidate", "candidate.tgz", "--record", "record.json"];
+  assert.deepEqual(argsFrom(argv), { package: "designer", candidate: "candidate.tgz", record: "record.json", mode: "owner-present", dryRun: false });
+  assert.deepEqual(argsFrom([...argv, "--mode", "oidc", "--dry-run"]), { package: "designer", candidate: "candidate.tgz", record: "record.json", mode: "oidc", dryRun: true });
+  for (const mutation of [["--otp", "123456"], ["--candidate", "https://example.test/x.tgz"], ["--unknown", "x"], ["--package", "../designer"], ["--dry-run"], ["--mode", "owner-present", "--dry-run"]]) assert.throws(() => argsFrom([...argv, ...mutation]), /Usage:/);
+  for (const missing of ["--package", "designer", "--candidate", "candidate.tgz", "--record", "record.json"]) assert.throws(() => argsFrom(argv.filter((value) => value !== missing)), /Usage:/);
 });
 
 test("owner-present publication rejects a programmatic dry-run before touching a candidate", async () => {
   let called = false;
   await assert.rejects(() => publishQualifiedDirectory({
-    packageKey: "strategist", candidatePath: "not-read.tgz", recordPath: "not-read.json", mode: "owner-present", dryRun: true,
+    packageKey: "designer", candidatePath: "not-read.tgz", recordPath: "not-read.json", mode: "owner-present", dryRun: true,
     run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; },
   }), /owner-present publication does not support dry-run/);
   assert.equal(called, false);
@@ -128,7 +128,7 @@ test("OIDC dry publication cleanly repacks the qualified bytes and forwards only
   };
   let verified = false;
   await publishQualifiedDirectory({
-    root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+    root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
     mode: "oidc", dryRun: true,
     env: { ...oidc, PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward", NODE_AUTH_TOKEN: "must-not-forward", GITHUB_TOKEN: "must-not-forward" },
     run, interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); }, verify: async () => { verified = true; },
@@ -145,7 +145,7 @@ test("OIDC dry publication cleanly repacks the qualified bytes and forwards only
   for (const missing of ["GITHUB_EVENT_NAME", "GITHUB_REF", "GITHUB_REPOSITORY_ID", "GITHUB_REPOSITORY_OWNER_ID", "GITHUB_RUN_ATTEMPT", "GITHUB_SERVER_URL", "GITHUB_SHA", "RUNNER_ENVIRONMENT"]) {
     const incomplete = { ...oidc }; delete incomplete[missing];
     await assert.rejects(() => publishQualifiedDirectory({
-      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
       mode: "oidc", dryRun: true, env: { ...incomplete, PATH: process.env.PATH, PUBLIC_SAFETY_DENYLIST: item.denylist },
       run, interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); }, verify: async () => {},
     }), new RegExp(`OIDC publication requires ${missing}`));
@@ -320,7 +320,7 @@ test("a nonzero owner-present PTY session aborts before anonymous verification",
   await assert.rejects(
     () => publishQualifiedDirectory({
       root: item.root,
-      packageKey: "strategist",
+      packageKey: "designer",
       candidatePath: item.candidate,
       recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
@@ -377,7 +377,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
     throw new Error(`unexpected interactive child ${file}`);
   };
   const verified = [];
-  const result = await publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, isInteractiveTerminal: () => true, interactiveRun, verify: async (options) => { verified.push(options); } });
+  const result = await publishQualifiedDirectory({ root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist, NPM_TOKEN: "must-not-forward" }, run, isInteractiveTerminal: () => true, interactiveRun, verify: async (options) => { verified.push(options); } });
   assert.equal(result.tarball.sha256, hash("sha256", item.bytes));
   const publish = interactiveCalls.find((call) => call.file === "/usr/bin/script");
   assert.deepEqual(publish.args, ownerPresentPtyArgs("https://registry.npmjs.org"));
@@ -398,7 +398,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(packed.env.HOME.includes("clossys-qualified-publish-"), true);
   const scan = calls.find((call) => call.file === process.execPath && call.args[0]?.endsWith("/scripts/check-public-safety.mjs"));
   assert.ok(scan, "only the intended staged safety-check executable is stubbed and captured");
-  assert.deepEqual(scan.args.slice(-8), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json"), "--path-prefix", "packages/strategist"]);
+  assert.deepEqual(scan.args.slice(-8), ["--artifact", "--no-gitignore", "--allow-changelogs", "--require-denylist", "--scope-config", join(item.root, "package-scope.json"), "--path-prefix", "packages/designer"]);
   assert.equal(scan.env.NPM_TOKEN, undefined, "the full scan receives only its explicit denylist capability");
   assert.equal(verified.length, 1);
   assert.equal(verified[0].env.NPM_TOKEN, undefined);
@@ -415,7 +415,7 @@ test("owner-present wrapper runs real pinned npm publish against a loopback regi
   assert.equal(publicationPuts.length, 1, "the no-challenge loopback registry must receive one accepted package upload");
   const [request] = publicationPuts;
   assert.equal(request.method, "PUT");
-  assert.match(request.url, /%40clossys%2fstrategist|@clossys%2fstrategist/i);
+  assert.match(request.url, /%40clossys%2fdesigner|@clossys%2fdesigner/i);
   assert.equal(request.authorization, "Bearer loopback-local-only");
   const outboundDocument = JSON.parse(Buffer.from(request.body, "base64").toString("utf8"));
   const outboundManifest = outboundDocument.versions?.["0.1.1"];
@@ -447,7 +447,7 @@ test("required Linux release runtime propagates a real PTY npm failure and suppr
   await assert.rejects(
     () => publishQualifiedDirectory({
       root: item.root,
-      packageKey: "strategist",
+      packageKey: "designer",
       candidatePath: item.candidate,
       recordPath: item.recordPath,
       env: { PATH: `${bin}:${process.env.PATH}`, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
@@ -605,7 +605,7 @@ test("wrapper refuses a non-release Node/npm runtime before scanning or publishi
     scanned = true;
     return { status: 0, stdout: "", stderr: "" };
   };
-  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, isInteractiveTerminal: () => true, verify: async () => {} }), /requires Node v24\.19\.0, npm 11\.17\.0, and zlib/);
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, isInteractiveTerminal: () => true, verify: async () => {} }), /requires Node v24\.19\.0, npm 11\.17\.0, and zlib/);
   assert.equal(scanned, false);
 });
 
@@ -625,26 +625,26 @@ test("wrapper rejects transient manifest metadata, symlinks, and changed clean-d
     }
     throw new Error("publish must not be reached");
   };
-  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, isInteractiveTerminal: () => true, verify: async () => {} }), /differs from the immutable qualified candidate/);
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run, isInteractiveTerminal: () => true, verify: async () => {} }), /differs from the immutable qualified candidate/);
   assert.equal((await readFile(item.candidate)).equals(original), true);
 });
 
 test("wrapper rejects archive symlinks and transient client manifest fields before any scan or publish", async (t) => {
   const item = await fixture(t);
   const archive = join(item.root, "unsafe-archive", "package"); await mkdir(archive, { recursive: true });
-  await writeFile(join(archive, "package.json"), JSON.stringify({ name: "@clossys/strategist", version: "0.1.1", _from: "file:qualified.tgz" }));
+  await writeFile(join(archive, "package.json"), JSON.stringify({ name: "@clossys/designer", version: "0.1.1", _from: "file:qualified.tgz" }));
   await symlink("package.json", join(archive, "linked-manifest"));
   const unsafe = join(item.root, "unsafe.tgz"); await execFile("tar", ["-czf", unsafe, "-C", join(item.root, "unsafe-archive"), "package"]);
   let called = false;
-  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "strategist", candidatePath: unsafe, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; }, isInteractiveTerminal: () => true, verify: async () => {} }), /unsafe|symlink|extended metadata|entries/);
+  await assert.rejects(() => publishQualifiedDirectory({ root: item.root, packageKey: "designer", candidatePath: unsafe, recordPath: item.recordPath, env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist }, run: () => { called = true; return { status: 0, stdout: "", stderr: "" }; }, isInteractiveTerminal: () => true, verify: async () => {} }), /unsafe|symlink|extended metadata|entries/);
   assert.equal(called, false);
 });
 
 
 test("publishExitCode reports indeterminate observation windows as 2, everything else as a failure", () => {
-  // This is the exact defect behind issue #790: controller@0.9.2 and
-  // strategist@0.1.3 both published correctly, then the CLI's un-narrowed
-  // catch-all turned a merely-unconfirmed anonymous visibility window into a
+  // This is the exact defect behind issue #790: controller@0.9.2 and the
+  // Director package's 0.1.3 (published under its earlier name) both
+  // published correctly, then the CLI's un-narrowed catch-all turned a merely-unconfirmed anonymous visibility window into a
   // hard failure, aborting the job and skipping the authoritative
   // `verify-published` check downstream. `publishExitCode` is the pure
   // mapping the CLI defers to; test it directly rather than spawning a real,
@@ -677,7 +677,7 @@ test("owner-present publication refuses up front when stdin is not an interactiv
   await assert.rejects(
     () => publishQualifiedDirectory({
       root: item.root,
-      packageKey: "strategist",
+      packageKey: "designer",
       candidatePath: item.candidate,
       recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
@@ -719,7 +719,7 @@ test("OIDC publication does not require an interactive terminal at all", async (
   // interactive child), and this still succeeds under this test runner's
   // own non-TTY stdin -- proving the check truly only gates owner-present.
   await publishQualifiedDirectory({
-    root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+    root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
     mode: "oidc", dryRun: true,
     env: { ...oidc, PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
     run, interactiveRun: async () => { throw new Error("OIDC must not create an owner PTY"); }, verify: async () => {},
@@ -739,7 +739,7 @@ test("owner-present publication refuses before the safety scan/pack when npm who
   };
   await assert.rejects(
     () => publishQualifiedDirectory({
-      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       isInteractiveTerminal: () => true,
       run,
@@ -776,7 +776,7 @@ test("owner-present publication proceeds past a successful npm whoami without ev
   let capturedError;
   try {
     await publishQualifiedDirectory({
-      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       isInteractiveTerminal: () => true,
       run,
@@ -818,7 +818,7 @@ function realPtyPublishStdout(fileListLines = ["0B index.js"], code = "ENEEDAUTH
   const line = (text) => `⠙\u001b[1G\u001b[0K\u001b[1mnpm\u001b[22m ${text}\r\n`;
   const notice = (text) => line(`\u001b[96mnotice\u001b[39m${text ? ` ${text}` : ""}`);
   return "^D\b\b" + notice("")
-    + notice("📦  @clossys/strategist@0.1.0")
+    + notice("📦  @clossys/designer@0.1.0")
     + notice("\u001b[94mTarball Contents\u001b[39m")
     + fileListLines.map((file) => notice(file)).join("")
     + notice("\u001b[94mTarball Details\u001b[39m")
@@ -878,7 +878,7 @@ test("a failed owner-present PTY session relays ONLY npm's own error code, never
   };
   await assert.rejects(
     () => publishQualifiedDirectory({
-      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       isInteractiveTerminal: () => true,
       run,
@@ -888,7 +888,7 @@ test("a failed owner-present PTY session relays ONLY npm's own error code, never
         status: 1, signal: null, stderr: "",
         stdout: realPtyPublishStdout(["0B index.js"], "E404").replace(
           "This command requires you to be logged in to https://registry.npmjs.org/",
-          "404 This package name is not yet public: @clossys/strategist",
+          "404 This package name is not yet public: @clossys/designer",
         ),
       }),
       verify: async () => { throw new Error("verification must never run after a failed publish"); },
@@ -916,7 +916,7 @@ test("a failed owner-present PTY session with no recognizable npm error code kee
   };
   await assert.rejects(
     () => publishQualifiedDirectory({
-      root: item.root, packageKey: "strategist", candidatePath: item.candidate, recordPath: item.recordPath,
+      root: item.root, packageKey: "designer", candidatePath: item.candidate, recordPath: item.recordPath,
       env: { PATH: process.env.PATH, HOME: item.root, PUBLIC_SAFETY_DENYLIST: item.denylist },
       isInteractiveTerminal: () => true,
       run,

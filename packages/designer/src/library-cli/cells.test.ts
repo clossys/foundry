@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { propose } from "@clossys/strategist/cell-format";
+import { propose } from "@clossys/director/cell-format";
 import { generateSelection, libraryHash, loadCatalog, stableStringify, type LibraryData } from "../catalog-core/index.js";
 import { adoptedComponentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { compositeLibraryHash } from "../catalog-core/library-components.js";

@@ -60,7 +60,7 @@ test("verify_branch_is_ours accepts a branch whose only new commits are bot-auth
   const root = initRepo();
   try {
     git(["checkout", "-q", "-b", "evidence"], root);
-    botCommit(root, "governance/release-publications/later/strategist-0.1.1.json", "{}\n");
+    botCommit(root, "governance/release-publications/later/director-0.1.1.json", "{}\n");
     assert.equal(verifies(root, "evidence", "main"), true);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -98,7 +98,7 @@ test("verify_branch_is_ours refuses a branch mixing one legitimate evidence comm
   const root = initRepo();
   try {
     git(["checkout", "-q", "-b", "evidence"], root);
-    botCommit(root, "governance/release-publications/later/strategist-0.1.1.json", "{}\n", "legitimate record");
+    botCommit(root, "governance/release-publications/later/director-0.1.1.json", "{}\n", "legitimate record");
     humanCommit(root, "scripts-evil.sh", "echo pwned\n", "planted afterward");
     assert.equal(verifies(root, "evidence", "main"), false);
   } finally {
@@ -110,7 +110,7 @@ test("verify_branch_is_ours accepts multiple legitimate bot commits from a genui
   const root = initRepo();
   try {
     git(["checkout", "-q", "-b", "evidence"], root);
-    botCommit(root, "governance/release-publications/later/strategist-0.1.1.json", "{}\n", "record one");
+    botCommit(root, "governance/release-publications/later/director-0.1.1.json", "{}\n", "record one");
     botCommit(root, "governance/release-publications/later/butler-0.1.9.json", "{}\n", "record two");
     assert.equal(verifies(root, "evidence", "main"), true);
   } finally {
@@ -122,7 +122,7 @@ test("verify_branch_is_ours returns false, never throws, for a ref with no commo
   const root = initRepo();
   try {
     git(["checkout", "-q", "--orphan", "unrelated"], root);
-    botCommit(root, "governance/release-publications/later/strategist-0.1.1.json", "{}\n", "no shared history with main");
+    botCommit(root, "governance/release-publications/later/director-0.1.1.json", "{}\n", "no shared history with main");
     assert.equal(verifies(root, "unrelated", "main"), false);
   } finally {
     rmSync(root, { recursive: true, force: true });
@@ -195,7 +195,7 @@ test("verify_branch_is_ours returns false, never an empty-loop pass, when rev-li
   const root = initRepo();
   try {
     git(["checkout", "-q", "-b", "evidence"], root);
-    botCommit(root, "governance/release-publications/later/strategist-0.1.1.json", "{}\n");
+    botCommit(root, "governance/release-publications/later/director-0.1.1.json", "{}\n");
     let passed;
     try {
       execFileSync("bash", ["-c", `set -e; source "${scriptPath}"; git() { if [ "$1" = rev-list ]; then return 1; fi; command git "$@"; }; verify_branch_is_ours evidence main`], { cwd: root, stdio: "ignore" });

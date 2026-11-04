@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { buildWorld, clone, mutateSet } from "./admission-fixture.js";
+import { DIRECTION_PACKAGE, DIRECTOR, buildWorld, clone, mutateSet } from "./admission-fixture.js";
 import type { Loose } from "./admission-fixture.js";
 import type { ApprovalBinding, RepositoryChangeSet } from "./change-set-contract.js";
 import { readChangeSetMarker, renderPullRequest } from "./pull-request-body.js";
@@ -30,7 +30,7 @@ const APPLY_ITEMS = [
   "- `caller-workflow` `add-caller-workflow`",
   "- `ci-template` `add-ci-template`",
   "- `example-owner/site:@example/starter` `pin-starter` `@example/starter@0.9.2`",
-  "- `example-owner/site:@example/strategist` `install` `@example/strategist@1.4.0`",
+  `- \`${DIRECTOR}\` \`install\` \`${DIRECTION_PACKAGE}@1.4.0\``,
   "- `example-owner/site:@example/writer` `install` `@example/writer@0.7.0`",
   "- `ledger` `write-ledger`",
   "- `path-scope-job` `add-path-scope-job`",
@@ -112,7 +112,7 @@ describe("renderPullRequest: golden bytes", () => {
         "",
         "## Not applied",
         "",
-        "- Deferred: `example-owner/site:@example/strategist` `after-setup`",
+        `- Deferred: \`${DIRECTOR}\` \`after-setup\``,
         "- Deferred: `example-owner/site:@example/writer` `after-setup`",
         "",
         "## Task record",

@@ -2,9 +2,9 @@ import { defineStep } from "../define.js";
 import type { Stage, Step } from "../define.js";
 import { LIBRARY_ELEMENTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
 
-const SKILL = { director: "packages/strategist/skill/SKILL.md", designer: "packages/designer/skill/SKILL.md", writer: "packages/writer/skill/SKILL.md", publisher: "packages/publisher/skill/SKILL.md" } as const;
+const SKILL = { director: "packages/director/skill/SKILL.md", designer: "packages/designer/skill/SKILL.md", writer: "packages/writer/skill/SKILL.md", publisher: "packages/publisher/skill/SKILL.md" } as const;
 const UPSTREAM = {
-  director: ["clossys/evidence/director/*.md", "clossys/evidence/strategist/findings/*.md"],
+  director: ["clossys/evidence/director/*.md", "clossys/evidence/director/findings/*.md"],
   designer: [pinsOf("director"), candidatesOf("director")],
   writer: [pinsOf("director"), candidatesOf("director"), candidatesOf("designer")],
   publisher: [pinsOf("designer"), candidatesOf("designer"), pinsOf("writer"), candidatesOf("writer")],

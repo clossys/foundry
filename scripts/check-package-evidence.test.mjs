@@ -290,9 +290,9 @@ test("(d) a malformed later-publication record fails closed rather than silently
     // Read before the malformed record exists: these are the genuine records.
     const genuine = retainedLaterIdentities(fixtureRoot);
     assert.ok(genuine.length > 0);
-    const malformedPath = join(fixtureRoot, "governance/release-publications/later/strategist-9.9.9.json");
+    const malformedPath = join(fixtureRoot, "governance/release-publications/later/director-9.9.9.json");
     writeFileSync(malformedPath, "{ this is not valid json");
-    execFileSync("git", ["add", "governance/release-publications/later/strategist-9.9.9.json"], { cwd: fixtureRoot });
+    execFileSync("git", ["add", "governance/release-publications/later/director-9.9.9.json"], { cwd: fixtureRoot });
     execFileSync("git", ["commit", "-m", "fixture: introduce a malformed later-publication record"], { cwd: fixtureRoot, stdio: "ignore" });
 
     const { names, identities, findings } = validateRetainedLaterPublications(fixtureRoot);
@@ -810,7 +810,7 @@ test("this repository's own contract passes, and exits 0/1/2 correctly", () => {
   try {
     const contract = JSON.parse(execFileSync(process.execPath, ["-e", "process.stdout.write(require('fs').readFileSync('docs/contracts/package-evidence.json','utf8'))"], { cwd: repoRoot, encoding: "utf8" }));
     for (const p of contract.packages) {
-      if (p.name !== "@clossys/strategist") continue;
+      if (p.name !== "@clossys/director") continue;
       p.state = "staged";
       // The real contract may acknowledge a staging shortfall with `gaps`,
       // or support it with a recorded red/control `stagedBy` run. Remove

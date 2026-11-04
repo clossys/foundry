@@ -3,7 +3,7 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 
 export const AGENT_PACKAGES = {
-  director: ["@clossys/director", "@clossys/strategist"],
+  director: ["@clossys/director"],
   designer: ["@clossys/designer"],
   writer: ["@clossys/writer"],
   publisher: ["@clossys/publisher"],

@@ -33,7 +33,7 @@ function skillSlug(role: string): string {
 /**
  * One plain-language instruction, correct for the given host, for
  * opening the next repository and calling the next role. `role` is a
- * package directory (short name), e.g. `"strategist"`.
+ * package directory (short name), e.g. `"director"`.
  */
 export function nextStepInstruction(role: string, host: NextStepHostContext): string {
   const skill = skillSlug(role);

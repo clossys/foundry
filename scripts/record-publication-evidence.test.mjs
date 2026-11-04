@@ -27,14 +27,14 @@ test("readAndClearEnv reads a variable once and deletes it, so a second read fin
 
 test("argsFrom parses exactly the four required flags and rejects everything else", () => {
   assert.deepEqual(
-    argsFrom(["node", "script", "--package", "strategist", "--run-id", "123", "--run-attempt", "1", "--source-sha", sourceSha]),
-    { package: "strategist", "run-id": "123", "run-attempt": "1", "source-sha": sourceSha },
+    argsFrom(["node", "script", "--package", "director", "--run-id", "123", "--run-attempt", "1", "--source-sha", sourceSha]),
+    { package: "director", "run-id": "123", "run-attempt": "1", "source-sha": sourceSha },
   );
   for (const argv of [
-    ["node", "script", "--package", "strategist"],
-    ["node", "script", "--package", "../strategist", "--run-id", "1", "--run-attempt", "1", "--source-sha", sourceSha],
-    ["node", "script", "--package", "strategist", "--run-id", "1", "--run-attempt", "1", "--source-sha", "not-a-sha"],
-    ["node", "script", "--package", "strategist", "--run-id", "1", "--run-attempt", "1", "--source-sha", sourceSha, "--otp", "1"],
+    ["node", "script", "--package", "director"],
+    ["node", "script", "--package", "../director", "--run-id", "1", "--run-attempt", "1", "--source-sha", sourceSha],
+    ["node", "script", "--package", "director", "--run-id", "1", "--run-attempt", "1", "--source-sha", "not-a-sha"],
+    ["node", "script", "--package", "director", "--run-id", "1", "--run-attempt", "1", "--source-sha", sourceSha, "--otp", "1"],
   ]) assert.throws(() => argsFrom(argv), /Usage/);
 });
 
@@ -47,7 +47,7 @@ test("githubAuthenticatedFetch adds bearer auth only to api.github.com requests,
   assert.equal(calls[0].init.headers.Authorization, "Bearer secret-token");
   assert.equal(calls[0].init.headers.Accept, "application/vnd.github+json");
 
-  await fetchImpl("https://registry.npmjs.org/%40clossys%2Fstrategist");
+  await fetchImpl("https://registry.npmjs.org/%40clossys%2Fdirector");
   assert.equal(calls[1].init.headers, undefined);
 });
 
@@ -63,7 +63,7 @@ test("recordPublicationEvidence wires the measured manifest, registry time, and 
   const writes = {};
   const writeOutput = (path, contents) => { writes[path] = contents; };
   const fetchImpl = async (url) => {
-    if (url === "https://registry.npmjs.org/%40clossys%2Fstrategist") {
+    if (url === "https://registry.npmjs.org/%40clossys%2Fdirector") {
       return { ok: true, status: 200, json: async () => ({ time: { "0.1.1": "2026-09-23T18:11:07.143Z" } }) };
     }
     throw new Error(`unexpected fetch ${url}`);
@@ -84,10 +84,10 @@ test("recordPublicationEvidence wires the measured manifest, registry time, and 
         sourceSha,
         builder: "https://github.com/actions/runner/github-hosted",
         invocation: "https://github.com/clossys/foundry/actions/runs/999/attempts/1",
-        attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fstrategist@0.1.1",
+        attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2Fdirector@0.1.1",
       },
     });
-    return { path: "governance/release-publications/later/strategist-0.1.1.json", record: { schemaVersion: 2 } };
+    return { path: "governance/release-publications/later/director-0.1.1.json", record: { schemaVersion: 2 } };
   };
 
   let verifyProvenanceOptions;
@@ -95,30 +95,30 @@ test("recordPublicationEvidence wires the measured manifest, registry time, and 
 
   const result = await recordPublicationEvidence({
     root: "/repo",
-    packageKey: "strategist",
+    packageKey: "director",
     runId: 999,
     runAttempt: 1,
     sourceSha,
     fetchImpl,
     githubToken: undefined,
-    readManifest: () => ({ name: "@clossys/strategist", version: "0.1.1" }),
+    readManifest: () => ({ name: "@clossys/director", version: "0.1.1" }),
     writeOutput,
     makeTempDir: () => "/tmp/publication-evidence-test",
     createRecord,
     verifyProvenance,
   });
 
-  assert.equal(result.path, "governance/release-publications/later/strategist-0.1.1.json");
+  assert.equal(result.path, "governance/release-publications/later/director-0.1.1.json");
   assert.equal(createRecordOptions.root, "/repo");
-  assert.equal(createRecordOptions.packageKey, "strategist");
-  assert.equal(createRecordOptions.qualificationPath, "governance/release-qualifications/clossys-strategist-0.1.1.json");
+  assert.equal(createRecordOptions.packageKey, "director");
+  assert.equal(createRecordOptions.qualificationPath, "governance/release-qualifications/clossys-director-0.1.1.json");
   assert.equal(createRecordOptions.fetch, true);
   assert.deepEqual(createRecordOptions.env, { PATH: process.env.PATH ?? "/usr/bin:/bin" });
 
   // B2 (2026-09-23 security review): the direct join must not be attempted
   // (let alone written) until verifyProvenance — the npm SLSA attestation
   // cross-check — has run against exactly this package/version/commit.
-  assert.equal(verifyProvenanceOptions.name, "@clossys/strategist");
+  assert.equal(verifyProvenanceOptions.name, "@clossys/director");
   assert.equal(verifyProvenanceOptions.version, "0.1.1");
   assert.equal(verifyProvenanceOptions.sourceSha, sourceSha);
 });
@@ -127,7 +127,7 @@ test("recordPublicationEvidence refuses a manifest with no name/version before m
   await assert.rejects(
     recordPublicationEvidence({
       root: "/repo",
-      packageKey: "strategist",
+      packageKey: "director",
       runId: 1,
       runAttempt: 1,
       sourceSha,
@@ -147,7 +147,7 @@ test("recordPublicationEvidence refuses a manifest with no name/version before m
 test("recordPublicationEvidence never writes a record, and never reaches either join, when verifyProvenance refuses", async () => {
   const writeOutput = () => {};
   const fetchImpl = async (url) => {
-    if (url === "https://registry.npmjs.org/%40clossys%2Fstrategist") {
+    if (url === "https://registry.npmjs.org/%40clossys%2Fdirector") {
       return { ok: true, status: 200, json: async () => ({ time: { "0.1.1": "2026-09-23T18:11:07.143Z" } }) };
     }
     throw new Error(`unexpected fetch ${url}`);
@@ -155,13 +155,13 @@ test("recordPublicationEvidence never writes a record, and never reaches either 
   await assert.rejects(
     recordPublicationEvidence({
       root: "/repo",
-      packageKey: "strategist",
+      packageKey: "director",
       runId: 999,
       runAttempt: 1,
       sourceSha,
       fetchImpl,
       githubToken: undefined,
-      readManifest: () => ({ name: "@clossys/strategist", version: "0.1.1" }),
+      readManifest: () => ({ name: "@clossys/director", version: "0.1.1" }),
       writeOutput,
       makeTempDir: () => "/tmp/publication-evidence-test-2",
       verifyProvenance: async () => { throw new Error("attestation does not corroborate this run"); },

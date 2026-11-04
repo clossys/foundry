@@ -6,7 +6,7 @@
 //
 // Exit 0 = packed / verified. Exit 1 = fail closed. Exit 2 = usage error.
 //
-// `--out` builds and packs producer, strategist, designer, writer, publisher
+// `--out` builds and packs producer, director, designer, writer, publisher
 // and controller from the current HEAD (which must be clean) and writes
 // exactly <key>.tgz for each plus overlay-manifest.json, the same
 // `foundry-overlay-manifest` schema the overlay prerelease uses, over all six.

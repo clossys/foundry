@@ -21,7 +21,7 @@ it("rejects a seeded same-text same-leaf duplicate and accepts a declared semant
 it("enforces the seeded duplicate through the library's normal closed-world gate", () => {
   const records = [record("st.0000000001"), record("st.0000000002")];
   const library: WriterLibrary = {
-    manifest: { consumer: "dedupe-proof", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, strategist: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
+    manifest: { consumer: "dedupe-proof", messageSyntax: "icu-mf1", defaultLocale: "en", locales: [{ tag: "en", dir: "ltr", state: "active" }], fallback: {}, director: { path: "strategy" }, leafFreeze: { lexicon: "", strings: "", patterns: "", passages: "", narratives: "" } },
     locales: { en: { records, documents: [] } },
   };
   expect(checkWriterClosedWorld(library)).toContainEqual(expect.objectContaining({ code: "WR3", field: "text", message: expect.stringContaining("Duplicate text in strings.common") }));

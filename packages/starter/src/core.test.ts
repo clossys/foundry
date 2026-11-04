@@ -339,19 +339,19 @@ type Placement = "dependencies" | "devDependencies";
 function adoptionFixture(placement: Placement = "dependencies") {
   const load = (name: string): Mutable<InstalledLedger> => JSON.parse(
     JSON.stringify(corpus.ledgers.find(entry => entry.name === name)!.ledger)
-      .replaceAll("@example/strategist", "@clossys/strategist")
-      .replaceAll("@example~1strategist", "@clossys~1strategist"),
+      .replaceAll("@example/director", "@clossys/director")
+      .replaceAll("@example~1director", "@clossys~1director"),
   );
   const base = load("setup-generation-1");
   const head = load("admitted-generation-2");
-  const name = "@clossys/strategist";
+  const name = "@clossys/director";
   const compare = (left: string, right: string) => left < right ? -1 : left > right ? 1 : 0;
   for (const ledger of [base, head]) {
     for (const rows of [ledger.packages, ledger.deferred]) {
       for (const row of rows) if (row.name === name) row.placement = placement;
     }
     for (const row of ledger.keys) {
-      if (row.pointer.endsWith("@clossys~1strategist")) row.pointer = row.pointer.replace("/devDependencies/", `/${placement}/`);
+      if (row.pointer.endsWith("@clossys~1director")) row.pointer = row.pointer.replace("/devDependencies/", `/${placement}/`);
     }
     ledger.packages.sort((a, b) => compare(a.planItem, b.planItem));
     ledger.deferred.sort((a, b) => compare(a.planItem, b.planItem));
@@ -395,14 +395,14 @@ describe("adoption manifest own-property boundaries", () => {
       delete input.headInstall.manifest[placement];
       Object.setPrototypeOf(input.headInstall.manifest, {[placement]: bucket});
       expect(evaluateAdmission(input).state).toBe("violated");
-      expect(Object.hasOwn(bucket, "@clossys/strategist")).toBe(true);
+      expect(Object.hasOwn(bucket, "@clossys/director")).toBe(true);
     });
     it(`${placement}: refuses an inherited package declaration`, () => {
       const {input} = adoptionFixture(placement);
       const bucket = input.headInstall.manifest[placement];
-      const value = bucket["@clossys/strategist"];
-      delete bucket["@clossys/strategist"];
-      Object.setPrototypeOf(bucket, {"@clossys/strategist": value});
+      const value = bucket["@clossys/director"];
+      delete bucket["@clossys/director"];
+      Object.setPrototypeOf(bucket, {"@clossys/director": value});
       expect(evaluateAdmission(input).state).toBe("violated");
     });
     it(`${placement}: never mutates a bucket inherited from Object.prototype`, () => {

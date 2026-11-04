@@ -11,21 +11,14 @@
     "default": "."
   },
   "rules": [
-    "One owner per folder: the declared Director, Designer, Writer and Publisher cell positions and the existing implemented Strategist native position are listed below. Other roles retain clossys/<role>/. No two roles write the same folder.",
+    "One owner per folder: the Director, Designer, Writer and Publisher cell positions are listed below. Other roles retain clossys/<role>/. No two roles write the same folder.",
     "Visible, not hidden: these are the business's own records. Only machine files go under clossys/.state/; there is no separate .clossys/.",
     "Removing a role removes its folder.",
     "Monorepos: one configuration key (see monorepoRootKey) may place clossys/ inside a workspace package; the default is the repository root.",
-    "Declaration compatibility: safe owned descendants of clossys/<role>/ remain valid; only implemented CellAgent roles strategist, writer, designer and publisher additionally accept clossys/agents/<role>/. The separately retained Director position does not resolve Director/Strategist identity or migration, and compatibility enables no runtime legacy fallback.",
+    "Declaration compatibility: safe owned descendants of clossys/<role>/ remain valid; only implemented CellAgent roles director, writer, designer and publisher additionally accept clossys/agents/<role>/. Compatibility enables no runtime legacy fallback.",
     "clossys/package.json and clossys/clossys.config.ts are required. The package manifest is the only @clossys/* install site; applications consume generated local source at apps/<app>/src/clossys/."
   ],
   "folders": [
-    {
-      "path": "clossys/agents/strategist",
-      "owner": "@clossys/strategist",
-      "kind": "record",
-      "committed": true,
-      "description": "Existing implemented Strategist native cell root: tree.json, cells/<id>/v<N>.md and compiled strategy outputs. Recorded alongside the retained Director position without deciding role identity or migration."
-    },
     {
       "path": "clossys/package.json",
       "owner": "@clossys/producer",
@@ -47,7 +40,7 @@
       "owner": "@clossys/director",
       "kind": "record",
       "committed": true,
-      "description": "Director tree.json and cells/<id>/v<N>.md; compiled strategy outputs stay in this agent folder."
+      "description": "Director tree.json and cells/<id>/v<N>.md (facts, audiences, positioning, claims, brand, direction); compiled strategy outputs stay in this agent folder. Replaces strategy/ at the repository root."
     },
     {
       "path": "clossys/README.md",
@@ -76,13 +69,6 @@
       "kind": "hub-only",
       "committed": true,
       "description": "Assessment input, plan, next action, PLAN.md. Exists on the account hub only, never on a product checkout."
-    },
-    {
-      "path": "clossys/strategist",
-      "owner": "@clossys/strategist",
-      "kind": "record",
-      "committed": true,
-      "description": "Facts, audiences, positioning, claims, brand, direction. Replaces strategy/ at the repository root."
     },
     {
       "path": "clossys/agents/writer",

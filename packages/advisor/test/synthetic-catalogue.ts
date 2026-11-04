@@ -10,7 +10,7 @@ import type { KitPreset } from "../src/kit-presets.js";
  *
  * Shape: `publisher` needs `writer`, `designer` and `toolchain` (which
  * solves nothing, so it is only ever pulled in); `writer` and `designer`
- * need nothing; `strategist`, `customer` and `influencer` stand alone;
+ * need nothing; `director`, `customer` and `influencer` stand alone;
  * `inspector` and `integrator` have no capability map and need each other.
  */
 
@@ -61,18 +61,18 @@ export const SYNTHETIC_CATALOGUE: CapabilityCatalogue = {
     role("integrator", { needs: [need("inspector", "inspection-report")], feeds: [feed("inspector", "integration-report")], declaredFeeds: [{ artifact: "integration-report", path: "clossys/integrator/report.json" }] }),
     role("toolchain", { feeds: [feed("publisher", "pipeline")], declaredFeeds: [{ artifact: "pipeline", path: "clossys/toolchain/pipeline.json" }] }),
     role("publisher", { problem: "publisher-verified-release", needs: [need("designer", "tokens"), need("toolchain", "pipeline"), need("writer", "copy")] }),
-    role("strategist", { problem: "strategist-unclear-direction" }),
+    role("director", { problem: "director-unclear-direction" }),
     role("writer", { problem: "writer-unapproved-copy", evidence: "qualified", feeds: [feed("publisher", "copy")], declaredFeeds: [{ artifact: "copy", path: "clossys/writer/copy.json" }] }),
   ],
 };
 
 export const SYNTHETIC_PRESETS: readonly KitPreset[] = [
-  { id: "launch", label: "Launch", problem: "We can't explain what we are.", roles: ["strategist", "writer", "designer", "publisher"] },
+  { id: "launch", label: "Launch", problem: "We can't explain what we are.", roles: ["director", "writer", "designer", "publisher"] },
 ];
 
 /** Four direct solvers: with `toolchain`, which `publisher` pulls in, their closure is exactly the `launch` preset's own closure. */
 export const SYNTHETIC_LAUNCH_PROBLEMS = [
-  { id: "strategist-unclear-direction", primary: true },
+  { id: "director-unclear-direction", primary: true },
   { id: "designer-interface-quality" },
   { id: "writer-unapproved-copy" },
   { id: "publisher-verified-release" },

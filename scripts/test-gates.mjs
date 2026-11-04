@@ -1183,7 +1183,7 @@ try {
     // derivation makes this case fail (see the PR body for the recorded
     // before/after verdicts).
     const rootDir = join(work, "publish-path-prefix-agreement");
-    const packageKey = "strategist";
+    const packageKey = "director";
     const pkgDir = join(rootDir, "packages", packageKey);
     mkdirSync(pkgDir, { recursive: true });
     mkdirSync(join(rootDir, "governance", "release-qualifications"), { recursive: true });
@@ -1208,22 +1208,22 @@ try {
       { id: "current-github-packages", status: historicalStatus, scope: historicalScope, registry: historicalRegistry, packages: "all" },
       { id: "clossys-npmjs", status: "active", scope: "@clossys", registry: "https://registry.npmjs.org", access: "public", packages: [...ALL_PACKAGE_RELEASE_ORDER] },
     ] }));
-    const manifest = { name: "@clossys/strategist", version: "0.1.1", type: "module", files: ["README.md", "LICENSE", "CHANGELOG.md"] };
+    const manifest = { name: "@clossys/director", version: "0.1.1", type: "module", files: ["README.md", "LICENSE", "CHANGELOG.md"] };
     writeFileSync(join(pkgDir, "package.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     writeFileSync(join(pkgDir, "README.md"), "Public package\n");
     writeFileSync(join(pkgDir, "LICENSE"), "MIT\n");
     // The planted term is package-scoped-neutralized ONLY at its real
-    // repository-relative path, "packages/strategist/CHANGELOG.md" — the
+    // repository-relative path, "packages/director/CHANGELOG.md" — the
     // exact shape a real recorded neutralize decision takes (see issue #936's
     // own reproduction against @clossys/locksmith's CHANGELOG.md and
     // package.json), and the exact shape a bare-extracted-tarball scan
     // strips down to "CHANGELOG.md".
-    writeFileSync(join(pkgDir, "CHANGELOG.md"), "ships with acme-corp-strategist936-allowed noted here\n");
+    writeFileSync(join(pkgDir, "CHANGELOG.md"), "ships with acme-corp-director936-allowed noted here\n");
 
     const scopedDenylist = {
       version: "synthetic-publish-path-prefix-agreement-test",
       terms: [{ pattern: "acme-corp", why: "synthetic sibling product", severity: "high" }],
-      neutralize: [{ pattern: "acme-corp-strategist936-allowed", paths: [`packages/${packageKey}/CHANGELOG.md`] }],
+      neutralize: [{ pattern: "acme-corp-director936-allowed", paths: [`packages/${packageKey}/CHANGELOG.md`] }],
     };
     const scopedDenylistPath = join(rootDir, "scoped-denylist.json");
     writeFileSync(scopedDenylistPath, JSON.stringify(scopedDenylist, null, 2));

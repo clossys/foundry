@@ -95,7 +95,7 @@ describe("check:pipeline", { concurrency: 3 }, () => {
   it("fails a step whose holder is not a roster entry (fixture)", () => {
     const result = run(["--steps", join(WRITER_FIXTURES, "lane-unrostered", "steps.mjs")]);
     assert.equal(result.code, 1);
-    assert.ok(result.out.failures.some(failure => failure.rule === "lane.unrostered" && failure.message.startsWith('step "strategist.candidates"')), JSON.stringify(result.out.failures));
+    assert.ok(result.out.failures.some(failure => failure.rule === "lane.unrostered" && failure.message.startsWith('step "auditor.candidates"')), JSON.stringify(result.out.failures));
   });
   it("fails a hand-edited node position (fixture), naming the node", () => {
     const file = join(work, "graph-moved.json");

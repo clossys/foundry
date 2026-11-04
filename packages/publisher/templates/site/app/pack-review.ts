@@ -23,7 +23,7 @@
  * the voice and copy the same way: the gate first, then one loader per
  * record, each validated by the package that owns its contract
  * (`openStrategy` / `validateBriefContract` and `readEngagementContextFromBriefData` from
- * Strategist, `parseVoiceRecord` from Writer). A record whose loader throws,
+ * Director, `parseVoiceRecord` from Writer). A record whose loader throws,
  * or that its owner's check refuses, is absent. The required launch brief
  * refuses the review page when missing; stale briefs carry a visible flag.
  * Other absent sections keep the view's empty label.
@@ -42,8 +42,8 @@ import type {
   PackReviewViewStrategy,
   PackReviewViewVoice,
 } from "@clossys/publisher/web";
-import { ENGAGEMENT_CONTEXT_FIELD_IDS, readEngagementContextFromBriefData, openStrategy, validateBriefContract } from "@clossys/strategist";
-import type { Brief } from "@clossys/strategist";
+import { ENGAGEMENT_CONTEXT_FIELD_IDS, readEngagementContextFromBriefData, openStrategy, validateBriefContract } from "@clossys/director";
+import type { Brief } from "@clossys/director";
 import { resolve } from "node:path";
 import launchContract from "@clossys/publisher/strategy-brief.json" with { type: "json" };
 import {
@@ -132,9 +132,9 @@ export function resolvePackReviewPage(input: PackReviewPageInput): PackReviewPag
 
 export interface PackReviewSectionsInput {
   env: PackReviewEnv;
-  /** Reads `clossys/strategist/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
+  /** Reads `clossys/director/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
   loadStrategyBrief: () => unknown;
-  /** Explicit Strategist root; defaults to the repository root used by site-records. */
+  /** Explicit Director root; defaults to the repository root used by site-records. */
   strategyRoot?: string;
   /** Reads `clossys/brief.json`. Called only when the gate is open; a throw means it is absent. */
   loadEngagementBrief: () => unknown;
@@ -187,7 +187,7 @@ function copyText(resolve: CopyResolver, id: string): string | undefined {
 }
 
 /** Compile the Publisher-owned contract against one read-only strategy snapshot. */
-export function publisherLaunchBrief(root = resolve(process.cwd(), "..", "..", "clossys", "strategist")): Brief {
+export function publisherLaunchBrief(root = resolve(process.cwd(), "..", "..", "clossys", "director")): Brief {
   const contract = validateBriefContract(launchContract);
   if (!contract.ok) throw new Error("Invalid publisher.launch brief contract");
   return openStrategy(root, { contracts: [contract.value] }).getBrief("publisher.launch");
@@ -196,7 +196,7 @@ export function publisherLaunchBrief(root = resolve(process.cwd(), "..", "..", "
 function strategySection(input: PackReviewSectionsInput, brief: Brief | undefined): { strategy: PackReviewViewStrategy; strategyState: "ready" | "stale" } | undefined {
   if (brief === undefined || brief.state === "missing") return undefined;
   // Consume only a written brief belonging to this contract. Its content is
-  // compiled afresh above; Strategist marks changed persisted fingerprints stale.
+  // compiled afresh above; Director marks changed persisted fingerprints stale.
   const written = attempt(input.loadStrategyBrief);
   if (typeof written !== "object" || written === null || !("contract" in written) || written.contract !== brief.contract ||
       !("fingerprint" in written) || typeof written.fingerprint !== "string" || !written.fingerprint.trim()) return undefined;
@@ -290,7 +290,7 @@ function voiceSection(input: PackReviewSectionsInput): PackReviewViewVoice | und
  * calls no loader and returns no section.
  *
  * - Strategy brief: the first product's summary and every hypothesis claim
- *   from the Strategist contract, and the engagement brief's context, with an
+ *   from the Director contract, and the engagement brief's context, with an
  *   unanswered field listed as an open question. Either record alone is
  *   enough; with neither, the section is absent.
  * - Brand kit: the brand file's color and type tokens, a type specimen over

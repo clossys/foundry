@@ -83,7 +83,7 @@
   "dependencies": {
     "@clossys/designer": "0.12.0",
     "@clossys/publisher": "0.13.0",
-    "@clossys/strategist": "0.6.0",
+    "@clossys/director": "0.6.0",
     "@clossys/writer": "0.6.0",
     "@tailwindcss/oxide": "4.3.3",
     "@xyflow/react": "12.12.1",

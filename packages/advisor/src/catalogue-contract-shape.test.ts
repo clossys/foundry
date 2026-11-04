@@ -18,7 +18,7 @@ import type { KitPreset } from "./kit-presets.js";
 
 /**
  * End to end, PR #1398's blocker and its review on #1403: the five v0
- * launch roles (customer, writer, designer, publisher, strategist) declare
+ * launch roles (customer, writer, designer, publisher, director) declare
  * contract-shaped `needs`/`solves` in their own package.json (#1172). These
  * tests build this repository's real catalogue, in memory, and check that it
  * packs, typechecks, passes the offering-kits gate, recommends the launch
@@ -27,7 +27,7 @@ import type { KitPreset } from "./kit-presets.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(here, "..", "..", "..");
-const LAUNCH_LANES = ["customer", "writer", "designer", "publisher", "strategist"] as const;
+const LAUNCH_LANES = ["customer", "writer", "designer", "publisher", "director"] as const;
 const realManifests = repositoryCatalogue.collectPackageManifests(repoRoot) as Map<string, { foundry?: Record<string, unknown> }>;
 /** Each launch role's own declared `foundry` block, read from its real package.json. */
 const lanes = Object.fromEntries(

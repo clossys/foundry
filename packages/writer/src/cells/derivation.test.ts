@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { lstat, mkdir, mkdtemp, readdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { activate, readActive } from '@clossys/strategist/cell-format';
+import { activate, readActive } from '@clossys/director/cell-format';
 import { assembleWriterBrief, checkWriterDerivation } from './derivation.js';
 import { compileWriterCells } from './compile.js';
 import { parseWriterCell, serializeWriterCell, type WriterCell } from './parse.js';

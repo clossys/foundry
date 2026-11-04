@@ -27,7 +27,7 @@ describe("loadLoopStates", () => {
 
   it("loads a valid loop.json per role directory, skipping a role with none", () => {
     write("clossys/advisor/loop.json", VALID_STATE);
-    write("clossys/strategist/facts.json", { x: 1 }); // no loop.json here
+    write("clossys/director/facts.json", { x: 1 }); // no loop.json here
     const { roles, unreadable } = loadLoopStates(root);
     expect(Object.keys(roles)).toEqual(["advisor"]);
     expect(unreadable).toEqual([]);
@@ -95,12 +95,12 @@ describe("agent loop layout", () => {
       write(`clossys/${agent}/loop.json`, "legacy must be ignored");
     }
     write("clossys/advisor/loop.json", VALID_STATE);
-    write("clossys/strategist/loop.json", { ...VALID_STATE, role: "strategist" });
+    write("clossys/director/loop.json", { ...VALID_STATE, role: "director" });
     write("clossys/agents/loop.json", "container must be ignored");
     write("clossys/agents/unknown/loop.json", VALID_STATE);
     write("clossys/.state/studio/loop.json", VALID_STATE);
     expect(loadLoopStates(root)).toEqual({
-      roles: Object.fromEntries(["advisor", "designer", "director", "publisher", "strategist", "writer"].map((role) => [role, { ...VALID_STATE, role }])),
+      roles: Object.fromEntries(["advisor", "designer", "director", "publisher", "writer"].map((role) => [role, { ...VALID_STATE, role }])),
       unreadable: [],
     });
   });

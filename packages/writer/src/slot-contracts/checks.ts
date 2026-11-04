@@ -2,7 +2,7 @@
  * Writer check suite `writer.copy.v1`. Deterministic and report-only:
  * callers decide whether findings fail a run.
  */
-import { parseCell, type Cell } from "@clossys/strategist";
+import { parseCell, type Cell } from "@clossys/director";
 import { parseWriterCell, type CellRecord, type JsonRecord, type WriterCell } from "../cells/parse.js";
 import { exemplarTexts, loadWriterContracts, WRITER_CHECK_SUITE_ID, type WriterContracts, type WriterFieldLimit, type WriterSlotContract } from "./format.js";
 import { copiedExemplar, normalizeText, stripIcu } from "./similarity.js";

@@ -10,7 +10,7 @@ import type { AdvisorPlan, AdvisorPlanDelegatedCopyApproval } from "./status.js"
 const BASE_PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-22T00:00:00Z",
-  mandate: { problem: "Placeholder problem statement.", primaryProblemId: "strategist-unclear-direction", roles: ["strategist", "writer"] },
+  mandate: { problem: "Placeholder problem statement.", primaryProblemId: "director-unclear-direction", roles: ["director", "writer"] },
   whereWeAre: ["Placeholder status line."],
   recommendedNext: { action: "Approve the first-wave plan.", owner: "sponsor", due: "2026-09-29T00:00:00Z" },
   decisions: [
@@ -26,17 +26,17 @@ const BASE_PLAN: AdvisorPlan = {
 };
 
 const NO_FIELD_GOLDEN =
-  "# Advisor status\n\n## Mandate\n\nPlaceholder problem statement.\n\nStaffed roles: strategist, writer.\n\n## Where we are\n\n- Placeholder status line.\n\n## Recommended next\n\nApprove the first-wave plan. (owner: sponsor, due 2026-09-29T00:00:00Z)\n\n## Decisions\n\n- 2026-09-20T00:00:00Z — recommended: compose from confirmed problems; chosen: approved (by sponsor)\n\n## Blockers\n\nNone.\n";
+  "# Advisor status\n\n## Mandate\n\nPlaceholder problem statement.\n\nStaffed roles: director, writer.\n\n## Where we are\n\n- Placeholder status line.\n\n## Recommended next\n\nApprove the first-wave plan. (owner: sponsor, due 2026-09-29T00:00:00Z)\n\n## Decisions\n\n- 2026-09-20T00:00:00Z — recommended: compose from confirmed problems; chosen: approved (by sponsor)\n\n## Blockers\n\nNone.\n";
 
 const NO_FIELD_NOTHING_PENDING_GOLDEN =
-  "# Advisor status\n\n## Mandate\n\nPlaceholder problem statement.\n\nStaffed roles: strategist, writer.\n\n## Where we are\n\n- Placeholder status line.\n\n## Recommended next\n\nNothing pending.\n\n## Decisions\n\n- 2026-09-20T00:00:00Z — recommended: compose from confirmed problems; chosen: approved (by sponsor)\n\n## Blockers\n\nNone.\n";
+  "# Advisor status\n\n## Mandate\n\nPlaceholder problem statement.\n\nStaffed roles: director, writer.\n\n## Where we are\n\n- Placeholder status line.\n\n## Recommended next\n\nNothing pending.\n\n## Decisions\n\n- 2026-09-20T00:00:00Z — recommended: compose from confirmed problems; chosen: approved (by sponsor)\n\n## Blockers\n\nNone.\n";
 
 function declaring(delegatedCopyApproval: AdvisorPlanDelegatedCopyApproval, overrides: Partial<AdvisorPlan> = {}): AdvisorPlan {
   return { ...BASE_PLAN, ...overrides, delegatedCopyApproval };
 }
 
 function statusWith(line: string, next = "Approve the first-wave plan. (owner: sponsor, due 2026-09-29T00:00:00Z)"): string {
-  return `# Advisor status\n\n## Mandate\n\nPlaceholder problem statement.\n\nStaffed roles: strategist, writer.\n\n## Where we are\n\n- Placeholder status line.\n\n## Recommended next\n\n${next}\n\n${line}\n\n## Decisions\n\n- 2026-09-20T00:00:00Z — recommended: compose from confirmed problems; chosen: approved (by sponsor)\n\n## Blockers\n\nNone.\n`;
+  return `# Advisor status\n\n## Mandate\n\nPlaceholder problem statement.\n\nStaffed roles: director, writer.\n\n## Where we are\n\n- Placeholder status line.\n\n## Recommended next\n\n${next}\n\n${line}\n\n## Decisions\n\n- 2026-09-20T00:00:00Z — recommended: compose from confirmed problems; chosen: approved (by sponsor)\n\n## Blockers\n\nNone.\n`;
 }
 
 const ALL_ENTRIES_LINE = "Approving this plan also accepts delegate-approved copy on production, for every copy entry.";

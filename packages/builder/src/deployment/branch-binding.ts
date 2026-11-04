@@ -16,7 +16,7 @@
  * declares. This package does not import that package to resolve it, and
  * must not start.
  *
- * This is the same discipline `@clossys/strategist`'s `validateBriefContract`
+ * This is the same discipline `@clossys/director`'s `validateBriefContract`
  * uses: a consuming package declares its brief's owner as a plain string,
  * and the validator checks the contract without importing that package.
  * The caller supplies the contract where the two packages meet.

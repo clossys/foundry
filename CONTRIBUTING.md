@@ -375,7 +375,7 @@ equivalent fix after.
   variant of failure.** Every gate CLI in this repo follows this three-state
   contract: `packages/designer/src/cli.ts` returns `2` when zero files were
   scanned, before findings are even possible; `packages/writer/src/cli.ts`,
-  `packages/strategist/src/cli.ts`, and
+  `packages/director/src/cli.ts`, and
   `scripts/check-release-readiness.mjs` use the same contract. `2` means the gate
   never formed an opinion — a git or npm failure, a directory it couldn't
   read, a scan that matched nothing — and is the only thing that

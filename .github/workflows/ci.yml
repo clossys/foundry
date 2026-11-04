@@ -1491,24 +1491,24 @@ jobs:
         run: npm run check:changelog-location
       # Moved here from `build` (issue #1420 review round 3, found by the
       # generic script-input wiring test below rather than by a reviewer):
-      # scripts/check-strategist-subject.mjs scans docs/*.md -- excluding
+      # scripts/check-director-subject.mjs scans docs/*.md -- excluding
       # docs/contracts/**, docs/changelogs/**, and every OTHER root-style
       # docs/*.md filename (see the script's own exclude list) -- which in
       # practice means only docs/PUBLISHING.md and docs/RELEASING.md, both
       # prose-tier paths. `build` is skipped on the pure 'prose' tier, so a
       # docs/PUBLISHING.md-only change would have merged with this gate
       # silently skipped. Unlike the three gates above, this one needs the
-      # BUILT strategist CLI (packages/strategist/dist/cli.js) -- so, unlike
+      # BUILT director CLI (packages/director/dist/cli.js) -- so, unlike
       # them, this job pays a real `npm ci` and a single-workspace build for
       # it, the same minimal-build shape `contrast`/`designer-contrast` use
       # for packages/designer below.
       - run: npm ci
-      - run: npm run build --workspace=packages/strategist
-      - name: Strategist facts subject (PUBLISHING.md)
-        run: npm run check:strategist-subject
+      - run: npm run build --workspace=packages/director
+      - name: Director facts subject (PUBLISHING.md)
+        run: npm run check:director-subject
 
   # Split out of `build and test` (issue: CI throughput). Measured on run
-  # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
+  # 35802156089 (job 106994736395, branch claude/director-clossys-layout):
   # `build and test` took 2571s (42m51s) end to end, and three steps inside
   # it were serial and independent of each other -- "Candidate qualification
   # records" (946s), "README code examples typecheck against shipped
@@ -2047,10 +2047,10 @@ jobs:
       # it is excluded from check:gates by name.
       - name: Consent port conformance
         run: npm run check:consent-port-conformance
-      # check:strategist-subject moved to `prose quality` (issue #1420
+      # check:director-subject moved to `prose quality` (issue #1420
       # review round 3): it scans docs/*.md (excluding docs/contracts/**,
       # docs/changelogs/**, and every OTHER root-style docs/*.md file --
-      # see scripts/check-strategist-subject.mjs's own exclude list), which
+      # see scripts/check-director-subject.mjs's own exclude list), which
       # in practice means docs/PUBLISHING.md and docs/RELEASING.md, both
       # prose-tier paths this job is SKIPPED for on the 'prose' tier. See
       # `prose quality`'s own comment for where it moved to and why it
@@ -2060,7 +2060,7 @@ jobs:
       # Schema versions and migrations for every clossys/ record (#1224):
       # invokes controller's built migrate CLI against this repository's
       # own clossys/ tree, report-only. Author-side dist invocation, same
-      # class as the repository-profile/locksmith/launcher/strategist
+      # class as the repository-profile/locksmith/launcher/director
       # steps above.
       - name: Schema versions and migrations
         run: npm run check:schema-versions

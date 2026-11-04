@@ -92,10 +92,10 @@ function validateSkillName(name, expectedName, packageDir) {
 }
 
 /**
- * The four content agents (Director = strategist, Designer, Writer, Publisher) each ship
+ * The four content agents (Director = director, Designer, Writer, Publisher) each ship
  * one loop skill: numbered steps under `## Loop` and an exact `## Done when` check.
  */
-const CONTENT_AGENT_LOOP = new Set(["strategist", "designer", "writer", "publisher"]);
+const CONTENT_AGENT_LOOP = new Set(["director", "designer", "writer", "publisher"]);
 const LOOP_HEADING = /^## Loop\b.*$/m;
 const DONE_HEADING = /^## Done when[ \t]*$/m;
 const INSPECTOR_USER_BOUNDARY = /synthetic user/i;

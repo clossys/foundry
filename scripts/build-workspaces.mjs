@@ -8,7 +8,7 @@
 // order, so a package that sorts before a first-party dependency compiles
 // against declarations that do not exist yet on a fresh clone. A hand-kept
 // "build these first" list only holds until the next new edge: designer
-// gained an import of @clossys/strategist and the list built it first anyway.
+// gained an import of @clossys/director and the list built it first anyway.
 // This script derives the order from the manifests instead, so it cannot drift.
 //
 // Edges: any dependencies / devDependencies / peerDependencies /

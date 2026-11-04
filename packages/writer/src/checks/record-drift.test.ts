@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { formatRef, openStrategy } from "@clossys/strategist";
+import { formatRef, openStrategy } from "@clossys/director";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { checkWriterRecordDrift } from "./record-drift.js";
@@ -111,7 +111,7 @@ it("checks claim refs against actual active pointers, preserving current refs wh
   const root = mkdtempSync(join("work", "writer-strategy-drift-"));
   const id = "advantage.proposition.proof";
   const cell = (version: number, status: string) => `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\n${status === "active" ? "confirmed: msg:2026-10-29-1#U2\n" : ""}---\n\n## Direction\n- Evidence: Fictional fixture evidence.\n- Never-claim: Unmeasured results.\n\n## Because\n- Interview evidence.\n\n## Watch\n- If requests > 5 each month, then review.\n`;
-  const tree = (version: number) => JSON.stringify({ schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core: "archetype", active: { [id]: version } });
+  const tree = (version: number) => JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: { [id]: version } });
   const claim = { id: "lx.0000000001", leaf: "lexicon.approved-claims", context: "Strategy drift fixture", kind: "claim", strategy: { cell: id, version: 1 }, phrasings: ["Fixture evidence"], requiresCitation: true, status: "draft", origin: "authored" };
   const input = source(envelope([claim]));
   const before = JSON.stringify(input);
@@ -135,7 +135,7 @@ it("checks claim refs against actual active pointers, preserving current refs wh
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
-it("refuses to claim strategy currency without a Strategist snapshot", () => {
+it("refuses to claim strategy currency without a Director snapshot", () => {
   const claim = { id: "lx.0000000001", leaf: "lexicon.approved-claims", context: "Fixture", kind: "claim", strategy: { cell: "advantage.proposition.proof", version: 1 }, phrasings: ["Evidence"], requiresCitation: true, status: "draft", origin: "authored" };
   expect(checkWriterRecordDrift(source(envelope([claim]))).findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_MISSING", field: "strategy" }));
 });

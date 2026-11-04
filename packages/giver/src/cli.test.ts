@@ -397,7 +397,7 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
  * presence is asserted explicitly, and a name whose package is not in this
  * tree is reported as absent rather than skipped in silence.
  */
-const CONTROL_PACKAGES = ["strategist", "writer", "bouncer", "butler"] as const;
+const CONTROL_PACKAGES = ["director", "writer", "bouncer", "butler"] as const;
 
 interface Control {
   name: string;
@@ -415,7 +415,7 @@ describe("the house exit-code contract, against the pinned controls", () => {
     // Absence is reported, never skipped. A control package that is not in
     // this checkout is a fact about the checkout; a control block that
     // quietly measured nothing would be a fact about nothing.
-    expect(CONTROL_PACKAGES).toEqual(["strategist", "writer", "bouncer", "butler"]);
+    expect(CONTROL_PACKAGES).toEqual(["director", "writer", "bouncer", "butler"]);
     const present = controls.filter((control) => control.present).map((control) => control.name);
     const absent = controls.filter((control) => !control.present).map((control) => control.name);
     expect(present.length + absent.length).toBe(CONTROL_PACKAGES.length);

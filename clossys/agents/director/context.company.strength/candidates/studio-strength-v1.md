@@ -8,7 +8,7 @@ note: "Unpinned initial-fill draft for the public Foundry Studio, derived from t
 
 ## Direction
 - Edge: checks that read what is actually on disk or installed, never what a manifest claims about itself, applied to direction, design, copy and publishing alike.
-- Evidence: the README thesis states it, and each agent package ships its own gates (strategist-check, designer token, brand and contrast checks, writer-check).
+- Evidence: the README thesis states it, and each agent package ships its own gates (director-check, designer token, brand and contrast checks, writer-check).
 - Rarity: this draft claims the practice, not uniqueness (planner default, open to owner change).
 
 ## Because

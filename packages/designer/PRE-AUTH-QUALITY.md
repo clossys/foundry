@@ -19,7 +19,7 @@ boxes is the same failure in a different hat.
 
 Foundry's other voices are hired roles (Designer, Writer, Publisher,
 Inspector). The keep is not a twenty-first contractor. It is a **synthetic
-user**: a first-person inhabit of the named Strategist Audience, with a
+user**: a first-person inhabit of the named Director Audience, with a
 fresh look, as if they just landed.
 
 | | Contractor / QA / specialist | Synthetic user |
@@ -29,10 +29,10 @@ fresh look, as if they just landed.
 | After a no | Negotiate the rubric. | I would not keep this. The doer fixes; they do not talk me out of it. |
 
 The inhabit runs in a **separate session** from Designer, Writer, Publisher,
-Strategist, and Inspector. Independence is the session. The voice is the
+Director, and Inspector. Independence is the session. The voice is the
 user. Both are required.
 
-Forbidden voices on a keep: designer, writer, publisher, strategist,
+Forbidden voices on a keep: designer, writer, publisher, director,
 inspector, builder, QA, reviewer, auditor, critic-with-a-rubric.
 
 ---
@@ -44,7 +44,7 @@ negotiated and 3 is reported as 5.
 
 | Seat | Who | Allowed | Forbidden |
 |------|-----|---------|-----------|
-| **Doer** | Designer and Writer (together); Strategist for direction | Make the page. Fix what the user named. | Inhabit the user. Write the keep. Call 3 done. Split a self-review into a visual half and a verbal half. |
+| **Doer** | Designer and Writer (together); Director for direction | Make the page. Fix what the user named. | Inhabit the user. Write the keep. Call 3 done. Split a self-review into a visual half and a verbal half. |
 | **User** | Synthetic inhabit of the named Audience, separate session | Speak in the first person as that person. One comprehensive keep/fail. | Edit the page. Become a reviewer. Score against Designer or Writer gates. Let the doer rewrite a no. |
 | **Sealer** | Publisher | Seal after a user keep. Prove the shipped bytes. | Inhabit the user. Treat "the surface rendered" as a keep. Seal a fail. |
 | **Rules judge** | Inspector | Judge whether the *change* satisfies declared rules. | Inhabit the user. Fitness for a person is not a rule scan. |
@@ -116,7 +116,7 @@ string in markup are not keep evidence.
 not the source tree alone.
 
 **Independence:** a **separate session** from Designer, Writer, Publisher, and
-Strategist on that walk. The model that authored the page must not inhabit the
+Director on that walk. The model that authored the page must not inhabit the
 user for that walk. The inhabit must be vision-capable; this document does not
 pin a vendor.
 
@@ -139,7 +139,7 @@ not auto-invoke the inhabit.
 Everything in **3**, plus:
 
 - A **named type record executed** — display face, H1 minimum size, measure cap, monospace only for eyebrows/data; cite or author `templates/brand-type.template.json` and run `designer-type-check` (not invented ad hoc during the walk that proves 3).
-- **Fold copy contains a domain noun** a competitor cannot reuse — aligned with Strategist do-not language and Writer slot discipline.
+- **Fold copy contains a domain noun** a competitor cannot reuse — aligned with Director do-not language and Writer slot discipline.
 - **Fold media is the thing** — the product surface with real data, or original art of the artifact being made, at a scale that *is* the page, not a card-in-a-slot screenshot.
 - **One visual device** that is not a generic dark/light SaaS band.
 
@@ -149,7 +149,7 @@ Everything in **3**, plus:
 
 ## 5 exceptional (synthetic user keep)
 
-Everything in **4**, plus a keep spoken **as** the named Strategist Audience,
+Everything in **4**, plus a keep spoken **as** the named Director Audience,
 not about them:
 
 - **First person, fresh look.** "I am [Audience.name]. I just landed. I came
@@ -181,11 +181,11 @@ green one, is not a keep.
 
 ## Operating wave
 
-1. **Strategist** — direction and Audience records, until citable. Strategist
+1. **Director** — direction and Audience records, until citable. Director
    supplies who the user is and does not inhabit them (they authored the
    positioning being expressed).
 2. **Designer and Writer together** — tokens→components→blocks in parallel with
-   copy. Prove 3 with the gates above. Do not start if Strategist still has
+   copy. Prove 3 with the gates above. Do not start if Director still has
    no citable direction.
 3. **Synthetic user keep** — separate session, first person as the named
    Audience, fresh look. Doers do not attend as the user.
@@ -206,7 +206,7 @@ green one, is not a keep.
 
 ## Package roles (mechanical vs authored)
 
-- **Strategist** — Audience records that name who the user is. Not the user.
+- **Director** — Audience records that name who the user is. Not the user.
 - **Designer** — tokens, `Hero`, `Button`, fold measurement schema, `designer-fold-check`. Doer.
 - **Writer** — copy slots, live trees, `fold-wallpaper` on wallpaper fold phrases. Doer.
 - **Publisher** — `MarketingView` mount; `heroActions` carries the single primary CTA; `heroMedia` is product surface or original art. Sealer, not the user.

@@ -97,7 +97,7 @@ test("exact-version metadata and tarball URLs support canonical scoped and unsco
   assert.equal(publicNpmTarballUrl(PUBLIC_NPM_REGISTRY, NAME, VERSION), `${PUBLIC_NPM_REGISTRY}/@fixture/probe/-/probe-${VERSION}.tgz`);
   assert.equal(publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, "unscoped", VERSION), `${PUBLIC_NPM_REGISTRY}/unscoped/${VERSION}`);
   assert.equal(publicNpmTarballUrl(PUBLIC_NPM_REGISTRY, "unscoped", VERSION), `${PUBLIC_NPM_REGISTRY}/unscoped/-/unscoped-${VERSION}.tgz`);
-  assert.equal(publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, "@clossys/strategist", "0.1.1"), `${PUBLIC_NPM_REGISTRY}/%40clossys%2Fstrategist/0.1.1`);
+  assert.equal(publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, "@clossys/director", "0.1.1"), `${PUBLIC_NPM_REGISTRY}/%40clossys%2Fdirector/0.1.1`);
   for (const [name, version] of [["@fixture", VERSION], ["fixture/probe", VERSION], ["@Fixture/probe", VERSION], [NAME, "01.2.3"], [NAME, "1.2.3-beta.1"]]) {
     assert.throws(() => publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, name, version), /canonical/);
   }

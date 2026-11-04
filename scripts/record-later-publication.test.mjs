@@ -36,7 +36,7 @@ function npmProbe({ version = "11.17.0\n", answer = () => "" } = {}) {
 }
 const FLOOR_REFUSAL = /evidence recording requires npm 11 or newer for "npm audit signatures --include-attestations" and "npm pack --dry-run"; observed npm /;
 const candidate = {
-  name: "@clossys/strategist", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
+  name: "@clossys/architect", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
   policySha256: hex("c", 64), adapterSha256: hex("d", 64), fixtureSetSha256: hex("e", 64),
   tarball: { sha1: hex("f", 40), sha256: hex("1", 64), sha512: hex("2", 128) },
 };
@@ -48,29 +48,29 @@ const qualification = {
 };
 const qualificationBytes = Buffer.from("qualification bytes\n");
 const catalogBytes = Buffer.from("catalog bytes\n");
-const catalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["strategist"] }] };
+const catalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["architect"] }] };
 const publication = {
   mode: "trusted-publisher", publishedAt: "2026-08-31T00:00:00.000Z", reference: "https://github.com/clossys/foundry/actions/runs/123",
   provenance: {
     repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
     sourceSha: hex("6", 40), builder: "https://github.com/actions/runner/github-hosted", invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
-    attestationUrl: `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fstrategist%400.1.1`,
+    attestationUrl: `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Farchitect%400.1.1`,
   },
 };
 const proof = {
   schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
     registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: candidate.name, version: candidate.version,
     metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
-    tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.1.tgz`, integrity: `sha512-${Buffer.from(candidate.tarball.sha512, "hex").toString("base64")}`,
+    tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/architect/-/architect-0.1.1.tgz`, integrity: `sha512-${Buffer.from(candidate.tarball.sha512, "hex").toString("base64")}`,
     shasum: candidate.tarball.sha1, sha256: candidate.tarball.sha256, sha512: candidate.tarball.sha512, packedManifestSha256: candidate.packageManifestSha256, size: candidateBytes.length,
   },
 };
 
 function build(overrides = {}) {
   return buildLaterPublicationRecord({
-    packageKey: "strategist", qualificationPath: "governance/release-qualifications/clossys-strategist-0.1.1.json", qualification,
+    packageKey: "architect", qualificationPath: "governance/release-qualifications/clossys-architect-0.1.1.json", qualification,
     qualificationBytes, candidateBytes, proof, catalog, catalogBytes, publication,
-    recordPath: "governance/release-publications/later/strategist-0.1.1.json", provenanceSourceValid: true, ...overrides,
+    recordPath: "governance/release-publications/later/architect-0.1.1.json", provenanceSourceValid: true, ...overrides,
   });
 }
 
@@ -79,7 +79,7 @@ function build(overrides = {}) {
 // package actually packed below. The template's own version is therefore
 // irrelevant, which is the point: a catalogue-wide bump must not stale a test
 // about the creator's behaviour.
-const QUALIFICATION_TEMPLATE = "governance/release-qualifications/clossys-strategist-0.1.2.json";
+const QUALIFICATION_TEMPLATE = "governance/release-qualifications/clossys-architect-0.1.12.json";
 function syntheticQualification({ root, base, version, hashes }) {
   const qualification = JSON.parse(readFileSync(join(process.cwd(), QUALIFICATION_TEMPLATE), "utf8"));
   const joins = currentQualificationJoins(root, { name: qualification.candidate.name, version }, base, { schemaVersion: qualification.schemaVersion });
@@ -131,10 +131,10 @@ test("creator emits a v3 record only for closed replay evidence and never change
       publicationSource: { sha: publication.provenance.sourceSha, rootPackageJsonSha256: hex("7", 64), rootPackageLockSha256: hex("8", 64) },
     },
     runQualification: {
-      run: { id: 123, url: "https://github.com/clossys/foundry/actions/runs/123", headSha: publication.provenance.sourceSha, conclusion: "failure", qualificationJob: { id: 124, name: "qualify (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/124" } },
-      artifact: { id: 125, name: "qualified-candidate-strategist", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
+      run: { id: 123, url: "https://github.com/clossys/foundry/actions/runs/123", headSha: publication.provenance.sourceSha, conclusion: "failure", qualificationJob: { id: 124, name: "qualify (architect)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/124" } },
+      artifact: { id: 125, name: "qualified-candidate-architect", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
       transcript: { rawSha256: hex("a", 64), canonicalSha256: hex("b", 64), candidateTarball: structuredClone(candidate.tarball) },
-      publicationJob: { id: 126, name: "publish (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
+      publicationJob: { id: 126, name: "publish (architect)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
       anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: publication.provenance.attestationUrl },
     },
     sourceEvidence: { valid: true },
@@ -169,8 +169,8 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   const sourceRoot = process.cwd();
   const copied = [
     "package.json", "package-lock.json", "package-scope.json", "governance/release-catalog.json",
-    "governance/release-qualification-policy.json", "governance/release-qualification-adapters/strategist",
-    "governance/release-qualification-fixtures/strategist", "packages/strategist",
+    "governance/release-qualification-policy.json", "governance/release-qualification-adapters/architect",
+    "governance/release-qualification-fixtures/architect", "packages/architect",
   ];
   for (const path of copied) cpSync(join(sourceRoot, path), join(root, path), { recursive: true });
   mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
@@ -184,16 +184,16 @@ test("creator writes one canonical owner-present record in a synthetic git repos
 
   const packDirectory = join(root, ".pack-output");
   mkdirSync(packDirectory);
-  execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
-  // Derived, not hardcoded: the packed filename carries strategist's current
+  execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/architect"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+  // Derived, not hardcoded: the packed filename carries architect's current
   // version, so pinning it here breaks on every version bump.
   const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
   const candidateBytesForRecord = readFileSync(candidatePath);
   const hashes = { sha1: digest("sha1", candidateBytesForRecord), sha256: digest("sha256", candidateBytesForRecord), sha512: digest("sha512", candidateBytesForRecord) };
-  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
+  const manifestBytes = readFileSync(join(root, "packages/architect/package.json"));
   const version = JSON.parse(manifestBytes).version;
   const qualification = syntheticQualification({ root, base, manifestBytes, version, hashes });
-  const qualificationPath = `governance/release-qualifications/clossys-strategist-${version}.json`;
+  const qualificationPath = `governance/release-qualifications/clossys-architect-${version}.json`;
   writeFileSync(join(root, qualificationPath), `${JSON.stringify(qualification, null, 2)}\n`);
   execFileSync("git", ["add", qualificationPath], { cwd: root });
   execFileSync("git", ["commit", "-qm", "synthetic qualification record"], { cwd: root });
@@ -202,27 +202,27 @@ test("creator writes one canonical owner-present record in a synthetic git repos
     schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
       registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: qualification.candidate.name, version: qualification.candidate.version,
       metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, qualification.candidate.name, qualification.candidate.version), repository: "clossys/foundry",
-      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
+      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/architect/-/architect-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
       shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: candidateBytesForRecord.length,
     },
   };
   const proofPath = join(root, "registry-proof.json");
   writeFileSync(proofPath, `${JSON.stringify(proof, null, 2)}\n`);
   const publicationPath = join(root, "publication-evidence.json");
-  writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://registry.npmjs.org/%40clossys%2Fstrategist/${version}` }, null, 2)}\n`);
+  writeFileSync(publicationPath, `${JSON.stringify({ mode: "owner-present", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://registry.npmjs.org/%40clossys%2Farchitect/${version}` }, null, 2)}\n`);
 
   // The direct join runs no signature audit, yet the npm floor still applies to
   // it. `direct.calls` lists every command the recorder ran through its seam.
   const direct = npmProbe();
   const call = () => createLaterPublicationRecord({
-    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, auditRun: direct.run, isExecutable: anyExecutable,
+    root, packageKey: "architect", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath, env: {}, auditRun: direct.run, isExecutable: anyExecutable,
   });
   const result = await call();
   assert.deepEqual(direct.calls, [[NPM, "--version"]], "the direct join reads the npm version once and runs no audit");
-  assert.equal(result.path, `governance/release-publications/later/strategist-${version}.json`);
+  assert.equal(result.path, `governance/release-publications/later/architect-${version}.json`);
   assert.equal(result.record.kind, "foundry-later-publication-v1");
   assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(root, result.path), "utf8"))), ["schemaVersion", "kind", "qualification", "candidate", "source", "catalog", "publication", "registryProof"]);
-  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`architect-${version}.json`]);
   assert.deepEqual(readFileSync(join(root, result.path)), result.bytes);
 
   // The qualification above is derived from the very tree it qualifies, so the
@@ -230,9 +230,9 @@ test("creator writes one canonical owner-present record in a synthetic git repos
   // by the happy path alone. Drift the live manifest and assert the creator
   // still refuses: that refusal is the property these tests exist to defend,
   // and it must not rest on a package's version happening to be stale.
-  writeFileSync(join(root, "packages/strategist/package.json"), `${manifestBytes.toString("utf8")}\n`);
+  writeFileSync(join(root, "packages/architect/package.json"), `${manifestBytes.toString("utf8")}\n`);
   await assert.rejects(call(), /current package manifest does not match the immutable qualification/);
-  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`architect-${version}.json`]);
 });
 
 // Builds a synthetic qualified repository, applies the requested root drift
@@ -247,8 +247,8 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   const sourceRoot = process.cwd();
   const copied = [
     "package.json", "package-lock.json", "package-scope.json", "governance/release-catalog.json",
-    "governance/release-qualification-policy.json", "governance/release-qualification-adapters/strategist",
-    "governance/release-qualification-fixtures/strategist", "packages/strategist",
+    "governance/release-qualification-policy.json", "governance/release-qualification-adapters/architect",
+    "governance/release-qualification-fixtures/architect", "packages/architect",
   ];
   for (const path of copied) cpSync(join(sourceRoot, path), join(root, path), { recursive: true });
   mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
@@ -262,16 +262,16 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
 
   const packDirectory = join(root, ".pack-output");
   mkdirSync(packDirectory);
-  execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
-  // Derived, not hardcoded: the packed filename carries strategist's current
+  execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", packDirectory, "--workspace=packages/architect"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+  // Derived, not hardcoded: the packed filename carries architect's current
   // version, so pinning it here breaks on every version bump.
   const candidatePath = join(packDirectory, readdirSync(packDirectory).find((entry) => entry.endsWith(".tgz")));
   const qualifiedBytes = readFileSync(candidatePath);
   const hashes = { sha1: digest("sha1", qualifiedBytes), sha256: digest("sha256", qualifiedBytes), sha512: digest("sha512", qualifiedBytes) };
-  const manifestBytes = readFileSync(join(root, "packages/strategist/package.json"));
+  const manifestBytes = readFileSync(join(root, "packages/architect/package.json"));
   const version = JSON.parse(manifestBytes).version;
   const qualification = syntheticQualification({ root, base, manifestBytes, version, hashes });
-  const qualificationPath = `governance/release-qualifications/clossys-strategist-${version}.json`;
+  const qualificationPath = `governance/release-qualifications/clossys-architect-${version}.json`;
   writeFileSync(join(root, qualificationPath), `${JSON.stringify(qualification, null, 2)}\n`);
   execFileSync("git", ["add", qualificationPath], { cwd: root });
   execFileSync("git", ["commit", "-qm", "synthetic qualification record"], { cwd: root });
@@ -279,8 +279,8 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   // The replay exception is only for raw root-resolution drift; changing
   // whitespace keeps both root files valid while changing their byte hashes.
   for (const file of driftFiles) writeFileSync(join(root, file), `${readFileSync(join(root, file), "utf8")}\n`);
-  if (packageChange) writeFileSync(join(root, "packages/strategist", packageChange), "placeholder change\n");
-  execFileSync("git", ["add", "-A", ...driftFiles, ...(packageChange ? ["packages/strategist"] : [])], { cwd: root });
+  if (packageChange) writeFileSync(join(root, "packages/architect", packageChange), "placeholder change\n");
+  execFileSync("git", ["add", "-A", ...driftFiles, ...(packageChange ? ["packages/architect"] : [])], { cwd: root });
   execFileSync("git", ["commit", "-qm", "synthetic root resolution drift", "--allow-empty"], { cwd: root });
   const sourceSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim();
 
@@ -289,11 +289,11 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   // the original digests; only the candidate the creator reads changes.
   let creatorBytes = qualifiedBytes;
   if (changedTarball) {
-    const readmePath = join(root, "packages/strategist/README.md");
+    const readmePath = join(root, "packages/architect/README.md");
     writeFileSync(readmePath, `${readFileSync(readmePath, "utf8")}\n`);
     const repackDirectory = join(root, ".pack-output-changed");
     mkdirSync(repackDirectory);
-    execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", repackDirectory, "--workspace=packages/strategist"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
+    execFileSync("npm", ["pack", "--ignore-scripts", "--pack-destination", repackDirectory, "--workspace=packages/architect"], { cwd: root, stdio: ["ignore", "ignore", "ignore"] });
     creatorBytes = readFileSync(join(repackDirectory, readdirSync(repackDirectory).find((entry) => entry.endsWith(".tgz"))));
     if (creatorBytes.equals(qualifiedBytes)) throw new Error("changed-tarball fixture packed identical bytes");
     writeFileSync(candidatePath, creatorBytes);
@@ -303,7 +303,7 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
     schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
       registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: qualification.candidate.name, version: qualification.candidate.version,
       metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, qualification.candidate.name, qualification.candidate.version), repository: "clossys/foundry",
-      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
+      tarballUrl: `${PUBLIC_NPM_REGISTRY}/@clossys/architect/-/architect-${version}.tgz`, integrity: `sha512-${Buffer.from(hashes.sha512, "hex").toString("base64")}`,
       shasum: hashes.sha1, sha256: hashes.sha256, sha512: hashes.sha512, packedManifestSha256: digest("sha256", manifestBytes), size: qualifiedBytes.length,
     },
   };
@@ -311,7 +311,7 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   writeFileSync(proofPath, `${JSON.stringify(replayProof, null, 2)}\n`);
   const runId = 777, artifactId = 778;
   const publicationPath = join(root, "publication-evidence.json");
-  const attestationUrl = `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Fstrategist%40${version}`;
+  const attestationUrl = `${PUBLIC_NPM_REGISTRY}/-/npm/v1/attestations/%40clossys%2Farchitect%40${version}`;
   writeFileSync(publicationPath, `${JSON.stringify({
     mode: "trusted-publisher", publishedAt: "2026-08-31T00:00:00.000Z", reference: `https://github.com/clossys/foundry/actions/runs/${runId}`,
     provenance: {
@@ -331,7 +331,7 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
 
   const statement = {
     _type: "https://in-toto.io/Statement/v1",
-    subject: [{ name: `pkg:npm/%40clossys/strategist@${version}`, digest: { sha512: hashes.sha512 } }],
+    subject: [{ name: `pkg:npm/%40clossys/architect@${version}`, digest: { sha512: hashes.sha512 } }],
     predicateType: "https://slsa.dev/provenance/v1",
     predicate: {
       buildDefinition: {
@@ -351,10 +351,10 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
     fetched.push(String(url));
     const response = (body) => ({ ok: true, status: 200, json: async () => body });
     if (url.endsWith(`/actions/runs/${runId}`)) return response({ id: runId, head_sha: sourceSha, event: "workflow_dispatch", conclusion: "success" });
-    if (url.endsWith(`/actions/artifacts/${artifactId}`)) return response({ id: artifactId, name: "qualified-candidate-strategist", digest: `sha256:${digest("sha256", archiveBytes)}`, size_in_bytes: archiveBytes.length, archive_download_url: `https://api.github.com/repos/clossys/foundry/actions/artifacts/${artifactId}/zip`, workflow_run: { id: runId, head_sha: sourceSha } });
+    if (url.endsWith(`/actions/artifacts/${artifactId}`)) return response({ id: artifactId, name: "qualified-candidate-architect", digest: `sha256:${digest("sha256", archiveBytes)}`, size_in_bytes: archiveBytes.length, archive_download_url: `https://api.github.com/repos/clossys/foundry/actions/artifacts/${artifactId}/zip`, workflow_run: { id: runId, head_sha: sourceSha } });
     if (url.endsWith(`/actions/runs/${runId}/jobs?per_page=100`)) return response({ jobs: [
-      { id: 779, name: "qualify (strategist)", conclusion: "success", html_url: `https://github.com/clossys/foundry/actions/runs/${runId}/job/779` },
-      { id: 780, name: "publish (strategist)", conclusion: "success", html_url: `https://github.com/clossys/foundry/actions/runs/${runId}/job/780` },
+      { id: 779, name: "qualify (architect)", conclusion: "success", html_url: `https://github.com/clossys/foundry/actions/runs/${runId}/job/779` },
+      { id: 780, name: "publish (architect)", conclusion: "success", html_url: `https://github.com/clossys/foundry/actions/runs/${runId}/job/780` },
     ] });
     if (url === `https://registry.npmjs.org/${encodeURIComponent(qualification.candidate.name)}`) return response(packument);
     if (url === replayProof.evidence.metadataUrl) return response({
@@ -380,7 +380,7 @@ async function replayScenario(t, { driftFiles = ["package.json", "package-lock.j
   };
   if (prepareOnly) return harness;
   const run = () => createLaterPublicationRecord({
-    root, packageKey: "strategist", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath,
+    root, packageKey: "architect", qualificationPath: join(root, qualificationPath), candidatePath, proofPath, publicationPath,
     artifactArchivePath: archivePath, replayEvidencePath, fetchImpl, auditRun, env, isExecutable,
   });
   if (!expectRecord) {
@@ -399,7 +399,7 @@ test("creator retains one provider-bound replay record from the exact qualified 
   assert.equal(result.record.runQualification.artifact.archiveSha256, `sha256:${digest("sha256", archiveBytes)}`);
   assert.equal(result.record.runQualification.transcript.rawSha256, digest("sha256", Buffer.from(`${JSON.stringify(qualification.transcript, null, 2)}\n`)));
   assert.equal(result.record.runQualification.transcript.comparableSha256, comparableTranscriptSha256(qualification.transcript));
-  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`architect-${version}.json`]);
 });
 
 test("creator records the v3 replay when only the root package-lock hash drifted, and the record validates", async (t) => {
@@ -411,7 +411,7 @@ test("creator records the v3 replay when only the root package-lock hash drifted
   assert.equal(measured.rootPackageJsonSha256, qualification.rootPackageJsonSha256, "unchanged root package.json hash is recorded truthfully");
   assert.notEqual(measured.rootPackageLockSha256, qualification.rootPackageLockSha256);
   assert.equal(measured.rootPackageLockSha256, digest("sha256", readFileSync(join(root, "package-lock.json"))));
-  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`strategist-${version}.json`]);
+  assert.deepEqual(readdirSync(join(root, "governance/release-publications/later")), [`architect-${version}.json`]);
 });
 
 test("creator records the v3 replay when only the root package.json hash drifted", async (t) => {
@@ -456,7 +456,7 @@ test("direct join failure records lock-only drift through the real v3 replay", a
   const tempDir = mkdtempSync(join(harness.root, "fallback-"));
   const result = await buildPublicationRecordWithFallback({
     root: harness.root,
-    packageKey: "strategist",
+    packageKey: "architect",
     qualificationPath: join(harness.root, harness.qualificationPath),
     publicationPath: harness.publicationPath,
     fetchImpl: harness.fetchImpl,
@@ -468,7 +468,7 @@ test("direct join failure records lock-only drift through the real v3 replay", a
     sourceSha: harness.sourceSha,
     auditRun: harness.auditRun,
     tempDir,
-    findArtifact: async () => ({ id: harness.artifactId, name: "qualified-candidate-strategist" }),
+    findArtifact: async () => ({ id: harness.artifactId, name: "qualified-candidate-architect" }),
     downloadZip: async () => harness.archiveBytes,
     createRecord,
     verifyProvenance: (options) => verifyPublicationProvenance({ ...options, isExecutable: harness.isExecutable }),
@@ -478,7 +478,7 @@ test("direct join failure records lock-only drift through the real v3 replay", a
   assert.equal(result.record.kind, "foundry-trusted-publication-replay-v3");
   assert.equal(result.record.source.publicationSource.rootPackageJsonSha256, harness.qualification.rootPackageJsonSha256);
   assert.notEqual(result.record.source.publicationSource.rootPackageLockSha256, harness.qualification.rootPackageLockSha256);
-  assert.deepEqual(readdirSync(join(harness.root, "governance/release-publications/later")), [`strategist-${harness.version}.json`]);
+  assert.deepEqual(readdirSync(join(harness.root, "governance/release-publications/later")), [`architect-${harness.version}.json`]);
 });
 
 // The introduced blob is the altered record, so the immutable-bytes check is
@@ -504,7 +504,7 @@ test("check:later-publications refuses a retained v3 record whose publicationSou
 
 test("creator refuses credential-bearing environments before reading inputs", async () => {
   await assert.rejects(
-    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: { NPM_TOKEN: "present" } }),
+    createLaterPublicationRecord({ packageKey: "architect", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: { NPM_TOKEN: "present" } }),
     /credential-bearing/,
   );
 });
@@ -551,7 +551,7 @@ for (const [label, version] of REFUSED_NPM_VERSIONS) {
   test(`creator refuses the direct path before reading any input when npm is ${label}`, async () => {
     const { run, calls } = npmProbe({ version });
     await assert.rejects(
-      createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: anyExecutable }),
+      createLaterPublicationRecord({ packageKey: "architect", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: anyExecutable }),
       FLOOR_REFUSAL,
     );
     assert.deepEqual(calls, [[NPM, "--version"]]);
@@ -561,7 +561,7 @@ for (const [label, version] of REFUSED_NPM_VERSIONS) {
 test("creator passes the npm floor on the direct path and only then reads its inputs", async () => {
   const { run, calls } = npmProbe();
   await assert.rejects(
-    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: anyExecutable }),
+    createLaterPublicationRecord({ packageKey: "architect", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: anyExecutable }),
     (error) => !FLOOR_REFUSAL.test(error.message) && /ENOENT|no such file/.test(error.message),
   );
   assert.deepEqual(calls, [[NPM, "--version"]]);
@@ -588,7 +588,7 @@ for (const [label, PATH] of [["a relative entry", "node_modules/.bin:/usr/bin"],
 test("creator refuses when no absolute PATH entry contains an executable npm", async () => {
   const { run, calls } = npmProbe();
   await assert.rejects(
-    createLaterPublicationRecord({ packageKey: "strategist", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: () => false }),
+    createLaterPublicationRecord({ packageKey: "architect", qualificationPath: "missing.json", publicationPath: "missing-publication.json", candidatePath: "missing.tgz", proofPath: "missing-proof.json", env: {}, auditRun: run, isExecutable: () => false }),
     /cannot resolve npm: no absolute PATH entry contains an executable npm/,
   );
   assert.deepEqual(calls, []);
@@ -655,26 +655,26 @@ test("requireEvidenceNpm resolves first and reads the version from that same abs
 
 test("npm floor refusal stops verifiedAnonymousAudit before it installs anything", () => {
   const { run, calls } = npmProbe({ version: "9.8.1\n" });
-  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, {}, { isExecutable: anyExecutable }), /observed npm 9\.8\.1/);
+  assert.throws(() => verifiedAnonymousAudit("@clossys/architect", "0.1.1", run, {}, { isExecutable: anyExecutable }), /observed npm 9\.8\.1/);
   assert.deepEqual(calls, [[NPM, "--version"]]);
 });
 
 test("verifiedAnonymousAudit refuses a relative PATH entry before running any command", () => {
   const { run, calls } = npmProbe();
-  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH: "node_modules/.bin:/usr/bin" }, { isExecutable: anyExecutable }), /relative or empty PATH entry/);
+  assert.throws(() => verifiedAnonymousAudit("@clossys/architect", "0.1.1", run, { PATH: "node_modules/.bin:/usr/bin" }, { isExecutable: anyExecutable }), /relative or empty PATH entry/);
   assert.deepEqual(calls, []);
   for (const PATH of ["/usr/bin:node_modules/.bin", "/usr/bin:"]) {
-    assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH }, { isExecutable: anyExecutable }), /relative or empty PATH entry/, `${PATH} (an entry after npm)`);
+    assert.throws(() => verifiedAnonymousAudit("@clossys/architect", "0.1.1", run, { PATH }, { isExecutable: anyExecutable }), /relative or empty PATH entry/, `${PATH} (an entry after npm)`);
   }
   assert.deepEqual(calls, []);
 });
 
 test("verifiedAnonymousAudit re-reads the version from the npm it is given and runs that same binary", () => {
   const { run, calls } = npmProbe({ answer: (_file, args) => args[0] === "audit" ? "{}" : "" });
-  assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", run, { PATH: "/safe/bin" }, { npm: "/checked/bin/npm" }), {});
+  assert.deepEqual(verifiedAnonymousAudit("@clossys/architect", "0.1.1", run, { PATH: "/safe/bin" }, { npm: "/checked/bin/npm" }), {});
   assert.deepEqual(calls.map(([file, ...args]) => [file, args[0]]), [["/checked/bin/npm", "--version"], ["/checked/bin/npm", "init"], ["/checked/bin/npm", "install"], ["/checked/bin/npm", "audit"]]);
   const old = npmProbe({ version: "10.0.0\n" });
-  assert.throws(() => verifiedAnonymousAudit("@clossys/strategist", "0.1.1", old.run, { PATH: "/safe/bin" }, { npm: "/checked/bin/npm" }), FLOOR_REFUSAL);
+  assert.throws(() => verifiedAnonymousAudit("@clossys/architect", "0.1.1", old.run, { PATH: "/safe/bin" }, { npm: "/checked/bin/npm" }), FLOOR_REFUSAL);
   assert.deepEqual(old.calls, [["/checked/bin/npm", "--version"]]);
 });
 
@@ -683,7 +683,7 @@ test("replay signature audit never inherits a token, private registry, or npm co
   const probed = [];
   const { run, calls } = npmProbe({ version: "11.17.0\n", answer: (_file, args) => args[0] === "audit" ? "{}" : "" });
   const spy = (file, args, options) => { probed.push(options.env); return run(file, args, options); };
-  assert.deepEqual(verifiedAnonymousAudit("@clossys/strategist", "0.1.1", spy, parent, { isExecutable: anyExecutable }), {});
+  assert.deepEqual(verifiedAnonymousAudit("@clossys/architect", "0.1.1", spy, parent, { isExecutable: anyExecutable }), {});
   assert.equal(calls.length, 4, "the npm floor probe, init, install, and audit");
   assert.equal(calls.every(([file]) => file === "/safe/bin/npm"), true, "the checked npm is the one that runs");
   assert.equal(probed.length, 4);
@@ -699,12 +699,12 @@ test("replay signature audit never inherits a token, private registry, or npm co
 });
 
 test("CLI rejects traversal, duplicate, credential, and mixed-fetch inputs", () => {
-  const base = ["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--candidate", "candidate.tgz", "--proof", "proof.json"];
-  assert.deepEqual(argsFrom(base), { fetch: false, package: "strategist", qualification: "q.json", publication: "p.json", candidate: "candidate.tgz", proof: "proof.json" });
+  const base = ["node", "script", "--package", "architect", "--qualification", "q.json", "--publication", "p.json", "--candidate", "candidate.tgz", "--proof", "proof.json"];
+  assert.deepEqual(argsFrom(base), { fetch: false, package: "architect", qualification: "q.json", publication: "p.json", candidate: "candidate.tgz", proof: "proof.json" });
   for (const mutation of [
-    ["--package", "../strategist"], ["--otp", "123456"], ["--fetch"], ["--candidate", "https://example.invalid/candidate.tgz"],
+    ["--package", "../architect"], ["--otp", "123456"], ["--fetch"], ["--candidate", "https://example.invalid/candidate.tgz"],
   ]) assert.throws(() => argsFrom([...base, ...mutation]), /Usage/);
-  assert.deepEqual(argsFrom(["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--fetch"]), { fetch: true, package: "strategist", qualification: "q.json", publication: "p.json" });
-  assert.throws(() => argsFrom(["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--fetch", "--artifact-archive", "qualified.zip"]), /Usage/);
-  assert.deepEqual(argsFrom(["node", "script", "--package", "strategist", "--qualification", "q.json", "--publication", "p.json", "--fetch", "--artifact-archive", "qualified.zip", "--replay-evidence", "provider.json"]), { fetch: true, package: "strategist", qualification: "q.json", publication: "p.json", "artifact-archive": "qualified.zip", "replay-evidence": "provider.json" });
+  assert.deepEqual(argsFrom(["node", "script", "--package", "architect", "--qualification", "q.json", "--publication", "p.json", "--fetch"]), { fetch: true, package: "architect", qualification: "q.json", publication: "p.json" });
+  assert.throws(() => argsFrom(["node", "script", "--package", "architect", "--qualification", "q.json", "--publication", "p.json", "--fetch", "--artifact-archive", "qualified.zip"]), /Usage/);
+  assert.deepEqual(argsFrom(["node", "script", "--package", "architect", "--qualification", "q.json", "--publication", "p.json", "--fetch", "--artifact-archive", "qualified.zip", "--replay-evidence", "provider.json"]), { fetch: true, package: "architect", qualification: "q.json", publication: "p.json", "artifact-archive": "qualified.zip", "replay-evidence": "provider.json" });
 });

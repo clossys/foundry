@@ -35,7 +35,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const producer = resolve(here, '..');
 const repo = resolve(producer, '..', '..');
-const AGENTS = ['director', 'designer', 'writer', 'publisher', 'strategist'];
+const AGENTS = ['director', 'designer', 'writer', 'publisher'];
 // A registry item name (`button`, `card`) names a component first: shadcn registry dependencies are components.
 const REF_LAYERS = ['components', 'sections', 'frames', 'assets', 'themes'];
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');

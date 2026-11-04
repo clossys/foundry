@@ -6,7 +6,7 @@ Read-only Next App Router composition over Producer's cells API. Every page is t
 - Right panel: the chat sidebar. It is present and toggles from the header's far-right icon, but it is not yet connected: it shows an empty state, and agents work through the CLI for now. Below 768px both sidebars open as sheets.
 - Agent galleries show one card per L3 slot with its pinned version, status and live preview. The card's title links to that slot's detail route, which holds the options, history and contract.
 
-From the repository root, after dependencies and the Controller, Strategist, and Designer prerequisites are built:
+From the repository root, after dependencies and the Controller, Director, and Designer prerequisites are built:
 
 ```sh
 npx next dev packages/producer/studio --hostname 127.0.0.1 --port 4301
