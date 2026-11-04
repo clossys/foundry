@@ -5,6 +5,7 @@ export const CHECKS = [
   defineCheck({ id: "pipeline", files: ["scripts/check-pipeline.mjs"], npm: ["check:pipeline", "test:pipeline"], rootNpm: ["check:pipeline"] }),
   defineCheck({ id: "workspace", cli: "check" }),
   defineCheck({ id: "assemble-only", files: ["scripts/check-assemble-only.mjs"], npm: ["check:assemble-only", "test:assemble-only"] }),
+  defineCheck({ id: "routes-published", files: ["scripts/check-routes-published.mjs"], npm: ["check:routes-published"] }),
   defineCheck({ id: "copy-source", files: ["scripts/check-copy-source.mjs"] }),
   defineCheck({ id: "generated-derived", files: ["scripts/check-generated-derived.mjs"], npm: ["check:generated-derived"], rootNpm: ["check:generated-derived"] }),
   defineCheck({ id: "studio-template", files: ["scripts/check-studio-template.mjs"], npm: ["check:studio-template"] }),

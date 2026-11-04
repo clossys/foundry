@@ -35,7 +35,7 @@ export const SCRIPT_STEPS = [
     summary: "Studio render, routing, assembly and propagation checks.",
     inputs: ["pkg:studio/generated/studio-map.json", "pkg:studio/generated/assembly-bindings.ts", "clossys/library/**"], outputs: ["arg:--out"],
     command: { script: "studio/checks/p0-studio-check.cjs", npm: "studio:check" },
-    checks: ["studio-p0", "studio-mutations", "studio-propagate", "studio-dom", "studio-modules", "publisher-preview", "theme-parity", "no-handrolling", "no-page-jsx", "studio-template", "assemble-only", "copy-source", "studio"],
+    checks: ["studio-p0", "studio-mutations", "studio-propagate", "studio-dom", "studio-modules", "publisher-preview", "theme-parity", "no-handrolling", "no-page-jsx", "studio-template", "assemble-only", "routes-published", "copy-source", "studio"],
   }),
   defineStep({
     id: "capture", kind: "plumb", actor: "code", stage: "check",

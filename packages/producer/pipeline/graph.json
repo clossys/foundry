@@ -1645,6 +1645,7 @@
         "no-page-jsx",
         "studio-template",
         "assemble-only",
+        "routes-published",
         "copy-source",
         "studio"
       ],
