@@ -1,20 +1,27 @@
 /**
- * Deterministic layered layout for the pipeline canvas, computed by the graph generator so the
+ * Deterministic swimlane layout for the pipeline canvas, computed by the graph generator so the
  * canvas only reads positions (no elkjs or dagre, no layout at render time).
  *
- *   lane  the step's actor: owner, planner, agent:* (by name), then code
+ *   lane  WHO: the step's seat holder (roster.ts), one swim row per lane in the order the caller
+ *         gives (the roster, then `unassigned`); a lane holding no step keeps one empty row
+ *   stage WHEN: the step's stage (define.ts STAGES), one column per stage in STAGES order; a step
+ *         whose stage is not a declared stage sits in a trailing `unstaged` column (check:pipeline
+ *         fails it as stage.missing)
  *   rank  longest-path topological rank over the derived edges; cycles are broken in step id
  *         order (a depth-first walk from the sources, then every step, successors by id, drops
- *         each edge back into the walk) and every edge it skips is listed in `cycleBreaks`
- *   order inside each lane/rank cell: id order, then `BARYCENTER_SWEEPS` alternating barycenter
- *         sweeps (left to right over predecessors, right to left over successors; ties by id); the
- *         order with the fewest edge crossings seen is kept, and both counts are in `crossings`
+ *         each edge back into the walk) and every edge it skips is listed in `cycleBreaks`. Rank
+ *         orders nothing on screen; it is the starting order inside a cell
+ *   order inside each lane/stage cell: rank then id order, then `BARYCENTER_SWEEPS` alternating
+ *         barycenter sweeps (left to right over predecessors, right to left over successors; ties
+ *         by id); the order with the fewest edge crossings seen is kept, and both counts are in
+ *         `crossings`
  *   x, y  from fixed constants: a cell stacks at most `cellRows` steps; more wrap into sub-columns
- *         inside the rank band, so a band is as wide as its widest cell. x by band plus sub-column,
- *         y by lane top plus the step's row; ranks run left to right and lanes are swim rows, each
- *         lane's label sits once at the row's start (x = -laneLabelWidth)
+ *         inside the stage column, so a column is as wide as its widest cell. x by stage column
+ *         plus sub-column, y by lane top plus the step's row. Each lane's label sits once at the
+ *         row's start (x = -laneLabelWidth); each stage's label sits once above its column
+ *         (y = -stageLabelHeight)
  *   crossings  pairs of edges whose straight segments (source right middle to target left middle)
- *         cross, counted with id order (`before`) and with the kept order (`after`)
+ *         cross, counted with the starting order (`before`) and with the kept order (`after`)
  *
  * The constants are sized for the canvas's step node at its tallest (the stock Item header wraps
  * the kind badge under a long title; one labeled handle per side), so no two node boxes intersect: rowGap > nodeHeight, columnGap > nodeWidth and
@@ -22,19 +29,20 @@
  *
  * The same steps and edges always give byte-identical output: every iteration is over sorted ids.
  */
-import type { Step } from "./define.js";
 
 export const LAYOUT_CONSTANTS = Object.freeze({
   nodeWidth: 240,
   nodeHeight: 148,
-  /** Horizontal distance between rank columns. */
+  /** Horizontal distance between two stage columns (from the last sub-column of one to the next). */
   rankGap: 320,
   /** Vertical distance between stacked steps in one lane/rank cell. */
   rowGap: 172,
   /** Vertical space between two lanes. */
   laneGap: 48,
-  /** Width of the lane label column left of rank 0. */
+  /** Width of the lane label column left of the first stage. */
   laneLabelWidth: 160,
+  /** Height of the stage label row above the first lane. */
+  stageLabelHeight: 72,
   /** Most steps one lane/rank cell stacks before wrapping into another sub-column. */
   cellRows: 3,
   /** Horizontal distance between two sub-columns of one cell. */
@@ -44,7 +52,12 @@ export const LAYOUT_CONSTANTS = Object.freeze({
 /** Fixed number of barycenter sweeps; the layout never iterates to convergence. */
 export const BARYCENTER_SWEEPS = 4;
 
-export interface NodeLayout { readonly lane: string; readonly rank: number; readonly x: number; readonly y: number }
+/** The column of a step whose stage is not a declared stage. */
+export const UNSTAGED = "unstaged";
+
+export interface NodeLayout { readonly lane: string; readonly stage: string; readonly rank: number; readonly x: number; readonly y: number }
+/** One stage column: its left edge and width (its widest cell's sub-columns), and its label's place. */
+export interface StageLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly width: number }
 export interface LaneLayout { readonly id: string; readonly index: number; readonly x: number; readonly y: number; readonly height: number }
 export interface CycleBreak { readonly from: string; readonly to: string }
 export interface Crossings { readonly before: number; readonly after: number }
@@ -52,17 +65,12 @@ export interface PipelineLayout {
   readonly constants: typeof LAYOUT_CONSTANTS;
   readonly crossings: Crossings;
   readonly lanes: readonly LaneLayout[];
+  readonly stages: readonly StageLayout[];
   readonly cycleBreaks: readonly CycleBreak[];
   readonly nodes: Readonly<Record<string, NodeLayout>>;
 }
 
 const byId = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);
-
-/** Lane order: owner, planner, agents by name, code; any other actor sorts after agents by name. */
-export function laneOrder(actors: Iterable<string>): string[] {
-  const weight = (actor: string): number => actor === "owner" ? 0 : actor === "planner" ? 1 : actor === "code" ? 3 : 2;
-  return [...new Set(actors)].sort((a, b) => weight(a) - weight(b) || byId(a, b));
-}
 
 /**
  * Edges that close a cycle: a depth-first walk in step id order (sources first, then every other
@@ -83,7 +91,12 @@ function backEdges(ids: readonly string[], next: ReadonlyMap<string, readonly st
   return back;
 }
 
-export function computeLayout(steps: readonly Pick<Step, "id" | "actor">[], edges: readonly { readonly from: string; readonly to: string }[]): PipelineLayout {
+/** A step as the layout reads it: its id, the lane it sits in (its holder) and its stage. */
+export interface LayoutStep { readonly id: string; readonly lane: string; readonly stage: string }
+/** The lanes top to bottom and the stages left to right; neither is listed by the layout itself. */
+export interface LayoutAxes { readonly lanes: readonly string[]; readonly stages: readonly string[] }
+
+export function computeLayout(steps: readonly LayoutStep[], edges: readonly { readonly from: string; readonly to: string }[], axes: LayoutAxes): PipelineLayout {
   const ids = steps.map(step => step.id).sort(byId);
   const known = new Set(ids);
   const pairs = [...new Map(edges.filter(edge => known.has(edge.from) && known.has(edge.to) && edge.from !== edge.to).map(edge => [`${edge.from}\0${edge.to}`, edge])).values()]
@@ -117,19 +130,22 @@ export function computeLayout(steps: readonly Pick<Step, "id" | "actor">[], edge
     }
   }
 
-  const actorOf = new Map(steps.map(step => [step.id, step.actor]));
-  const lanes = laneOrder(steps.map(step => step.actor));
+  const laneOf = new Map(steps.map(step => [step.id, step.lane]));
+  const lanes = [...new Set([...axes.lanes, ...steps.map(step => step.lane).filter(lane => !axes.lanes.includes(lane)).sort(byId)])];
+  const stageOf = new Map(steps.map(step => [step.id, axes.stages.includes(step.stage) ? step.stage : UNSTAGED]));
+  const stages = [...axes.stages, ...(steps.some(step => !axes.stages.includes(step.stage)) ? [UNSTAGED] : [])];
   const C = LAYOUT_CONSTANTS;
-  const ranks = [...new Set(ids.map(id => rank.get(id)!))].sort((a, b) => a - b);
-  // Cells in lane then rank order; each holds its steps in id order to start.
-  const cellOf = (lane: string, r: number): string => `${lane}\0${r}`;
+  // Cells in lane then stage order; each holds its steps in rank then id order to start.
+  const cellOf = (lane: string, stage: string): string => `${lane}\0${stage}`;
   const cells = new Map<string, string[]>();
-  for (const lane of lanes) for (const r of ranks) cells.set(cellOf(lane, r), []);
-  for (const id of ids) cells.get(cellOf(actorOf.get(id)!, rank.get(id)!))!.push(id);
+  for (const lane of lanes) for (const stage of stages) cells.set(cellOf(lane, stage), []);
+  for (const id of [...ids].sort((a, b) => rank.get(a)! - rank.get(b)! || byId(a, b))) cells.get(cellOf(laneOf.get(id)!, stageOf.get(id)!))!.push(id);
   for (const [key, members] of [...cells]) if (!members.length) cells.delete(key);
+  const keyLane = (key: string): string => key.slice(0, key.indexOf("\0"));
+  const keyStage = (key: string): string => key.slice(key.indexOf("\0") + 1);
 
-  const laneRows = (lane: string): number => Math.max(1, ...[...cells].filter(([key]) => key.startsWith(`${lane}\0`)).map(([, members]) => Math.min(members.length, C.cellRows)));
-  const bandColumns = (r: number): number => Math.max(1, ...[...cells].filter(([key]) => Number(key.slice(key.indexOf("\0") + 1)) === r).map(([, members]) => Math.ceil(members.length / C.cellRows)));
+  const laneRows = (lane: string): number => Math.max(1, ...[...cells].filter(([key]) => keyLane(key) === lane).map(([, members]) => Math.min(members.length, C.cellRows)));
+  const stageColumns = (stage: string): number => Math.max(1, ...[...cells].filter(([key]) => keyStage(key) === stage).map(([, members]) => Math.ceil(members.length / C.cellRows)));
   const laneTops = new Map<string, number>();
   const laneLayouts: LaneLayout[] = [];
   let top = 0;
@@ -139,17 +155,22 @@ export function computeLayout(steps: readonly Pick<Step, "id" | "actor">[], edge
     laneLayouts.push({ id: lane, index, x: -C.laneLabelWidth, y: top, height });
     top += height + C.laneGap;
   });
-  const bandX = new Map<number, number>();
+  const stageX = new Map<string, number>();
+  const stageLayouts: StageLayout[] = [];
   let left = 0;
-  for (const r of ranks) { bandX.set(r, left); left += (bandColumns(r) - 1) * C.columnGap + C.rankGap; }
+  stages.forEach((stage, index) => {
+    const width = (stageColumns(stage) - 1) * C.columnGap + C.nodeWidth;
+    stageX.set(stage, left);
+    stageLayouts.push({ id: stage, index, x: left, y: -C.stageLabelHeight, width });
+    left += (stageColumns(stage) - 1) * C.columnGap + C.rankGap;
+  });
 
   const place = (order: ReadonlyMap<string, readonly string[]>): Record<string, NodeLayout> => {
     const nodes: Record<string, NodeLayout> = {};
     for (const [key, members] of order) {
-      const lane = key.slice(0, key.indexOf("\0"));
-      const cellRank = Number(key.slice(lane.length + 1));
+      const lane = keyLane(key), stage = keyStage(key);
       members.forEach((id, at) => {
-        nodes[id] = { lane, rank: cellRank, x: bandX.get(cellRank)! + Math.floor(at / C.cellRows) * C.columnGap, y: laneTops.get(lane)! + (at % C.cellRows) * C.rowGap };
+        nodes[id] = { lane, stage, rank: rank.get(id)!, x: stageX.get(stage)! + Math.floor(at / C.cellRows) * C.columnGap, y: laneTops.get(lane)! + (at % C.cellRows) * C.rowGap };
       });
     }
     return nodes;
@@ -176,10 +197,10 @@ export function computeLayout(steps: readonly Pick<Step, "id" | "actor">[], edge
   for (let sweep = 0; sweep < BARYCENTER_SWEEPS; sweep++) {
     const forward = sweep % 2 === 0;
     const neighbours = forward ? preds : succ;
-    for (const r of forward ? ranks : [...ranks].reverse()) {
+    for (const stage of forward ? stages : [...stages].reverse()) {
       const nodes = place(order);
       for (const [key, members] of order) {
-        if (Number(key.slice(key.indexOf("\0") + 1)) !== r || members.length < 2) continue;
+        if (keyStage(key) !== stage || members.length < 2) continue;
         const weight = new Map(members.map(id => {
           const near = neighbours.get(id)!;
           return [id, near.length ? near.reduce((sum, other) => sum + vertical(nodes, other), 0) / near.length : vertical(nodes, id)];
@@ -193,5 +214,5 @@ export function computeLayout(steps: readonly Pick<Step, "id" | "actor">[], edge
   const nodes = place(best.order);
   const ordered: Record<string, NodeLayout> = {};
   for (const id of ids) ordered[id] = nodes[id]!;
-  return { constants: C, crossings: { before, after: best.count }, lanes: laneLayouts, cycleBreaks, nodes: ordered };
+  return { constants: C, crossings: { before, after: best.count }, lanes: laneLayouts, stages: stageLayouts, cycleBreaks, nodes: ordered };
 }

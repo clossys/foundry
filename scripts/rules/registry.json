@@ -426,9 +426,23 @@
           "cwd": ".",
           "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
           "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/repo-write/write-workspace-config\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/stage-missing",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
+          "expect": "^FAIL stage\\.missing: step \"ia\": names no stage"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/lane-unrostered",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
+          "expect": "^FAIL lane\\.unrostered: step \"strategist\\.candidates\": its holder strategist .* is not a roster entry"
         }
       ],
-      "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write)."
+      "note": "Every pipeline step is a defineStep call; check:pipeline fails when a decide step's output can be written inside the repository by code outside its declared entry (a write that resolves outside the repository root, such as a scratch copy under os.tmpdir(), is not a repository write). Every step names a stage from define.ts STAGES (stage.missing) and a holder that is a roster.ts ROSTER entry (lane.unrostered); the stage-missing and lane-unrostered fixtures are the real steps with one stage removed and one step held by an unrostered agent."
     },
     {
       "id": "R-PIPELINE-CANVAS",

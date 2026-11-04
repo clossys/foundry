@@ -9,7 +9,18 @@
  */
 export const STEP_KINDS = ["plumb", "decide:creative", "decide:judgment"] as const;
 export type StepKind = typeof STEP_KINDS[number];
-export const STAGES = ["direct", "derive", "pin", "compile", "check", "capture", "operate"] as const;
+/**
+ * WHEN a step runs: the canvas's columns, in order. Declared once here; every step names one, and
+ * check:pipeline fails a step whose stage is missing or not one of these (stage.missing).
+ *   brief     decide what to make and derive the briefs agents work from
+ *   select    choose the library and the slot selection
+ *   make      agents draft candidates
+ *   pin       decide which candidate is the one
+ *   assemble  compile pins into sections, maps and specimens
+ *   check     verify the assembled workspace and Studio
+ *   publish   install and serve the published pages
+ */
+export const STAGES = ["brief", "select", "make", "pin", "assemble", "check", "publish"] as const;
 export type Stage = typeof STAGES[number];
 
 /** One input or output: a glob, an optional `#field` carve-out and the schema its files follow. */

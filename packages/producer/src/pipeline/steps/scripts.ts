@@ -6,13 +6,13 @@ const STUDIO_GENERATED = ["studio-copy.json", "studio-map.json", "studio-map.ts"
 /** Build, generate, compose and capture scripts: plumb, byte-identical every run. */
 export const SCRIPT_STEPS = [
   defineStep({
-    id: "derive.uses", kind: "plumb", actor: "code", stage: "derive",
+    id: "derive.uses", kind: "plumb", actor: "code", stage: "assemble",
     summary: "Derive each slot's uses list from pinned candidates.",
     inputs: [PINS, ...CANDIDATES], outputs: ["clossys/agents/*/*/slot.json#uses"],
     command: { script: "scripts/check-generated-derived.mjs", npm: "build" }, checks: ["generated-derived"],
   }),
   defineStep({
-    id: "studio.map", kind: "plumb", actor: "code", stage: "derive",
+    id: "studio.map", kind: "plumb", actor: "code", stage: "assemble",
     summary: "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
     inputs: [IA, SLOTS, PINS, ...CANDIDATES, "clossys/library/**", "clossys/selection.json"],
     outputs: STUDIO_GENERATED.map(name => `pkg:studio/generated/${name}`),
@@ -25,7 +25,7 @@ export const SCRIPT_STEPS = [
     command: { script: "scripts/generate-page-check-receipt.mjs", npm: "build" }, checks: ["workspace"],
   }),
   defineStep({
-    id: "studio.compose", kind: "plumb", actor: "code", stage: "check",
+    id: "studio.compose", kind: "plumb", actor: "code", stage: "assemble",
     summary: "Compose the actual Studio runtime for the Studio checks.",
     inputs: ["pkg:studio/generated/studio-map.json", "clossys/library/**"], outputs: [],
     command: { script: "scripts/compose-studio.mjs", npm: "studio:compose" }, checks: ["studio-compose"],
@@ -38,7 +38,7 @@ export const SCRIPT_STEPS = [
     checks: ["studio-p0", "studio-mutations", "studio-propagate", "studio-dom", "studio-modules", "publisher-preview", "theme-parity", "no-handrolling", "no-page-jsx", "studio-template", "assemble-only", "copy-source", "studio"],
   }),
   defineStep({
-    id: "capture", kind: "plumb", actor: "code", stage: "capture",
+    id: "capture", kind: "plumb", actor: "code", stage: "check",
     summary: "Capture every Studio route as screenshots and a contact sheet.",
     inputs: ["pkg:studio/generated/studio-map.json"], outputs: ["arg:--out"],
     command: { script: "scripts/capture-studio.mjs", npm: "capture:studio" }, checks: ["studio-capture"],

@@ -6,7 +6,7 @@
       "id": "ia",
       "kind": "decide:judgment",
       "actor": "owner",
-      "stage": "direct",
+      "stage": "brief",
       "summary": "Place every L3 slot: the agent IA tree and each slot's contract.",
       "inputs": [],
       "outputs": [
@@ -27,18 +27,25 @@
       ],
       "open": "slots-without-slot-json",
       "seat": "clossys/agents/producer/ia/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "brief",
         "rank": 0,
         "x": 0,
-        "y": 344
+        "y": 172
       }
     },
     {
       "id": "evidence",
       "kind": "decide:judgment",
       "actor": "owner",
-      "stage": "direct",
+      "stage": "brief",
       "summary": "Owner answers and strategist findings the Director cites.",
       "inputs": [],
       "outputs": [
@@ -56,8 +63,15 @@
         "workspace"
       ],
       "seat": "clossys/agents/producer/evidence/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "brief",
         "rank": 0,
         "x": 0,
         "y": 0
@@ -67,7 +81,7 @@
       "id": "workspace.config",
       "kind": "decide:judgment",
       "actor": "owner",
-      "stage": "direct",
+      "stage": "brief",
       "summary": "The workspace marker and config the CLI discovers.",
       "inputs": [],
       "outputs": [
@@ -82,18 +96,25 @@
         "workspace"
       ],
       "seat": "clossys/agents/producer/workspace.config/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "brief",
         "rank": 0,
-        "x": 0,
-        "y": 172
+        "x": 280,
+        "y": 0
       }
     },
     {
       "id": "seats",
       "kind": "decide:judgment",
       "actor": "owner",
-      "stage": "direct",
+      "stage": "brief",
       "summary": "Who decides each decide step: an llm seat, a human seat, or both.",
       "inputs": [],
       "outputs": [
@@ -110,10 +131,17 @@
       ],
       "open": "seats-open",
       "seat": "clossys/agents/producer/seats/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "brief",
         "rank": 0,
-        "x": 280,
+        "x": 0,
         "y": 344
       }
     },
@@ -121,7 +149,7 @@
       "id": "rules",
       "kind": "decide:judgment",
       "actor": "owner",
-      "stage": "direct",
+      "stage": "brief",
       "summary": "Rule registry rows and gate yes/no.",
       "inputs": [],
       "outputs": [
@@ -136,8 +164,15 @@
         "rules"
       ],
       "seat": "clossys/agents/producer/rules/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "brief",
         "rank": 0,
         "x": 280,
         "y": 172
@@ -147,7 +182,7 @@
       "id": "selection",
       "kind": "decide:judgment",
       "actor": "owner",
-      "stage": "pin",
+      "stage": "select",
       "summary": "The consumer's component selection and release events.",
       "inputs": [
         {
@@ -166,10 +201,17 @@
         "workspace"
       ],
       "seat": "clossys/agents/producer/selection/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "select",
         "rank": 0,
-        "x": 280,
+        "x": 600,
         "y": 0
       }
     },
@@ -198,11 +240,18 @@
       ],
       "open": "writer-keys-unapproved",
       "seat": "clossys/agents/producer/writer.approve/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "pin",
         "rank": 5,
-        "x": 2160,
-        "y": 0
+        "x": 1240,
+        "y": 172
       }
     },
     {
@@ -255,8 +304,15 @@
       ],
       "open": "slots-undecided",
       "seat": "clossys/agents/producer/pin/seat.json",
+      "holder": {
+        "id": "you",
+        "kind": "you",
+        "source": "file",
+        "tier": null
+      },
       "layout": {
-        "lane": "owner",
+        "lane": "you",
+        "stage": "pin",
         "rank": 3,
         "x": 1240,
         "y": 0
@@ -266,7 +322,7 @@
       "id": "director.candidates",
       "kind": "decide:creative",
       "actor": "agent:director",
-      "stage": "derive",
+      "stage": "make",
       "summary": "Create Director candidates: one immutable file per option, per L3 slot.",
       "inputs": [
         {
@@ -297,18 +353,25 @@
       ],
       "open": "slots-without-candidates:director",
       "seat": "clossys/agents/producer/director.candidates/seat.json",
+      "holder": {
+        "id": "director",
+        "kind": "ai",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "agent:director",
+        "lane": "director",
+        "stage": "make",
         "rank": 1,
-        "x": 600,
-        "y": 736
+        "x": 920,
+        "y": 540
       }
     },
     {
       "id": "designer.candidates",
       "kind": "decide:creative",
       "actor": "agent:designer",
-      "stage": "derive",
+      "stage": "make",
       "summary": "Create Designer candidates: one immutable file per option, per L3 slot.",
       "inputs": [
         {
@@ -342,18 +405,25 @@
       ],
       "open": "slots-without-candidates:designer",
       "seat": "clossys/agents/producer/designer.candidates/seat.json",
+      "holder": {
+        "id": "designer",
+        "kind": "ai",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "agent:designer",
+        "lane": "designer",
+        "stage": "make",
         "rank": 2,
         "x": 920,
-        "y": 540
+        "y": 736
       }
     },
     {
       "id": "writer.candidates",
       "kind": "decide:creative",
       "actor": "agent:writer",
-      "stage": "derive",
+      "stage": "make",
       "summary": "Create Writer candidates: one immutable file per option, per L3 slot.",
       "inputs": [
         {
@@ -390,18 +460,25 @@
       ],
       "open": "slots-without-candidates:writer",
       "seat": "clossys/agents/producer/writer.candidates/seat.json",
+      "holder": {
+        "id": "writer",
+        "kind": "ai",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "agent:writer",
+        "lane": "writer",
+        "stage": "make",
         "rank": 4,
-        "x": 1560,
-        "y": 1128
+        "x": 920,
+        "y": 932
       }
     },
     {
       "id": "publisher.candidates",
       "kind": "decide:creative",
       "actor": "agent:publisher",
-      "stage": "derive",
+      "stage": "make",
       "summary": "Create Publisher candidates: one immutable file per option, per L3 slot.",
       "inputs": [
         {
@@ -442,18 +519,25 @@
       ],
       "open": "slots-without-candidates:publisher",
       "seat": "clossys/agents/producer/publisher.candidates/seat.json",
+      "holder": {
+        "id": "publisher",
+        "kind": "ai",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "agent:publisher",
+        "lane": "publisher",
+        "stage": "make",
         "rank": 5,
-        "x": 2160,
-        "y": 932
+        "x": 920,
+        "y": 1128
       }
     },
     {
       "id": "designer.library",
       "kind": "decide:creative",
       "actor": "agent:designer",
-      "stage": "derive",
+      "stage": "select",
       "summary": "Adopt a Designer element version into the consumer library.",
       "inputs": [
         {
@@ -481,11 +565,18 @@
         "studio-template"
       ],
       "seat": "clossys/agents/producer/designer.library/seat.json",
+      "holder": {
+        "id": "designer",
+        "kind": "ai",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "agent:designer",
+        "lane": "designer",
+        "stage": "select",
         "rank": 4,
-        "x": 1560,
-        "y": 540
+        "x": 600,
+        "y": 736
       }
     },
     {
@@ -514,18 +605,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 4,
-        "x": 1840,
-        "y": 1496
+        "x": 2440,
+        "y": 1840
       }
     },
     {
       "id": "designer.brief",
       "kind": "plumb",
       "actor": "code",
-      "stage": "derive",
+      "stage": "brief",
       "summary": "Print the Designer derivation brief (read-only).",
       "inputs": [
         {
@@ -554,11 +652,18 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "brief",
         "rank": 4,
-        "x": 1560,
-        "y": 1496
+        "x": 0,
+        "y": 1128
       }
     },
     {
@@ -594,18 +699,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 4,
-        "x": 1560,
-        "y": 1668
+        "x": 2440,
+        "y": 2012
       }
     },
     {
       "id": "designer.compile",
       "kind": "plumb",
       "actor": "code",
-      "stage": "compile",
+      "stage": "assemble",
       "summary": "Print the pinned Designer projection (read-only; written only to --out).",
       "inputs": [
         {
@@ -635,18 +747,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 4,
-        "x": 1840,
-        "y": 1324
+        "x": 1560,
+        "y": 1128
       }
     },
     {
       "id": "writer.brief",
       "kind": "plumb",
       "actor": "code",
-      "stage": "derive",
+      "stage": "brief",
       "summary": "Print the Writer derivation brief (read-only).",
       "inputs": [
         {
@@ -675,11 +794,18 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "brief",
         "rank": 5,
-        "x": 2160,
-        "y": 1324
+        "x": 0,
+        "y": 1300
       }
     },
     {
@@ -715,18 +841,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 5,
-        "x": 2160,
-        "y": 1496
+        "x": 2720,
+        "y": 1668
       }
     },
     {
       "id": "writer.compile",
       "kind": "plumb",
       "actor": "code",
-      "stage": "compile",
+      "stage": "assemble",
       "summary": "Print the pinned Writer projection (read-only; written only to --out).",
       "inputs": [
         {
@@ -756,11 +889,18 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 5,
-        "x": 2160,
-        "y": 1668
+        "x": 1560,
+        "y": 1300
       }
     },
     {
@@ -814,18 +954,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 6,
-        "x": 3040,
-        "y": 1324
+        "x": 3000,
+        "y": 1668
       }
     },
     {
       "id": "compile",
       "kind": "plumb",
       "actor": "code",
-      "stage": "compile",
+      "stage": "assemble",
       "summary": "Compile the Studio from decision files only into the compile lock.",
       "inputs": [
         {
@@ -869,11 +1016,18 @@
       "checks": [
         "compile-pure"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 6,
-        "x": 2760,
-        "y": 1324
+        "x": 1560,
+        "y": 1472
       }
     },
     {
@@ -903,18 +1057,25 @@
       "checks": [
         "decisions"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 4,
-        "x": 1560,
-        "y": 1324
+        "x": 2440,
+        "y": 1668
       }
     },
     {
       "id": "studio.produce",
       "kind": "plumb",
       "actor": "code",
-      "stage": "operate",
+      "stage": "publish",
       "summary": "Serve the local Studio over the live slot model (no compile step).",
       "inputs": [
         {
@@ -956,18 +1117,25 @@
       "checks": [
         "studio-p0"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "publish",
         "rank": 6,
-        "x": 2760,
-        "y": 1668
+        "x": 3600,
+        "y": 1300
       }
     },
     {
       "id": "publish.install",
       "kind": "plumb",
       "actor": "code",
-      "stage": "compile",
+      "stage": "publish",
       "summary": "Install pinned pages, a routed site or Next routes into a consumer app.",
       "inputs": [
         {
@@ -1002,18 +1170,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "publish",
         "rank": 6,
-        "x": 2480,
-        "y": 1324
+        "x": 3600,
+        "y": 1128
       }
     },
     {
       "id": "publish.page",
       "kind": "plumb",
       "actor": "code",
-      "stage": "compile",
+      "stage": "check",
       "summary": "Bare publish: dry-run check of every pinned page against pinned Designer slots and Writer copy (read-only).",
       "inputs": [
         {
@@ -1043,18 +1218,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 6,
-        "x": 2480,
-        "y": 1496
+        "x": 2720,
+        "y": 2012
       }
     },
     {
       "id": "specimen",
       "kind": "plumb",
       "actor": "code",
-      "stage": "capture",
+      "stage": "assemble",
       "summary": "Serve or snapshot a library element specimen.",
       "inputs": [
         {
@@ -1079,18 +1261,25 @@
       "checks": [
         "studio-dom"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 0,
-        "x": 280,
-        "y": 1496
+        "x": 2120,
+        "y": 1128
       }
     },
     {
       "id": "migrate",
       "kind": "plumb",
       "actor": "code",
-      "stage": "derive",
+      "stage": "assemble",
       "summary": "One-shot codemod: migrate copy keys to port ids (--check reports only).",
       "inputs": [
         {
@@ -1121,18 +1310,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 6,
-        "x": 3040,
-        "y": 1668
+        "x": 1840,
+        "y": 1472
       }
     },
     {
       "id": "pipeline",
       "kind": "plumb",
       "actor": "code",
-      "stage": "operate",
+      "stage": "check",
       "summary": "Report pipeline status (read-only) and the step graph built from these definitions.",
       "inputs": [
         {
@@ -1180,18 +1376,25 @@
       "checks": [
         "pipeline"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 6,
-        "x": 2480,
-        "y": 1668
+        "x": 2720,
+        "y": 1840
       }
     },
     {
       "id": "derive.uses",
       "kind": "plumb",
       "actor": "code",
-      "stage": "derive",
+      "stage": "assemble",
       "summary": "Derive each slot's uses list from pinned candidates.",
       "inputs": [
         {
@@ -1227,18 +1430,25 @@
       "checks": [
         "generated-derived"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 6,
-        "x": 3040,
-        "y": 1496
+        "x": 1840,
+        "y": 1300
       }
     },
     {
       "id": "studio.map",
       "kind": "plumb",
       "actor": "code",
-      "stage": "derive",
+      "stage": "assemble",
       "summary": "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
       "inputs": [
         {
@@ -1310,11 +1520,18 @@
         "studio-map",
         "studio-routes"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 6,
-        "x": 2760,
-        "y": 1496
+        "x": 1840,
+        "y": 1128
       }
     },
     {
@@ -1340,18 +1557,25 @@
       "checks": [
         "workspace"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 0,
-        "x": 0,
-        "y": 1324
+        "x": 3000,
+        "y": 1840
       }
     },
     {
       "id": "studio.compose",
       "kind": "plumb",
       "actor": "code",
-      "stage": "check",
+      "stage": "assemble",
       "summary": "Compose the actual Studio runtime for the Studio checks.",
       "inputs": [
         {
@@ -1369,11 +1593,18 @@
       "checks": [
         "studio-compose"
       ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "publisher",
+        "stage": "assemble",
         "rank": 0,
-        "x": 280,
-        "y": 1324
+        "x": 2120,
+        "y": 1300
       }
     },
     {
@@ -1417,18 +1648,25 @@
         "copy-source",
         "studio"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 0,
-        "x": 0,
-        "y": 1496
+        "x": 3280,
+        "y": 1668
       }
     },
     {
       "id": "capture",
       "kind": "plumb",
       "actor": "code",
-      "stage": "capture",
+      "stage": "check",
       "summary": "Capture every Studio route as screenshots and a contact sheet.",
       "inputs": [
         {
@@ -1447,11 +1685,18 @@
       "checks": [
         "studio-capture"
       ],
+      "holder": {
+        "id": "checks",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
       "layout": {
-        "lane": "code",
+        "lane": "checks",
+        "stage": "check",
         "rank": 0,
-        "x": 0,
-        "y": 1668
+        "x": 3000,
+        "y": 2012
       }
     }
   ],
@@ -2582,55 +2827,107 @@
       "rowGap": 172,
       "laneGap": 48,
       "laneLabelWidth": 160,
+      "stageLabelHeight": 72,
       "cellRows": 3,
       "columnGap": 280
     },
     "crossings": {
-      "before": 725,
-      "after": 714
+      "before": 724,
+      "after": 687
     },
     "lanes": [
       {
-        "id": "owner",
+        "id": "you",
         "index": 0,
         "x": -160,
         "y": 0,
         "height": 492
       },
       {
-        "id": "agent:designer",
+        "id": "director",
         "index": 1,
         "x": -160,
         "y": 540,
         "height": 148
       },
       {
-        "id": "agent:director",
+        "id": "designer",
         "index": 2,
         "x": -160,
         "y": 736,
         "height": 148
       },
       {
-        "id": "agent:publisher",
+        "id": "writer",
         "index": 3,
         "x": -160,
         "y": 932,
         "height": 148
       },
       {
-        "id": "agent:writer",
+        "id": "publisher",
         "index": 4,
         "x": -160,
         "y": 1128,
-        "height": 148
+        "height": 492
       },
       {
-        "id": "code",
+        "id": "checks",
         "index": 5,
         "x": -160,
-        "y": 1324,
+        "y": 1668,
         "height": 492
+      }
+    ],
+    "stages": [
+      {
+        "id": "brief",
+        "index": 0,
+        "x": 0,
+        "y": -72,
+        "width": 520
+      },
+      {
+        "id": "select",
+        "index": 1,
+        "x": 600,
+        "y": -72,
+        "width": 240
+      },
+      {
+        "id": "make",
+        "index": 2,
+        "x": 920,
+        "y": -72,
+        "width": 240
+      },
+      {
+        "id": "pin",
+        "index": 3,
+        "x": 1240,
+        "y": -72,
+        "width": 240
+      },
+      {
+        "id": "assemble",
+        "index": 4,
+        "x": 1560,
+        "y": -72,
+        "width": 800
+      },
+      {
+        "id": "check",
+        "index": 5,
+        "x": 2440,
+        "y": -72,
+        "width": 1080
+      },
+      {
+        "id": "publish",
+        "index": 6,
+        "x": 3600,
+        "y": -72,
+        "width": 240
       }
     ],
     "cycleBreaks": [
@@ -2757,6 +3054,76 @@
       "issues": []
     }
   },
+  "roster": [
+    {
+      "id": "you",
+      "kinds": [
+        "you"
+      ],
+      "steps": 8,
+      "sources": [
+        "file",
+        "derived"
+      ],
+      "tiers": []
+    },
+    {
+      "id": "director",
+      "kinds": [
+        "ai"
+      ],
+      "steps": 1,
+      "sources": [
+        "derived"
+      ],
+      "tiers": []
+    },
+    {
+      "id": "designer",
+      "kinds": [
+        "ai"
+      ],
+      "steps": 2,
+      "sources": [
+        "derived"
+      ],
+      "tiers": []
+    },
+    {
+      "id": "writer",
+      "kinds": [
+        "ai"
+      ],
+      "steps": 1,
+      "sources": [
+        "derived"
+      ],
+      "tiers": []
+    },
+    {
+      "id": "publisher",
+      "kinds": [
+        "ai",
+        "code"
+      ],
+      "steps": 13,
+      "sources": [
+        "derived"
+      ],
+      "tiers": []
+    },
+    {
+      "id": "checks",
+      "kinds": [
+        "code"
+      ],
+      "steps": 10,
+      "sources": [
+        "derived"
+      ],
+      "tiers": []
+    }
+  ],
   "options": {
     "cli": {
       "pin": [

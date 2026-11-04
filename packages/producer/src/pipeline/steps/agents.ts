@@ -12,7 +12,7 @@ const UPSTREAM = {
 
 /** Agent candidate creation: one immutable file per option, per L3 slot, written by the agent's skill. */
 const candidates = (agent: keyof typeof SKILL, modules: readonly string[]): Step => defineStep({
-  id: `${agent}.candidates`, kind: "decide:creative", actor: `agent:${agent}`, stage: "derive",
+  id: `${agent}.candidates`, kind: "decide:creative", actor: `agent:${agent}`, stage: "make",
   summary: `Create ${agent[0]!.toUpperCase()}${agent.slice(1)} candidates: one immutable file per option, per L3 slot.`,
   inputs: [...UPSTREAM[agent], slotsOf(agent)],
   outputs: [candidatesOf(agent)],
@@ -25,7 +25,7 @@ export const AGENT_STEPS = [
   candidates("writer", ["src/records/slot-write.ts#writeCandidate"]),
   candidates("publisher", ["src/records/slot-write.ts#writeCandidate"]),
   defineStep({
-    id: "designer.library", kind: "decide:creative", actor: "agent:designer", stage: "derive",
+    id: "designer.library", kind: "decide:creative", actor: "agent:designer", stage: "select",
     summary: "Adopt a Designer element version into the consumer library.",
     inputs: [pinsOf("designer"), candidatesOf("designer")],
     outputs: ["clossys/library/*/*/v*/element.json", "clossys/library/**"],

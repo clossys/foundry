@@ -4,9 +4,11 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { parseArgs } from "../cli/args.js";
 import { parsePipelineArgs, runPipelineCli } from "../cli/pipeline.js";
-import { defineStep, StepDefinitionError } from "./define.js";
+import { defineStep, STAGES, StepDefinitionError } from "./define.js";
+import type { Stage } from "./define.js";
 import { buildGraph, deriveEdges, graphJson, schemaMismatches, untypedPorts } from "./graph.js";
-import { computeLayout, LAYOUT_CONSTANTS } from "./layout.js";
+import { computeLayout, LAYOUT_CONSTANTS, UNSTAGED } from "./layout.js";
+import { holderOf, laneIds, laneOf, ROSTER, UNASSIGNED } from "./roster.js";
 import { portsOverlap } from "./globs.js";
 import { stepOptions } from "./options.js";
 import { runPipeline, selectStep } from "./runner.js";
@@ -72,41 +74,72 @@ describe("derived graph", () => {
     expect(schemaMismatches([a, make("b", [{ glob: "x/b.json", schema: "pin" }], [])])).toHaveLength(1);
     expect(deriveEdges([a, make("b", [{ glob: "y/b.json", schema: "slot" }], [])])).toHaveLength(0);
   });
-  it("lays out lanes by actor and ranks by longest path, breaking cycles in step id order from the sources", () => {
-    const make = (id: string, actor: string, inputs: string[], outputs: string[]) =>
-      defineStep({ id, kind: actor === "code" ? "plumb" : "decide:judgment", actor, stage: "check", summary: id,
-        inputs: inputs.map(glob => ({ glob, schema: "slot" })), outputs: outputs.map(glob => ({ glob, schema: "slot" })), command: { npm: "x" }, checks: [] });
-    const steps = [make("c", "code", ["q/*"], []), make("b", "owner", ["p/*"], ["q/1"]), make("a", "owner", ["q/*"], ["p/1"]), make("d", "agent:x", [], ["p/2"])];
-    const edges = deriveEdges(steps);
-    const layout = computeLayout(steps, edges);
-    expect(layout.lanes.map(lane => lane.id)).toEqual(["owner", "agent:x", "code"]);
+  it("lays out lanes by holder and columns by stage, ranking by longest path and breaking cycles in step id order", () => {
+    const make = (id: string, stage: Stage, inputs: string[], outputs: string[]) => ({ id, stage, inputs: inputs.map(glob => ({ glob, schema: "slot" })), outputs: outputs.map(glob => ({ glob, schema: "slot" })) });
+    const lanes = { c: "checks", b: "you", a: "you", d: "designer" } as Record<string, string>;
+    const steps = [make("c", "check", ["q/*"], []), make("b", "pin", ["p/*"], ["q/1"]), make("a", "brief", ["q/*"], ["p/1"]), make("d", "make", [], ["p/2"])];
+    const edges = deriveEdges(steps as never);
+    const axes = { lanes: ROSTER, stages: STAGES };
+    const layout = computeLayout(steps.map(step => ({ id: step.id, lane: lanes[step.id]!, stage: step.stage })), edges, axes);
+    const C = LAYOUT_CONSTANTS;
+    // Every roster entry is a lane, empty ones included; every stage is a column, in STAGES order.
+    expect(layout.lanes.map(lane => lane.id)).toEqual([...ROSTER]);
+    expect(layout.stages.map(stage => stage.id)).toEqual([...STAGES]);
     expect(layout.cycleBreaks).toEqual([{ from: "a", to: "b" }]);
     expect(Object.fromEntries(Object.entries(layout.nodes).map(([id, node]) => [id, node.rank]))).toEqual({ a: 2, b: 1, c: 2, d: 0 });
-    expect(layout.nodes.b).toEqual({ lane: "owner", rank: 1, x: LAYOUT_CONSTANTS.rankGap, y: 0 });
-    expect(layout.nodes.c!.y).toBe(layout.lanes[2]!.y);
-    expect(JSON.stringify(computeLayout([...steps].reverse(), [...edges].reverse()))).toBe(JSON.stringify(layout));
+    const stageX = (id: string) => layout.stages.find(stage => stage.id === id)!.x;
+    expect(layout.nodes.b).toEqual({ lane: "you", stage: "pin", rank: 1, x: stageX("pin"), y: 0 });
+    expect(layout.nodes.a!.x).toBeLessThan(layout.nodes.b!.x);
+    expect(layout.nodes.c!.y).toBe(layout.lanes.find(lane => lane.id === "checks")!.y);
+    expect(layout.stages.every(stage => stage.y === -C.stageLabelHeight)).toBe(true);
+    // A stage outside STAGES sits in the trailing unstaged column instead of throwing.
+    const odd = computeLayout([{ id: "x", lane: "you", stage: "later" }], [], axes);
+    expect(odd.stages.at(-1)!.id).toBe(UNSTAGED);
+    expect(odd.nodes.x!.stage).toBe(UNSTAGED);
+    const reversed = [...steps].reverse();
+    expect(JSON.stringify(computeLayout(reversed.map(step => ({ id: step.id, lane: lanes[step.id]!, stage: step.stage })), [...edges].reverse(), axes))).toBe(JSON.stringify(layout));
   });
   it("orders cells by barycenter and wraps a cell past cellRows into sub-columns", () => {
     const make = (id: string, inputs: string[], outputs: string[]) =>
-      defineStep({ id, kind: "plumb", actor: "code", stage: "check", summary: id,
+      defineStep({ id, kind: "plumb", actor: "code", stage: id.startsWith("t") ? "brief" : "check", summary: id,
         inputs: inputs.map(glob => ({ glob, schema: "slot" })), outputs: outputs.map(glob => ({ glob, schema: "slot" })), command: { npm: "x" }, checks: [] });
-    // s1..s5 share one code/rank-1 cell: three rows, the rest wrap into a second sub-column.
+    // s1..s5 share one checks/check cell: three rows, the rest wrap into a second sub-column.
     const steps = [make("t1", [], ["a/1"]), make("t2", [], ["b/1"]), ...["s1", "s2", "s3", "s4"].map(id => make(id, ["a/*"], [])), make("s5", ["b/*"], [])];
-    const layout = computeLayout(steps, deriveEdges(steps));
+    const axes = { lanes: ["checks"], stages: STAGES };
+    const toLayout = (list: typeof steps) => list.map(step => ({ id: step.id, lane: "checks", stage: step.stage }));
+    const layout = computeLayout(toLayout(steps), deriveEdges(steps), axes);
     const C = LAYOUT_CONSTANTS;
     const cell = ["s1", "s2", "s3", "s4", "s5"].map(id => layout.nodes[id]!);
-    expect(new Set(cell.map(node => node.rank))).toEqual(new Set([1]));
+    const check = layout.stages.find(stage => stage.id === "check")!;
+    expect(new Set(cell.map(node => node.stage))).toEqual(new Set(["check"]));
     expect(Math.max(...cell.map(node => node.y)) - layout.lanes[0]!.y).toBe((C.cellRows - 1) * C.rowGap);
-    expect(new Set(cell.map(node => node.x - C.rankGap))).toEqual(new Set([0, C.columnGap]));
+    expect(new Set(cell.map(node => node.x - check.x))).toEqual(new Set([0, C.columnGap]));
+    expect(check.width).toBe(C.columnGap + C.nodeWidth);
     expect(new Set(cell.map(node => `${node.x},${node.y}`)).size).toBe(5);
     expect(layout.crossings.after).toBeLessThanOrEqual(layout.crossings.before);
-    expect(JSON.stringify(computeLayout([...steps].reverse(), deriveEdges([...steps].reverse())))).toBe(JSON.stringify(layout));
+    const reversed = [...steps].reverse();
+    expect(JSON.stringify(computeLayout(toLayout(reversed), deriveEdges(reversed), axes))).toBe(JSON.stringify(layout));
   });
   it("writes a layout for every node, byte-identical across builds", () => {
     const root = workspace();
     const graph = buildGraph(root);
-    expect(graph.nodes.every(node => Number.isInteger(node.layout.x) && Number.isInteger(node.layout.y) && node.layout.lane === node.actor)).toBe(true);
+    expect(graph.nodes.every(node => Number.isInteger(node.layout.x) && Number.isInteger(node.layout.y) && node.layout.lane === laneOf(node.holder) && node.layout.stage === node.stage)).toBe(true);
     expect(graphJson(buildGraph(root))).toBe(graphJson(graph));
+  });
+  it("derives each step's holder from its seat file or its kind, and lists every roster entry", () => {
+    const root = workspace();
+    const graph = buildGraph(root);
+    const holder = (id: string) => graph.nodes.find(node => node.id === id)!.holder;
+    expect(holder("ia")).toEqual({ id: "you", kind: "you", source: "derived", tier: null });
+    expect(holder("designer.candidates")).toEqual({ id: "designer", kind: "ai", source: "derived", tier: null });
+    expect(holder("decisions")).toEqual({ id: "checks", kind: "code", source: "derived", tier: null });
+    expect(holder("compile")).toEqual({ id: "publisher", kind: "code", source: "derived", tier: null });
+    expect(graph.roster.map(entry => entry.id)).toEqual([...ROSTER]);
+    expect(graph.roster.reduce((sum, entry) => sum + entry.steps, 0)).toBe(graph.nodes.length);
+    expect(holderOf({ kind: "decide:judgment", actor: "owner", stage: "pin" }, { path: "x", state: "partial", by: "agent:writer", llm: { model: "m", tier: "mid", promptFile: "p" }, human: "open", issues: [] }))
+      .toEqual({ id: "writer", kind: "ai", source: "file", tier: "mid" });
+    expect(holderOf({ kind: "decide:judgment", actor: "owner", stage: "pin" }, { path: "x", state: "partial", by: "planner", llm: "open", human: "open", issues: [] }).id).toBe("planner");
+    expect(laneIds([{ id: "planner", kind: null, source: "file", tier: null }])).toEqual([...ROSTER, UNASSIGNED]);
   });
   it("reads options from the verb's parser", () => {
     const flags = stepOptions(step("workspace.check"))!.map(option => option.flag);
@@ -136,7 +169,7 @@ describe("runner", () => {
   });
   it("refuses a pending step and a verb no step declares", async () => {
     const root = workspace();
-    const later = defineStep({ id: "later", kind: "plumb", actor: "code", stage: "operate", summary: "x", inputs: [], outputs: [], command: { cli: { verb: "later" }, entry: "src/cli/later.ts#runLater" }, checks: [], pending: { branch: "claude/later", change: "adds" } });
+    const later = defineStep({ id: "later", kind: "plumb", actor: "code", stage: "publish", summary: "x", inputs: [], outputs: [], command: { cli: { verb: "later" }, entry: "src/cli/later.ts#runLater" }, checks: [], pending: { branch: "claude/later", change: "adds" } });
     const pending = await runPipeline(["later"], root, [...STEPS, later]);
     expect(pending.exitCode).toBe(2);
     expect(pending.message).toMatch(/pending; it lands on claude\/later/);
@@ -158,7 +191,7 @@ describe("status", () => {
     const root = workspace();
     expect(() => parsePipelineArgs(["status", "--out", "x"])).toThrow(/--out requires pipeline graph/);
     const graph = await runPipelineCli(["graph", "--root", root], root);
-    expect(Object.keys(graph.output as object).sort()).toEqual(["edges", "layout", "nodes", "options", "rule", "schema", "seats", "status", "untyped"]);
+    expect(Object.keys(graph.output as object).sort()).toEqual(["edges", "layout", "nodes", "options", "roster", "rule", "schema", "seats", "status", "untyped"]);
     expect((await runPipeline(["pipeline", "status", "--root", root], root)).exitCode).toBe(0);
     expect((await runPipelineCli(["status"], tmpdir())).exitCode).toBe(2);
   });

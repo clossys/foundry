@@ -4,38 +4,38 @@ import { CANDIDATES, IA, PINS, SEATS, SLOTS, candidatesOf } from "./ports.js";
 /** Owner and agent decisions: the only steps that may write decision files (decision-boundary.md). */
 export const DECISION_STEPS = [
   defineStep({
-    id: "ia", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "ia", kind: "decide:judgment", actor: "owner", stage: "brief",
     summary: "Place every L3 slot: the agent IA tree and each slot's contract.",
     inputs: [],
     outputs: [IA, SLOTS],
     command: { manual: "owner edits ia.json and slot.json" }, checks: ["workspace"], open: "slots-without-slot-json",
   }),
   defineStep({
-    id: "evidence", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "evidence", kind: "decide:judgment", actor: "owner", stage: "brief",
     summary: "Owner answers and strategist findings the Director cites.",
     inputs: [], outputs: ["clossys/agents/director/_evidence/*.md", "clossys/agents/strategist/findings/*.md"],
     command: { manual: "owner records answers as evidence files" }, checks: ["workspace"],
   }),
   defineStep({
-    id: "workspace.config", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "workspace.config", kind: "decide:judgment", actor: "owner", stage: "brief",
     summary: "The workspace marker and config the CLI discovers.",
     inputs: [], outputs: ["clossys/clossys.config.ts"],
     command: { manual: "owner edits clossys.config.ts" }, checks: ["workspace"],
   }),
   defineStep({
-    id: "seats", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "seats", kind: "decide:judgment", actor: "owner", stage: "brief",
     summary: "Who decides each decide step: an llm seat, a human seat, or both.",
     inputs: [], outputs: [SEATS],
     command: { manual: "owner writes clossys/agents/producer/<step>/seat.json" }, checks: ["pipeline"], open: "seats-open",
   }),
   defineStep({
-    id: "rules", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "rules", kind: "decide:judgment", actor: "owner", stage: "brief",
     summary: "Rule registry rows and gate yes/no.",
     inputs: [], outputs: ["scripts/rules/registry.json"],
     command: { manual: "owner approves rule rows and gates" }, checks: ["rules"],
   }),
   defineStep({
-    id: "selection", kind: "decide:judgment", actor: "owner", stage: "pin",
+    id: "selection", kind: "decide:judgment", actor: "owner", stage: "select",
     summary: "The consumer's component selection and release events.",
     inputs: ["clossys/library/**"], outputs: ["clossys/selection.json"],
     command: { module: "src/records/selection.ts#writeSelection" }, checks: ["workspace"],

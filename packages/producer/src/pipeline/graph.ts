@@ -1,4 +1,5 @@
 import { STEPS } from "./steps/index.js";
+import { STAGES } from "./define.js";
 import type { Step } from "./define.js";
 import { portsOverlap } from "./globs.js";
 import { PACKAGE_ROOT, stepOptions } from "./options.js";
@@ -7,6 +8,8 @@ import { computeLayout } from "./layout.js";
 import type { NodeLayout, PipelineLayout } from "./layout.js";
 import { readSeats } from "./seats.js";
 import type { SeatReport } from "./seats.js";
+import { holderOf, laneIds, laneOf, rosterOf } from "./roster.js";
+import type { Holder, RosterEntry } from "./roster.js";
 
 export const GRAPH_SCHEMA = "clossys.pipeline-graph/1";
 export const GRAPH_FILE = "pipeline/graph.json";
@@ -16,7 +19,8 @@ export interface GraphEdge { readonly from: string; readonly to: string; readonl
 export interface UntypedPort { readonly step: string; readonly port: "input" | "output"; readonly glob: string }
 /** An output and an input whose globs overlap but whose schemas differ: a broken contract. */
 export interface SchemaMismatch { readonly from: string; readonly to: string; readonly output: string; readonly input: string; readonly outputSchema: string; readonly inputSchema: string }
-export type GraphNode = Step & { readonly layout: NodeLayout };
+/** A step with its seat holder (WHO: file or derived) and its place on the canvas. */
+export type GraphNode = Step & { readonly holder: Holder; readonly layout: NodeLayout };
 export interface PipelineGraph {
   readonly schema: typeof GRAPH_SCHEMA;
   readonly rule: "R-PIPELINE-IS-CODE";
@@ -25,6 +29,8 @@ export interface PipelineGraph {
   readonly untyped: readonly UntypedPort[];
   readonly layout: Omit<PipelineLayout, "nodes">;
   readonly seats: Readonly<Record<string, SeatReport>>;
+  /** Every roster entry with the steps it holds; entries holding none stay listed. */
+  readonly roster: readonly RosterEntry[];
   readonly options: {
     readonly cli: Readonly<Record<string, readonly CliOption[] | null>>;
     /** Workspace config keys, from the config schema. src/config.ts exports no schema yet, so there are none. */
@@ -78,10 +84,16 @@ export function buildGraph(root: string, steps: readonly Step[] = STEPS, package
   const cli: Record<string, readonly CliOption[] | null> = {};
   for (const step of steps) if (step.command.cli) cli[step.id] = stepOptions(step, packageRoot);
   const edges = deriveEdges(steps);
-  const { nodes: positions, ...layout } = computeLayout(steps, edges);
+  const seats = readSeats(root, steps);
+  const holders = new Map(steps.map(step => [step.id, holderOf(step, seats[step.id])]));
+  const { nodes: positions, ...layout } = computeLayout(
+    steps.map(step => ({ id: step.id, lane: laneOf(holders.get(step.id)!), stage: step.stage })), edges,
+    { lanes: laneIds([...holders.values()]), stages: STAGES },
+  );
   return {
     schema: GRAPH_SCHEMA, rule: "R-PIPELINE-IS-CODE",
-    nodes: steps.map(step => ({ ...step, layout: positions[step.id]! })), edges, untyped: untypedPorts(steps), layout, seats: readSeats(root, steps),
+    nodes: steps.map(step => ({ ...step, holder: holders.get(step.id)!, layout: positions[step.id]! })), edges, untyped: untypedPorts(steps), layout, seats,
+    roster: rosterOf([...holders.values()]),
     options: { cli, config: { schema: null, keys: [] } },
   };
 }

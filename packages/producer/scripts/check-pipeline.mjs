@@ -14,6 +14,10 @@
 // Failure rules (each finding names one):
 //   dist.missing      dist/pipeline is absent or older than src/pipeline; build first
 //   step.invalid      a step definition does not load (defineStep refused it) or is malformed
+//   stage.missing     a step names no stage, or a stage that is not one of define.ts STAGES (WHEN:
+//                     the canvas's columns)
+//   lane.unrostered   a step's seat holder (its seat file's `by`, else derived from its kind; WHO:
+//                     the canvas's lanes) is not a roster entry (roster.ts ROSTER)
 //   edge.declared     an edge, option or config listed by hand; edges are derived from output/input globs
 //   graph.stale       pipeline/graph.json differs from the graph built from the definitions
 //   edges.stale       its edges differ from the derived edges (an edge needs the same schema on
@@ -41,6 +45,7 @@
 //   option.unknown    a flag the step's CLI parser does not define
 //
 // A missing seat file, or a seat part set to null, is listed as OPEN (unassigned), never as passing.
+// A step whose holder does not resolve at all sits in the `unassigned` lane and is listed as OPEN.
 // A workspace port that names no schema feeds no edge; each one is listed as UNTYPED (and in
 // graph.json "untyped"), never dropped silently. Cycle edges the layout skips are listed as CYCLE;
 // the layout's edge crossings before and after its barycenter ordering are listed as CROSSINGS.
@@ -122,6 +127,7 @@ else try {
     globs: await import(pathToFileURL(join(DIST, "globs.js")).href),
     schema: await import(pathToFileURL(join(DIST, "schema.js")).href),
     seats: await import(pathToFileURL(join(DIST, "seats.js")).href),
+    roster: await import(pathToFileURL(join(DIST, "roster.js")).href),
   };
 } catch (error) {
   const rule = /listed by hand/.test(error?.message ?? "") ? "edge.declared" : "step.invalid";
@@ -141,6 +147,8 @@ for (const step of steps) {
   for (const key of HAND_LISTED) if (step[key] !== undefined || step.command?.[key] !== undefined) fail("edge.declared", `${where}: ${key} is listed by hand; edges, options and config are derived`);
   if (!lib) continue;
   if (!lib.define.STEP_KINDS.includes(step.kind)) fail("step.invalid", `${where}: kind must be ${lib.define.STEP_KINDS.join(", ")}`);
+  if (step.stage === undefined) fail("stage.missing", `${where}: names no stage; every step names one of ${lib.define.STAGES.join(", ")}`);
+  else if (!lib.define.STAGES.includes(step.stage)) fail("stage.missing", `${where}: stage ${JSON.stringify(step.stage)} is not one of ${lib.define.STAGES.join(", ")}`);
   if (step.kind === "plumb" && step.seat !== undefined) fail("seat.invalid", `${where}: a plumb step has no seat`);
   if (isDecide(step) && step.seat !== lib.define.seatPath(step.id)) fail("seat.invalid", `${where}: its seat must be ${lib.define.seatPath(step.id)}`);
 }
@@ -398,6 +406,12 @@ for (const [id, seat] of Object.entries(seatReports)) {
   const flags = new Set(owners.flatMap(owner => [...flagsFor(owner)]));
   if (owners.every(owner => isPending(owner)) && flags.size === 0) continue;
   for (const flag of rest.filter(word => word.startsWith("--"))) if (!flags.has(flag)) fail("option.unknown", `${seat.path}: human.command uses ${flag}, which the clossys ${verb} parser does not define`);
+}
+/** WHO: every step's holder is a roster entry (the canvas's lanes are the roster); an unresolved holder is OPEN. */
+if (lib) for (const step of defined) {
+  const holder = lib.roster.holderOf(step, seatReports[step.id]);
+  if (holder.id === lib.roster.UNASSIGNED) open.push({ step: step.id, field: "holder (no seat file, and its kind and actor name no roster entry)" });
+  else if (!lib.roster.isRostered(holder.id)) fail("lane.unrostered", `step ${JSON.stringify(step.id)}: its holder ${holder.id} (${holder.source === "file" ? `${seatReports[step.id]?.path} by` : "derived from its actor"}) is not a roster entry (${lib.roster.ROSTER.join(", ")})`);
 }
 const seatDir = join(REPO, "clossys", "agents", "producer");
 if (existsSync(seatDir)) for (const name of readdirSync(seatDir)) {
