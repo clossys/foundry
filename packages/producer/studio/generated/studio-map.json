@@ -3021,6 +3021,11 @@
         "permanent": false
       },
       {
+        "from": "/designer/components.flow.canvas",
+        "to": "/designer/components/flow/components.flow.canvas",
+        "permanent": false
+      },
+      {
         "from": "/designer/sections.specimen-swatch",
         "to": "/designer/sections/specimens/sections.specimen-swatch",
         "permanent": false
@@ -14441,7 +14446,8 @@
         "description": "studio.group-designer-components",
         "groups": [
           "components.flow/flow-nodes",
-          "components.flow/flow-edges"
+          "components.flow/flow-edges",
+          "components.flow/flow-canvas"
         ]
       },
       "inputs": {
@@ -24671,6 +24677,12 @@
       "path": "/designer/components/flow/components.flow.edge"
     },
     {
+      "page": "designer-components.flow",
+      "slug": "components.flow.canvas",
+      "title": "Flow canvas",
+      "path": "/designer/components/flow/components.flow.canvas"
+    },
+    {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-swatch",
       "title": "Color swatch",
@@ -26588,6 +26600,11 @@
     {
       "source": "/designer/components.flow.base-node",
       "destination": "/designer/components/flow/components.flow.base-node",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.flow.canvas",
+      "destination": "/designer/components/flow/components.flow.canvas",
       "permanent": false
     },
     {

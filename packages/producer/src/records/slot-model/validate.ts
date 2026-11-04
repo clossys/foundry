@@ -1,7 +1,7 @@
 import { parseFrontmatter } from "./frontmatter.js";
 import {
   AGENT_KIND, CANDIDATE_NAME, CANDIDATE_STATUS_KEYS, DECIDED_BY, IA_SCHEMA, KIND_EXT, LEGACY_PROVENANCE_KEYS, NODE_ID, PAGE_SCHEMA,
-  PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, INSTANCE_KEY, WRITER_KEY_REF,
+  PUBLICATION_SCHEMA, SLOT_AGENTS, SLOT_ID, SLOT_KINDS, SLOT_SCHEMA, SOURCE_KINDS, NPM_SOURCE_REF, INSTANCE_KEY, WRITER_KEY_REF,
   type IaDoc, type PinDoc, type SlotAgent, type SlotDoc, type SlotKind, type SourceDoc,
 } from "./types.js";
 
@@ -123,7 +123,7 @@ export function validateSource(value: unknown, path: string): SlotModelIssue[] {
   const fail = (message: string): SlotModelIssue[] => [{ code: "candidate-source", path, message }];
   if (!object(value)) return fail("source must be {kind, ref, parts?, hash?, license?}");
   for (const key of Object.keys(value)) if (!["kind", "ref", "parts", "hash", "license"].includes(key)) return fail(`source has unknown key ${key}`);
-  if (!SOURCE_KINDS.includes(value.kind as SourceDoc["kind"])) return fail("source.kind must be registry, derived, original or composition");
+  if (!SOURCE_KINDS.includes(value.kind as SourceDoc["kind"])) return fail("source.kind must be registry, derived, original, composition or npm");
   if (!strings(value.ref)) return fail("source.ref must be a list");
   if (value.kind === "composition") {
     // A composition cites no reference of its own: its proof is the parts list, checked by ref-verbatim.
@@ -136,6 +136,7 @@ export function validateSource(value: unknown, path: string): SlotModelIssue[] {
       seen.add(part.slot);
     }
   } else if (value.parts !== undefined) return fail(`source.kind ${value.kind} takes no parts`);
+  else if (value.kind === "npm" && (value.ref.length !== 1 || !NPM_SOURCE_REF.test(value.ref[0]!))) return fail("source.kind npm needs exactly one ref npm/<package>@<exact version>");
   else if (value.kind !== "original" && value.ref.length === 0) return fail(`source.kind ${value.kind} needs at least one ref`);
   if (value.hash !== undefined && typeof value.hash !== "string") return fail("source.hash must be a string");
   if (value.license !== undefined && typeof value.license !== "string") return fail("source.license must be a string");

@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.producer",
     "l2": "producer-pipeline",
-    "order": 260
+    "order": 261
   },
   "kind": "element",
   "contract": {
@@ -69,6 +69,7 @@
     "components.badge",
     "components.card",
     "components.flow.base-node",
+    "components.flow.canvas",
     "components.flow.labeled-handle"
   ]
 }

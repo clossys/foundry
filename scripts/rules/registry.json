@@ -105,9 +105,23 @@
           "cwd": "packages/designer",
           "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
           "expect": "REF-HUNK-CLASS components\\.badge"
+        },
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-VERSION",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-NPM-VERSION components\\.flow\\.canvas"
+        },
+        {
+          "check": "packages/designer#check:ref-verbatim",
+          "cwd": "packages/designer",
+          "fixture": "scripts/rules/fixtures/R-SHADCN-STOCK-NPM-CODE",
+          "run": "node scripts/check-ref-verbatim.mjs --root {fixture}/clossys --pinned --components ui/components.json --report {out}/ref-verbatim.json",
+          "expect": "REF-NPM-CODE components\\.flow\\.canvas"
         }
       ],
-      "note": "Code-level gate: every pinned Designer candidate ships the vendored reference file plus only allowed hunks."
+      "note": "Code-level gate: every pinned Designer candidate ships the vendored reference file plus only allowed hunks; an npm candidate ships only named re-exports of the package version package-lock.json resolves."
     },
     {
       "id": "R-VENDORED-SOURCES",

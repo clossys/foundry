@@ -4,6 +4,7 @@
   "extensions": [
     "components.flow.base-handle",
     "components.flow.base-node",
+    "components.flow.canvas",
     "components.flow.edge",
     "components.flow.labeled-handle",
     "components.flow.node-header",
@@ -967,6 +968,13 @@
           "label": "Edges",
           "slots": [
             "components.flow.edge"
+          ]
+        },
+        {
+          "id": "flow-canvas",
+          "label": "Canvas",
+          "slots": [
+            "components.flow.canvas"
           ]
         }
       ]

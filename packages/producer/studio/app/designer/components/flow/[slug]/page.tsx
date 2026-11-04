@@ -10,6 +10,7 @@ const leaves: { slug: string }[] = [
   { slug: "components.flow.base-handle" },
   { slug: "components.flow.labeled-handle" },
   { slug: "components.flow.edge" },
+  { slug: "components.flow.canvas" },
 ];
 export const dynamicParams = true;
 export function generateStaticParams() {

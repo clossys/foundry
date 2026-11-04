@@ -19,7 +19,9 @@ export type RefVerbatimCode =
   | "REF-COMP-IMPORT"
   | "REF-COMP-UNUSED"
   | "REF-COMP-MARKUP"
-  | "REF-COMP-USES";
+  | "REF-COMP-USES"
+  | "REF-NPM-VERSION"
+  | "REF-NPM-CODE";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };
