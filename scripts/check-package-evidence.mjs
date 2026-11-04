@@ -130,6 +130,7 @@ import {
 import { TRIO_PUBLICATION_PATH, validateTrioFirstPublication } from "./lib/release-publication-cohort.mjs";
 import { TRIO_COHORT_PATH, TRIO_CONTROL_TAIL_AUTHORIZATION_PATH } from "./lib/release-qualification-trio.mjs";
 import { readValidatedLaterPublishedPackages } from "./lib/release-later-publication.mjs";
+import { withGitHistoryIndex } from "./lib/git-history-index.mjs";
 
 export const STATES = ["designed", "implemented", "staged", "published", "adopted", "grounded", "closed"];
 export const LIFECYCLE_POSITION_START = "<!-- lifecycle-position-table:start -->";
@@ -1014,13 +1015,17 @@ async function main() {
 
   const declared = (contract.packages ?? []).map((p) => p?.name).filter((n) => typeof n === "string");
   const { distSites, binSites } = scanInvocationSites(repoRoot, [...new Set([...declared, ...workspacePackages])]);
-  for (const [name, sites] of readPackageAuthenticQualificationSites(repoRoot)) {
-    distSites.set(name, [...(distSites.get(name) ?? []), ...sites]);
-  }
+  // Every retained-record history question below is answered from one
+  // batched `git log` over this run's HEAD instead of one walk per record.
+  const { workspaceBins, workspacePackageVersions, publishedPackages } = withGitHistoryIndex(repoRoot, () => {
+    for (const [name, sites] of readPackageAuthenticQualificationSites(repoRoot)) {
+      distSites.set(name, [...(distSites.get(name) ?? []), ...sites]);
+    }
 
-  const workspaceBins = readWorkspaceBins(repoRoot);
-  const workspacePackageVersions = readWorkspacePackageVersions(repoRoot);
-  const publishedPackages = readValidatedPublishedPackages(repoRoot);
+    const bins = readWorkspaceBins(repoRoot);
+    const versions = readWorkspacePackageVersions(repoRoot);
+    return { workspaceBins: bins, workspacePackageVersions: versions, publishedPackages: readValidatedPublishedPackages(repoRoot) };
+  });
   const { findings, results } = evaluatePrograms({
     contract,
     distSites,
