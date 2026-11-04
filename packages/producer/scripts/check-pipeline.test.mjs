@@ -39,8 +39,10 @@ describe("check:pipeline", { concurrency: 3 }, () => {
   });
   it("lists a step that lands on another branch as pending, never as passing", () => {
     const result = run(["--steps", stepsModule("pending", extra(`command: { module: "src/not-landed-yet.ts#run" }, pending: { branch: "claude/not-landed-yet", change: "adds" }`))]);
-    // The added step is not in the committed graph; nothing else may fail, and its absent entry is not entry.missing.
-    assert.deepEqual([...rules(result)], ["graph.stale"], JSON.stringify(result.out.failures, null, 2));
+    // The added step is not in the committed graph (graph.stale) and has no committed layout, which also
+    // re-ranks the code lane (layout.stale, naming it); nothing else may fail, and its absent entry is not entry.missing.
+    assert.deepEqual([...rules(result)].sort(), ["graph.stale", "layout.stale"], JSON.stringify(result.out.failures, null, 2));
+    assert.ok(result.out.failures.some(failure => failure.rule === "layout.stale" && failure.message.startsWith("mutant: committed layout (none)")), JSON.stringify(result.out.failures, null, 2));
     assert.deepEqual(result.out.pendingSteps, ["mutant"]);
   });
   it("fails a hand-listed edge", () => {
