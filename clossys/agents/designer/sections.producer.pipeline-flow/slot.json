@@ -6,7 +6,7 @@
     "l0": "sections",
     "l1": "sections.producer",
     "l2": "producer-pipeline",
-    "order": 261
+    "order": 262
   },
   "kind": "element",
   "contract": {
@@ -14,7 +14,7 @@
     "slot": "sections.producer.pipeline-flow",
     "package": "producer",
     "layer": "sections",
-    "purpose": "graph.json rendered by @xyflow/react: one components.flow.base-node per step with its header, labeled input and output handles and lane, joined by the built-in smoothstep edge; positions come from graph.json.",
+    "purpose": "graph.json rendered by @xyflow/react, filling the content area: one components.flow.base-node per step in a node-status indicator, lane labels, the smoothstep edge, stock Controls and MiniMap, and a stock Sheet of Field label + value facts per step; positions come from graph.json.",
     "inputs": [
       {
         "name": "flow",
@@ -59,6 +59,13 @@
         "version": "4.23.0",
         "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
         "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      },
+      {
+        "registry": "reactflow",
+        "item": "node-status-indicator",
+        "version": "20261103",
+        "hash": "sha256:0761456a110f126d8f1601e7e4799c1c0f45629c72a25d50f6616a7d34515166",
+        "url": "https://ui.reactflow.dev/registry/node-status-indicator.json"
       }
     ],
     "checkSuite": "studio",
@@ -68,8 +75,13 @@
   "uses": [
     "components.badge",
     "components.card",
+    "components.field",
     "components.flow.base-node",
     "components.flow.canvas",
-    "components.flow.labeled-handle"
+    "components.flow.edge",
+    "components.flow.labeled-handle",
+    "components.flow.node-status",
+    "components.item",
+    "components.sheet"
   ]
 }

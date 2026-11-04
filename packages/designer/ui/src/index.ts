@@ -26,8 +26,10 @@ import * as flowBaseNode from "./foundry/flow-base-node"
 import * as flowCanvas from "./foundry/flow-canvas"
 import * as flowEdge from "./foundry/flow-edge"
 import * as flowLabeledHandle from "./foundry/flow-labeled-handle"
+import * as flowNodeStatus from "./foundry/flow-node-status"
 import * as input from "./foundry/input"
 import * as inputGroup from "./foundry/input-group"
+import * as item from "./foundry/item"
 import * as label from "./foundry/label"
 import * as popover from "./foundry/popover"
 import * as scrollArea from "./foundry/scroll-area"
@@ -61,8 +63,10 @@ export const FOUNDRY_COMPONENT_SLOTS = [
   "flow-canvas",
   "flow-edge",
   "flow-labeled-handle",
+  "flow-node-status",
   "input",
   "input-group",
+  "item",
   "label",
   "popover",
   "scroll-area",
@@ -97,11 +101,13 @@ export const foundryComponents = {
   field: { Field: field.Field, FieldLabel: field.FieldLabel },
   "flow-base-handle": { BaseHandle: flowBaseHandle.BaseHandle },
   "flow-base-node": { BaseNode: flowBaseNode.BaseNode, BaseNodeHeader: flowBaseNode.BaseNodeHeader, BaseNodeHeaderTitle: flowBaseNode.BaseNodeHeaderTitle, BaseNodeContent: flowBaseNode.BaseNodeContent, BaseNodeFooter: flowBaseNode.BaseNodeFooter },
-  "flow-canvas": { ReactFlow: flowCanvas.ReactFlow, Background: flowCanvas.Background, Controls: flowCanvas.Controls, Handle: flowCanvas.Handle, MarkerType: flowCanvas.MarkerType, Position: flowCanvas.Position },
+  "flow-canvas": { ReactFlow: flowCanvas.ReactFlow, Background: flowCanvas.Background, Controls: flowCanvas.Controls, Handle: flowCanvas.Handle, MarkerType: flowCanvas.MarkerType, MiniMap: flowCanvas.MiniMap, Panel: flowCanvas.Panel, Position: flowCanvas.Position, useReactFlow: flowCanvas.useReactFlow },
   "flow-edge": { BaseEdge: flowEdge.BaseEdge, SmoothStepEdge: flowEdge.SmoothStepEdge },
   "flow-labeled-handle": { LabeledHandle: flowLabeledHandle.LabeledHandle },
+  "flow-node-status": { NodeStatusIndicator: flowNodeStatus.NodeStatusIndicator },
   input: { Input: input.Input },
   "input-group": { InputGroup: inputGroup.InputGroup, InputGroupAddon: inputGroup.InputGroupAddon },
+  item: { Item: item.Item, ItemContent: item.ItemContent, ItemTitle: item.ItemTitle, ItemActions: item.ItemActions },
   label: { Label: label.Label },
   popover: { Popover: popover.Popover, PopoverTrigger: popover.PopoverTrigger },
   "scroll-area": { ScrollArea: scrollArea.ScrollArea },
@@ -135,8 +141,10 @@ export * from "./foundry/flow-base-node"
 export * from "./foundry/flow-canvas"
 export * from "./foundry/flow-edge"
 export * from "./foundry/flow-labeled-handle"
+export * from "./foundry/flow-node-status"
 export * from "./foundry/input"
 export * from "./foundry/input-group"
+export * from "./foundry/item"
 export * from "./foundry/label"
 export * from "./foundry/popover"
 export * from "./foundry/scroll-area"

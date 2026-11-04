@@ -9,7 +9,7 @@ export interface StudioManifestAction { id: string; icon: string; label: string;
 /** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
 export interface StudioPageManifest { navigator: 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
-export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string; purpose?: string; description?: string; groups?: readonly string[] }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
+export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string; purpose?: string; description?: string; groups?: readonly string[]; record?: string; empty?: { title: string; description: string } }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
 /** A Publisher page record: frame + ordered sections + bindings; `leaf` assembles every leaf beneath the page. */
 export interface StudioPageRecord extends StudioAssemblySpec { id: string; path: string; title: string; frameId: string; leaf?: StudioAssemblySpec & { param: 'slug' } }
 
@@ -27,5 +27,14 @@ export const studioRoutes = projection.routes as readonly StudioInstalledRoute[]
 /** One leaf a tab page serves: the tab's page id, the slot slug, its label and its served path. */
 export interface StudioLeaf { page: string; slug: string; title: string; path: string }
 export const studioLeaves = projection.leaves as readonly StudioLeaf[];
-/** The top-level groups of the content map: the agents, in map order. */
-export const studioAgents = studioMap.entries.filter(row => row.kind === 'group' && !row.parentId).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
+/** One tab of an expanded record: its page id, the record it belongs to, its label and its served path. */
+export interface StudioTab { id: string; record: string; title: string; path: string }
+export const studioTabs = projection.tabs as readonly StudioTab[];
+/** The agent groups (the groups that hold an agent's expanded records), in map order. */
+export const studioAgents = projection.agents as readonly { id: string; label: string; icon?: string }[];
+/** The served path every entry opens on, by entry id. */
+export const studioLandings = projection.landings as Readonly<Record<string, string>>;
+/** One crumb of a served entry's trail. */
+export interface StudioCrumb { id: string; label: string; href?: string }
+/** Every served entry's trail, by entry id (a leaf by `<tab id>:<slug>`). */
+export const studioTrails = projection.trails as Readonly<Record<string, readonly StudioCrumb[]>>;

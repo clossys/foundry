@@ -1,0 +1,8 @@
+{
+  "by": "owner",
+  "llm": null,
+  "human": {
+    "procedure": "Compare a slot's candidates against its contract; pin one with clossys pin, or mark the slot not needed with clossys pin --not-needed.",
+    "command": "clossys pin"
+  }
+}

@@ -18,6 +18,18 @@ export const pinsOf = (agent: Agent): Port => ({ glob: `clossys/agents/${agent}/
 export const candidatesOf = (agent: Agent): Port => ({ glob: `clossys/agents/${agent}/*/candidates/*`, schema: CANDIDATE_SCHEMA[agent] });
 /** Every agent's candidate files, one typed port per agent schema. */
 export const CANDIDATES: readonly Port[] = AGENTS.map(candidatesOf);
+/** Library element records (src/records/schemas.ts ELEMENT_SCHEMA); their payload files stay untyped. */
+export const LIBRARY_ELEMENTS: Port = { glob: "clossys/library/*/*/v*/element.json", schema: "library-element" };
+/** The consumer selection (src/records/schemas.ts SELECTION_SCHEMA). */
+export const SELECTION: Port = { glob: "clossys/selection.json", schema: "selection" };
+/** The Studio map projection the Studio checks and capture read. */
+export const STUDIO_MAP: Port = { glob: "pkg:studio/generated/studio-map.json", schema: "studio-map" };
+/** The compile lock `clossys compile` writes. */
+export const COMPILE_LOCK: Port = { glob: "pkg:studio/compile.lock.json", schema: "compile-lock" };
+/** The page-check source receipt the build writes and `clossys check --pages` reads. */
+export const SOURCE_RECEIPT: Port = { glob: "pkg:dist/check/source-receipt.json", schema: "source-receipt" };
+/** The committed pipeline graph the Studio server reads at GET /api/pipeline. */
+export const PIPELINE_GRAPH: Port = { glob: "pkg:pipeline/graph.json", schema: "pipeline-graph" };
 /*
  * Field carve-outs (`slot.json#uses`, `slot.json#notNeeded`, `candidates/*#status`) stay untyped:
  * a field write is not the file's contract, so it feeds no edge and is listed as untyped.

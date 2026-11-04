@@ -40,6 +40,7 @@ function fixture(overrides = {}) {
     'packages/producer/studio/sections/page-tabs/index.tsx': SECTION,
     'packages/producer/studio/components/StudioPage.tsx': RENDERER,
     'packages/producer/studio/generated/studio-map.json': JSON.stringify(MAP),
+    'clossys/agents/designer/ia.json': JSON.stringify({ schema: 'clossys.ia/1' }),
     'clossys/agents/publisher/page.designer-themes/pin.json': JSON.stringify({ candidate: 'page-v1.json' }),
     'clossys/agents/publisher/page.designer-themes/candidates/page-v1.json': record([PAGE_HEADER, PAGE_TABS]),
     ...overrides,
@@ -99,4 +100,38 @@ test('mutation: a record page without projected tab routes fails tabs-projected'
   assert.deepEqual(rules(fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(map) })), ['tabs-projected']);
   const flat = { map: { entries: [...MAP.map.entries, { id: 'agents', kind: 'group', parentId: null }, { id: 'writer', kind: 'page', parentId: 'agents', source: { sectionIds: [PAGE_HEADER, PAGE_TABS] } }] } };
   assert.ok(fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(flat) }).some(row => /agent accordions/.test(row.detail)));
+});
+
+test('mutation: an agent group under a system group still needs page-tabs on its records; a system overview does not', () => {
+  const nested = entries => ({ map: { entries: [
+    { id: 'home', kind: 'page', path: '/', parentId: null },
+    { id: 'content', kind: 'group', path: '/systems/content', parentId: null },
+    { id: 'content-overview', kind: 'page', path: '/content', parentId: 'content', source: { sectionIds: [PAGE_HEADER] } },
+    ...entries,
+  ] } });
+  const designer = { id: 'designer', kind: 'group', path: '/designer', parentId: 'content' };
+  const tab = { id: 'designer-themes.colors', kind: 'page', path: '/designer/themes/colors', parentId: 'designer-themes' };
+  const withTabs = nested([designer, { id: 'designer-themes', kind: 'page', path: '/designer/themes', parentId: 'designer', source: { sectionIds: [PAGE_HEADER, PAGE_TABS] } }, tab]);
+  assert.deepEqual(fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(withTabs) }), []);
+  const without = nested([designer, { id: 'designer-themes', kind: 'page', path: '/designer/themes', parentId: 'designer', source: { sectionIds: [PAGE_HEADER] } }, tab]);
+  const findings = fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(without) });
+  assert.deepEqual(rules(findings), ['tabs-projected']);
+  assert.ok(findings.some(row => /designer-themes: places no page-tabs section/.test(row.detail)));
+});
+
+test('mutation: a record whose tabs the Publisher projects beside it passes; dropping the projected tab routes fails tabs-projected', () => {
+  const entries = [
+    { id: 'home', kind: 'page', path: '/', parentId: null },
+    { id: 'content', kind: 'group', path: '/systems/content', parentId: null },
+    { id: 'designer', kind: 'group', path: '/designer', parentId: 'content' },
+    { id: 'designer-themes', kind: 'page', path: '/designer/themes', parentId: 'designer', source: { sectionIds: [PAGE_HEADER, PAGE_TABS] } },
+    { id: 'designer-themes.colors', kind: 'page', path: '/designer/themes/colors', parentId: 'designer', source: { sectionIds: [PAGE_HEADER, PAGE_TABS] } },
+  ];
+  const tabs = [{ id: 'designer-themes.colors', record: 'designer-themes', path: '/designer/themes/colors' }];
+  assert.deepEqual(fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify({ map: { entries }, tabs }) }), []);
+  const findings = fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify({ map: { entries: entries.slice(0, -1) }, tabs: [] }) });
+  assert.ok(findings.some(row => /designer-themes: places page-tabs but projects no tab routes/.test(row.detail)));
+  // A sibling page the Publisher does not project as a tab is a record of its own and needs its own tabs.
+  const unprojected = fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify({ map: { entries }, tabs: [] }) });
+  assert.ok(unprojected.some(row => /designer-themes.colors: places page-tabs but projects no tab routes/.test(row.detail)));
 });

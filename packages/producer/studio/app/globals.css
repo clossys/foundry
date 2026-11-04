@@ -1,5 +1,8 @@
 /* Studio styling is the Foundry components layer: stock shadcn CSS variables carrying Clossys values. */
 @import "@clossys/designer-ui/styles.css";
+/* React Flow's stylesheet, from the pinned components.flow.canvas part; its --xy-* theme, generated from the pinned tokens. */
+@import "@clossys/designer-ui/flow-canvas.css";
+@import "../generated/studio-flow-theme.css";
 
 @source "../../../designer/ui/src";
 @source "../app";

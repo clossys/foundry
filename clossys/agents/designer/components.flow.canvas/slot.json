@@ -6,7 +6,7 @@
     "l0": "components",
     "l1": "components.flow",
     "l2": "flow-canvas",
-    "order": 259
+    "order": 260
   },
   "kind": "element",
   "contract": {
@@ -30,7 +30,10 @@
         "themes.muted-foreground",
         "themes.ring",
         "themes.secondary",
-        "themes.radius"
+        "themes.radius",
+        "themes.muted",
+        "themes.accent",
+        "themes.accent-foreground"
       ],
       "assets": []
     }

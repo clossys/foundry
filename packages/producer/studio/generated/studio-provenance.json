@@ -19,6 +19,21 @@
     "data-clossys-candidate": "module-checks-v4.json",
     "data-clossys-hash": "sha256:24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199"
   },
+  "sections.producer.team-strip": {
+    "data-clossys-slot": "sections.producer.team-strip",
+    "data-clossys-candidate": "producer-team-strip-v1.json",
+    "data-clossys-hash": "sha256:f30b003e93a38409db438f9145df77b2475f7c635db69db2bfbfaea08cebded9"
+  },
+  "sections.producer.pipeline-legend": {
+    "data-clossys-slot": "sections.producer.pipeline-legend",
+    "data-clossys-candidate": "producer-pipeline-legend-v3.json",
+    "data-clossys-hash": "sha256:41fc6a637ad8ad4dac154506a8b97c86d0b283d7157799b1ff0676c4eee95525"
+  },
+  "sections.producer.pipeline-flow": {
+    "data-clossys-slot": "sections.producer.pipeline-flow",
+    "data-clossys-candidate": "producer-pipeline-flow-v9.json",
+    "data-clossys-hash": "sha256:5304aea9ebb0d673de47724884ee4c7a42e0615bf34a1e9c83fbf564d9d1024c"
+  },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",
     "data-clossys-candidate": "studio-page-tabs-v5.json",
@@ -28,6 +43,11 @@
     "data-clossys-slot": "sections.studio.slot-groups",
     "data-clossys-candidate": "studio-slot-groups-v4.json",
     "data-clossys-hash": "sha256:e1340410cf9d47f9eae8aa427552840403b6ffe7bba568e902284c5262a0644a"
+  },
+  "sections.producer.system-empty": {
+    "data-clossys-slot": "sections.producer.system-empty",
+    "data-clossys-candidate": "producer-system-empty-v1.json",
+    "data-clossys-hash": "sha256:b1c13669e7c6e4a0483b72d4806b8802f43b124728d8a254bc52bbae91c57ad2"
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",

@@ -135,7 +135,7 @@ function CommandMenu({ commands, pageCommands, open, onOpenChange, copy }: { com
 }
 
 /** Desktop navigation and mobile dismissal follow the native Sidebar boundary. */
-function StudioNavigation({ navigation, navigationLabel, copy }: { navigation: ContentMapNavigation; navigationLabel?: string; copy: SidebarCopy }) {
+function StudioNavigation({ navigation, copy }: { navigation: ContentMapNavigation; copy: SidebarCopy }) {
   const pathname = usePathname();
   const { isMobile, setOpenMobile } = useSidebar();
   useEffect(() => {
@@ -143,7 +143,7 @@ function StudioNavigation({ navigation, navigationLabel, copy }: { navigation: C
     // The content column is the scroller, so a new page starts at its top.
     document.getElementById('studio-main')?.scrollTo({ top: 0 });
   }, [pathname, setOpenMobile]);
-  return !isMobile ? <AppSidebar navigation={navigation} navigationLabel={navigationLabel} copy={copy} /> : null;
+  return !isMobile ? <AppSidebar navigation={navigation} copy={copy} /> : null;
 }
 
 /** The scroll-spy over the open popover's targets: the part at the top of the page column is active. */
@@ -195,8 +195,6 @@ function useScrollSpy(targets: readonly string[]) {
 export interface StudioShellProps {
   homeHref: string;
   navigation: ContentMapNavigation;
-  /** The sidebar label over the map's group rows (Writer copy). */
-  navigationLabel?: string;
   commands: readonly ContentMapCommandGroup[];
   breadcrumbs: readonly { id: string; label: string; href?: string }[];
   /** The shell's own words, resolved from the Writer by the page. */
@@ -218,12 +216,12 @@ export interface StudioShellProps {
 export default function StudioShellFrame(props: StudioShellProps) {
   const [leftOpen, setLeftOpen] = useState(true);
   useEffect(() => { setLeftOpen(readCookie(LEFT_COOKIE) ?? true); }, []);
-  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} navigationLabel={props.navigationLabel} copy={props.copy.sidebar} />}>
+  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} copy={props.copy.sidebar} />}>
     <StudioShellContent {...props} />
   </StudioAppFrame>;
 }
 
-function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs, copy, popovers = [], body = 'plain', head, children }: StudioShellProps) {
+function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers = [], body = 'plain', head, children }: StudioShellProps) {
   const pathname = usePathname();
   const { resolved, setMode } = useThemeMode();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -329,7 +327,7 @@ function StudioShellContent({ navigation, navigationLabel, commands, breadcrumbs
     </StudioPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} copy={copy.search} />
     {isMobile && <StockSidebarSheet panel={mobilePanel} copy={copy.chat} isOpen={openMobile} onOpenChange={setOpenMobile}>
-      {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} navigationLabel={navigationLabel} copy={copy.sidebar} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
+      {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} copy={copy.sidebar} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
     </StockSidebarSheet>}
   </>;
 }

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "page.producer-pipeline",
+  "agent": "publisher",
+  "ia": {
+    "l1": "studio",
+    "l2": "systems",
+    "order": 19
+  },
+  "kind": "page",
+  "contract": {},
+  "inputs": [
+    "frames.studio-shell",
+    "sections.producer.pipeline-flow",
+    "sections.producer.pipeline-legend",
+    "sections.producer.team-strip",
+    "sections.studio.page-header"
+  ],
+  "uses": [
+    "assets.icon-team",
+    "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.outline",
+    "sections.producer.pipeline-flow",
+    "sections.producer.pipeline-legend",
+    "sections.producer.team-strip",
+    "sections.studio.page-header",
+    "strings.common"
+  ]
+}

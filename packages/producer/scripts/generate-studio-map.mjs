@@ -8,9 +8,9 @@ import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slot
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
-import { expandPublication } from '../dist/publish/expand-tabs.js';
+import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
 import { checkPayload } from './studio-payload.mjs';
-import { brandJson, iconsModule, provenanceJson } from './check-generated-derived.mjs';
+import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
 const studioRoot = fileURLToPath(new URL('../studio/', import.meta.url));
@@ -292,13 +292,23 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
   };
   const frames = items.filter(item => item.slot.startsWith('frames.'));
   const sections = items.filter(item => item.slot.startsWith('sections.'));
+  // Every leaf a tab serves (`<tab path>/<slot id>`).
+  const leaves = expansion.leafTemplates.flatMap(template => {
+    const tab = expansion.tabs.find(row => row.id === template.pageId);
+    return template.leaves.map(leaf => ({ page: template.pageId, slug: leaf.slug, title: leaf.title, path: `${tab.path}/${leaf.slug}` }));
+  });
+  const tabs = expansion.tabs.map(tab => ({ id: tab.id, record: tab.recordId, title: tab.title, path: tab.path }));
   const projection = {
     publicationId: map.publicationId, homeId: routePack.homeRouteId, root, map, pages,
-    // Every leaf a tab serves (`<tab path>/<slot id>`), and the redirects the expanded map declares.
-    leaves: expansion.leafTemplates.flatMap(template => {
-      const tab = expansion.tabs.find(row => row.id === template.pageId);
-      return template.leaves.map(leaf => ({ page: template.pageId, slug: leaf.slug, title: leaf.title, path: `${tab.path}/${leaf.slug}` }));
-    }),
+    leaves,
+    // Each expanded record's tabs, in order: the record's page-tabs read them, never a child walk.
+    tabs,
+    // The agent groups: the groups that hold an expanded record (an agent's records), in map order.
+    agents: map.entries.filter(row => row.kind === 'group' && expansion.tabs.some(tab => map.entries.find(entry => entry.id === tab.recordId)?.parentId === row.id)).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title, ...(row.icon ? { icon: row.icon } : {}) })),
+    // The page every entry opens on, and every served entry's trail (groups, record, tab, leaf): the breadcrumbs.
+    landings: Object.fromEntries(map.entries.flatMap(row => { const href = landingOf(map, expansion.tabs, row.id); return href ? [[row.id, href]] : []; })),
+    trails: projectTrails(map, expansion.tabs, leaves),
+    // The redirects the expanded map declares.
     redirects: projectRedirects(map),
     ...(target === 'preview' ? { assembly: previewDescriptor(previewItems) } : {}),
     items: items.map(item => ({ slot: item.slot, element: item.element, version: item.version, ...(item.previewEvidence ? { previewEvidence: item.previewEvidence } : {}) })),
@@ -322,7 +332,7 @@ export interface StudioManifestAction { id: string; icon: string; label: string;
 /** The page manifest: navigator, modules, header actions and one wiring line per interaction. */
 export interface StudioPageManifest { navigator: 'outline'; modules: readonly StudioManifestModule[]; actions: readonly StudioManifestAction[]; wiring: readonly { do: string; expect: string }[] }
 /** How one assembly is laid out and fed: a data loader, and per section the data field its contract input reads. */
-export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string; purpose?: string; description?: string; groups?: readonly string[] }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
+export interface StudioAssemblySpec { body: 'plain' | 'detail'; data: { loader: string; agent?: string; purpose?: string; description?: string; groups?: readonly string[]; record?: string; empty?: { title: string; description: string } }; inputs: Record<string, string>; sectionIds: readonly string[]; manifest: StudioPageManifest }
 /** A Publisher page record: frame + ordered sections + bindings; \`leaf\` assembles every leaf beneath the page. */
 export interface StudioPageRecord extends StudioAssemblySpec { id: string; path: string; title: string; frameId: string; leaf?: StudioAssemblySpec & { param: 'slug' } }
 
@@ -340,8 +350,17 @@ export const studioRoutes = projection.routes as readonly StudioInstalledRoute[]
 /** One leaf a tab page serves: the tab's page id, the slot slug, its label and its served path. */
 export interface StudioLeaf { page: string; slug: string; title: string; path: string }
 export const studioLeaves = projection.leaves as readonly StudioLeaf[];
-/** The top-level groups of the content map: the agents, in map order. */
-export const studioAgents = studioMap.entries.filter(row => row.kind === 'group' && !row.parentId).sort((a, b) => a.order - b.order).map(row => ({ id: row.id, label: row.title }));
+/** One tab of an expanded record: its page id, the record it belongs to, its label and its served path. */
+export interface StudioTab { id: string; record: string; title: string; path: string }
+export const studioTabs = projection.tabs as readonly StudioTab[];
+/** The agent groups (the groups that hold an agent's expanded records), in map order. */
+export const studioAgents = projection.agents as readonly { id: string; label: string; icon?: string }[];
+/** The served path every entry opens on, by entry id. */
+export const studioLandings = projection.landings as Readonly<Record<string, string>>;
+/** One crumb of a served entry's trail. */
+export interface StudioCrumb { id: string; label: string; href?: string }
+/** Every served entry's trail, by entry id (a leaf by \`<tab id>:<slug>\`). */
+export const studioTrails = projection.trails as Readonly<Record<string, readonly StudioCrumb[]>>;
 `;
   const bindings = `${assemblyBanner}import { createElement, type ComponentType } from 'react';
 import type { StudioShellProps } from '../frames/studio-shell';
@@ -369,7 +388,7 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i},
     : await studioCopyRegistry(clossysRoot);
   // Derived products: the icon map from the pinned icon glyphs, each section's DOM provenance from its binding, the consumer brand from its pinned assets.
   const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
-    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot) };
+    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });

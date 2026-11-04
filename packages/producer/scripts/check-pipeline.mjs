@@ -14,18 +14,26 @@
 // Failure rules (each finding names one):
 //   dist.missing      dist/pipeline is absent or older than src/pipeline; build first
 //   step.invalid      a step definition does not load (defineStep refused it) or is malformed
+//   stage.missing     a step names no stage, or a stage that is not one of define.ts STAGES (WHEN:
+//                     the canvas's columns, `<round>.<stage>` in (round, stage) order)
+//   lane.unrostered   a step's seat holder (its seat file's `by`, else derived from its kind; WHO:
+//                     the canvas's lanes) is not a roster entry (roster.ts ROSTER)
+//   stage.orphan      a step outside the first stage (direct.brief) that no derived edge feeds: it
+//                     reads nothing another step produces, so it starts the flow mid-way. Only a
+//                     first-stage step may start it; declare the typed files the step really reads
 //   edge.declared     an edge, option or config listed by hand; edges are derived from output/input globs
 //   graph.stale       pipeline/graph.json differs from the graph built from the definitions
 //   edges.stale       its edges differ from the derived edges (an edge needs the same schema on
 //                     both ports and overlapping globs), named by from->to
 //   layout.stale      a node's layout {lane, rank, x, y}, the lanes or the cycle breaks differ from
-//                     the generator's deterministic layout, named by step id
+//                     the generator's deterministic layout, named by step id (layout.crossings too)
 //   layout.nondeterministic  two builds of the graph from the same definitions differ
 //   edge.schema-mismatch  an output and an input overlap by glob but name different schemas
 //   schema.missing    a port names a schema with no file under pipeline/schemas/
 //   schema.invalid    a committed file an output glob matches fails its port schema (reported by step id)
 //   output.zero       a tracked data file, or a step input, that no step produces
-//   output.multiple   one file (or one JSON field) produced by two steps
+//   output.multiple   one file (or one JSON field) produced by two steps, or one CLI mode (verb, flags
+//                     and `<agent>/` target) declared by two steps
 //   entry.missing     a step names an entry, module, script, npm script or skill that does not exist
 //   entry.stale       a pending step whose branch has landed (or whose removal already happened)
 //   verb.undeclared   a CLI verb no step declares; verb.unknown is the reverse
@@ -41,8 +49,10 @@
 //   option.unknown    a flag the step's CLI parser does not define
 //
 // A missing seat file, or a seat part set to null, is listed as OPEN (unassigned), never as passing.
+// A step whose holder does not resolve at all sits in the `unassigned` lane and is listed as OPEN.
 // A workspace port that names no schema feeds no edge; each one is listed as UNTYPED (and in
-// graph.json "untyped"), never dropped silently. Cycle edges the layout skips are listed as CYCLE.
+// graph.json "untyped"), never dropped silently. Cycle edges the layout skips are listed as CYCLE;
+// the layout's edge crossings before and after its barycenter ordering are listed as CROSSINGS.
 //
 // Steps declared `pending` (they land on another branch) are reported as PENDING,
 // never as passing. A pending step's own entry may be absent; when it exists the
@@ -69,10 +79,11 @@ const pending = [];
 const open = [];
 let untyped = [];
 let cycleBreaks = [];
+let crossings = null;
 const fail = (rule, message) => failures.push({ rule, message });
 const note = (step, message) => pending.push({ step, message });
 function report() {
-  const summary = { ok: failures.length === 0, steps: steps.length, pendingSteps: steps.filter(isPending).map(step => step.id), failures, pending, open, untyped, cycleBreaks, unscanned };
+  const summary = { ok: failures.length === 0, steps: steps.length, pendingSteps: steps.filter(isPending).map(step => step.id), failures, pending, open, untyped, cycleBreaks, crossings, unscanned };
   if (json) console.log(JSON.stringify(summary, null, 2));
   else {
     for (const { rule, message } of failures) console.log(`FAIL ${rule}: ${message}`);
@@ -80,6 +91,7 @@ function report() {
     for (const { step, field } of open) console.log(`OPEN ${step}: ${field} is unassigned`);
     for (const { step, port, glob } of untyped) console.log(`UNTYPED ${step}: ${port} ${glob} names no schema, so it feeds no edge`);
     for (const { from, to } of cycleBreaks) console.log(`CYCLE ${from} -> ${to}: edge closes a cycle; the layout ranks without it (step id order)`);
+    if (crossings) console.log(`CROSSINGS ${crossings.before} -> ${crossings.after}: edge crossings with steps in id order, then after the layout's barycenter ordering`);
     for (const { step, output } of unscanned) console.log(`INFO ${step}: ${output} has no file-name marker; its writers are found through the step's other outputs`);
     console.log(failures.length ? `check:pipeline FAIL (${failures.length} findings, ${pending.length} pending)` : `check:pipeline PASS (${steps.length} steps, ${edgeCount} edges, ${summary.pendingSteps.length} pending, ${pending.length} pending notes, ${open.length} open, ${untyped.length} untyped ports, ${cycleBreaks.length} cycle breaks)`);
   }
@@ -119,6 +131,7 @@ else try {
     globs: await import(pathToFileURL(join(DIST, "globs.js")).href),
     schema: await import(pathToFileURL(join(DIST, "schema.js")).href),
     seats: await import(pathToFileURL(join(DIST, "seats.js")).href),
+    roster: await import(pathToFileURL(join(DIST, "roster.js")).href),
   };
 } catch (error) {
   const rule = /listed by hand/.test(error?.message ?? "") ? "edge.declared" : "step.invalid";
@@ -138,6 +151,8 @@ for (const step of steps) {
   for (const key of HAND_LISTED) if (step[key] !== undefined || step.command?.[key] !== undefined) fail("edge.declared", `${where}: ${key} is listed by hand; edges, options and config are derived`);
   if (!lib) continue;
   if (!lib.define.STEP_KINDS.includes(step.kind)) fail("step.invalid", `${where}: kind must be ${lib.define.STEP_KINDS.join(", ")}`);
+  if (step.stage === undefined) fail("stage.missing", `${where}: names no stage; every step names one of ${lib.define.STAGES.join(", ")}`);
+  else if (!lib.define.STAGES.includes(step.stage)) fail("stage.missing", `${where}: stage ${JSON.stringify(step.stage)} is not one of ${lib.define.STAGES.join(", ")}`);
   if (step.kind === "plumb" && step.seat !== undefined) fail("seat.invalid", `${where}: a plumb step has no seat`);
   if (isDecide(step) && step.seat !== lib.define.seatPath(step.id)) fail("seat.invalid", `${where}: its seat must be ${lib.define.seatPath(step.id)}`);
 }
@@ -159,8 +174,15 @@ if (lib) {
   const fresh = JSON.parse(regenerated);
   if (lib.graph.graphJson(lib.graph.buildGraph(REPO, defined, PKG)) !== regenerated) fail("layout.nondeterministic", "two builds of the graph from the same step definitions differ");
   edgeCount = fresh.edges.length;
+  // WHEN: only a first-stage step may start the flow; every later step is fed by a derived edge.
+  const fed = new Set(fresh.edges.map(edge => edge.to));
+  for (const step of defined) {
+    if (step.stage === undefined || !lib.define.STAGES.includes(step.stage) || step.stage === lib.define.STAGES[0] || fed.has(step.id)) continue;
+    fail("stage.orphan", `step ${JSON.stringify(step.id)} (${step.stage}): no derived edge feeds it, so it starts the flow outside ${lib.define.STAGES[0]}; declare the typed files it reads`);
+  }
   untyped = fresh.untyped ?? [];
   cycleBreaks = fresh.layout?.cycleBreaks ?? [];
+  crossings = fresh.layout?.crossings ?? null;
   for (const m of lib.graph.schemaMismatches(defined)) fail("edge.schema-mismatch", `${m.from} -> ${m.to}: ${m.output} (${m.outputSchema}) overlaps ${m.input} (${m.inputSchema}); one file has one schema`);
   let committed = null;
   try { committed = existsSync(GRAPH) ? JSON.parse(readFileSync(GRAPH, "utf8")) : null; } catch { fail("graph.stale", `${relative(REPO, GRAPH)} is not valid JSON`); }
@@ -177,7 +199,7 @@ if (lib) {
     const moved = [...wantLayout.keys()].filter(id => haveLayout.get(id) !== wantLayout.get(id));
     for (const id of moved.slice(0, 10)) fail("layout.stale", `${id}: committed layout ${haveLayout.get(id) ?? "(none)"} differs from the generated ${wantLayout.get(id)}`);
     if (moved.length > 10) fail("layout.stale", `${moved.length - 10} more nodes have a stale layout`);
-    for (const key of ["lanes", "cycleBreaks", "constants"]) if (JSON.stringify(committed.layout?.[key] ?? null) !== JSON.stringify(fresh.layout[key])) fail("layout.stale", `layout.${key} differs from the generated layout`);
+    for (const key of ["lanes", "cycleBreaks", "constants", "crossings"]) if (JSON.stringify(committed.layout?.[key] ?? null) !== JSON.stringify(fresh.layout[key])) fail("layout.stale", `layout.${key} differs from the generated layout`);
   }
 }
 
@@ -354,7 +376,8 @@ for (const verb of verbs) {
   if (!owners) { fail("verb.undeclared", `clossys ${verb} runs, but no step declares it`); continue; }
   const modes = new Map();
   for (const step of owners) {
-    const mode = (step.run.cli.flags ?? []).join(" ") || "default";
+    // A mode is the step's flags, plus the `<agent>/` its first argument names when the verb takes a target.
+    const mode = [...(step.run.cli.flags ?? []), ...(step.run.cli.target !== undefined ? [`${step.run.cli.target}/<slot>`] : [])].join(" ") || "default";
     if (modes.has(mode)) fail("output.multiple", `clossys ${verb} (${mode}) is declared by ${modes.get(mode)} and ${step.id}`);
     modes.set(mode, step.id);
   }
@@ -394,6 +417,12 @@ for (const [id, seat] of Object.entries(seatReports)) {
   const flags = new Set(owners.flatMap(owner => [...flagsFor(owner)]));
   if (owners.every(owner => isPending(owner)) && flags.size === 0) continue;
   for (const flag of rest.filter(word => word.startsWith("--"))) if (!flags.has(flag)) fail("option.unknown", `${seat.path}: human.command uses ${flag}, which the clossys ${verb} parser does not define`);
+}
+/** WHO: every step's holder is a roster entry (the canvas's lanes are the roster); an unresolved holder is OPEN. */
+if (lib) for (const step of defined) {
+  const holder = lib.roster.holderOf(step, seatReports[step.id]);
+  if (holder.id === lib.roster.UNASSIGNED) open.push({ step: step.id, field: "holder (no seat file, and its kind and actor name no roster entry)" });
+  else if (!lib.roster.isRostered(holder.id)) fail("lane.unrostered", `step ${JSON.stringify(step.id)}: its holder ${holder.id} (${holder.source === "file" ? `${seatReports[step.id]?.path} by` : "derived from its actor"}) is not a roster entry (${lib.roster.ROSTER.join(", ")})`);
 }
 const seatDir = join(REPO, "clossys", "agents", "producer");
 if (existsSync(seatDir)) for (const name of readdirSync(seatDir)) {

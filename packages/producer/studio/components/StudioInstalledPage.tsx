@@ -16,7 +16,7 @@ const segmentsOf = (path: string) => path.split('/').filter(Boolean);
 export async function PublishedPage({ page, slug }: { page: string; slug?: string }) {
   const record = pageById.get(page);
   if (!record) throw new Error(`Studio has no installed page ${page}`);
-  // A record with group tabs opens on its first tab: the tabs are the record's content-map children.
+  // A record with group tabs opens on its first tab: Publisher's projected landing for the record.
   const landing = slug === undefined ? studioLanding(record.id) : undefined;
   if (landing && landing !== record.path) redirect(landing);
   const spec = slug === undefined ? record : record.leaf;

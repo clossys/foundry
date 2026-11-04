@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import type { ContentMapNavigation } from "@clossys/publisher/content-map"
+import type { ContentMapNavigation, ContentMapNavigationNode as NavNode } from "@clossys/publisher/content-map"
 
 import { NavMain } from "./nav-main"
 import { NavUser } from "./nav-user"
@@ -37,18 +37,25 @@ export interface SidebarCopy {
  * The left sidebar: shadcn sidebar-15's `SidebarLeft` (off-canvas, full height, toggled from the
  * header) holding the N1 navigation, shadcn sidebar-07 `AppSidebar` content. Its sample data is
  * replaced by Studio's: the consumer brand as the one team, the Studio map's navigation tree as
- * `navMain`, the local workspace as the user. The block's `NavProjects` group is left out: the
- * Studio map has no projects.
+ * one `NavMain` per system (the map's root groups), the local workspace as the user. The block's
+ * `NavProjects` group is left out: the Studio map has no projects.
  */
 export function AppSidebar({
   navigation,
-  navigationLabel,
   copy,
   ...props
-}: React.ComponentProps<typeof Sidebar> & { navigation: ContentMapNavigation; navigationLabel?: string; copy: SidebarCopy }) {
+}: React.ComponentProps<typeof Sidebar> & { navigation: ContentMapNavigation; copy: SidebarCopy }) {
   const { brand } = useStudioData()
   const { resolved } = useThemeMode()
   const name = brand.state === "ready" ? brand.value.name : undefined
+  const item = (node: NavNode) => {
+    const Icon = studioIcon(node.icon)
+    return { title: node.label, url: node.href, icon: <Icon />, isActive: navigation.activeId === node.id }
+  }
+  const group = (node: NavNode) => {
+    const items = (node.children ?? []).flatMap((child) => (child.href ? [{ title: child.label, url: child.href, isActive: navigation.activeId === child.id }] : []))
+    return items.length ? [{ ...item(node), items }] : []
+  }
   const data = {
     user: {
       name: copy.user.name,
@@ -65,14 +72,13 @@ export function AppSidebar({
         plan: name ? copy.plan : copy.localPlan,
       },
     ],
-    navMain: navigation.tree.flatMap((node) => {
-      const Icon = studioIcon(node.icon)
-      const items = (node.children ?? []).flatMap((child) =>
-        child.href ? [{ title: child.label, url: child.href, isActive: navigation.activeId === child.id }] : []
-      )
-      if (!items.length && !node.href) return []
-      return [{ title: node.label, url: node.href, icon: <Icon />, isActive: navigation.activeId === node.id, items }]
-    }),
+    // The map's root pages (Home: a projected href) sit in one unlabeled NavMain; each root group (a
+    // system: no href) is one NavMain labeled with its name, its pages as menu buttons and its child
+    // groups (the agents: projected children) as the block's collapsible items.
+    pages: navigation.tree.flatMap((node) => (node.href ? [item(node)] : [])),
+    systems: navigation.tree.flatMap((node) =>
+      node.href ? [] : [{ id: node.id, label: node.label, items: (node.children ?? []).flatMap((child) => (child.children?.length ? group(child) : child.href ? [item(child)] : [])) }]
+    ),
   }
   return (
     <Sidebar className="border-r-0" {...props}>
@@ -80,8 +86,10 @@ export function AppSidebar({
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain.filter((item) => !item.items.length)} />
-        <NavMain label={navigationLabel} items={data.navMain.filter((item) => item.items.length)} />
+        <NavMain items={data.pages} />
+        {data.systems.map((system) => (
+          <NavMain key={system.id} label={system.label} items={system.items} />
+        ))}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

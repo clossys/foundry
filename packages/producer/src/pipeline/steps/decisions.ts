@@ -1,57 +1,63 @@
 import { defineStep } from "../define.js";
-import { CANDIDATES, IA, PINS, SEATS, SLOTS, candidatesOf } from "./ports.js";
+import type { Stage } from "../define.js";
+import { IA, LIBRARY_ELEMENTS, SEATS, SELECTION, SLOTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
+import type { Agent } from "./ports.js";
+
+/** One `clossys pin` step per agent, at the pin stage of the agent's round; You hold every one. */
+const PIN_ROUNDS: readonly (readonly [Agent, Stage])[] = [["director", "direct.pin"], ["designer", "design.pin"], ["writer", "design.pin"], ["publisher", "publish.pin"]];
 
 /** Owner and agent decisions: the only steps that may write decision files (decision-boundary.md). */
 export const DECISION_STEPS = [
   defineStep({
-    id: "ia", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "ia", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
     summary: "Place every L3 slot: the agent IA tree and each slot's contract.",
     inputs: [],
     outputs: [IA, SLOTS],
     command: { manual: "owner edits ia.json and slot.json" }, checks: ["workspace"], open: "slots-without-slot-json",
   }),
   defineStep({
-    id: "evidence", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "evidence", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
     summary: "Owner answers and strategist findings the Director cites.",
     inputs: [], outputs: ["clossys/agents/director/_evidence/*.md", "clossys/agents/strategist/findings/*.md"],
     command: { manual: "owner records answers as evidence files" }, checks: ["workspace"],
   }),
   defineStep({
-    id: "workspace.config", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "workspace.config", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
     summary: "The workspace marker and config the CLI discovers.",
     inputs: [], outputs: ["clossys/clossys.config.ts"],
     command: { manual: "owner edits clossys.config.ts" }, checks: ["workspace"],
   }),
   defineStep({
-    id: "seats", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "seats", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
     summary: "Who decides each decide step: an llm seat, a human seat, or both.",
     inputs: [], outputs: [SEATS],
     command: { manual: "owner writes clossys/agents/producer/<step>/seat.json" }, checks: ["pipeline"], open: "seats-open",
   }),
   defineStep({
-    id: "rules", kind: "decide:judgment", actor: "owner", stage: "direct",
+    id: "rules", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
     summary: "Rule registry rows and gate yes/no.",
     inputs: [], outputs: ["scripts/rules/registry.json"],
     command: { manual: "owner approves rule rows and gates" }, checks: ["rules"],
   }),
   defineStep({
-    id: "selection", kind: "decide:judgment", actor: "owner", stage: "pin",
+    id: "selection", kind: "decide:judgment", actor: "owner", stage: "design.select",
     summary: "The consumer's component selection and release events.",
-    inputs: ["clossys/library/**"], outputs: ["clossys/selection.json"],
+    // The pin gate reads each element record and verifies its payload bytes.
+    inputs: [LIBRARY_ELEMENTS, "clossys/library/**"], outputs: [SELECTION],
     command: { module: "src/records/selection.ts#writeSelection" }, checks: ["workspace"],
   }),
   defineStep({
-    id: "writer.approve", kind: "decide:judgment", actor: "owner", stage: "pin",
+    id: "writer.approve", kind: "decide:judgment", actor: "owner", stage: "design.pin",
     summary: "Owner approves Writer copy keys (status approved).",
     inputs: [candidatesOf("writer")], outputs: ["clossys/agents/writer/*/candidates/*#status"],
     command: { manual: "owner sets a Writer key status to approved" }, checks: ["workspace"], open: "writer-keys-unapproved",
   }),
-  defineStep({
-    id: "pin", kind: "decide:judgment", actor: "owner", stage: "pin",
-    summary: "Pin one candidate per L3 slot, or mark the slot not needed.",
-    inputs: [...CANDIDATES, SLOTS],
-    outputs: [PINS, "clossys/agents/*/*/slot.json#notNeeded"],
-    command: { cli: { verb: "pin", parser: "src/cli/pin.ts" }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state"],
-    open: "slots-undecided",
-  }),
+  ...PIN_ROUNDS.map(([agent, stage]) => defineStep({
+    id: `pin.${agent}`, kind: "decide:judgment", actor: "owner", stage,
+    summary: `Pin one candidate per ${agent[0]!.toUpperCase()}${agent.slice(1)} L3 slot, or mark the slot not needed.`,
+    inputs: [candidatesOf(agent), slotsOf(agent)],
+    outputs: [pinsOf(agent), `clossys/agents/${agent}/*/slot.json#notNeeded`],
+    command: { cli: { verb: "pin", parser: "src/cli/pin.ts", target: agent }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state"],
+    open: `slots-undecided:${agent}`,
+  })),
 ];

@@ -1,0 +1,19 @@
+{
+  "name": "node-status-indicator",
+  "type": "registry:component",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "devDependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "type": "registry:component",
+      "path": "node-status-indicator.tsx",
+      "content": "import { type ReactNode } from \"react\";\nimport { LoaderCircle } from \"lucide-react\";\n\nimport { cn } from \"@/lib/utils\";\n\nexport type NodeStatus = \"loading\" | \"success\" | \"error\" | \"initial\";\n\nexport type NodeStatusVariant = \"overlay\" | \"border\";\n\nexport type NodeStatusIndicatorProps = {\n  status?: NodeStatus;\n  variant?: NodeStatusVariant;\n  children: ReactNode;\n};\n\nexport const SpinnerLoadingIndicator = ({\n  children,\n}: {\n  children: ReactNode;\n}) => {\n  return (\n    <div className=\"relative\">\n      <StatusBorder className=\"border-blue-700/40\">{children}</StatusBorder>\n\n      <div className=\"bg-background/50 backdrop-blur-xs absolute inset-0 z-50 rounded-[9px]\" />\n      <div className=\"absolute inset-0 z-50\">\n        <span className=\"absolute left-[calc(50%-1.25rem)] top-[calc(50%-1.25rem)] inline-block h-10 w-10 animate-ping rounded-full bg-blue-700/20\" />\n\n        <LoaderCircle className=\"absolute left-[calc(50%-0.75rem)] top-[calc(50%-0.75rem)] size-6 animate-spin text-blue-700\" />\n      </div>\n    </div>\n  );\n};\n\nexport const BorderLoadingIndicator = ({\n  children,\n}: {\n  children: ReactNode;\n}) => {\n  return (\n    <>\n      <div className=\"absolute -left-px -top-px h-[calc(100%+2px)] w-[calc(100%+2px)]\">\n        <style>\n          {`\n        @keyframes spin {\n          from { transform: translate(-50%, -50%) rotate(0deg); }\n          to { transform: translate(-50%, -50%) rotate(360deg); }\n        }\n        .spinner {\n          animation: spin 2s linear infinite;\n          position: absolute;\n          left: 50%;\n          top: 50%;\n          width: 140%;\n          aspect-ratio: 1;\n          transform-origin: center;\n        }\n      `}\n        </style>\n        <div className=\"absolute inset-0 overflow-hidden rounded-[9px]\">\n          <div className=\"spinner rounded-full bg-[conic-gradient(from_0deg_at_50%_50%,rgb(42,67,233)_0deg,rgba(42,138,246,0)_360deg)]\" />\n        </div>\n      </div>\n      {children}\n    </>\n  );\n};\n\nconst StatusBorder = ({\n  children,\n  className,\n}: {\n  children: ReactNode;\n  className?: string;\n}) => {\n  return (\n    <>\n      <div\n        className={cn(\n          \"absolute -left-px -top-px h-[calc(100%+2px)] w-[calc(100%+2px)] rounded-[9px] border-2\",\n          className,\n        )}\n      />\n      {children}\n    </>\n  );\n};\n\nexport const NodeStatusIndicator = ({\n  status,\n  variant = \"border\",\n  children,\n}: NodeStatusIndicatorProps) => {\n  switch (status) {\n    case \"loading\":\n      switch (variant) {\n        case \"overlay\":\n          return <SpinnerLoadingIndicator>{children}</SpinnerLoadingIndicator>;\n        case \"border\":\n          return <BorderLoadingIndicator>{children}</BorderLoadingIndicator>;\n        default:\n          return <>{children}</>;\n      }\n    case \"success\":\n      return (\n        <StatusBorder className=\"border-emerald-600\">{children}</StatusBorder>\n      );\n    case \"error\":\n      return <StatusBorder className=\"border-red-400\">{children}</StatusBorder>;\n    default:\n      return <>{children}</>;\n  }\n};\n"
+    }
+  ],
+  "tailwind": {},
+  "cssVars": {},
+  "meta": {}
+}

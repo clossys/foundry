@@ -59,6 +59,7 @@ export const CODES = [
   "REF-COMP-USES",
   "REF-NPM-VERSION",
   "REF-NPM-CODE",
+  "REF-NPM-ASSET",
 ];
 
 /**
@@ -840,6 +841,20 @@ export function lockedVersion(root, pkg, explicit) {
   return typeof version === "string" ? version : undefined;
 }
 
+/** The installed directory of `pkg` at exactly `version`: the nearest node_modules/<pkg> at or above the lockfile's folder. */
+export function installedPackageDir(root, pkg, version, explicit) {
+  const lock = lockfileFor(root, explicit);
+  if (!lock) return undefined;
+  for (let dir = dirname(lock); ; dir = dirname(dir)) {
+    const manifest = join(dir, "node_modules", pkg, "package.json");
+    if (existsSync(manifest) && json(manifest).version === version) return dirname(manifest);
+    if (dirname(dir) === dir) return undefined;
+  }
+}
+
+/** Record-only payload files: the licence record, never a package path. */
+const NPM_RECORD_ONLY = new Set(["LICENCE.md", "registry-item.json"]);
+
 /**
  * An `npm` source: the candidate ships the package itself, unmodified.
  * - its one ref is `npm/<package>@<exact version>`, and that version is the one
@@ -847,7 +862,10 @@ export function lockedVersion(root, pkg, explicit) {
  * - it records no refVerbatim mappings or adaptations (REF-ADAPTATION);
  * - it ships at least one code file, and every code file holds only named
  *   re-exports from that package: no `export *`, no default, no other
- *   statement of any kind (REF-NPM-CODE).
+ *   statement of any kind (REF-NPM-CODE);
+ * - every other (non-code, non-record) file is byte-identical to the same path
+ *   inside the installed package at the lockfile-resolved version, e.g. its
+ *   stylesheet dist/style.css (REF-NPM-ASSET).
  */
 const syntaxName = (ts, kind) => Object.keys(ts.SyntaxKind).find(name => ts.SyntaxKind[name] === kind && !/^(?:First|Last)/.test(name)) ?? String(kind);
 
@@ -895,6 +913,19 @@ function checkNpmItem(root, slot, candidate, options = {}) {
     }
     const codes = [...new Set(findings.slice(before).map(f => f.code))];
     files.push({ file, mapping: "npm", hunks: [], codes, status: codes.length ? "fail" : "pass" });
+  }
+  const assets = Object.entries(payload).filter(([path]) => !isCode(path) && !NPM_RECORD_ONLY.has(path)).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  if (assets.length && pkg) {
+    const installed = installedPackageDir(root, pkg, version, opts.lockfile);
+    for (const [file, text] of assets) {
+      const before = findings.length;
+      const target = installed && resolve(installed, file);
+      if (!installed) fail("REF-NPM-ASSET", `${file}: ${pkg}@${version} is not installed, so the file cannot be compared to the package`, { file });
+      else if (!target.startsWith(`${installed}/`) || !existsSync(target) || !statSync(target).isFile()) fail("REF-NPM-ASSET", `${file} is not a file of ${pkg}@${version}`, { file });
+      else if (sha256(readFileSync(target)) !== sha256(Buffer.from(text, "utf8"))) fail("REF-NPM-ASSET", `${file} differs from ${pkg}@${version}/${file}: an npm candidate ships the package's own files byte for byte`, { file });
+      const codes = [...new Set(findings.slice(before).map(f => f.code))];
+      files.push({ file, mapping: "npm-asset", hunks: [], codes, status: codes.length ? "fail" : "pass" });
+    }
   }
   return { key, slot, element, version: 1, status: findings.length ? "fail" : "pass", files, findings, hash, ref: refs[0], npm: pkg ? { package: pkg, version, names } : undefined };
 }

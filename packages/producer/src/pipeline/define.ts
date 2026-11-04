@@ -7,10 +7,47 @@
  * Globs are workspace-relative. `pkg:` is relative to this package and `arg:`
  * is a caller-chosen path (a CLI argument).
  */
+import { SLOT_AGENTS } from "../records/slot-model/types.js";
+
 export const STEP_KINDS = ["plumb", "decide:creative", "decide:judgment"] as const;
 export type StepKind = typeof STEP_KINDS[number];
-export const STAGES = ["direct", "derive", "pin", "compile", "check", "capture", "operate"] as const;
-export type Stage = typeof STAGES[number];
+/**
+ * WHEN a step runs: the canvas's columns, grouped by round. Declared once here; every step names one
+ * stage as `<round>.<stage>`, and check:pipeline fails a step whose stage is missing or not one of
+ * these (stage.missing). The workflow is a cascade, Director, then Designer and Writer side by side,
+ * then Publisher; each agent round is brief, make, pin, and You hold every pin.
+ *   direct   the Director round
+ *     brief     decide what to make: the IA, evidence, config, seats and rules
+ *     make      the Director drafts candidates
+ *     pin       You pin the Director slots
+ *   design   the Designer and Writer round, in the same columns and their own lanes
+ *     brief     derive each agent's brief from the pinned Director slots
+ *     make      Designer and Writer draft candidates
+ *     pin       You pin the Designer and Writer slots and approve Writer keys
+ *     select    adopt pinned Designer elements into the library and choose the selection
+ *   publish  the Publisher round
+ *     make      the Publisher drafts page candidates from the Designer and Writer pins
+ *     pin       You pin the Publisher slots
+ *     assemble  compile every pin into sections, maps and specimens
+ *     check     verify the assembled workspace and Studio
+ *     publish   install and serve the published pages
+ * Order is (round, stage): every stage of an earlier round comes before every stage of a later one.
+ */
+export const ROUNDS = [
+  { id: "direct", stages: ["brief", "make", "pin"] },
+  { id: "design", stages: ["brief", "make", "pin", "select"] },
+  { id: "publish", stages: ["make", "pin", "assemble", "check", "publish"] },
+] as const;
+type RoundStage<R> = R extends { readonly id: infer I extends string; readonly stages: readonly (infer S extends string)[] } ? `${I}.${S}` : never;
+export type Round = typeof ROUNDS[number]["id"];
+/** `<round>.<stage>`, e.g. `design.make`. */
+export type Stage = RoundStage<typeof ROUNDS[number]>;
+/** Every stage in (round, stage) order: the canvas's columns left to right. */
+export const STAGES: readonly Stage[] = Object.freeze(ROUNDS.flatMap(round => round.stages.map(stage => `${round.id}.${stage}` as Stage)));
+/** A stage's round (`design` for `design.make`). */
+export const roundOf = (stage: string): string => stage.slice(0, Math.max(0, stage.indexOf(".")));
+/** A stage's name inside its round (`make` for `design.make`). */
+export const stageName = (stage: string): string => stage.slice(stage.indexOf(".") + 1);
 
 /** One input or output: a glob, an optional `#field` carve-out and the schema its files follow. */
 export interface Port { readonly glob: string; readonly schema?: string }
@@ -21,6 +58,8 @@ export interface StepCli {
   readonly flags?: readonly string[];
   /** A verb that parses its own argv names its parser module (package-relative). */
   readonly parser?: string;
+  /** A verb whose first argument is `<agent>/<slot>`: the agent this step's mode acts on (`clossys pin designer/<slot>`). */
+  readonly target?: string;
 }
 
 /** What runs a step. Entries and modules are `<package-relative file>#<export>`. */
@@ -40,7 +79,7 @@ export interface StepCommand {
 export interface Pending { readonly branch: string; readonly change: "adds" | "removes" }
 
 /** Named counters of open decisions a decide step leaves, read from real files. */
-export type OpenCounter = "slots-without-slot-json" | `slots-without-candidates:${string}` | "writer-keys-unapproved" | "slots-undecided" | "seats-open";
+export type OpenCounter = "slots-without-slot-json" | `slots-without-candidates:${string}` | "writer-keys-unapproved" | `slots-undecided:${string}` | "seats-open";
 
 export interface StepInput {
   readonly id: string;
@@ -102,6 +141,7 @@ export function defineStep(input: StepInput): Step {
   const command = input.command;
   if (!["cli", "entry", "module", "script", "npm", "skill", "manual", "steps"].some(key => (command as Record<string, unknown>)[key] !== undefined)) fail("command names nothing that runs it");
   if (command.cli && !command.entry) fail("a CLI step names its entry");
+  if (command.cli?.target !== undefined && !(SLOT_AGENTS as readonly string[]).includes(command.cli.target)) fail(`cli.target must be one of ${SLOT_AGENTS.join(", ")}`);
   const step: Step = {
     ...input,
     inputs: input.inputs.map(toPort),

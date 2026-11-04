@@ -1,6 +1,6 @@
 {
-  "candidate": "producer-pipeline-legend-v1.json",
-  "sha256": "49629f30ca18899bcdc3076b8a2481980d8fb6eb1b448fb6ac327db0586a82d4",
-  "decidedBy": "planner:CANVAS-PARTS",
-  "at": "2026-11-04T02:25:19.411Z"
+  "candidate": "producer-pipeline-legend-v3.json",
+  "sha256": "41fc6a637ad8ad4dac154506a8b97c86d0b283d7157799b1ff0676c4eee95525",
+  "decidedBy": "planner:PIPELINE-CANVAS",
+  "at": "2026-11-04T06:17:13.613Z"
 }

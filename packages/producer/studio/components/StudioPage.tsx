@@ -19,15 +19,17 @@ import type { ModuleCheckGroup, ModuleCheckRow, ModuleChecksInput } from '../sec
 import type { OptionsInput } from '../sections/studio-options';
 import type { PageHeaderInput } from '../sections/studio-page-header';
 import type { PageTabsInput } from '../sections/studio-page-tabs';
+import type { SystemEmptyInput } from '../sections/producer-system-empty';
 import type { SlotGroupsInput, SlotTone } from '../sections/studio-slot-groups';
 import { slotCardSpecimen, slotDetailInputs, versionLabel } from '../lib/slot-detail';
 import { studioShellCopy } from '../lib/shell-copy';
 import { studioCopy } from '../lib/studio-copy';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
-import { resolveStudioRoute, studioChildren, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
+import { resolveStudioRoute, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioAgentRecords, studioRecordTabs, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
 import { useSlotCensus } from '../lib/slot-census';
-import { loadLeaf, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
+import { pipelineInputs, type PipelineGraphFile } from '../lib/pipeline-flow';
+import { loadLeaf, loadPipeline, loadSlotGroups, type LeafRecord, type SlotGroupsRecord, type StudioPageSeed } from '../lib/studio-seed';
 import { useStudioData, useThemeMode, type Resource } from './StudioProviders';
 import { useStudioRoutes } from './StudioRouteMap';
 
@@ -124,17 +126,17 @@ function useHomeInputs({ page }: LoaderProps): Loaded {
   const census = useSlotCensus(revision, initialCensus);
   return useMemo(() => {
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
-    // Home lists the map's top-level groups; each opens on its first record's first tab.
+    // Home lists the projected agent groups; each opens on its projected landing (its first record's first tab).
     const agents = studioGroups().flatMap(group => {
       const href = studioLanding(group.id);
-      const record = pageById.get(studioChildren(group.id)[0]?.id ?? '');
+      const record = pageById.get(studioAgentRecords(group.id)[0] ?? '');
       if (!href || !record) return [];
       const Icon = studioIcon(group.icon);
       // The agent's purpose, which its records carry beside their own description.
       const purpose = record.data.purpose ?? record.data.description;
       return [{
-        id: group.id, label: group.title, purpose: purpose ? studioCopy(purpose) : '', icon: <Icon className="size-4" />,
-        census: census[group.id], censusLabels: censusLabels(group.title, census[group.id]), href, openLabel: studioCopy("studio.open", { value0: String(group.title) }), openIcon: <ArrowRightIcon data-icon="inline-end" />,
+        id: group.id, label: group.label, purpose: purpose ? studioCopy(purpose) : '', icon: <Icon className="size-4" />,
+        census: census[group.id], censusLabels: censusLabels(group.label, census[group.id]), href, openLabel: studioCopy("studio.open", { value0: String(group.label) }), openIcon: <ArrowRightIcon data-icon="inline-end" />,
       }];
     });
     const home: HomeInput = { agentsLabel: studioCopy("studio.agents"), agents };
@@ -155,9 +157,9 @@ function useSlotGroupsInputs({ entry, page, spec }: LoaderProps): Loaded {
     if (!agent) return { state: 'notice', notice: { title: studioCopy("studio.this-page-cannot-load"), description: studioCopy("studio.studio-has-no-loader-named", { value0: String(spec.data.loader) }) } };
     if (record.state === 'loading') return { state: 'loading' };
     if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.the-library-could-not-load"), description: record.message } };
-    // The record the tab belongs to heads the page; its child pages are the tabs.
-    const owner = pageById.get(entry.parentId ?? '') ?? page;
-    const tabs: PageTabsInput = { label: owner.title, active: entry.id, tabs: studioChildren(owner.id).map(tab => ({ id: tab.id, label: tab.title, href: tab.path })) };
+    // The record the tab belongs to (its route data names it) heads the page; Publisher's projected tabs are the record's tabs.
+    const owner = pageById.get(spec.data.record ?? '') ?? page;
+    const tabs: PageTabsInput = { label: owner.title, active: entry.id, tabs: studioRecordTabs(owner.id).map(tab => ({ id: tab.id, label: tab.title, href: tab.path })) };
     const sections = new Map(record.value.sections.filter(section => section.level === 2).map(section => [section.id, section]));
     const groups: SlotGroupsInput = {
       empty: studioCopy("studio.nothing-to-preview-yet"),
@@ -201,6 +203,40 @@ function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];
     return { state: 'ready', inputs, modules: { checks: leafChecks(inputs, list, agent, slug) } };
   }, [agent, slug, record, page, spec, resolved, reports]);
+}
+
+/** The URL's `?seat=<id>` (a team card's link): the lane the overview highlights. Read after mount, so the server render and hydration agree. */
+function useSeatParam(): string | null {
+  const [seat, setSeat] = useState<string | null>(null);
+  useEffect(() => {
+    const read = () => setSeat(new URLSearchParams(window.location.search).get('seat'));
+    read();
+    window.addEventListener('popstate', read);
+    return () => window.removeEventListener('popstate', read);
+  }, []);
+  return seat;
+}
+
+/** A system overview: graph.json's roster as the team strip, its steps and edges as the swimlane flow, its counts and kinds as the legend. */
+function usePipelineInputs({ page }: LoaderProps): Loaded {
+  const record = useResource<PipelineGraphFile>('pipeline', undefined, loadPipeline, studioCopy("studio.pipeline.empty.description"));
+  const seat = useSeatParam();
+  return useMemo((): Loaded => {
+    if (record.state === 'loading') return { state: 'loading' };
+    if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.pipeline.empty.title"), description: record.message } };
+    const inputs = pipelineInputs(record.value, pageHeader(page), page.path, seat);
+    return { state: 'ready', inputs: { ...inputs }, modules: { checks: checksInput([], [], []) } };
+  }, [record, page, seat]);
+}
+
+/** A system that is not set up yet: the record's empty state, its words Writer keys. */
+function useEmptyInputs({ page, spec }: LoaderProps): Loaded {
+  return useMemo((): Loaded => {
+    const keys = spec.data.empty;
+    if (!keys) return { state: 'notice', notice: { title: studioCopy("studio.this-page-cannot-load"), description: studioCopy("studio.studio-has-no-loader-named", { value0: String(spec.data.loader) }) } };
+    const empty: SystemEmptyInput = { title: studioCopy(keys.title), description: studioCopy(keys.description) };
+    return { state: 'ready', inputs: { header: pageHeader(page), empty }, modules: { checks: checksInput([], [], []) } };
+  }, [page, spec]);
 }
 
 /* Assembly. */
@@ -289,9 +325,11 @@ function Assembled(props: LoaderProps & { loaded: Loaded }) {
 function HomePage(props: LoaderProps) { return <Assembled {...props} loaded={useHomeInputs(props)} />; }
 function SlotGroupsPage(props: LoaderProps) { return <Assembled {...props} loaded={useSlotGroupsInputs(props)} />; }
 function LeafPage(props: LoaderProps) { return <Assembled {...props} loaded={useLeafInputs(props)} />; }
+function PipelinePage(props: LoaderProps) { return <Assembled {...props} loaded={usePipelineInputs(props)} />; }
+function EmptyPage(props: LoaderProps) { return <Assembled {...props} loaded={useEmptyInputs(props)} />; }
 
 /** The loaders a page record may name (`data.loader`). */
-const LOADERS = { home: HomePage, 'slot-groups': SlotGroupsPage, leaf: LeafPage } as const;
+const LOADERS = { home: HomePage, 'slot-groups': SlotGroupsPage, leaf: LeafPage, pipeline: PipelinePage, empty: EmptyPage } as const;
 
 /** Renders whatever page record the Studio map resolves `segments` to. */
 export function StudioPage({ segments, seed }: { segments: readonly string[]; seed?: StudioPageSeed }) {

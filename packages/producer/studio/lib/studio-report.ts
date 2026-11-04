@@ -27,7 +27,7 @@ function layerLabel(layer: string, name: string): string {
 }
 
 /** An agent by its content-map group title; an agent the map does not hold keeps its id. */
-const agentTitle = (agent: string) => studioGroups().find(group => group.id === agent)?.title ?? agent;
+const agentTitle = (agent: string) => studioGroups().find(group => group.id === agent)?.label ?? agent;
 
 function slotLabel(message: string): string | undefined {
   const slot = /slot ([a-z][a-z0-9-]*)\.([a-z][a-z0-9-]*)/.exec(message);

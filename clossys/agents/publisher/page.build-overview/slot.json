@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "page.build-overview",
+  "agent": "publisher",
+  "ia": {
+    "l1": "studio",
+    "l2": "systems",
+    "order": 20
+  },
+  "kind": "page",
+  "contract": {},
+  "inputs": [
+    "frames.studio-shell",
+    "sections.producer.system-empty",
+    "sections.studio.page-header"
+  ],
+  "uses": [
+    "assets.icon-package",
+    "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.outline",
+    "sections.producer.system-empty",
+    "sections.studio.page-header",
+    "strings.common"
+  ]
+}

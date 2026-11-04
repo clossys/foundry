@@ -1,6 +1,6 @@
 {
-  "candidate": "publication-v2.json",
-  "sha256": "853e65360df858f2e35dda8357fed6ab361b1d781dc33c98835ff57e0a59bc05",
-  "decidedBy": "owner:2026-11-03 STUDIO-ASSEMBLE-ONLY go",
-  "at": "2026-11-03T12:00:00Z"
+  "candidate": "publication-v5.json",
+  "sha256": "47dc9631e33e85c6a1fb30aa47cf2669400c9982c7fb6a37cbe36299c73f5bce",
+  "decidedBy": "planner:SYSTEMS-IA",
+  "at": "2026-11-04T08:52:41.781Z"
 }

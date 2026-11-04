@@ -21,7 +21,8 @@ export type RefVerbatimCode =
   | "REF-COMP-MARKUP"
   | "REF-COMP-USES"
   | "REF-NPM-VERSION"
-  | "REF-NPM-CODE";
+  | "REF-NPM-CODE"
+  | "REF-NPM-ASSET";
 
 export type RefVerbatimPosition = { readonly line: number; readonly column: number };
 export type RefVerbatimRange = { readonly start: RefVerbatimPosition; readonly end: RefVerbatimPosition };
