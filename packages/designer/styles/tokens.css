@@ -441,6 +441,11 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
    * numbered 1-10, which would silently override Tailwind's own default
    * numeric spacing scale (p-4, gap-2, ...) the moment theme.css loads)
    * ════════════════════════════════════════════════════════════════ */
+  /* The base unit every numeric spacing utility and shadcn's
+   * calc(var(--spacing) * n) multiply: Tailwind v4's own default, declared
+   * here so the token layer owns the one value components read through
+   * var(--spacing) instead of relying on the framework build to emit it. */
+  --spacing:                      0.25rem;
   --spacing-xs:                   4px;
   --spacing-sm:                   8px;
   --spacing-md:                   12px;
