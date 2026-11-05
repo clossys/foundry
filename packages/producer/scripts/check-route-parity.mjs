@@ -14,15 +14,30 @@
  * The marker only says who should have written a file; this check proves it. Fix by reinstalling
  * (`npm run generate:studio-map` or `clossys compile`), never by editing studio/app.
  *
- * Usage: node scripts/check-route-parity.mjs [--root <repository>] [--clossys <records>] [--json].
- * `--root` compares another repository tree's packages/producer/studio/app; the records come from
- * `--clossys` (default: this repository's clossys/). Exit 1 on any finding.
+ * The site template (`--surface site-template`, packages/publisher/templates/site) is a Publisher
+ * install too: it ships no route file, and its `publish:site` script (run before `dev` and `build`)
+ * has `clossys publish --install --next app --bind` write every route file, the assembly, the states
+ * and the page modules from the consumer's pinned page records. The check installs the template for
+ * the fixture consumer (site-template-install.mjs) and fails on:
+ *
+ *   route-not-installed  code or a name-served App Router file (icon, robots, sitemap, OG image) the
+ *                        template ships under app/, which only Publisher may install
+ *   route-missing        a template whose publish:site script is not that bound install, or whose
+ *                        predev/prebuild do not run it; an install Publisher refuses
+ *   route-drift          a reinstall (`--check`) that would change any file the install wrote
+ *
+ * Usage: node scripts/check-route-parity.mjs [--root <repository>] [--clossys <records>]
+ * [--surface studio|site-template] [--json]. `--root` checks another repository tree's
+ * packages/producer/studio/app and packages/publisher/templates/site; the Studio records come from
+ * `--clossys` (default: this repository's clossys/). Both surfaces run unless `--surface` names one.
+ * Exit 1 on any finding.
  */
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { publishNext } from '../dist/publish/install-next.js';
+import { installSiteTemplate, isRouteSource, SITE_TEMPLATE, walk as walkSite } from './site-template-install.mjs';
 
 const PRODUCER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPOSITORY_ROOT = path.resolve(PRODUCER_ROOT, '../..');
@@ -66,16 +81,59 @@ export async function checkRouteParity({ appDir = path.join(REPOSITORY_ROOT, 'pa
   }
 }
 
+/** The site template's app/ ships no route file, its install script is the bound install, and the install is stable. */
+export async function checkSiteTemplateParity({ root = REPOSITORY_ROOT, consumer } = {}) {
+  const template = path.join(root, SITE_TEMPLATE);
+  const findings = [];
+  const add = (rule, file, message) => findings.push({ rule, file, message });
+  if (!fs.existsSync(template)) { add('route-missing', 'site', `${SITE_TEMPLATE} does not exist`); return { findings, compared: 0, installed: 0 }; }
+  const shipped = walkSite(path.join(template, 'app'));
+  for (const file of shipped.filter(isRouteSource)) add('route-not-installed', `site/app/${file}`, 'the template ships this file by hand; Publisher installs every route file from page records (publish:site)');
+  let scripts = {};
+  try { scripts = JSON.parse(fs.readFileSync(path.join(template, 'package.json'), 'utf8')).scripts ?? {}; } catch { add('route-missing', 'site/package.json', 'the template has no readable package.json'); }
+  const publish = scripts['publish:site'] ?? '';
+  if (!/^clossys publish --install\b/.test(publish) || !/ --next app\b/.test(publish) || !/ --bind\b/.test(publish) || !/ --selection \S/.test(publish)) {
+    add('route-missing', 'site/package.json#scripts.publish:site', 'is not `clossys publish --install --site <publication> --next app --bind --selection <module>`, so nothing installs the routes');
+  }
+  for (const hook of ['predev', 'prebuild']) if (scripts[hook] !== 'npm run publish:site') add('route-missing', `site/package.json#scripts.${hook}`, 'does not run publish:site, so the site can start or build without its installed routes');
+
+  const install = await installSiteTemplate({ template, ...(consumer ? { consumer } : {}) });
+  try {
+    const blocking = install.result.findings.filter(finding => finding.severity !== 'info');
+    if (blocking.length) { add('route-missing', 'site/app', `Publisher could not install the site template: ${blocking.map(finding => finding.detail).join('; ')}`); return { findings, compared: shipped.length, installed: 0 }; }
+    const written = install.result.files.filter(file => file.state !== 'removed');
+    const again = await install.reinstall();
+    for (const file of again.files.filter(row => row.state === 'drift')) add('route-drift', `site/${file.kind === 'bind' ? file.file : `app/${file.file}`}`, 'a reinstall would change this file: the install is not stable');
+    const reported = new Set(findings.map(finding => finding.file));
+    const owned = new Set(written.map(file => file.kind === 'bind' ? file.file : `app/${file.file}`));
+    for (const file of walkSite(path.join(install.site, 'app'))) {
+      const rel = `app/${file}`;
+      if (isRouteSource(file) && !owned.has(rel) && !reported.has(`site/${rel}`)) add('route-not-installed', `site/${rel}`, 'is under the installed app/ but no Publisher install wrote it');
+    }
+    return { findings, compared: shipped.length, installed: written.length };
+  } finally {
+    fs.rmSync(install.scratch, { recursive: true, force: true });
+  }
+}
+
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const option = name => { const at = args.indexOf(name); return at >= 0 ? path.resolve(args[at + 1]) : undefined; };
   const root = option('--root') ?? REPOSITORY_ROOT;
   const clossys = option('--clossys');
-  const result = await checkRouteParity({ appDir: path.join(root, 'packages/producer/studio/app'), ...(clossys ? { clossysRoot: clossys } : {}) });
-  if (args.includes('--json')) console.log(JSON.stringify(result, null, 2));
+  const surfaceAt = args.indexOf('--surface');
+  const surface = surfaceAt >= 0 ? args[surfaceAt + 1] : 'all';
+  if (!['all', 'studio', 'site-template'].includes(surface)) throw new Error(`route-parity: --surface is studio or site-template, not ${surface}`);
+  const results = {};
+  if (surface !== 'site-template') results.studio = await checkRouteParity({ appDir: path.join(root, 'packages/producer/studio/app'), ...(clossys ? { clossysRoot: clossys } : {}) });
+  if (surface !== 'studio') results['site-template'] = await checkSiteTemplateParity({ root });
+  const findings = Object.values(results).flatMap(result => result.findings);
+  if (args.includes('--json')) console.log(JSON.stringify(surface === 'studio' ? results.studio : results, null, 2));
   else {
-    for (const finding of result.findings) console.log(`${finding.rule}  ${finding.file}  ${finding.message}`);
-    console.log(result.findings.length ? `route-parity: ${result.findings.length} finding(s)` : `route-parity: OK (${result.compared} files under app/ match a fresh Publisher install)`);
+    for (const finding of findings) console.log(`${finding.rule}  ${finding.file}  ${finding.message}`);
+    if (results.studio && !results.studio.findings.length) console.log(`route-parity: studio OK (${results.studio.compared} files under app/ match a fresh Publisher install)`);
+    if (results['site-template'] && !results['site-template'].findings.length) console.log(`route-parity: site-template OK (no hand-made route file; ${results['site-template'].installed} files installed from records, stable on reinstall)`);
+    if (findings.length) console.log(`route-parity: ${findings.length} finding(s)`);
   }
-  process.exitCode = result.findings.length ? 1 : 0;
+  process.exitCode = findings.length ? 1 : 0;
 }

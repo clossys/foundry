@@ -66,7 +66,7 @@ describe("publisher-site-instantiate: exit codes", () => {
     ] as const;
     for (const [path, text] of kept) writeFileSync(path, text);
     expect(main(["--standalone", "--root", root, "--pins", pinsFile(), "--site-dir", "apps/site"])).toBe(0);
-    expect(existsSync(join(root, "apps", "site", "app", "page.tsx"))).toBe(true);
+    expect(existsSync(join(root, "apps", "site", "components.json"))).toBe(true);
     expect(existsSync(join(root, "package.json"))).toBe(false);
     for (const [path, text] of kept) expect(readFileSync(path, "utf8")).toBe(text);
     expect(logs.join("\n")).not.toContain("root workspaces updated");
@@ -163,7 +163,7 @@ describe("publisher-site-instantiate: the built bin", () => {
     if (!standalone) writeRootManifest();
     const result = await run(["--root", root, "--pins", pinsFile(), ...(standalone ? ["--standalone"] : [])]);
     expect(result.status, result.stderr).toBe(0);
-    expect(existsSync(join(root, "apps", "site", "web-route-manifest.json"))).toBe(true);
+    expect(existsSync(join(root, "apps", "site", "components.json"))).toBe(true);
     if (standalone) expect(existsSync(join(root, "package.json"))).toBe(false);
   });
 

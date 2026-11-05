@@ -688,9 +688,33 @@
           "cwd": "packages/producer",
           "run": "node scripts/check-route-parity.mjs --root {fixture}",
           "expect": "^route-not-installed\\s+app/probe/page\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture} --surface site-template",
+          "expect": "^route-not-installed\\s+site/app/pack/page\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture} --surface site-template",
+          "expect": "^route-not-installed\\s+site/app/robots\\.ts"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture} --surface site-template",
+          "expect": "^route-unpublished\\s+site/app/pack/page\\.tsx\\s+mounts no record id"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture} --surface site-template",
+          "expect": "^route-unpublished\\s+site/app/robots\\.ts\\s+is an App Router file no publication installs"
         }
       ],
-      "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json), and every file under studio/app is what Publisher installs: check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, breadcrumbs, tabs or landings missing from the projection, a root layout or loading/not-found/error/global-error file that is missing, unmarked or mounts anything but the publication's document or state, and any other App Router file; check:studio-routes fails on a content-map page, leaf template or shell file without Publisher's install, and on any other route file; check:route-parity reinstalls publication.studio into a temp directory and fails on any file under studio/app that a fresh install does not write or writes with other bytes (a hand edit under a copied marker) and on any file it writes that app/ lacks. The fixture serves an unpublished probe route, leaves an orphan record unserved, links a breadcrumb to an unpublished path, lacks the not-found and other state files, and hand-writes the root layout under a copied marker."
+      "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json), and every file under studio/app is what Publisher installs: check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, breadcrumbs, tabs or landings missing from the projection, a root layout or loading/not-found/error/global-error file that is missing, unmarked or mounts anything but the publication's document or state, and any other App Router file; check:studio-routes fails on a content-map page, leaf template or shell file without Publisher's install, and on any other route file; check:route-parity reinstalls publication.studio into a temp directory and fails on any file under studio/app that a fresh install does not write or writes with other bytes (a hand edit under a copied marker) and on any file it writes that app/ lacks. The fixture serves an unpublished probe route, leaves an orphan record unserved, links a breadcrumb to an unpublished path, lacks the not-found and other state files, and hand-writes the root layout under a copied marker. The site template (packages/publisher/templates/site) is a Publisher install too: it ships no route file and its publish:site script (run by predev and prebuild) is `clossys publish --install --next app --bind`, which writes every route file, the assembly, the states and the page modules from the consumer's pinned page records. check:route-parity --surface site-template fails on code or a name-served App Router file under the template's app/, a publish:site/predev/prebuild that is not that install, an install Publisher refuses, and a reinstall that drifts; check:routes-published --surface site-template installs the template for the fixture consumer and fails, over the installed output, on a route mounting no projected page, a projected page with no route or page module, a shell file not installed or mounting anything else, and any other App Router file. The fixture's site template ships a hand-written app/pack/page.tsx with a raw link and a hand-written app/robots.ts."
     },
     {
       "id": "R-SINGLE-READER",

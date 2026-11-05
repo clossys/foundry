@@ -1,0 +1,10 @@
+{
+  "name": "site",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "publish:site": "clossys publish --install --site site --next app --bind --selection ../../clossys/component-selection.ts",
+    "predev": "npm run publish:site",
+    "prebuild": "npm run publish:site"
+  }
+}

@@ -154,11 +154,9 @@ describe("native Next local font snapshot", () => {
     const failed = await resolveNativeNextFonts({ ...f.options, readFile: async () => { throw new TypeError("/host/private/path"); } });
     expect(JSON.stringify(failed)).not.toContain("/host/private/path"); expect(failed.findings).toHaveLength(1);
   });
-  it("native template consumes generated variables at the html computation site", () => {
-    const layout = readFileSync(new URL("../../templates/site/app/layout.tsx", import.meta.url), "utf8");
+  it("native template ships the generated font variables module its Publisher-installed document consumes", () => {
+    // The root layout is Publisher's (clossys publish --install --next --bind); producer's install-next-bind test pins that its document reads this module.
     const empty = readFileSync(new URL("../../templates/site/src/clossys/fonts.ts", import.meta.url), "utf8");
-    expect(layout).toContain('import { nativeFontVariables } from "../src/clossys/fonts"');
-    expect(layout).toMatch(/<html[^>]*className=\{nativeFontVariables\}/);
     expect(empty).toContain("export const nativeFontVariables = '';");
   });
 });

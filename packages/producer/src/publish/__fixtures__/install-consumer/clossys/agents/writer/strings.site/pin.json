@@ -1,6 +1,7 @@
 {
   "candidate": "site-v1.md",
   "sha256": "f9eb9082e613de0566813adea31b9466f7ba7a36b5720e6a2f3ac15a23a2b079",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-11-03T00:00:00Z"
+  "decidedBy": "planner:SITE-TEMPLATE",
+  "basis": "planner",
+  "at": "2026-11-04T00:00:00Z"
 }
