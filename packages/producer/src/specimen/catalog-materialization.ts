@@ -28,6 +28,15 @@ export interface CatalogCandidateInput {
 }
 const object = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === "object" && !Array.isArray(value);
 function fail(message: string): never { throw new TypeError(`catalog candidate: ${message}`); }
+/** The Writer keys a preview value names (`{ "$copy": key }`), sorted: the candidate declares them as its specimen inputs. */
+function copyInputs(value: unknown, found = new Set<string>()): Set<string> {
+  if (Array.isArray(value)) value.forEach(item => copyInputs(item, found));
+  else if (object(value)) {
+    if (typeof value.$copy === "string") found.add(value.$copy);
+    Object.values(value).forEach(item => copyInputs(item, found));
+  }
+  return found;
+}
 function unresolved(value: unknown): boolean {
   return Array.isArray(value) ? value.some(unresolved) : object(value) && (Object.hasOwn(value, "$copy") || Object.hasOwn(value, "$asset") || Object.values(value).some(unresolved));
 }
@@ -82,12 +91,13 @@ export async function materializeCatalogCandidate(input: CatalogCandidateInput) 
   if (preview.width !== undefined && (!Number.isInteger(preview.width) || preview.width < 1 || preview.width > 3840)) fail("invalid preview width");
   const meta = emission.document.$extensions["com.clossys.fill"], pin = meta.pin!;
   const copyExport = preview.copyKeys === undefined ? {} : { copyKeys: "catalogCopyKeys" };
+  const inputs = [...copyInputs(props)].sort();
   const content = emission.file.contents + (preview.copyKeys === undefined ? "" : `export const catalogCopyKeys = ${JSON.stringify(preview.copyKeys)} as const;\n`);
   const item = {
     name: input.element, type: "registry:block", dependencies: [`${pin.package}@${pin.version}`],
     files: [{ path: emission.file.path, target: `components/foundry/${input.element}.${emission.file.path.endsWith("tsx") ? "tsx" : "ts"}`, type: "registry:component", content }],
     meta: { slot: input.slot, source: { kind: "registry", ref: [meta.id, `${pin.package}@${pin.version}${pin.export}`], hash: emission.descriptorHash, license: meta.license },
-      preview: { fixtures: { file: emission.file.path, export: emission.export, ...copyExport, props }, ...(preview.width === undefined ? {} : { width: preview.width }) },
+      preview: { fixtures: { file: emission.file.path, export: emission.export, ...copyExport, props }, ...(inputs.length ? { inputs: { copy: inputs } } : {}), ...(preview.width === undefined ? {} : { width: preview.width }) },
       catalog: { document: emission.document, descriptorHash: emission.descriptorHash, package: emission.package, adapter: emission.adapter, ports } },
   };
   const versions = entry.candidates.flatMap(name => { const match = CANDIDATE_NAME.exec(name); return match?.[1] === input.element && match[3] === "json" ? [Number(match[2])] : []; });

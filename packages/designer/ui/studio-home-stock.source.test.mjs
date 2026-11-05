@@ -66,7 +66,7 @@ test('Home stock parts retain exact upstream files, byte ranges, license and com
   const actual = parse(source);
   const functions = actual.statements.filter(ts.isFunctionDeclaration);
   assert.deepEqual(functions.map(fn => fn.name.text), manifest.parts.map(part => part.export));
-  assert.deepEqual(actual.statements.filter(ts.isImportDeclaration).map(node => node.moduleSpecifier.text), ['react', './badge', './button', './card']);
+  assert.deepEqual(actual.statements.filter(ts.isImportDeclaration).map(node => node.moduleSpecifier.text), ['react', './ui/badge', './ui/button', './ui/card']);
   assert.equal(actual.statements.length, functions.length + 4, 'no uncovered emitted statements');
   for (const part of manifest.parts) {
     const bytes = read(part.file), lines = bytes.toString('utf8').split(/(?<=\n)/);

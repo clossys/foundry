@@ -1,4 +1,5 @@
 import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { existsSync, realpathSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -11,7 +12,7 @@ import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
 import { readPinnedPublication, resolvePublicationTitles } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
-import { checkPayload } from './studio-payload.mjs';
+import { checkComponent, checkPayload, componentTarget, installComponent, installPayload } from './studio-payload.mjs';
 import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
@@ -173,6 +174,40 @@ function pinnedItem(clossysRoot, entries, slot) {
   return { slot, element: item.name, version, candidate: pin.candidate, sha256: pin.sha256, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, item.name), module: `../${folder}/${item.name}` };
 }
 
+/** The node_modules folder of a workspace package, found upward from this script (its symlink resolved). */
+function layerDir(layer) {
+  for (let dir = dirname(fileURLToPath(import.meta.url)); ; dir = dirname(dir)) {
+    const candidate = join(dir, 'node_modules', ...layer.split('/'));
+    if (existsSync(join(candidate, 'package.json'))) return realpathSync(candidate);
+    if (dirname(dir) === dir) fail(`component layer ${layer} is not installed`);
+  }
+}
+
+/**
+ * Every pinned component-layer slot (its contract names `install`): the pinned candidate and the file
+ * in the consumer's component layer it installs to. Same pin and lineage proof as a frame or section.
+ */
+function pinnedComponents(clossysRoot, entries) {
+  const out = [];
+  for (const entry of entries.values()) {
+    if (!entry.id.startsWith('components.')) continue;
+    const install = readSlot(clossysRoot, 'designer', entry.id)?.contract?.install;
+    if (install === undefined) continue;
+    if (!object(install) || !nonEmpty(install.layer) || !nonEmpty(install.alias) || !nonEmpty(install.file)) fail(`${entry.id} contract.install must name a layer, an alias and a file`);
+    const pin = entry.pin;
+    if (!pin || !entry.candidates.includes(pin.candidate)) fail(`${entry.id} installs into ${install.layer} but has no pinned candidate`);
+    const candidate = readCandidate(clossysRoot, 'designer', entry.id, pin.candidate);
+    if (candidate.sha256 !== pin.sha256) fail(`${entry.id} pin hash does not match its candidate`);
+    const item = JSON.parse(candidate.bytes);
+    const source = item.meta?.source;
+    if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${entry.id} must come from a trusted reference (source registry or derived with a ref)`);
+    const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
+    const files = new Map((item.files ?? []).map(file => [file.path, Buffer.from(file.content, 'utf8')]));
+    out.push({ slot: entry.id, element: item.name, version, install, files, payload: [...files.keys()], target: componentTarget(layerDir(install.layer), install, entry.id) });
+  }
+  return out;
+}
+
 // Studio copy slots: every Writer `strings.*` slot (folders are flat, agents/writer/<slot-id>, so a
 // regroup in ia.json never drops a slot from Studio copy). A key Studio shows may live in any of
 // them (page titles, errors, names); only `studio.` ids are Studio copy. `placement` in the
@@ -310,7 +345,10 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     const entries = new Map(listSlots(clossysRoot, 'designer').map(entry => [entry.id, entry]));
     for (const slot of slots) items.push(pinnedItem(clossysRoot, entries, slot));
   }
-  if (payloads) for (const item of items) await checkPayload(item);
+  // The build installs each pinned frame and section payload into its Studio folder (Designer -> Studio); --check only compares.
+  if (payloads) for (const item of items) { if (!check && target !== 'preview') await installPayload(item); await checkPayload(item); }
+  // Component-layer pins install into the consumer's component layer (Designer -> designer-ui), where frames and sections import them.
+  if (payloads) for (const item of pinnedComponents(clossysRoot, new Map(listSlots(clossysRoot, 'designer').map(entry => [entry.id, entry])))) { if (!check && target !== 'preview') await installComponent(item); await checkComponent(item); }
   const installed = await installStudioRoutes({ clossysRoot, appDir, check, installOut });
   const routeOf = (page, kind) => {
     const row = installed.find(file => file.pageId === page.id && file.kind === kind);
@@ -400,14 +438,15 @@ import provenance from './studio-provenance.json';
 ${frames.map((item, i) => `import Frame${i} from ${JSON.stringify(item.module)};`).join('\n')}
 ${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.module)};`).join('\n')}
 
-/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} page frame per frame slot. */
-export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
-${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: Frame${i},`).join('\n')}
-};
-/** The generated DOM provenance markers (slot id, candidate file, content hash) one section root carries. */
+/** The generated DOM provenance markers (slot id, candidate file, content hash) one frame or section root carries. */
 export type StudioProvenance = Readonly<Record<'data-clossys-slot' | 'data-clossys-candidate' | 'data-clossys-hash', string>>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
-const marked = (Section: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Section, { ...props, ...marks }); };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each frame and section types its own input; the assembly binds it by name.
+const marked = (Block: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Block, { ...props, ...marks }); };
+
+/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} page frame per frame slot, with its provenance markers. */
+export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
+${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Frame${i}, (provenance as Record<string, StudioProvenance>)[${JSON.stringify(item.slot)}]),`).join('\n')}
+};
 
 /** ${target === 'preview' ? 'Draft preview' : 'Pinned'} section per section slot; each takes one prop, named by its contract input, plus its provenance markers. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
@@ -418,9 +457,9 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i},
   const copy = target === 'preview'
     ? await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })
     : await studioCopyRegistry(clossysRoot);
-  // Derived products: the icon map from the pinned icon glyphs, each section's DOM provenance from its binding, the consumer brand from its pinned assets.
+  // Derived products: the icon map from the pinned icon glyphs, each frame's and section's DOM provenance from its binding, the consumer brand from its pinned assets.
   const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
-    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
+    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(items.filter(item => /^(?:frames|sections)\./.test(item.slot))), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });

@@ -1,6 +1,7 @@
 {
   "candidate": "sample-card-v1.json",
-  "sha256": "5d8f6239e7929f9b92affc195841a12997a1218e8a5538fad6a18c53c4d11fa4",
-  "pinnedBy": "migration:SLOT-MODEL",
+  "sha256": "77964b930a7ac21f0529ebaf4becba162eae0994205f3df5b6a3417caf93ddcd",
+  "decidedBy": "migration:SLOT-MODEL",
+  "basis": "bulk",
   "at": "2026-10-31T00:00:00Z"
 }

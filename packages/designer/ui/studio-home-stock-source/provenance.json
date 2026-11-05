@@ -105,17 +105,17 @@
     }
   ],
   "importRelocations": {
-    "@/registry/bases/aria/ui/card": "./card",
-    "@/registry/bases/aria/ui/badge": "./badge",
-    "@/registry/bases/aria/ui/button": "./button"
+    "@/registry/bases/aria/ui/card": "./ui/card",
+    "@/registry/bases/aria/ui/badge": "./ui/badge",
+    "@/registry/bases/aria/ui/button": "./ui/button"
   },
   "emitted": {
-    "file": "src/foundry/studio-home-stock.tsx",
-    "sha256": "375712822ca458d664620e700e6a74fd645af33cd4916a0eae4076033b5b08a1"
+    "file": "src/components/studio-home-stock.tsx",
+    "sha256": "6dd108fdcb5d212f0ece8395cfda22d08a23e423def1ccdacea3f2c5b8af986e"
   },
   "consumer": {
     "file": "packages/producer/studio/sections/studio-home/index.tsx",
-    "sha256": "70f3f51ba758a5c10262ee2bca16e77d339c72e3ce72c15acc9f010a94c02035",
+    "sha256": "6bcf8237d15ca357b2dbb8b7fa4c09734222f301181acd3a8d9f78cf2646f18b",
     "retained": [
       "independent census states and labels; no navigation in census cards",
       "existing Needs rows, severity tones, empty text and close callback",

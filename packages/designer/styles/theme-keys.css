@@ -15,6 +15,23 @@
  * `theme.css` for the full rationale.
  * ════════════════════════════════════════════════════════════════════ */
 
+/* Framework defaults this package's components read by name. `--spacing`
+ * is Tailwind v4's own base unit (the value its default theme ships); a plain
+ * `@theme` restates it so the stylesheet a consumer imports declares every
+ * `calc(var(--spacing) * n)` the stock shadcn parts multiply. It stays out of
+ * the curated token registry, like the transition defaults below. */
+@theme {
+  --spacing: 0.25rem;
+}
+
+/* Positioner fallback. The stock shadcn combobox list caps its height with
+ * `var(--available-height)`, which a positioning engine sets on an ancestor;
+ * React Aria sets none, so the viewport is the available height (the list's
+ * `max-h-[inherit]` still takes React Aria's own computed limit). */
+:root {
+  --available-height: 100dvh;
+}
+
 @theme inline {
   --default-transition-duration: var(--ui-duration-fast, 120ms);
   --default-transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));

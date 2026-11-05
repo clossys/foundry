@@ -14,17 +14,17 @@ export interface ModuleChecksInput { summary: string; groups: readonly ModuleChe
  * groups: failing checks, pending options and open needs. Read-only: each row links to its leaf.
  */
 export default function ModuleChecksSection({ checks, ...provenance }: { checks: ModuleChecksInput } & { [marker: `data-clossys-${string}`]: string }) {
-  return <FieldGroup {...provenance} className="gap-4">
+  return <FieldGroup {...provenance}>
     <CardDescription>{checks.summary}</CardDescription>
-    {checks.groups.map((group, index) => <FieldGroup key={group.id} data-module-checks-group={group.id} className="gap-2">
+    {checks.groups.map((group, index) => <FieldGroup key={group.id} data-module-checks-group={group.id}>
       {index > 0 && <Separator />}
-      <CardTitle role="heading" aria-level={3} className="flex items-center gap-2 text-sm">{group.label}<Badge variant="ghost" className="tabular-nums">{group.rows.length}</Badge></CardTitle>
+      <CardTitle role="heading" aria-level={3}>{group.label}<Badge variant="ghost">{group.rows.length}</Badge></CardTitle>
       {group.rows.length
-        ? group.rows.map(row => <Field key={row.id} data-module-check={row.id} className="gap-1">
-          <FieldContent className="gap-1">
-            <FieldTitle className="flex-wrap"><Badge variant={row.tone}>{row.badge}</Badge>{row.title}</FieldTitle>
-            {row.detail && <FieldDescription className="text-xs leading-relaxed">{row.detail}</FieldDescription>}
-            {row.href && <LinkButton variant="link" size="xs" href={row.href} className="h-auto self-start p-0">{row.openLabel ?? row.title}</LinkButton>}
+        ? group.rows.map(row => <Field key={row.id} data-module-check={row.id}>
+          <FieldContent>
+            <FieldTitle><Badge variant={row.tone}>{row.badge}</Badge>{row.title}</FieldTitle>
+            {row.detail && <FieldDescription>{row.detail}</FieldDescription>}
+            {row.href && <LinkButton variant="link" size="xs" href={row.href}>{row.openLabel ?? row.title}</LinkButton>}
           </FieldContent>
         </Field>)
         : <FieldDescription>{group.empty}</FieldDescription>}

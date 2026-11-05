@@ -17,7 +17,7 @@ function LineageCell({ lineage }: { lineage: HistoryRow['lineage'] }) {
   if (!lineage) return <TableCell>—</TableCell>;
   return <TableCell>
     {lineage.mode}
-    {lineage.source && <Badge variant="outline" title={lineage.source} className="ml-2 inline-block max-w-40 truncate align-middle">{lineage.source}</Badge>}
+    {lineage.source && <Badge variant="outline" title={lineage.source}>{lineage.source}</Badge>}
   </TableCell>;
 }
 
@@ -35,7 +35,7 @@ export default function HistorySection({ history, ...provenance }: { history: Hi
       <CardTitle role="heading" aria-level={2}>{copy.title}</CardTitle>
       <CardDescription>{copy.summary}</CardDescription>
     </CardHeader>
-    <CardContent className="min-w-0">
+    <CardContent>
       <Table aria-label={copy.label}>
         <TableHeader>
           <TableHead isRowHeader>{copy.version}</TableHead>
@@ -49,10 +49,10 @@ export default function HistorySection({ history, ...provenance }: { history: Hi
           {rows.map(row => <TableRow key={row.version} id={String(row.version)}>
             <TableCell>{row.versionLabel}</TableCell>
             <TableCell>{row.date}</TableCell>
-            <TableCell className="min-w-64 whitespace-normal">{row.note}</TableCell>
+            <TableCell>{row.note}</TableCell>
             {lineage && <LineageCell lineage={row.lineage} />}
-            {hash && <TableCell>{row.hash ? <Badge variant="outline" title={row.hash} className="font-mono">{shortHash(row.hash)}</Badge> : '—'}</TableCell>}
-            <TableCell className="space-x-1">{row.marks.map(mark => <Badge key={mark} variant="secondary">{mark}</Badge>)}</TableCell>
+            {hash && <TableCell>{row.hash ? <Badge variant="outline" title={row.hash}>{shortHash(row.hash)}</Badge> : '—'}</TableCell>}
+            <TableCell>{row.marks.map(mark => <Badge key={mark} variant="secondary">{mark}</Badge>)}</TableCell>
           </TableRow>)}
         </TableBody>
       </Table>

@@ -1,0 +1,37 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.studio.specimen-figure",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.studio",
+    "l2": "studio-specimens",
+    "order": 273
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "install": {
+      "layer": "@clossys/designer-ui",
+      "alias": "components",
+      "file": "specimen-figure.tsx"
+    },
+    "allowedReads": {
+      "themes": [
+        "themes.muted-foreground",
+        "themes.spacing"
+      ],
+      "assets": [],
+      "components": []
+    },
+    "composes": []
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -47,7 +47,7 @@ export const publishedMetadata: Metadata = { title: studioCopy('studio.studio'),
 export async function PublishedDocument({ children }: { children: ReactNode }) {
   const seed = await loadStudioSeed();
   const head = <>
-    <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+    <script>{THEME_INIT_SCRIPT}</script>
     {studioDocument.stylesheets.map(sheet => <link key={sheet.href} rel="stylesheet" href={sheet.href} precedence={sheet.precedence} />)}
   </>;
   return <StudioDocument head={head}><StudioProviders {...(seed ? { seed } : {})}>{children}</StudioProviders></StudioDocument>;

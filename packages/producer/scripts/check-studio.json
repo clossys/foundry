@@ -21,6 +21,12 @@
       "kind": "static"
     },
     {
+      "id": "producer derive-element-deps",
+      "cwd": "packages/producer",
+      "run": "node scripts/derive-element-deps.mjs",
+      "kind": "static"
+    },
+    {
       "id": "producer check:routes-published",
       "cwd": "packages/producer",
       "run": "npm run check:routes-published",
@@ -297,6 +303,13 @@
       "kind": "live"
     },
     {
+      "id": "producer check-rendered-provenance (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/check-rendered-provenance.mjs \"$STUDIO_ORIGIN\"",
+      "kind": "live",
+      "timeout": "studio-routes"
+    },
+    {
       "id": "producer check-theme-parity (live)",
       "cwd": "packages/producer",
       "run": "node studio/checks/check-theme-parity.cjs \"$STUDIO_ORIGIN\" \"$STUDIO_ORIGIN\"",
@@ -564,12 +577,6 @@
       "id": "designer-ui stock-frame-picks.b6a.test.mjs",
       "cwd": "packages/designer/ui",
       "run": "node --test stock-frame-picks.b6a.test.mjs",
-      "kind": "test"
-    },
-    {
-      "id": "designer-ui studio-frames.test.cjs",
-      "cwd": "packages/designer/ui",
-      "run": "node --test studio-frames.test.cjs",
       "kind": "test"
     },
     {

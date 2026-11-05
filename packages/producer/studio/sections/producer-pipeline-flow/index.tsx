@@ -177,7 +177,7 @@ function StepSheet({ step, copy, isOpen, onOpenChange }: { step: StepData; copy:
       <SheetTitle>{step.label}</SheetTitle>
       <SheetDescription>{facts.holder.name}</SheetDescription>
     </SheetHeader>
-    <FieldGroup className="px-4">
+    <FieldGroup>
       <Field data-fact="round"><FieldTitle>{copy.round}</FieldTitle><FieldDescription>{facts.round}</FieldDescription></Field>
       <Field data-fact="stage"><FieldTitle>{copy.stage}</FieldTitle><FieldDescription>{facts.stage}</FieldDescription></Field>
       <Field data-fact="holder"><FieldTitle>{copy.holder}</FieldTitle><FieldDescription>{facts.holder.name}</FieldDescription>
@@ -228,7 +228,7 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   // The flow is read-only and mounts once graph.json has loaded (the empty state renders until then).
   // The stock Card is the canvas's frame and fills the content area below the page's header rows (flex-1); the canvas fills the Card.
   // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.
-  return <Card size="sm" className="flex-1" {...provenance}>
+  return <Card size="sm" {...provenance}>
     <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...rounds, ...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
       ariaLabelConfig={copy.aria} proOptions={HIDE_ATTRIBUTION}
       nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>

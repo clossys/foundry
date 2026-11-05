@@ -1,0 +1,125 @@
+{
+  "name": "card",
+  "type": "registry:ui",
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "card.tsx",
+      "type": "registry:ui",
+      "content": "import * as React from \"react\"\nimport { cn } from \"cn\"\n\nfunction Card({\n  className,\n  size = \"default\",\n  ...props\n}: React.ComponentProps<\"div\"> & { size?: \"default\" | \"sm\" }) {\n  return (\n    <div\n      data-slot=\"card\"\n      data-size={size}\n      className={cn(\n        \"group/card flex flex-col gap-(--card-spacing) overflow-hidden rounded-xl bg-card py-(--card-spacing) text-sm text-card-foreground ring-1 ring-foreground/10 [--card-spacing:--spacing(4)] has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:[--card-spacing:--spacing(3)] data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction CardHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"card-header\"\n      className={cn(\n        \"group/card-header @container/card-header grid auto-rows-min items-start gap-1 rounded-t-xl px-(--card-spacing) has-data-[slot=card-action]:grid-cols-[1fr_auto] has-data-[slot=card-description]:grid-rows-[auto_auto] [.border-b]:pb-(--card-spacing)\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction CardTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"card-title\"\n      className={cn(\n        \"font-heading text-base leading-snug font-medium group-data-[size=sm]/card:text-sm\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction CardDescription({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"card-description\"\n      className={cn(\"text-sm text-muted-foreground\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction CardAction({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"card-action\"\n      className={cn(\n        \"col-start-2 row-span-2 row-start-1 self-start justify-self-end\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction CardContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"card-content\"\n      className={cn(\"px-(--card-spacing)\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction CardFooter({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"card-footer\"\n      className={cn(\n        \"flex items-center rounded-b-xl border-t bg-muted/50 p-(--card-spacing)\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Card,\n  CardHeader,\n  CardFooter,\n  CardTitle,\n  CardAction,\n  CardDescription,\n  CardContent,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.card",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/card@4.23.0"
+      ],
+      "hash": "sha256:61bc38f49644576f405ca6bdb11ba9c60c261cf76c2fc7cb21d71f99db133ac8",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "card.tsx": "registry/aria-nova/ui/card.tsx"
+      }
+    },
+    "element": {
+      "id": "card",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.card",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "AGENT-PAGES"
+      },
+      "reason": "FIX-ALL: v1 code unchanged (v1 sha256:b75400e4a764dd109165cdeba75ec8df6a6e47d49779a49c383b41084122f394); adds a preview fixture whose element tree renders the component's parts with Writer sample copy (studio.specimen.*), so the Studio specimen is not empty. DS-COMPLETE D4: no copy snapshot; meta.preview.inputs declares the Writer keys the fixtures name, and the specimen resolves them from the pinned Writer slots. Code unchanged from card-v2.",
+      "createdAt": "2026-11-05T11:46:20.104Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.specimen.card-title",
+          "studio.specimen.card-description",
+          "studio.specimen.card-content",
+          "studio.specimen.card-footer"
+        ],
+        "themeVars": []
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "card.tsx",
+        "export": "Card",
+        "props": {
+          "className": "w-full max-w-80",
+          "children": [
+            {
+              "$component": "CardHeader",
+              "children": [
+                {
+                  "$component": "CardTitle",
+                  "children": {
+                    "$copy": "studio.specimen.card-title"
+                  }
+                },
+                {
+                  "$component": "CardDescription",
+                  "children": {
+                    "$copy": "studio.specimen.card-description"
+                  }
+                }
+              ]
+            },
+            {
+              "$component": "CardContent",
+              "children": {
+                "$copy": "studio.specimen.card-content"
+              }
+            },
+            {
+              "$component": "CardFooter",
+              "props": {
+                "className": "text-muted-foreground"
+              },
+              "children": {
+                "$copy": "studio.specimen.card-footer"
+              }
+            }
+          ]
+        }
+      },
+      "inputs": {
+        "copy": [
+          "studio.specimen.card-content",
+          "studio.specimen.card-description",
+          "studio.specimen.card-footer",
+          "studio.specimen.card-title"
+        ]
+      },
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

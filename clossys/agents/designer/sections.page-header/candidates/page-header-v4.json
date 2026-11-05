@@ -1,0 +1,185 @@
+{
+  "name": "page-header",
+  "type": "registry:block",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "breadcrumb",
+    "button",
+    "card",
+    "empty"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "page-header.tsx",
+      "type": "registry:component",
+      "content": "import { Badge } from '@/components/ui/badge';\nimport { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from '@/components/ui/breadcrumb';\nimport { LinkButton } from '@/components/ui/button';\nimport { CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\nimport { EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';\n\n/** A link with its Writer label; the last breadcrumb has no href (the current page). */\nexport interface PageHeaderLink { label: string; href?: string }\n/** One record fact beside the title (config.record). */\nexport interface PageHeaderMeta { label: string; value: string }\n\n/** The inputs of `sections.page-header`: the contract's copy fields, display-ready. */\nexport interface PageHeaderInput {\n  header?: { eyebrow?: string };\n  title: string;\n  description?: string;\n  breadcrumbs?: { label: string; items: readonly PageHeaderLink[] };\n  actions?: readonly { label: string; href: string }[];\n  meta?: readonly PageHeaderMeta[];\n  /** The closed members: `config.standard`, `config.record` (meta badges beside the title) and `contact.header` (centred, no breadcrumbs). */\n  config?: 'standard' | 'record' | 'contact';\n}\n\n/** `sections.page-header`: a page's breadcrumbs, title, description, record facts and actions, composed of stock aria-nova parts only. */\nexport default function PageHeaderSection({ header, title, description, breadcrumbs, actions = [], meta = [], config = 'standard', ...provenance }: PageHeaderInput & { [marker: `data-clossys-${string}`]: string }) {\n  const links = actions.slice(0, 2).map((action, index) => <LinkButton key={action.href} href={action.href} variant={index === 0 ? 'default' : 'outline'}>{action.label}</LinkButton>);\n  const eyebrow = header?.eyebrow ? <Badge variant=\"secondary\">{header.eyebrow}</Badge> : null;\n  if (config === 'contact') return <EmptyHeader data-config=\"contact\" {...provenance}>\n    {eyebrow}\n    <EmptyTitle role=\"heading\" aria-level={1}>{title}</EmptyTitle>\n    {description ? <EmptyDescription>{description}</EmptyDescription> : null}\n    {links.length ? <EmptyContent>{links}</EmptyContent> : null}\n  </EmptyHeader>;\n  const trail = breadcrumbs?.items ?? [];\n  return <CardHeader data-config={config} {...provenance}>\n    {trail.length > 1 ? <Breadcrumb aria-label={breadcrumbs?.label}>\n      <BreadcrumbList>\n        {trail.map((item, index) => <BreadcrumbItem key={`${index}:${item.label}`}>\n          {item.href && index < trail.length - 1 ? <BreadcrumbLink href={item.href}>{item.label}</BreadcrumbLink> : <BreadcrumbPage>{item.label}</BreadcrumbPage>}\n        </BreadcrumbItem>)}\n      </BreadcrumbList>\n    </Breadcrumb> : eyebrow}\n    <CardTitle role=\"heading\" aria-level={1}>\n      {title}\n      {config === 'record' ? meta.map(fact => <Badge key={fact.label} variant=\"outline\">{fact.label} {fact.value}</Badge>) : null}\n    </CardTitle>\n    {description ? <CardDescription>{description}</CardDescription> : null}\n    {links.length ? <CardAction>{links}</CardAction> : null}\n  </CardHeader>;\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.page-header",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.breadcrumbs",
+          "files": [
+            "registry/aria-nova/ui/breadcrumb.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.empty",
+          "files": [
+            "registry/aria-nova/ui/empty.tsx"
+          ]
+        }
+      ],
+      "license": "MIT",
+      "hash": "sha256:47303afe5a5f64bb34fcf48908e8c57c43db1cf33e94c113c212868972db3bbf"
+    },
+    "element": {
+      "id": "page-header",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.page-header",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D3, option a): breadcrumbs, title, description, record facts and up to two actions over the stock card header, centred over the stock empty header for contact.header. Composed through the Designer create path from pinned stock aria-nova parts only (components.badge, components.breadcrumbs, components.button, components.card, components.empty); no raw styled markup, no restyle of a part, every word a Writer copy prop. v3 names the part slots in deps.registry (v2 named the breadcrumb file, which maps to no slot). Replaces v1 (original lineage, failing ref-verbatim). page-header-v3 follow-up: preview.copy carries the pinned Writer text of every key the fixtures name, so the Studio specimen renders Writer copy.",
+      "createdAt": "2026-11-05T10:52:23.711Z",
+      "deps": {
+        "npm": {},
+        "registry": [
+          "badge",
+          "breadcrumbs",
+          "button",
+          "card",
+          "empty"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "page-header.tsx",
+        "export": "default",
+        "props": {
+          "title": {
+            "$copy": "studio.nav.designer"
+          },
+          "description": {
+            "$copy": "studio.detail.section.description"
+          },
+          "breadcrumbs": {
+            "label": {
+              "$copy": "studio.agent-header.breadcrumbs.label"
+            },
+            "items": [
+              {
+                "label": {
+                  "$copy": "studio.nav.home"
+                },
+                "href": "/"
+              },
+              {
+                "label": {
+                  "$copy": "studio.nav.designer"
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "label": {
+                "$copy": "studio.home.cta.actions.primary.label"
+              },
+              "href": "/director"
+            }
+          ]
+        }
+      },
+      "copy": {
+        "studio.agent-header.breadcrumbs.label": {
+          "text": "Breadcrumb"
+        },
+        "studio.detail.section.description": {
+          "text": "Every candidate in this slot. The owner pins one."
+        },
+        "studio.home.cta.actions.primary.label": {
+          "text": "Open Director"
+        },
+        "studio.nav.designer": {
+          "text": "Designer"
+        },
+        "studio.nav.home": {
+          "text": "Home"
+        }
+      },
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

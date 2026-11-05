@@ -196,10 +196,21 @@ export function iconButtonLinkClassName(ground: IconButtonLinkGround = "base"): 
   return iconButtonClassName({ size: "md", shape: "circle", ground });
 }
 
+/** The control-height token of each size, as literal reads so every var() names its property. */
+const CONTROL_HEIGHT = { sm: "var(--ui-control-h-sm)", md: "var(--ui-control-h-md)", lg: "var(--ui-control-h-lg)" } as const satisfies Record<ButtonSize, string>;
+
+/** The control-height token read for one size. */
+export function controlHeight(size: ButtonSize = "md"): string {
+  return CONTROL_HEIGHT[size];
+}
+
 /** Token-bound geometry; visual height is independent of line height and padding. */
 export function controlSizeStyle(size: ButtonSize = "md"): CSSProperties {
-  return { boxSizing: "border-box", paddingBlock: 0, blockSize: `var(--ui-control-h-${size})`, minBlockSize: `var(--ui-control-h-${size})` };
+  return { boxSizing: "border-box", paddingBlock: 0, blockSize: controlHeight(size), minBlockSize: controlHeight(size) };
 }
+
+/** The two state-layer alpha tokens, as literal reads. */
+const STATE_ALPHA = { pressed: "var(--ui-state-pressed-alpha)", hover: "var(--ui-state-hover-alpha)" } as const;
 
 /**
  * A state layer paints over the existing fill, including a selected fill. The
@@ -210,9 +221,9 @@ export function controlStateStyle(
   state: { isHovered?: boolean; isPressed?: boolean; isFocusVisible?: boolean; isDisabled?: boolean },
   { ground = "base", dimDisabled = true }: { ground?: ControlGround; dimDisabled?: boolean } = {},
 ): CSSProperties {
-  const alpha = state.isPressed ? "--ui-state-pressed-alpha" : state.isHovered ? "--ui-state-hover-alpha" : undefined;
+  const alpha = state.isPressed ? STATE_ALPHA.pressed : state.isHovered ? STATE_ALPHA.hover : undefined;
   // currentColor follows the control's token-bound selected/inverse ink too.
-  const layer = `color-mix(in srgb, currentColor calc(var(${alpha}) * 100%), transparent)`;
+  const layer = `color-mix(in srgb, currentColor calc(${alpha} * 100%), transparent)`;
   return {
     backgroundImage: !state.isDisabled && alpha ? `linear-gradient(${layer}, ${layer})` : undefined,
     color: state.isDisabled ? "var(--color-ink-muted)" : undefined,

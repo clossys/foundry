@@ -1,0 +1,34 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.studio.text-link",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.studio",
+    "l2": "studio-layout",
+    "order": 269
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "install": {
+      "layer": "@clossys/designer-ui",
+      "alias": "components",
+      "file": "text-link.tsx"
+    },
+    "allowedReads": {
+      "themes": [],
+      "assets": [],
+      "components": []
+    },
+    "composes": []
+  },
+  "inputs": [],
+  "uses": []
+}

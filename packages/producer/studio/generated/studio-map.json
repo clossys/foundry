@@ -1306,6 +1306,22 @@
         }
       },
       {
+        "id": "designer-components.studio",
+        "parentId": "designer",
+        "order": 3007,
+        "title": "Studio",
+        "kind": "page",
+        "path": "/designer/components/studio",
+        "source": {
+          "frameId": "frames.studio-shell",
+          "sectionIds": [
+            "sections.studio.page-header",
+            "sections.studio.page-tabs",
+            "sections.studio.slot-groups"
+          ]
+        }
+      },
+      {
         "id": "designer-sections.specimens",
         "parentId": "designer",
         "order": 4000,
@@ -3155,6 +3171,51 @@
       {
         "from": "/designer/components.flow.canvas",
         "to": "/designer/components/flow/components.flow.canvas",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.card-grid",
+        "to": "/designer/components/studio/components.studio.card-grid",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.card-stack",
+        "to": "/designer/components/studio/components.studio.card-stack",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.text-link",
+        "to": "/designer/components/studio/components.studio.text-link",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.sidebar-static-row",
+        "to": "/designer/components/studio/components.studio.sidebar-static-row",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.home-grid",
+        "to": "/designer/components/studio/components.studio.home-grid",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.specimen-frame",
+        "to": "/designer/components/studio/components.studio.specimen-frame",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.specimen-figure",
+        "to": "/designer/components/studio/components.studio.specimen-figure",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.block-viewer-iframe",
+        "to": "/designer/components/studio/components.studio.block-viewer-iframe",
+        "permanent": false
+      },
+      {
+        "from": "/designer/components.studio.specimen-document",
+        "to": "/designer/components/studio/components.studio.specimen-document",
         "permanent": false
       },
       {
@@ -15061,6 +15122,204 @@
       }
     },
     {
+      "id": "designer-components.studio",
+      "path": "/designer/components/studio",
+      "title": "Studio",
+      "frameId": "frames.studio-shell",
+      "sectionIds": [
+        "sections.studio.page-header",
+        "sections.studio.page-tabs",
+        "sections.studio.slot-groups"
+      ],
+      "body": "plain",
+      "data": {
+        "loader": "slot-groups",
+        "agent": "designer",
+        "purpose": "studio.design-decisions-tokens-sections-and-frames-the",
+        "description": "studio.group-designer-components",
+        "groups": [
+          "components.studio/studio-layout",
+          "components.studio/studio-specimens"
+        ],
+        "record": "designer-components"
+      },
+      "inputs": {
+        "sections.studio.page-header": "header",
+        "sections.studio.page-tabs": "tabs",
+        "sections.studio.slot-groups": "groups"
+      },
+      "manifest": {
+        "navigator": "outline",
+        "modules": [
+          {
+            "id": "outline",
+            "icon": "assets.icon-outline",
+            "label": "studio.outline-label",
+            "section": "sections.module.outline",
+            "source": "page.outline",
+            "shortcut": "o",
+            "input": "outline"
+          },
+          {
+            "id": "checks",
+            "icon": "assets.icon-checks",
+            "label": "studio.checks",
+            "section": "sections.module.checks",
+            "source": "page.checks",
+            "shortcut": "c",
+            "input": "checks"
+          }
+        ],
+        "actions": [],
+        "wiring": [
+          {
+            "do": "open outline",
+            "expect": "outline open"
+          },
+          {
+            "do": "open checks",
+            "expect": "checks open"
+          },
+          {
+            "do": "select outline",
+            "expect": "target in view and highlighted"
+          },
+          {
+            "do": "cmdk",
+            "expect": "every popover listed with its shortcut"
+          },
+          {
+            "do": "key o",
+            "expect": "outline open"
+          },
+          {
+            "do": "key escape",
+            "expect": "popover closed"
+          },
+          {
+            "do": "click outside",
+            "expect": "popover closed"
+          }
+        ]
+      },
+      "leaf": {
+        "param": "slug",
+        "body": "detail",
+        "data": {
+          "loader": "leaf",
+          "agent": "designer"
+        },
+        "sectionIds": [
+          "sections.studio.leaf-header",
+          "sections.studio.specimen",
+          "sections.studio.options",
+          "sections.studio.checks",
+          "sections.studio.contract",
+          "sections.studio.history",
+          "sections.studio.references"
+        ],
+        "inputs": {
+          "sections.studio.leaf-header": "header",
+          "sections.studio.specimen": "specimen",
+          "sections.studio.options": "options",
+          "sections.studio.checks": "checks",
+          "sections.studio.contract": "contract",
+          "sections.studio.history": "history",
+          "sections.studio.references": "references"
+        },
+        "manifest": {
+          "navigator": "outline",
+          "modules": [
+            {
+              "id": "outline",
+              "icon": "assets.icon-outline",
+              "label": "studio.outline-label",
+              "section": "sections.module.outline",
+              "source": "page.outline",
+              "shortcut": "o",
+              "input": "outline"
+            },
+            {
+              "id": "checks",
+              "icon": "assets.icon-checks",
+              "label": "studio.checks",
+              "section": "sections.module.checks",
+              "source": "page.checks",
+              "shortcut": "c",
+              "input": "checks"
+            },
+            {
+              "id": "versions",
+              "icon": "assets.icon-versions",
+              "label": "studio.versions-label",
+              "section": "sections.module.outline",
+              "source": "page.versions",
+              "shortcut": "v",
+              "input": "outline"
+            }
+          ],
+          "actions": [
+            {
+              "id": "request-change",
+              "icon": "assets.icon-request",
+              "label": "studio.request-change",
+              "handler": {
+                "kind": "copy-prompt",
+                "prompt": "studio.request-change-prompt"
+              },
+              "shortcut": "r"
+            }
+          ],
+          "wiring": [
+            {
+              "do": "open outline",
+              "expect": "outline open"
+            },
+            {
+              "do": "open checks",
+              "expect": "checks open"
+            },
+            {
+              "do": "open versions",
+              "expect": "versions open"
+            },
+            {
+              "do": "open request-change",
+              "expect": "request-change open"
+            },
+            {
+              "do": "select outline",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "select versions",
+              "expect": "target in view and highlighted"
+            },
+            {
+              "do": "copy request-change",
+              "expect": "clipboard prompt"
+            },
+            {
+              "do": "cmdk",
+              "expect": "every popover listed with its shortcut"
+            },
+            {
+              "do": "key o",
+              "expect": "outline open"
+            },
+            {
+              "do": "key escape",
+              "expect": "popover closed"
+            },
+            {
+              "do": "click outside",
+              "expect": "popover closed"
+            }
+          ]
+        }
+      }
+    },
+    {
       "id": "designer-sections.specimens",
       "path": "/designer/sections/specimens",
       "title": "Specimens",
@@ -25364,6 +25623,60 @@
       "path": "/designer/components/flow/components.flow.canvas"
     },
     {
+      "page": "designer-components.studio",
+      "slug": "components.studio.card-grid",
+      "title": "Studio card grid",
+      "path": "/designer/components/studio/components.studio.card-grid"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.card-stack",
+      "title": "Studio card stack",
+      "path": "/designer/components/studio/components.studio.card-stack"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.text-link",
+      "title": "Studio text link",
+      "path": "/designer/components/studio/components.studio.text-link"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.sidebar-static-row",
+      "title": "Studio sidebar static row",
+      "path": "/designer/components/studio/components.studio.sidebar-static-row"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.home-grid",
+      "title": "Studio home grid",
+      "path": "/designer/components/studio/components.studio.home-grid"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.specimen-frame",
+      "title": "Studio specimen frame",
+      "path": "/designer/components/studio/components.studio.specimen-frame"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.specimen-figure",
+      "title": "Studio specimen figure",
+      "path": "/designer/components/studio/components.studio.specimen-figure"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.block-viewer-iframe",
+      "title": "Studio block viewer iframe",
+      "path": "/designer/components/studio/components.studio.block-viewer-iframe"
+    },
+    {
+      "page": "designer-components.studio",
+      "slug": "components.studio.specimen-document",
+      "title": "Studio specimen document",
+      "path": "/designer/components/studio/components.studio.specimen-document"
+    },
+    {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-swatch",
       "title": "Color swatch",
@@ -27184,6 +27497,12 @@
       "path": "/designer/components/flow"
     },
     {
+      "id": "designer-components.studio",
+      "record": "designer-components",
+      "title": "Studio",
+      "path": "/designer/components/studio"
+    },
+    {
       "id": "designer-sections.specimens",
       "record": "designer-sections",
       "title": "Specimens",
@@ -27551,6 +27870,7 @@
     "designer-components.navigation": "/designer/components/navigation",
     "designer-components.containment": "/designer/components/containment",
     "designer-components.flow": "/designer/components/flow",
+    "designer-components.studio": "/designer/components/studio",
     "designer-sections.specimens": "/designer/sections/specimens",
     "designer-sections.parts": "/designer/sections/parts",
     "designer-sections.explain": "/designer/sections/explain",
@@ -28935,6 +29255,28 @@
         "id": "designer-components.flow",
         "label": "Flow",
         "href": "/designer/components/flow"
+      }
+    ],
+    "designer-components.studio": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
       }
     ],
     "designer-sections.specimens": [
@@ -36027,6 +36369,249 @@
         "id": "designer-components.flow:components.flow.canvas",
         "label": "Flow canvas",
         "href": "/designer/components/flow/components.flow.canvas"
+      }
+    ],
+    "designer-components.studio:components.studio.card-grid": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.card-grid",
+        "label": "Studio card grid",
+        "href": "/designer/components/studio/components.studio.card-grid"
+      }
+    ],
+    "designer-components.studio:components.studio.card-stack": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.card-stack",
+        "label": "Studio card stack",
+        "href": "/designer/components/studio/components.studio.card-stack"
+      }
+    ],
+    "designer-components.studio:components.studio.text-link": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.text-link",
+        "label": "Studio text link",
+        "href": "/designer/components/studio/components.studio.text-link"
+      }
+    ],
+    "designer-components.studio:components.studio.sidebar-static-row": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.sidebar-static-row",
+        "label": "Studio sidebar static row",
+        "href": "/designer/components/studio/components.studio.sidebar-static-row"
+      }
+    ],
+    "designer-components.studio:components.studio.home-grid": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.home-grid",
+        "label": "Studio home grid",
+        "href": "/designer/components/studio/components.studio.home-grid"
+      }
+    ],
+    "designer-components.studio:components.studio.specimen-frame": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.specimen-frame",
+        "label": "Studio specimen frame",
+        "href": "/designer/components/studio/components.studio.specimen-frame"
+      }
+    ],
+    "designer-components.studio:components.studio.specimen-figure": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.specimen-figure",
+        "label": "Studio specimen figure",
+        "href": "/designer/components/studio/components.studio.specimen-figure"
+      }
+    ],
+    "designer-components.studio:components.studio.block-viewer-iframe": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.block-viewer-iframe",
+        "label": "Studio block viewer iframe",
+        "href": "/designer/components/studio/components.studio.block-viewer-iframe"
+      }
+    ],
+    "designer-components.studio:components.studio.specimen-document": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.specimen-document",
+        "label": "Studio specimen document",
+        "href": "/designer/components/studio/components.studio.specimen-document"
       }
     ],
     "designer-sections.specimens:sections.specimen-swatch": [
@@ -43568,6 +44153,51 @@
       "permanent": false
     },
     {
+      "source": "/designer/components.studio.block-viewer-iframe",
+      "destination": "/designer/components/studio/components.studio.block-viewer-iframe",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.card-grid",
+      "destination": "/designer/components/studio/components.studio.card-grid",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.card-stack",
+      "destination": "/designer/components/studio/components.studio.card-stack",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.home-grid",
+      "destination": "/designer/components/studio/components.studio.home-grid",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.sidebar-static-row",
+      "destination": "/designer/components/studio/components.studio.sidebar-static-row",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.specimen-document",
+      "destination": "/designer/components/studio/components.studio.specimen-document",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.specimen-figure",
+      "destination": "/designer/components/studio/components.studio.specimen-figure",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.specimen-frame",
+      "destination": "/designer/components/studio/components.studio.specimen-frame",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.text-link",
+      "destination": "/designer/components/studio/components.studio.text-link",
+      "permanent": false
+    },
+    {
       "source": "/designer/components.switch",
       "destination": "/designer/components/inputs/components.switch",
       "permanent": false
@@ -45442,32 +46072,32 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 12
+      "version": 18
     },
     {
       "slot": "sections.studio.page-header",
       "element": "studio-page-header",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
-      "version": 7
+      "version": 9
     },
     {
       "slot": "sections.module.outline",
       "element": "module-outline",
-      "version": 6
+      "version": 7
     },
     {
       "slot": "sections.module.checks",
       "element": "module-checks",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.producer.team-strip",
       "element": "producer-team-strip",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.producer.pipeline-legend",
@@ -45477,17 +46107,17 @@
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 10
+      "version": 11
     },
     {
       "slot": "sections.studio.page-tabs",
       "element": "studio-page-tabs",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 4
+      "version": 8
     },
     {
       "slot": "sections.producer.system-empty",
@@ -45497,37 +46127,37 @@
     {
       "slot": "sections.studio.leaf-header",
       "element": "studio-leaf-header",
-      "version": 6
+      "version": 7
     },
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 9
+      "version": 11
     },
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 5
+      "version": 7
     },
     {
       "slot": "sections.studio.checks",
       "element": "studio-checks",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.contract",
       "element": "studio-contract",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.history",
       "element": "studio-history",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.references",
       "element": "studio-references",
-      "version": 5
+      "version": 6
     }
   ],
   "pageActions": {
@@ -45609,6 +46239,7 @@
     "designer-components.navigation": [],
     "designer-components.containment": [],
     "designer-components.flow": [],
+    "designer-components.studio": [],
     "designer-sections.specimens": [],
     "designer-sections.parts": [],
     "designer-sections.explain": [],
@@ -46570,6 +47201,22 @@
         "path": "/designer/components/flow/[slug]",
         "entry": {
           "file": "studio/app/designer/components/flow/[slug]/page.tsx",
+          "export": "default"
+        }
+      }
+    },
+    {
+      "instanceId": "designer-components.studio",
+      "path": "/designer/components/studio",
+      "label": "Studio",
+      "entry": {
+        "file": "studio/app/designer/components/studio/page.tsx",
+        "export": "default"
+      },
+      "leaf": {
+        "path": "/designer/components/studio/[slug]",
+        "entry": {
+          "file": "studio/app/designer/components/studio/[slug]/page.tsx",
           "export": "default"
         }
       }

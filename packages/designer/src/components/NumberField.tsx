@@ -4,6 +4,7 @@ import { NumberField as AriaNumberField, Group, Input, Label, Text, FieldError, 
 import { Button } from "./Button.js";
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
+import { controlHeight } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 
@@ -25,7 +26,7 @@ export const NumberField = forwardRef<HTMLDivElement, NumberFieldProps>(function
   if (!incrementLabel.trim() || !decrementLabel.trim()) throw new TypeError("NumberField requires stepper names.");
   return <AriaNumberField {...props} ref={ref} className={cx("flex flex-col gap-xs", className)}>
     <Label className="text-body-s text-ink-secondary font-body">{label}</Label>
-    <Group className={({ isInvalid }) => cx("flex items-center rounded-control border bg-surface-raised", isInvalid ? "border-status-danger" : "border-line-control")} style={({ isDisabled, isFocusVisible }) => ({ minBlockSize: `var(--ui-control-h-${size})`, opacity: isDisabled ? UI_ALPHA_DISABLED : undefined, boxShadow: isFocusVisible ? UI_RING_FOCUS : undefined })}>
+    <Group className={({ isInvalid }) => cx("flex items-center rounded-control border bg-surface-raised", isInvalid ? "border-status-danger" : "border-line-control")} style={({ isDisabled, isFocusVisible }) => ({ minBlockSize: controlHeight(size), opacity: isDisabled ? UI_ALPHA_DISABLED : undefined, boxShadow: isFocusVisible ? UI_RING_FOCUS : undefined })}>
       <Button slot="decrement" aria-label={decrementLabel} aria-labelledby="" variant="quiet" size={size} style={{ minInlineSize: "var(--ui-layout-tap-target)" }} className="px-md py-sm text-ink-primary outline-none focus-visible:underline forced-colors:outline"><Icon glyph={decrementGlyph} decorative /></Button>
       <Input className="min-w-0 flex-1 bg-transparent px-sm py-sm font-body text-body text-ink-primary tabular-nums outline-none" />
       <Button slot="increment" aria-label={incrementLabel} aria-labelledby="" variant="quiet" size={size} style={{ minInlineSize: "var(--ui-layout-tap-target)" }} className="px-md py-sm text-ink-primary outline-none focus-visible:underline forced-colors:outline"><Icon glyph={incrementGlyph} decorative /></Button>

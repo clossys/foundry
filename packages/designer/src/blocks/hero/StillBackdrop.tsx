@@ -55,7 +55,7 @@ export function StillBackdrop({ art, scrim = "light" }: { art: StillBackdropArt;
       ) : (
         <img src={art.source.src} alt="" width={art.width} height={art.height} loading="lazy" decoding="async" draggable={false} className="h-full w-full object-cover" style={{ pointerEvents }} />
       )}
-      <SemanticContent as="div" data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: "var(--gradient-media-scrim)" }} />
+      <SemanticContent as="div" data-hero-gradient="media-scrim" className="absolute inset-0" style={{ pointerEvents, backgroundImage: "linear-gradient(transparent, var(--color-overlay-scrim))" }} />
       {Array.from({ length: policy.passes }, (_, index) => <SemanticContent as="div" key={index} data-hero-scrim={scrim} className="absolute inset-0" style={{ pointerEvents, backgroundColor: "var(--color-overlay-scrim)" }} />)}
     </SemanticContent>
   );

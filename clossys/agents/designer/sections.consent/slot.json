@@ -199,8 +199,8 @@
   ],
   "uses": [],
   "notNeeded": {
-    "reason": "no approved-registry source; W6 composition check (strict, consent-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed); 4 styled raw element attribute(s); imports outside the stock parts: @/components/ui/icon (absent from the component layer), @/components/ui/semantic-content (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03",
-    "decidedBy": "migrated"
+    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, consent-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed); 4 styled raw element attribute(s); imports outside the stock parts: @/components/ui/icon (absent from the component layer), @/components/ui/semantic-content (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
   }
 }

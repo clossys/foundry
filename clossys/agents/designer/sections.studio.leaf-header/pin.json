@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-leaf-header-v6.json",
-  "sha256": "3865f280bc35af5961d9bb560f38e185cb04f0d1e4e55e3f4fa5ca71f58cc0c9",
-  "decidedBy": "planner:CONVERGE-R2",
+  "candidate": "studio-leaf-header-v7.json",
+  "sha256": "c3099262a9a50dba860a3e110248f3f0c58e9942e7426b1dbbc43e81413ed0d6",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-04T00:50:34.405Z"
+  "at": "2026-11-05T06:09:20.074Z"
 }

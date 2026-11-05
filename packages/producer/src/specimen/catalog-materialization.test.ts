@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
 import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadCatalog, loadComponentRegistry, runtimeHash, type CompositeCatalogData, type RuntimeJson, type SurfaceCandidateDocument, type SurfaceSlot } from "@clossys/designer/catalog";
 import { readSurfacePackageEvidence } from "@clossys/designer/catalog/node";
@@ -29,6 +30,13 @@ async function fixture() {
     mkdirSync(dir, { recursive: true });
     writeFileSync(slotFile(dir), jsonBytes({ schema: SLOT_SCHEMA, id, agent: "designer", ia: position, kind: "element", contract: build.slots.find(slot => slot.id === id)!.contract, inputs: [], uses: [] }));
   }
+  // The pinned Writer slot holding the Hero keys these candidates declare as their copy inputs.
+  const writer = join(root, "agents/writer");
+  cpSync(fileURLToPath(new URL("./__fixtures__/canonical-writer/", import.meta.url)), writer, { recursive: true });
+  const row = (key: string, text: string) => `### ${key}\n<!-- ${JSON.stringify({ id: key, bindings: ["agents/designer/sections.hero"] })} -->\n${text}\n`;
+  const strings = `---\nslot: "strings.sample"\nsource: {"kind":"original","ref":[]}\nlocales: ["en"]\n---\n\n## en\n\n${[row("hero.heading", "A fixture heading"), row("hero.eyebrow", "Fixture eyebrow"), row("hero.description", "A fixture description.")].join("\n")}`;
+  writeFileSync(join(writer, "strings.sample/candidates/hero-v1.md"), strings);
+  writeFileSync(join(writer, "strings.sample/pin.json"), jsonBytes({ candidate: "hero-v1.md", sha256: sha256Hex(strings), decidedBy: "migration:SLOT-MODEL", basis: "bulk", at: "2026-10-31T00:00:00Z" }));
   const packages = await readSurfacePackageEvidence(catalog.surfaces!.fills);
   const reference = (key: string) => ({ kind: "copy" as const, ref: `fixture:${key}` });
   // Actual public neutral asset bytes, not an invented production mark.

@@ -19,7 +19,7 @@ export interface LineageRow { key: string; version: string; mode: string; source
 export interface ReferencesInput { copy: ReferencesCopy; uses: readonly ReferenceLink[]; usedBy: readonly ReferenceLink[]; lineage: readonly LineageRow[] }
 
 function RefList({ label, refs, none }: { label: string; refs: readonly ReferenceLink[]; none: string }) {
-  return <CardDescription className="flex flex-wrap items-center gap-1">
+  return <CardDescription>
     {label}
     {refs.length
       ? refs.map(ref => ref.href
@@ -36,7 +36,7 @@ export default function ReferencesSection({ references, ...provenance }: { refer
       <CardTitle role="heading" aria-level={2}>{references.copy.title}</CardTitle>
       <CardDescription>{references.copy.description}</CardDescription>
     </CardHeader>
-    <CardContent className="flex flex-col gap-3">
+    <CardContent>
       <RefList label={references.copy.uses} refs={references.uses} none={references.copy.none} />
       <RefList label={references.copy.usedBy} refs={references.usedBy} none={references.copy.none} />
       {references.lineage.length > 0 && <Table aria-label={references.copy.lineage}>
@@ -49,7 +49,7 @@ export default function ReferencesSection({ references, ...provenance }: { refer
           {references.lineage.map(row => <TableRow key={row.key} id={row.key}>
             <TableCell>{row.version}</TableCell>
             <TableCell>{row.mode}</TableCell>
-            <TableCell className="whitespace-normal break-all">{row.source}</TableCell>
+            <TableCell>{row.source}</TableCell>
           </TableRow>)}
         </TableBody>
       </Table>}

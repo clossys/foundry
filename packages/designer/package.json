@@ -49,6 +49,7 @@
     "./utilities.css": "./styles/utilities.css",
     "./compiled.css": "./styles/compiled.css",
     "./brand-template.css": "./styles/brand-template.css",
+    "./specimen-frame.css": "./styles/specimen-frame.css",
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js"
@@ -391,7 +392,7 @@
     "test:copy-port-ids": "node --test scripts/check-copy-port-ids.test.mjs",
     "check:section-tokens": "node scripts/check-section-tokens.mjs --root ../../clossys --components ui/components.json",
     "check:page-overflow": "node scripts/check-page-overflow.mjs",
-    "check:provenance": "node scripts/check-provenance.mjs --scan ..",
+    "check:provenance": "node scripts/check-provenance.mjs --scan .. && node scripts/check-provenance.mjs --root ../../clossys",
     "check:ref-verbatim": "node scripts/check-ref-verbatim.mjs --root ../../clossys --pinned --components ui/components.json --report reports/ref-verbatim.json --release",
     "test:section-tokens": "node --test scripts/check-section-tokens.test.mjs",
     "test:references": "node --test scripts/check-references.test.mjs",

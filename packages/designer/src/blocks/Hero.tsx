@@ -165,7 +165,7 @@ export function Hero({
       {resolvedBackdrop.art ? <StillBackdrop art={resolvedBackdrop.art} scrim={backdropScrim} /> : null}
       {resolvedBackdrop.video || resolvedBackdrop.graphic ? <SemanticContent as="div" data-hero-live-backdrop="" aria-hidden="true" className="absolute inset-0" style={{ pointerEvents: "none", ...resolvedBackdrop.graphic?.style }}>
         {resolvedBackdrop.video ? <MediaPlayer decorative video={resolvedBackdrop.video.video} poster={{ kind: "photo", src: resolvedBackdrop.video.video.poster!, width: resolvedBackdrop.video.poster.width, height: resolvedBackdrop.video.poster.height, decorative: true }} muted autoplay loop /> : null}
-        <SemanticContent as="div" className="absolute inset-0" style={{ pointerEvents: "none", backgroundImage: "var(--gradient-media-scrim)" }} />
+        <SemanticContent as="div" className="absolute inset-0" style={{ pointerEvents: "none", backgroundImage: "linear-gradient(transparent, var(--color-overlay-scrim))" }} />
         {Array.from({ length: HERO_SCRIM_PASSES[backdropScrim] }, (_, index) => <SemanticContent as="div" key={index} data-hero-live-scrim={backdropScrim} className="absolute inset-0" style={{ pointerEvents: "none", backgroundColor: "var(--color-overlay-scrim)" }} />)}
       </SemanticContent> : null}
       {resolvedBackdrop.need ? <SemanticContent as="aside" role="status" className="relative" style={hasBackdropArt ? { color: "var(--color-neutral-50)" } : undefined}>{resolvedBackdrop.need}</SemanticContent> : null}

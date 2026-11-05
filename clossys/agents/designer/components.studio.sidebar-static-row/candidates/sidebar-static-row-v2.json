@@ -1,0 +1,63 @@
+{
+  "name": "sidebar-static-row",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [
+    "sidebar"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "sidebar-static-row.tsx",
+      "type": "registry:component",
+      "content": "\"use client\"\n\nimport type { ReactNode } from \"react\"\nimport { cn } from \"../lib/utils\"\nimport { useSidebar } from \"./ui/sidebar\"\n\n// Foundry sidebar extension (not a shadcn slot), lifted unchanged from the stock aria-nova\n// ../components/ui/sidebar.tsx: the SidebarMenuButton base/default/lg classes. It adds no styling of its own.\n\n// Exact SidebarMenuButton base/default/lg presentation from stock aria-nova.\nconst stockRowBase = \"peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-expanded:hover:bg-sidebar-accent aria-expanded:hover:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate\"\nconst stockRowDefault = \"hover:bg-sidebar-accent hover:text-sidebar-accent-foreground\"\nconst stockRowLarge = \"h-12 text-sm group-data-[collapsible=icon]:p-0!\"\n\n/** A non-interactive sidebar row with every stock SidebarMenuButton (size lg) class: no button, ref or press handler. */\nfunction SidebarStaticRow({ children, className }: { children: ReactNode; className?: string }) {\n  useSidebar()\n  return <div data-slot=\"sidebar-menu-button\" data-sidebar=\"menu-button\" data-size=\"lg\" data-active={false}\n    className={cn(stockRowBase, stockRowDefault, stockRowLarge, className)}>{children}</div>\n}\n\nexport { SidebarStaticRow }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.sidebar-static-row",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/sidebar@4.23.0"
+      ],
+      "license": "MIT",
+      "hash": "sha256:aab21fbe877774b1f11aecfe573a855d340e78fcb777f2cc7be8056a90ae90eb"
+    },
+    "element": {
+      "id": "sidebar-static-row",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.sidebar-static-row",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D1): a non-interactive row carrying the stock SidebarMenuButton base/default/lg classes unchanged. Created through the Designer create path as a component-layer slot that installs into @clossys/designer-ui (src/components/sidebar-static-row.tsx); the Foundry extension under src/foundry re-exports it only. DS-COMPLETE D5: source.ref cites reference-manifest row ids only (shadcn-aria/sidebar@4.23.0). Code unchanged from sidebar-static-row-v1.",
+      "createdAt": "2026-11-05T11:33:16.140Z",
+      "deps": {
+        "npm": {
+          "react": "*"
+        },
+        "registry": [
+          "sidebar"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--sidebar-accent",
+          "--sidebar-accent-foreground",
+          "--sidebar-ring",
+          "--radius"
+        ]
+      }
+    }
+  }
+}

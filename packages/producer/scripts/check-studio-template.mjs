@@ -137,8 +137,8 @@ const notes = [];
 
 /* inset */
 {
-  const frames = read('packages/designer/ui/src/foundry/studio-frames.tsx') ?? '';
-  if (!/id="studio-main"[^>]*className="[^"]*\bp-\d/.test(frames)) fail('inset', 'designer-ui/foundry/studio-frames', 'the frame body does not own the content inset');
+  const frames = read(`${STUDIO}/frames/studio-shell/index.tsx`) ?? '';
+  if (!/id="studio-main"[^>]*className="[^"]*\bp-\d/.test(frames)) fail('inset', 'frames/studio-shell', 'the frame body does not own the content inset');
   for (const section of list(`${STUDIO}/sections`)) {
     const file = `${STUDIO}/sections/${section}/index.tsx`;
     const source = read(file);

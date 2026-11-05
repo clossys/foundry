@@ -32,18 +32,18 @@ export interface SlotGroupsInput {
 
 /** `sections.studio.slot-groups`: the active tab's IA groups, stacked, each a grid of stock shadcn slot cards. */
 export default function SlotGroupsSection({ groups, ...provenance }: { groups: SlotGroupsInput } & { [marker: `data-clossys-${string}`]: string }) {
-  return <CardContent {...provenance} className="flex flex-col gap-8">
+  return <CardContent {...provenance}>
     {groups.groups.length ? groups.groups.map(group => <section key={group.id} id={group.id} aria-label={group.label}>
-      <CardTitle role="heading" aria-level={2} className="pb-3">{group.label}</CardTitle>
-      <CardGrid className="@xl/main:grid-cols-2 @5xl/main:grid-cols-3">
+      <CardTitle role="heading" aria-level={2}>{group.label}</CardTitle>
+      <CardGrid>
         {group.cards.map(card => <Card key={card.id} size="sm" data-slot-card={card.id}>
           <CardHeader>
-            <CardTitle className="flex flex-wrap items-center gap-2">
-              <LinkButton href={card.href} variant="link" size="sm" className="h-auto px-0">{card.name}</LinkButton>
+            <CardTitle>
+              <LinkButton href={card.href} variant="link" size="sm">{card.name}</LinkButton>
               {card.versionLabel ? <Badge variant="ghost">{card.versionLabel}</Badge> : null}
               <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
             </CardTitle>
-            <CardDescription className="font-mono text-xs">{card.id}</CardDescription>
+            <CardDescription>{card.id}</CardDescription>
           </CardHeader>
           <SpecimenContent specimen={card.specimen} />
         </Card>)}

@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { renderSpecimenPage, specimenRecordFrom } from "./index.js";
+import { renderSpecimenPage, specimenRecordFrom, SPECIMEN_SAMPLE_COPY_KEYS } from "./index.js";
 import { SPECIMEN_CHROME_CSS } from "./chrome.js";
 import type { SpecimenRecord } from "./types.js";
 
+/** The sample texts Producer's store resolves from the pinned Writer keys for a theme or font record. */
+const SAMPLE_COPY = Object.fromEntries(Object.values(SPECIMEN_SAMPLE_COPY_KEYS).map(key => [key, `writer:${key}`]));
+
 /** A library record as Producer's store hands it over: the whole registry item is the one payload file. */
-function libraryRecord(slot: string, element: string, kind: string, layer: string, item: unknown): SpecimenRecord {
-  return specimenRecordFrom({ id: `${slot}/${element}`, version: 1, kind, layer, files: [{ path: `${element}.json`, content: JSON.stringify(item) }], preview: {}, contentHash: "h" });
+function libraryRecord(slot: string, element: string, kind: string, layer: string, item: unknown, copy: Record<string, string> = SAMPLE_COPY): SpecimenRecord {
+  return specimenRecordFrom({ id: `${slot}/${element}`, version: 1, kind, layer, files: [{ path: `${element}.json`, content: JSON.stringify(item) }], preview: { copy }, contentHash: "h" });
 }
 
 const page = (record: SpecimenRecord, mode: "light" | "dark" = "light") =>
@@ -50,6 +53,16 @@ describe("token specimens (data)", () => {
     expectDrawn(html);
     expect(html).toContain('data-token="font"');
     expect(html).toContain("font-family:&#39;Inter Variable&#39;, sans-serif");
+    // The ladder's sample text is the pinned Writer copy, never a literal in the renderer.
+    expect(html).toContain(`writer:${SPECIMEN_SAMPLE_COPY_KEYS.pangram}`);
+    expect(html).not.toContain("quick brown fox");
+  });
+
+  it("reports a sample whose Writer copy the store did not resolve, and draws its missing marker", () => {
+    const html = page(libraryRecord("themes.font-sans", "font-sans", "registry:font", "themes", { name: "font-sans", type: "registry:font", font: { family: "Inter, sans-serif", variable: "--font-sans" } }, {}));
+    expect(html).toContain(`no pinned Writer copy for ${SPECIMEN_SAMPLE_COPY_KEYS.pangram}`);
+    expect(html).toContain(`[missing copy ${SPECIMEN_SAMPLE_COPY_KEYS.pangram}]`);
+    expect(html).not.toContain('"preErrors":[]');
   });
 
   it("drops values that would break out of CSS and reports a token with nothing to draw", () => {

@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -553,6 +553,16 @@ describe("ref-verbatim pin gate (strict, one element version)", () => {
     const noComponents = consumer([button()], { components: false });
     expect(gate(noComponents, "components.button/button/v1", { components: join(tmpdir(), "missing-components.json") })).toEqual(["REF-FLAVOR"]);
 
+    // With no --components, the consumer's shadcn config is the one its installed component layer carries.
+    const project = realpathSync(mkdtempSync(join(tmpdir(), "ref-verbatim-project-")));
+    renameSync(consumer([button()], { components: false }), join(project, "clossys"));
+    expect(gate(join(project, "clossys"), "components.button/button/v1")).toEqual(["REF-FLAVOR"]);
+    const layer = join(project, "node_modules/@clossys/designer-ui");
+    mkdirSync(layer, { recursive: true });
+    writeFileSync(join(layer, "package.json"), JSON.stringify({ name: "@clossys/designer-ui", exports: { ".": "./src/index.ts" } }));
+    writeFileSync(join(layer, "components.json"), read("ui/components.json"));
+    expect(gate(join(project, "clossys"), "components.button/button/v1")).toEqual([]);
+
     const unmapped = consumer([button({ refVerbatim: undefined })]);
     expect(gate(unmapped, "components.button/button/v1")).toEqual(["REF-FILE-UNMAPPED"]);
     const wrongPath = consumer([button({ refVerbatim: { files: { "button.tsx": "registry/aria-nova/ui/nope.tsx" } } })]);
@@ -740,6 +750,13 @@ describe("every pinned source representation", () => {
       source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, refVerbatim: { files: { "button.tsx": BUTTON_REF } },
     } };
     expect(checkRegistryItem(root, "components.button", item, { strict: true }).findings).toEqual([]);
+    // Every citation resolves to a reference-manifest row id: an unknown id, a JSON object or a
+    // self-lineage version beside a resolving row is a finding, never ignored.
+    for (const extra of ["shadcn-aria/no-such-item@9.9.9", JSON.stringify({ registry: "shadcn-aria", item: "button", version: "4.23.0" }), JSON.stringify({ version: 1 })]) {
+      const cited = { ...item, meta: { ...item.meta, source: { ...item.meta.source, ref: [...item.meta.source.ref, extra] } } };
+      expect(checkRegistryItem(root, "components.button", cited, { strict: true }).findings.map(row => [row.code, row.detail]), extra)
+        .toEqual([["REF-NOT-VENDORED", expect.stringContaining(`${extra} is not a reference-manifest row id`)]]);
+    }
     const save = () => writeDesignerSlot(root, { id: "components.button", candidates: { "button-v1.json": item }, pin: "button-v1.json" });
     save();
     expect(refVerbatimReport(root).findings).toEqual([]);

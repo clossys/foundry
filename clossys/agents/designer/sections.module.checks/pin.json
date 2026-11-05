@@ -1,7 +1,7 @@
 {
-  "candidate": "module-checks-v5.json",
-  "sha256": "49ace7671f63039ed121af4ec767b116abc4dc3ccc4b5de27db873502a6539dc",
-  "decidedBy": "planner:FLAT-SLOTS",
+  "candidate": "module-checks-v6.json",
+  "sha256": "ee046f560f04e715a37a636bf9586789431fda3503374d6f9eea277acd3e7171",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T12:59:54.227Z"
+  "at": "2026-11-05T10:06:50.054Z"
 }

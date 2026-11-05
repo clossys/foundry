@@ -20,8 +20,8 @@ export interface LeafHeaderInput {
 /** `sections.studio.leaf-header`: the leaf name, id, shown version, status and where it sits in the IA. */
 export default function LeafHeaderSection({ header, ...provenance }: { header: LeafHeaderInput } & { [marker: `data-clossys-${string}`]: string }) {
   return <CardHeader {...provenance}>
-    <CardDescription><LinkButton href={header.galleryHref} variant="link" size="sm" className="h-auto px-0">{header.galleryLabel}</LinkButton></CardDescription>
-    <CardTitle role="heading" aria-level={1} className="flex flex-wrap items-center gap-2 text-xl">
+    <CardDescription><LinkButton href={header.galleryHref} variant="link" size="sm">{header.galleryLabel}</LinkButton></CardDescription>
+    <CardTitle role="heading" aria-level={1}>
       {header.name}
       {header.versionLabel && <Badge variant="ghost">{header.versionLabel}</Badge>}
       <Badge variant={header.statusTone}>{header.statusLabel}</Badge>

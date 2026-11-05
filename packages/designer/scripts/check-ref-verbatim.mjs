@@ -26,7 +26,7 @@
  * Exit 1 on any finding, 2 on a usage error.
  */
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { configFromComponents, mapImport, normalizeReference } from "./ref-verbatim/normalize.mjs";
@@ -142,8 +142,27 @@ export function defaults(overrides = {}) {
   };
 }
 
+/**
+ * The consumer's component layer as Node resolves it from the consumer project (`<consumer>/clossys/..`):
+ * the nearest `node_modules/@clossys/designer-ui` on the way up. Its `components.json` is the consumer's
+ * shadcn config (style, iconLibrary, aliases) whichever folder installed it.
+ */
+function consumerComponentLayer(root) {
+  let dir = resolve(root, "..");
+  for (;;) {
+    const layer = join(dir, "node_modules", ...DS_COMPONENT_LAYER.split("/"));
+    if (existsSync(join(layer, "package.json"))) return realpathSync(layer);
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+}
+
 function loadComponents(root, explicit) {
-  const candidates = explicit ? [explicit] : [join(root, "components.json"), join(root, "..", "components.json")];
+  const layer = explicit ? undefined : consumerComponentLayer(root);
+  const candidates = explicit
+    ? [explicit]
+    : [join(root, "components.json"), join(root, "..", "components.json"), ...(layer ? [join(layer, "components.json")] : [])];
   for (const path of candidates) if (existsSync(path)) return { path, value: json(path) };
   return undefined;
 }
@@ -684,6 +703,7 @@ function checkVersion(root, target, options = {}, versionInput) {
   }
 
   if (!Object.hasOwn(record?.lineage ?? {}, "exactParts") && (opts.rule.consumerAssets?.slots ?? []).some((pattern) => globMatch(pattern, slot))) return result("exempt", { hash, note: "consumer-asset slot" });
+  for (const ref of versionInput?.unresolved ?? []) fail("REF-NOT-VENDORED", `${typeof ref === "string" ? ref : JSON.stringify(ref)} is not a reference-manifest row id (<registry>/<item>@<version> in references/manifest.json)`);
   if (mode === "original" || !source?.registry || !source?.item) {
     fail("REF-NO-SOURCE", mode === "original" ? `original code in ${slot}, which is not a consumer-asset slot` : `${mode ?? "no"} lineage without lineage.source`);
     return result("fail", { hash });
@@ -854,7 +874,12 @@ export function checkRegistryItem(root, slot, candidate, options = {}) {
 
 function checkLineageItem(root, slot, candidate, options = {}) {
   const opts = defaults(options);
-  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, candidateInput(candidate, opts.manifest));
+  const refs = candidate.meta?.source?.ref ?? [];
+  // Derived lineage cites reference-manifest row ids (`<registry>/<item>@<version>`): every other
+  // citation is unresolved and fails, except a self-citation, which withSelfCitation reports.
+  const rows = new Set((opts.manifest.items ?? []).map(row => `${row.registry}/${row.name}@${row.version}`));
+  const unresolved = (Array.isArray(refs) ? refs : [refs]).filter(ref => !(typeof ref === "string" && rows.has(ref)) && !selfCitation(ref));
+  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { ...candidateInput(candidate, opts.manifest), unresolved });
 }
 
 // ---- npm package reference -------------------------------------------------

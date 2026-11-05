@@ -9,12 +9,17 @@ import { fileURLToPath } from "node:url";
 
 const fixture = (name: string) => fileURLToPath(new URL(`./${name}/`, import.meta.url));
 
-/** A consumer folder holding the canonical Designer fixture: a theme preset, a button and a card. */
+/**
+ * A consumer folder holding the canonical Designer fixture (a theme preset, a button and a card)
+ * and the pinned Writer slot whose keys the card's specimen declares as its copy inputs.
+ */
 export async function canonicalLibrary(consumer: string): Promise<string> {
-  const designer = join(consumer, "agents", "designer");
+  const designer = join(consumer, "agents", "designer"), writer = join(consumer, "agents", "writer");
   mkdirSync(designer, { recursive: true });
+  mkdirSync(writer, { recursive: true });
   cpSync(fixture("designer-slots"), designer, { recursive: true });
   cpSync(fixture("canonical-designer"), designer, { recursive: true });
+  cpSync(fixture("canonical-writer"), writer, { recursive: true });
   return realpathSync(consumer);
 }
 

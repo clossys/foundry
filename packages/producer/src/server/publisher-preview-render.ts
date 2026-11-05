@@ -9,7 +9,6 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { resolveAgent } from "../agents.js";
-import { isAbsent } from "../errors.js";
 
 const execute = promisify(execFile);
 const producerRequire = createRequire(import.meta.url);
@@ -46,6 +45,27 @@ export function generatedBody(source: string): string {
 }
 const escape = (value: string) => value.replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
 export interface NativePreviewPage { root: string; entry: string; exportName?: string; title?: string; description?: string; ogImage?: string }
+
+/** Designer's shipped stylesheets a served page may link, each at `/__designer/<file>`. */
+export const DESIGNER_STYLESHEETS: ReadonlySet<string> = new Set(["compiled.css", "specimen-frame.css"]);
+export const designerStylesheetHref = (file: string): string => `/__designer/${file}`;
+/** The bytes of one `DESIGNER_STYLESHEETS` file from the installed Designer package; undefined for any other name. */
+export async function designerStylesheet(file: string): Promise<Buffer | undefined> {
+  return DESIGNER_STYLESHEETS.has(file) ? readFile(join(resolveAgent("designer").packageRoot, "styles", file)) : undefined;
+}
+/** A native preview's bundled CSS, served by content hash under the preview's assets route. */
+export const BUNDLE_STYLES = "__bundle/";
+const bundledStyles = new Map<string, string>();
+function holdBundledStylesheet(css: string): string {
+  const hash = createHash("sha256").update(css).digest("hex");
+  bundledStyles.delete(hash); bundledStyles.set(hash, css);
+  while (bundledStyles.size > 64) bundledStyles.delete(bundledStyles.keys().next().value!);
+  return hash;
+}
+export function bundledPreviewStylesheet(file: string): string | undefined {
+  const hash = /^([a-f0-9]{64})\.css$/.exec(file)?.[1];
+  return hash === undefined ? undefined : bundledStyles.get(hash);
+}
 
 /** Render actual generated modules in a short-lived child with no parent run token. */
 export async function renderNativePreview(page: NativePreviewPage): Promise<Buffer> {
@@ -84,17 +104,18 @@ export async function renderNativePreview(page: NativePreviewPage): Promise<Buff
     await writeFile(outfile, js.contents);
     const { stdout } = await execute(process.execPath, [outfile], { cwd: directory, env: { NODE_ENV: "production" }, timeout: 20_000, maxBuffer: 8 * 1024 * 1024 });
     if (!stdout.trim()) throw new Error("Native publication rendered no page");
-    const styles: string[] = [];
-    // These are the installed Designer runtime's shipped utility rules, followed
-    // by the exact emitted consumer theme. Selection stays in generated modules.
-    // The runtime stylesheet is optional (a Designer build may ship none); an unreadable one surfaces.
-    try { styles.push(await readFile(join(resolveAgent("designer").packageRoot, "styles", "compiled.css"), "utf8")); } catch (error) { if (!isAbsent(error)) throw error; }
+    // Stylesheets are linked, never inlined: the installed Designer runtime's shipped utility rules
+    // (DESIGNER_STYLESHEETS), the exact emitted consumer theme (the preview's own assets route) and
+    // the bundle's own CSS (held by content hash). Selection stays in generated modules.
+    const links = [designerStylesheetHref("compiled.css")];
     // The emitted consumer theme is required: a publication without it is not rendered unstyled.
-    try { styles.push(generatedBody((await previewSource(page.root, "theme.css")).toString("utf8"))); }
+    try { await previewSource(page.root, "theme.css"); }
     catch (error) { throw new Error(`Native publication has no readable emitted theme.css: ${error instanceof Error ? error.message : String(error)}`); }
-    for (const file of result.outputFiles ?? []) if (file.path.endsWith(".css")) styles.push(file.text);
-    const css = styles.join("\n").replace(/<\/style/gi, "<\\/style");
+    links.push("../assets/theme.css");
+    const bundled = (result.outputFiles ?? []).filter(file => file.path.endsWith(".css")).map(file => file.text).join("\n");
+    if (bundled) links.push(`../assets/${BUNDLE_STYLES}${holdBundledStylesheet(bundled)}.css`);
+    const head = links.map(href => `<link rel="stylesheet" href="${escape(href)}">`).join("");
     const metadata = `${page.title === undefined ? "" : `<title>${escape(page.title)}</title>`}${page.description === undefined ? "" : `<meta name="description" content="${escape(page.description)}">`}${page.ogImage === undefined ? "" : `<meta property="og:image" content="${escape(page.ogImage)}">`}`;
-    return Buffer.from(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${metadata}<style>${css}</style></head><body>${stdout}</body></html>`);
+    return Buffer.from(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">${metadata}${head}</head><body>${stdout}</body></html>`);
   } finally { await rm(directory, { recursive: true, force: true }); }
 }

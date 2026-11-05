@@ -9,6 +9,14 @@
     "components.flow.labeled-handle",
     "components.flow.node-header",
     "components.flow.node-status",
+    "components.studio.block-viewer-iframe",
+    "components.studio.card-grid",
+    "components.studio.card-stack",
+    "components.studio.home-grid",
+    "components.studio.sidebar-static-row",
+    "components.studio.specimen-figure",
+    "components.studio.specimen-frame",
+    "components.studio.text-link",
     "frames.studio-shell",
     "sections.module.checks",
     "sections.module.outline",
@@ -995,6 +1003,33 @@
             "sections.producer.pipeline-legend",
             "sections.producer.team-strip",
             "sections.producer.system-empty"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "components.studio",
+      "label": "Studio",
+      "children": [
+        {
+          "id": "studio-layout",
+          "label": "Layout",
+          "slots": [
+            "components.studio.card-grid",
+            "components.studio.card-stack",
+            "components.studio.text-link",
+            "components.studio.sidebar-static-row",
+            "components.studio.home-grid"
+          ]
+        },
+        {
+          "id": "studio-specimens",
+          "label": "Specimens",
+          "slots": [
+            "components.studio.specimen-frame",
+            "components.studio.specimen-figure",
+            "components.studio.block-viewer-iframe",
+            "components.studio.specimen-document"
           ]
         }
       ]

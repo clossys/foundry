@@ -17,6 +17,7 @@ import { consumerApps } from "./publications.js";
 import { DESIGNER_FONT_PREFIX, consumerBrand, consumerFontFile, consumerGlobals } from "./designer-globals.js";
 import { installedSpecimens } from "./installed-specimens.js";
 import { opaqueSpecimenRequest } from "./specimen-frame.js";
+import { designerStylesheet } from "./publisher-preview-render.js";
 import { slotGallery } from "./slot-gallery.js";
 import { slotDetail } from "./slot-detail.js";
 import { SLOT_AGENTS, type SlotAgent } from "../records/slot-model/index.js";
@@ -215,6 +216,14 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
     // Run tokens are header-only; do not forward a token accidentally placed in a URL.
     const decodedQuery = [...new URL(raw, origin).searchParams].flat().join(" ");
     if (raw.includes(token) || decodedQuery.includes(token)) { json(response, 400, { error: "Run tokens must use the request header" }); return; }
+    // Served pages link Designer's shipped stylesheets (the specimen frame, compiled utilities); none inlines a style.
+    if (pathname.startsWith("/__designer/")) {
+      if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Designer stylesheets are read-only" }); return; }
+      const css = await designerStylesheet(pathname.slice("/__designer/".length));
+      if (!css) { json(response, 404, { error: "Unknown Designer stylesheet" }); return; }
+      response.writeHead(200, { "Content-Type": "text/css; charset=utf-8", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff", "Cross-Origin-Resource-Policy": "same-origin" });
+      response.end(request.method === "HEAD" ? undefined : css); return;
+    }
     if (installed && (pathname === "/__specimen" || pathname.startsWith("/__specimen-site/"))) {
       if (request.method !== "GET" && request.method !== "HEAD") { json(response, 405, { error: "Specimens are read-only" }); return; }
       if (await installed.handle(request, response, pathname)) return;

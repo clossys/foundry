@@ -21,7 +21,7 @@ import { CODE_FILE, DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, script
  * Every other element a frame renders is a Designer component, exactly as in a section, or the
  * block's own markup: a raw element whose tag and literal `className` appear verbatim in the
  * reference blocks its pinned record's `lineage.source` and `lineage.parts` name (the shadcn snapshots under
- * `packages/designer/references/shadcn/<item>@<version>/registry/`).
+ * `packages/designer/references/<shadcn|shadcn-aria>/<item>@<version>/registry/`).
  *
  * A section may also place another pinned Studio section's export (`../<folder>`) when, and only
  * when, its pinned canonical record declares that section in `meta.element.deps.elements`: composition the record
@@ -41,8 +41,17 @@ const CLOSSYS = resolve(STUDIO, '../../../clossys');
 const REFERENCES = resolve(STUDIO, '../../designer/references/shadcn');
 
 const filesUnder = (root: string): string[] => readdirSync(root, { withFileTypes: true }).flatMap(entry => entry.isDirectory() ? filesUnder(join(root, entry.name)) : [join(root, entry.name)]);
+/** `className={className}`: the caller's own prop forwarded unchanged (H-PROPS), not a restyle. */
+const classPassthrough = (attribute: ts.JsxAttribute) => !!attribute.initializer && ts.isJsxExpression(attribute.initializer)
+  && !!attribute.initializer.expression && ts.isIdentifier(attribute.initializer.expression) && attribute.initializer.expression.text === 'className';
 const classAttribute = (node: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => node.attributes.properties.find((attribute): attribute is ts.JsxAttribute => ts.isJsxAttribute(attribute) && attribute.name.getText() === 'className');
 
+/**
+ * An icon glyph (`<XIcon>` / `<Icon>`: a lucide or generated Studio icon, not a Designer component)
+ * sized with one literal `size-N` class: shadcn's own stock icon idiom, not a restyle. Any other class fails.
+ */
+const iconSize = (tag: string, value: ts.JsxAttributeValue | undefined) => /^(?:[A-Z][A-Za-z0-9]*)?Icon$/.test(tag)
+  && !!value && ts.isStringLiteral(value) && /^size-(?:[0-9]+(?:\.5)?)$/.test(value.text);
 /** `<tag> <className>` pairs of the raw elements in one reference block's source files. */
 export function referenceMarkup(root: string): Set<string> {
   const pairs = new Set<string>();
@@ -52,7 +61,7 @@ export function referenceMarkup(root: string): Set<string> {
       if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
         const tag = node.tagName.getText(source);
         const value = classAttribute(node)?.initializer;
-        if (/^[a-z]/.test(tag) && value && ts.isStringLiteral(value)) pairs.add(`${tag} ${value.text}`);
+        if (value && ts.isStringLiteral(value)) pairs.add(`${tag} ${value.text}`);
       }
       ts.forEachChild(node, visit);
     };
@@ -62,22 +71,56 @@ export function referenceMarkup(root: string): Set<string> {
 }
 
 type Ref = { registry: string; item: string; version: string; hash: string };
+/**
+ * The stock shadcn registries whose snapshots can authorize block markup: shadcn's radix-nova style
+ * (`shadcn`) and its aria-nova style (`shadcn-aria`), the style Designer's component layer installs.
+ * Each sits under `packages/designer/references/<registry>/` and is matched by exact manifest hash.
+ * Third-party and app-source snapshots (`shadcn-app`, `tailark-oss`, ...) never qualify.
+ */
+const STOCK_REGISTRIES = new Set(['shadcn', 'shadcn-aria']);
 
-/** Migrated lineage preserves structured objects and arrays as JSON strings. Decode deliberately. */
-export function lineageReferences(refs: unknown): Ref[] {
+const ROW_ID = /^([a-z0-9-]+)\/([a-z0-9-]+)@(\d+\.\d+\.\d+)$/;
+/**
+ * A lineage citation is a reference-manifest row id (`<registry>/<item>@<version>`), resolved to that
+ * row and its hash; an id with no manifest row authorizes nothing. Migrated lineage may still hold
+ * structured objects and arrays as JSON strings; those are decoded deliberately.
+ */
+export function lineageReferences(refs: unknown, manifest: { items?: { registry: string; name: string; version: string; hash: string }[] } = referenceManifest()): Ref[] {
   if (!Array.isArray(refs)) return [];
   const rows: unknown[] = refs.flatMap(value => {
     if (typeof value !== 'string') return [];
+    const id = ROW_ID.exec(value);
+    if (id) {
+      const row = (manifest.items ?? []).find(item => item.registry === id[1] && item.name === id[2] && item.version === id[3]);
+      return row ? [{ registry: row.registry, item: row.name, version: row.version, hash: row.hash }] : [];
+    }
     try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; }
   });
   return rows.filter((row): row is Ref => !!row && typeof row === 'object'
-    && (row as Ref).registry === 'shadcn' && /^[a-z0-9-]+$/.test((row as Ref).item ?? '')
+    && STOCK_REGISTRIES.has((row as Ref).registry) && /^[a-z0-9-]+$/.test((row as Ref).item ?? '')
     && /^\d+\.\d+\.\d+$/.test((row as Ref).version ?? '') && /^sha256:[a-f0-9]{64}$/.test((row as Ref).hash ?? ''));
+}
+
+/**
+ * The committed record store and the vendored reference snapshots do not change while the suite runs,
+ * so they are listed and parsed once. A probe copy (any other root) is written to between reads and is
+ * always read fresh.
+ */
+const committedSlots = (() => { let listed: ReturnType<typeof listSlots> | undefined; return () => (listed ??= listSlots(CLOSSYS, 'designer')); })();
+const designerSlots = (clossys: string) => (clossys === CLOSSYS ? committedSlots() : listSlots(clossys, 'designer'));
+const vendored = new Map<string, unknown>();
+function onceFor<T>(key: string, read: () => T): T {
+  if (!vendored.has(key)) vendored.set(key, read());
+  return vendored.get(key) as T;
+}
+
+function referenceManifest(references = REFERENCES): { items?: { registry: string; name: string; version: string; hash: string }[] } {
+  return onceFor(`manifest:${references}`, () => JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'))) as any;
 }
 
 /** Read only the exact valid canonical pin; a stale legacy record cannot authorize markup. */
 function pinnedElement(folder: string, prefix: string, clossys: string): { item: any; slot: string; version: number } | undefined {
-  const entries = listSlots(clossys, 'designer').filter(entry => entry.id.startsWith(prefix) && entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate)?.[1] === folder);
+  const entries = designerSlots(clossys).filter(entry => entry.id.startsWith(prefix) && entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate)?.[1] === folder);
   if (entries.length !== 1) return undefined;
   const entry = entries[0]!, name = entry.pin!.candidate;
   if (!entry.candidates.includes(name)) return undefined;
@@ -92,15 +135,20 @@ function pinnedElement(folder: string, prefix: string, clossys: string): { item:
 
 /** Stock markup from exact reference identities in the pinned candidate's preserved lineage. */
 export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references = REFERENCES): Set<string> {
-  const pinned = pinnedElement(folder, 'frames.', clossys);
+  return elementBlockMarkup(folder, 'frames.', clossys, references);
+}
+
+/** The `<tag> <className>` pairs of the reference blocks a pinned frame's or section's lineage names. */
+export function elementBlockMarkup(folder: string, prefix: 'frames.' | 'sections.', clossys = CLOSSYS, references = REFERENCES): Set<string> {
+  const pinned = pinnedElement(folder, prefix, clossys);
   if (!pinned) return new Set();
-  const manifest = JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'));
+  const manifest = referenceManifest(references) as any;
   const markup = new Set<string>();
-  for (const ref of lineageReferences(pinned.item.meta.source.ref)) {
+  for (const ref of lineageReferences(pinned.item.meta.source.ref, manifest)) {
     const exact = manifest.items.find((item: any) => item.registry === ref.registry && item.name === ref.item && item.version === ref.version && item.hash === ref.hash);
     if (!exact) continue;
-    const root = join(references, `${ref.item}@${ref.version}`, 'registry');
-    if (existsSync(root)) for (const line of referenceMarkup(root)) markup.add(line);
+    const root = join(ref.registry === 'shadcn' ? references : join(references, '..', ref.registry), `${ref.item}@${ref.version}`, 'registry');
+    if (existsSync(root)) for (const line of onceFor(`markup:${root}`, () => referenceMarkup(root))) markup.add(line);
   }
   return markup;
 }
@@ -125,20 +173,22 @@ export function declaredSections(folder: string, clossys = CLOSSYS): Set<string>
  * (`studio/components`, `studio/lib`) runs the app and loads data, so it may import React, the Next
  * router, lucide icons, Node builtins, type-only modules, other `@clossys/*` engine packages as data and
  * anything inside the producer package; every component it renders comes from the Designer layer and
- * it renders no raw styled markup. A Studio frame inside `@clossys/designer-ui` (StudioAppFrame,
- * StudioPageFrame, the layout primitives, BlockViewerIframe) imports only React, lucide icons, type-only
+ * it renders no raw styled markup. A Studio frame inside `@clossys/designer-ui` (the layout
+ * primitives, BlockViewerIframe) imports only React, lucide icons, type-only
  * modules and its own package's source, and styles only its page landmarks.
  */
 type Kind = 'section' | 'frame' | 'renderer' | 'ui-frame';
 const PRODUCER = resolve(STUDIO, '..');
 const UI_SRC = resolve(STUDIO, '../../designer/ui/src');
 const RENDERER_DIRS = ['components', 'lib'];
+// The App Router tree (the root layout and every installed route file) renders through the same rule.
+const APP_DIR = 'app';
 const RENDERER_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react']);
 const UI_FRAME_RUNTIME = new Set(['react', 'lucide-react']);
-const UI_FRAMES = ['foundry/block-viewer-iframe.tsx', 'foundry/layout.tsx', 'foundry/studio-frames.tsx'];
+// Every Foundry extension in the component layer (`src/foundry`, to every depth), not a hand-kept list.
+const UI_FOUNDRY = 'foundry';
 // Every code extension the ref-verbatim gate accepts (`CODE_FILE`), so a `.jsx`/`.js`/`.mjs` file cannot sit outside the scan.
 const isSource = (name: string) => CODE_FILE.test(name) && !name.endsWith('.d.ts') && !/\.test\.[cm]?[jt]sx?$/.test(name);
-const sourceFiles = (folder: string) => readdirSync(folder).filter(isSource).map(name => join(folder, name));
 // A section or frame folder is scanned to every depth: a subfolder file is still the folder's code.
 const sourceFilesDeep = (folder: string): string[] => readdirSync(folder, { withFileTypes: true }).flatMap(entry =>
   entry.isDirectory() ? sourceFilesDeep(join(folder, entry.name)) : isSource(entry.name) ? [join(folder, entry.name)] : []);
@@ -170,7 +220,12 @@ export function resolveRelative(file: string, specifier: string): string | undef
   }
   return realPathOf(base);
 }
-const within = (file: string, specifier: string, root: string) => specifier.startsWith('.') && resolve(dirname(file), specifier).startsWith(root + sep);
+/** A relative specifier whose real loaded file (symlinks followed) stays inside `root` (D10). */
+const within = (file: string, specifier: string, root: string) => {
+  if (!specifier.startsWith('.')) return false;
+  const target = resolveRelative(file, specifier);
+  return !!target && target.startsWith(realPathOf(root) + sep);
+};
 
 function importAllowed(kind: Kind, file: string, folder: string, specifier: string, typeOnly: boolean, composes: ReadonlySet<string>): boolean {
   if (specifier === COMPONENT_LAYER) return true;
@@ -188,8 +243,55 @@ function importAllowed(kind: Kind, file: string, folder: string, specifier: stri
   }
   if (composes.has(specifier)) return true;
   if (typeOnly) return true;
-  if (kind === 'renderer') return RENDERER_RUNTIME.has(specifier) || isBuiltin(specifier) || (specifier.startsWith('@clossys/') && !specifier.startsWith(`${COMPONENT_LAYER}/`)) || within(file, specifier, PRODUCER);
+  // `node:module` is the one builtin that loads other modules (createRequire), so it is not a free builtin (D11).
+  if (kind === 'renderer') return RENDERER_RUNTIME.has(specifier) || (isBuiltin(specifier) && !/^(node:)?module$/.test(specifier)) || (specifier.startsWith('@clossys/') && !specifier.startsWith(`${COMPONENT_LAYER}/`)) || within(file, specifier, PRODUCER);
   return UI_FRAME_RUNTIME.has(specifier) || within(file, specifier, UI_SRC);
+}
+
+const MARKER_TYPE = '{ [marker: `data-clossys-${string}`]: string }';
+const MARKER_FILTER = "Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-')))";
+const flat = (node: ts.Node, source: ts.SourceFile) => node.getText(source).replace(/\s+/g, ' ');
+
+/**
+ * Whether every binding named `provenance` in the file holds only the generated `data-clossys-*`
+ * markers, judged by its declaration, never by text elsewhere in the file. Two forms qualify:
+ * - the rest element of a parameter typed `{ ...named props } & <marker type>`, where every member of
+ *   the other type literals is bound by name, so nothing but markers reaches the rest; and
+ * - `const provenance = Object.fromEntries(Object.entries(given).filter(([key]) =>
+ *   key.startsWith('data-clossys-'))) as <marker type>`.
+ * Any other declaration (or none) leaves the spread unexempted.
+ */
+function provenanceMarkerTyped(source: ts.SourceFile): boolean {
+  let declared = 0;
+  let typed = 0;
+  const restOk = (element: ts.BindingElement): boolean => {
+    const pattern = element.parent;
+    const parameter = pattern.parent;
+    if (!element.dotDotDotToken || !ts.isObjectBindingPattern(pattern) || !ts.isParameter(parameter) || !parameter.type) return false;
+    const parts = ts.isIntersectionTypeNode(parameter.type) ? [...parameter.type.types] : [parameter.type];
+    const markers = parts.filter(part => flat(part, source) === MARKER_TYPE);
+    if (markers.length !== 1) return false;
+    const bound = new Set(pattern.elements.filter(other => !other.dotDotDotToken).map(other => (other.propertyName ?? other.name).getText(source)));
+    return parts.every(part => markers.includes(part) || (ts.isTypeLiteralNode(part) && part.members.every(member =>
+      ts.isPropertySignature(member) && bound.has(member.name.getText(source)))));
+  };
+  const constOk = (declaration: ts.VariableDeclaration): boolean => {
+    const value = declaration.initializer;
+    return !declaration.type && !!value && ts.isAsExpression(value) && flat(value.type, source) === MARKER_TYPE
+      && flat(value.expression, source) === MARKER_FILTER && ts.isVariableDeclarationList(declaration.parent)
+      && (declaration.parent.flags & ts.NodeFlags.Const) !== 0;
+  };
+  const visit = (node: ts.Node) => {
+    if ((ts.isBindingElement(node) || ts.isVariableDeclaration(node) || ts.isParameter(node)) && ts.isIdentifier(node.name) && node.name.text === 'provenance') {
+      declared += 1;
+      if ((ts.isBindingElement(node) && restOk(node)) || (ts.isVariableDeclaration(node) && constOk(node))) typed += 1;
+    }
+    // Reassigning the binding would replace the checked value.
+    if (ts.isBinaryExpression(node) && ts.isIdentifier(node.left) && node.left.text === 'provenance' && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment) declared += 1;
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return declared > 0 && typed === declared;
 }
 
 /** Violations in one source file; `folder` bounds a section or frame's own imports. */
@@ -205,18 +307,30 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
     if (event.type === 'dynamic' && !importAllowed(kind, file, folder, event.specifier, false, composes)) violations.push(`${label}: imports ${event.specifier}`);
   }
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, scriptKind(ts, file));
-  const markerTyped = source.text.includes('{ [marker: `data-clossys-${string}`]: string }');
+  const markerTyped = provenanceMarkerTyped(source);
   const visit = (node: ts.Node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const tag = node.tagName.getText(source);
       const value = classAttribute(node)?.initializer;
-      const block = kind === 'frame' && !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
-      if (/^[a-z]/.test(tag) && !(landmarks && FRAME_LANDMARKS.has(tag))) for (const attribute of node.attributes.properties) {
-        if (block && ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'className') continue;
-        // The generated provenance markers are typed `data-clossys-*` only, so their spread carries no styling.
-        if (ts.isJsxSpreadAttribute(attribute) && attribute.expression.getText(source) === 'provenance' && markerTyped) continue;
+      const block = !!value && ts.isStringLiteral(value) && blockMarkup.has(`${tag} ${value.text}`);
+      const raw = /^[a-z][a-z0-9-]*$/.test(tag);
+      for (const attribute of node.attributes.properties) {
         const attr = ts.isJsxAttribute(attribute) ? attribute.name.getText(source) : '{...spread}';
-        if (attr === 'className' || attr === 'style' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
+        // Inline style and injected HTML are unregistered presentation on any element: a raw tag, a
+        // page landmark or a Designer component alike.
+        if (attr === 'style' || attr === 'dangerouslySetInnerHTML') { violations.push(`${label}: <${tag} ${attr}>`); continue; }
+        if (raw) {
+          if (landmarks && FRAME_LANDMARKS.has(tag)) continue;
+          if (kind === 'frame' && block && attr === 'className') continue;
+          // The generated provenance markers are typed `data-clossys-*` only, so their spread carries no styling.
+          if (ts.isJsxSpreadAttribute(attribute) && attribute.expression.getText(source) === 'provenance' && markerTyped) continue;
+          if (attr === 'className' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
+        } else if (attr === 'className' && !(((kind === 'frame' || kind === 'section') && block) || classPassthrough(attribute as ts.JsxAttribute) || iconSize(tag, value))) {
+          // A class string on a Designer component restyles the registered component: anything but
+          // forwarding the caller's own `className` prop unchanged, or (in a frame or section) the exact
+          // component-and-class pair the reference blocks its pinned lineage names carry.
+          violations.push(`${label}: <${tag} className>`);
+        }
       }
     }
     ts.forEachChild(node, visit);
@@ -229,18 +343,54 @@ export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'se
   return sourceFilesDeep(folder).flatMap(file => fileViolations(file, kind, composes, blockMarkup, folder));
 }
 
-const RENDERER_FILES = RENDERER_DIRS.flatMap(dir => sourceFiles(join(STUDIO, dir))).map(file => relative(STUDIO, file)).sort();
+/**
+ * A Producer server file that writes markup as text (generated specimen pages, the specimen frame,
+ * publication preview wrappers) emits it to a person exactly as a component would. Every string
+ * and template-literal chunk it holds is read: a styled attribute (`className=`, `class=`,
+ * `style=`) or a `<style` element is raw styled markup outside the Designer layer.
+ */
+const EMITTED_STYLE = [/\bclassName=/, /<style\b/, /(?:^|[\s"'])class=/, /(?:^|[\s"'])style=/];
+export function emitterViolations(file: string, base = PRODUCER): string[] {
+  const text = readFileSync(file, 'utf8'), label = relative(base, file);
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+  const out: string[] = [];
+  const visit = (node: ts.Node) => {
+    if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
+      const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
+      for (const pattern of EMITTED_STYLE) {
+        const match = pattern.exec(node.text);
+        if (match) out.push(`${label}:${line}: emits ${match[0].replace(/^[\s"']/, '')}`);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return out;
+}
+const SERVER_FILES = sourceFilesDeep(join(PRODUCER, 'src/server')).map(file => relative(PRODUCER, file)).sort();
+const RENDERER_FILES = RENDERER_DIRS.flatMap(dir => sourceFilesDeep(join(STUDIO, dir))).map(file => relative(STUDIO, file)).sort();
+const APP_FILES = sourceFilesDeep(join(STUDIO, APP_DIR)).map(file => relative(STUDIO, file)).sort();
+const UI_FRAMES = sourceFilesDeep(join(UI_SRC, UI_FOUNDRY)).map(file => relative(UI_SRC, file)).sort();
 
 describe('Studio sections are ds-only', () => {
   it('reads canonical pin lineage arrays and exact declared section dependencies without retired stores', () => {
     expect(lineageReferences(['[{"registry":"shadcn","item":"sidebar-07","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}]', 'not JSON', '{"version":5,"hash":"parent"}', '{"registry":"shadcn","item":"../escape","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}']))
       .toEqual([{ registry: 'shadcn', item: 'sidebar-07', version: '4.23.0', hash: `sha256:${'a'.repeat(64)}` }]);
+    // The aria-nova stock registry qualifies; an app-source or third-party snapshot never does.
+    expect(lineageReferences(['shadcn-aria', 'shadcn-app', 'tailark-oss', 'aria'].map(registry => JSON.stringify({ registry, item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'b'.repeat(64)}` })))
+      .map(ref => ref.registry)).toEqual(['shadcn-aria']);
+    // A manifest row id resolves to its row; an id with no row authorizes nothing.
+    const manifest = { items: [{ registry: 'shadcn-aria', name: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }] };
+    expect(lineageReferences(['shadcn-aria/sidebar-15@4.23.0', 'shadcn-aria/no-such-item@9.9.9', 'shadcn-app/sidebar-15@4.23.0'], manifest))
+      .toEqual([{ registry: 'shadcn-aria', item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }]);
     expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
-    // No placed Studio section composes another today; the positive case is a probe re-pin below.
-    expect(FOLDERS.flatMap(folder => [...declaredSections(folder)])).toEqual([]);
+    // studio-slot-groups places studio-specimen, declared by its engine-derived pin (derive-element-deps); the probe re-pin below is the positive case for another section.
+    expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual(['studio-slot-groups -> ../studio-specimen']);
     const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-canonical-')));
     try {
-      cpSync(join(CLOSSYS, 'agents/designer'), join(probe, 'agents/designer'), { recursive: true });
+      // Only the records this probe reads and rewrites: copying the whole store dominated the test's time.
+      for (const entry of ['ia.json', 'frames.studio-shell', 'sections.studio.home', 'sections.studio.specimen'])
+        cpSync(join(CLOSSYS, 'agents/designer', entry), join(probe, 'agents/designer', entry), { recursive: true });
       expect(frameBlockMarkup('studio-shell', probe)).toEqual(frameBlockMarkup('studio-shell'));
       const frame = listSlots(probe, 'designer').find(entry => entry.id === 'frames.studio-shell')!;
       const pin = join(frame.dir, 'pin.json');
@@ -268,7 +418,7 @@ describe('Studio sections are ds-only', () => {
   });
 
   it.each(FOLDERS)('%s imports only the Designer component layer and carries no raw styled markup', folder => {
-    expect(dsOnlyViolations(join(VIEWS, folder), 'section', declaredSections(folder))).toEqual([]);
+    expect(dsOnlyViolations(join(VIEWS, folder), 'section', declaredSections(folder), elementBlockMarkup(folder, 'sections.'))).toEqual([]);
   });
 
   it('lets a section place a sibling section only when its pinned record declares it', () => {
@@ -309,7 +459,26 @@ describe('Studio sections are ds-only', () => {
     const probe = mkdtempSync(join(tmpdir(), 'ds-only-'));
     try {
       writeFileSync(join(probe, 'Probe.tsx'), "import { X } from 'other-ui';\nimport { Y } from '../elsewhere';\nimport { Card } from '@clossys/designer-ui';\nexport const A = () => <div className=\"p-4\"><Card className=\"gap-2\"><X /><Y /></Card></div>;\n");
-      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', 'imports ../elsewhere', '<div className>']);
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', 'imports ../elsewhere', '<div className>', '<Card className>']);
+      // An icon glyph sized with one stock `size-N` class passes; any other class on it is a restyle.
+      writeFileSync(join(probe, 'Probe.tsx'), "import { Card } from '@clossys/designer-ui';\nexport const A = ({ Icon }: { Icon: () => null }) => <Card><Icon className=\"size-4\" /><ArrowIcon className=\"size-3.5\" /><ArrowIcon className=\"size-4 text-red-500\" /><Icon className={x} /><CardIcon className=\"p-1\" /></Card>;\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<ArrowIcon className>', '<Icon className>', '<CardIcon className>']);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+
+  it('keeps the section rule strict beside the component-layer slots: their file is no import path, and raw styled markup still fails (DS-COMPLETE D1)', () => {
+    const probe = mkdtempSync(join(tmpdir(), 'ds-only-component-layer-'));
+    try {
+      // CardGrid and TextLink are pinned components.studio.* slots placed through the package entry; the
+      // section's own styled div is still refused, and so is reaching the installed file directly.
+      writeFileSync(join(probe, 'Probe.tsx'), "import { CardGrid, TextLink } from '@clossys/designer-ui';\nimport { SpecimenFrame } from '@clossys/designer-ui/src/components/specimen-frame';\nexport const A = () => <CardGrid density=\"specimens\"><div className=\"grid gap-4\"><TextLink href=\"#\">x</TextLink></div><SpecimenFrame /></CardGrid>;\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports @clossys/designer-ui/src/components/specimen-frame', '<div className>']);
+      // The installed component bodies hold their stock classes in src/components, outside every Studio scan root.
+      for (const file of ['card-grid.tsx', 'card-stack.tsx', 'specimen-frame.tsx', 'specimen-figure.tsx', 'text-link.tsx', 'sidebar-static-row.tsx', 'block-viewer-iframe.tsx', 'studio-home-stock.tsx'])
+        expect(readFileSync(join(UI_SRC, 'components', file), 'utf8'), file).toMatch(/className/);
+      // Each Foundry extension the slots replaced is now an import-only consumer.
+      for (const file of ['foundry/layout.tsx', 'foundry/sidebar-static.tsx', 'foundry/block-viewer-iframe.tsx', 'foundry/studio-home-stock.tsx'])
+        expect(readFileSync(join(UI_SRC, file), 'utf8').split('\n').filter(line => line.trim() && !line.startsWith('//')).every(line => /^export \* from "\.\.\/components\/[a-z-]+"$/.test(line)), file).toBe(true);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
   it('covers every Studio renderer and every Studio frame in the component layer', () => {
@@ -317,7 +486,43 @@ describe('Studio sections are ds-only', () => {
       'lib/agents.ts', 'lib/cell-events.ts', 'lib/checks-copy.ts', 'lib/contract-copy.ts', 'lib/options-copy.ts', 'lib/pipeline-flow.ts', 'lib/producer-url.ts', 'lib/publisher-preview.ts',
       'lib/references-copy.ts', 'lib/shell-copy.ts', 'lib/slot-census-load.ts', 'lib/slot-census.ts', 'lib/slot-detail.ts', 'lib/studio-copy.ts', 'lib/studio-icons.tsx', 'lib/studio-report.ts',
       'lib/studio-route-map.ts', 'lib/studio-seed.ts']);
-    for (const file of UI_FRAMES) expect(existsSync(join(UI_SRC, file)), file).toBe(true);
+    // Every Foundry component-layer extension is scanned, the named Studio frames among them.
+    for (const file of ['foundry/block-viewer-iframe.tsx', 'foundry/layout.tsx', 'foundry/sidebar-static.tsx', 'foundry/studio-home-stock.tsx'])
+      expect(UI_FRAMES, file).toContain(file);
+    // The App Router tree: the root layout and every installed route; nothing under app/ but its stylesheet escapes the scan.
+    expect(APP_FILES).toContain('app/layout.tsx');
+    expect(filesUnder(join(STUDIO, APP_DIR)).map(file => relative(STUDIO, file)).filter(file => file !== 'app/globals.css').sort()).toEqual(APP_FILES);
+    expect(SERVER_FILES).toEqual(expect.arrayContaining(['src/server/installed-specimens.ts', 'src/server/publication.ts', 'src/server/specimen-frame.ts']));
+  });
+
+  it.each(APP_FILES)('app file %s renders only Designer components', file => {
+    expect(fileViolations(join(STUDIO, file), 'renderer')).toEqual([]);
+  });
+
+  it.each(SERVER_FILES)('server emitter %s emits no raw styled markup', file => {
+    expect(emitterViolations(join(PRODUCER, file))).toEqual([]);
+  });
+
+  it('flags inline style, injected HTML and class strings on Designer components (SEEN-DS)', () => {
+    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-restyle-')));
+    try {
+      writeFileSync(join(probe, 'Probe.tsx'), [
+        "import { Card, CardTitle } from '@clossys/designer-ui';",
+        'export const A = ({ className }: { className?: string }) => <Card className="gap-2">',
+        '  <CardTitle style={{ color: "red" }} />',
+        '  <Card.Header className={className} />',
+        '  <main dangerouslySetInnerHTML={{ __html: "" }} />',
+        '</Card>;',
+      ].join('\n') + '\n');
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<Card className>', '<CardTitle style>', '<main dangerouslySetInnerHTML>']);
+      // A frame landmark keeps its layout classes but not an inline style; a reference block's own component class passes in a frame.
+      writeFileSync(join(probe, 'Probe.tsx'), "import { SidebarInset } from '@clossys/designer-ui';\nexport const F = () => <main className=\"p-4\" style={{}}><SidebarInset className=\"h-full\" /><SidebarInset className=\"p-1\" /></main>;\n");
+      expect(dsOnlyViolations(probe, 'frame', new Set(), new Set(['SidebarInset h-full'])).map(line => line.split(': ').at(-1))).toEqual(['<main style>', '<SidebarInset className>']);
+      expect(fileViolations(join(probe, 'Probe.tsx'), 'ui-frame', new Set(), new Set(), undefined, probe)).toEqual(['Probe.tsx: <main style>', 'Probe.tsx: <SidebarInset className>', 'Probe.tsx: <SidebarInset className>']);
+      // A server emitter writing styled markup as text is held to the same rule.
+      writeFileSync(join(probe, 'emit.ts'), 'export const page = () => "<main className=\\"p-8\\">" + `<style>${1}</style>` + \'<div class="x" style="y">\';\nexport const plain = "class names and styles in prose";\n');
+      expect(emitterViolations(join(probe, 'emit.ts'), probe)).toEqual(['emit.ts:1: emits className=', 'emit.ts:1: emits <style', 'emit.ts:1: emits class=', 'emit.ts:1: emits style=']);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 
   it.each(RENDERER_FILES)('renderer %s renders only Designer components and imports no outside UI', file => {
@@ -349,6 +554,34 @@ describe('Studio sections are ds-only', () => {
         'Dyn.tsx: imports react-aria-components', 'Raw.js: <span style>', 'Raw.jsx: <div className>', 'load.mjs: imports ../elsewhere', 'load.mjs: imports other-ui',
       ]);
       expect(fileViolations(join(probe, 'Dyn.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Dyn.tsx: imports react-aria-components', 'Dyn.tsx: imports ./local']);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+
+  it('resolves renderer and ui-frame relative imports by real path, not as written (D10)', () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-out-')));
+    const inside = mkdtempSync(join(PRODUCER, '.ds-only-d10-'));
+    try {
+      writeFileSync(join(outside, 'Other.tsx'), 'export const X = 1;\n');
+      writeFileSync(join(inside, 'own.ts'), 'export const Own = 1;\n');
+      symlinkSync(join(outside, 'Other.tsx'), join(inside, 'escape.tsx'));
+      writeFileSync(join(inside, 'Emit.ts'), "export { X } from './escape';\nexport { Own } from './own';\n");
+      expect(fileViolations(join(inside, 'Emit.ts'), 'renderer', new Set(), new Set(), undefined, inside)).toEqual(['Emit.ts: imports ./escape']);
+    } finally { rmSync(inside, { recursive: true, force: true }); rmSync(outside, { recursive: true, force: true }); }
+  });
+
+  it('holds module.require, createRequire and require read as a value to the import rule (D11)', () => {
+    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-req-')));
+    try {
+      writeFileSync(join(probe, 'Module.tsx'), "export const A = () => module.require('other-ui');\n");
+      writeFileSync(join(probe, 'Create.tsx'), "import { createRequire } from 'node:module';\nconst load = createRequire(import.meta.url);\nexport const B = load('other-ui');\n");
+      writeFileSync(join(probe, 'Alias.tsx'), "const load = require;\nexport const C = load('other-ui');\n");
+      expect(dsOnlyViolations(probe).map(line => { const [path, ...rest] = line.split(': '); return `${basename(path!)}: ${rest.join(': ')}`; }).sort()).toEqual([
+        'Alias.tsx: imports require', 'Create.tsx: imports createRequire', 'Create.tsx: imports createRequire', 'Create.tsx: imports node:module', 'Module.tsx: imports other-ui',
+      ]);
+      // A renderer may import node builtins, but not the module loader itself.
+      expect(fileViolations(join(probe, 'Create.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Create.tsx: imports node:module', 'Create.tsx: imports createRequire', 'Create.tsx: imports createRequire']);
+      writeFileSync(join(probe, 'Path.tsx'), "import { join } from 'node:path';\nexport const P = join('a', 'b');\n");
+      expect(fileViolations(join(probe, 'Path.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual([]);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 
@@ -392,6 +625,23 @@ describe('Studio sections are ds-only', () => {
       writeFileSync(join(probe, 'Probe.tsx'), typed.replace(/provenance/g, 'rest'));
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
       writeFileSync(join(probe, 'Probe.tsx'), "export default function A({ x, ...provenance }: { x: string; className?: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // The marker type named elsewhere in the file (a comment, another binding) does not type this spread.
+      writeFileSync(join(probe, 'Probe.tsx'), "// { [marker: `data-clossys-${string}`]: string }\nexport default function A({ x, ...provenance }: { x: string; className?: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // A props member left unbound by name falls into the rest, so the intersection does not type it.
+      writeFileSync(join(probe, 'Probe.tsx'), "export default function A({ x, ...provenance }: { x: string; className?: string } & { [marker: `data-clossys-${string}`]: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // A typed declaration shadowed by an untyped one, or reassigned, is not exempt.
+      writeFileSync(join(probe, 'Probe.tsx'), typed.replace('return', 'const provenance = { className: x }; return'));
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      writeFileSync(join(probe, 'Probe.tsx'), typed.replace('return', 'provenance = { className: x } as never; return'));
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // The frame form: only markers filtered from the given props, cast to the marker type.
+      const frame = "export default function F({ ...given }: { x: string } & { [marker: `data-clossys-${string}`]: string }) { const provenance = Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-'))) as { [marker: `data-clossys-${string}`]: string }; return <section {...provenance} />; }\n";
+      writeFileSync(join(probe, 'Probe.tsx'), frame);
+      expect(dsOnlyViolations(probe)).toEqual([]);
+      writeFileSync(join(probe, 'Probe.tsx'), frame.replace("key.startsWith('data-clossys-')", 'true'));
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });

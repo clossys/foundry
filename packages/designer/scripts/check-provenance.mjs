@@ -19,7 +19,7 @@
  *
  * Pins and candidates come only from the one slot-model reader (slot-pins.mjs). Default
  * scope is what the consumer pins or proposes: every pin and the newest unpinned
- * candidate of each slot (an option). A pinned violator whose slot has a
+ * candidate of each slot (an option); a slot marked not needed proposes nothing. A pinned violator whose slot has a
  * passing pending option is reported as pending replacement, not failed: the owner
  * approves the pin. Exit 1 on any violation, 2 on a usage error.
  */
@@ -63,7 +63,8 @@ export function lineageFindings(label, lineage, { rule = loadRule(), manifest = 
     return findings;
   }
   if (mode !== "verbatim" && mode !== "customized") return [`${label}: lineage.mode ${JSON.stringify(mode)} is not verbatim, customized or original`];
-  if (!source) return [`${label}: ${mode} item has no lineage.source`];
+  for (const ref of lineage.unresolved ?? []) findings.push(`${label}: lineage cites ${typeof ref === "string" ? ref : JSON.stringify(ref)}, which is not a reference-manifest row id (<registry>/<item>@<version>)`);
+  if (!source) return [...findings, `${label}: ${mode} item has no lineage.source`];
   const found = referenceFindings(label, "lineage.source", source, manifest, findings);
   if (!found) return findings;
   for (const [index, part] of (lineage.parts ?? []).entries()) referenceFindings(label, `lineage.parts[${index}]`, part, manifest, findings, { hashed: lineage.partsHashed !== false || typeof part?.hash === "string" });
@@ -76,18 +77,16 @@ export function lineageFindings(label, lineage, { rule = loadRule(), manifest = 
   return findings;
 }
 
-/** One `source.ref` entry as a reference: `registry/item@version`, or a JSON object naming registry, item, version and hash. Self-lineage entries (no registry) are null. */
+/** One `source.ref` entry as a reference-manifest row id, `<registry>/<item>@<version>`; anything else is null (unresolved). */
 function parseRef(ref) {
   if (typeof ref !== "string") return null;
-  if (ref.startsWith("{")) {
-    try {
-      const value = JSON.parse(ref);
-      return value?.registry ? { registry: value.registry, item: value.item, version: value.version, hash: value.hash } : null;
-    } catch { return null; }
-  }
-  const m = /^([^/@]+)\/(.+)@([^@]+)$/.exec(ref);
+  const m = /^([^/@{}\s]+)\/([^@{}\s]+)@([^@{}\s]+)$/.exec(ref);
   return m ? { registry: m[1], item: m[2], version: m[3] } : null;
 }
+
+/** `source.ref` entries that all name the consumer's own Designer asset slots (`clossys/agents/designer/assets.<slot>[/candidates/<file>.json]`). */
+const CONSUMER_ASSET_REF = /^clossys\/agents\/designer\/assets\.[a-z0-9-]+(?:\/candidates\/[a-z0-9-]+-v[1-9][0-9]*\.json)?$/;
+const consumerOwnDerivation = refs => Array.isArray(refs) && refs.length > 0 && refs.every(ref => typeof ref === "string" && CONSUMER_ASSET_REF.test(ref));
 
 /**
  * Lineage of one Designer candidate (registry item): `original` stays original, `registry` is a
@@ -99,14 +98,27 @@ export function candidateLineage(slot, item) {
   const source = item?.meta?.source ?? {};
   if (source.kind === "original") return { slot, mode: "original" };
   if (source.kind === "composition" || source.kind === "npm") return null;
+  // Derived only from the consumer's own Designer asset slots (no registry item, no outside file): the
+  // consumer's own artwork, so it is an original and passes only in a consumer-asset slot.
+  if (source.kind === "derived" && consumerOwnDerivation(source.ref)) return { slot, mode: "original" };
   const mode = source.kind === "registry" ? "verbatim" : source.kind === "derived" ? "customized" : source.kind;
-  const refs = (source.ref ?? []).map(parseRef).filter(Boolean);
-  const [first, ...parts] = refs;
-  // `source.hash` is the first reference's manifest hash; a further plain ref is a part named by registry, item and version.
-  const ref = first && !first.hash ? { ...first, hash: source.hash } : first;
-  // A candidate's plain part refs carry no hash of their own: they must still be trusted manifest items.
-  return { slot, mode, source: ref, parts, partsHashed: false };
+  // Derived and adopted lineage cites reference-manifest row ids (and the consumer's own asset
+  // slots) only: any other entry (a JSON object, a self-lineage version, a file path) is an
+  // unresolved citation and fails.
+  const cited = Array.isArray(source.ref) ? source.ref : [];
+  const unresolved = cited.filter(ref => !parseRef(ref) && !(typeof ref === "string" && CONSUMER_ASSET_REF.test(ref)));
+  const [first, ...parts] = cited.map(parseRef).filter(Boolean);
+  // `source.hash` is the first reference's manifest hash; a further ref is a part named by registry, item and version.
+  const ref = first ? { ...first, hash: source.hash } : first;
+  // A candidate's part refs carry no hash of their own: they must still be trusted manifest items.
+  return { slot, mode, source: ref, parts, partsHashed: false, unresolved };
 }
+
+/** slot.json `notNeeded {reason, since, decidedBy}` as the slot loader accepts it (a malformed marker is not one). */
+const notNeededSlot = doc => {
+  const marker = doc?.notNeeded;
+  return !!marker && typeof marker === "object" && ["reason", "since", "decidedBy"].every(field => typeof marker[field] === "string" && marker[field] !== "");
+};
 
 /**
  * Provenance of a consumer root (`<consumer>/clossys`), over the Designer slot pins read through
@@ -130,7 +142,10 @@ export function provenanceFindings(root, { all = false, rule = loadRule(), manif
   for (const [, list] of bySlot) {
     const pinned = list.find(entry => entry.pin);
     const newest = list.at(-1);
-    const option = newest && !newest.pin && (!pinned || list.indexOf(newest) > list.indexOf(pinned)) ? newest : undefined;
+    // A slot the consumer marked not needed (slot.json `notNeeded`, no pin: the one loader's `not-needed`
+    // state) proposes nothing, so it has no option; `--all` still checks its candidates.
+    const declined = !pinned && notNeededSlot(newest?.slotDoc);
+    const option = newest && !declined && !newest.pin && (!pinned || list.indexOf(newest) > list.indexOf(pinned)) ? newest : undefined;
     let optionOk = false;
     if (option) {
       const found = check(option);

@@ -43,6 +43,26 @@ function cssVars(value: unknown): Record<string, string> {
   return vars;
 }
 
+/**
+ * The Writer keys the token specimens set their samples in (the consumer's strings.common
+ * `studio.specimen-sample.*`). The record source supplies their pinned text in `preview.copy`; a key
+ * it does not supply shows a visible marker and reports a problem, never an English literal.
+ */
+export const SPECIMEN_SAMPLE_COPY_KEYS = {
+  glyph: "studio.specimen-sample.glyph",
+  pangram: "studio.specimen-sample.pangram",
+  pangramAlt: "studio.specimen-sample.pangram-alt",
+  characters: "studio.specimen-sample.characters",
+  motion: "studio.specimen-sample.motion",
+} as const;
+
+function sampleCopy(record: SpecimenRecord, key: string, problems: SpecimenProblem[]): string {
+  const text = record.preview.copy?.[key]?.text;
+  if (typeof text === "string") return text;
+  if (!problems.some(problem => problem.message.endsWith(` ${key}`))) problems.push({ source: "render", message: `${record.id}: no pinned Writer copy for ${key}` });
+  return `[missing copy ${key}]`;
+}
+
 const tile = (kind: string, name: string, body: string, value?: string) =>
   `<figure class="specimen-token" data-token="${escapeHtml(kind)}"><div class="specimen-token-sample">${body}</div><figcaption><span class="specimen-token-name">${escapeHtml(label(name))}</span>${value ? `<code class="specimen-token-value">${escapeHtml(value)}</code>` : ""}</figcaption></figure>`;
 
@@ -73,7 +93,7 @@ function themeTokens(record: SpecimenRecord, item: Record<string, any>, mode: Sp
   const light = cssVars(vars.light), dark = cssVars(vars.dark);
   const values = { ...cssVars(vars.theme), ...light, ...(mode === "dark" ? dark : {}) };
   const frames = keyframes(item.css);
-  const tiles: string[] = [], styles: string[] = [];
+  const tiles: string[] = [], styles: string[] = [], problems: SpecimenProblem[] = [];
   const shadows = Object.entries(values).filter(([name]) => /^shadow(?:-|$)/.test(name));
   if (shadows.length) {
     for (const [name, value] of shadows) tiles.push(tile("shadow", name, `<div class="specimen-shadow" style="box-shadow:${escapeHtml(value)}"></div>`, value));
@@ -88,14 +108,14 @@ function themeTokens(record: SpecimenRecord, item: Record<string, any>, mode: Sp
       const steps = [1, 2, 3, 4, 6, 8, 12, 16].map(step => `<div class="specimen-space-step"><span>${step}</span><div class="specimen-space" style="width:calc(${escapeHtml(value)} * ${step})"></div></div>`).join("");
       tiles.push(tile("spacing", name, `<div class="specimen-space-ladder">${steps}</div>`, value));
     } else if (/^tracking(?:-|$)/.test(name)) {
-      tiles.push(tile("tracking", name, `<p class="specimen-type-sample" style="letter-spacing:${escapeHtml(value)}">The quick brown fox jumps over the lazy dog</p>`, value));
+      tiles.push(tile("tracking", name, `<p class="specimen-type-sample" style="letter-spacing:${escapeHtml(value)}">${escapeHtml(sampleCopy(record, SPECIMEN_SAMPLE_COPY_KEYS.pangram, problems))}</p>`, value));
     } else if (/^animate-/.test(name)) {
       const keyframe = /^([a-z][a-z0-9-]*)\s/.exec(value)?.[1];
       const block = keyframe ? frames.get(keyframe) : undefined;
       if (!block) continue;
       styles.push(block);
       const sample = /background-position/.test(block)
-        ? `<p class="specimen-motion-shine" style="animation:${escapeHtml(value)}">Motion preview</p>`
+        ? `<p class="specimen-motion-shine" style="animation:${escapeHtml(value)}">${escapeHtml(sampleCopy(record, SPECIMEN_SAMPLE_COPY_KEYS.motion, problems))}</p>`
         : `<div class="specimen-motion-track"><div class="specimen-motion-row" style="animation:${escapeHtml(value)}">${[1, 2, 3, 4, 5, 6].map(n => `<span class="specimen-motion-chip">${n}</span>`).join("")}</div></div>`;
       tiles.push(tile("motion", name, sample, value));
     } else if (isColor(value)) {
@@ -107,7 +127,7 @@ function themeTokens(record: SpecimenRecord, item: Record<string, any>, mode: Sp
     }
   }
   if (!tiles.length) return unavailable(record, "the theme item has no token values to draw");
-  return { html: `${styles.length ? `<style>${styles.join("")}</style>` : ""}<section class="specimen-tokens" data-specimen-tokens="theme">${tiles.join("")}</section>`, problems: [] };
+  return { html: `${styles.length ? `<style>${styles.join("")}</style>` : ""}<section class="specimen-tokens" data-specimen-tokens="theme">${tiles.join("")}</section>`, problems };
 }
 
 function fontTokens(record: SpecimenRecord, item: Record<string, any>): RenderedSpecimen {
@@ -116,9 +136,11 @@ function fontTokens(record: SpecimenRecord, item: Record<string, any>): Rendered
   if (!family) return unavailable(record, "the font item names no family");
   const variable = typeof font.variable === "string" && /^--[a-z][a-z0-9-]*$/.test(font.variable) ? font.variable : undefined;
   const style = `font-family:${escapeHtml(family)}`;
-  const ladder = [["3rem", "Aa"], ["1.5rem", "Sphinx of black quartz, judge my vow"], ["1rem", "The quick brown fox jumps over the lazy dog"], ["0.75rem", "0123456789 — ABCDEFGHIJKLMNOPQRSTUVWXYZ"]]
-    .map(([size, text]) => `<p class="specimen-type-sample" style="${style};font-size:${size}">${escapeHtml(text!)}</p>`).join("");
-  return { html: `<section class="specimen-tokens specimen-tokens-wide" data-specimen-tokens="font">${tile("font", item.name ?? record.id, `<div class="specimen-type-ladder">${ladder}</div>`, `${variable ? `${variable}: ` : ""}${family}`)}</section>`, problems: [] };
+  const problems: SpecimenProblem[] = [];
+  const keys = SPECIMEN_SAMPLE_COPY_KEYS;
+  const ladder = ([["3rem", keys.glyph], ["1.5rem", keys.pangramAlt], ["1rem", keys.pangram], ["0.75rem", keys.characters]] as const)
+    .map(([size, key]) => `<p class="specimen-type-sample" style="${style};font-size:${size}">${escapeHtml(sampleCopy(record, key, problems))}</p>`).join("");
+  return { html: `<section class="specimen-tokens specimen-tokens-wide" data-specimen-tokens="font">${tile("font", item.name ?? record.id, `<div class="specimen-type-ladder">${ladder}</div>`, `${variable ? `${variable}: ` : ""}${family}`)}</section>`, problems };
 }
 
 export function renderDataSpecimen(record: SpecimenRecord, mode: SpecimenMode): RenderedSpecimen {
