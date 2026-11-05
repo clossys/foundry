@@ -68,7 +68,8 @@
   "inputs": [
     "advantage.proposition.proof",
     "context.customer.buying",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "context.company.constraint"
   ],
   "uses": []
 }

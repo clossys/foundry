@@ -18,7 +18,8 @@
     "advantage.proposition.promise",
     "advantage.proposition.proof",
     "focus.lifecycle.acquisition",
-    "identity.verbal.narrative"
+    "identity.verbal.narrative",
+    "identity.naming.name"
   ],
   "uses": [],
   "options": 3,

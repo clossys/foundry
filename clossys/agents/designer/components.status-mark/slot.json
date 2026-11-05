@@ -52,7 +52,23 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-danger",
+    "assets.icon-info",
+    "assets.icon-success",
+    "assets.icon-warning",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.destructive",
+    "themes.muted-foreground",
+    "themes.spacing"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, status-mark-v2.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-PART: a primitive slot with no stock parts in uses; 3 styled raw element attribute(s); imports outside the stock parts: react, class-variance-authority, cn. The only direct item, diceui/status@04aad54, is new-york, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",

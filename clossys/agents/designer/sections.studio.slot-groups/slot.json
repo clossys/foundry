@@ -43,7 +43,16 @@
     "checkSuite": "studio",
     "specimenKind": "text"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
   "uses": [
     "components.badge",
     "components.button",

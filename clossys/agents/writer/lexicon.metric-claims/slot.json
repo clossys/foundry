@@ -16,7 +16,8 @@
     "valueType": "approved-metric-list"
   },
   "inputs": [
-    "advantage.proposition.proof"
+    "advantage.proposition.proof",
+    "execution.measure.driver"
   ],
   "uses": []
 }

@@ -87,7 +87,9 @@
     "advantage.proposition.promise",
     "focus.lifecycle.acquisition",
     "focus.segment.core",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "context.company.constraint",
+    "identity.naming.name"
   ],
   "uses": [],
   "options": 3,

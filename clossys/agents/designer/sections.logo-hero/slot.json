@@ -77,7 +77,29 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.mark",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.animate-marquee",
+    "themes.animate-marquee-vertical",
+    "themes.animate-shiny-text",
+    "themes.background",
+    "themes.card",
+    "themes.muted",
+    "themes.popover",
+    "themes.secondary",
+    "themes.sidebar",
+    "themes.sidebar-accent",
+    "themes.spacing"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, logo-hero-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-PART: uses parts that are not pinned stock: components.logo (pinned derived); 2 styled raw element attribute(s); imports outside the stock parts: react, @/components/ui/logo (absent from the component layer). No vendored item in the approved set maps to this slot (candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",

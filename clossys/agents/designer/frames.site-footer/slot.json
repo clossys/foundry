@@ -109,7 +109,22 @@
       "components.semantic-content"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.image",
+    "assets.mark",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.primary",
+    "themes.spacing"
+  ],
   "uses": [
     "components.logo"
   ]

@@ -132,7 +132,18 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.foreground",
+    "themes.spacing"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, call-to-action-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 4 styled raw element attribute(s); imports outside the stock parts: @/components/ui/semantic-content (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. The only direct item, tailark-oss/mist-call-to-action-1@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",

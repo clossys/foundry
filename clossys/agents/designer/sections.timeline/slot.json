@@ -132,7 +132,22 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.background",
+    "themes.border",
+    "themes.muted-foreground",
+    "themes.primary",
+    "themes.radius",
+    "themes.spacing"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, timeline-v1.json unmodified) fails REF-COMP-MARKUP: 11 styled raw element attribute(s). The only direct item, diceui/timeline@04aad54, is a registry:ui primitive (verbatim adopt fails REF-PRIMITIVE-AS-REF and REF-FLAVOR); no registry:block or registry:example; candidate v1 fails ref-verbatim.",

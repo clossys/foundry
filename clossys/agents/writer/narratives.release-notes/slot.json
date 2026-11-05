@@ -16,7 +16,8 @@
   },
   "inputs": [
     "advantage.proposition.proof",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "execution.roadmap.release"
   ],
   "uses": []
 }

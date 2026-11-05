@@ -67,7 +67,8 @@
   },
   "inputs": [
     "identity.brand.personality",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "context.company.constraint"
   ],
   "uses": []
 }

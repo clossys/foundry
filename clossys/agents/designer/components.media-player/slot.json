@@ -77,7 +77,28 @@
       "components.semantic-content"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-right",
+    "assets.image",
+    "assets.video",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.background",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.radius",
+    "themes.ring",
+    "themes.secondary",
+    "themes.spacing"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, media-player-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed); 7 styled raw element attribute(s); imports outside the stock parts: react, lucide-react, cn, @/components/ui/slider (absent from the component layer). The only direct item, diceui/media-player@04aad54, is new-york, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",

@@ -34,6 +34,17 @@
       "assets": []
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.muted",
+    "themes.radius"
+  ],
   "uses": []
 }

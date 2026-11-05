@@ -16,7 +16,8 @@
   },
   "inputs": [
     "identity.naming.architecture",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "identity.naming.name"
   ],
   "uses": []
 }

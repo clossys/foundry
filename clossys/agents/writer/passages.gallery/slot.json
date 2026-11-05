@@ -85,7 +85,8 @@
   },
   "inputs": [
     "identity.verbal.voice",
-    "identity.visual.imagery"
+    "identity.visual.imagery",
+    "focus.offer.included"
   ],
   "uses": []
 }

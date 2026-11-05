@@ -75,6 +75,29 @@
     ],
     "apg": "button"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-right",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.background",
+    "themes.border",
+    "themes.destructive",
+    "themes.foreground",
+    "themes.input",
+    "themes.muted",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.radius",
+    "themes.ring",
+    "themes.secondary",
+    "themes.secondary-foreground",
+    "themes.spacing"
+  ],
   "uses": []
 }

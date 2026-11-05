@@ -231,7 +231,21 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-down",
+    "assets.icon-chevron-right",
+    "assets.icon-close",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.radius",
+    "themes.spacing"
+  ],
   "uses": [
     "components.button",
     "components.dropdown-menu",

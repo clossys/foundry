@@ -37,7 +37,17 @@
     ],
     "apg": "dialog-modal"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-date",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
   "uses": [
     "assets.icon-chevron-left",
     "assets.icon-chevron-right",

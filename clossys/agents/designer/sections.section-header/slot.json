@@ -146,7 +146,22 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.foreground",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.primary",
+    "themes.spacing"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "no approved-registry source; W6 composition check (strict, section-header-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.status-mark (not-needed); 4 styled raw element attribute(s); imports outside the stock parts: @/components/ui/semantic-content (absent from the component layer), @/components/ui/status-mark (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. No vendored item in the approved set maps to this slot (no registry:block or registry:example); candidate v1 fails ref-verbatim.",

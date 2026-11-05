@@ -43,6 +43,17 @@
     },
     "apg": "disclosure"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-chevron-down",
+    "assets.icon-chevron-up",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
   "uses": []
 }
