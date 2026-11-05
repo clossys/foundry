@@ -225,13 +225,13 @@ describe("header brand slot", () => {
   it("keeps an explicit tone and accent default together in the header", () => {
     render(<SiteHeader brand={<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" tone="inverse" />} />);
     const anchor = screen.getByRole("link", { name: "Example home" });
-    expect(anchor).toHaveClass("text-ink-on-inverse");
+    expect(anchor).toHaveClass("text-background");
     expect(markOf(anchor)).toHaveClass("bg-accent");
   });
 
   it.each([
     ["auto", "text-ink-primary"],
-    ["inverse", "text-ink-on-inverse"],
+    ["inverse", "text-background"],
   ] as const)("sets the %s wordmark in the surface's own ink token, which follows the colour scheme", (tone, ink) => {
     render(<Brandmark variant="lockup" wordmark="Example" size="md" label="Example home" markSrc="/mark.svg" markInk="accent" tone={tone} />);
     const anchor = screen.getByRole("link", { name: "Example home" });

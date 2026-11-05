@@ -37,7 +37,7 @@ describe("Foundry ToggleButton", () => {
 
   it("selected on the inverse ground takes the inverse action fill", () => {
     render(<ToggleButton ground="inverse" defaultSelected>Bold</ToggleButton>);
-    expect(classes(screen.getByRole("button"))).toEqual(expect.arrayContaining(["bg-action-on-inverse", "text-ink-primary"]));
+    expect(classes(screen.getByRole("button"))).toEqual(expect.arrayContaining(["bg-primary-foreground", "text-ink-primary"]));
   });
 
   it("a primary toggle, already action-filled at rest, marks selected with an inset ring in its own ink", () => {

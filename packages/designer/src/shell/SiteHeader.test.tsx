@@ -143,10 +143,10 @@ describe("SiteHeader", () => {
           actions={<a href="/sign-in" className="text-inherit">Sign in</a>}
         />,
       );
-      expect(container.querySelector("header")?.classList.contains("text-ink-on-inverse")).toBe(true);
+      expect(container.querySelector("header")?.classList.contains("text-background")).toBe(true);
       for (const link of container.querySelectorAll("a")) expect(link.className).toBe("text-inherit");
       const gated = CONTRAST_PAIRS.filter((pair) => pair.background === "--color-surface-glass-inverse").map((pair) => pair.foreground);
-      expect(new Set(gated)).toEqual(new Set(["--color-ink-on-inverse"]));
+      expect(new Set(gated)).toEqual(new Set(["--background"]));
     });
 
     const FLOW_MARKUP = renderToStaticMarkup(<SiteHeader brand={<span>Acme</span>} navPlacement="centered" surface="solid" />);
@@ -160,7 +160,7 @@ describe("SiteHeader", () => {
     it("applies inverse tone to the solid surface", () => {
       render(<SiteHeader brand={<span>Acme</span>} tone="inverse" menuOpen />);
       expect(screen.getByRole("banner")).toHaveAttribute("data-tone", "inverse");
-      expect(screen.getByRole("banner")).toHaveClass("bg-surface-inverse", "text-ink-on-inverse");
+      expect(screen.getByRole("banner")).toHaveClass("bg-foreground", "text-background");
     });
 
     it("overlay fixes the header to the top of the viewport, out of flow, over the shell z-index", () => {
@@ -188,7 +188,7 @@ describe("SiteHeader", () => {
       render(<SiteHeader brand={<span>Acme</span>} surface="glass" tone="inverse" />);
       const banner = screen.getByRole("banner");
       expect(banner).toHaveAttribute("data-tone", "inverse");
-      expect(banner.className).toContain("text-ink-on-inverse");
+      expect(banner.className).toContain("text-background");
       expect(banner.className).not.toContain("text-ink-primary");
     });
 

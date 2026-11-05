@@ -149,7 +149,7 @@ describe("iconButtonLinkClassName", () => {
       ]),
     );
     const inverse = iconButtonLinkClassName("inverse").split(" ");
-    expect(inverse).toEqual(expect.arrayContaining(["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "active:border-ink-on-inverse"]));
+    expect(inverse).toEqual(expect.arrayContaining(["bg-card-foreground", "text-background", "border-background/14", "active:border-background"]));
     expect(inverse).not.toContain("bg-surface-raised");
     expect(base).not.toContain("outline-none");
     expect(base).not.toContain("focus-visible:outline-accent");

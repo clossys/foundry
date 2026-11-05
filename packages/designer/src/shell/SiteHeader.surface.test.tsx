@@ -27,9 +27,9 @@ describe("the single SiteHeader surface contract", () => {
       render(<SiteHeader brand="Example" surface={surface} tone={tone} />);
       const header = screen.getByRole("banner");
       expect(header).toHaveAttribute("data-tone", tone);
-      expect(header).toHaveClass(tone === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+      expect(header).toHaveClass(tone === "inverse" ? "text-background" : "text-ink-primary");
       if (surface === "solid") {
-        expect(header).toHaveClass(tone === "inverse" ? "bg-surface-inverse" : "bg-surface-raised");
+        expect(header).toHaveClass(tone === "inverse" ? "bg-foreground" : "bg-surface-raised");
         expect(header).toHaveClass("border-b");
       } else if (surface === "transparent") {
         expect(header.className).not.toMatch(/\bbg-|\bborder-b\b|site-header-overlay/);

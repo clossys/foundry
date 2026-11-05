@@ -63,7 +63,7 @@ for (const mode of ["server", "client"] as const) {
     for (const variant of ["mark", "lockup"] as const) {
       const variantBrand = variant === "mark" ? { assetId: "mark", label: ref("Example home"), size: "md", variant } : brand;
       const shell = { ...base, brand: { ...variantBrand, tone: "inverse" } } as SiteShellInput;
-      expect(output(frame(shell), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-on-inverse", "focus-visible:outline-ink-on-inverse");
+      expect(output(frame(shell), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-background", "focus-visible:outline-background");
       const auto = { ...defaults.inverse, brand: { ...variantBrand, tone: "auto" } } as SiteShellInput;
       expect(output(frame(auto), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-primary", "focus-visible:outline-accent");
       expect(output(frame({ ...defaults.inverse, brand: variantBrand } as SiteShellInput), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-inherit");
@@ -84,7 +84,7 @@ for (const mode of ["server", "client"] as const) {
   it(`inherits the header ink for icon navigation: ${mode}`, () => {
     for (const surface of ["solid", "transparent", "glass"] as const) {
       const root = output(frame({ ...base, header: { surface, tone: "inverse" }, nav }), mode);
-      expect(root.querySelector("header")).toHaveClass("text-ink-on-inverse");
+      expect(root.querySelector("header")).toHaveClass("text-background");
       expect(root.querySelector("header button")).not.toHaveAttribute("data-tone");
       expect(root.querySelector("header button")).toHaveAttribute("aria-label", "Menu");
       expect(root.querySelector("header button .nav-disclosure-icon")).toHaveAttribute("aria-hidden", "true");
@@ -114,12 +114,12 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector("h1")).toHaveClass("tablet-lg:text-display-xl");
     expect(root.querySelector("h1")!.parentElement).toHaveStyle({ maxWidth: "none" });
     const eyebrow = [...root.querySelectorAll("p")].find(p => p.textContent === "Eyebrow")!;
-    expect(eyebrow).toHaveClass("text-ink-on-inverse-muted");
+    expect(eyebrow).toHaveClass("text-background/75");
     const description = [...root.querySelectorAll("p")].find(p => p.textContent === "Supporting words.")!;
     expect(description.style.maxWidth).toBe("var(--ui-width-hero-wide, 64rem)");
     const footer = root.querySelector("footer")!;
     expect(footer).toHaveClass("border-t", "border-border");
-    expect(footer).not.toHaveClass("bg-surface-base", "bg-surface-inverse");
+    expect(footer).not.toHaveClass("bg-surface-base", "bg-foreground");
     expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
     expect(footer.querySelector(".border-t")).toBeNull();
     expect(root.querySelector("[data-frame-footer-overlay]")).toBeNull();

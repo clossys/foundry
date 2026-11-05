@@ -140,7 +140,7 @@ describe("Button", () => {
   it("tonal on the inverse ground takes the inverse fill and ink", () => {
     render(<Button variant="tonal" ground="inverse">Compare</Button>);
     const classes = screen.getByRole("button", { name: "Compare" }).className.split(" ");
-    expect(classes).toEqual(expect.arrayContaining(["bg-control-tonal-inverse", "text-ink-on-inverse"]));
+    expect(classes).toEqual(expect.arrayContaining(["bg-background/12", "text-background"]));
     expect(classes).not.toContain("bg-control-tonal");
   });
 });
@@ -156,7 +156,7 @@ describe("primary action palette", () => {
   it("uses inverse action fill and primary ink on the inverse ground", async () => {
     render(<Button ground="inverse">Save</Button>);
     const control = screen.getByRole("button");
-    expect(control.className.split(" ")).toEqual(expect.arrayContaining(["bg-action-on-inverse", "text-ink-primary", "hover:bg-action-on-inverse-hover"]));
+    expect(control.className.split(" ")).toEqual(expect.arrayContaining(["bg-primary-foreground", "text-ink-primary", "hover:bg-primary-foreground/90"]));
     await userEvent.setup().tab();
     expect(control.style.outline).toContain("--color-focus-ring-on-inverse");
     expect(control.style.outlineOffset).toBe("var(--ui-focus-offset, 2px)");

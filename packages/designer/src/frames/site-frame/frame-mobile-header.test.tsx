@@ -186,7 +186,7 @@ it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s 
   const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, header: { surface: "glass", tone: "inverse" } };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
   const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
-  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
+  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-background");
 });
 
 it.each([false, true])("names a mark-only brand from its label and renders no wordmark (server=%s)", server => {
@@ -211,7 +211,7 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   expect(mark).toHaveAttribute("aria-hidden", "true");
   expect(mark).toHaveClass("bg-accent");
   expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
-  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
+  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-background");
   expect(brand.children[1]).toHaveTextContent("Example");
   expect(brand.children[1]!.className).not.toMatch(/\b(?:text|bg)-/);
 });
@@ -352,7 +352,7 @@ it.each([false, true])("gives the ghost mobile action the toggle's inverse ink o
   const header = output(shell, server).querySelector("header")!;
   const action = header.querySelector<HTMLAnchorElement>("[data-header-primary]")!;
   const toggle = header.querySelector("button")!;
-  for (const token of ["text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse"]) {
+  for (const token of ["text-background", "hover:bg-background/16", "focus-visible:outline-background"]) {
     expect(toggle).not.toHaveAttribute("data-tone");
     expect(header).toHaveAttribute("data-tone", "inverse");
     expect(action).toHaveClass(token);

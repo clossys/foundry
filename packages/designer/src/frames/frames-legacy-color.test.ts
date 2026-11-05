@@ -16,7 +16,9 @@ import { handAuthoredThemeKeys, renderThemeKeys, shadcnColorKeys, type ThemesTok
  * a translucent tone of the plate's ink keeps its legacy opacity as an `alpha` on the same
  * variable. The 36 inverse uses the frame layer had, now in the frame layer and in the
  * component plates it reads (Card GROUND_PAINT, button-classes INVERSE_CONTROL_INK,
- * Brandmark, Logomark, ToggleButton), carry no inverse legacy name.
+ * Brandmark, Logomark, ToggleButton), carry no inverse legacy utility. The token-layer
+ * fallback chain in components/internal/ui-vars.ts (a custom-property read of the legacy
+ * token with its literal fallback) stays on the legacy token layer.
  */
 const pkg = new URL("../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, pkg), "utf8");
@@ -59,7 +61,7 @@ describe("legacy colour map (H-TOKEN)", () => {
 
 const INVERSE_KEYS = Object.keys(legacyMap.map).filter(key => key.includes("inverse") && !key.includes("glass")).sort();
 // The component plates the frame layer's inverse uses moved to (GATES-RED round 4, G1/G2).
-const INVERSE_PLATES = ["src/components/Card.tsx", "src/components/button-classes.ts", "src/components/ToggleButton.tsx", "src/components/Logomark.tsx", "src/components/internal/ui-vars.ts", "src/shell/Brandmark.tsx"];
+const INVERSE_PLATES = ["src/components/Card.tsx", "src/components/button-classes.ts", "src/components/ToggleButton.tsx", "src/components/Logomark.tsx", "src/shell/Brandmark.tsx"];
 
 describe("inverse plate = shadcn foreground/background swap (G7)", () => {
   it("maps every inverse key onto the swap, with no new variable", () => {
