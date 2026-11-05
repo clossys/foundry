@@ -1,0 +1,187 @@
+{
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "style": "nova",
+  "base": "aria",
+  "files": [
+    {
+      "path": "LICENSE.md",
+      "sha256": "1564074e13439397221ffd522e2e504d56561994a23d371aa5e3ad43e4f5423f"
+    },
+    {
+      "path": "apps/v4/registry/styles/style-nova.css",
+      "sha256": "fd9803ec398290c306b377a46a769cad0c7ff024bf6a626993c113cacc20f16e"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/_registry.ts",
+      "sha256": "9831a64fd11c30477f57e3db684d4813c94929d44457fabe4303078a4b12d09a"
+    },
+    {
+      "path": "apps/v4/package.json",
+      "sha256": "fb9f0b09e9f5956681c34dc371aa9b394e2c40ddd3c90f7237da3f243cc42eda"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/button.tsx",
+      "sha256": "8bcff6f70522e6e6cb0ff67f050830ea1a93596403d2d9b035f3b543c7a42e2c"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/select.tsx",
+      "sha256": "9e662cbcb7177303d243076e86ce6b9c2a4c5c5ccff23350fcaae4bf140f9619"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/calendar.tsx",
+      "sha256": "1ab779eb83ff098fa8788b6082353a4f10629b48aceccc3fb004f0e7c70d64c1"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/toggle.tsx",
+      "sha256": "0c17862bfbdc3f9c59ace9677226bc4316e71b289b49666536ac37409b2c6f30"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/dropdown-menu.tsx",
+      "sha256": "50a583093755eb29800812b189860b10f3aac3f7d48a3be23abe59c73dbb551d"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/context-menu.tsx",
+      "sha256": "e38986646bb2a666d68d8cfc737d9da172ff0e550463b1998d9080c2d7a3ce79"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/input.tsx",
+      "sha256": "b9596748b7238b5605f558474e9d50afc1535c5832c57134055e4bbde5fa804f"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/input-group.tsx",
+      "sha256": "f560ff23727006fc7790bef0f9dee2960e8eb00843f8644e9707f0c65582c9d6"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/textarea.tsx",
+      "sha256": "522eb7b565500e9a38ada957dc86ef0a4b2273dca9af2cb92af45332e614a334"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/checkbox.tsx",
+      "sha256": "bd74264abb104368774e95baa3246982052e74bc9f7e174982105d715fdb7c14"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/radio-group.tsx",
+      "sha256": "662dd64be47229a6e3801d2f1b091abcd9529e323bb9653781b9d73d9f2da215"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/switch.tsx",
+      "sha256": "b276029b57a613e457cdf3264c75cafe60bdf2c9093f564166ced3d66070e1b5"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/combobox.tsx",
+      "sha256": "2253d74226fd60b09503f208fe25d1b59719002dbb8ca1e5c0aaa8fc06acb18b"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/toggle-group.tsx",
+      "sha256": "6946ac25f24e71ed0ff53d8e2405e68ca1a9203a9b33bf33c0ddd1d854e20eb5"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/table.tsx",
+      "sha256": "138adfb5e7e8b93375a914d6fc22121f798f029d07f0ed2f52c15f35e805dd06"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/badge.tsx",
+      "sha256": "7771524b64abcdf8dd0d1a0dad02ae5dd78b6865ec69be6d19ff204e73302c64"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/kbd.tsx",
+      "sha256": "38452bf969618854c72821a8684100aa441653fc15cb2703a2f6e2299f829e27"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/alert.tsx",
+      "sha256": "639c846b57885d8af4dbdf7ddab7b15fd4d392c051f7496c67e811154e7861d9"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/progress.tsx",
+      "sha256": "3037eb4fd45d538216a2aa12d32a2e2a70c4f90678440939e1cb9dc30c467a61"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/spinner.tsx",
+      "sha256": "494f71fd2733709d0e43be44e3353d9df215b370137af0195251cbdfdcc9e17b"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/skeleton.tsx",
+      "sha256": "8fcbad84e494a75484a0975221fb40f54c4a7d68f79cfc305cb158d1feb1badf"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/breadcrumb.tsx",
+      "sha256": "8990ffeda8fd218d0cc3a7efec18fb1e97db8e6fb9dfb4d440399cda4a067025"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/separator.tsx",
+      "sha256": "482ee8e50eaf1095fb6874ac18d430704820d2444a3944e1f93f7ab99e39a793"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/tabs.tsx",
+      "sha256": "9ab0c37a41594b5bf60751ee05c2c8f9a42cfa1558015607ef154c315afd3954"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/avatar.tsx",
+      "sha256": "87cbda924259089cf0ecb7b29850c268e22b938ec7aba3e9c48021c535a6e6c9"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/card.tsx",
+      "sha256": "0d525c03e086b0047f7c0700850281023359cfc020eb233fdb0d74ec870ebea0"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/accordion.tsx",
+      "sha256": "1fe5c781263e046e1c897eb6a32a6f9f188963d53b1bef2ea23b8686597949ed"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/collapsible.tsx",
+      "sha256": "45c7e65d7960b07e99cbacec399945ad2f8a1f484096e7b80c0199a776c699a1"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/dialog.tsx",
+      "sha256": "ff8a8e6b372e7eb06c931975d8ac1ea59d9271051ac178a62c95f6acae20bb35"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/alert-dialog.tsx",
+      "sha256": "e4c943f27064ffb492cda2b281ef3e2f31c8f50188778206234928bf78b01887"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/popover.tsx",
+      "sha256": "ff617496f63c49105c177be5c2d21a2e4174a5417c3d675179b21cf98854deea"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/hover-card.tsx",
+      "sha256": "0eb2672b0ac67f4a5f4f99d410f96a371745c8e7680f9d0192efae7b6d138ce0"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/tooltip.tsx",
+      "sha256": "4cc80f882fec4abad1512f0d35d330603d653169ac210b27c12de10a09458d64"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/field.tsx",
+      "sha256": "1019104c41eaef8ffae109e2ece95be87a7a637e3a9bac049d7a9fb54bfb7275"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/label.tsx",
+      "sha256": "165c4ae2584ec47e5d64107cc8fd6d20d707ed4e24098d0dae67bfd43f6cd5aa"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/sidebar.tsx",
+      "sha256": "183522be3bb9b5c96123461df155e3c5df08e63cf9ac00c9e81a5748d857165f"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/sonner.tsx",
+      "sha256": "d5178ce4c7834d3f46d261698395b498b8f45fef29975585df7e26cb43aa3cc7"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/resizable.tsx",
+      "sha256": "7971b48619d5e322ca95e29b2a2ff72eacb95b730d1fcbdead94511dae056e83"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/slider.tsx",
+      "sha256": "bc583217a68d71c4e42222d1b1af68691593d73a2ba628aaac28add20e92a6f2"
+    },
+    {
+      "path": "apps/v4/registry/bases/aria/ui/command.tsx",
+      "sha256": "911e2d5972ca64ec2565b2c18281f0d9c0cb4d5caffa139dcd4eea2c853add11"
+    }
+  ],
+  "missing": [
+    "apps/v4/registry/bases/aria/ui/form.tsx"
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "id": "designer.identity",
+  "schemaVersion": 1,
+  "owner": "@clossys/designer",
+  "requires": [
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.visual.style"
+  ],
+  "optional": ["identity.visual.imagery"]
+}

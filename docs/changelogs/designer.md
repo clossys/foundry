@@ -5,6 +5,8 @@ All notable changes to this package are documented here. Format follows
 
 ## Unreleased
 
+- Add the ErrorState, StatGroup, RecordCards, CallToAction, NoticeList and Gallery Section blocks, and give the consent, error-state, stats, data-grid, cards, call-to-action, notices and gallery Section slots a Foundry candidate (ConsentBanner and DataTable cover consent and data-grid).
+
 - Add the RelationGraph Navigation Material: layered directed relationships, one keyboard-navigable list, safe-link refusals and a cycle fallback.
 
 - Add the FlowCanvas Block Material: a server-rendered node-and-edge diagram with a deterministic layered layout (`layoutFlowCanvas`), arrowheads and edge labels drawn from tokens, an ordered node list as its accessible source, edge-following keyboard navigation and a host-controlled selection.
@@ -15,6 +17,8 @@ All notable changes to this package are documented here. Format follows
 - Add Panel, Drawer and ResizablePane Block Materials with source-backed composition records, and a named ResizeHandle Atom with bounded keyboard and pointer interaction. Drawer reuses the Dialog lifecycle and releases it on route and breakpoint changes. Document the forty-first Atom without changing existing Dialog defaults.
 
 ## 0.12.0 - 2026-10-16
+
+- Retire the executable Landing views and their copied rendering graph. SiteFrame overlays accept one direct registered Hero and retain glass-header, heading and layout refusals.
 
 - Add optional inverse brand and navigation ink, muted eyebrows, wide hero copy, display heading scale, and a transparent footer top rule while preserving default rendering.
 - Link Designer setup to the Publisher frame wiring guide for brand, CSS and frame configuration.

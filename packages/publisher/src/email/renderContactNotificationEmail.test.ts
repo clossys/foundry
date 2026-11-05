@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { WriterManifest } from "@clossys/writer";
 import { renderContactNotificationEmail } from "./renderContactNotificationEmail.js";
 
 const DOMAIN = "example.com";
@@ -53,7 +54,7 @@ function row(label: string, value: string): string {
 function golden(rows: string[]): string {
   return [
     "<!DOCTYPE html>",
-    '<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>',
+    '<html lang="en" dir="ltr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"></head>',
     '<body style="margin:0;padding:16px;">',
     '<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"><tbody>',
     ...rows,
@@ -114,6 +115,47 @@ describe("golden bytes", () => {
   it("keeps a tab in the message and never produces a raw newline in the message cell", () => {
     const rendered = renderContactNotificationEmail({ ...full, message: "a\tb\nc" });
     expect(rendered.html).toContain(">a\tb<br>c</td>");
+  });
+});
+
+describe("document locale", () => {
+  const manifest: Pick<WriterManifest, "defaultLocale" | "locales"> = {
+    defaultLocale: "ar",
+    locales: [
+      { tag: "en", dir: "ltr", state: "active" },
+      { tag: "ar", dir: "rtl", state: "active" },
+      { tag: "ar-XB", dir: "rtl", state: "pseudo" },
+    ],
+  };
+
+  it("keeps English as the default for existing callers", () => {
+    expect(renderContactNotificationEmail(full, { locale: "en" })).toEqual(renderContactNotificationEmail(full));
+    expect(renderContactNotificationEmail(full).html).toContain('<html lang="en" dir="ltr">');
+  });
+
+  it.each([
+    ["en", "en", "ltr"],
+    ["ar", "ar", "rtl"],
+    ["AR-xb", "ar-XB", "rtl"],
+  ])("renders %s using Writer's canonical tag and declared direction", (locale, canonical, dir) => {
+    const baseline = renderContactNotificationEmail(full);
+    const result = renderContactNotificationEmail(full, { locale, manifest });
+    expect(result).toEqual({
+      ...baseline,
+      html: baseline.html.replace('<html lang="en" dir="ltr">', `<html lang="${canonical}" dir="${dir}">`),
+    });
+  });
+
+  it("uses the supplied manifest default and treats its direction as authoritative", () => {
+    expect(renderContactNotificationEmail(full, { manifest }).html).toContain('<html lang="ar" dir="rtl">');
+    expect(renderContactNotificationEmail(full, {
+      manifest: { defaultLocale: "en", locales: [{ tag: "en", dir: "rtl", state: "active" }] },
+    }).html).toContain('<html lang="en" dir="rtl">');
+  });
+
+  it("requires a declaration for a requested locale", () => {
+    expect(() => renderContactNotificationEmail(full, { locale: "ar" })).toThrow(RangeError);
+    expect(() => renderContactNotificationEmail(full, { locale: "fr", manifest })).toThrow(RangeError);
   });
 });
 

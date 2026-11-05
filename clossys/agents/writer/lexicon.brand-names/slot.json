@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.brand-names",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.terminology",
+    "l2": "terminology-brand-names",
+    "order": 7
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "term",
+    "valueType": "name-list"
+  },
+  "inputs": [
+    "identity.naming.architecture",
+    "identity.naming.name"
+  ],
+  "uses": []
+}

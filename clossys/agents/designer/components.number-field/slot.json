@@ -1,0 +1,71 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.number-field",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-number",
+    "order": 112
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:NumberField",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "format",
+        "step",
+        "state.invalid"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.ring"
+      ],
+      "assets": [
+        "assets.icon-chevron-up",
+        "assets.icon-chevron-down"
+      ]
+    },
+    "composes": [
+      "components.button"
+    ],
+    "apg": "spinbutton"
+  },
+  "inputs": [],
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; W6 composition check (strict, number-field-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-UNUSED: imports outside the stock parts: react, lucide-react, cn, react-aria-components. No vendored item in the approved set maps to this slot (manifest gap row); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
+  }
+}

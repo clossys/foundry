@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { Link } from "@clossys/designer/atoms";
+import { Link } from "@clossys/designer/components";
 import { ConsentBanner } from "@clossys/designer/blocks";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
 import { isSanctionedHref } from "../../internal/href.js";

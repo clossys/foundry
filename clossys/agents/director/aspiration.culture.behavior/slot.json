@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "aspiration.culture.behavior",
+  "agent": "director",
+  "ia": {
+    "l1": "aspiration",
+    "l2": "aspiration.culture",
+    "order": 11
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which behaviors do we expect, and which do we refuse?",
+    "mustContain": [
+      {
+        "key": "Do",
+        "hint": "expected behavior"
+      },
+      {
+        "key": "Refuse",
+        "hint": "behavior we refuse"
+      },
+      {
+        "key": "Signal",
+        "hint": "how you can tell it is happening"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

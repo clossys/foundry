@@ -6,12 +6,9 @@ import { SiteHeader } from "./SiteHeader.js";
 
 const nextFrame = () => new Promise<void>(resolve => { window.requestAnimationFrame(() => resolve()); });
 
-function renderNav() {
-  return render(
-    <SiteHeader brand={<a href="/">Example</a>} nav={
-      <NavDisclosure><a href="#about">About</a><a href="#contact"><span>Contact</span></a></NavDisclosure>
-    } />,
-  );
+function renderNav(placement: "header" | "standalone" = "header") {
+  const nav = <NavDisclosure><a href="#about">About</a><a href="#contact"><span>Contact</span></a></NavDisclosure>;
+  return render(placement === "header" ? <SiteHeader brand={<a href="/">Example</a>} nav={nav} /> : nav);
 }
 
 describe("NavDisclosure", () => {
@@ -62,17 +59,22 @@ describe("NavDisclosure", () => {
     expect(toggle).toHaveFocus();
   });
 
-  it("activating a link in the panel collapses it, including a nested click target, without refocusing the toggle", () => {
+  it.each(["link", "nested target"])("activating a panel %s returns focus before the closed panel becomes inert", target => {
     renderNav();
     const toggle = screen.getByRole("button", { name: "Menu" });
     fireEvent.click(toggle);
     const link = screen.getByRole("link", { name: "Contact" });
     act(() => link.focus());
-    fireEvent.click(screen.getByText("Contact"));
+    expect(link).toHaveFocus();
+    expect(link.parentElement).not.toHaveAttribute("inert");
+    const inertAtFocus: boolean[] = [];
+    toggle.addEventListener("focus", () => { inertAtFocus.push(link.parentElement!.hasAttribute("inert")); }, { once: true });
+    fireEvent.click(target === "link" ? link : screen.getByText("Contact"));
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(link.parentElement).not.toHaveAttribute("data-expanded");
     expect(link.parentElement).toHaveAttribute("inert");
-    expect(toggle).not.toHaveFocus();
+    expect(inertAtFocus).toEqual([false]);
+    expect(toggle).toHaveFocus();
   });
 
   it("accepts landmark and trigger names and className, with instance-local controls", () => {
@@ -89,6 +91,7 @@ describe("NavDisclosure", () => {
     expect(html).toContain('aria-expanded="false"');
     expect(html).not.toContain("data-expanded");
     expect(html).not.toContain("hidden=");
+    expect(html).not.toMatch(/\sinert(?:\s|=|>)/);
     expect(html.match(/href="#about"/g)).toHaveLength(1);
   });
 
@@ -241,10 +244,10 @@ function motionTokens(panel: HTMLElement, duration = "240ms") {
 }
 
 describe("NavDisclosure panel motion", () => {
-  it("slides the sheet in on its motion tokens, then keeps a closing sheet painted but inert", async () => {
+  it.each(["header", "standalone"] as const)("slides the %s sheet in on its motion tokens, then keeps a closing sheet painted but inert", async placement => {
     const motion = mockAnimate();
     try {
-      const view = renderNav();
+      const view = renderNav(placement);
       const toggle = screen.getByRole("button", { name: "Menu" });
       const link = screen.getByRole("link", { name: "About" });
       const panel = link.parentElement!;
@@ -287,11 +290,11 @@ describe("NavDisclosure panel motion", () => {
     } finally { motion.restore(); }
   });
 
-  it("switches at once, still inert after close, under reduced motion", () => {
+  it.each(["header", "standalone"] as const)("switches the %s sheet at once, still inert after close, under reduced motion", placement => {
     vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("prefers-reduced-motion"), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
     const motion = mockAnimate();
     try {
-      renderNav();
+      renderNav(placement);
       const toggle = screen.getByRole("button", { name: "Menu" });
       const panel = screen.getByRole("link", { name: "About" }).parentElement!;
       motionTokens(panel);
@@ -304,10 +307,10 @@ describe("NavDisclosure panel motion", () => {
     } finally { motion.restore(); vi.unstubAllGlobals(); }
   });
 
-  it("treats a zero duration token, the stylesheet's reduced-motion fallback, as no motion", () => {
+  it.each(["header", "standalone"] as const)("treats a zero duration token on the %s sheet, the stylesheet's reduced-motion fallback, as no motion", placement => {
     const motion = mockAnimate();
     try {
-      renderNav();
+      renderNav(placement);
       const toggle = screen.getByRole("button", { name: "Menu" });
       const panel = screen.getByRole("link", { name: "About" }).parentElement!;
       motionTokens(panel, "0s");
@@ -318,13 +321,13 @@ describe("NavDisclosure panel motion", () => {
     } finally { motion.restore(); }
   });
 
-  it("cancels a running slide as soon as reduced motion turns on", () => {
+  it.each(["header", "standalone"] as const)("cancels a running %s slide as soon as reduced motion turns on", placement => {
     let onChange = () => {};
     const reduced = { matches: false, addEventListener: (_: string, callback: () => void) => { onChange = callback; }, removeEventListener: vi.fn() };
     vi.stubGlobal("matchMedia", (query: string) => query.includes("prefers-reduced-motion") ? reduced : { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
     const motion = mockAnimate();
     try {
-      renderNav();
+      renderNav(placement);
       const toggle = screen.getByRole("button", { name: "Menu" });
       const panel = screen.getByRole("link", { name: "About" }).parentElement!;
       motionTokens(panel);

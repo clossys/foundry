@@ -1,0 +1,49 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.specimen",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 253
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.specimen",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "What a leaf produces, for every agent: rendered output framed at 375, 768 and 1280 px in light and dark, or the record content as titled tables.",
+    "inputs": [
+      {
+        "name": "specimen",
+        "kind": "data",
+        "required": true,
+        "description": "A viewports or record specimen."
+      }
+    ],
+    "limits": {
+      "viewports": "375,768,1280"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "tabs",
+        "version": "4.23.0",
+        "hash": "sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/tabs.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "visual"
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.table",
+    "components.tabs"
+  ]
+}

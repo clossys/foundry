@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.icon-chevron-up",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.icons",
+    "l2": "icons-navigation",
+    "order": 50
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "glyph",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "grid": 24
+  },
+  "inputs": [],
+  "uses": []
+}

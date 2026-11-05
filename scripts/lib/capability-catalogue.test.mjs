@@ -1,7 +1,7 @@
 // Contract-shape tests for the capability catalogue (PR #1398's blocker).
 //
 // Most tests compose THIS repository's real catalogue: the five v0 launch
-// roles (customer, writer, designer, publisher, strategist) declare their
+// roles (customer, writer, designer, publisher, director) declare their
 // contract-shaped `needs`/`solves`/`feeds` in their own package.json (#1172).
 // Variants are overlaid in memory through buildCapabilityCatalogue's
 // `manifests` option, so nothing is written to disk and no package is edited.
@@ -23,7 +23,7 @@ import { evaluateOfferingKits } from "../check-offering-kits.mjs";
 import { evaluatePackageFramework } from "../check-package-framework.mjs";
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
-const LAUNCH_LANES = ["customer", "writer", "designer", "publisher", "strategist"];
+const LAUNCH_LANES = ["customer", "writer", "designer", "publisher", "director"];
 const realManifests = collectPackageManifests(repoRoot);
 /** Each launch role's own declared `foundry` block, read from its real package.json. */
 const lanes = Object.fromEntries(LAUNCH_LANES.map((role) => [role, { foundry: structuredClone(realManifests.get(role).foundry) }]));
@@ -148,8 +148,8 @@ test("a contract-shaped `needs` edge resolves: producerRole's scoped name become
   const catalogue = lanesCatalogue();
   const customer = roleOf(catalogue, "customer");
   assert.deepEqual(customer.needs, [
+    { artifact: "strategy-brief", role: "director", producerRole: "@clossys/director", source: "manifest" },
     { artifact: "surface-documents", role: "publisher", producerRole: "@clossys/publisher", source: "manifest" },
-    { artifact: "audience-understanding", role: "strategist", producerRole: "@clossys/strategist", source: "manifest" },
   ]);
 
   // The producer's side of the met edge names its consumer and its declared path.
@@ -161,14 +161,14 @@ test("a contract-shaped `needs` edge resolves: producerRole's scoped name become
   const composed = composeKit({ selectedRoles: ["customer"], catalogue });
   assert.equal(composed.state, "composed");
   assert.deepEqual(composed.unsatisfiedNeeds, []);
-  assert.deepEqual([...composed.addedForDependencies].sort(), ["designer", "publisher", "strategist", "writer"]);
-  assert.ok(composed.sequence.indexOf("strategist") < composed.sequence.indexOf("customer"));
-  assert.deepEqual(composed.roles.find((role) => role.role === "customer").inputsFrom, ["publisher", "strategist"]);
+  assert.deepEqual([...composed.addedForDependencies].sort(), ["designer", "director", "publisher", "writer"]);
+  assert.ok(composed.sequence.indexOf("director") < composed.sequence.indexOf("customer"));
+  assert.deepEqual(composed.roles.find((role) => role.role === "customer").inputsFrom, ["director", "publisher"]);
 });
 
 test("`declaredFeeds` is the role's own `foundry.feeds`, verbatim and in declared order", () => {
   const catalogue = lanesCatalogue();
-  assert.deepEqual(roleOf(catalogue, "strategist").declaredFeeds, lanes.strategist.foundry.feeds);
+  assert.deepEqual(roleOf(catalogue, "director").declaredFeeds, lanes.director.foundry.feeds);
   assert.deepEqual(roleOf(catalogue, "controller").declaredFeeds, []);
 });
 
@@ -188,16 +188,26 @@ test("a need is met only when its producer feeds the artifact, the same rule as 
   assert.deepEqual(corrected.gateUnmatched, []);
 
   // A producer that exists but declares no `feeds` at all does not meet a manifest need either.
-  // Strategist keeps its capability map but declares no `feeds`: every need on it goes unmet.
-  const unfed = verdicts({ strategist: (foundry) => ({ ...foundry, feeds: [] }) }, ["customer"]);
+  // Director keeps its capability map but declares no `feeds`: every need on it goes unmet.
+  const unfed = verdicts({ director: (foundry) => ({ ...foundry, feeds: [] }) }, ["customer"]);
   assert.deepEqual(unfed.kitUnsatisfied, [
-    "customer audience-understanding",
-    "designer brand-derivation",
+    "customer strategy-brief",
+    "designer strategy-brief",
     "publisher strategy-brief",
-    "writer brand-derivation",
-    "writer claims",
+    "writer strategy-brief",
   ]);
   assert.deepEqual(unfed.kitUnsatisfied, unfed.gateUnmatched);
+
+  // Feeding a different artifact does not satisfy the required strategy brief.
+  // Keep strategy-map available: role presence alone must not satisfy this edge.
+  const missingBrief = verdicts({ director: (foundry) => ({ ...foundry, feeds: foundry.feeds.filter((feed) => feed.artifact !== "strategy-brief") }) }, ["customer"]);
+  assert.deepEqual(missingBrief.kitUnsatisfied, [
+    "customer strategy-brief",
+    "designer strategy-brief",
+    "publisher strategy-brief",
+    "writer strategy-brief",
+  ]);
+  assert.deepEqual(missingBrief.kitUnsatisfied, missingBrief.gateUnmatched);
 });
 
 test("a `needs` edge naming a producer outside this repository's scope is unsatisfied, never guessed", () => {
@@ -219,7 +229,7 @@ test("an unscoped producerRole is reported as the consumer's own defect, never a
 
 test("the pre-contract edge shape (fromRole/toRole/role) is not read", () => {
   const catalogue = catalogueWith({
-    customer: (foundry) => ({ ...foundry, needs: [{ fromRole: "publisher", artifact: "surface-documents" }, { role: "strategist", artifact: "audience-understanding" }] }),
+    customer: (foundry) => ({ ...foundry, needs: [{ fromRole: "publisher", artifact: "surface-documents" }, { role: "director", artifact: "audience-understanding" }] }),
   });
   // A declared array of entries without producerRole resolves to no edges at all.
   assert.deepEqual(roleOf(catalogue, "customer").needs, []);

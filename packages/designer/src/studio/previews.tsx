@@ -1,0 +1,111 @@
+"use client";
+
+import { inspectGlyph, inspectSvg } from "../catalog-assets/svg.js";
+import type { IconNode } from "../components/Icon.js";
+import { IconSpecimen, RatioSpecimen, SvgSpecimen, mediaSpecimen, ratioOf } from "./asset-specimens.js";
+import type { ReactElement } from "react";
+import type { StudioLabels } from "./types.js";
+import { TokenPreview, TokenValuePreview } from "../tokens/preview/index.js";
+import { OklchSwatch, TokenLeafSpecimen, TokenValueText, oklchSwatchable, tokenLeafSpecimenKind } from "../tokens/preview/specimens.js";
+import { describePreview, previewRows, type Candidate, type PreviewSpec } from "./model.js";
+import { specimenDataset } from "./specimen-dataset.js";
+
+/** Text every token specimen sets: the shared dataset's sample, never host label copy. */
+const SAMPLE_TEXT = specimenDataset.tokens.sampleText;
+
+/** Copy for the previews. The host supplies it; this module holds no English. */
+export interface PreviewLabels {
+  fontNotLoaded: string;
+  visualPreviewUnsupported: string;
+  inspector: Pick<StudioLabels["inspector"], "light" | "dark">;
+}
+
+/** At most this many members render in a card; the rest collapse into a `+<n>` line. The inspector lists them all. */
+export const PREVIEW_LIMIT = 24;
+
+/** True when the page already declares a font face with this family. Studio never loads fonts. */
+export function isFontDeclared(family: string): boolean {
+  const faces = typeof document === "undefined" ? undefined : (document as Document & { fonts?: Iterable<{ family: string }> }).fonts;
+  if (!faces) return false;
+  for (const face of faces) if (face.family.replace(/^["']|["']$/g, "") === family) return true;
+  return false;
+}
+
+const firstFamily = (css: string): string => (css.split(",")[0] ?? "").trim().replace(/^["']|["']$/g, "");
+function Specimen({ id, member, spec, labels }: { id: string; member: Candidate["members"][number]["member"]; spec: PreviewSpec; labels: PreviewLabels }): ReactElement {
+  if (member.slot.startsWith("assets.")) {
+    // Assets render as specimens by value type; a value that fails its check never renders as artwork.
+    const unsupported = <p data-preview-kind="unsupported-asset">{labels.visualPreviewUnsupported}</p>;
+    if (member.$type === "glyph") {
+      try { inspectGlyph(member.value.light); } catch { return unsupported; }
+      return <IconSpecimen glyph={member.value.light as IconNode} name={member.slot.replace(/^assets\.icon-/, "")} />;
+    }
+    if (member.$type === "rules") {
+      const media = mediaSpecimen(member.slot, id, member.value.light);
+      if (media !== undefined) return media ?? unsupported;
+      const ratio = ratioOf(member.value.light); return ratio ? <RatioSpecimen {...ratio} /> : unsupported;
+    }
+    if (member.$type !== "svg" || typeof member.value.light !== "string") return unsupported;
+    try { inspectSvg(member.value.light, id === "assets.favicon.vector" ? { favicon: true } : undefined); }
+    catch { return <code>{member.css.light}</code>; }
+    return <SvgSpecimen id={id} slot={member.slot} svg={member.value.light} />;
+  }
+  if (spec.kind === "text" && spec.visualUnsupported) return <div data-preview-kind="unsupported-text"><p>{labels.visualPreviewUnsupported}</p><dl><dt>{labels.inspector.light}</dt><dd><code>{spec.css}</code></dd><dt>{labels.inspector.dark}</dt><dd><code>{spec.dark}</code></dd></dl></div>;
+  if (spec.kind === "token") return <TokenPreview property={spec.property} sampleText={SAMPLE_TEXT} unsupportedMessage={spec.property} />;
+  if (spec.kind === "text") return <code data-preview-kind="text">{spec.css}</code>;
+  return <TokenValuePreview id={id} member={member} sampleText={SAMPLE_TEXT} lightLabel="" darkLabel="" />;
+}
+
+/** The preview of one card: a row per member, capped at `limit`. */
+export function SlotPreview({ members, labels, limit = PREVIEW_LIMIT, fontDeclared = isFontDeclared }: {
+  members: Candidate["members"]; labels: PreviewLabels; limit?: number; fontDeclared?: (family: string) => boolean;
+}): ReactElement {
+  const rows = previewRows(members);
+  const shown = rows.slice(0, limit);
+  const hidden = rows.length - shown.length;
+  return (
+    <div data-studio-slot-preview="">
+      <ul className="m-0 grid list-none gap-sm p-0">
+        {shown.map(({ id, member, spec }) => {
+          const family = member.$type === "fontFamily" && member.font?.kind === "fontsource" ? firstFamily(member.css.light) : undefined;
+          return (
+            <li key={id} className="grid gap-xs">
+              <code>{id.slice(member.slot.length + 1)}</code>
+              <Specimen id={id} member={member} spec={spec} labels={labels} />
+              {family !== undefined && !fontDeclared(family) ? <small data-preview-note="font">{labels.fontNotLoaded}</small> : null}
+            </li>
+          );
+        })}
+      </ul>
+      {hidden > 0 ? <p data-preview-more="">+{hidden}</p> : null}
+    </div>
+  );
+}
+
+/**
+ * The specimen of one member inside a labelled cell. The cell owns the member key, so this never
+ * re-enters the labelled SlotPreview; it adds the member value only where the specimen shows none.
+ */
+export function CompactPreview({ candidate, labels }: { candidate: Candidate; labels: StudioLabels }): ReactElement | null {
+  const id = candidate.members[0]?.id, member = candidate.members[0]?.member;
+  if (!candidate.previewable || !id || !member) return null;
+  const family = member.$type === "fontFamily" && member.font?.kind === "fontsource" ? firstFamily(member.css.light) : undefined;
+  // A token leaf with its own specimen (C21-4) paints it; the value stays as separate readable text.
+  if (tokenLeafSpecimenKind(member)) return <><TokenLeafSpecimen id={id} member={member} /><TokenValueText css={member.css.light} /></>;
+  // An achromatic oklch value with a `none` channel paints from its strictly parsed channels.
+  if (oklchSwatchable(member)) return <>
+    <OklchSwatch id={id} light={member.css.light} dark={member.css.dark} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} />
+    <TokenValueText css={member.css.light} />
+  </>;
+  const spec = describePreview(member, 0);
+  const compact = !(spec.kind === "text" && spec.visualUnsupported) && (member.$type === "color" || member.$type === "duration" || member.$type === "cubicBezier");
+  const specimen = compact
+    ? <TokenValuePreview id={id} member={member} sampleText={SAMPLE_TEXT} lightLabel={labels.inspector.light} darkLabel={labels.inspector.dark} compact />
+    : <Specimen id={id} member={member} spec={spec} labels={labels} />;
+  const valueShown = member.slot.startsWith("assets.") || spec.kind === "text" || spec.kind === "ruler";
+  return <>
+    {specimen}
+    {valueShown ? null : <TokenValueText css={member.css.light} />}
+    {family !== undefined && !isFontDeclared(family) ? <small data-preview-note="font">{labels.fontNotLoaded}</small> : null}
+  </>;
+}

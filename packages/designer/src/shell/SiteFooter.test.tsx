@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 import { render, screen, within } from "@testing-library/react";
 import { SITE_FOOTER_LIMITS, SiteFooter, SiteFooterContractError, type SiteFooterLegalProps } from "./SiteFooter.js";
 import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
@@ -77,8 +78,7 @@ describe("SiteFooter measured geometry", () => {
   };
   let measurements: Record<string, Measurement>;
   beforeAll(() => {
-    const browser = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"]
-      .find(name => spawnSync(name, ["--version"], { stdio: "ignore" }).status === 0);
+    const browser = selectChromium(process.env.FOUNDRY_TEST_CHROME, (executable, args) => spawnSync(executable, args, { stdio: "ignore" }));
     if (!browser) throw new Error("Footer geometry tests require Chromium or Google Chrome on PATH.");
     const css = readFileSync(join(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     const longText = "International privacy terms for account information and research communications ".repeat(4);

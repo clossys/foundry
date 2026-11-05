@@ -175,7 +175,7 @@
  * `content` either.
  */
 
-import { resolveDocument } from "../core/index.js";
+import { resolveDocument } from "../core/resolve.js";
 import type { ComposeDocument, ResolvedSurfaceGroup, ResolvedSurfaceGroupField, ResolvedSurfaceGroupItem, ResolvedSurfaceNode, WebMeta } from "../core/index.js";
 import type { ReactNode } from "react";
 import { createElement, version as reactVersion } from "react";
@@ -188,8 +188,8 @@ import { defaultWebTemplateMap, framedAuthTemplate, slotKindsFor } from "./inter
 import type { RepeatingWebSlotFieldSpec, RepeatingWebSlotSpec, ResolvedWebGroupField, ResolvedWebGroupItem, WebTemplate } from "./types.js";
 import type { RenderWebOptions, RenderWebResult } from "./types.js";
 import { buildAssetElement } from "./buildAssetElement.js";
-import { SiteFrame } from "./frame/SiteFrame.js";
-import { resolveShell } from "./frame/internal/resolveShell.js";
+import { SiteFrame } from "@clossys/designer/frames";
+import { resolveSiteShell as resolveShell } from "@clossys/designer/frames";
 
 /**
  * `react` is this subpath's optional peer (see package.json's

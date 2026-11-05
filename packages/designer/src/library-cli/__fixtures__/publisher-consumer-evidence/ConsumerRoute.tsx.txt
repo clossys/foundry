@@ -1,0 +1,12 @@
+import { PageHeaderModule } from "@clossys/designer/shell";
+import { PageLayout } from "publisher-layout";
+import { renderViewLinks } from "publisher-links";
+import { AppPack } from "publisher-app";
+
+export default function ConsumerRoute() {
+  return <>
+    <PageHeaderModule id="publisher" header={{ title: "Publisher" }} />
+    <PageLayout title="Publish"><AppPack /></PageLayout>
+    {renderViewLinks(undefined, "StatusView")}
+  </>;
+}

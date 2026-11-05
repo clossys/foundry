@@ -1,0 +1,128 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.inspector",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#InspectorFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.inspector",
+      "source": "foundry",
+      "sourceAddress": "./frames#InspectorFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "inspector": {
+      "composes": [
+        "frames.sheet"
+      ],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "frames.sheet"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+          },
+          {
+            "path": "packages/designer/src/blocks/ResizablePane.tsx",
+            "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/frames/InspectorFrame.tsx",
+            "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
+          },
+          {
+            "path": "packages/designer/src/frames/right-panel-config.ts",
+            "sha256": "6ec16fdd02b06c1285e72b71adacb7567558f9c7c49fd17ab31308a5144e1fe9"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+            "file": "packages/designer/src/frames/right-panel-config.ts",
+            "line": 1
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "InspectorFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [
+        "presentation.collapsed",
+        "presentation.docked",
+        "presentation.overlay"
+      ],
+      "propMap": {
+        "presentation.collapsed": "collapsed=true",
+        "presentation.docked": "presentation=docked",
+        "presentation.overlay": "presentation=overlay"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "frames.inspector",
+      "slots": {
+        "content": "children"
+      },
+      "statePorts": {
+        "collapsed": "collapsed/onCollapsedChange",
+        "max": "max",
+        "min": "min",
+        "step": "step",
+        "width": "value/onChange"
+      }
+    }
+  }
+}

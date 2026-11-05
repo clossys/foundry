@@ -1,0 +1,114 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.audit-log",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#AuditLog",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.audit-log",
+      "source": "foundry",
+      "sourceAddress": "./blocks#AuditLog",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "audit-log": {
+      "composes": [],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/AuditLog.tsx",
+            "sha256": "9a56cc9b0ea7aeb05b9c57c08dfb98a42058fd8d704efdb319d6aef36174ac15"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "ambiguous slot ownership ./DataTable.js#DataTable: sections.data-grid, sections.data-table",
+            "file": "packages/designer/src/blocks/AuditLog.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "AuditLog",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Composes DataTable with fixed time, actor, action and target columns; host supplies labels. Filter and export are host regions in the DataTable toolbar; the block never filters or exports rows itself.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#AuditLog",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.audit-log",
+      "slotMap": {
+        "entries": "./blocks#AuditLog.entries",
+        "export": "./blocks#AuditLog.exportAction",
+        "filter": "./blocks#AuditLog.filter"
+      },
+      "source": "foundry"
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { computeDigest } from "../policy/digest.js";
 import { isOwnedByRole, planCreateOrUpdate, planMove, planRetire, planSupersede } from "./artifacts.js";
@@ -8,17 +9,17 @@ describe("role ownership boundary", () => {
   });
 
   it("rejects a path under a different role's folder", () => {
-    expect(isOwnedByRole("@clossys/advisor", "clossys/strategist/direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys/director/direction.json")).toBe(false);
   });
 
   it("rejects a path escaping with a .. segment", () => {
-    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/../strategist/direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/../director/direction.json")).toBe(false);
   });
 
   it("rejects a path escaping with a Windows-style ..\\ segment", () => {
-    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/..\\strategist\\direction.json")).toBe(false);
-    expect(isOwnedByRole("@clossys/advisor", "clossys\\advisor\\..\\strategist\\direction.json")).toBe(false);
-    expect(planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/..\\strategist\\direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] }).kind).toBe("refused");
+    expect(isOwnedByRole("@clossys/advisor", "clossys/advisor/..\\director\\direction.json")).toBe(false);
+    expect(isOwnedByRole("@clossys/advisor", "clossys\\advisor\\..\\director\\direction.json")).toBe(false);
+    expect(planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/..\\director\\direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] }).kind).toBe("refused");
   });
 });
 
@@ -54,7 +55,7 @@ describe("create/update planning", () => {
   });
 
   it("refuses a path outside the role's own folder", () => {
-    const plan = planCreateOrUpdate({ role: "@clossys/advisor", path: "clossys/strategist/direction.json", existing: null });
+    const plan = planCreateOrUpdate({ role: "@clossys/advisor", path: "clossys/director/direction.json", existing: null });
     expect(plan.kind).toBe("refused");
   });
 });
@@ -85,13 +86,13 @@ describe("move planning", () => {
   });
 
   it("refuses a destination outside the role's own folder", () => {
-    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/a.json", toPath: "clossys/strategist/a.json", candidateReferrers: [] });
+    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/advisor/a.json", toPath: "clossys/director/a.json", candidateReferrers: [] });
     expect(plan.kind).toBe("refused");
   });
 
   it("refuses a source outside the role's own folder, before it ever proposes removing that file", () => {
-    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/strategist/direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] });
-    expect(plan).toMatchObject({ kind: "refused", path: "clossys/strategist/direction.json" });
+    const plan = planMove({ role: "@clossys/advisor", fromPath: "clossys/director/direction.json", toPath: "clossys/advisor/direction.json", candidateReferrers: [] });
+    expect(plan).toMatchObject({ kind: "refused", path: "clossys/director/direction.json" });
   });
 });
 
@@ -105,7 +106,7 @@ describe("supersede planning", () => {
   });
 
   it("refuses a path outside the role's own folder", () => {
-    const plan = planSupersede({ role: "@clossys/advisor", path: "clossys/strategist/proof.json", supersededEntryId: "entry-7" });
+    const plan = planSupersede({ role: "@clossys/advisor", path: "clossys/director/proof.json", supersededEntryId: "entry-7" });
     expect(plan.kind).toBe("refused");
   });
 });
@@ -126,7 +127,7 @@ describe("retire planning", () => {
       role: "@clossys/advisor",
       path: "clossys/advisor/legacy.json",
       manifestOutputs: ["clossys/advisor/legacy.json"],
-      dependents: [{ role: "@clossys/strategist", path: "clossys/strategist/direction.json" }],
+      dependents: [{ role: "@clossys/director", path: "clossys/director/direction.json" }],
     });
     expect(plan.kind).toBe("blocked");
     expect((plan as { dependents: unknown[] }).dependents).toHaveLength(1);
@@ -139,10 +140,51 @@ describe("retire planning", () => {
       manifestOutputs: ["clossys/advisor/legacy.json"],
       dependents: [
         { role: "@clossys/writer", path: "clossys/writer/voice.json" },
-        { role: "@clossys/strategist", path: "clossys/strategist/direction.json" },
+        { role: "@clossys/director", path: "clossys/director/direction.json" },
       ],
     });
     expect(plan.kind).toBe("blocked");
-    expect((plan as { dependents: { role: string }[] }).dependents.map((d) => d.role)).toEqual(["@clossys/strategist", "@clossys/writer"]);
+    expect((plan as { dependents: { role: string }[] }).dependents.map((d) => d.role)).toEqual(["@clossys/director", "@clossys/writer"]);
+  });
+});
+
+
+describe("consumer layout contract", () => {
+  const layout = JSON.parse(readFileSync(new URL("../../../../docs/contracts/consumer-layout.json", import.meta.url), "utf8"));
+
+  it.each(["director", "designer", "writer", "publisher"])("places %s cells only under agents", (agent) => {
+    expect(layout.folders).toContainEqual(expect.objectContaining({ path: `clossys/agents/${agent}` }));
+    expect(layout.folders.some((entry: { path: string }) => entry.path === `clossys/${agent}` || entry.path.startsWith(`clossys/${agent}/`))).toBe(false);
+  });
+
+  it.each(["clossys/package.json", "clossys/clossys.config.ts"])("requires %s", (path) => {
+    expect(layout.folders).toContainEqual(expect.objectContaining({ path, required: true, committed: true }));
+  });
+
+  it("defines the sole package install site, generated apps and uncommitted Studio state", () => {
+    expect(layout.installPolicy).toMatchObject({ packageFile: "clossys/package.json", onlyClossysInstallSite: true });
+    expect(layout.folders).toContainEqual(expect.objectContaining({ path: "apps/<app>/src/clossys", kind: "generated", committed: true }));
+    expect(layout.folders).toContainEqual(expect.objectContaining({ path: "clossys/.state/studio", kind: "machine", committed: false }));
+  });
+});
+
+describe("agent and non-agent ownership", () => {
+  it.each(["director", "designer", "writer", "publisher"])("owns only the nested %s agent folder", (agent) => {
+    const role = `@clossys/${agent}`;
+    const path = `clossys/agents/${agent}/cells/example/v1.md`;
+    expect(isOwnedByRole(role, path)).toBe(true);
+    expect(isOwnedByRole(role, path.replaceAll("/", "\\"))).toBe(true);
+    expect(isOwnedByRole(role, `clossys/${agent}/tree.json`)).toBe(false);
+    expect(isOwnedByRole(role, `clossys/agents/${agent}/../other/tree.json`)).toBe(false);
+    expect(isOwnedByRole(role, `clossys/agents/${agent}-other/tree.json`)).toBe(false);
+    expect(planCreateOrUpdate({ role, path, existing: null }).kind).toBe("create");
+    expect(planMove({ role, fromPath: path, toPath: `clossys/agents/${agent}/cells/example/v2.md`, candidateReferrers: [] }).kind).toBe("move");
+    expect(planSupersede({ role, path, supersededEntryId: "v0" }).kind).toBe("supersede");
+    expect(planCreateOrUpdate({ role, path: `clossys/${agent}/tree.json`, existing: null })).toMatchObject({ kind: "refused", reason: expect.stringContaining(`clossys/agents/${agent}/`) });
+  });
+
+  it.each(["advisor", "customer", "controller"])("preserves the %s role folder", (role) => {
+    expect(isOwnedByRole(`@clossys/${role}`, `clossys/${role}/record.json`)).toBe(true);
+    expect(isOwnedByRole(`@clossys/${role}`, `clossys/agents/${role}/record.json`)).toBe(false);
   });
 });

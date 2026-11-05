@@ -1,0 +1,74 @@
+{
+  "schema": "clossys.element/1",
+  "id": "studio-shell",
+  "package": "producer",
+  "layer": "frames",
+  "slot": "frames.studio-shell",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "customized",
+    "parent": {
+      "version": 6,
+      "hash": "sha256:29fc10325034a41c24e8591cd46f1895d1ec30dd322b8366c139b2ecc7afd2fc"
+    },
+    "ownerRequest": "studio-current-ui-draft-studio-shell-20261101",
+    "source": {
+      "registry": "foundry",
+      "item": "packages/producer/studio/frames/studio-shell",
+      "version": "902f695cc3720af807baa814508b67a769dcda4c",
+      "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/frames/studio-shell",
+      "hash": "sha256:caca769c5517ddaa80000f5857d47ae6b261bedc76ae203aced1c0e3b1bd233a"
+    },
+    "path": "create"
+  },
+  "license": {
+    "spdx": "MIT",
+    "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+    "file": "LICENCE.md"
+  },
+  "creator": {
+    "agent": "codex",
+    "model": "unknown",
+    "by": "current-source payload draft preparation"
+  },
+  "reason": "DRAFT only: preserve current owner-authoritative Studio UI bytes as a new immutable payload. NEED: actual current trusted-reference lineage and whole-file or exact-part proof remain unresolved; no production qualification, selection or pin approval is claimed.",
+  "createdAt": "2026-11-02T00:02:40.217Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": [
+      "--background",
+      "--foreground",
+      "--muted",
+      "--muted-foreground",
+      "--sidebar",
+      "--sidebar-foreground",
+      "--sidebar-primary",
+      "--sidebar-primary-foreground",
+      "--sidebar-accent",
+      "--sidebar-accent-foreground",
+      "--sidebar-border",
+      "--sidebar-ring"
+    ]
+  },
+  "payload": [
+    "LICENCE.md",
+    "PageNotice.tsx",
+    "app-sidebar.tsx",
+    "index.tsx",
+    "nav-main.tsx",
+    "nav-user.tsx",
+    "registry-item.json",
+    "stock-chat-sidebar.tsx",
+    "stock-frame.provenance.json",
+    "stock-header-controls.tsx",
+    "stock-static-nav-rows.tsx",
+    "team-switcher.tsx"
+  ],
+  "version": 7,
+  "hash": "sha256:324f1c4646837998ff545ef9cc72ce5f1b76ed264dea745752a609053a83c036"
+}

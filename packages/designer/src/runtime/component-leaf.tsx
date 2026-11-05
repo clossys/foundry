@@ -1,0 +1,38 @@
+import * as React from "react";
+import type { GridListProps } from "../components/GridList.js";
+type ClientBoundary = typeof import("./component-leaf.client.js");
+const loadClient = (): Promise<ClientBoundary> => import("./component-leaf.client.js");
+// Resolve the client boundary while this module evaluates, so every renderer
+// (renderToString, renderToStaticMarkup, a first test `render`, streaming SSR)
+// gets the selected leaf synchronously and never suspends on it. The selection
+// itself lives in that module's ConsumerComponentProvider, so a known selection
+// always means the boundary is loadable. A react-server graph (no createContext)
+// never evaluates the client module here: it keeps the deferred boundary, which
+// an RSC bundler turns into its client reference and which otherwise reports
+// its own error only if a leaf actually renders there.
+const loaded: ClientBoundary | undefined = typeof React.createContext === "function" ? await loadClient().catch(() => undefined) : undefined;
+const SelectedComponentLeaf: React.ElementType = loaded?.SelectedComponentLeaf
+  ?? React.lazy(async () => ({ default: (await loadClient()).SelectedComponentLeaf }));
+export type { ConsumerComponentBinding, ConsumerComponentSelection } from "./component-leaf.client.js";
+
+/** The selected GridList contract maps layout.list to the native stack geometry. */
+export type GridListLeaf = (<T extends object>(props: Omit<GridListProps<T>, "layout"> & { readonly layout?: "list" | "grid" }) => React.ReactElement)
+  & Pick<typeof import("../components/GridList.js").GridList, "Item" | "SelectionCheckbox">;
+
+/** Server-safe facade: its client boundary resolves only the consumer's selected component leaf. */
+export function componentLeaf<T>(leaf: `components.${string}`, part?: string): T {
+  if (!/^components\.[a-z][a-z0-9-]*$/.test(leaf)) throw new TypeError("A registered component leaf id is required");
+  const facade = (parts: readonly string[]): unknown => {
+    const render = (props: Record<string, unknown>, ref?: React.Ref<unknown>): React.ReactNode => React.createElement(SelectedComponentLeaf, { leaf, parts, componentProps: ref ? { ...props, ref } : props });
+    // React's server condition intentionally omits forwardRef. The facade may be
+    // imported there, while ref attachment is owned by the client component.
+    const Component = typeof React.forwardRef === "function" ? React.forwardRef<unknown, Record<string, unknown>>(render) : (props: Record<string, unknown>) => render(props);
+    Object.defineProperty(Component, "displayName", { value: `${leaf}${parts.length ? `.${parts.join(".")}` : ""}` });
+    return new Proxy(Component, { get(target, key, receiver) {
+      if (typeof key !== "string" || Reflect.has(target, key)) return Reflect.get(target, key, receiver);
+      if (!/^[A-Z][A-Za-z0-9]*$/.test(key)) return undefined;
+      return facade([...parts, key]);
+    } });
+  };
+  return facade(part ? [part] : []) as T;
+}

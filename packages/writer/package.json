@@ -8,9 +8,29 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./declarations": {
+      "types": "./dist/declarations.d.ts",
+      "import": "./dist/declarations.js"
+    },
+    "./slot-body": {
+      "types": "./dist/slot-body.d.ts",
+      "import": "./dist/slot-body.js"
+    },
+    "./front-door/strict": {
+      "types": "./dist/front-door.d.ts",
+      "import": "./dist/front-door.js"
+    },
+    "./resolve": {
+      "types": "./dist/resolve.d.ts",
+      "import": "./dist/resolve.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./locale": {
+      "types": "./dist/locale.d.ts",
+      "import": "./dist/locale.js"
     },
     "./voice": {
       "types": "./dist/voice/index.d.ts",
@@ -21,6 +41,25 @@
     "./front-door": {
       "types": "./dist/front-door-browser.d.ts",
       "import": "./dist/front-door-browser.js"
+    },
+    "./admin-studio.en.json": "./src/catalog/records/admin-studio.r1.en.json",
+    "./admin-studio": {
+      "types": "./dist/admin-studio.d.ts",
+      "import": "./dist/admin-studio.js"
+    },
+    "./admin-voice.en.json": "./src/catalog/records/admin-voice.r1.en.json",
+    "./admin-voice": {
+      "types": "./dist/admin-voice.d.ts",
+      "import": "./dist/admin-voice.js"
+    },
+    "./admin-meta.en.json": "./src/catalog/records/admin-meta.r1.en.json",
+    "./admin-meta": {
+      "types": "./dist/admin-meta.d.ts",
+      "import": "./dist/admin-meta.js"
+    },
+    "./admin-copy": {
+      "types": "./dist/admin-copy.d.ts",
+      "import": "./dist/admin-copy.js"
     }
   },
   "bin": {
@@ -30,12 +69,22 @@
   "files": [
     "dist",
     "src",
-    "!src/**/*.test.ts",
     "templates",
     "fit-signals.json",
     "README.md",
     "LICENSE",
-    "skill"
+    "skill",
+    "strategy-brief.json",
+    "!dist/**/__fixtures__/**",
+    "!dist/**/__tests__/**",
+    "!dist/**/__mocks__/**",
+    "!dist/**/__snapshots__/**",
+    "!dist/**/*.test.*",
+    "!src/**/__fixtures__/**",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__snapshots__/**",
+    "!src/**/*.test.*"
   ],
   "sideEffects": false,
   "foundry": {
@@ -50,8 +99,8 @@
         "worldClass": "The voice record is fully bound (no unedited template placeholder) and every rule traces to a brand-derivation attribute — checked as a record, before any copy is ever measured against it.",
         "inputs": [
           {
-            "producerRole": "@clossys/strategist",
-            "artifact": "brand-derivation"
+            "producerRole": "@clossys/director",
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -78,7 +127,7 @@
       {
         "id": "copy-coverage",
         "subQuestion": "Does every user-facing string in code trace to a registered copy entry, by literal match or citation?",
-        "worldClass": "Every component string either matches a registered CopyRecord entry's text/alias or carries a copy:<id> citation -- the \"approved copy coverage rate\" metric this role owns (docs/contracts/role-loop-archetypes.json), and what writer-check's default command (copy-clean) actually proves. Distinct from `copy-registry` (is the registry entry itself valid) and from `claims-to-copy-traceability` (does a claim-SHAPED sentence cite an approved Strategist claim).",
+        "worldClass": "Every component string either matches a registered CopyRecord entry's text/alias or carries a copy:<id> citation -- the \"approved copy coverage rate\" metric this role owns (docs/contracts/role-loop-archetypes.json), and what writer-check's default command (copy-clean) actually proves. Distinct from `copy-registry` (is the registry entry itself valid) and from `claims-to-copy-traceability` (does a claim-SHAPED sentence cite an approved Director claim).",
         "inputs": [
           {
             "producerRole": "@clossys/writer",
@@ -96,11 +145,11 @@
       {
         "id": "claims-to-copy-traceability",
         "subQuestion": "Does every claim-shaped or numeric sentence in shipped copy trace to an approved registry claim, by citation?",
-        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one -- checked on the COPY side. Whether Strategist's own facts/markers gate should stop scanning shipped surfaces at all (leaving this the one place that check happens) is a decision pending #1271, not yet a settled boundary -- today `strategist-check` still scans authored prose too (its own facts-clean fixture is an announcement.md).",
+        "worldClass": "A currency amount, percentage, multiplier, or superlative sentence in live copy either matches a registered claim's text or carries a claim:<id> citation to one -- checked on the COPY side. Whether Director's own facts/markers gate should stop scanning shipped surfaces at all (leaving this the one place that check happens) is a decision pending #1271, not yet a settled boundary -- today `clossys director check` still scans authored prose too (its own facts-clean fixture is an announcement.md).",
         "inputs": [
           {
-            "producerRole": "@clossys/strategist",
-            "artifact": "claims"
+            "producerRole": "@clossys/director",
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -174,8 +223,8 @@
         "worldClass": "One governed messaging kit (tagline, short/medium/long pitch, short/medium/long boilerplate, FAQ) exists and every surface's short-form copy derives from it, per #1204's Identity layer, rather than being improvised per surface.",
         "inputs": [
           {
-            "producerRole": "@clossys/strategist",
-            "artifact": "positioning"
+            "producerRole": "@clossys/director",
+            "artifact": "strategy-brief"
           }
         ],
         "outputs": [
@@ -212,12 +261,8 @@
     ],
     "needs": [
       {
-        "producerRole": "@clossys/strategist",
-        "artifact": "brand-derivation"
-      },
-      {
-        "producerRole": "@clossys/strategist",
-        "artifact": "claims"
+        "producerRole": "@clossys/director",
+        "artifact": "strategy-brief"
       }
     ],
     "solves": [
@@ -256,10 +301,12 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json",
+    "build": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json && node scripts/check-record-drift.mjs",
     "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
-    "test": "node scripts/pack-plan-contract.mjs && vitest run"
+    "test": "node scripts/pack-plan-contract.mjs && vitest run",
+    "check:records": "node scripts/check-record-drift.mjs",
+    "check:cells": "vitest run src/cells/cells.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",
@@ -269,5 +316,12 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public"
+  },
+  "dependencies": {
+    "@clossys/director": "^0.6.0",
+    "@formatjs/icu-messageformat-parser": "3.5.22",
+    "intl-messageformat": "12.1.4",
+    "retext": "9.0.0",
+    "unified": "11.0.5"
   }
 }

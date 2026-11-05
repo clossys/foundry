@@ -1,0 +1,72 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.combo-box",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-choice",
+    "order": 106
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:ComboBox",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "allows-custom",
+        "state.invalid"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.shadow",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.icon-chevron-down",
+        "assets.icon-check",
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.popover"
+    ],
+    "apg": "combobox"
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.popover"
+  ]
+}

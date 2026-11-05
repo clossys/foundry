@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "package": "@clossys/writer",
+  "references": [
+    {
+      "id": "writer.composition.message-hierarchy",
+      "kind": "composition",
+      "guide": "Copy is composed top-down. The promise (Director advantage.proposition.promise) is the one message every page serves. Pillars are the two to four reasons to believe it, each backed by the proof cell. Passages carry pillars; patterns carry single messages; strings carry labels. A page narrative orders passages as promise, pillars, proof, objection, action. A lower layer never introduces a claim the layer above does not support.",
+      "levels": [
+        {
+          "level": "promise",
+          "layer": "patterns",
+          "slots": [
+            "patterns.messaging-kit",
+            "patterns.headline-subhead"
+          ],
+          "rule": "One promise per page; it appears in the hero and the closing call to action in different words."
+        },
+        {
+          "level": "pillars",
+          "layer": "passages",
+          "slots": [
+            "passages.features",
+            "passages.steps",
+            "passages.cards"
+          ],
+          "rule": "Two to four pillars; each names a benefit and how it works."
+        },
+        {
+          "level": "proof",
+          "layer": "passages",
+          "slots": [
+            "passages.stats",
+            "passages.testimonials",
+            "passages.logo-cloud"
+          ],
+          "rule": "Every number and superlative cites the Director proof cell or a lexicon claim record."
+        },
+        {
+          "level": "action",
+          "layer": "passages",
+          "slots": [
+            "passages.call-to-action",
+            "passages.hero"
+          ],
+          "rule": "One primary action per page; the secondary action is a smaller step toward the same goal."
+        }
+      ],
+      "arc": [
+        "promise",
+        "pillars",
+        "proof",
+        "objection",
+        "action"
+      ],
+      "inputs": [
+        "director:advantage.proposition.promise",
+        "director:advantage.proposition.proof",
+        "director:identity.verbal.narrative",
+        "director:identity.verbal.voice"
+      ]
+    }
+  ]
+}

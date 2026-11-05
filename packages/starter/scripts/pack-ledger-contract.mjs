@@ -7,7 +7,7 @@
  * `docs/contracts/installed-ledger.json` that every other reader of a ledger
  * validates against, with no runtime dependency on any other package.
  *
- * Mirrors `packages/strategist/scripts/pack-brief-contract.mjs` -- see that
+ * Mirrors `packages/director/scripts/pack-brief-contract.mjs` -- see that
  * file and `scripts/lib/plan-contracts.mjs`, whose
  * `renderContractSchemaCopy()` this reuses for a byte-identical checker
  * copy -- but packs only the ledger contract, which is self-contained: it

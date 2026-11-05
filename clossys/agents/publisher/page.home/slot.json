@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "page.home",
+  "agent": "publisher",
+  "ia": {
+    "l1": "studio",
+    "l2": "studio.pages",
+    "order": 0
+  },
+  "kind": "page",
+  "contract": {},
+  "inputs": [
+    "frames.studio-shell",
+    "sections.studio.home",
+    "sections.studio.page-header",
+    "sections.task-list"
+  ],
+  "uses": [
+    "assets.icon-home",
+    "frames.studio-shell",
+    "sections.module.checks",
+    "sections.module.outline",
+    "sections.studio.home",
+    "sections.studio.page-header",
+    "sections.task-list",
+    "strings.common"
+  ]
+}

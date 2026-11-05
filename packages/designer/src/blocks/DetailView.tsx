@@ -1,5 +1,14 @@
+import { SectionHeader } from "./SectionHeader.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+import { TOKENS } from "../tokens/tokens.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.record-detail", "foundry/sections.record-detail");
 
 export interface DetailViewField {
   /** The field's name — rendered in a `<dt>`. */
@@ -25,6 +34,8 @@ export interface DetailViewProps extends Omit<HTMLAttributes<HTMLElement>, "titl
   fields: readonly DetailViewField[];
   /** Slot for the record's own actions (edit, delete, ...), rendered at the trailing edge of the title row. */
   actions?: ReactNode;
+  /** Host-composed menu replacing actions in a container narrower than the tablet token. */
+  compactActions?: ReactNode;
   className?: string;
   style?: CSSProperties;
 }
@@ -52,21 +63,19 @@ export interface DetailViewProps extends Omit<HTMLAttributes<HTMLElement>, "titl
  * under sub-headings, a card wrapper, a single column always) composes
  * that directly around this block's own `title`/`fields`/`actions` slots.
  */
-export function DetailView({ title, fields, actions, className, style, ...rest }: DetailViewProps) {
-  const hasHeader = title !== undefined || actions !== undefined;
+export function DetailView({ title, fields, actions, compactActions, className, style, ...rest }: DetailViewProps) {
+  const hasHeader = title !== undefined || actions !== undefined || compactActions !== undefined;
+  const responsiveActions = compactActions !== undefined ? <>
+    <SemanticContent as="span" data-detail-actions-wide="" className="flex flex-wrap items-center gap-sm">{actions}</SemanticContent>
+    <SemanticContent as="span" data-detail-actions-compact="">{compactActions}</SemanticContent>
+  </> : actions;
   return (
-    <section {...rest} className={cx("flex flex-col gap-md", className)} style={style}>
+    <SemanticContent as="section" {...SECTION_STAMP} {...rest} data-record-detail="" className={cx("flex min-w-0 max-w-full flex-col gap-md", className)} style={{ containerType: "inline-size", overflowWrap: "anywhere", ...style }}>
       {hasHeader ? (
-        <div className="flex flex-wrap items-start justify-between gap-md">
-          {title !== undefined ? (
-            <h2 className="text-h2 font-display text-ink-primary">{title}</h2>
-          ) : null}
-          {actions !== undefined ? (
-            <div className={cx("flex items-center gap-sm", title === undefined ? "ms-auto" : "")}>
-              {actions}
-            </div>
-          ) : null}
-        </div>
+        <SectionHeader data-detail-header="" density="standard" level={2}
+          {...(title !== undefined ? { title } : {})}
+          actions={responsiveActions !== undefined ? <>{responsiveActions}</> : undefined}
+        />
       ) : null}
       {/*
        * Responsive: a single full-width column below the `tablet`
@@ -75,17 +84,26 @@ export function DetailView({ title, fields, actions, className, style, ...rest }
        * own `--breakpoint-tablet` token — no JS breakpoint state, the same
        * pattern `Shell.SideNav` uses for its own responsive collapse.
        */}
-      <dl className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
+      <SemanticContent as="dl" className="grid grid-cols-1 gap-lg tablet:grid-cols-2">
         {fields.map((field, index) => (
-          <div
+          <SemanticContent as="div"
             key={index}
             className={cx("flex flex-col gap-xs", field.span === 2 ? "tablet:col-span-2" : "")}
           >
-            <dt className="text-body-s text-ink-secondary">{field.label}</dt>
-            <dd className="text-body text-ink-primary">{field.value}</dd>
-          </div>
+            <SemanticContent as="dt" className="text-body-s text-ink-secondary">{field.label}</SemanticContent>
+            <SemanticContent as="dd" className="text-body text-ink-primary">{field.value}</SemanticContent>
+          </SemanticContent>
         ))}
-      </dl>
-    </section>
+      </SemanticContent>
+      <style>{`
+        [data-detail-header] > div > div { min-inline-size: 0; max-inline-size: 100%; }
+        [data-detail-header] > div > div:last-child { flex-wrap: wrap; }
+        [data-detail-actions-compact] { display: none; }
+        @container (width < ${TOKENS["--breakpoint-tablet"]!.value}) {
+          [data-detail-actions-wide] { display: none; }
+          [data-detail-actions-compact] { display: inline-flex; }
+        }
+      `}</style>
+    </SemanticContent>
   );
 }

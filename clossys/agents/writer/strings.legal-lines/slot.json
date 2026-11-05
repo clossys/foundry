@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.legal-lines",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.identity",
+    "l2": "identity-legal-lines",
+    "order": 40
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 1000,
+    "maxWords": 180
+  },
+  "inputs": [
+    "advantage.proposition.proof"
+  ],
+  "uses": []
+}

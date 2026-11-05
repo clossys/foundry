@@ -1,0 +1,136 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.legal-prose",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.explain",
+    "l2": "explain-reading",
+    "order": 186
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "div",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "heading",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "revision",
+        "type": "region",
+        "required": false
+      },
+      {
+        "name": "body",
+        "type": "region",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "legal.privacy",
+        "legal.terms"
+      ]
+    },
+    "allowedComposes": [
+      "components.semantic-content"
+    ],
+    "composes": [
+      "sections.article",
+      "sections.section-header"
+    ],
+    "parts": [
+      "sections.band"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.tracking-tight",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.legal-prose",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "heading",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "revision.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "revision.value",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "body",
+          "kind": "rich",
+          "required": true,
+          "maxLength": {
+            "en": 48000
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": []
+}

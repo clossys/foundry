@@ -1,0 +1,120 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.status-list",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#StatusList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.status-list",
+      "source": "foundry",
+      "sourceAddress": "./blocks#StatusList",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "status-list": {
+      "composes": [
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/StatusList.tsx",
+            "sha256": "73e83e96e60d9681a56697ce03582984e1be1afbb2be1b94089fdf009812ac82"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "StatusList",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Host supplies labels including disposition labels and legendLabel. Not-offered is a separate disposition, never a fourth readiness state.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#StatusList",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "status.available": "./blocks#StatusList.items[].state=available",
+        "status.not-offered": "./blocks#StatusList.items[].disposition=not-offered",
+        "status.partial": "./blocks#StatusList.items[].state=partial",
+        "status.planned": "./blocks#StatusList.items[].state=planned"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.status-list",
+      "slotMap": {
+        "items": "./blocks#StatusList.items",
+        "legend": "./blocks#StatusList.legendLabel"
+      },
+      "source": "foundry"
+    }
+  }
+}

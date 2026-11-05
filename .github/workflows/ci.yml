@@ -3,11 +3,9 @@ name: CI
 # CI's triggers are pull_request and push to main. It is this repository's
 # broad, always-on gate: safety, scope, provenance, build, and test run here
 # so a change is judged before it can merge. It does not publish, qualify,
-# or reconcile against the registry — publish.yml owns release execution,
-# registry-parity.yml owns the post-merge registry comparison, and the
-# aggregate canary runs only from its own dispatch-only workflow — while its
-# per-package tarball scan reuses the same scripts rather than introducing a
-# second copy.
+# or reconcile against the registry — publish.yml owns release execution.
+# Its per-package tarball scan reuses the same scripts rather than
+# introducing a second copy.
 
 on:
   pull_request:
@@ -795,10 +793,12 @@ jobs:
         with:
           node-version: 20
       - run: npm run check:package-identity
-      - run: npm run check:public-npm-aggregate-canary
-      - run: npm run check:public-npm-aggregate-canary-v2
       - run: npm run check:release-cleanup-inventory
       - run: node scripts/set-scope.mjs --check
+      # Offline half of probe:package-visibility: the active release target
+      # resolves and every deprecated package declares valid retention.
+      # Reads governance/** and docs/contracts/*.json only; no network.
+      - run: npm run check:visibility-declarations
 
   # package-scope.json.registry is the single declared source for which
   # registry every published package's publishConfig.registry must point
@@ -1013,7 +1013,7 @@ jobs:
       # --enforce-contract-statics is passed, which this step does not do.
       # Same dependency-free, manifest/contract/source-read-only class as
       # every step in this job. Its own unit tests run first, same
-      # compound-script pattern as check:public-npm-aggregate-canary.
+      # compound-script pattern as check:contrast.
       #
       # NOT added to this repository's `main-required-checks` ruleset by
       # this change, same reasoning as the jobs elsewhere in this file with
@@ -1491,24 +1491,25 @@ jobs:
         run: npm run check:changelog-location
       # Moved here from `build` (issue #1420 review round 3, found by the
       # generic script-input wiring test below rather than by a reviewer):
-      # scripts/check-strategist-subject.mjs scans docs/*.md -- excluding
+      # scripts/check-director-subject.mjs scans docs/*.md -- excluding
       # docs/contracts/**, docs/changelogs/**, and every OTHER root-style
       # docs/*.md filename (see the script's own exclude list) -- which in
       # practice means only docs/PUBLISHING.md and docs/RELEASING.md, both
       # prose-tier paths. `build` is skipped on the pure 'prose' tier, so a
       # docs/PUBLISHING.md-only change would have merged with this gate
       # silently skipped. Unlike the three gates above, this one needs the
-      # BUILT strategist CLI (packages/strategist/dist/cli.js) -- so, unlike
-      # them, this job pays a real `npm ci` and a single-workspace build for
-      # it, the same minimal-build shape `contrast`/`designer-contrast` use
-      # for packages/designer below.
+      # BUILT clossys CLI (packages/producer/dist/cli/index.js, which runs
+      # `clossys director check`) -- so, unlike them, this job pays a real
+      # `npm ci` and a build. Producer imports director, designer, writer and
+      # publisher, so the root build (every workspace, dependencies first)
+      # replaces the single-workspace director build.
       - run: npm ci
-      - run: npm run build --workspace=packages/strategist
-      - name: Strategist facts subject (PUBLISHING.md)
-        run: npm run check:strategist-subject
+      - run: npm run build
+      - name: Director facts subject (PUBLISHING.md)
+        run: npm run check:director-subject
 
   # Split out of `build and test` (issue: CI throughput). Measured on run
-  # 35802156089 (job 106994736395, branch claude/strategist-clossys-layout):
+  # 35802156089 (job 106994736395, branch claude/director-clossys-layout):
   # `build and test` took 2571s (42m51s) end to end, and three steps inside
   # it were serial and independent of each other -- "Candidate qualification
   # records" (946s), "README code examples typecheck against shipped
@@ -2047,10 +2048,10 @@ jobs:
       # it is excluded from check:gates by name.
       - name: Consent port conformance
         run: npm run check:consent-port-conformance
-      # check:strategist-subject moved to `prose quality` (issue #1420
+      # check:director-subject moved to `prose quality` (issue #1420
       # review round 3): it scans docs/*.md (excluding docs/contracts/**,
       # docs/changelogs/**, and every OTHER root-style docs/*.md file --
-      # see scripts/check-strategist-subject.mjs's own exclude list), which
+      # see scripts/check-director-subject.mjs's own exclude list), which
       # in practice means docs/PUBLISHING.md and docs/RELEASING.md, both
       # prose-tier paths this job is SKIPPED for on the 'prose' tier. See
       # `prose quality`'s own comment for where it moved to and why it
@@ -2060,7 +2061,7 @@ jobs:
       # Schema versions and migrations for every clossys/ record (#1224):
       # invokes controller's built migrate CLI against this repository's
       # own clossys/ tree, report-only. Author-side dist invocation, same
-      # class as the repository-profile/locksmith/launcher/strategist
+      # class as the repository-profile/locksmith/launcher/director
       # steps above.
       - name: Schema versions and migrations
         run: npm run check:schema-versions

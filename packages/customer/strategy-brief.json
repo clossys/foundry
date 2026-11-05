@@ -1,0 +1,13 @@
+{
+  "id": "customer.persona",
+  "schemaVersion": 1,
+  "owner": "@clossys/customer",
+  "requires": [
+    "focus.segment.core",
+    "context.customer.need"
+  ],
+  "optional": [
+    "context.customer.buying",
+    "context.competition.alternative"
+  ]
+}

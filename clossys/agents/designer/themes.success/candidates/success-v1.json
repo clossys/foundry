@@ -1,0 +1,60 @@
+{
+  "name": "success",
+  "type": "registry:theme",
+  "cssVars": {
+    "light": {
+      "success": "oklch(0.527 0.154 150.069)"
+    },
+    "dark": {
+      "success": "oklch(0.792 0.209 151.711)"
+    }
+  },
+  "files": [
+    {
+      "path": "clossys/themes.success.json",
+      "type": "registry:file",
+      "content": "{\n  \"themes\": {\n    \"success\": {\n      \"default\": {\n        \"$type\": \"color\",\n        \"$value\": \"oklch(0.527 0.154 150.069)\",\n        \"$extensions\": {\n          \"com.clossys.css\": {\n            \"raw\": \"oklch(0.527 0.154 150.069)\"\n          },\n          \"com.clossys.modes\": {\n            \"dark\": \"oklch(0.792 0.209 151.711)\"\n          },\n          \"com.clossys.provenance\": {\n            \"sourceLabel\": \"tailwindcss\",\n            \"sourceAddress\": \"tailwindcss@4.1 theme.css --color-green-700 (light) / --color-green-400 (dark)\",\n            \"sourceVariable\": \"--success\",\n            \"brand\": \"foundry-default\",\n            \"basePreset\": \"shadcn/neutral@4.23.0\"\n          }\n        }\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "themes.success",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn/neutral@4.23.0"
+      ],
+      "hash": "sha256:0141db5c2a3924edc9dbfc20e943458e57fc0b91edeacde611a4a2c7aea9c161",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "success",
+      "package": "designer",
+      "layer": "themes",
+      "slot": "themes.success",
+      "kind": "registry:theme",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "DATA-GAPS"
+      },
+      "reason": "Status role --success on the shadcn neutral preset: Tailwind CSS v4 default palette green-700 (light) and green-400 (dark), the OKLCH palette shadcn/ui v4 themes are built on. WCAG 2.2 1.4.3 text contrast vs --background: 4.53:1 on #F5F5F5, 11.15:1 on #0A0A0A (AA 4.5:1).",
+      "createdAt": "2026-11-03T09:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code theme payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

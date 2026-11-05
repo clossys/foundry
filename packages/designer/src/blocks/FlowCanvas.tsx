@@ -1,7 +1,7 @@
 import { useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { StatusMark } from "../atoms/StatusMark.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../atoms/internal/ui-vars.js";
+import { StatusMark } from "../components/StatusMark.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-vars.js";
 import { layoutFlowCanvas, type FlowCanvasEdge, type FlowCanvasNode, type FlowCanvasOrientation } from "./flow-canvas-layout.js";
 
 export interface FlowCanvasProps {
@@ -32,8 +32,8 @@ export interface FlowCanvasProps {
 const UNIT = "var(--spacing-xs, 4px)";
 const units = (value: number) => "calc(" + value + " * " + UNIT + ")";
 
-/** In forced colors the border colours collapse to one system colour, so the selected node also gets an outline in the button's system text colour. */
-const SELECTED_FORCED = "forced-colors:outline-solid forced-colors:outline-2 forced-colors:outline-offset-2 forced-colors:outline-current";
+/** Forced colors flatten border colours; a dashed selected perimeter stays distinct from solid keyboard focus. */
+const SELECTED_FORCED = "forced-colors:border-dashed forced-colors:outline-solid forced-colors:outline-2 forced-colors:outline-offset-2 forced-colors:outline-current";
 
 /**
  * The canvas's own direction: the closest `dir`, as `:dir()` reads it, so a

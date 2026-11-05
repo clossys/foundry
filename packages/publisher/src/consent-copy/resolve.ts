@@ -77,6 +77,9 @@ function resolveField(
   if (ref.locale !== undefined && ref.locale !== locale) refuse(field, "references a locale other than the one requested");
   const resolution: CopyResolution | undefined = resolveCopy({ ...(ref as unknown as CopyRef), locale });
   if (!isRecord(resolution)) refuse(field, "was not resolved; the resolver returned no approved copy for it");
+  // Writer marks preview drafts; consent refuses that lifecycle in either target.
+  // Approved resolutions and legacy host callbacks retain their existing shape.
+  if (resolution.status !== undefined && resolution.status !== "approved") refuse(field, "resolved to copy that is not approved");
   const { text, recordId, entryId, revision } = resolution;
   if (typeof text !== "string" || text.trim().length === 0) refuse(field, "resolved to blank text");
   if (text.includes(PLACEHOLDER_SENTINEL)) refuse(field, "resolved to text that contains the placeholder sentinel");
@@ -98,8 +101,9 @@ function resolveField(
  *
  * Throws an error naming the field, never echoing its text, when the
  * resolver returns nothing for a field (unapproved, stale, expired or
- * out-of-scope copy), when the text is blank or contains the placeholder
- * sentinel, and when the resolution's locale differs from `locale`. Under
+ * out-of-scope copy), when its reported lifecycle status is not approved,
+ * when the text is blank or contains the placeholder sentinel, and when the
+ * resolution's locale differs from `locale`. Under
  * `target: "production"` every field needs an owner approval and a
  * non-generated source. When `process.env.NODE_ENV` is `"production"` at
  * call time, a declared `"preview"` target throws and the production rules

@@ -1,27 +1,23 @@
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { FieldInputContext } from "react-aria-components";
-import { Dialog } from "../atoms/Dialog.js";
-import { SearchField } from "../atoms/SearchField.js";
-import { Tooltip } from "../atoms/Tooltip.js";
-import { IconButton } from "../atoms/IconButton.js";
-import { Icon } from "../atoms/Icon.js";
-import { UI_ALPHA_DISABLED } from "../atoms/internal/ui-vars.js";
+import { useShellCopy } from "../components/Banner.copy-context.js";
+import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
+import { useEffect, type ReactElement } from "react";
+import type { ModalOverlayProps, DialogProps, HeadingProps } from "react-aria-components";
 import { X } from "../icons/X.js";
 import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-menu-types.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
 
-function defaultResultCountMessage(count: number): string {
-  return String(count) + " results";
-}
-
-function CommandMenuGroupRegion({ label, children }: { label: string; children: ReactNode }) {
-  const headingId = useId();
-  return (
-    <div role="group" aria-labelledby={headingId} className="flex flex-col gap-xs">
-      <p id={headingId} className="m-0 px-sm py-xs text-caption text-ink-muted">{label}</p>
-      {children}
-    </div>
-  );
-}
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Dialog = componentLeaf<(props: Omit<ModalOverlayProps, "children" | "className"> & { children: DialogProps["children"]; className?: string; showCloseButton?: boolean }) => ReactElement>("components.dialog");
+const DialogTitle = componentLeaf<(props: Omit<HeadingProps, "slot">) => ReactElement>("components.dialog", "DialogTitle");
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Command = componentLeaf<typeof import("../components/command/index.js").Command>("components.command");
+const CommandInput = componentLeaf<typeof import("../components/command/index.js").CommandInput>("components.command", "CommandInput");
+const CommandList = componentLeaf<typeof import("../components/command/index.js").CommandList>("components.command", "CommandList");
+const CommandGroup = componentLeaf<typeof import("../components/command/index.js").CommandGroup>("components.command", "CommandGroup");
+const CommandItem = componentLeaf<typeof import("../components/command/index.js").CommandItem>("components.command", "CommandItem");
+const CommandEmpty = componentLeaf<typeof import("../components/command/index.js").CommandEmpty>("components.command", "CommandEmpty");
+const CommandShortcut = componentLeaf<typeof import("../components/command/index.js").CommandShortcut>("components.command", "CommandShortcut");
 
 /** Opt-in opening shortcut. Every open modal, including the command menu itself, keeps ownership of its keys. */
 export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuShortcutOptions): void {
@@ -49,107 +45,51 @@ export function useCommandMenuShortcut({ onOpen, enabled = true }: CommandMenuSh
   }, [enabled, onOpen]);
 }
 
-/** Navigation Material over host data. Dialog owns the overlay, focus containment and opener restoration. */
+/**
+ * Selected command collection owns virtual focus, active descendants and keyboard activation.
+ * Collection keys are namespaced because the stock menu keys groups and items in one collection,
+ * so a host group id equal to an item id would otherwise drop a row. Rows are named by their label;
+ * descriptions and shortcut hints stay visible text.
+ */
 export function CommandMenu({
   heading, searchLabel, closeLabel, emptyMessage, groups, isOpen, onOpenChange,
-  query, onQueryChange, filter, dir,
-  /** @default `${count} results` */
-  resultCountMessage = defaultResultCountMessage,
+  query, onQueryChange, filter, dir, resultCountMessage: suppliedResultCountMessage,
 }: CommandMenuProps) {
-  const id = useId();
-  const input = useRef<HTMLInputElement | null>(null);
-  const options = useRef(new Map<string, HTMLAnchorElement>());
-  const [activeId, setActiveId] = useState<string | null>(null);
-  useEffect(() => { setActiveId(null); }, [isOpen, query]);
-  const configureInput = useCallback((element: Element | null) => {
-    input.current = element instanceof HTMLInputElement ? element : null;
-    // SearchField exposes its exact input through this public context ref.
-    // These static semantics exist only while the open menu's input exists.
-    input.current?.setAttribute("role", "combobox");
-    input.current?.setAttribute("aria-expanded", "true");
-  }, []);
+  const copy = useShellCopy();
+  const resultCountMessage = suppliedResultCountMessage ?? ((count: number) => copy(SHELL_COPY_REFS.commands.results, { count }));
   const visibleGroups = groups.map(group => ({ ...group, items: group.items.filter(item =>
     filter ? filter(item, query) : item.label.toLowerCase().includes(query.toLowerCase()),
   ) })).filter(group => group.items.length > 0);
-  const visible = visibleGroups.flatMap(group => group.items);
-  const enabled = visible.filter(item => !item.disabled);
-  const active = enabled.find(item => item.id === activeId) ?? enabled[0];
-  const activeResultId = active?.id;
-  useEffect(() => {
-    if (isOpen && activeResultId !== undefined) {
-      options.current.get(activeResultId)?.scrollIntoView?.({ block: "nearest", inline: "nearest", behavior: "instant" });
-    }
-  }, [activeResultId, isOpen, query, groups]);
-  const optionId = (itemId: string) => `${id}-option-${encodeURIComponent(itemId)}`;
-  const keydown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.nativeEvent.isComposing) return;
-    if (event.key === "Escape") {
-      // Capture before SearchField's clear-on-Escape behavior.
-      event.preventDefault();
-      event.stopPropagation();
-      onOpenChange(false);
-      return;
-    }
-    if (event.target !== input.current) return;
-    if (event.key === "ArrowDown" || event.key === "ArrowUp") {
-      event.preventDefault();
-      event.stopPropagation();
-      if (!enabled.length) return;
-      const current = enabled.findIndex(item => item.id === active?.id);
-      const next = (current + (event.key === "ArrowDown" ? 1 : -1) + enabled.length) % enabled.length;
-      setActiveId(enabled[next]!.id);
-    } else if (event.key === "Enter" && active) {
-      event.preventDefault();
-      event.stopPropagation();
-      options.current.get(active.id)?.click();
-    }
-  };
+  const count = visibleGroups.reduce((total, group) => total + group.items.length, 0);
   if (!isOpen) return null;
-  return (
-    <Dialog trigger={null} isOpen={isOpen} onOpenChange={onOpenChange}>
-      <div dir={dir} className="flex min-h-0 min-w-0 flex-col gap-md" onKeyDownCapture={keydown}>
-        <div className="flex items-start justify-between gap-md">
-          <Dialog.Heading>{heading}</Dialog.Heading>
-          <Tooltip trigger={<IconButton label={closeLabel} icon={X} size="sm" onPress={() => onOpenChange(false)} />}>{closeLabel}</Tooltip>
-        </div>
-        <FieldInputContext.Provider value={{
-          ref: configureInput, "aria-controls": `${id}-results`, "aria-autocomplete": "list",
-          "aria-activedescendant": active ? optionId(active.id) : undefined,
-        }}>
-          <SearchField label={searchLabel} value={query} onChange={onQueryChange} autoFocus />
-        </FieldInputContext.Provider>
-        <div id={`${id}-results`} role="listbox" aria-label={searchLabel} className="min-h-0 overflow-auto">
-          {visibleGroups.map(group => (
-            <CommandMenuGroupRegion key={group.id} label={group.label}>
-              {group.items.map(item => (
-                <a key={item.id} id={optionId(item.id)} role="option" aria-label={item.label}
-                  aria-selected={active?.id === item.id} aria-disabled={item.disabled || undefined}
-                  href={item.disabled ? undefined : item.href} tabIndex={-1}
-                  ref={element => { if (element) options.current.set(item.id, element); else options.current.delete(item.id); }}
-                  onMouseDown={event => event.preventDefault()}
-                  onPointerMove={() => { if (!item.disabled) setActiveId(item.id); }}
-                  onClick={event => {
-                    if (item.disabled) { event.preventDefault(); return; }
-                    item.onAction?.();
-                    onOpenChange(false);
-                  }}
-                  className={`flex min-w-0 items-center gap-sm rounded-control border px-sm py-sm text-body text-ink-primary forced-colors:border-current ${active?.id === item.id ? "border-line-base bg-surface-selected underline" : "border-transparent"}`}
-                  style={{ opacity: item.disabled ? UI_ALPHA_DISABLED : undefined }}
-                >
-                  {item.icon ? <Icon glyph={item.icon} decorative size="sm" /> : null}
-                  <span className="min-w-0 flex-1 break-words">
-                    <span className="block">{item.label}</span>
-                    {item.description ? <span className="block text-body-s text-ink-secondary">{item.description}</span> : null}
-                  </span>
-                  {item.shortcutHint ? <span className="shrink-0 text-caption text-ink-muted">{item.shortcutHint}</span> : null}
-                </a>
-              ))}
-            </CommandMenuGroupRegion>
-          ))}
-        </div>
-        {visible.length === 0 ? <div className="text-body text-ink-secondary">{emptyMessage}</div> : null}
-        <span role="status" aria-live="polite" aria-atomic="true" className="sr-only">{resultCountMessage(visible.length)}</span>
-      </div>
-    </Dialog>
-  );
+  return <Dialog isOpen={isOpen} onOpenChange={onOpenChange} showCloseButton={false}>
+    <SemanticContent as="div" onKeyDownCapture={event => {
+      if (!event.nativeEvent.isComposing && event.key === "Escape") {
+        event.preventDefault(); event.stopPropagation(); onOpenChange(false);
+      }
+    }}>
+      <Command dir={dir} inputValue={query} onInputChange={onQueryChange} filter={() => true}>
+        <SemanticContent as="div" className="flex items-start justify-between gap-md">
+          <DialogTitle>{heading}</DialogTitle>
+          <Button aria-label={closeLabel} variant="ghost" size="sm" className="icon-control-sm rounded-control p-0" onPress={() => onOpenChange(false)}><Icon glyph={X} decorative size="sm" /></Button>
+        </SemanticContent>
+        <CommandInput aria-label={searchLabel} placeholder={searchLabel} />
+        <CommandList aria-label={searchLabel} selectionMode="none" shouldFocusWrap>
+          {visibleGroups.map(group => <CommandGroup key={group.id} id={JSON.stringify(["group", group.id])} heading={group.label}>
+            {group.items.map(item => <CommandItem key={item.id} id={JSON.stringify(["item", group.id, item.id])} aria-label={item.label} textValue={item.label} href={item.href} isDisabled={item.disabled}
+              onAction={() => { item.onAction?.(); onOpenChange(false); }}>
+              {item.icon ? <Icon glyph={item.icon} decorative size="sm" /> : null}
+              <SemanticContent as="span" className="min-w-0 flex-1 break-words">
+                <SemanticContent as="span" className="block">{item.label}</SemanticContent>
+                {item.description && item.description.trim().toLocaleLowerCase() !== group.label.trim().toLocaleLowerCase() ? <SemanticContent as="span" className="block text-body-s text-ink-secondary">{item.description}</SemanticContent> : null}
+              </SemanticContent>
+              {item.shortcutHint ? <CommandShortcut>{item.shortcutHint}</CommandShortcut> : null}
+            </CommandItem>)}
+          </CommandGroup>)}
+        </CommandList>
+        {count === 0 ? <CommandEmpty>{emptyMessage}</CommandEmpty> : null}
+        <SemanticContent as="span" role="status" aria-live="polite" aria-atomic="true" className="sr-only">{resultCountMessage(count)}</SemanticContent>
+      </Command>
+    </SemanticContent>
+  </Dialog>;
 }

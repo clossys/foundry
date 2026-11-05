@@ -1,6 +1,6 @@
 import type { AriaAttributes, ReactNode } from "react";
-import type { BadgeVariant } from "../../atoms/Badge.js";
-import type { StatusMarkTone } from "../../atoms/StatusMark.js";
+import type { BadgeVariant } from "../../components/Badge.js";
+import type { StatusMarkTone } from "../../components/StatusMark.js";
 import type { SectionGround } from "../section-ground.js";
 
 export type ItemSize = "standard" | "display";

@@ -1,0 +1,109 @@
+{
+  "name": "studio-references",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, LinkButton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\nexport interface ReferencesCopy {\n  title: string;\n  description: string;\n  uses: string;\n  usedBy: string;\n  lineage: string;\n  version: string;\n  source: string;\n  none: string;\n}\n\nexport interface ReferenceLink { label: string; href?: string }\n/** One step of how the shown version came to be: a version, its mode and where it came from. */\nexport interface LineageRow { key: string; version: string; mode: string; source: string }\n\n/** The `references` input of `sections.studio.references`: links in both directions, then lineage. */\nexport interface ReferencesInput { copy: ReferencesCopy; uses: readonly ReferenceLink[]; usedBy: readonly ReferenceLink[]; lineage: readonly LineageRow[] }\n\nfunction RefList({ label, refs, none }: { label: string; refs: readonly ReferenceLink[]; none: string }) {\n  return <CardDescription className=\"flex flex-wrap items-center gap-1\">\n    {label}\n    {refs.length\n      ? refs.map(ref => ref.href\n        ? <LinkButton key={ref.label} href={ref.href} variant=\"outline\" size=\"sm\">{ref.label}</LinkButton>\n        : <Badge key={ref.label} variant=\"outline\">{ref.label}</Badge>)\n      : <Badge variant=\"ghost\">{none}</Badge>}\n  </CardDescription>;\n}\n\n/** `sections.studio.references`: what this leaf reads from other leaves, what reads it, and its lineage. */\nexport default function ReferencesSection({ references }: { references: ReferencesInput }) {\n  return <Card size=\"sm\" data-studio-section=\"references\">\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{references.copy.title}</CardTitle>\n      <CardDescription>{references.copy.description}</CardDescription>\n    </CardHeader>\n    <CardContent className=\"flex flex-col gap-3\">\n      <RefList label={references.copy.uses} refs={references.uses} none={references.copy.none} />\n      <RefList label={references.copy.usedBy} refs={references.usedBy} none={references.copy.none} />\n      {references.lineage.length > 0 && <Table aria-label={references.copy.lineage}>\n        <TableHeader>\n          <TableHead isRowHeader>{references.copy.version}</TableHead>\n          <TableHead>{references.copy.lineage}</TableHead>\n          <TableHead>{references.copy.source}</TableHead>\n        </TableHeader>\n        <TableBody>\n          {references.lineage.map(row => <TableRow key={row.key} id={row.key}>\n            <TableCell>{row.version}</TableCell>\n            <TableCell>{row.mode}</TableCell>\n            <TableCell className=\"whitespace-normal break-all\">{row.source}</TableCell>\n          </TableRow>)}\n        </TableBody>\n      </Table>}\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-references\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf References\",\n  \"description\": \"Uses and used by, in both directions across agents, and the lineage of each version.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-references/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.references",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.table",
+          "files": [
+            "registry/aria-nova/ui/table.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:41cfc00aac448bdc7038a6c5f930f0b0bbc11a746ac3ea03a87a8df506eea333",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-references",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.references",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "writer",
+        "model": "UNKNOWN",
+        "by": "studio-references-copy"
+      },
+      "reason": "Bind the existing References section labels through display-ready Writer copy input.",
+      "createdAt": "2026-11-01T16:15:03Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.references-title",
+          "studio.references-description",
+          "studio.references-uses",
+          "studio.references-used-by",
+          "studio.references-lineage",
+          "studio.references-version",
+          "studio.references-source",
+          "studio.references-none"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

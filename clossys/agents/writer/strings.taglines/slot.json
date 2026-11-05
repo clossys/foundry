@@ -1,0 +1,26 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.taglines",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.identity",
+    "l2": "identity-taglines",
+    "order": 39
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 120,
+    "maxWords": 20
+  },
+  "inputs": [
+    "advantage.proposition.promise",
+    "identity.brand.essence"
+  ],
+  "uses": [],
+  "options": 3,
+  "varyOn": "tone"
+}

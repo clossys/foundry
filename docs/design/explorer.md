@@ -4,7 +4,7 @@
 Supply a `tree` and an accessible `label`. A node has a stable `id`, a `label`, an
 optional `icon`, an optional `href` or `onSelect` callback, and optional `children`.
 The presence of `children` identifies a folder, including an empty folder.
-Default folders and files use distinct Designer Icon atoms. Custom icons are
+Default folders and files use distinct Designer Icon components. Custom icons are
 decorative content; the label remains the row's accessible name.
 
 ```tsx

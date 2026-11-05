@@ -1,0 +1,57 @@
+{
+  "name": "icon-info",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "icons/info.svg",
+      "type": "registry:file",
+      "content": "<svg\n  xmlns=\"http://www.w3.org/2000/svg\"\n  width=\"24\"\n  height=\"24\"\n  viewBox=\"0 0 24 24\"\n  fill=\"none\"\n  stroke=\"currentColor\"\n  stroke-width=\"2\"\n  stroke-linecap=\"round\"\n  stroke-linejoin=\"round\"\n>\n  <circle cx=\"12\" cy=\"12\" r=\"10\" />\n  <path d=\"M12 16v-4\" />\n  <path d=\"M12 8h.01\" />\n</svg>\n"
+    },
+    {
+      "path": "clossys/assets.icon-info.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"icon-info\": {\n      \"default\": {\n        \"$type\": \"glyph\",\n        \"$value\": [\n          [\n            \"circle\",\n            {\n              \"cx\": \"12\",\n              \"cy\": \"12\",\n              \"r\": \"10\",\n              \"key\": \"1mglay\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"M12 16v-4\",\n              \"key\": \"1dtifu\"\n            }\n          ],\n          [\n            \"path\",\n            {\n              \"d\": \"M12 8h.01\",\n              \"key\": \"e9boi3\"\n            }\n          ]\n        ]\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.icon-info",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "lucide/info@1.65.0"
+      ],
+      "hash": "sha256:4b9e7b2fa1943280ce9e270b9d4859ebac16af061c13b7a7b53f4acb8be766c0",
+      "license": "ISC"
+    },
+    "element": {
+      "id": "icon-info",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.icon-info",
+      "kind": "registry:item",
+      "license": "ISC",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Vendored lucide/info@1.65.0 glyph (the Studio's lucide icon library) adopted unmodified.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

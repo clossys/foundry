@@ -174,3 +174,39 @@ describe("StatusList flat items", () => {
     for (const dl of dls) expect(dl.parentElement?.querySelector("h3")).not.toBeNull();
   });
 });
+
+// S4-2/S4-4: preserve the owner's presence predicate and ground on the shared region.
+it("S4 preserves absent, supporting-only and falsy title regions with original root attributes", () => {
+  const view = render(<StatusList labels={LABELS} items={[]} legendLabel="Legend" id="host" dir="rtl" data-host="yes" style={{ marginTop: 7 }} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("SECTION");
+  expect(root).toHaveAttribute("id", "host");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.children).toHaveLength(2);
+  expect(root.querySelectorAll("#host")).toHaveLength(0);
+  for (const heading of [0, "", null, false]) {
+    view.rerender(<StatusList labels={LABELS} items={[]} legendLabel="Legend" heading={heading} />);
+    expect(view.container.firstElementChild?.firstElementChild).toHaveClass("gap-xs");
+    expect(view.container.firstElementChild?.firstElementChild?.querySelector("h2")).toBeNull();
+  }
+  view.rerender(<StatusList labels={LABELS} items={[]} legendLabel="Legend" description="Support" ground="inverse" />);
+  expect(view.getByText("Support")).toHaveClass("text-ink-on-inverse-muted");
+  view.rerender(<StatusList labels={LABELS} items={[]} legendLabel="Legend" heading="Title" headingLevel={5} ground="inverse"  eyebrow="Label" />);
+  expect(view.getByRole("heading", { name: "Title", level: 5 })).toHaveClass("text-h2", "text-ink-on-inverse");
+});
+
+it("S4-4 preserves direct group headings and flat definition-list ownership", () => {
+  const view = render(<StatusList labels={LABELS} groups={GROUPS} legendLabel="Legend" headingLevel={6} />);
+  const root = view.container.firstElementChild!;
+  expect(root.tagName).toBe("SECTION");
+  for (const group of root.querySelectorAll("section")) {
+    expect(Array.from(group.children).map(child => child.tagName)).toEqual(["H6", "DL"]);
+    expect(group.firstElementChild).toHaveClass("text-h3");
+  }
+  view.rerender(<StatusList labels={LABELS} items={GROUPS[0].items} legendLabel="Legend" />);
+  expect(view.container.querySelectorAll("h1,h2,h3,h4,h5,h6")).toHaveLength(0);
+  expect(view.container.firstElementChild?.lastElementChild?.tagName).toBe("DL");
+  expect(view.getAllByRole("list", { name: "Legend" })).toHaveLength(1);
+});

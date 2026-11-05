@@ -1,0 +1,185 @@
+/**
+ * Record suites for `clossys check`: Publisher's page conformance over the consumer's
+ * page records, the Writer and Director slot suites over their pinned slots, the
+ * agents' slot contracts against the slot engine's `clossys.slot-contract/1` schema,
+ * and Designer's ref-verbatim check over every pinned library version.
+ *
+ * Each suite is the owning package's own check, loaded from its shipped dist; Producer
+ * only gathers inputs and prints. Ref-verbatim always enforces; other suites
+ * remain report-only unless `strict` is set.
+ */
+import { join } from "node:path";
+import { agentModule } from "../server/cells.js";
+import { readPinnedDirector } from "../records/director-pinned.js";
+import { readPublisher, readWriter } from "../publish/site-source.js";
+import { writerText } from "../publish/site-plan.js";
+import { validateSlotContract } from "../records/validate.js";
+
+export interface SuiteFinding { readonly severity: "error" | "warning" | "info"; readonly where: string; readonly code: string; readonly message: string }
+
+export interface SuiteReport {
+  readonly suite: "archetypes" | "writer-slots" | "director-slots" | "slot-contracts" | "ref-verbatim";
+  readonly status: "ran" | "error";
+  /** Pages, cells or contracts the suite looked at. */
+  readonly checked: number;
+  readonly totals: Readonly<Record<SuiteFinding["severity"], number>>;
+  readonly findings: readonly SuiteFinding[];
+  readonly error?: string;
+  /** The suite's own verdict where it has one (Publisher page conformance). */
+  readonly exitCode?: 0 | 1;
+}
+
+export interface RecordSuitesReport {
+  readonly schemaVersion: 1;
+  readonly root: string;
+  readonly strict: boolean;
+  /** 1 when ref-verbatim fails, or when strict and any suite fails. */
+  readonly exitCode: 0 | 1;
+  readonly suites: readonly SuiteReport[];
+}
+
+const isRecord = (value: unknown): value is Record<string, any> => !!value && typeof value === "object" && !Array.isArray(value);
+const message = (error: unknown) => error instanceof Error ? error.message : String(error);
+
+function report(suite: SuiteReport["suite"], checked: number, findings: SuiteFinding[]): SuiteReport {
+  const totals = { error: 0, warning: 0, info: 0 };
+  for (const finding of findings) totals[finding.severity]++;
+  return { suite, status: "ran", checked, totals, findings };
+}
+const failed = (suite: SuiteReport["suite"], error: unknown): SuiteReport =>
+  ({ suite, status: "error", checked: 0, totals: { error: 0, warning: 0, info: 0 }, findings: [], error: message(error) });
+
+/**
+ * The consumer's page records: the compiled content map, its route pack, Writer's
+ * section bindings and each page cell's Copy bullets resolved to Writer text. An
+ * archetype is taken only from the entry or route that declares one; nothing is inferred.
+ */
+export async function consumerPageRecords(root: string): Promise<{ records: unknown[]; routes: string[]; directorCells: string[] }> {
+  const publisher = await readPublisher(root);
+  const writer = await readWriter(root);
+  const text = writerText(writer);
+  const pageCopy: Record<string, Record<string, string>> = {};
+  const pages: Record<string, { archetype?: string; format?: string }> = {};
+  for (const entry of publisher.entries as readonly Record<string, any>[]) {
+    const id = String(entry.id);
+    const cell = publisher.cellOfEntry[id];
+    const copy: Record<string, string> = {};
+    for (const bullet of cell ? publisher.copy[cell] ?? [] : []) {
+      const value = text.alias(`${bullet.cell}.${bullet.key}`);
+      if (value !== undefined) copy[bullet.key] = value;
+    }
+    pageCopy[id] = copy;
+    const route = publisher.routes.find(row => isRecord(row) && row.instanceId === id) as Record<string, any> | undefined;
+    const archetype = [entry.archetype, entry.source?.archetype, route?.archetype].find(value => typeof value === "string");
+    const format = [entry.pageFormat, route?.pageFormat].find(value => typeof value === "string");
+    if (archetype || format) pages[id] = { ...(archetype ? { archetype } : {}), ...(format ? { format } : {}) };
+  }
+  const archetypes = await agentModule("publisher", "archetypes/index.js");
+  const records = archetypes.pageRecordsFromPublication({
+    contentMap: { publicationId: publisher.publicationId, format: publisher.format, entries: publisher.entries },
+    routePack: { routes: publisher.routes }, sectionBindings: writer.sections, pageCopy, pages,
+  });
+  const routes = (publisher.routes as readonly unknown[]).filter(isRecord).map(row => row.path).filter((path): path is string => typeof path === "string");
+  const directorCells = (await readPinnedDirector(join(root, "clossys"))).cells.map(cell => cell.id);
+  return { records, routes, directorCells };
+}
+
+async function archetypeSuite(root: string, strict: boolean): Promise<SuiteReport> {
+  const set = await consumerPageRecords(root);
+  const archetypes = await agentModule("publisher", "archetypes/index.js");
+  const result = archetypes.checkPageRecords(set, { strict });
+  const findings: SuiteFinding[] = result.findings.map((finding: any) => ({
+    severity: finding.severity, code: `${finding.check}/${finding.code}`, message: finding.message,
+    where: `${finding.page}${typeof finding.section === "number" ? `#${finding.section}${finding.role ? ` (${finding.role})` : ""}` : ""}`,
+  }));
+  return { ...report("archetypes", set.records.length, findings), exitCode: result.exitCode };
+}
+
+/**
+ * Writer's slot suite parses legacy cell documents; pinned Writer candidates are a different
+ * format, so the suite reports that it cannot run rather than passing over nothing.
+ * Locale coverage, won't-claim and Director links run in `clossys write --check`.
+ */
+async function writerSuite(): Promise<SuiteReport> {
+  return failed("writer-slots", new Error("Writer's slot suite reads cell documents, not pinned slot candidates; run clossys write --check"));
+}
+
+/** The Director's own contract checks over each pinned Director candidate. */
+async function directorSuite(root: string): Promise<SuiteReport> {
+  const checks = await agentModule("director", "slot-contracts/checks.js");
+  const format = await agentModule("director", "slot-contracts/format.js");
+  const director = await readPinnedDirector(join(root, "clossys"));
+  const byId = new Map((format.loadDirectorContracts().slots as { id: string }[]).map(contract => [contract.id, contract]));
+  const findings: SuiteFinding[] = director.unreadable.map(row => ({ severity: "error", code: "INPUT", message: row.message, where: `${row.slot} ${row.path}` }));
+  for (const cell of director.cells) {
+    const contract = byId.get(cell.id);
+    if (!contract) { findings.push({ severity: "error", code: "INPUT", message: `No Director slot contract for ${cell.id}`, where: `${cell.id} ${cell.path}` }); continue; }
+    // Director findings carry no severity: each one is a contract miss.
+    for (const finding of checks.checkDirectorCell(cell, contract) as { check: string; slot: string; path?: string; message: string }[]) {
+      findings.push({ severity: "error", code: finding.check, message: finding.message, where: `${finding.slot}${finding.path ? ` ${finding.path}` : ""}` });
+    }
+  }
+  return report("director-slots", director.cells.length + director.unreadable.length, findings);
+}
+
+/** Writer and Director contracts, projected by their own packages, against the shared schema. */
+export async function slotContractSuite(): Promise<SuiteReport> {
+  const findings: SuiteFinding[] = [];
+  let checked = 0;
+  for (const [kind, load] of [["writer", "loadWriterContracts"], ["director", "loadDirectorContracts"]] as const) {
+    const format = await agentModule(kind, "slot-contracts/format.js");
+    for (const contract of format[load]().slots) {
+      checked++;
+      const record = format.toSlotContractRecord(contract);
+      const result = validateSlotContract(record);
+      if (!result.ok) for (const issue of result.issues) findings.push({ severity: "error", where: `${kind}:${record.slot}`, code: "slot-contract/schema", message: `${issue.path} ${issue.message}` });
+    }
+  }
+  return report("slot-contracts", checked, findings);
+}
+
+/**
+ * Designer's ref-verbatim check over every pin, of the Designer slot model and the legacy library store: each pinned
+ * code file must be its recorded reference file plus allowed hunks. The shrink-only baseline is inventory; every failure remains an error.
+ */
+export async function refVerbatimSuite(root: string): Promise<SuiteReport> {
+  const { refVerbatimReport } = await import("@clossys/designer/ref-verbatim");
+  const result = refVerbatimReport(join(root, "clossys"));
+  const findings: SuiteFinding[] = result.findings.map(finding => ({
+    severity: "error", code: finding.code, message: finding.detail,
+    where: `${finding.element}${finding.file ? ` ${finding.file}` : ""}${finding.range ? `:${finding.range.start.line}` : ""}`,
+  }));
+  for (const key of result.baselined) findings.push({ severity: "error", code: "REF-BASELINED", where: key, message: "fails ref-verbatim; listed in the shrink-only baseline" });
+  return { ...report("ref-verbatim", result.elements.length, findings), exitCode: findings.length ? 1 : 0 };
+}
+
+export async function runRecordSuites(rootIn: string, options: { strict?: boolean } = {}): Promise<RecordSuitesReport> {
+  const strict = options.strict === true;
+  const run = (suite: SuiteReport["suite"], body: () => Promise<SuiteReport>) => body().catch(error => failed(suite, error));
+  const suites = [
+    await run("archetypes", () => archetypeSuite(rootIn, strict)),
+    await run("writer-slots", () => writerSuite()),
+    await run("director-slots", () => directorSuite(rootIn)),
+    await run("slot-contracts", () => slotContractSuite()),
+    await run("ref-verbatim", () => refVerbatimSuite(rootIn)),
+  ];
+  const failing = suites.some(suite => suite.status === "error" || suite.totals.error > 0 || suite.exitCode === 1);
+  return { schemaVersion: 1, root: rootIn, strict, exitCode: (strict && failing) || suites.some(s => s.suite === "ref-verbatim" && (s.status === "error" || s.exitCode === 1)) ? 1 : 0, suites };
+}
+
+const LABEL: Record<SuiteReport["suite"], string> = { "archetypes": "Archetypes", "writer-slots": "Writer slots", "director-slots": "Director slots", "slot-contracts": "Slot contracts", "ref-verbatim": "Ref verbatim" };
+const UNIT: Record<SuiteReport["suite"], string> = { "archetypes": "pages", "writer-slots": "cells", "director-slots": "cells", "slot-contracts": "contracts", "ref-verbatim": "pins" };
+
+/** Human summary: every archetype finding, at most `limit` per other suite. */
+export function recordSuitesSummary(result: RecordSuitesReport, limit = 20): string {
+  const lines = [`Record suites (${result.strict ? "strict" : "report only"}): ${result.root}`];
+  for (const suite of result.suites) {
+    if (suite.status === "error") { lines.push(`  ${LABEL[suite.suite]}: error: ${suite.error}`); continue; }
+    lines.push(`  ${LABEL[suite.suite]}: ${suite.checked} ${UNIT[suite.suite]}, errors=${suite.totals.error} warnings=${suite.totals.warning} info=${suite.totals.info}`);
+    const shown = suite.suite === "archetypes" ? suite.findings : suite.findings.slice(0, limit);
+    for (const finding of shown) lines.push(`    ${finding.severity} ${finding.where} [${finding.code}] ${finding.message}`);
+    if (shown.length < suite.findings.length) lines.push(`    ... ${suite.findings.length - shown.length} more (--json for all)`);
+  }
+  return lines.join("\n");
+}
+

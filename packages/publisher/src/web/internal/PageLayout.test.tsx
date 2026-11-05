@@ -8,8 +8,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import type { CopyRef, CopyRegistry, CopyResolution, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
-import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "../frame/index.js";
-import type { SiteFrameConfig } from "../frame/index.js";
+import { SITE_MAIN_ID, SiteFrame, siteShellFor } from "@clossys/designer/frames";
+import type { SiteFrameConfig } from "@clossys/designer/frames";
 import { AuthView } from "../views/AuthView.js";
 import { CaptureView } from "../views/CaptureView.js";
 import { DocumentView } from "../views/DocumentView.js";
@@ -137,19 +137,30 @@ function landmarks(container: HTMLElement) {
   };
 }
 
-/** The layout's column: the view's chrome-free root, or the legacy page's `<main>`. */
+/** The Section root a chrome-free view's column is: Designer's `SectionFrame` (`sections.band`). */
+const SECTION_ROOT = "section[data-designer-section-frame]";
+
+/** The layout's column: the view's chrome-free Section root, or the legacy page's `<main>`. */
 function column(container: HTMLElement): HTMLElement {
   return (container.querySelector("main") ?? container.firstElementChild) as HTMLElement;
+}
+
+/** The element holding the slots: the Section's one content column, or the legacy `<main>` itself. */
+function slotParent(root: HTMLElement): HTMLElement {
+  if (!root.matches(SECTION_ROOT)) return root;
+  expect(root.children).toHaveLength(1);
+  return root.firstElementChild as HTMLElement;
 }
 
 /** The layout's three slots, found by position in the column: header, the card (and what wraps it), the notes. */
 function slots(container: HTMLElement) {
   const root = column(container);
-  const header = root.firstElementChild as HTMLElement;
-  const card = root.querySelector(".rounded-control") as HTMLElement;
+  const parent = slotParent(root);
+  const header = parent.firstElementChild as HTMLElement;
+  const card = parent.querySelector(".rounded-control") as HTMLElement;
   let body: HTMLElement = card;
-  while (body.parentElement !== root) body = body.parentElement as HTMLElement;
-  return { root, header, card, body, notes: body.nextElementSibling as HTMLElement | null };
+  while (body.parentElement !== parent) body = body.parentElement as HTMLElement;
+  return { root, parent, header, card, body, notes: body.nextElementSibling as HTMLElement | null };
 }
 
 describe("page layout: header, body card and notes", () => {
@@ -163,8 +174,8 @@ describe("page layout: header, body card and notes", () => {
 
     it("puts the body in a card after the header, and the notes after the card", () => {
       const { container } = render(fixture.build({ notes: NOTES }));
-      const { root, header, card, body, notes } = slots(container);
-      expect([...root.children]).toEqual([header, body, notes]);
+      const { parent, header, card, body, notes } = slots(container);
+      expect([...parent.children]).toEqual([header, body, notes]);
       expect(card).toHaveTextContent("Card body");
       expect(notes).toContainElement(screen.getByRole("link", { name: "Questions? Email us" }));
       expect(card).not.toContainElement(notes);
@@ -194,22 +205,27 @@ describe("page layout: header, body card and notes", () => {
       ["an empty list", []],
     ])("omits the notes element when notes is %s", (_label, empty) => {
       const { container } = render(fixture.build({ notes: empty as ReactNode }));
-      const { root, body } = slots(container);
+      const { parent, body } = slots(container);
       expect(body.nextElementSibling).toBeNull();
-      expect(root.lastElementChild).toBe(body);
+      expect(parent.lastElementChild).toBe(body);
     });
 
-    it("renders no header, footer or main of its own, and exactly one h1", () => {
+    it("is one Section, the column itself, and renders no header, footer or main of its own, and exactly one h1", () => {
       const { container } = render(fixture.build({ notes: NOTES }));
-      expect(container.firstElementChild?.tagName).toBe("DIV");
+      expect(container.children).toHaveLength(1);
+      expect(container.firstElementChild?.tagName).toBe("SECTION");
+      expect(container.firstElementChild?.matches(SECTION_ROOT)).toBe(true);
+      expect(container.querySelectorAll("[data-designer-section-frame]")).toHaveLength(1);
+      expect(column(container)).toBe(container.firstElementChild);
       expect(container.querySelector("header, main, footer, nav, [role='main'], [role='banner'], [role='contentinfo']")).toBeNull();
       expect(container.querySelectorAll("h1")).toHaveLength(1);
       expect(screen.getAllByRole("heading", { level: 1 })).toHaveLength(1);
     });
 
-    it("inside SiteFrame leaves exactly one skip link, banner, main (with the frame's id), contentinfo and h1", () => {
+    it("inside SiteFrame leaves exactly one skip link, banner, main (with the frame's id), contentinfo and h1, and the main holds only the Section", () => {
       const { container } = render(framed(fixture.build({ notes: NOTES })));
       const found = landmarks(container);
+      expect([...found.mains[0]!.children].map((child) => child.matches(SECTION_ROOT))).toEqual([true]);
       expect(found.skipLinks).toHaveLength(1);
       expect(found.banners).toHaveLength(1);
       expect(found.mains).toHaveLength(1);

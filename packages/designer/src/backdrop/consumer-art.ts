@@ -1,5 +1,6 @@
 import { TOKENS } from "../tokens/tokens.js";
-import { BACKDROP_BUDGET_CEILING_BYTES } from "./contract.js";
+import { BACKDROP_BUDGET_CEILING_BYTES, checkBackdropContract } from "./contract.js";
+import type { BackdropCheckOptions, BackdropContract, BackdropReport } from "./contract.js";
 
 /** Placement within the existing art seams; these are not catalog function axes. */
 export type ConsumerArtPosition = "backdrop" | "media";
@@ -43,6 +44,16 @@ export interface ConsumerArtFinding {
 }
 export interface ConsumerArtReport {
   ok: boolean;
+  findings: ConsumerArtFinding[];
+}
+
+export type ImageBackdropContract = Extract<BackdropContract, { kind: "image" }>;
+export type StillBackdropArt = Extract<ConsumerArtContract, { slot: "backdrop" }>;
+export interface StillBackdropReport {
+  ok: boolean;
+  art: ConsumerArtReport;
+  backdrop: BackdropReport;
+  /** Mismatches between otherwise valid art and backdrop declarations. */
   findings: ConsumerArtFinding[];
 }
 
@@ -129,4 +140,37 @@ export function checkConsumerArtContract(value: unknown): ConsumerArtReport {
     }
   } catch { fail("art", "The declaration could not be read."); }
   return { ok: findings.length === 0, findings };
+}
+
+/**
+ * Binds static artwork to its image-backdrop declaration before rendering.
+ * Byte counts remain consumer declarations; this check does not fetch a source
+ * or inspect the rendered layer, which still needs `checkBackdropElement`.
+ */
+export function checkStillBackdrop(
+  art: unknown,
+  contract: ImageBackdropContract,
+  options?: BackdropCheckOptions,
+): StillBackdropReport {
+  const artReport = checkConsumerArtContract(art);
+  const backdropReport = checkBackdropContract(contract, options);
+  const findings: ConsumerArtFinding[] = [];
+  const fail = (path: string, message: string) => { findings.push({ path, message }); };
+  if (artReport.ok && backdropReport.ok) {
+    try {
+      const still = art as ConsumerArtContract;
+      if (still.slot !== "backdrop") fail("art.slot", "Still backdrops require the backdrop art placement.");
+      if (still.loading !== "lazy") fail("art.loading", "Still backdrop art must load lazily.");
+      if (!dataRecord(contract) || !dataRecord(contract.loading)) {
+        fail("backdrop", "Expected plain backdrop and loading declarations.");
+      } else {
+        if (contract.kind !== "image") fail("backdrop.kind", "Still artwork requires an image backdrop declaration.");
+        if (contract.loading.strategy !== "lazy") fail("backdrop.loading.strategy", "A static lazy image requires a lazy backdrop declaration.");
+        if (still.bytes > contract.loading.budgetBytes) fail("art.bytes", "Declared art bytes exceed the backdrop loading budget.");
+      }
+    } catch {
+      fail("backdrop", "The still backdrop binding could not be read.");
+    }
+  }
+  return { ok: artReport.ok && backdropReport.ok && findings.length === 0, art: artReport, backdrop: backdropReport, findings };
 }

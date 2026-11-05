@@ -1,0 +1,25 @@
+{
+  "package": "open-props",
+  "version": "1.7.23",
+  "commit": "fcb77853851109cc45a801fc18b36293eb1f5be7",
+  "source": {
+    "package": "open-props",
+    "version": "1.7.23",
+    "commit": "fcb77853851109cc45a801fc18b36293eb1f5be7",
+    "file": "src/props.aspects.css",
+    "url": "https://raw.githubusercontent.com/argyleink/open-props/fcb77853851109cc45a801fc18b36293eb1f5be7/src/props.aspects.css",
+    "sha256": "fcdbb315c25f081d3c5a2da83c4cab23f773f16cdd20ee56bfa933272744f6e2",
+    "bytes": 172
+  },
+  "license": {
+    "file": "LICENSE",
+    "url": "https://raw.githubusercontent.com/argyleink/open-props/fcb77853851109cc45a801fc18b36293eb1f5be7/LICENSE",
+    "bytes": 1068,
+    "sha256": "fed3aa342094f6bb33701d09133c159a4c124e509ede255a889dd2c28ec3ab6e"
+  },
+  "rosterSha256": "6cb331af26cd88d9ebd35e0365af91fef92955e60d2d6456b3f08fab4244d0f3",
+  "observedFiles": {
+    "src/props.aspects.js": "9d50831e089963e34879efed2ad42d823476605bd80c4bb9c2b11c4f037a7f73",
+    "package.json": "dab7d3f760983e601d00572a720ecb80957978eb950f2a288ffcc0e3d2cf320a"
+  }
+}

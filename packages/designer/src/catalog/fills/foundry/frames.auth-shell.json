@@ -1,0 +1,103 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.auth-shell",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./frames#AuthFrame",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.auth-shell",
+      "source": "foundry",
+      "sourceAddress": "./frames#AuthFrame",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "auth-shell": {
+      "composes": [],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/frames/AuthFrame.tsx",
+            "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          },
+          {
+            "path": "packages/designer/src/shell/SkipLink.tsx",
+            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
+            "file": "packages/designer/src/shell/SkipLink.tsx",
+            "line": 3
+          }
+        ]
+      },
+      "impl": {
+        "export": "AuthFrame",
+        "kind": "package",
+        "module": "@clossys/designer/frames"
+      },
+      "members": [],
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "frames.auth-shell",
+      "slots": {
+        "main": "children",
+        "skip-link": "skipLabel"
+      },
+      "statePorts": {}
+    }
+  }
+}

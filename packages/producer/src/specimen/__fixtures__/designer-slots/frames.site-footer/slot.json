@@ -1,0 +1,120 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.site-footer",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.regions",
+    "l2": "footers",
+    "order": 233
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "footer",
+    "landmarks": [
+      {
+        "slot": "columns",
+        "role": "contentinfo",
+        "topLevel": true,
+        "nameRequired": false
+      }
+    ],
+    "slots": [
+      {
+        "id": "columns",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "links",
+        "required": false,
+        "accepts": "components.link"
+      },
+      {
+        "id": "legal",
+        "required": false,
+        "accepts": "host-node"
+      },
+      {
+        "id": "social",
+        "required": false,
+        "accepts": "components.icon"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "ground.base",
+        "ground.inverse",
+        "rule.on",
+        "rule.off",
+        "overlay.on",
+        "overlay.off"
+      ]
+    },
+    "statePorts": [],
+    "rendering": "server",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.spacing",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono",
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.radius",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.destructive"
+      ],
+      "assets": [
+        "assets.mark",
+        "assets.image"
+      ]
+    },
+    "composes": [
+      "components.link",
+      "components.icon",
+      "components.logo",
+      "components.separator",
+      "components.semantic-content"
+    ]
+  },
+  "inputs": [],
+  "uses": [
+    "components.icon",
+    "components.link",
+    "components.logo",
+    "components.semantic-content",
+    "components.separator"
+  ]
+}

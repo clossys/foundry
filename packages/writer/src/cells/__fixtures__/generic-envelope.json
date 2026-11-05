@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "revision": 3,
+  "state": "draft",
+  "locale": "en",
+  "activation": "none",
+  "source": {
+    "kind": "generated",
+    "reference": "synthetic/cell-roundtrip"
+  },
+  "scope": ["Generic section copy"],
+  "records": [
+    {
+      "id": "st.0000000002",
+      "leaf": "strings.page-titles",
+      "context": "sample.auth.heading",
+      "status": "draft",
+      "origin": "foundry-default",
+      "limits": { "maxChars": 120 },
+      "text": "# A heading\n<!-- literal comment\n\\literal slash\n\n{count, plural,\n  one {One item}\n  other {# items}\n}"
+    },
+    {
+      "id": "st.0000000001",
+      "leaf": "strings.actions",
+      "context": "sample.auth.action",
+      "status": "draft",
+      "origin": "foundry-default",
+      "text": "Continue"
+    },
+    {
+      "id": "ps.0000000001",
+      "leaf": "passages.sign-in-form",
+      "context": "sample.auth.passage",
+      "schema": "passages.sign-in-form",
+      "schemaDigest": "synthetic-schema-digest",
+      "fields": { "heading": { "ref": "string", "id": "st.0000000002" } },
+      "status": "draft",
+      "origin": "foundry-default"
+    }
+  ],
+  "bindings": [
+    { "cellId": "sample.auth.primary", "recordId": "st.0000000002", "target": "heading", "kind": "CopyRef" },
+    { "cellId": "sample.auth.action", "recordId": "st.0000000001", "target": "action", "kind": "CopyRef" },
+    { "cellId": "sample.auth.secondary", "recordId": "st.0000000002", "target": "label", "kind": "CopyRef" }
+  ],
+  "externalRecords": [
+    { "recordId": "st.0000000003", "source": "example-common.r1.en.json", "sourceContext": "sample.common.cancel" }
+  ],
+  "coverage": { "missing": [], "total": 3 },
+  "reviews": [],
+  "needs": []
+}

@@ -15,6 +15,7 @@ export default defineConfig({
     // Builds dist/ once, before any test file runs; test files never rebuild it (#1385).
     globalSetup: ["../../scripts/lib/vitest-build-package.mjs"],
     include: ["src/**/*.test.ts"],
+    setupFiles: ["./vitest.setup.ts"],
     testTimeout: 5_000,
     globals: false,
   },

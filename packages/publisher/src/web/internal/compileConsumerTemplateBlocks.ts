@@ -7,7 +7,7 @@
 
 import type { ReactNode } from "react";
 import { createElement } from "react";
-import { Card } from "@clossys/designer/atoms/server";
+import { Card } from "@clossys/designer/components/server";
 import { MarketingChapter, PageHeader, Stat } from "@clossys/designer/blocks/server";
 import type { ResolvedWebGroupItem, WebTemplateBlockSpec } from "../types.js";
 

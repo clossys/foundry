@@ -7,7 +7,7 @@
 //   node scripts/generate-loop-section.mjs <packageDir> [--write] [<repoRoot>]
 //
 // <packageDir> is a package's own directory name under packages/ (for
-// example "strategist"). Prints the generated section to stdout; --write
+// example "director"). Prints the generated section to stdout; --write
 // splices it into that package's skill/SKILL.md in place (same splice
 // mechanics as scripts/check-conversation-contract.mjs's injectContract,
 // keyed on the `## Run the feedback loop` heading instead).

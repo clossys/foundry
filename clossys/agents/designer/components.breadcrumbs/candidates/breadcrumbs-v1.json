@@ -1,0 +1,81 @@
+{
+  "name": "breadcrumbs",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "breadcrumb.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  Breadcrumb as BreadcrumbPrimitive,\n  Breadcrumbs as BreadcrumbsPrimitive,\n  composeRenderProps,\n  Link as LinkPrimitive,\n  type BreadcrumbProps,\n  type BreadcrumbsProps,\n  type LinkProps,\n} from \"react-aria-components\"\n\nimport { ChevronRightIcon, MoreHorizontalIcon } from \"lucide-react\"\n\nfunction Breadcrumb({ className, ...props }: React.ComponentProps<\"nav\">) {\n  return (\n    <nav\n      aria-label=\"breadcrumb\"\n      data-slot=\"breadcrumb\"\n      className={cn(className)}\n      {...props}\n    />\n  )\n}\n\nfunction BreadcrumbList<T extends object>({\n  className,\n  ...props\n}: BreadcrumbsProps<T>) {\n  return (\n    <BreadcrumbsPrimitive\n      data-slot=\"breadcrumb-list\"\n      className={cn(\n        \"flex flex-wrap items-center gap-1.5 text-sm wrap-break-word text-muted-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction BreadcrumbItem({\n  className,\n  children,\n  separatorClassName,\n  ...props\n}: BreadcrumbProps & { separatorClassName?: string }) {\n  return (\n    <BreadcrumbPrimitive\n      data-slot=\"breadcrumb-item\"\n      className={cn(\"inline-flex items-center gap-1\", className)}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isCurrent }) => (\n        <>\n          {children}\n          {!isCurrent && (\n            <span\n              data-slot=\"breadcrumb-separator\"\n              role=\"presentation\"\n              aria-hidden=\"true\"\n              className={cn(\"[&>svg]:size-3.5\", separatorClassName)}\n            >\n              <ChevronRightIcon\n              />\n            </span>\n          )}\n        </>\n      ))}\n    </BreadcrumbPrimitive>\n  )\n}\n\nfunction BreadcrumbLink({ className, render, ...props }: LinkProps) {\n  return (\n    <LinkPrimitive\n      data-slot=\"breadcrumb-link\"\n      className={cn(\"transition-colors hover:text-foreground\", className)}\n      render={render}\n      {...props}\n    />\n  )\n}\n\nfunction BreadcrumbPage({ className, ...props }: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"breadcrumb-page\"\n      role=\"link\"\n      aria-disabled=\"true\"\n      aria-current=\"page\"\n      className={cn(\"font-normal text-foreground\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction BreadcrumbEllipsis({\n  className,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"breadcrumb-ellipsis\"\n      role=\"presentation\"\n      aria-hidden=\"true\"\n      className={cn(\n        \"flex size-5 items-center justify-center [&>svg]:size-4\",\n        className\n      )}\n      {...props}\n    >\n      <MoreHorizontalIcon\n      />\n      <span className=\"sr-only\">More</span>\n    </span>\n  )\n}\n\nexport {\n  Breadcrumb,\n  BreadcrumbList,\n  BreadcrumbItem,\n  BreadcrumbLink,\n  BreadcrumbPage,\n  BreadcrumbEllipsis,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.breadcrumbs",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/breadcrumb@4.23.0"
+      ],
+      "hash": "sha256:7c80b6fd19640f0ab9e3ff830a3b803c6e048beb73436789e69aab038d0e1e5c",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "breadcrumb.tsx": "registry/aria-nova/ui/breadcrumb.tsx"
+      }
+    },
+    "element": {
+      "id": "breadcrumbs",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.breadcrumbs",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/breadcrumb@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for components.breadcrumbs.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--font-heading",
+          "--font-mono"
+        ]
+      }
+    }
+  }
+}

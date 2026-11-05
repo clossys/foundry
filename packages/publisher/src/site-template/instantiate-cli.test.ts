@@ -57,6 +57,28 @@ describe("publisher-site-instantiate: exit codes", () => {
     expect(errors).toEqual([]);
   });
 
+  it("copies a standalone site beside an isolated pnpm app without a root manifest", () => {
+    mkdirSync(join(root, "apps", "admin"), { recursive: true });
+    const kept = [
+      [join(root, "apps", "admin", "package.json"), '{"name":"admin","packageManager":"pnpm@10.0.0"}\n'],
+      [join(root, "apps", "admin", "pnpm-lock.yaml"), "lockfileVersion: '9.0'\n"],
+      [join(root, "pnpm-workspace.yaml"), "packages: []\n"],
+    ] as const;
+    for (const [path, text] of kept) writeFileSync(path, text);
+    expect(main(["--standalone", "--root", root, "--pins", pinsFile(), "--site-dir", "apps/site"])).toBe(0);
+    expect(existsSync(join(root, "apps", "site", "app", "page.tsx"))).toBe(true);
+    expect(existsSync(join(root, "package.json"))).toBe(false);
+    for (const [path, text] of kept) expect(readFileSync(path, "utf8")).toBe(text);
+    expect(logs.join("\n")).not.toContain("root workspaces updated");
+    expect(errors).toEqual([]);
+  });
+
+  it("keeps a missing root manifest a refusal without --standalone", () => {
+    expect(main(["--root", root, "--pins", pinsFile()])).toBe(1);
+    expect(errors.join("\n")).toContain("root-manifest-missing");
+    expect(existsSync(join(root, "apps"))).toBe(false);
+  });
+
   it("exits 1 on a refusal and leaves no partial output", () => {
     const rootFile = writeRootManifest(`{"name":"example-project","workspaces":"packages/*"}`);
     const before = readFileSync(rootFile);
@@ -98,6 +120,10 @@ describe("publisher-site-instantiate: exit codes", () => {
       ["--root", root, "--pins", pinsFile(), "--unknown", "x"],
       ["--root", root, "--pins", pinsFile(), "--site-dir"],
       ["--root", root, "--pins", pinsFile(), "--root", root],
+      ["--root", root, "--pins", pinsFile(), "--standalone", "--standalone"],
+      ["--root", root, "--pins", pinsFile(), "--standalone", "true"],
+      ["--root", root, "--pins", pinsFile(), "--standalone=true"],
+      ["--root", root, "--pins", "--standalone"],
     ];
     for (const argv of cases) expect(main(argv), JSON.stringify(argv)).toBe(2);
     const garbage = join(work, "garbage.json");
@@ -113,6 +139,7 @@ describe("publisher-site-instantiate: exit codes", () => {
   it("prints usage and exits 0 for --help", () => {
     expect(main(["--help"])).toBe(0);
     expect(logs.join("\n")).toContain("publisher-site-instantiate --root");
+    expect(logs.join("\n")).toContain("--standalone");
   });
 });
 
@@ -132,11 +159,12 @@ describe("publisher-site-instantiate: the built bin", () => {
     });
   }
 
-  it("resolves the template from the installed package, not the working directory", async () => {
-    writeRootManifest();
-    const result = await run(["--root", root, "--pins", pinsFile()]);
+  it.each([false, true])("resolves the installed template (standalone=%s)", async (standalone) => {
+    if (!standalone) writeRootManifest();
+    const result = await run(["--root", root, "--pins", pinsFile(), ...(standalone ? ["--standalone"] : [])]);
     expect(result.status, result.stderr).toBe(0);
     expect(existsSync(join(root, "apps", "site", "web-route-manifest.json"))).toBe(true);
+    if (standalone) expect(existsSync(join(root, "package.json"))).toBe(false);
   });
 
   it("exits 1 on a refusal and 2 on a usage error", async () => {

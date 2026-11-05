@@ -1,0 +1,87 @@
+{
+  "name": "studio-options",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, SpecimenFigure, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\nimport { BlockViewerIframe } from '../studio-specimen/BlockViewerIframe';\n\n/**\n * What one version shows beside the others: a framed render (Designer items, Publisher pages),\n * its strings set against the active version (Writer, Director), or a note when it has neither.\n */\nexport type OptionPreview =\n  | { kind: 'frame'; src: string; viewport: 375 | 768 | 1280 }\n  | { kind: 'strings'; rows: readonly { key: string; text: string; change: 'added' | 'changed' | 'removed' | 'same' }[] }\n  | { kind: 'note'; text: string };\n\nexport interface OptionsCopy { title: string; key: string; text: string; changeLabels: Readonly<Record<'added' | 'changed' | 'removed' | 'same', string>> }\nexport interface OptionCopy { frameTitle: string; stringsLabel: string }\n\nexport interface OptionRow { version: number; pinned: boolean; label: string; reason: string; preview: OptionPreview }\n\n/** The `options` input of `sections.studio.options`: the pinned or active version first, then every newer unpinned version or draft. */\nexport interface OptionsInput { name: string; description: string; copy: OptionsCopy; rows: readonly (OptionRow & { copy: OptionCopy })[] }\n\nconst CHANGE_TONE = { added: 'secondary', changed: 'secondary', removed: 'destructive', same: 'ghost' } as const;\n\nfunction Preview({ name, row, copy }: { name: string; row: OptionRow & { copy: OptionCopy }; copy: OptionsCopy }) {\n  if (row.preview.kind === 'frame') return <BlockViewerIframe interactive viewport={row.preview.viewport} iframeKey={`${name}:${row.version}`} title={row.copy.frameTitle} src={row.preview.src} />;\n  if (row.preview.kind === 'note') return <CardDescription>{row.preview.text}</CardDescription>;\n  return <Table aria-label={row.copy.stringsLabel}>\n    <TableHeader>\n      <TableHead isRowHeader>{copy.key}</TableHead>\n      <TableHead>{copy.text}</TableHead>\n    </TableHeader>\n    <TableBody>\n      {row.preview.rows.map(line => <TableRow key={line.key} id={line.key}>\n        <TableCell>{line.key}</TableCell>\n        <TableCell className=\"min-w-48 whitespace-normal\">\n          {line.text}\n          {line.change !== 'same' && <Badge variant={CHANGE_TONE[line.change]} className=\"ml-2\">{copy.changeLabels[line.change]}</Badge>}\n        </TableCell>\n      </TableRow>)}\n    </TableBody>\n  </Table>;\n}\n\n/** `sections.studio.options`: the pinned version (if any) beside every version waiting for the owner's approval. */\nexport default function OptionsSection({ options }: { options: OptionsInput }) {\n  return <Card size=\"sm\" data-studio-section=\"options\">\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{options.copy.title}</CardTitle>\n      <CardDescription>{options.description}</CardDescription>\n    </CardHeader>\n    <CardContent>\n      <CardGrid density=\"specimens\">\n        {options.rows.map(row => <SpecimenFigure key={row.version} caption={<>\n          <Badge variant={row.pinned ? 'secondary' : 'outline'}>{row.label}</Badge>\n          {row.reason}\n        </>}>\n          <Preview name={options.name} row={row} copy={options.copy} />\n        </SpecimenFigure>)}\n      </CardGrid>\n    </CardContent>\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-options\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Options\",\n  \"description\": \"Options pending approval, for every agent: the pinned or active version beside every newer unpinned version or draft, framed or as changed strings.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"card\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-options/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.options",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn\",\"item\":\"card\",\"version\":\"4.23.0\",\"hash\":\"sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/card.json\"}"
+      ],
+      "hash": "sha256:08bc50fefa89c2d134e2569c898b773d3e87632f0113c69fa00a9ab3bc580c17",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-options",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.options",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "writer",
+        "model": "UNKNOWN",
+        "by": "studio-options-copy"
+      },
+      "reason": "Bind existing Options labels and preview titles through display-ready Writer copy inputs. The pre-cut Producer source already used BlockViewerIframe with viewport and iframeKey and omitted pinned v1's max-w-(--measure) description class; inherited drift is preserved.",
+      "createdAt": "2026-11-01T16:47:33Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.options-title",
+          "studio.options-key",
+          "studio.options-text",
+          "studio.options-added",
+          "studio.options-changed",
+          "studio.options-removed",
+          "studio.options-same",
+          "studio.options-pinned-title",
+          "studio.options-option-title",
+          "studio.options-strings-label"
+        ],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

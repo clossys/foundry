@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "tree": [
+    {
+      "id": "example.admin",
+      "name": "example.admin",
+      "children": [
+        {
+          "id": "agents",
+          "name": "Agents",
+          "entry": {
+            "slug": "agents",
+            "kind": "group",
+            "pin": {
+              "nav": true
+            },
+            "source": {
+              "planItemId": "app.agents"
+            }
+          },
+          "children": [],
+          "cells": [
+            "page.designer",
+            "page.writer",
+            "page.publisher"
+          ]
+        }
+      ]
+    }
+  ],
+  "active": {
+    "page.designer": 1,
+    "page.writer": 1,
+    "page.publisher": 1
+  },
+  "retired": [],
+  "meta": {
+    "publications": [
+      {
+        "id": "example.admin",
+        "format": "web.page.responsive",
+        "entryIds": {
+          "page.designer": "designer",
+          "page.writer": "writer",
+          "page.publisher": "publisher"
+        },
+        "entryOrder": [
+          "agents",
+          "designer",
+          "writer",
+          "publisher"
+        ],
+        "entryMeta": {
+          "page.designer": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          },
+          "page.writer": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          },
+          "page.publisher": {
+            "pin": {
+              "nav": true,
+              "group": "agents"
+            }
+          }
+        },
+        "actions": [
+          {
+            "id": "refresh",
+            "label": "Refresh records",
+            "group": "Records",
+            "intent": "records.refresh"
+          }
+        ]
+      }
+    ]
+  }
+}

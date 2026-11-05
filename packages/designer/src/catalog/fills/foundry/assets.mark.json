@@ -1,0 +1,52 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "id": "foundry/assets.mark",
+      "slot": "assets.mark",
+      "source": "foundry",
+      "mode": "derived",
+      "sourceAddress": "catalog-assets/identity.ts",
+      "relation": "derived",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "author": "foundry",
+      "trust": "foundry",
+      "license": "MIT",
+      "status": "draft",
+      "reads": {
+        "themes": [
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground"
+        ],
+        "assets": [
+          "assets.mark"
+        ]
+      },
+      "derivation": {
+        "from": "asset-identity#consumer-seed",
+        "rule": "identity-mark@1"
+      }
+    }
+  },
+  "assets": {
+    "mark": {
+      "reversed": {
+        "$type": "svg",
+        "$value": "{{assets.mark.positive}}"
+      },
+      "mono": {
+        "$type": "svg",
+        "$value": "{{assets.mark.positive}}"
+      }
+    }
+  }
+}

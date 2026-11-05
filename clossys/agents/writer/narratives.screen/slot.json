@@ -1,0 +1,24 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "narratives.screen",
+  "agent": "writer",
+  "ia": {
+    "l0": "narratives",
+    "l1": "narratives.web",
+    "l2": "web-app-and-admin",
+    "order": 126
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "narrative",
+    "source": "writer",
+    "structure": "passage-sequence"
+  },
+  "inputs": [
+    "focus.offer.included",
+    "identity.verbal.voice"
+  ],
+  "uses": [],
+  "options": 3,
+  "varyOn": "arc"
+}

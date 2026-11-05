@@ -8,41 +8,41 @@
  * `@testing-library/react`, collects the real DOM `className`s, and checks
  * each one against a freshly generated `compiled.css`.
  *
- * SCOPE, STATED HONESTLY: this exercises a representative set of atoms
+ * SCOPE, STATED HONESTLY: this exercises a representative set of components
  * spanning every structural pattern this package's README documents
  * (plain markup, a variant table, a size table, a boolean-state control, a
  * labeled field, a homogeneous collection, link variants) — not all 31
- * atoms in every documented prop combination. The atoms it does NOT render
+ * components in every documented prop combination. The components it does NOT render
  * here (`Select`, `Menu`, `Dialog`, `Popover`, `ComboBox`, `Tabs`,
  * `RadioGroup`, `DateField`, `SearchField`, `FileTrigger`, `Disclosure`,
  * `ProgressBar`, `Table`, `Field`, `Tooltip`) mostly require opening a
  * portalled overlay or richer state setup to reach their real classes in
  * the DOM; `class-scan.ts`'s static extraction (not rendering) is what
- * keeps `compiled.css` complete for those, since it reads every atom's
+ * keeps `compiled.css` complete for those, since it reads every component's
  * source text directly rather than needing to drive its UI. This test's
  * job is narrower and different: catch a REGEX BUG in `class-scan.ts`
  * (a class shape it silently fails to extract), not exhaustively enumerate
- * every atom. See the introducing PR body for the same statement.
+ * every component. See the introducing PR body for the same statement.
  */
 import { resolve } from "node:path";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Logomark } from "../atoms/Logomark.js";
+import { Logomark } from "../components/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
-import { Avatar } from "../atoms/Avatar.js";
-import { Badge } from "../atoms/Badge.js";
-import { Banner } from "../atoms/Banner.js";
-import { Breadcrumb } from "../atoms/Breadcrumb.js";
-import { Button } from "../atoms/Button.js";
-import { Card } from "../atoms/Card.js";
-import { Checkbox } from "../atoms/Checkbox.js";
-import { Chip } from "../atoms/Chip.js";
-import { Link } from "../atoms/Link.js";
-import { Meter } from "../atoms/Meter.js";
-import { Separator } from "../atoms/Separator.js";
-import { ResizeHandle } from "../atoms/ResizeHandle.js";
+import { Avatar } from "../components/Avatar.js";
+import { Badge } from "../components/Badge.js";
+import { Banner } from "../components/Banner.js";
+import { Breadcrumb } from "../components/Breadcrumb.js";
+import { Button } from "../components/Button.js";
+import { Card } from "../components/Card.js";
+import { Checkbox } from "../components/Checkbox.js";
+import { Chip } from "../components/Chip.js";
+import { Link } from "../components/Link.js";
+import { Meter } from "../components/Meter.js";
+import { Separator } from "../components/Separator.js";
+import { ResizeHandle } from "../components/ResizeHandle.js";
 import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
@@ -51,12 +51,12 @@ import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
 import { FlowCanvas } from "../blocks/FlowCanvas.js";
-import { Skeleton } from "../atoms/Skeleton.js";
-import { Spinner } from "../atoms/Spinner.js";
-import { StatusMark } from "../atoms/StatusMark.js";
-import { Switch } from "../atoms/Switch.js";
-import { TextField } from "../atoms/TextField.js";
-import { Textarea } from "../atoms/Textarea.js";
+import { Skeleton } from "../components/Skeleton.js";
+import { Spinner } from "../components/Spinner.js";
+import { StatusMark } from "../components/StatusMark.js";
+import { Switch } from "../components/Switch.js";
+import { TextField } from "../components/TextField.js";
+import { Textarea } from "../components/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
 import { AccountMenu } from "../blocks/AccountMenu.js";
 import { Item } from "../blocks/items/Item.js";
@@ -82,7 +82,7 @@ const packageRoot = resolve(import.meta.dirname, "..", "..");
  * `HTMLElement` but an `SVGAnimatedString` OBJECT on an `SVGElement`
  * (`Icon`/`Spinner` render `<svg>`). Reading `.className` directly here
  * would silently stringify that object instead of the class list on any
- * SVG-rendering atom — a real bug caught while building this test.
+ * SVG-rendering component — a real bug caught while building this test.
  */
 function collectClassNames(container: HTMLElement): Set<string> {
   const classes = new Set<string>();
@@ -240,7 +240,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       } finally { style.remove(); tree.unmount(); }
     }
   });
-  it("covers AccountMenu portals with normal rings and forced-colors-only outlines", async () => {
+  it("covers AccountMenu portals with solid Button trigger focus and forced-colors outlines", async () => {
     const classes = new Set<string>(), user = userEvent.setup();
     for (const collapsed of [false, true]) {
       const tree = render(<AccountMenu actor={{ name: "Alex Morgan" }} collapsed={collapsed}
@@ -251,8 +251,9 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       await user.tab();
       const trigger = screen.getByRole("button", { name: "Alex Morgan" });
       await waitFor(() => expect(trigger).toHaveFocus());
-      expect(trigger.style.outlineStyle).toBe("");
-      expect(trigger.style.boxShadow).not.toBe("");
+      expect(trigger.style.outline).toBe("var(--ui-border-focus, 2px) solid var(--color-focus-ring)");
+      expect(trigger.style.outlineOffset).toBe("var(--ui-focus-offset, 2px)");
+      expect(trigger.style.boxShadow).toBe("");
       expect(trigger).toHaveClass("forced-colors:focus-visible:outline", "forced-colors:focus-visible:outline-solid");
       for (const cls of collectClassNames(document.body)) classes.add(cls);
       await user.keyboard("{ArrowDown}");
@@ -293,9 +294,9 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         view.unmount();
       }
     }
-    const atom = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
-    collect(atom.container);
-    atom.unmount();
+    const component = render(<ResizeHandle value={100} min={50} max={200} resetValue={100} label="Resize tools" onChange={() => {}} />);
+    collect(component.container);
+    component.unmount();
     for (const ground of ["base", "sunken", "inverse"] as const) {
       const view = render(<Panel ground={ground} header="Header" footer="Footer">Content</Panel>);
       collect(view.container);
@@ -395,7 +396,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       result.unmount();
     }
 
-    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-accent", "rounded-control", "tablet:grid-cols-2"]) {
+    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-action", "text-ink-on-action", "rounded-control", "tablet:grid-cols-2"]) {
       expect(renderedClasses.has(required), required).toBe(true);
     }
 
@@ -410,7 +411,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     expect(missing).toEqual([]);
   });
 
-  it("collects classes from a representative set of atoms and cross-checks against a fresh compiled.css", async () => {
+  it("collects classes from a representative set of components and cross-checks against a fresh compiled.css", async () => {
     const trees: Array<[string, ReturnType<typeof render>]> = [];
     trees.push(["Button primary md", render(<Button variant="primary" size="md">Save</Button>)]);
     trees.push(["Button secondary sm", render(<Button variant="secondary" size="sm">Save</Button>)]);

@@ -1,10 +1,10 @@
-import { Button } from "../../atoms/Button.js";
-import { Select } from "../../atoms/Select.js";
-import { Switch } from "../../atoms/Switch.js";
-import { TextField } from "../../atoms/TextField.js";
+import { Button } from "../../components/Button.js";
+import { Select } from "../../components/Select.js";
+import { Switch } from "../../components/Switch.js";
+import { TextField } from "../../components/TextField.js";
 import type { CatalogBrowserConfig, CatalogBrowserControl } from "./types.js";
 
-/** One labelled atom per control; every change reports the whole resolved configuration. */
+/** One labelled component per control; every change reports the whole resolved configuration. */
 export function Configurator({ controls, config, onChange, noControls, resetLabel }: {
   controls: readonly CatalogBrowserControl[]; config: CatalogBrowserConfig;
   onChange: (config: CatalogBrowserConfig) => void; noControls: string; resetLabel: string;

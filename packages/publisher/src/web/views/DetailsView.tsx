@@ -1,9 +1,9 @@
 "use client";
 
 import type { HTMLAttributes, ReactNode } from "react";
-import { Banner, Skeleton, Tabs } from "@clossys/designer/atoms";
-import type { BannerProps } from "@clossys/designer/atoms";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Banner, Skeleton, Tabs } from "@clossys/designer/components";
+import type { BannerProps } from "@clossys/designer/components";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { DetailView, EmptyState, Panel, RecordLedger, SectionHeader, Stat, StatusList } from "@clossys/designer/blocks";
 import type { DetailViewProps, EmptyStateProps, PanelProps, RecordLedgerProps, StatProps, StatusListProps } from "@clossys/designer/blocks";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";

@@ -1,0 +1,77 @@
+{
+  "name": "studio-page-tabs",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "'use client';\nimport { ScrollArea, Tabs, TabsList, TabsTrigger } from '@clossys/designer-ui';\n\n/** One tab: a route the content map projects under the page record. */\nexport interface PageTab {\n  id: string;\n  label: string;\n  href: string;\n}\n\n/** The `tabs` input of `sections.studio.page-tabs`: the tab routes, in content-map order, and the active one. */\nexport interface PageTabsInput {\n  label: string;\n  active: string;\n  tabs: readonly PageTab[];\n}\n\n/** `sections.studio.page-tabs`: stock shadcn Tabs in a ScrollArea; each tab is a link to its route. */\nexport default function PageTabsSection({ tabs }: { tabs: PageTabsInput }) {\n  return <ScrollArea data-studio-section=\"page-tabs\" className=\"w-full\">\n    <Tabs selectedKey={tabs.active}>\n      <TabsList aria-label={tabs.label}>\n        {tabs.tabs.map(tab => <TabsTrigger key={tab.id} id={tab.id} href={tab.href}>{tab.label}</TabsTrigger>)}\n      </TabsList>\n    </Tabs>\n  </ScrollArea>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-page-tabs\",\n  \"type\": \"registry:block\",\n  \"title\": \"Page Tabs\",\n  \"description\": \"The tab row of a Studio page: stock shadcn Tabs in a ScrollArea, one link per tab route the content map projects.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"tabs\",\n    \"scroll-area\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/studio-page-tabs/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.page-tabs",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn\",\"item\":\"tabs\",\"version\":\"4.23.0\",\"hash\":\"sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/tabs.json\"}",
+        "{\"registry\":\"shadcn\",\"item\":\"scroll-area\",\"version\":\"4.23.0\",\"hash\":\"sha256:ebf805286284762c329b48209e8e2c07860073adef9459181c7f2ceb2fd0b67f\",\"url\":\"https://ui.shadcn.com/r/styles/radix-nova/scroll-area.json\"}",
+        "{\"version\":1,\"hash\":\"sha256:1490a9ee9de85f0457b8492a78c25f81b53c25af04f7045a20ee81223826cd05\"}"
+      ],
+      "hash": "sha256:2283e8a809e3afec3cf4a546074effa4cbb5073095abf3c90387706664f9c693",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-page-tabs",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.page-tabs",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "STUDIO-TEMPLATE-FIX"
+      },
+      "reason": "Align the tab strip to the content edge (drop the extra inline padding); owner go 2026-11-03 STUDIO-TEMPLATE-FIX.",
+      "createdAt": "2026-11-03T15:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card-foreground",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

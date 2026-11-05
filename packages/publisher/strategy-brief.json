@@ -1,0 +1,12 @@
+{
+  "id": "publisher.launch",
+  "schemaVersion": 1,
+  "owner": "@clossys/publisher",
+  "requires": [
+    "focus.reach.channel",
+    "focus.offer.included"
+  ],
+  "optional": [
+    "execution.roadmap.release"
+  ]
+}

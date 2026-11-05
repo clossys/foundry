@@ -220,7 +220,7 @@ describe("SiteHeader", () => {
       expect(link.querySelector(".sr-only")).toBeNull();
       expect(link.childNodes).toHaveLength(1);
       expect(link.firstChild?.nodeType).toBe(Node.TEXT_NODE);
-      expect(link.className).toContain("bg-accent");
+      expect(link.className).toContain("bg-action");
       expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
       expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
     });
@@ -257,11 +257,11 @@ describe("SiteHeader", () => {
       expect(label.className.split(" ")).toEqual(["sr-only", "tablet:not-sr-only"]);
     });
 
-    it("marks only the current link with aria-current=true and a non-colour cue", () => {
+    it("marks only the current link with aria-current=page and a non-colour cue", () => {
       renderEnvironments("admin");
       const app = screen.getByRole("link", { name: "App" });
       const admin = screen.getByRole("link", { name: "Admin" });
-      expect(admin).toHaveAttribute("aria-current", "true");
+      expect(admin).toHaveAttribute("aria-current", "page");
       expect(app).not.toHaveAttribute("aria-current");
       expect(admin.style.boxShadow).toContain("inset");
       expect(app.style.boxShadow).toBe("");
@@ -282,10 +282,10 @@ describe("SiteHeader", () => {
     it("borrows the small button look without the outline-none that would hide its focus outline", () => {
       render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} variant="primary" />);
       const classes = screen.getByRole("link", { name: "Home" }).className.split(" ");
-      expect(classes).toContain("bg-accent");
+      expect(classes).toContain("bg-action");
       expect(classes).toContain("px-sm");
       expect(classes).not.toContain("outline-none");
-      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent"]));
+      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-focus-ring"]));
     });
 
     it("defaults to the secondary look", () => {
@@ -302,7 +302,7 @@ describe("SiteHeader", () => {
     it("ships from the server entry and renders without client code", () => {
       const html = renderToStaticMarkup(<ServerSiteHeader.ActionLink href="/" label="Home" icon={Home} isCurrent />);
       expect(html).toContain('href="/"');
-      expect(html).toContain('aria-current="true"');
+      expect(html).toContain('aria-current="page"');
       expect(html).toContain(">Home</span>");
     });
   });

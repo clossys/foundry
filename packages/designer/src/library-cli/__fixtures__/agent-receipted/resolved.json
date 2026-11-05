@@ -1,0 +1,4209 @@
+{
+  "consumer": "example",
+  "members": {
+    "assets.app-icon.maskable": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" fill=\"oklch(0.145 0 0)\"/><svg x=\"116\" y=\"116\" width=\"280\" height=\"280\" viewBox=\"0 0 48 48\" color=\"oklch(1 0 0)\" fill=\"oklch(0.145 0 0)\"><rect x=\"0\" y=\"0\" width=\"48\" height=\"48\"/><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg></svg>"
+      },
+      "fill": "example/assets.app-icon",
+      "origin": {
+        "inputs": [
+          "assets.mark.positive",
+          "themes.background.default",
+          "themes.foreground.default"
+        ],
+        "inputsHash": "1907b1c0e9d08c897e685c920e207fad90774ca585ffe4a60435aae8861f4cfa",
+        "kind": "derived",
+        "rule": "identity-app-icon@1"
+      },
+      "reads": [
+        "assets.mark.positive",
+        "themes.background.default",
+        "themes.foreground.default"
+      ],
+      "slot": "assets.app-icon",
+      "source": "example",
+      "value": {
+        "light": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect width=\"512\" height=\"512\" fill=\"oklch(0.145 0 0)\"/><svg x=\"116\" y=\"116\" width=\"280\" height=\"280\" viewBox=\"0 0 48 48\" color=\"oklch(1 0 0)\" fill=\"oklch(0.145 0 0)\"><rect x=\"0\" y=\"0\" width=\"48\" height=\"48\"/><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg></svg>"
+      },
+      "via": "derived"
+    },
+    "assets.app-icon.standard": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect x=\"16\" y=\"16\" width=\"480\" height=\"480\" rx=\"104\" fill=\"oklch(0.145 0 0)\"/><svg x=\"116\" y=\"116\" width=\"280\" height=\"280\" viewBox=\"0 0 48 48\" color=\"oklch(1 0 0)\" fill=\"oklch(0.145 0 0)\"><rect x=\"0\" y=\"0\" width=\"48\" height=\"48\"/><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg></svg>"
+      },
+      "fill": "example/assets.app-icon",
+      "origin": {
+        "inputs": [
+          "assets.mark.positive",
+          "themes.background.default",
+          "themes.foreground.default"
+        ],
+        "inputsHash": "1907b1c0e9d08c897e685c920e207fad90774ca585ffe4a60435aae8861f4cfa",
+        "kind": "derived",
+        "rule": "identity-app-icon@1"
+      },
+      "reads": [
+        "assets.mark.positive",
+        "themes.background.default",
+        "themes.foreground.default"
+      ],
+      "slot": "assets.app-icon",
+      "source": "example",
+      "value": {
+        "light": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 512 512\"><rect x=\"16\" y=\"16\" width=\"480\" height=\"480\" rx=\"104\" fill=\"oklch(0.145 0 0)\"/><svg x=\"116\" y=\"116\" width=\"280\" height=\"280\" viewBox=\"0 0 48 48\" color=\"oklch(1 0 0)\" fill=\"oklch(0.145 0 0)\"><rect x=\"0\" y=\"0\" width=\"48\" height=\"48\"/><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg></svg>"
+      },
+      "via": "derived"
+    },
+    "assets.favicon.vector": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" color=\"oklch(1 0 0)\" fill=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><style>@media (prefers-color-scheme: dark){svg{color:oklch(0.145 0 0);fill:oklch(1 0 0)}}</style><rect x=\"0\" y=\"0\" width=\"48\" height=\"48\"/><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "fill": "example/assets.favicon",
+      "origin": {
+        "inputs": [
+          "assets.mark.positive",
+          "themes.background.default",
+          "themes.foreground.default"
+        ],
+        "inputsHash": "1907b1c0e9d08c897e685c920e207fad90774ca585ffe4a60435aae8861f4cfa",
+        "kind": "derived",
+        "rule": "identity-favicon@1"
+      },
+      "reads": [
+        "assets.mark.positive",
+        "themes.background.default",
+        "themes.foreground.default"
+      ],
+      "slot": "assets.favicon",
+      "source": "example",
+      "value": {
+        "light": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" color=\"oklch(1 0 0)\" fill=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><style>@media (prefers-color-scheme: dark){svg{color:oklch(0.145 0 0);fill:oklch(1 0 0)}}</style><rect x=\"0\" y=\"0\" width=\"48\" height=\"48\"/><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "via": "derived"
+    },
+    "assets.icon-arrow-right.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M5 12h14\",\"key\":\"1ays0h\"}],[\"path\",{\"d\":\"m12 5 7 7-7 7\",\"key\":\"xquz4c\"}]]"
+      },
+      "fill": "example/assets.icon-arrow-right",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-arrow-right",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-arrow-right.default",
+        "pin": {
+          "file": "src/icons/ArrowRight.ts",
+          "package": "lucide-react",
+          "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31",
+          "version": "1.24.0"
+        },
+        "sha256": "6eb1a8ae2e220b96b0bf85062d18c3446564246dd9a7c7b232acc5f426ccd34f",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-arrow-right",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M5 12h14",
+              "key": "1ays0h"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m12 5 7 7-7 7",
+              "key": "xquz4c"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-business.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16\",\"key\":\"jecpp\"}],[\"rect\",{\"height\":\"14\",\"key\":\"i6l2r4\",\"rx\":\"2\",\"width\":\"20\",\"x\":\"2\",\"y\":\"6\"}]]"
+      },
+      "fill": "example/assets.icon-business",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-business",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-business.default",
+        "pin": {
+          "file": "src/icons/Briefcase.ts",
+          "package": "lucide-react",
+          "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394",
+          "version": "1.24.0"
+        },
+        "sha256": "55c089ecbf3d81ee6f0dee934b45dfb7e8f5d0ba6279fef76e12c7142ac86170",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-business",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16",
+              "key": "jecpp"
+            }
+          ],
+          [
+            "rect",
+            {
+              "height": "14",
+              "key": "i6l2r4",
+              "rx": "2",
+              "width": "20",
+              "x": "2",
+              "y": "6"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-check.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M20 6 9 17l-5-5\",\"key\":\"1gmf2c\"}]]"
+      },
+      "fill": "example/assets.icon-check",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-check",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-check.default",
+        "pin": {
+          "file": "src/icons/Check.ts",
+          "package": "lucide-react",
+          "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159",
+          "version": "1.23.0"
+        },
+        "sha256": "4348f434eb2c746e05050eddf06caad28277fd408f4da25d11f8d8e3e9bd3081",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-check",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M20 6 9 17l-5-5",
+              "key": "1gmf2c"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-chevron-down.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"m6 9 6 6 6-6\",\"key\":\"qrunsl\"}]]"
+      },
+      "fill": "example/assets.icon-chevron-down",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-chevron-down",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-chevron-down.default",
+        "pin": {
+          "file": "src/icons/ChevronDown.ts",
+          "package": "lucide-react",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294",
+          "version": "1.23.0"
+        },
+        "sha256": "e9c2f81ea58066dc6e5a7bde3532f25bc525bf9166179bd7ccdad3740586c7ee",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-chevron-down",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "m6 9 6 6 6-6",
+              "key": "qrunsl"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-chevron-left.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"m15 18-6-6 6-6\",\"key\":\"1wnfg3\"}]]"
+      },
+      "fill": "example/assets.icon-chevron-left",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-chevron-left",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-chevron-left.default",
+        "pin": {
+          "file": "src/icons/ChevronLeft.ts",
+          "package": "lucide-react",
+          "sha256": "3674c3670e0c34bdb78c075730560e17b6f6b698194010fd42efa76533415e4a",
+          "version": "1.23.0"
+        },
+        "sha256": "02486707b69594b541f4c0c566202dfc1f5d06c4f61d1b9f831865a4b02b0e9d",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-chevron-left",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "m15 18-6-6 6-6",
+              "key": "1wnfg3"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-chevron-right.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"m9 18 6-6-6-6\",\"key\":\"mthhwq\"}]]"
+      },
+      "fill": "example/assets.icon-chevron-right",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-chevron-right",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-chevron-right.default",
+        "pin": {
+          "file": "src/icons/ChevronRight.ts",
+          "package": "lucide-react",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6",
+          "version": "1.23.0"
+        },
+        "sha256": "6cf474b764da370b47c84154f8f4c1cd895ec930c99d002771c0e6eb5831f265",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-chevron-right",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "m9 18 6-6-6-6",
+              "key": "mthhwq"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-chevron-up.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"m18 15-6-6-6 6\",\"key\":\"153udz\"}]]"
+      },
+      "fill": "example/assets.icon-chevron-up",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-chevron-up",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-chevron-up.default",
+        "pin": {
+          "file": "src/icons/ChevronUp.ts",
+          "package": "lucide-react",
+          "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55",
+          "version": "1.23.0"
+        },
+        "sha256": "ee08d86cb7f6e213aade097e61373f1f91dff0eaeb0e42d03a677195078546ac",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-chevron-up",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "m18 15-6-6-6 6",
+              "key": "153udz"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-close.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M18 6 6 18\",\"key\":\"1bl5f8\"}],[\"path\",{\"d\":\"m6 6 12 12\",\"key\":\"d8bk6v\"}]]"
+      },
+      "fill": "example/assets.icon-close",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-close",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-close.default",
+        "pin": {
+          "file": "src/icons/X.ts",
+          "package": "lucide-react",
+          "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e",
+          "version": "1.23.0"
+        },
+        "sha256": "89e7cafe7d162d6a9fec2903424849546cfc25de664d662bbc784724d1124075",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-close",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M18 6 6 18",
+              "key": "1bl5f8"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m6 6 12 12",
+              "key": "d8bk6v"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-danger.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"circle\",{\"cx\":\"12\",\"cy\":\"12\",\"key\":\"1mglay\",\"r\":\"10\"}],[\"path\",{\"d\":\"m15 9-6 6\",\"key\":\"1uzhvr\"}],[\"path\",{\"d\":\"m9 9 6 6\",\"key\":\"z0biqf\"}]]"
+      },
+      "fill": "example/assets.icon-danger",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-danger",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-danger.default",
+        "pin": {
+          "file": "src/icons/XCircle.ts",
+          "package": "lucide-react",
+          "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263",
+          "version": "1.23.0"
+        },
+        "sha256": "834d1aa339d70c84c90712c199a6fa8666f812984f9caca338415231acd3fe5d",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-danger",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m15 9-6 6",
+              "key": "1uzhvr"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 9 6 6",
+              "key": "z0biqf"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-date.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M8 2v4\",\"key\":\"1cmpym\"}],[\"path\",{\"d\":\"M16 2v4\",\"key\":\"4m81vk\"}],[\"rect\",{\"height\":\"18\",\"key\":\"1hopcy\",\"rx\":\"2\",\"width\":\"18\",\"x\":\"3\",\"y\":\"4\"}],[\"path\",{\"d\":\"M3 10h18\",\"key\":\"8toen8\"}]]"
+      },
+      "fill": "example/assets.icon-date",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-date",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-date.default",
+        "pin": {
+          "file": "src/icons/Calendar.ts",
+          "package": "lucide-react",
+          "sha256": "a1e5fc91fbad729410ac3637f2be8a37951ddb30f4a552c5ff9f0b7430fe569a",
+          "version": "1.23.0"
+        },
+        "sha256": "2d4989642d894cf840825db8700f5745c4a6e9db4c4eee690d802d70439d49b8",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-date",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M8 2v4",
+              "key": "1cmpym"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M16 2v4",
+              "key": "4m81vk"
+            }
+          ],
+          [
+            "rect",
+            {
+              "height": "18",
+              "key": "1hopcy",
+              "rx": "2",
+              "width": "18",
+              "x": "3",
+              "y": "4"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 10h18",
+              "key": "8toen8"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-document-approved.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\",\"key\":\"1oefj6\"}],[\"path\",{\"d\":\"M14 2v5a1 1 0 0 0 1 1h5\",\"key\":\"wfsgrz\"}],[\"path\",{\"d\":\"m9 15 2 2 4-4\",\"key\":\"1grp1n\"}]]"
+      },
+      "fill": "example/assets.icon-document-approved",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-document-approved",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-document-approved.default",
+        "pin": {
+          "file": "src/icons/FileCheck.ts",
+          "package": "lucide-react",
+          "sha256": "93cb25323e680b6e02d37fe076b9672cc2cf91c4f7bb9cf9d41757ba16344f82",
+          "version": "1.24.0"
+        },
+        "sha256": "171316074d1f89848bb991e11c2806ea38525ca4003a845eabf9fd52dfaa7305",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-document-approved",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+              "key": "1oefj6"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M14 2v5a1 1 0 0 0 1 1h5",
+              "key": "wfsgrz"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 15 2 2 4-4",
+              "key": "1grp1n"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-document.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z\",\"key\":\"1oefj6\"}],[\"path\",{\"d\":\"M14 2v5a1 1 0 0 0 1 1h5\",\"key\":\"wfsgrz\"}],[\"path\",{\"d\":\"M10 9H8\",\"key\":\"b1mrlr\"}],[\"path\",{\"d\":\"M16 13H8\",\"key\":\"t4e002\"}],[\"path\",{\"d\":\"M16 17H8\",\"key\":\"z1uh3a\"}]]"
+      },
+      "fill": "example/assets.icon-document",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-document",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-document.default",
+        "pin": {
+          "file": "src/icons/FileText.ts",
+          "package": "lucide-react",
+          "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f",
+          "version": "1.23.0"
+        },
+        "sha256": "d7bac2e1180aa55e7fc84af761c105dc79c7b4944fcbd7cb2285f11222a425f8",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-document",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z",
+              "key": "1oefj6"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M14 2v5a1 1 0 0 0 1 1h5",
+              "key": "wfsgrz"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M10 9H8",
+              "key": "b1mrlr"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M16 13H8",
+              "key": "t4e002"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M16 17H8",
+              "key": "z1uh3a"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-external-link.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M15 3h6v6\",\"key\":\"1q9fwt\"}],[\"path\",{\"d\":\"M10 14 21 3\",\"key\":\"gplh6r\"}],[\"path\",{\"d\":\"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6\",\"key\":\"a6xqqp\"}]]"
+      },
+      "fill": "example/assets.icon-external-link",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-external-link",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-external-link.default",
+        "pin": {
+          "file": "src/icons/ExternalLink.ts",
+          "package": "lucide-react",
+          "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9",
+          "version": "1.23.0"
+        },
+        "sha256": "46ead5283534dc30ad212cefbbdeec47886fc1a3c2a00c5257564e7b418118b0",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-external-link",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M15 3h6v6",
+              "key": "1q9fwt"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M10 14 21 3",
+              "key": "gplh6r"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6",
+              "key": "a6xqqp"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-folder.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\",\"key\":\"1kt360\"}]]"
+      },
+      "fill": "example/assets.icon-folder",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-folder",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-folder.default",
+        "pin": {
+          "file": "src/icons/Folder.ts",
+          "package": "lucide-react",
+          "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902",
+          "version": "1.23.0"
+        },
+        "sha256": "a5a93559b6b26bce57ac49c032d8fa0a89302423ad0e8faefb8f44bb1367f092",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-folder",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z",
+              "key": "1kt360"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-grid-view.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"rect\",{\"height\":\"18\",\"key\":\"afitv7\",\"rx\":\"2\",\"width\":\"18\",\"x\":\"3\",\"y\":\"3\"}],[\"path\",{\"d\":\"M3 9h18\",\"key\":\"1pudct\"}],[\"path\",{\"d\":\"M3 15h18\",\"key\":\"5xshup\"}],[\"path\",{\"d\":\"M9 3v18\",\"key\":\"fh3hqa\"}],[\"path\",{\"d\":\"M15 3v18\",\"key\":\"14nvp0\"}]]"
+      },
+      "fill": "example/assets.icon-grid-view",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-grid-view",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-grid-view.default",
+        "pin": {
+          "file": "src/icons/Grid3x3.ts",
+          "package": "lucide-react",
+          "sha256": "0a77926c1da9c77b936a4ffb8a28d7b93733db4284de21f93f7aed1d4d56d332",
+          "version": "1.23.0"
+        },
+        "sha256": "4c9923f17404d0c817a29c42a154f0428d820a767594c590d2a4046e8c6ea040",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-grid-view",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "rect",
+            {
+              "height": "18",
+              "key": "afitv7",
+              "rx": "2",
+              "width": "18",
+              "x": "3",
+              "y": "3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 9h18",
+              "key": "1pudct"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 15h18",
+              "key": "5xshup"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 3v18",
+              "key": "fh3hqa"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M15 3v18",
+              "key": "14nvp0"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-guide.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M12 7v14\",\"key\":\"1akyts\"}],[\"path\",{\"d\":\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\",\"key\":\"ruj8y\"}]]"
+      },
+      "fill": "example/assets.icon-guide",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-guide",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-guide.default",
+        "pin": {
+          "file": "src/icons/BookOpen.ts",
+          "package": "lucide-react",
+          "sha256": "918684990e3fad045cf89db5d13598ca76f0675dc9a07f7132374c583fb01068",
+          "version": "1.23.0"
+        },
+        "sha256": "7367eab4ca2158ea7f2b6357d2379e8e140324d463b37d38a09f5e72c999e6e0",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-guide",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M12 7v14",
+              "key": "1akyts"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z",
+              "key": "ruj8y"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-home.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8\",\"key\":\"5wwlr5\"}],[\"path\",{\"d\":\"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\",\"key\":\"r6nss1\"}]]"
+      },
+      "fill": "example/assets.icon-home",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-home",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-home.default",
+        "pin": {
+          "file": "src/icons/Home.ts",
+          "package": "lucide-react",
+          "sha256": "aeb67ad2d4678f68249a344ebd5cefbb4a148a0039922413ac173092a57bfbd4",
+          "version": "1.23.0"
+        },
+        "sha256": "05aa3aeb57ea5b89aca468dcc2a4bfd7dd4b070128545e5319bb4dcb2c6376c0",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-home",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8",
+              "key": "5wwlr5"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
+              "key": "r6nss1"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-info.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"circle\",{\"cx\":\"12\",\"cy\":\"12\",\"key\":\"1mglay\",\"r\":\"10\"}],[\"path\",{\"d\":\"M12 16v-4\",\"key\":\"1dtifu\"}],[\"path\",{\"d\":\"M12 8h.01\",\"key\":\"e9boi3\"}]]"
+      },
+      "fill": "example/assets.icon-info",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-info",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-info.default",
+        "pin": {
+          "file": "src/icons/Info.ts",
+          "package": "lucide-react",
+          "sha256": "ead0c9f1d9e45f0c181d93364f563f01876d03f27956565722b68dbc042388b5",
+          "version": "1.23.0"
+        },
+        "sha256": "861665c033e26464380f08c647bebd8045c8da7f7481eaf6e58e64c0661004ef",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-info",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 16v-4",
+              "key": "1dtifu"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 8h.01",
+              "key": "e9boi3"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-institution.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M10 18v-7\",\"key\":\"wt116b\"}],[\"path\",{\"d\":\"M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z\",\"key\":\"yxxwt6\"}],[\"path\",{\"d\":\"M14 18v-7\",\"key\":\"vav6t3\"}],[\"path\",{\"d\":\"M18 18v-7\",\"key\":\"aexdmj\"}],[\"path\",{\"d\":\"M3 22h18\",\"key\":\"8prr45\"}],[\"path\",{\"d\":\"M6 18v-7\",\"key\":\"1ivflk\"}]]"
+      },
+      "fill": "example/assets.icon-institution",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-institution",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-institution.default",
+        "pin": {
+          "file": "src/icons/Landmark.ts",
+          "package": "lucide-react",
+          "sha256": "defe18c0251260c4f6e44882f36756daba7aaa6544b5c35794c59e0baefeb384",
+          "version": "1.24.0"
+        },
+        "sha256": "effe0d6e4fbd8dc70fa0516eb9e9f223f877cfff4750da8739f79bfa2a491abb",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-institution",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M10 18v-7",
+              "key": "wt116b"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z",
+              "key": "yxxwt6"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M14 18v-7",
+              "key": "vav6t3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M18 18v-7",
+              "key": "aexdmj"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 22h18",
+              "key": "8prr45"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M6 18v-7",
+              "key": "1ivflk"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-integration.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M12 22v-5\",\"key\":\"1ega77\"}],[\"path\",{\"d\":\"M15 8V2\",\"key\":\"18g5xt\"}],[\"path\",{\"d\":\"M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z\",\"key\":\"1xoxul\"}],[\"path\",{\"d\":\"M9 8V2\",\"key\":\"14iosj\"}]]"
+      },
+      "fill": "example/assets.icon-integration",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-integration",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-integration.default",
+        "pin": {
+          "file": "src/icons/Plug.ts",
+          "package": "lucide-react",
+          "sha256": "7a8b54b6476e72844d33fcbb3753367f392b68600ef45406223142f65e5805bc",
+          "version": "1.23.0"
+        },
+        "sha256": "e04403c2274c73af786e1cd745cb42b3d4e742f5d3c05f1b40c2df2789c06b01",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-integration",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M12 22v-5",
+              "key": "1ega77"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M15 8V2",
+              "key": "18g5xt"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z",
+              "key": "1xoxul"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 8V2",
+              "key": "14iosj"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-layers.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z\",\"key\":\"zw3jo\"}],[\"path\",{\"d\":\"M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12\",\"key\":\"1wduqc\"}],[\"path\",{\"d\":\"M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17\",\"key\":\"kqbvx6\"}]]"
+      },
+      "fill": "example/assets.icon-layers",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-layers",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-layers.default",
+        "pin": {
+          "file": "src/icons/Layers.ts",
+          "package": "lucide-react",
+          "sha256": "b59dcca2c5d4bbea7050a85b895eff429370bf5bdd005189c75c0d648e92d59b",
+          "version": "1.24.0"
+        },
+        "sha256": "13b99511fa8e95ef7a737c0edca6a4c12d3e5c73b8913cc7b9e15c934f40d7f5",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-layers",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z",
+              "key": "zw3jo"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12",
+              "key": "1wduqc"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17",
+              "key": "kqbvx6"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-legal.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M12 3v18\",\"key\":\"108xh3\"}],[\"path\",{\"d\":\"m19 8 3 8a5 5 0 0 1-6 0zV7\",\"key\":\"zcdpyk\"}],[\"path\",{\"d\":\"M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1\",\"key\":\"1yorad\"}],[\"path\",{\"d\":\"m5 8 3 8a5 5 0 0 1-6 0zV7\",\"key\":\"eua70x\"}],[\"path\",{\"d\":\"M7 21h10\",\"key\":\"1b0cd5\"}]]"
+      },
+      "fill": "example/assets.icon-legal",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-legal",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-legal.default",
+        "pin": {
+          "file": "src/icons/Scale.ts",
+          "package": "lucide-react",
+          "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6",
+          "version": "1.24.0"
+        },
+        "sha256": "4687beb14fce20bee5444dbf99f4b75ae716fd09d60fb8cb87467258f3d597c3",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-legal",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M12 3v18",
+              "key": "108xh3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m19 8 3 8a5 5 0 0 1-6 0zV7",
+              "key": "zcdpyk"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1",
+              "key": "1yorad"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m5 8 3 8a5 5 0 0 1-6 0zV7",
+              "key": "eua70x"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M7 21h10",
+              "key": "1b0cd5"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-list-view.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M3 5h.01\",\"key\":\"18ugdj\"}],[\"path\",{\"d\":\"M3 12h.01\",\"key\":\"nlz23k\"}],[\"path\",{\"d\":\"M3 19h.01\",\"key\":\"noohij\"}],[\"path\",{\"d\":\"M8 5h13\",\"key\":\"1pao27\"}],[\"path\",{\"d\":\"M8 12h13\",\"key\":\"1za7za\"}],[\"path\",{\"d\":\"M8 19h13\",\"key\":\"m83p4d\"}]]"
+      },
+      "fill": "example/assets.icon-list-view",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-list-view",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-list-view.default",
+        "pin": {
+          "file": "src/icons/List.ts",
+          "package": "lucide-react",
+          "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2",
+          "version": "1.23.0"
+        },
+        "sha256": "d7fb2e0df4387501ccb354be95a602c5642de656264c396f96db4b0661f11a91",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-list-view",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M3 5h.01",
+              "key": "18ugdj"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 12h.01",
+              "key": "nlz23k"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M3 19h.01",
+              "key": "noohij"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 5h13",
+              "key": "1pao27"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 12h13",
+              "key": "1za7za"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M8 19h13",
+              "key": "m83p4d"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-locked.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"rect\",{\"height\":\"11\",\"key\":\"1w4ew1\",\"rx\":\"2\",\"ry\":\"2\",\"width\":\"18\",\"x\":\"3\",\"y\":\"11\"}],[\"path\",{\"d\":\"M7 11V7a5 5 0 0 1 10 0v4\",\"key\":\"fwvmzm\"}]]"
+      },
+      "fill": "example/assets.icon-locked",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-locked",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-locked.default",
+        "pin": {
+          "file": "src/icons/Lock.ts",
+          "package": "lucide-react",
+          "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2",
+          "version": "1.23.0"
+        },
+        "sha256": "49de9b890f7cc95da75ece7eedd7ff981edbf3686a024ce47fd853a011a9f968",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-locked",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "rect",
+            {
+              "height": "11",
+              "key": "1w4ew1",
+              "rx": "2",
+              "ry": "2",
+              "width": "18",
+              "x": "3",
+              "y": "11"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M7 11V7a5 5 0 0 1 10 0v4",
+              "key": "fwvmzm"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-organization.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M10 12h4\",\"key\":\"a56b0p\"}],[\"path\",{\"d\":\"M10 8h4\",\"key\":\"1sr2af\"}],[\"path\",{\"d\":\"M14 21v-3a2 2 0 0 0-4 0v3\",\"key\":\"1rgiei\"}],[\"path\",{\"d\":\"M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2\",\"key\":\"secmi2\"}],[\"path\",{\"d\":\"M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16\",\"key\":\"16ra0t\"}]]"
+      },
+      "fill": "example/assets.icon-organization",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-organization",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-organization.default",
+        "pin": {
+          "file": "src/icons/Building2.ts",
+          "package": "lucide-react",
+          "sha256": "c774892a801f2765135e929313deb96d44b62ea6ad21d03178a261686ed655a0",
+          "version": "1.23.0"
+        },
+        "sha256": "75b2b9bb8cf6980331adb32bcc8735cadcee3f2084f1c004b3f3cae4f93db840",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-organization",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M10 12h4",
+              "key": "a56b0p"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M10 8h4",
+              "key": "1sr2af"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M14 21v-3a2 2 0 0 0-4 0v3",
+              "key": "1rgiei"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2",
+              "key": "secmi2"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16",
+              "key": "16ra0t"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-package.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z\",\"key\":\"hh9hay\"}],[\"path\",{\"d\":\"m3.3 7 8.7 5 8.7-5\",\"key\":\"g66t2b\"}],[\"path\",{\"d\":\"M12 22V12\",\"key\":\"d0xqtd\"}]]"
+      },
+      "fill": "example/assets.icon-package",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-package",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-package.default",
+        "pin": {
+          "file": "src/icons/Box.ts",
+          "package": "lucide-react",
+          "sha256": "7b2e0c2bdbabaebc89ad2f3dddbd5f20b0645aa6d76af7ee9a1caec026cb535d",
+          "version": "1.23.0"
+        },
+        "sha256": "26d3140435654b51d8ba2aab387165e5f0ad8e8bfa8cfc837076bb864724f629",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-package",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z",
+              "key": "hh9hay"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m3.3 7 8.7 5 8.7-5",
+              "key": "g66t2b"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 22V12",
+              "key": "d0xqtd"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-panel-left.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"rect\",{\"height\":\"18\",\"key\":\"afitv7\",\"rx\":\"2\",\"width\":\"18\",\"x\":\"3\",\"y\":\"3\"}],[\"path\",{\"d\":\"M9 3v18\",\"key\":\"fh3hqa\"}]]"
+      },
+      "fill": "example/assets.icon-panel-left",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-panel-left",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-panel-left.default",
+        "pin": {
+          "file": "src/icons/PanelLeft.ts",
+          "package": "lucide-react",
+          "sha256": "dd3c0b171cb38e6c3c773aa6e1d9eb5eaf2d84f7ab983abb6dbef6bfa4d4e512",
+          "version": "1.24.0"
+        },
+        "sha256": "5d52e6b896c4396b6ab1222764cf898127f3aa043e31d39e863a078b577f868c",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-panel-left",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "rect",
+            {
+              "height": "18",
+              "key": "afitv7",
+              "rx": "2",
+              "width": "18",
+              "x": "3",
+              "y": "3"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M9 3v18",
+              "key": "fh3hqa"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-payment.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"rect\",{\"height\":\"14\",\"key\":\"ynyp8z\",\"rx\":\"2\",\"width\":\"20\",\"x\":\"2\",\"y\":\"5\"}],[\"line\",{\"key\":\"1b3vmo\",\"x1\":\"2\",\"x2\":\"22\",\"y1\":\"10\",\"y2\":\"10\"}]]"
+      },
+      "fill": "example/assets.icon-payment",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-payment",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-payment.default",
+        "pin": {
+          "file": "src/icons/CreditCard.ts",
+          "package": "lucide-react",
+          "sha256": "c749d18fccbfd6915ad160c3934671fd2bd1d838731028a127f635fc914c1356",
+          "version": "1.23.0"
+        },
+        "sha256": "2f643ed100f2cc9233282cf57100ef776dde1c8de9eefb22bd84d91decf028dc",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-payment",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "rect",
+            {
+              "height": "14",
+              "key": "ynyp8z",
+              "rx": "2",
+              "width": "20",
+              "x": "2",
+              "y": "5"
+            }
+          ],
+          [
+            "line",
+            {
+              "key": "1b3vmo",
+              "x1": "2",
+              "x2": "22",
+              "y1": "10",
+              "y2": "10"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-receipt.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M12 17V7\",\"key\":\"pyj7ub\"}],[\"path\",{\"d\":\"M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8\",\"key\":\"1elt7d\"}],[\"path\",{\"d\":\"M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z\",\"key\":\"ycz6yz\"}]]"
+      },
+      "fill": "example/assets.icon-receipt",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-receipt",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-receipt.default",
+        "pin": {
+          "file": "src/icons/Receipt.ts",
+          "package": "lucide-react",
+          "sha256": "e718142acbdde5943a83cff95c85d38db1776c83bf406178ff549a94cde7d092",
+          "version": "1.23.0"
+        },
+        "sha256": "7e33530acc2f5e9223b735ec48b614e39192411c4895d964185342fa83ad941b",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-receipt",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M12 17V7",
+              "key": "pyj7ub"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M16 8h-6a2 2 0 0 0 0 4h4a2 2 0 0 1 0 4H8",
+              "key": "1elt7d"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M4 3a1 1 0 0 1 1-1 1.3 1.3 0 0 1 .7.2l.933.6a1.3 1.3 0 0 0 1.4 0l.934-.6a1.3 1.3 0 0 1 1.4 0l.933.6a1.3 1.3 0 0 0 1.4 0l.933-.6a1.3 1.3 0 0 1 1.4 0l.934.6a1.3 1.3 0 0 0 1.4 0l.933-.6A1.3 1.3 0 0 1 19 2a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1 1.3 1.3 0 0 1-.7-.2l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.934.6a1.3 1.3 0 0 1-1.4 0l-.933-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-1.4 0l-.934-.6a1.3 1.3 0 0 0-1.4 0l-.933.6a1.3 1.3 0 0 1-.7.2 1 1 0 0 1-1-1z",
+              "key": "ycz6yz"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-search.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"m21 21-4.34-4.34\",\"key\":\"14j7rj\"}],[\"circle\",{\"cx\":\"11\",\"cy\":\"11\",\"key\":\"4ej97u\",\"r\":\"8\"}]]"
+      },
+      "fill": "example/assets.icon-search",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-search",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-search.default",
+        "pin": {
+          "file": "src/icons/Search.ts",
+          "package": "lucide-react",
+          "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3",
+          "version": "1.23.0"
+        },
+        "sha256": "70f462cddc0164256197c4c60cba1051ec34c658a045a6accac6e1561d7f7278",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-search",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "m21 21-4.34-4.34",
+              "key": "14j7rj"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "11",
+              "cy": "11",
+              "key": "4ej97u",
+              "r": "8"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-security.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z\",\"key\":\"oel41y\"}],[\"path\",{\"d\":\"m9 12 2 2 4-4\",\"key\":\"dzmm74\"}]]"
+      },
+      "fill": "example/assets.icon-security",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-security",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-security.default",
+        "pin": {
+          "file": "src/icons/ShieldCheck.ts",
+          "package": "lucide-react",
+          "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4",
+          "version": "1.24.0"
+        },
+        "sha256": "9e6a71ba9d2e76a2d9a249f5039e6ad05b72dd330c91fc441b98ff5e1ed23a2b",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-security",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z",
+              "key": "oel41y"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 12 2 2 4-4",
+              "key": "dzmm74"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-settings.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915\",\"key\":\"1i5ecw\"}],[\"circle\",{\"cx\":\"12\",\"cy\":\"12\",\"key\":\"1v7zrd\",\"r\":\"3\"}]]"
+      },
+      "fill": "example/assets.icon-settings",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-settings",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-settings.default",
+        "pin": {
+          "file": "src/icons/Settings.ts",
+          "package": "lucide-react",
+          "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3",
+          "version": "1.23.0"
+        },
+        "sha256": "679fe66d34a4b4437455f0560c8fce23ac076386d644caf2aaf5f2a97fe6f5d9",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-settings",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915",
+              "key": "1i5ecw"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1v7zrd",
+              "r": "3"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-success.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M21.801 10A10 10 0 1 1 17 3.335\",\"key\":\"yps3ct\"}],[\"path\",{\"d\":\"m9 11 3 3L22 4\",\"key\":\"1pflzl\"}]]"
+      },
+      "fill": "example/assets.icon-success",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-success",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-success.default",
+        "pin": {
+          "file": "src/icons/CheckCircle.ts",
+          "package": "lucide-react",
+          "sha256": "e42486366da8ecf567b7550bb88078661910f893c0237d96b5812fb9dbb6060a",
+          "version": "1.23.0"
+        },
+        "sha256": "3dba58aca378132ca2edf4f7ed7121ac3efd36d249e60fb5e14eb7e5e3c7c11b",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-success",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M21.801 10A10 10 0 1 1 17 3.335",
+              "key": "yps3ct"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m9 11 3 3L22 4",
+              "key": "1pflzl"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-team.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\",\"key\":\"1yyitq\"}],[\"path\",{\"d\":\"M16 3.128a4 4 0 0 1 0 7.744\",\"key\":\"16gr8j\"}],[\"path\",{\"d\":\"M22 21v-2a4 4 0 0 0-3-3.87\",\"key\":\"kshegd\"}],[\"circle\",{\"cx\":\"9\",\"cy\":\"7\",\"key\":\"nufk8\",\"r\":\"4\"}]]"
+      },
+      "fill": "example/assets.icon-team",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-team",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-team.default",
+        "pin": {
+          "file": "src/icons/Users.ts",
+          "package": "lucide-react",
+          "sha256": "f5ba36adeb1462a29cfcf8edd3f7456756756449d73fdbb91948ce1ac4939104",
+          "version": "1.23.0"
+        },
+        "sha256": "810c8836d365d18ccd5bdf152f3797a26d9add03a8101550cbbacba260f4ce3e",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-team",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2",
+              "key": "1yyitq"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M16 3.128a4 4 0 0 1 0 7.744",
+              "key": "16gr8j"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M22 21v-2a4 4 0 0 0-3-3.87",
+              "key": "kshegd"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "9",
+              "cy": "7",
+              "key": "nufk8",
+              "r": "4"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-theme-dark.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401\",\"key\":\"kfwtm\"}]]"
+      },
+      "fill": "example/assets.icon-theme-dark",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-theme-dark",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-theme-dark.default",
+        "pin": {
+          "file": "src/icons/Moon.ts",
+          "package": "lucide-react",
+          "sha256": "dc1db0aec557a9ca371734249fb9a84eedce7d41c0a5fdfd072979821039be9d",
+          "version": "1.23.0"
+        },
+        "sha256": "a149607a1b4cf4f48cb7040223bdec5f64911a6d1a87d7abd0f1768ef7b8b139",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-theme-dark",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401",
+              "key": "kfwtm"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-theme-light.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"circle\",{\"cx\":\"12\",\"cy\":\"12\",\"key\":\"4exip2\",\"r\":\"4\"}],[\"path\",{\"d\":\"M12 2v2\",\"key\":\"tus03m\"}],[\"path\",{\"d\":\"M12 20v2\",\"key\":\"1lh1kg\"}],[\"path\",{\"d\":\"m4.93 4.93 1.41 1.41\",\"key\":\"149t6j\"}],[\"path\",{\"d\":\"m17.66 17.66 1.41 1.41\",\"key\":\"ptbguv\"}],[\"path\",{\"d\":\"M2 12h2\",\"key\":\"1t8f8n\"}],[\"path\",{\"d\":\"M20 12h2\",\"key\":\"1q8mjw\"}],[\"path\",{\"d\":\"m6.34 17.66-1.41 1.41\",\"key\":\"1m8zz5\"}],[\"path\",{\"d\":\"m19.07 4.93-1.41 1.41\",\"key\":\"1shlcs\"}]]"
+      },
+      "fill": "example/assets.icon-theme-light",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-theme-light",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-theme-light.default",
+        "pin": {
+          "file": "src/icons/Sun.ts",
+          "package": "lucide-react",
+          "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f",
+          "version": "1.23.0"
+        },
+        "sha256": "fb9391b10809af23d9fe979b0f07b0878610bae946c7bf092abc9750a3978161",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-theme-light",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "4exip2",
+              "r": "4"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 2v2",
+              "key": "tus03m"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 20v2",
+              "key": "1lh1kg"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m4.93 4.93 1.41 1.41",
+              "key": "149t6j"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m17.66 17.66 1.41 1.41",
+              "key": "ptbguv"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 12h2",
+              "key": "1t8f8n"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M20 12h2",
+              "key": "1q8mjw"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m6.34 17.66-1.41 1.41",
+              "key": "1m8zz5"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "m19.07 4.93-1.41 1.41",
+              "key": "1shlcs"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-theme-system.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"rect\",{\"height\":\"14\",\"key\":\"48i651\",\"rx\":\"2\",\"width\":\"20\",\"x\":\"2\",\"y\":\"3\"}],[\"line\",{\"key\":\"1svkeh\",\"x1\":\"8\",\"x2\":\"16\",\"y1\":\"21\",\"y2\":\"21\"}],[\"line\",{\"key\":\"vw1qmm\",\"x1\":\"12\",\"x2\":\"12\",\"y1\":\"17\",\"y2\":\"21\"}]]"
+      },
+      "fill": "example/assets.icon-theme-system",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-theme-system",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-theme-system.default",
+        "pin": {
+          "file": "src/icons/Monitor.ts",
+          "package": "lucide-react",
+          "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148",
+          "version": "1.23.0"
+        },
+        "sha256": "af4b40b4308173f90c3ed9dd234734f7b0dbb1dec2435d7474b8cbd66fa0fa79",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-theme-system",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "rect",
+            {
+              "height": "14",
+              "key": "48i651",
+              "rx": "2",
+              "width": "20",
+              "x": "2",
+              "y": "3"
+            }
+          ],
+          [
+            "line",
+            {
+              "key": "1svkeh",
+              "x1": "8",
+              "x2": "16",
+              "y1": "21",
+              "y2": "21"
+            }
+          ],
+          [
+            "line",
+            {
+              "key": "vw1qmm",
+              "x1": "12",
+              "x2": "12",
+              "y1": "17",
+              "y2": "21"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-time.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"circle\",{\"cx\":\"12\",\"cy\":\"12\",\"key\":\"1mglay\",\"r\":\"10\"}],[\"path\",{\"d\":\"M12 6v6l4 2\",\"key\":\"mmk7yg\"}]]"
+      },
+      "fill": "example/assets.icon-time",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-time",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-time.default",
+        "pin": {
+          "file": "src/icons/Clock.ts",
+          "package": "lucide-react",
+          "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd",
+          "version": "1.23.0"
+        },
+        "sha256": "641813685105fe9a53e43630d4af9a7be5802d38c989463633969cfb8378dfbb",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-time",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 6v6l4 2",
+              "key": "mmk7yg"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-user.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\",\"key\":\"975kel\"}],[\"circle\",{\"cx\":\"12\",\"cy\":\"7\",\"key\":\"17ys0d\",\"r\":\"4\"}]]"
+      },
+      "fill": "example/assets.icon-user",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-user",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-user.default",
+        "pin": {
+          "file": "src/icons/User.ts",
+          "package": "lucide-react",
+          "sha256": "4713de5f47d186c42e871932ddc90f71f88e8edb927071b718830c7eeece9050",
+          "version": "1.23.0"
+        },
+        "sha256": "347f8c1031c682e6fd2d6462c987bc297e9271f67a4f2fd8e4249c210ea9a2fb",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-user",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",
+              "key": "975kel"
+            }
+          ],
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "7",
+              "key": "17ys0d",
+              "r": "4"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-warning.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"path\",{\"d\":\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\",\"key\":\"wmoenq\"}],[\"path\",{\"d\":\"M12 9v4\",\"key\":\"juzpu7\"}],[\"path\",{\"d\":\"M12 17h.01\",\"key\":\"p32p05\"}]]"
+      },
+      "fill": "example/assets.icon-warning",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-warning",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-warning.default",
+        "pin": {
+          "file": "src/icons/AlertTriangle.ts",
+          "package": "lucide-react",
+          "sha256": "5df01838b615e03b2e1d30618a1e3180cbbb82294bb2b32ec544e2bb3c127653",
+          "version": "1.23.0"
+        },
+        "sha256": "7d9ebad85ba84cc45aaf800090e971bc5bad54795b10280cd158f1310f482a34",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-warning",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "path",
+            {
+              "d": "m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3",
+              "key": "wmoenq"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 9v4",
+              "key": "juzpu7"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 17h.01",
+              "key": "p32p05"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.icon-website.default": {
+      "$type": "glyph",
+      "alias": {},
+      "css": {
+        "light": "[[\"circle\",{\"cx\":\"12\",\"cy\":\"12\",\"key\":\"1mglay\",\"r\":\"10\"}],[\"path\",{\"d\":\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\",\"key\":\"13o1zl\"}],[\"path\",{\"d\":\"M2 12h20\",\"key\":\"9i4pu4\"}]]"
+      },
+      "fill": "example/assets.icon-website",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "lucide/assets.icon-website",
+        "kind": "adopted",
+        "license": "ISC",
+        "member": "assets.icon-website.default",
+        "pin": {
+          "file": "src/icons/Globe.ts",
+          "package": "lucide-react",
+          "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2",
+          "version": "1.24.0"
+        },
+        "sha256": "7383856bc2b1c7992ecda0c663373cd3d697f1f3e169d5c754acd0daf60f12df",
+        "source": "lucide"
+      },
+      "reads": [],
+      "slot": "assets.icon-website",
+      "source": "example",
+      "value": {
+        "light": [
+          [
+            "circle",
+            {
+              "cx": "12",
+              "cy": "12",
+              "key": "1mglay",
+              "r": "10"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
+              "key": "13o1zl"
+            }
+          ],
+          [
+            "path",
+            {
+              "d": "M2 12h20",
+              "key": "9i4pu4"
+            }
+          ]
+        ]
+      },
+      "via": "adopted"
+    },
+    "assets.image-ratio.landscape": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"height\":2,\"width\":3}"
+      },
+      "fill": "example/assets.image-ratio",
+      "origin": {
+        "kind": "authored",
+        "license": "UNLICENSED",
+        "note": "Consumer editorial brief: Landscape crop for editorial media"
+      },
+      "reads": [],
+      "slot": "assets.image-ratio",
+      "source": "example",
+      "value": {
+        "light": {
+          "height": 2,
+          "width": 3
+        }
+      },
+      "via": "authored"
+    },
+    "assets.image.hero": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"alt\":\"A flat slate panel\",\"height\":30,\"kind\":\"illustration\",\"src\":\"data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2030%22%3E%3Crect%20width%3D%2240%22%20height%3D%2230%22%20fill%3D%22%23445566%22%2F%3E%3C%2Fsvg%3E\",\"width\":40}"
+      },
+      "fill": "example/assets.image",
+      "origin": {
+        "kind": "authored",
+        "license": "UNLICENSED",
+        "note": "Consumer media brief: Product illustration"
+      },
+      "reads": [],
+      "slot": "assets.image",
+      "source": "example",
+      "value": {
+        "light": {
+          "alt": "A flat slate panel",
+          "height": 30,
+          "kind": "illustration",
+          "src": "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2040%2030%22%3E%3Crect%20width%3D%2240%22%20height%3D%2230%22%20fill%3D%22%23445566%22%2F%3E%3C%2Fsvg%3E",
+          "width": 40
+        }
+      },
+      "via": "authored"
+    },
+    "assets.lockup.positive": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><g><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></g><text x=\"56\" y=\"30\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"22\" font-weight=\"600\" fill=\"currentColor\">Example</text></svg>"
+      },
+      "fill": "example/assets.lockup",
+      "origin": {
+        "kind": "authored",
+        "license": "UNLICENSED",
+        "note": "Consumer identity seed; live text; font outlining unknown; family sans-serif"
+      },
+      "reads": [],
+      "slot": "assets.lockup",
+      "source": "example",
+      "value": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><g><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></g><text x=\"56\" y=\"30\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"22\" font-weight=\"600\" fill=\"currentColor\">Example</text></svg>"
+      },
+      "via": "authored"
+    },
+    "assets.lockup.reversed": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><g><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"oklch(1 0 0)\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"oklch(1 0 0)\">EX</text></g><text x=\"56\" y=\"30\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"22\" font-weight=\"600\" fill=\"oklch(1 0 0)\">Example</text></svg>"
+      },
+      "fill": "example/assets.lockup",
+      "origin": {
+        "inputs": [
+          "assets.lockup.positive",
+          "themes.background.default",
+          "themes.font-heading.default",
+          "themes.foreground.default",
+          "themes.primary-foreground.default",
+          "themes.primary.default"
+        ],
+        "inputsHash": "157250d610a7c1a8cf7a9f11184f0be69c0eae183d0bed021eb4a87d0a76ae45",
+        "kind": "derived",
+        "rule": "identity-lockup@1"
+      },
+      "reads": [
+        "assets.lockup.positive",
+        "themes.background.default",
+        "themes.font-heading.default",
+        "themes.foreground.default",
+        "themes.primary-foreground.default",
+        "themes.primary.default"
+      ],
+      "slot": "assets.lockup",
+      "source": "example",
+      "value": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 200 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><g><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"oklch(1 0 0)\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"oklch(1 0 0)\">EX</text></g><text x=\"56\" y=\"30\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"22\" font-weight=\"600\" fill=\"oklch(1 0 0)\">Example</text></svg>"
+      },
+      "via": "derived"
+    },
+    "assets.mark.mono": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "fill": "example/assets.mark",
+      "origin": {
+        "inputs": [
+          "assets.mark.positive",
+          "themes.background.default",
+          "themes.font-heading.default",
+          "themes.foreground.default",
+          "themes.primary-foreground.default",
+          "themes.primary.default"
+        ],
+        "inputsHash": "1b3b9c50cc8b2c295a39af07267ca96b7a2996afe8b3b18f6ac9d3c825e88f36",
+        "kind": "derived",
+        "rule": "identity-mark@1"
+      },
+      "reads": [
+        "assets.mark.positive",
+        "themes.background.default",
+        "themes.font-heading.default",
+        "themes.foreground.default",
+        "themes.primary-foreground.default",
+        "themes.primary.default"
+      ],
+      "slot": "assets.mark",
+      "source": "example",
+      "value": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "via": "derived"
+    },
+    "assets.mark.positive": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "fill": "example/assets.mark",
+      "origin": {
+        "kind": "authored",
+        "license": "UNLICENSED",
+        "note": "Consumer identity seed; live text; font outlining unknown; family sans-serif"
+      },
+      "reads": [],
+      "slot": "assets.mark",
+      "source": "example",
+      "value": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"currentColor\">EX</text></svg>"
+      },
+      "via": "authored"
+    },
+    "assets.mark.reversed": {
+      "$type": "svg",
+      "alias": {},
+      "css": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"oklch(1 0 0)\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"oklch(1 0 0)\">EX</text></svg>"
+      },
+      "fill": "example/assets.mark",
+      "origin": {
+        "inputs": [
+          "assets.mark.positive",
+          "themes.background.default",
+          "themes.font-heading.default",
+          "themes.foreground.default",
+          "themes.primary-foreground.default",
+          "themes.primary.default"
+        ],
+        "inputsHash": "1b3b9c50cc8b2c295a39af07267ca96b7a2996afe8b3b18f6ac9d3c825e88f36",
+        "kind": "derived",
+        "rule": "identity-mark@1"
+      },
+      "reads": [
+        "assets.mark.positive",
+        "themes.background.default",
+        "themes.font-heading.default",
+        "themes.foreground.default",
+        "themes.primary-foreground.default",
+        "themes.primary.default"
+      ],
+      "slot": "assets.mark",
+      "source": "example",
+      "value": {
+        "light": "<svg aria-label=\"Example\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 48 48\" aria-hidden=\"true\" color=\"oklch(0.145 0 0)\" data-clear-space=\"0.2\"><circle cx=\"24\" cy=\"24\" r=\"22\" fill=\"none\" stroke=\"oklch(1 0 0)\" stroke-width=\"2\" /><text x=\"24\" y=\"30\" text-anchor=\"middle\" font-family=\"-apple-system, &quot;BlinkMacSystemFont&quot;, &quot;Segoe UI&quot;, &quot;Roboto&quot;, &quot;Helvetica Neue&quot;, &quot;Noto Sans&quot;, &quot;Arial&quot;, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;\" font-size=\"18\" font-weight=\"600\" fill=\"oklch(1 0 0)\">EX</text></svg>"
+      },
+      "via": "derived"
+    },
+    "assets.pattern.dots": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"ink\":\"--color-line-strong\",\"shape\":\"dots\",\"tile\":\"--spacing-xl\",\"weight\":\"--ui-border-hairline\"}"
+      },
+      "fill": "example/assets.pattern",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/assets.pattern",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "assets.pattern.dots",
+        "pin": {
+          "export": "PATTERN_RECIPES",
+          "file": "src/tokens/pattern.ts",
+          "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+        },
+        "sha256": "7dc3d8bdbf6e73ed061fc290bf1ce5d47648abefde6ce88f45144b5c8a9c0f0e",
+        "source": "foundry"
+      },
+      "reads": [],
+      "slot": "assets.pattern",
+      "source": "example",
+      "value": {
+        "light": {
+          "ink": "--color-line-strong",
+          "shape": "dots",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "via": "adopted"
+    },
+    "assets.pattern.grain": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"ink\":\"--color-line-strong\",\"shape\":\"grain\",\"tile\":\"--spacing-xl\",\"weight\":\"--ui-border-hairline\"}"
+      },
+      "fill": "example/assets.pattern",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/assets.pattern",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "assets.pattern.grain",
+        "pin": {
+          "export": "PATTERN_RECIPES",
+          "file": "src/tokens/pattern.ts",
+          "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+        },
+        "sha256": "b3dc9ef7ad2a92c0fcc1c96ef0f393a14111c1e736f9b7c5e896ebcc26a2619a",
+        "source": "foundry"
+      },
+      "reads": [],
+      "slot": "assets.pattern",
+      "source": "example",
+      "value": {
+        "light": {
+          "ink": "--color-line-strong",
+          "shape": "grain",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "via": "adopted"
+    },
+    "assets.pattern.grid": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"ink\":\"--color-line-strong\",\"shape\":\"grid\",\"tile\":\"--spacing-xl\",\"weight\":\"--ui-border-hairline\"}"
+      },
+      "fill": "example/assets.pattern",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/assets.pattern",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "assets.pattern.grid",
+        "pin": {
+          "export": "PATTERN_RECIPES",
+          "file": "src/tokens/pattern.ts",
+          "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+        },
+        "sha256": "d61a149826ab969920e8a687309991f32ce85760c37a6d2177b2ca9ecd05329c",
+        "source": "foundry"
+      },
+      "reads": [],
+      "slot": "assets.pattern",
+      "source": "example",
+      "value": {
+        "light": {
+          "ink": "--color-line-strong",
+          "shape": "grid",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "via": "adopted"
+    },
+    "assets.pattern.lines": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"ink\":\"--color-line-strong\",\"shape\":\"lines\",\"tile\":\"--spacing-xl\",\"weight\":\"--ui-border-hairline\"}"
+      },
+      "fill": "example/assets.pattern",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/assets.pattern",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "assets.pattern.lines",
+        "pin": {
+          "export": "PATTERN_RECIPES",
+          "file": "src/tokens/pattern.ts",
+          "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+        },
+        "sha256": "77e1e66fa7ee94c37b0499e56723bf4ed3a1eef67a5cc1423089466658fda93f",
+        "source": "foundry"
+      },
+      "reads": [],
+      "slot": "assets.pattern",
+      "source": "example",
+      "value": {
+        "light": {
+          "ink": "--color-line-strong",
+          "shape": "lines",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "via": "adopted"
+    },
+    "assets.pattern.noise": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"ink\":\"--color-line-strong\",\"shape\":\"noise\",\"tile\":\"--spacing-xl\",\"weight\":\"--ui-border-hairline\"}"
+      },
+      "fill": "example/assets.pattern",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/assets.pattern",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "assets.pattern.noise",
+        "pin": {
+          "export": "PATTERN_RECIPES",
+          "file": "src/tokens/pattern.ts",
+          "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+        },
+        "sha256": "404290ff28f06f3c1579f74f3d3b9b770f1a6b451d54bc04428edde93805cd64",
+        "source": "foundry"
+      },
+      "reads": [],
+      "slot": "assets.pattern",
+      "source": "example",
+      "value": {
+        "light": {
+          "ink": "--color-line-strong",
+          "shape": "noise",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "via": "adopted"
+    },
+    "assets.pattern.topo": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"ink\":\"--color-line-strong\",\"shape\":\"topo\",\"tile\":\"--spacing-xl\",\"weight\":\"--ui-border-hairline\"}"
+      },
+      "fill": "example/assets.pattern",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/assets.pattern",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "assets.pattern.topo",
+        "pin": {
+          "export": "PATTERN_RECIPES",
+          "file": "src/tokens/pattern.ts",
+          "sha256": "5cde189c7941f787042b61fe3ac9575b9d34918fa0d20d3f7740548d10aa5852"
+        },
+        "sha256": "c64ea1a22cac082667e10733bbd6bc453bf350e8a827a6682d0eec45d415e3d8",
+        "source": "foundry"
+      },
+      "reads": [],
+      "slot": "assets.pattern",
+      "source": "example",
+      "value": {
+        "light": {
+          "ink": "--color-line-strong",
+          "shape": "topo",
+          "tile": "--spacing-xl",
+          "weight": "--ui-border-hairline"
+        }
+      },
+      "via": "adopted"
+    },
+    "assets.video.tour": {
+      "$type": "rules",
+      "alias": {},
+      "css": {
+        "light": "{\"captions\":{\"label\":\"English\",\"src\":\"https://media.example.invalid/tour.en.vtt\",\"srclang\":\"en\"},\"height\":720,\"mediaType\":\"video/mp4\",\"reducedMotion\":\"poster\",\"src\":\"https://media.example.invalid/tour.mp4\",\"width\":1280}"
+      },
+      "fill": "example/assets.video",
+      "origin": {
+        "kind": "authored",
+        "license": "UNLICENSED",
+        "note": "Consumer media brief: Product tour"
+      },
+      "reads": [],
+      "slot": "assets.video",
+      "source": "example",
+      "value": {
+        "light": {
+          "captions": {
+            "label": "English",
+            "src": "https://media.example.invalid/tour.en.vtt",
+            "srclang": "en"
+          },
+          "height": 720,
+          "mediaType": "video/mp4",
+          "reducedMotion": "poster",
+          "src": "https://media.example.invalid/tour.mp4",
+          "width": 1280
+        }
+      },
+      "via": "authored"
+    },
+    "themes.accent-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--accent-foreground",
+      "fill": "example/themes.accent-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.accent-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.accent-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "1f111a411406f99a3ab10b9410a1b07cb857191453120bcbd46636b58570b699",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.accent-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.accent.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--accent",
+      "fill": "example/themes.accent",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.accent",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.accent.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "13cbb479b10d319410e795ddbeaca62c86cf300a6ff2471ed478521106fb6fc2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.accent",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-marquee-vertical.default": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "marquee-vertical var(--duration) linear infinite"
+      },
+      "emit": "--animate-marquee-vertical",
+      "fill": "example/themes.animate-marquee-vertical",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/themes.animate-marquee-vertical",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee-vertical.default",
+        "sha256": "c38bcd6c14c96841a9971d2976b6cc1e6ba53c6198cf24ef01e529c52f4abf0d",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee-vertical",
+      "source": "example",
+      "value": {
+        "light": "marquee-vertical var(--duration) linear infinite"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-marquee.default": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "marquee var(--duration) infinite linear"
+      },
+      "emit": "--animate-marquee",
+      "fill": "example/themes.animate-marquee",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/themes.animate-marquee",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee.default",
+        "sha256": "6e3fff38b16b6939c86964fb85825d6fc47f087251b446de9bb4346ee4d30994",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee",
+      "source": "example",
+      "value": {
+        "light": "marquee var(--duration) infinite linear"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-shiny-text.default": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "shiny-text 8s infinite"
+      },
+      "emit": "--animate-shiny-text",
+      "fill": "example/themes.animate-shiny-text",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "foundry/themes.animate-shiny-text",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-shiny-text.default",
+        "sha256": "74dbeb9a4df2e0bb4b27e72016860789644b713a41f9eafbf625d2143ebe4b27",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-shiny-text",
+      "source": "example",
+      "value": {
+        "light": "shiny-text 8s infinite"
+      },
+      "via": "adopted"
+    },
+    "themes.background.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.145 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "emit": "--background",
+      "fill": "example/themes.background",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.background",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.background.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "b4cc53718aa44f22d6c1ce417af6d707c5f74ec6ce090ce1891728d90d01ff0c",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.background",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.145 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.border.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "emit": "--border",
+      "fill": "example/themes.border",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.border",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.border.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "9694682d81bfbba889490a00a216db5abdd426ab9af7213b1cb571c130cfb882",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.border",
+      "source": "example",
+      "value": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.card-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--card-foreground",
+      "fill": "example/themes.card-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.card-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.card-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "ffe43daffb7dfefd336aaeb03fa4672ec99eec131256e26daa8f0d7d35a82a49",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.card-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.card.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "emit": "--card",
+      "fill": "example/themes.card",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.card",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.card.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "2afbe0c1c3d23ff1bc22d6eaadaab82e6df28d7f6e001313acabe376ff91f503",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.card",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-1.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.87 0 0)",
+        "light": "oklch(0.87 0 0)"
+      },
+      "emit": "--chart-1",
+      "fill": "example/themes.chart-1",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.chart-1",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-1.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7317a41fad1d83bb73cd13bfbbbccef43bb654ffcac9820415d00b89a48dbc0a",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-1",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.87 0 0)",
+        "light": "oklch(0.87 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-2.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "emit": "--chart-2",
+      "fill": "example/themes.chart-2",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.chart-2",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-2.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "dc9d18b6ee9486cfd6b2f0907016363e74d773651d9b0e904422b8016bc077f5",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-2",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-3.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.439 0 0)",
+        "light": "oklch(0.439 0 0)"
+      },
+      "emit": "--chart-3",
+      "fill": "example/themes.chart-3",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.chart-3",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-3.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "4f86406a3d52d982df5e45db1ed29ed79c306de6c518a1095b109dcff27674c6",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-3",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.439 0 0)",
+        "light": "oklch(0.439 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-4.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.371 0 0)",
+        "light": "oklch(0.371 0 0)"
+      },
+      "emit": "--chart-4",
+      "fill": "example/themes.chart-4",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.chart-4",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-4.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7422f8a792375d3c2a9e52a9d2080ed9183fc0b15a5146459873aa005b0c6cc2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-4",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.371 0 0)",
+        "light": "oklch(0.371 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.chart-5.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.269 0 0)"
+      },
+      "emit": "--chart-5",
+      "fill": "example/themes.chart-5",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.chart-5",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.chart-5.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "6198133f91acf3eadf105b9c66c6f1666a8e758879e79d2615b7aceea9abb035",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.chart-5",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.269 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.destructive.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.704 0.191 22.216)",
+        "light": "oklch(0.577 0.245 27.325)"
+      },
+      "emit": "--destructive",
+      "fill": "example/themes.destructive",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.destructive",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.destructive.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "352496b02736b7aa198059e1aea29473c640fba27d7b64bca587dd99ca0e1d05",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.destructive",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.704 0.191 22.216)",
+        "light": "oklch(0.577 0.245 27.325)"
+      },
+      "via": "adopted"
+    },
+    "themes.font-heading.default": {
+      "$type": "fontFamily",
+      "alias": {
+        "light": "themes.font-sans.default"
+      },
+      "css": {
+        "light": "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji')"
+      },
+      "emit": "--font-heading",
+      "fill": "example/themes.font-heading",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.font-heading",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-heading.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "dfbe8f6bf03e70ac7b879147e40bac6bcf08a04df0df6a4493224f412a769c2a",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-heading",
+      "source": "example",
+      "value": {
+        "light": [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Noto Sans",
+          "Arial",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.font-mono.default": {
+      "$type": "fontFamily",
+      "alias": {},
+      "css": {
+        "light": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace"
+      },
+      "emit": "--font-mono",
+      "fill": "example/themes.font-mono",
+      "font": {
+        "kind": "system"
+      },
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.font-mono",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-mono.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "c518577ececf7f2bc35a92bf2e1a86d725d8661f240e5331cc7a0928f66f2ff3",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-mono",
+      "source": "example",
+      "value": {
+        "light": [
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "Monaco",
+          "Consolas",
+          "Liberation Mono",
+          "Courier New",
+          "monospace"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.font-sans.default": {
+      "$type": "fontFamily",
+      "alias": {},
+      "css": {
+        "light": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'"
+      },
+      "emit": "--font-sans",
+      "fill": "example/themes.font-sans",
+      "font": {
+        "kind": "system"
+      },
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.font-sans",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-sans.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "8de2ccb4d8990bca6ef843cade58ba74d64c3bed5a6a044a0d7e73125b7f7bcc",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-sans",
+      "source": "example",
+      "value": {
+        "light": [
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Noto Sans",
+          "Arial",
+          "sans-serif",
+          "Apple Color Emoji",
+          "Segoe UI Emoji",
+          "Segoe UI Symbol",
+          "Noto Color Emoji"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.font-serif.default": {
+      "$type": "fontFamily",
+      "alias": {},
+      "css": {
+        "light": "ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif"
+      },
+      "emit": "--font-serif",
+      "fill": "example/themes.font-serif",
+      "font": {
+        "kind": "system"
+      },
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.font-serif",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.font-serif.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "d059d056ed8577dbe53dd23789e2b802ea1e5016bbe9ff27fb9485e8df517caf",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.font-serif",
+      "source": "example",
+      "value": {
+        "light": [
+          "ui-serif",
+          "Georgia",
+          "Cambria",
+          "Times New Roman",
+          "Times",
+          "serif"
+        ]
+      },
+      "via": "adopted"
+    },
+    "themes.foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--foreground",
+      "fill": "example/themes.foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "6964735584672ec061ab53cbc45e23faf50dbe8e64a5ce18ec756b685e8c12c2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.input.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(1 0 0 / 15%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "emit": "--input",
+      "fill": "example/themes.input",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.input",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.input.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "0ed13dd608efeedd0f409c21864abbe05ab02cd43c6852c979de88ec465484e2",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.input",
+      "source": "example",
+      "value": {
+        "dark": "oklch(1 0 0 / 15%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.muted-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.708 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "emit": "--muted-foreground",
+      "fill": "example/themes.muted-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.muted-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.muted-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "0654d740aaab664c6cd1ac292b746ee3f6d1fae4375fdbaa74c7f8aa47f5003c",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.muted-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.708 0 0)",
+        "light": "oklch(0.556 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.muted.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--muted",
+      "fill": "example/themes.muted",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.muted",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.muted.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "b75ec25fbcd4ba028147b9f9f621fb4f1d5a6e2346ff3bb3ee2a2866523246b8",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.muted",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.popover-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--popover-foreground",
+      "fill": "example/themes.popover-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.popover-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.popover-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "cac6348948e60c4e38a9db709a45b3261b69e32c9710969932be3f594ad27595",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.popover-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.popover.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "emit": "--popover",
+      "fill": "example/themes.popover",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.popover",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.popover.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "9707de586d22088d419733e05ee116a8577d65f2bc3a6ccd027b4f86369d7cd1",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.popover",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(1 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.primary-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "emit": "--primary-foreground",
+      "fill": "example/themes.primary-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.primary-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.primary-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "be339a490d9301737edab16d36b180714cf876374b7e3ebafe42a5ce34e8684c",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.primary-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.primary.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.922 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--primary",
+      "fill": "example/themes.primary",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.primary",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.primary.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "6fcf2eeb2c9aeaccf541e8d4d293f1a9acb73dd978f87b8b74e31dc6a4f0e6f0",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.primary",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.922 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.radius.default": {
+      "$type": "dimension",
+      "alias": {},
+      "css": {
+        "light": "0.75rem"
+      },
+      "emit": "--radius",
+      "fill": "example/themes.radius",
+      "origin": {
+        "kind": "authored",
+        "license": "UNLICENSED"
+      },
+      "slot": "themes.radius",
+      "source": "example",
+      "value": {
+        "light": {
+          "unit": "rem",
+          "value": 0.75
+        }
+      },
+      "via": "authored"
+    },
+    "themes.ring.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "emit": "--ring",
+      "fill": "example/themes.ring",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.ring",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.ring.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "52e2e971fcbd0081c94d4b7655f95229c563de0b385ad9bdd83594539dfc9097",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.ring",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.secondary-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--secondary-foreground",
+      "fill": "example/themes.secondary-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.secondary-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.secondary-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "d779a983ac536f2c4f92c07363db9e1b058cd727cb8e2fc482589f00a32597f6",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.secondary-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.secondary.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--secondary",
+      "fill": "example/themes.secondary",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.secondary",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.secondary.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7393550e940af3b2739ab84016343174830b288734e26a1a0bd597a490c71ba4",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.secondary",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.2xl": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+      },
+      "emit": "--shadow-2xl",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.2xl",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "3f7bb255e18be7b6086997bd8026706b4fd74e56996bcee653a854c33caf4faa",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 25px 50px -12px rgb(0 0 0 / 0.25)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.2xs": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 1px rgb(0 0 0 / 0.05)"
+      },
+      "emit": "--shadow-2xs",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.2xs",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "0ce1f1c342e894c20989063268071c8b16d40d2e60d79ea88e77b31a37b7e9f4",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 1px rgb(0 0 0 / 0.05)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.lg": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-lg",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.lg",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "ffaf62224cb9889fe287e38fed90884345b6af9e65be3ec7456289382f9d3508",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.md": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-md",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.md",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "542914a59cb2d8b6c0fbf2dc5ab1a388a09a2db63568fda5d262e4cae3421c85",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.sm": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-sm",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.sm",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "1bc0075d8a593cf567fb1555db082edae1994060275ac72a58921d9a0d0fc328",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.xl": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+      },
+      "emit": "--shadow-xl",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.xl",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "a4b991902d1a3c52562fb712f5a8a884e180a653b09d99ccec29b6bbf6069aff",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)"
+      },
+      "via": "adopted"
+    },
+    "themes.shadow.xs": {
+      "$type": "shadow",
+      "alias": {},
+      "css": {
+        "light": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+      },
+      "emit": "--shadow-xs",
+      "fill": "example/themes.shadow",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.shadow",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.shadow.xs",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "a32abc76810d58fa442de5c9ab137577730eeeeeffb2404c2d1179ed3d46b4e0",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.shadow",
+      "source": "example",
+      "value": {
+        "light": "0 1px 2px 0 rgb(0 0 0 / 0.05)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-accent-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--sidebar-accent-foreground",
+      "fill": "example/themes.sidebar-accent-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-accent-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-accent-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "4170cbee6cef1f8e7b4b4d09565739e76a2a5f60160d6344503f478f8ad39e04",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-accent-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-accent.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "emit": "--sidebar-accent",
+      "fill": "example/themes.sidebar-accent",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-accent",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-accent.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "0064e5e9d80b9e92ba5ed1cdeda4cd237880572bcf490c119bdb7ed4300b7ea6",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-accent",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.269 0 0)",
+        "light": "oklch(0.97 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-border.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "emit": "--sidebar-border",
+      "fill": "example/themes.sidebar-border",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-border",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-border.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "4b77670ce1ef7676685c580dbb4636ffda8c99388c3aada1ac749021cf478c4b",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-border",
+      "source": "example",
+      "value": {
+        "dark": "oklch(1 0 0 / 10%)",
+        "light": "oklch(0.922 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "emit": "--sidebar-foreground",
+      "fill": "example/themes.sidebar-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "e3997577848c5eab0609b5580730265e490cd7babc3b30cd4d911e82f165d505",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.145 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-primary-foreground.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "emit": "--sidebar-primary-foreground",
+      "fill": "example/themes.sidebar-primary-foreground",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-primary-foreground",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-primary-foreground.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "09095c53611f0cedec095e578d0450e8ea40b19703f6cba94effffb94f9bb1cb",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-primary-foreground",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.985 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-primary.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.488 0.243 264.376)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "emit": "--sidebar-primary",
+      "fill": "example/themes.sidebar-primary",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-primary",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-primary.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "7dc3a380ecd3876fea4688491aa65c148a0d4387caee9e46384bce714f5181f9",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-primary",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.488 0.243 264.376)",
+        "light": "oklch(0.205 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar-ring.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "emit": "--sidebar-ring",
+      "fill": "example/themes.sidebar-ring",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar-ring",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar-ring.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "195f27c79430cf7170c98ad1e990be0874645a17e383ffc2ef0eee2fa21661d8",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar-ring",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.556 0 0)",
+        "light": "oklch(0.708 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.sidebar.default": {
+      "$type": "color",
+      "alias": {},
+      "css": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "emit": "--sidebar",
+      "fill": "example/themes.sidebar",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "shadcn@aria/themes.sidebar",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.sidebar.default",
+        "pin": {
+          "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+          "file": "apps/v4/registry/themes.ts#neutral",
+          "sha256": "b7d751e6741f8eea1e10d3fb4c9bdd0d5421e0b5f6b9f543f85d2f7787c2d347",
+          "url": "https://github.com/shadcn-ui/ui/blob/daaf156ee00ed91cc7e6bdd937c1b4973152d141/apps/v4/registry/themes.ts"
+        },
+        "sha256": "a1afb25affbb944a00a99a3892b219d805b47360737d71a944b8f1ce6c8c6714",
+        "source": "shadcn@aria"
+      },
+      "slot": "themes.sidebar",
+      "source": "example",
+      "value": {
+        "dark": "oklch(0.205 0 0)",
+        "light": "oklch(0.985 0 0)"
+      },
+      "via": "adopted"
+    },
+    "themes.spacing.default": {
+      "$type": "dimension",
+      "alias": {},
+      "css": {
+        "light": "0.25rem"
+      },
+      "emit": "--spacing",
+      "fill": "example/themes.spacing",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.spacing",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.spacing.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "8aa15d2f10722a0cd127c4d6cddb3818e8d1a59a897fde77643ecd2b7e955972",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.spacing",
+      "source": "example",
+      "value": {
+        "light": {
+          "unit": "rem",
+          "value": 0.25
+        }
+      },
+      "via": "adopted"
+    },
+    "themes.tracking-tight.default": {
+      "$type": "number",
+      "alias": {},
+      "css": {
+        "light": "-0.025em"
+      },
+      "emit": "--tracking-tight",
+      "fill": "example/themes.tracking-tight",
+      "origin": {
+        "adoptedAt": "2026-10-27",
+        "fill": "tailwind-default/themes.tracking-tight",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.tracking-tight.default",
+        "pin": {
+          "file": "theme.css",
+          "package": "tailwindcss",
+          "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167",
+          "version": "4.3.3"
+        },
+        "sha256": "7e96cb4c5c951e6de9a9ceb084d58010cdc93ed870d4841c4206de48a28df288",
+        "source": "tailwind-default"
+      },
+      "slot": "themes.tracking-tight",
+      "source": "example",
+      "value": {
+        "light": -0.025
+      },
+      "via": "adopted"
+    }
+  },
+  "notices": [],
+  "selectionHash": "fnv1a64:ad24b88dc0eeca6b",
+  "version": 1
+}

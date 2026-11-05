@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.page-tabs",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 249
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.page-tabs",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The tab row of a Studio page: stock shadcn Tabs in a ScrollArea, one link per tab route the content map projects.",
+    "inputs": [
+      {
+        "name": "tabs",
+        "kind": "data",
+        "required": true,
+        "description": "The page's tab routes in content-map order, and the active one."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "tabs",
+        "version": "4.23.0",
+        "hash": "sha256:3694a0147e4ed8eccfc7644b7cb5214b76f9e0f76780740faf9f1908cef3d0f7",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/tabs.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "scroll-area",
+        "version": "4.23.0",
+        "hash": "sha256:ebf805286284762c329b48209e8e2c07860073adef9459181c7f2ceb2fd0b67f",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/scroll-area.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "text"
+  },
+  "inputs": [],
+  "uses": [
+    "components.scroll-area",
+    "components.tabs"
+  ]
+}

@@ -14,7 +14,7 @@ import {
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { LATER_AT, assessmentFor, commitHubPlan, decide } from "./admission-fixture.js";
+import { DIRECTION_ROLE, LATER_AT, assessmentFor, commitHubPlan, decide } from "./admission-fixture.js";
 import { buildMaterializedFixture } from "./apply-step-fixture.js";
 import type { MaterializedFixtureOptions } from "./apply-step-fixture.js";
 import { discoveryLinkPath, skillPath } from "./change-set-contract.js";
@@ -75,7 +75,7 @@ describe("verifyRepository", () => {
     "reports violations for tampered files, links, modes, ledger, undeclared paths, and dirty trees",
     async () => {
     let fixture = await materialized();
-    const skill = skillPath("strategist");
+    const skill = skillPath(DIRECTION_ROLE);
     writeFileSync(join(fixture.clone, skill), "tampered\n");
     expect((await verifyRepository({ clone: fixture.clone, hub: fixture.hub, set: fixture.set })).exitCode).toBe(1);
 
@@ -126,7 +126,7 @@ describe("verifyRepository", () => {
 
   it("matches verifyMain exit codes for a violated tree", async () => {
     const fixture = await materialized();
-    writeFileSync(join(fixture.clone, skillPath("strategist")), "tampered\n");
+    writeFileSync(join(fixture.clone, skillPath(DIRECTION_ROLE)), "tampered\n");
     const { verifyMain } = await import("./apply-plan-cli.js");
     const code = await verifyMain(["--repo", SITE_ID], { cwd: fixture.hub, clone: fixture.clone, set: fixture.set });
     expect(code).toBe(1);
@@ -160,8 +160,8 @@ describe("verifyRepository", () => {
   it("returns symlink-ancestor when a symlink ancestor lies outside clossys, .github, and .starter", async () => {
     const fixture = await materialized();
     const realAgents = join(fixture.clone, "agents-real");
-    mkdirSync(join(realAgents, "skills/clossys-strategist"), { recursive: true });
-    writeFileSync(join(realAgents, "skills/clossys-strategist/SKILL.md"), readFileSync(join(fixture.clone, skillPath("strategist")), "utf8"));
+    mkdirSync(join(realAgents, `skills/clossys-${DIRECTION_ROLE}`), { recursive: true });
+    writeFileSync(join(realAgents, `skills/clossys-${DIRECTION_ROLE}/SKILL.md`), readFileSync(join(fixture.clone, skillPath(DIRECTION_ROLE)), "utf8"));
     rmSync(join(fixture.clone, ".agents"), { recursive: true, force: true });
     symlinkSync(realAgents, join(fixture.clone, ".agents"));
     expect(await verifyRepository({ clone: fixture.clone, hub: fixture.hub, set: fixture.set })).toEqual({

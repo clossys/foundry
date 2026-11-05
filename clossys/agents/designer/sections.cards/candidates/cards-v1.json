@@ -1,0 +1,101 @@
+{
+  "name": "cards",
+  "type": "registry:block",
+  "registryDependencies": [
+    "badge",
+    "button",
+    "card",
+    "semantic-content"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "cards/cards.tsx",
+      "type": "registry:block",
+      "content": "import { Badge } from \"@/components/ui/badge\"\nimport { LinkButton } from \"@/components/ui/button\"\nimport { Card, CardDescription, CardHeader, CardTitle } from \"@/components/ui/card\"\nimport { SemanticContent } from \"@/components/ui/semantic-content\"\n\ntype CardRecord = {\n  title: string\n  description?: string\n  meta?: string\n  href?: string\n  badge?: { label: string }\n  image?: { src: string; alt: string }\n}\n\ntype State = { label: string; description?: string }\n\n/**\n * Card collection: an optional section header over a grid or list of the\n * pinned Card, each with optional image, badge, meta and link. layout.grid |\n * layout.list are the closed members; loading, empty and error are states.\n */\nexport default function Cards({\n  layout = \"grid\",\n  header = { heading: \"Featured work\" },\n  records = [\n    { title: \"Design system\", description: \"Tokens, components and sections in one library.\", meta: \"Guide\", href: \"#\" },\n    { title: \"Publishing\", description: \"Assemble pages from frames and sections.\", meta: \"Guide\", href: \"#\" },\n    { title: \"Copy\", description: \"Every string resolved per locale.\", meta: \"Guide\", href: \"#\" },\n  ],\n  state,\n  states = {\n    loading: { label: \"Loading\" },\n    empty: { label: \"Nothing here yet\" },\n    error: { label: \"Something went wrong\" },\n  },\n}: {\n  layout?: \"grid\" | \"list\"\n  header?: { eyebrow?: string; heading?: string; description?: string }\n  records?: CardRecord[]\n  state?: \"loading\" | \"empty\" | \"error\"\n  states?: Record<\"loading\" | \"empty\" | \"error\", State>\n}) {\n  const shown = state ?? (records.length === 0 ? \"empty\" : undefined)\n  return (\n    <section data-slot=\"cards\" data-layout={layout} className=\"py-16\">\n      <div className=\"mx-auto flex max-w-6xl flex-col gap-8 px-6\">\n        {(header.heading || header.eyebrow || header.description) && (\n          <header data-slot=\"section-header\" className=\"flex max-w-3xl flex-col items-start gap-3\">\n            {header.eyebrow && <Badge variant=\"secondary\">{header.eyebrow}</Badge>}\n            {header.heading && <h2 className=\"font-heading text-3xl font-semibold tracking-tight text-balance\">{header.heading}</h2>}\n            {header.description && <SemanticContent as=\"p\" className=\"text-muted-foreground\">{header.description}</SemanticContent>}\n          </header>\n        )}\n        {shown ? (\n          <div\n            role={shown === \"error\" ? \"alert\" : \"status\"}\n            aria-busy={shown === \"loading\" || undefined}\n            data-state={shown}\n            className=\"rounded-xl border border-dashed border-border p-10 text-center\"\n          >\n            <SemanticContent as=\"p\" className=\"font-medium text-foreground\">{states[shown].label}</SemanticContent>\n            {states[shown].description && <SemanticContent as=\"small\">{states[shown].description}</SemanticContent>}\n          </div>\n        ) : (\n          <ul className={layout === \"grid\" ? \"grid gap-4 sm:grid-cols-2 lg:grid-cols-3\" : \"flex flex-col gap-4\"}>\n            {records.map((r) => (\n              <li key={r.title} className=\"flex\">\n                <Card className={layout === \"list\" ? \"w-full sm:flex-row sm:items-center\" : \"w-full\"}>\n                  {r.image && (\n                    <img\n                      src={r.image.src}\n                      alt={r.image.alt}\n                      className={layout === \"list\" ? \"aspect-video w-full object-cover sm:w-48\" : \"aspect-video w-full object-cover\"}\n                    />\n                  )}\n                  <CardHeader className=\"flex-1\">\n                    {(r.badge || r.meta) && (\n                      <div className=\"flex items-center gap-2\">\n                        {r.badge && <Badge variant=\"outline\">{r.badge.label}</Badge>}\n                        {r.meta && <SemanticContent as=\"small\">{r.meta}</SemanticContent>}\n                      </div>\n                    )}\n                    <CardTitle>\n                      {r.href ? (\n                        <LinkButton href={r.href} variant=\"link\" className=\"h-auto p-0 text-base font-medium text-foreground\">\n                          {r.title}\n                        </LinkButton>\n                      ) : (\n                        r.title\n                      )}\n                    </CardTitle>\n                    {r.description && <CardDescription>{r.description}</CardDescription>}\n                  </CardHeader>\n                </Card>\n              </li>\n            ))}\n          </ul>\n        )}\n      </div>\n    </section>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.cards",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/card@4.23.0"
+      ],
+      "hash": "sha256:61bc38f49644576f405ca6bdb11ba9c60c261cf76c2fc7cb21d71f99db133ac8",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "cards",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.cards",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-LAST4"
+      },
+      "reason": "Card collection composed of the pinned aria-nova Card with Badge, SemanticContent and LinkButton titles; layout grid|list with loading, empty and error states.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-PRIMITIVE-AS-REF",
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; findings recorded, not pinned"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "badge",
+          "button",
+          "card",
+          "semantic-content"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--radius",
+          "--shadow",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

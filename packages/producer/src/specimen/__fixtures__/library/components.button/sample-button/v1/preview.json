@@ -1,0 +1,10 @@
+{
+  "schema": "clossys.preview/1",
+  "fixtures": {
+    "children": "Continue"
+  },
+  "copy": {},
+  "container": "canvas",
+  "theme": "light",
+  "width": 320
+}

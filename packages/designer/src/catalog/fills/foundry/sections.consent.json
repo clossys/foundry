@@ -1,0 +1,118 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.consent",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ConsentBanner",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.consent",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ConsentBanner",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "consent": {
+      "composes": [],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ConsentBanner.tsx",
+            "sha256": "61fba7843dc3b778f7f83988565537211c6a7620823c3826cacbc19aa4ff74bf"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/Check.ts",
+            "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Check.js#Check",
+            "file": "packages/designer/src/blocks/ConsentBanner.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "ConsentBanner",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Accept and reject are two equal-prominence built-in buttons labelled by the host, who also supplies onAccept and onReject. The banner owns no consent state, storage or network call.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ConsentBanner",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.consent",
+      "slotMap": {
+        "actions": "./blocks#ConsentBanner.acceptLabel,rejectLabel",
+        "copy": "./blocks#ConsentBanner.title,body",
+        "policy": "./blocks#ConsentBanner.privacyLink"
+      },
+      "source": "foundry"
+    }
+  }
+}

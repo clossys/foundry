@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.pricing-item",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.data-and-lists",
+    "l2": "data-and-lists-items",
+    "order": 66
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "name",
+          "required": true,
+          "maxChars": 80,
+          "maxWords": 12
+        },
+        {
+          "id": "price",
+          "required": true,
+          "maxChars": 48,
+          "maxWords": 10
+        },
+        {
+          "id": "interval",
+          "required": true,
+          "maxChars": 48,
+          "maxWords": 6
+        },
+        {
+          "id": "note",
+          "required": false,
+          "maxChars": 180,
+          "maxWords": 32
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.model.pricing",
+    "focus.offer.included"
+  ],
+  "uses": []
+}

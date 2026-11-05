@@ -34,7 +34,7 @@ const REJECTED_SPEAKERS = new Set([
   "inspector",
   "qa",
   "reviewer",
-  "strategist",
+  "director",
 ]);
 const DEFAULT_KEEP_TOPIC = "the candidate in front of me";
 const INHABIT_SHAPE_RULES = new Set(["speaker-required", "speaker-not-customer", "speaker-invalid", "inhabited-as"]);

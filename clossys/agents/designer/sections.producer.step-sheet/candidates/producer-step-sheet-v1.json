@@ -1,0 +1,115 @@
+{
+  "name": "producer-step-sheet",
+  "type": "registry:block",
+  "dependencies": [],
+  "registryDependencies": [
+    "components.badge",
+    "components.sheet",
+    "components.table"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "content": "import { Badge, Sheet, SheetDescription, SheetHeader, SheetTitle, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\n/** One step as graph.json records it: what runs, what it reads and writes, and who holds its seat. */\nexport interface PipelineStep {\n  id: string;\n  label: string;\n  lane: string;\n  command: string;\n  inputs: readonly string[];\n  outputs: readonly string[];\n  options: readonly string[];\n  /** The seat holder's label, or null for an open seat. */\n  seat: string | null;\n  status: string;\n}\n\n/** Writer copy of the step sheet (studio.pipeline.step.*, studio.pipeline.seat.*, studio.pipeline.empty.*). */\nexport interface StepSheetCopy {\n  field: string;\n  value: string;\n  command: string;\n  inputs: string;\n  outputs: string;\n  options: string;\n  seat: string;\n  status: string;\n  none: string;\n  openSeat: string;\n  emptyTitle: string;\n  emptyDescription: string;\n}\n\n/** The `sheet` input of `sections.producer.step-sheet`: the selected step, or null, and whether the sheet is open. */\nexport interface StepSheetInput { open: boolean; step: PipelineStep | null; copy: StepSheetCopy }\n\nconst list = (values: readonly string[], none: string) => values.length ? values.join(', ') : none;\n\n/** `sections.producer.step-sheet`: the selected step's facts in a stock shadcn Sheet; an open seat and no selection are stated, never blank. */\nexport default function StepSheetSection({ sheet, onOpenChange, ...provenance }: { sheet: StepSheetInput; onOpenChange?: (open: boolean) => void } & { [marker: `data-clossys-${string}`]: string }) {\n  const { step, copy } = sheet;\n  return <Sheet {...provenance} isOpen={sheet.open} onOpenChange={onOpenChange} isDismissable>\n    {step ? <>\n      <SheetHeader>\n        <SheetTitle>{step.label}</SheetTitle>\n        <SheetDescription>{step.lane}</SheetDescription>\n      </SheetHeader>\n      <Table aria-label={step.label}>\n        <TableHeader>\n          <TableHead isRowHeader>{copy.field}</TableHead>\n          <TableHead>{copy.value}</TableHead>\n        </TableHeader>\n        <TableBody>\n          <TableRow id=\"command\"><TableCell>{copy.command}</TableCell><TableCell><code>{step.command}</code></TableCell></TableRow>\n          <TableRow id=\"inputs\"><TableCell>{copy.inputs}</TableCell><TableCell>{list(step.inputs, copy.none)}</TableCell></TableRow>\n          <TableRow id=\"outputs\"><TableCell>{copy.outputs}</TableCell><TableCell>{list(step.outputs, copy.none)}</TableCell></TableRow>\n          <TableRow id=\"options\"><TableCell>{copy.options}</TableCell><TableCell>{list(step.options, copy.none)}</TableCell></TableRow>\n          <TableRow id=\"seat\"><TableCell>{copy.seat}</TableCell><TableCell>{step.seat ?? <Badge variant=\"outline\">{copy.openSeat}</Badge>}</TableCell></TableRow>\n          <TableRow id=\"status\"><TableCell>{copy.status}</TableCell><TableCell><Badge variant=\"secondary\">{step.status}</Badge></TableCell></TableRow>\n        </TableBody>\n      </Table>\n    </> : <SheetHeader>\n      <SheetTitle>{copy.emptyTitle}</SheetTitle>\n      <SheetDescription>{copy.emptyDescription}</SheetDescription>\n    </SheetHeader>}\n  </Sheet>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"producer-step-sheet\",\n  \"type\": \"registry:block\",\n  \"title\": \"Step Sheet\",\n  \"description\": \"The selected pipeline step's command, inputs, outputs, options, seat and status in a stock shadcn Sheet; an open seat and no selection are stated.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"components.badge\",\n    \"components.sheet\",\n    \"components.table\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/producer-step-sheet/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.producer.step-sheet",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.sheet",
+          "files": [
+            "registry/aria-nova/ui/sheet.tsx"
+          ]
+        },
+        {
+          "slot": "components.table",
+          "files": [
+            "registry/aria-nova/ui/table.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:f1e72e5ad20a00365f1e3c49579f6d13e2daa7cdb0f4b31c42ae3852f0f0332d",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "producer-step-sheet",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.producer.step-sheet",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "CANVAS-PARTS"
+      },
+      "reason": "W6 composition for /producer/pipeline: The selected pipeline step's command, inputs, outputs, options, seat and status in a stock shadcn Sheet; an open seat and no selection are stated. Places pinned parts only; copy arrives through Writer keys; the root spreads the generated data-clossys-* provenance markers.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.pipeline.step.field",
+          "studio.pipeline.step.value",
+          "studio.pipeline.step.command",
+          "studio.pipeline.step.inputs",
+          "studio.pipeline.step.outputs",
+          "studio.pipeline.step.options",
+          "studio.pipeline.step.seat",
+          "studio.pipeline.step.status",
+          "studio.pipeline.step.none",
+          "studio.pipeline.seat.open",
+          "studio.pipeline.step.empty-title",
+          "studio.pipeline.step.empty-description"
+        ],
+        "themeVars": [
+          "--popover",
+          "--popover-foreground",
+          "--border",
+          "--muted-foreground",
+          "--secondary"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

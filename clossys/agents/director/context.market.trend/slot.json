@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.market.trend",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.market",
+    "order": 1
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which shift in the market makes now the right moment?",
+    "mustContain": [
+      {
+        "key": "Shift",
+        "hint": "the change, named concretely"
+      },
+      {
+        "key": "Effect",
+        "hint": "what it does to the need or the alternative"
+      },
+      {
+        "key": "Timing",
+        "hint": "when it bites, dated"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

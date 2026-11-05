@@ -151,7 +151,9 @@ describe("DataTable", () => {
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
   });
 
-  it("renders the empty-state region (reusing the EmptyState block) when rows is empty", () => {
+  it("S2-4 keeps supplied empty title, description and recovery action in the table-owned empty row", async () => {
+    const recover = vi.fn();
+    const user = userEvent.setup();
     render(
       <DataTable
         aria-label="Prompts"
@@ -160,10 +162,17 @@ describe("DataTable", () => {
         rowKey={(row) => row.id}
         emptyStateTitle="No prompts yet"
         emptyStateDescription="Create your first one."
+        emptyStateAction={<button onClick={recover}>Create prompt</button>}
       />,
     );
-    expect(screen.getByRole("heading", { name: "No prompts yet" })).toBeInTheDocument();
-    expect(screen.getByText("Create your first one.")).toBeInTheDocument();
+    const grid = screen.getByRole("grid", { name: "Prompts" });
+    const body = grid.querySelector("tbody")!;
+    expect(within(body).getByRole("heading", { name: "No prompts yet", level: 2 })).toBeInTheDocument();
+    expect(within(body).getByText("Create your first one.")).toBeInTheDocument();
+    const action = within(body).getByRole("button", { name: "Create prompt" });
+    expect(action.closest("tr")).toBe(within(body).getByRole("row"));
+    await user.click(action);
+    expect(recover).toHaveBeenCalledTimes(1);
     // 1 header row + react-aria-components' own row wrapping the empty-state content — no data rows.
     expect(screen.queryAllByRole("row")).toHaveLength(2);
   });
@@ -178,13 +187,14 @@ describe("DataTable", () => {
       <DataTable
         aria-label="Prompts"
         columns={COLUMNS}
-        rows={[]}
+        rows={ROWS}
         rowKey={(row) => row.id}
         isLoading
         loadingRowCount={3}
       />,
     );
     expect(screen.queryByRole("heading", { name: "No results" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Ada")).not.toBeInTheDocument();
     // 1 header row + 3 skeleton rows.
     expect(screen.getAllByRole("row")).toHaveLength(4);
   });

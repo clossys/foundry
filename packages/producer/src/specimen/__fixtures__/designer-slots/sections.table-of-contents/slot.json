@@ -1,0 +1,124 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.table-of-contents",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.navigate",
+    "l2": "navigate-indexes",
+    "order": 217
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "headings",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "active-id",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "label",
+        "type": "copy",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "tracking.css"
+      ]
+    },
+    "allowedComposes": [
+      "components.link",
+      "components.disclosure",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.table-of-contents",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "headings[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.disclosure",
+    "components.link",
+    "components.semantic-content"
+  ]
+}

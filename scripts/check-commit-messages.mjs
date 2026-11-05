@@ -36,6 +36,58 @@ import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
+
+import { spawnSync as candidateSpawn } from 'node:child_process';
+import { userInfo as candidateUser } from 'node:os';
+import { realpathSync as candidateRealpath, lstatSync as candidateStat } from 'node:fs';
+import { resolve as candidateResolve, join as candidateJoin } from 'node:path';
+
+// Delegated results are authenticated by a fixed owner installation. A receipt
+// never turns a skipped local scan into local FULL, and --require-denylist keeps
+// its literal native meaning. No candidate selects the verifier, signer or policy.
+const candidateArgs = process.argv.slice(2);
+const candidateRemote = ['PUBLIC_SAFETY_REMOTE_ARTIFACT', 'PUBLIC_SAFETY_REMOTE_RECEIPT', 'PUBLIC_SAFETY_REMOTE_MESSAGE'];
+if (candidateArgs.includes('--trusted-remote-full') && (process.env.PUBLIC_SAFETY_DENYLIST || candidateArgs.includes('--denylist'))) {
+  console.error('Choose direct native scanning or explicit trusted remote verification.');
+  process.exit(2);
+}
+if (candidateArgs.includes('--trusted-remote-full') && !process.env.PUBLIC_SAFETY_DENYLIST && !candidateArgs.includes('--denylist')) {
+  try {
+    if (candidateArgs.includes('--require-denylist') || candidateRemote.some(key => !process.env[key])) throw new Error('Remote receipt unavailable');
+    const root = candidateRealpath(process.cwd());
+    const installation = candidateJoin(candidateUser().homedir, '.config', 'public-safety', 'cloud-candidate');
+    if (candidateRealpath(installation) !== installation || installation === root || installation.startsWith(`${root}/`)) throw new Error('External owner installation required');
+    const authorityFile = candidateJoin(installation, 'authority.json');
+    if (candidateStat(authorityFile).size > 16384 || candidateRealpath(authorityFile) !== authorityFile) throw new Error('Invalid authority');
+    const authority = JSON.parse(readFileSync(authorityFile, 'utf8'));
+    for (const [file, pin, bound] of [['cloud-candidate.mjs', authority.cliSha256, 131072], ['lib/cloud-candidate.mjs', authority.engineSha256, 262144]]) {
+      const path = candidateJoin(installation, file);
+      if (!/^[a-f0-9]{64}$/.test(pin) || candidateRealpath(path) !== path || !candidateStat(path).isFile() || candidateStat(path).size > bound || createHash('sha256').update(readFileSync(path)).digest('hex') !== pin) throw new Error('Verifier pin mismatch');
+    }
+    const child = candidateSpawn(process.execPath, [candidateJoin(installation, 'cloud-candidate.mjs'), 'remote-check', '--repository-path', root,
+      '--artifact', process.env[candidateRemote[0]], '--receipt', process.env[candidateRemote[1]], '--message', process.env[candidateRemote[2]]],
+      { cwd: root, input: '', encoding: 'utf8', timeout: 120000, maxBuffer: 32768,
+        env: { PATH: '/usr/bin:/bin', LANG: 'C', LC_ALL: 'C' } });
+    if (child.status !== 0 || child.error) throw new Error('Remote verification failed');
+    const result = JSON.parse(child.stdout);
+    if (result.provenance !== 'trusted-remote-FULL' || result.verified !== true) throw new Error('Unproven remote result');
+    const remainder = [];
+    for (let i = 0; i < candidateArgs.length; i++) {
+      const arg = candidateArgs[i];
+      if (arg === '--trusted-remote-full') continue;
+      if (arg === '--title') {
+        if (createHash('sha256').update(candidateArgs[++i] ?? '').digest('hex') !== result.messageSha256) throw new Error('Wrong proposed message');
+      } else remainder.push(arg);
+    }
+    if (remainder.length > 1 || remainder.some(arg => arg !== result.base && arg !== `${result.base}..${result.base}`)) throw new Error('Unbound message history scope');
+    console.log(JSON.stringify({ ...result, mode: 'TRUSTED_REMOTE_FULL', localScan: false }));
+    process.exit(0);
+  } catch {
+    console.error('Trusted remote FULL admission refused; no local FULL result was produced.');
+    process.exit(2);
+  }
+}
+
 function flagValue(name) {
   const i = process.argv.indexOf(name);
   return i !== -1 ? process.argv[i + 1] : undefined;

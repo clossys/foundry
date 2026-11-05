@@ -1,8 +1,8 @@
 "use client";
 
 import type { HTMLAttributes } from "react";
-import { Link } from "@clossys/designer/atoms";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { Link } from "@clossys/designer/components";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { DataTable, EmptyState, Pagination, Panel, RecordLedger, Toolbar } from "@clossys/designer/blocks";
 import type { DataTableColumn, DataTableProps, EmptyStateProps, PaginationProps, PanelProps, RecordLedgerProps, ToolbarProps } from "@clossys/designer/blocks";
 import { isSanctionedHref } from "../../internal/href.js";

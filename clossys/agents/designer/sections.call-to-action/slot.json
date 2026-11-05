@@ -1,0 +1,142 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.call-to-action",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.explain",
+    "l2": "explain-promotion",
+    "order": 188
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "header",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": true,
+        "max": 2
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.tracking-tight",
+        "themes.radius",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.call-to-action",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.primary.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions.secondary.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; W6 composition check (strict, call-to-action-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 4 styled raw element attribute(s); imports outside the stock parts: @/components/ui/semantic-content (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. The only direct item, tailark-oss/mist-call-to-action-1@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
+  }
+}

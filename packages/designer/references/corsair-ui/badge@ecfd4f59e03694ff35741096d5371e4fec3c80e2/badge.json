@@ -1,0 +1,21 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "badge",
+  "title": "Badge",
+  "description": "Short status or metadata label. Solid, secondary and outline styles, plus success, warning and destructive statuses shown as a coloured dot.",
+  "dependencies": [
+    "@radix-ui/react-slot",
+    "class-variance-authority"
+  ],
+  "registryDependencies": [
+    "@corsair-ui/utils"
+  ],
+  "files": [
+    {
+      "path": "registry/default/ui/badge.tsx",
+      "content": "import { Slot } from \"@radix-ui/react-slot\";\nimport { cva, type VariantProps } from \"class-variance-authority\";\nimport type { ComponentProps } from \"react\";\n\nimport { cn } from \"@/registry/default/lib/utils\";\n\nconst badgeVariants = cva(\n  [\n    \"inline-flex w-fit shrink-0 items-center justify-center gap-1.5 overflow-hidden rounded-md border px-2 py-0.5 text-xs font-medium whitespace-nowrap\",\n    \"transition-[color,background-color,border-color,box-shadow] outline-none motion-reduce:transition-none\",\n    \"focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]\",\n    \"[&>svg]:pointer-events-none [&>svg]:size-3\",\n  ],\n  {\n    variants: {\n      variant: {\n        default: \"bg-primary text-primary-foreground [a&]:hover:bg-primary/90 border-transparent\",\n        secondary:\n          \"bg-secondary text-secondary-foreground [a&]:hover:bg-secondary/80 border-transparent\",\n        outline:\n          \"border-border text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground\",\n        // Status tones keep the neutral outline and put the colour on a dot,\n        // or on the icon when there is one.\n        destructive:\n          \"border-border text-foreground before:bg-destructive [&>svg]:text-destructive [a&]:hover:bg-accent before:size-1.5 before:shrink-0 before:rounded-full has-[>svg]:before:hidden\",\n        success:\n          \"border-border text-foreground before:bg-success [&>svg]:text-success [a&]:hover:bg-accent before:size-1.5 before:shrink-0 before:rounded-full has-[>svg]:before:hidden\",\n        warning:\n          \"border-border text-foreground before:bg-warning [&>svg]:text-warning [a&]:hover:bg-accent before:size-1.5 before:shrink-0 before:rounded-full has-[>svg]:before:hidden\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n);\n\ninterface BadgeProps extends ComponentProps<\"span\">, VariantProps<typeof badgeVariants> {\n  /** Render the single child element (a link, for example) with the badge styles instead. */\n  asChild?: boolean;\n}\n\n/**\n * Short status or metadata label. The status tones (success, warning,\n * destructive) show a coloured dot, or colour the icon if you put one first;\n * the text stays neutral, so it has to say what the status is.\n */\nfunction Badge({ className, variant, asChild = false, ...props }: BadgeProps) {\n  const Comp = asChild ? Slot : \"span\";\n  return (\n    <Comp\n      data-slot=\"badge\"\n      data-variant={variant ?? \"default\"}\n      className={cn(badgeVariants({ variant }), className)}\n      {...props}\n    />\n  );\n}\n\nexport { Badge, badgeVariants, type BadgeProps };\n",
+      "type": "registry:ui"
+    }
+  ],
+  "type": "registry:ui"
+}

@@ -1,10 +1,10 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { ArticleBody } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
-import { PAGE_COLUMN_CLASSES, PageLayout, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageColumn, PageLayout } from "../internal/PageLayout.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 import { renderStructuredDocument } from "../../document/render.js";
 import type { StructuredDocument } from "../../document/types.js";
@@ -92,16 +92,16 @@ export function DocumentView({ brand, document, resolveCopyId, summary, effectiv
   if (!usesLegacyChrome({ brand, footerSecondary })) {
     assertViewContentRoot("DocumentView", rest);
     return (
-      <div {...rest} className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)} style={pageColumnStyle("prose", style)}>
+      <PageColumn {...rest} measure="prose" className={className} style={style}>
         {content}
-      </div>
+      </PageColumn>
     );
   }
 
   return (
     <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader brand={brand} />
-      <main className={PAGE_COLUMN_CLASSES} style={pageColumnStyle("prose")}>
+      <main className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-prose-max,none)]`}>
         {content}
       </main>
       <SiteFooter secondary={footerSecondary} />

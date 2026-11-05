@@ -1,6 +1,6 @@
 import { useId, type CSSProperties, type ReactNode } from "react";
-import { cx } from "../atoms/internal/cx.js";
-import { CHART_AXIS, CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID } from "./internal/chart-vars.js";
+import { cx } from "../components/internal/cx.js";
+import { CHART_AXIS, CHART_AXIS_LABEL, CHART_FONT_BODY, CHART_GRID, CHART_SURFACE } from "./internal/chart-vars.js";
 import { CHART_HAIRLINE, CHART_INLINE_AXIS_LABEL } from "./internal/marks.js";
 import { scatterGlyph } from "./internal/scatter-geometry.js";
 
@@ -36,6 +36,11 @@ export interface ChartTableSpec {
   readonly headers: readonly string[];
   readonly rows: ReadonlyArray<ReadonlyArray<string | number>>;
 }
+
+/** The hover/focus reveal rule every `ChartFrame.Tooltip` trigger relies on; an SVG that hosts the part outside `ChartFrame` embeds the same rule. */
+export const CHART_TOOLTIP_REVEAL_CSS = `[data-chart-tooltip-trigger] > [data-chart-part="tooltip"] { visibility: hidden; }
+[data-chart-tooltip-trigger]:hover > [data-chart-part="tooltip"],
+[data-chart-tooltip-trigger]:focus > [data-chart-part="tooltip"] { visibility: visible; }`;
 
 const DEFAULT_MARGIN: ChartMargin = { top: 16, right: 16, bottom: 32, left: 48 };
 
@@ -133,6 +138,7 @@ export function ChartFrame({
         data-chart-part="frame"
         style={fit === "fluid" ? { maxWidth: width * 1.5, height: "auto" } : undefined}
       >
+        <style>{CHART_TOOLTIP_REVEAL_CSS}</style>
         <title id={titleId}>{title}</title>
         {description ? <desc id={descId}>{description}</desc> : null}
 
@@ -233,3 +239,34 @@ export function ChartFrame({
     </figure>
   );
 }
+
+/** Pure SVG inspection part. CSS exposes a wrapped mark on hover/focus; existing
+ * client inspection can render the same part without children while active.
+ * Very long text in a narrow plot can exceed the SVG viewport; the full
+ * authored data remains available in the frame table. CSS inspection alone
+ * does not establish tooltip accessibility conformance.
+ * This keeps the shared frame and static chart exports usable on the server. */
+function ChartTooltip({ plot, x, y, text, children }: {
+  plot: PlotArea; x: number; y: number; text: string; children?: ReactNode;
+}) {
+  const width = Math.max(1, Math.min(320, plot.width));
+  const lineLength = Math.max(1, Math.floor((width - 16) / 11));
+  const characters = Array.from(text);
+  const lines: string[] = [];
+  for (let offset = 0; offset < characters.length; offset += lineLength) lines.push(characters.slice(offset, offset + lineLength).join(""));
+  const height = lines.length * 14 + 12;
+  const left = Math.max(plot.x, Math.min(x, plot.x + plot.width - width));
+  const top = Math.max(plot.y, Math.min(y, plot.y + plot.height - height));
+  const tooltip = <g data-chart-part="tooltip" aria-hidden="true" pointerEvents="none">
+    <path d={`M${left},${top}h${width}v${height}h${-width}Z`} fill={CHART_SURFACE} stroke={CHART_AXIS} />
+    <text fill={CHART_AXIS_LABEL} fontSize={11} fontFamily={CHART_FONT_BODY}>
+      {lines.map((line, index) => <tspan key={index} x={left + 8} y={top + 16 + index * 14}>{line}</tspan>)}
+    </text>
+  </g>;
+  return children === undefined ? tooltip : <g data-chart-tooltip-trigger="" tabIndex={0} role="img" aria-label={text}
+    className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+    {children}{tooltip}
+  </g>;
+}
+
+ChartFrame.Tooltip = ChartTooltip;

@@ -1,0 +1,16 @@
+{
+  "clauses": [
+    {
+      "id": "tree",
+      "title": "Tree View"
+    },
+    {
+      "id": "radio-group",
+      "title": "Radio Group"
+    }
+  ],
+  "id": "apg",
+  "title": "WAI-ARIA Authoring Practices Guide",
+  "url": "https://www.w3.org/WAI/ARIA/apg/",
+  "version": "1.2"
+}

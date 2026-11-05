@@ -461,7 +461,7 @@ describe("HeroView source guard", () => {
     const designerImports = [...source.matchAll(/from\s+["'](@clossys\/designer[^"']*)["']/g)].map((m) => m[1]);
     expect(designerImports.length).toBeGreaterThan(0);
     for (const specifier of designerImports) {
-      expect(["@clossys/designer/shell/server", "@clossys/designer/atoms/server", "@clossys/designer/blocks/server"]).toContain(specifier);
+      expect(["@clossys/designer/shell/server", "@clossys/designer/components/server", "@clossys/designer/blocks/server"]).toContain(specifier);
     }
   });
 

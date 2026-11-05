@@ -107,3 +107,25 @@ describe("OrderedStepSequence eyebrow", () => {
     expect((bare.firstElementChild as HTMLElement).firstElementChild?.tagName).toBe("OL");
   });
 });
+
+// S4-2/S4-4: preserve the owner's presence predicate and ground on the shared region.
+it("S4 preserves absent, supporting-only and falsy title regions with original root attributes", () => {
+  const view = render(<OrderedStepSequence items={ITEMS} id="host" dir="rtl" data-host="yes" style={{ marginTop: 7 }} />);
+  const root = view.container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("SECTION");
+  expect(root).toHaveAttribute("id", "host");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.children).toHaveLength(1);
+  expect(root.querySelectorAll("#host")).toHaveLength(0);
+  for (const heading of [0, "", null, false]) {
+    view.rerender(<OrderedStepSequence items={ITEMS} heading={heading} />);
+    expect(view.container.firstElementChild?.firstElementChild).toHaveClass("gap-xs");
+    expect(view.container.firstElementChild?.firstElementChild?.querySelector("h2")).toBeNull();
+  }
+  view.rerender(<OrderedStepSequence items={ITEMS} description="Support" ground="inverse" />);
+  expect(view.getByText("Support")).toHaveClass("text-ink-on-inverse-muted");
+  view.rerender(<OrderedStepSequence items={ITEMS} heading="Title" headingLevel={5} ground="inverse"  eyebrow="Label" />);
+  expect(view.getByRole("heading", { name: "Title", level: 5 })).toHaveClass("text-h2", "text-ink-on-inverse");
+});

@@ -1,0 +1,39 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.consent-line",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.forms",
+    "l2": "forms-consent",
+    "order": 63
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "statement",
+          "required": true,
+          "maxChars": 400,
+          "maxWords": 72
+        },
+        {
+          "id": "policy-link",
+          "required": true,
+          "maxChars": 80,
+          "maxWords": 12
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "advantage.proposition.proof",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

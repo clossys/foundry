@@ -1,0 +1,17 @@
+{
+  "name": "alert",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/alert.tsx",
+      "type": "registry:ui",
+      "content": "import * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"cn\"\n\nconst alertVariants = cva(\"cn-alert group/alert relative w-full\", {\n  variants: {\n    variant: {\n      default: \"cn-alert-variant-default\",\n      destructive: \"cn-alert-variant-destructive\",\n    },\n  },\n  defaultVariants: {\n    variant: \"default\",\n  },\n})\n\nfunction Alert({\n  className,\n  variant,\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof alertVariants>) {\n  return (\n    <div\n      data-slot=\"alert\"\n      role=\"alert\"\n      className={cn(alertVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction AlertTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"alert-title\"\n      className={cn(\n        \"cn-alert-title [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction AlertDescription({\n  className,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"alert-description\"\n      className={cn(\n        \"cn-alert-description [&_a]:underline [&_a]:underline-offset-3 [&_a]:hover:text-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction AlertAction({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"alert-action\"\n      className={cn(\"cn-alert-action\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Alert, AlertTitle, AlertDescription, AlertAction }\n",
+      "sha256": "639c846b57885d8af4dbdf7ddab7b15fd4d392c051f7496c67e811154e7861d9"
+    }
+  ]
+}

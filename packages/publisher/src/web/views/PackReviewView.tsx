@@ -1,7 +1,7 @@
 import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
 import { useId } from "react";
 import type { ReactNode } from "react";
-import { Badge, type BadgeVariant } from "@clossys/designer/atoms/server";
+import { Badge, type BadgeVariant } from "@clossys/designer/components/server";
 import { DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { RenderError } from "../../internal/errors.js";
@@ -280,8 +280,7 @@ export function PackReviewView({
     <div className="flex min-h-dvh flex-col">
       <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main
-        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl"
-        style={{ maxWidth: "var(--ui-width-form-max, none)" }}
+        className="mx-auto flex w-full flex-1 flex-col gap-xl px-lg py-2xl max-w-[var(--ui-width-form-max,none)]"
       >
         <PageHeader title={heading} description={description} />
 

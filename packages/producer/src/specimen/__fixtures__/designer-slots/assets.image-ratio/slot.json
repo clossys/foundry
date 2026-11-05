@@ -1,0 +1,25 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.image-ratio",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.imagery",
+    "l2": "imagery-framing",
+    "order": 87
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "rules",
+    "members": {
+      "mode": "open",
+      "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+    },
+    "modes": [
+      "light"
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

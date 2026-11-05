@@ -16,7 +16,13 @@
 // location gate) derives the path from here rather than spelling it itself,
 // so the location cannot drift between the tool that writes an entry and the
 // gate that checks it.
+//
+// A package renamed after its changelog was written keeps that changelog
+// file: the file is a dated record, so <dir> here is the directory the
+// package was published from (scripts/lib/package-renames.mjs), not the
+// directory it lives in now.
 import { basename, join, resolve } from "node:path";
+import { publishedDirectory } from "./package-renames.mjs";
 
 export const CHANGELOGS_DIR = "docs/changelogs";
 
@@ -29,12 +35,12 @@ export const CHANGELOG_REL_PATH_RE = /^docs\/changelogs\/(?!README\.md$)([^/]+)\
 
 // "docs/changelogs/<dir>.md", repository-relative, "/"-separated.
 export function changelogRelPath(dir) {
-  return `${CHANGELOGS_DIR}/${dir}.md`;
+  return `${CHANGELOGS_DIR}/${publishedDirectory(dir)}.md`;
 }
 
 // The absolute path of <dir>'s changelog under repository root `root`.
 export function changelogPath(root, dir) {
-  return join(resolve(root), CHANGELOGS_DIR, `${dir}.md`);
+  return join(resolve(root), CHANGELOGS_DIR, `${publishedDirectory(dir)}.md`);
 }
 
 // The changelog for a packages/<dir> directory, given that directory's own
@@ -42,7 +48,7 @@ export function changelogPath(root, dir) {
 // the same layout every caller already assumes for packages/<dir>.
 export function changelogPathForPackageDir(pkgDir) {
   const abs = resolve(pkgDir);
-  return join(abs, "..", "..", CHANGELOGS_DIR, `${basename(abs)}.md`);
+  return join(abs, "..", "..", CHANGELOGS_DIR, `${publishedDirectory(basename(abs))}.md`);
 }
 
 // The absolute public URL a package README links to, derived from that

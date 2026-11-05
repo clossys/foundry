@@ -62,7 +62,7 @@ function tableRows(container: HTMLElement): string[][] {
 function visibleMarkValues(container: HTMLElement): string[] {
   // ChartFrame's outer marks group also contains this chart's own ticks.
   return [...container.querySelectorAll('[data-chart-part="marks"] text')]
-    .filter(text => !text.closest('[data-chart-part="ticks"]'))
+    .filter(text => !text.closest('[data-chart-part="ticks"], [data-chart-part="tooltip"]'))
     .map(text => text.textContent ?? "");
 }
 
@@ -318,7 +318,7 @@ describe("WaterfallChart additive server/public entry", () => {
     expect(publicProps.labels).toEqual(serverProps.labels);
   });
 
-  it("resolves the actual compiled component and server barrel under react-server without handlers or focus targets", () => {
+  it("resolves the actual compiled component and server barrel under react-server without client handlers or hooks", () => {
     const component = resolve(sourceDir, "../../dist/charts/WaterfallChart.js");
     const server = resolve(sourceDir, "../../dist/charts/server.js");
     const input = JSON.stringify({ ...props, valueFormat: undefined });

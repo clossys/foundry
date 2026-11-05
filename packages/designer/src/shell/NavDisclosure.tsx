@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { TOKENS } from "../tokens/tokens.js";
-import { buttonLinkClassName } from "../atoms/button-classes.js";
-import { cx } from "../atoms/internal/cx.js";
+import { buttonLinkClassName } from "../components/button-classes.js";
+import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
 
 export interface NavDisclosureProps {
@@ -64,7 +64,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
     if (!open.current) return;
     if (restore) toggle.current?.focus();
     // Inert at once, while a closing panel may still be painted.
-    if (nav.current?.closest("header")) panel.current?.setAttribute("inert", "");
+    panel.current?.setAttribute("inert", "");
     setExpanded(false);
   };
   useEffect(() => {
@@ -171,7 +171,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   useBeforePaint(() => {
     const element = panel.current;
     if (!element) return;
-    element.toggleAttribute("inert", mobile && !expanded && Boolean(nav.current?.closest("header")));
+    element.toggleAttribute("inert", mobile && !expanded);
     const running = motion.current;
     const changed = shown.current !== expanded;
     shown.current = expanded;
@@ -278,9 +278,8 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         className="nav-disclosure-panel"
         data-expanded={expanded ? "" : undefined}
         onClick={event => {
-          // Following a link moves on from the menu; focus stays with the
-          // destination rather than returning to the toggle.
-          if (event.target instanceof Element && event.target.closest("a[href]")) close(false);
+          // Return focus before closing makes the mobile panel inert.
+          if (event.target instanceof Element && event.target.closest("a[href]")) close();
         }}
       >
         {children}

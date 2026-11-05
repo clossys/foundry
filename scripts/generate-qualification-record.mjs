@@ -156,11 +156,7 @@ import { selectPolicyPackage, validateReleaseQualificationPolicy } from "./lib/r
 // comparisons live in `scripts/lib/release-publication-cohort.mjs`
 // (`evidence?.packedManifestSha256 !== candidate?.packageManifestSha256`)
 // and `scripts/lib/release-later-publication.mjs`
-// (`proof?.packedManifestSha256 !== c?.packageManifestSha256`);
-// `scripts/lib/public-npm-aggregate-canary.mjs` and
-// `public-npm-aggregate-canary-v2.mjs` both thread the same raw
-// `evidence.packedManifestSha256` value through as a stand-in
-// `packageManifestSha256` when joining served bytes back to a candidate.
+// (`proof?.packedManifestSha256 !== c?.packageManifestSha256`).
 // `scripts/record-later-publication.mjs` sits upstream of this chain (it
 // calls `validatePublicNpmRegistryProof`, which only self-compares two raw
 // hashes and is schema-safe on its own) but is where a later-publication

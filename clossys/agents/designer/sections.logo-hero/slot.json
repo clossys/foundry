@@ -1,0 +1,87 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.logo-hero",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.explain",
+    "l2": "explain-introductions",
+    "order": 180
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "mark",
+        "type": "media",
+        "required": true
+      },
+      {
+        "name": "name",
+        "type": "copy",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "brand.named"
+      ]
+    },
+    "allowedComposes": [
+      "components.logo"
+    ],
+    "parts": [
+      "sections.band"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text"
+      ],
+      "assets": [
+        "assets.mark"
+      ]
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.logo-hero",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "name",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; W6 composition check (strict, logo-hero-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-PART: uses parts that are not pinned stock: components.logo (pinned derived); 2 styled raw element attribute(s); imports outside the stock parts: react, @/components/ui/logo (absent from the component layer). No vendored item in the approved set maps to this slot (candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
+  }
+}

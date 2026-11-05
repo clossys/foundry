@@ -1,0 +1,5094 @@
+{
+  "frames.app-header": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/frame-header-layout.ts",
+          "sha256": "30f6f578ba60d142b3cf6aebe98151e24f36a490fc857f57ae44642513ef5761"
+        },
+        {
+          "path": "packages/designer/src/blocks/frame-navigation.ts",
+          "sha256": "fd8e4f554ec87389b5c411e2624e2ccac29222eddd9e75ee7993962b071e40e9"
+        },
+        {
+          "path": "packages/designer/src/blocks/page-bar-layout.ts",
+          "sha256": "43f39d1272e7e324abc53b987f8dfffa48161907e186e6c930f2ac1fbc6606df"
+        },
+        {
+          "path": "packages/designer/src/blocks/PageBar.tsx",
+          "sha256": "3509338db32d1fe369e025cf74a05838fdc801d52392a7db8909b67366b409f1"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/frame-header-options.ts",
+          "sha256": "f71b58c6ee2f652a2058b3f58cb938735c16aaf1cbe39a139e158e15e132fb0a"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/Check.ts",
+          "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronDown.ts",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/page-bar-layout.ts",
+          "line": 1
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
+          "file": "packages/designer/src/blocks/PageBar.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Check.js#Check",
+          "file": "packages/designer/src/blocks/PageBar.tsx",
+          "line": 8
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#PageBar",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.app-shell": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "frames.app-header",
+        "frames.app-sidebar",
+        "frames.command",
+        "frames.sheet"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/AccountMenu.tsx",
+          "sha256": "72c31cc1c2c3c7a32d017edc0f2242b86c0e32ba27b6bafe116932d51e5f1b3c"
+        },
+        {
+          "path": "packages/designer/src/blocks/canvas/models.ts",
+          "sha256": "dd0a29239e18010e12355d28c13b776be54ab19f1b9234468c627ff7b72d3e61"
+        },
+        {
+          "path": "packages/designer/src/blocks/CommandMenu.tsx",
+          "sha256": "fc6af3399546a5f2522abe69cc5216770d2647d9ee01729f146ecfd24961f2dc"
+        },
+        {
+          "path": "packages/designer/src/blocks/Panel.tsx",
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+        },
+        {
+          "path": "packages/designer/src/blocks/ResizablePane.tsx",
+          "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
+        },
+        {
+          "path": "packages/designer/src/blocks/shell-menu.tsx",
+          "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/Avatar.server.tsx",
+          "sha256": "ab46302d1b6d63c4e1380433f6c37035677e1f10e28fe2b234322216d2901c04"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy-context.tsx",
+          "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy.ts",
+          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/frames/app-frame-layout.ts",
+          "sha256": "fec6d45d03384483481d50b6eee8629da2799c66f5b70438f36eb7504f055a5e"
+        },
+        {
+          "path": "packages/designer/src/frames/app-frame-size-classes.ts",
+          "sha256": "bc6004ea5d97865ec6dea7b596e1f216c40bbdb7a1d1ff70954185af192e7d45"
+        },
+        {
+          "path": "packages/designer/src/frames/AppFrame.tsx",
+          "sha256": "2e681bf48e0e1dd67724c5e5b09451eeb83044f992742cebe716650f25879a99"
+        },
+        {
+          "path": "packages/designer/src/frames/AppFrameBrand.tsx",
+          "sha256": "aebc205da11a48ffce8f765e20bf62ae607d7df5f486a169c3b8d7f656f0c206"
+        },
+        {
+          "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+          "sha256": "01b0102600681af1e7bde548135447de7cb9e6cb0060e7a746dc3b2e7c19da27"
+        },
+        {
+          "path": "packages/designer/src/frames/frame-dock-layout.ts",
+          "sha256": "cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf"
+        },
+        {
+          "path": "packages/designer/src/frames/frame-notices.tsx",
+          "sha256": "53e8f66790898a06ea518468e071bda360b5ac65ac60fa192f7d192ce2a3990b"
+        },
+        {
+          "path": "packages/designer/src/frames/frame-zoom-gestures.tsx",
+          "sha256": "9be4b7d8b3324e9014db063bafc4348d065039c6883e15dd1f553ea1694896cd"
+        },
+        {
+          "path": "packages/designer/src/frames/FrameDock.tsx",
+          "sha256": "421f9a3bcc956f89c38413ccaf63e8325196b81f010910c0f421673ce5f9522b"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronDown.ts",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronUp.ts",
+          "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+        },
+        {
+          "path": "packages/designer/src/icons/List.ts",
+          "sha256": "41a9f16bbf2cea86eb4a8d2039efce4cf87fb58c6ef7a23d120dea45985bd4c2"
+        },
+        {
+          "path": "packages/designer/src/icons/Monitor.ts",
+          "sha256": "1018ced79e3d8f50a4a74607ffc22ad99c7744c29c248824b8437fba65185148"
+        },
+        {
+          "path": "packages/designer/src/icons/Moon.ts",
+          "sha256": "dc1db0aec557a9ca371734249fb9a84eedce7d41c0a5fdfd072979821039be9d"
+        },
+        {
+          "path": "packages/designer/src/icons/Search.ts",
+          "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+        },
+        {
+          "path": "packages/designer/src/icons/Sun.ts",
+          "sha256": "8667df53d290ac14195b44a8a39a1b88e0bda24fb236637c1f30b6fea19a1a2f"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        },
+        {
+          "path": "packages/designer/src/shell/FrameSlots.tsx",
+          "sha256": "516a1b13236d14591e8400d5fb17597f83b651c1b637909905ee7672bdf86300"
+        },
+        {
+          "path": "packages/designer/src/shell/SkipLink.tsx",
+          "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+        },
+        {
+          "path": "packages/designer/src/shell/Toaster.tsx",
+          "sha256": "ec61ccf36fc75352f3668080b542344caf204a16bace2d49a2564949c0934f2d"
+        },
+        {
+          "path": "packages/designer/src/theme/internal/theme-core.ts",
+          "sha256": "7cae970cc903074715cd099a5b235d07fa71ce7873afb354b3926a17a4f1af33"
+        },
+        {
+          "path": "packages/designer/src/theme/ThemeProvider.tsx",
+          "sha256": "7cde01b104ce5bcc51b04053d361404bbfe79a2fc87f17493ac168f21efed753"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronUp.js#ChevronUp",
+          "file": "packages/designer/src/blocks/AccountMenu.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+          "file": "packages/designer/src/frames/app-frame-layout.ts",
+          "line": 1
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/index.js#List",
+          "file": "packages/designer/src/frames/AppFrame.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/index.js#Search",
+          "file": "packages/designer/src/frames/AppFrame.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Monitor.js#Monitor",
+          "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Moon.js#Moon",
+          "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+          "line": 8
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Sun.js#Sun",
+          "file": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
+          "line": 9
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+          "file": "packages/designer/src/frames/frame-dock-layout.ts",
+          "line": 1
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/index.js#ChevronDown",
+          "file": "packages/designer/src/frames/FrameDock.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
+          "file": "packages/designer/src/shell/SkipLink.tsx",
+          "line": 3
+        }
+      ]
+    },
+    "pin": {
+      "export": "./frames#AppFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.app-sidebar": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "frames.sheet"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/app-navigation-layout.ts",
+          "sha256": "02bed42a4e94ab8adaa692e2d6bc59d2095204b4ac1195b7e92281c9009294b9"
+        },
+        {
+          "path": "packages/designer/src/blocks/app-navigation-tree.ts",
+          "sha256": "cfb8fc62ad199c7c40961ccc6294e290cf85c7bdc64fd07979d43a87854a7a29"
+        },
+        {
+          "path": "packages/designer/src/blocks/AppNavigation.tsx",
+          "sha256": "ccd50822fa369c2679d5b0a28101a1b3b5e23365dcf880b6bb55a50378cfc474"
+        },
+        {
+          "path": "packages/designer/src/blocks/frame-navigation.ts",
+          "sha256": "fd8e4f554ec87389b5c411e2624e2ccac29222eddd9e75ee7993962b071e40e9"
+        },
+        {
+          "path": "packages/designer/src/blocks/Panel.tsx",
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+        },
+        {
+          "path": "packages/designer/src/blocks/tree-model.ts",
+          "sha256": "fc9061aa49bfd02431c16ebda6a119cbc395ebe793ec1a2ebece5ee34e7c3f8d"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy-context.tsx",
+          "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy.ts",
+          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronDown.ts",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronLeft.ts",
+          "sha256": "3674c3670e0c34bdb78c075730560e17b6f6b698194010fd42efa76533415e4a"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/icons/FileText.ts",
+          "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+        },
+        {
+          "path": "packages/designer/src/icons/Folder.ts",
+          "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/FileText.js#FileText",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 9
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Folder.js#Folder",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 10
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 11
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronLeft.js#ChevronLeft",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 12
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 13
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/AppNavigation.tsx",
+          "line": 20
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#AppNavigation",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.auth-shell": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/frames/AuthFrame.tsx",
+          "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        },
+        {
+          "path": "packages/designer/src/shell/SkipLink.tsx",
+          "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
+          "file": "packages/designer/src/shell/SkipLink.tsx",
+          "line": 3
+        }
+      ]
+    },
+    "pin": {
+      "export": "./frames#AuthFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.command": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/CommandMenu.tsx",
+          "sha256": "fc6af3399546a5f2522abe69cc5216770d2647d9ee01729f146ecfd24961f2dc"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy-context.tsx",
+          "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy.ts",
+          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+        },
+        {
+          "path": "packages/designer/src/icons/X.ts",
+          "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/X.js#X",
+          "file": "packages/designer/src/blocks/CommandMenu.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#CommandMenu",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.document": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/types.ts",
+          "sha256": "9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c"
+        },
+        {
+          "path": "packages/designer/src/runtime/frames/document.tsx",
+          "sha256": "57ae877432f27fd700501aeb4930e4220dec33a30090f1a4fd5409acc74f016a"
+        }
+      ],
+      "unresolved": []
+    },
+    "pin": {
+      "export": "./frames#DocumentFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.inspector": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "frames.sheet"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Panel.tsx",
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+        },
+        {
+          "path": "packages/designer/src/blocks/ResizablePane.tsx",
+          "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/frames/InspectorFrame.tsx",
+          "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
+        },
+        {
+          "path": "packages/designer/src/frames/right-panel-config.ts",
+          "sha256": "6ec16fdd02b06c1285e72b71adacb7567558f9c7c49fd17ab31308a5144e1fe9"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+          "file": "packages/designer/src/frames/right-panel-config.ts",
+          "line": 1
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./frames#InspectorFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.sheet": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Drawer.tsx",
+          "sha256": "bee8b2f5da66237d651ed627b7c2a948cab8be593fc9b740de2c615e805adf65"
+        },
+        {
+          "path": "packages/designer/src/blocks/Panel.tsx",
+          "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/X.ts",
+          "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/X.js#X",
+          "file": "packages/designer/src/blocks/Drawer.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/Drawer.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Drawer",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.site-footer": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.icon",
+        "components.logo",
+        "components.semantic-content"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/internal/brandmark.ts",
+          "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        },
+        {
+          "path": "packages/designer/src/shell/internal/shell-ground.ts",
+          "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+        },
+        {
+          "path": "packages/designer/src/shell/internal/shell-vars.ts",
+          "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+        },
+        {
+          "path": "packages/designer/src/shell/SiteFooter.tsx",
+          "sha256": "b3f161c6c3d6d51521b0ad1574d56a070a8dba2f0c3c83f3b59d8656f9518781"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./shell/server#SiteFooter",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.site-header": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.icon"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.icon"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/catalog-core/frame-header-options.ts",
+          "sha256": "f71b58c6ee2f652a2058b3f58cb938735c16aaf1cbe39a139e158e15e132fb0a"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        },
+        {
+          "path": "packages/designer/src/shell/internal/shell-ground.ts",
+          "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+        },
+        {
+          "path": "packages/designer/src/shell/internal/shell-vars.ts",
+          "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+        },
+        {
+          "path": "packages/designer/src/shell/SiteHeader.tsx",
+          "sha256": "2812237c178b75d2b9be9d04a8a830cda4de0c7a05b1e3d675b298574254cd7e"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./shell/server#SiteHeader",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "frames.site-shell": {
+    "consumption": {
+      "privateInternalReads": [
+        {
+          "file": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
+          "line": 4,
+          "rawAssets": [
+            "assets.js"
+          ],
+          "sourceSha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
+          "specifier": "../landing/internal/assets.js",
+          "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+          "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+        }
+      ],
+      "rawScannedReads": {
+        "assets": [
+          "assets.js"
+        ],
+        "components": [
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "themes": []
+      },
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.icon",
+        "components.logo",
+        "components.semantic-content",
+        "frames.site-footer",
+        "frames.site-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.icon",
+          "components.logo",
+          "components.semantic-content"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
+          "sha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
+          "sha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/landing/internal/errors.ts",
+          "sha256": "19a0d6e258427849321149d4fb3cefe1d4122f8cbb82c224ba3349859783eaa4"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/site-frame-contract.ts",
+          "sha256": "2ab7ee65d528d172ea5e96c96b37d492ec9bc2e08263c33d841baa736516367b"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+          "sha256": "cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/types.ts",
+          "sha256": "9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c"
+        },
+        {
+          "path": "packages/designer/src/frames/site-frame/viewChromeGround.ts",
+          "sha256": "d5c430d26e272474f954f3fd42ed0f7175e0e483afaeb8352c131d46e6f50aa2"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ./NavDisclosure.boundary.client.js#SiteNavDisclosure",
+          "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ./SkipLink.boundary.client.js#SiteSkipLink",
+          "file": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
+          "line": 8
+        }
+      ]
+    },
+    "pin": {
+      "export": "./frames#SiteFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.access-matrix": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/access-matrix/summary.ts",
+          "sha256": "fc91b0b809a347d177f03ff546bc6ff87d1ab784efb909408186937b056e5e94"
+        },
+        {
+          "path": "packages/designer/src/blocks/access-matrix/validate.ts",
+          "sha256": "c8bb9454a3f19068cc4e27c7370cdacadb4431a3f731aa74af242d6d5dc68a32"
+        },
+        {
+          "path": "packages/designer/src/blocks/AccessMatrix.tsx",
+          "sha256": "ab9214574b5cd103232a322398fa59a21ad4ff09efaca90ec1a733fc0973b5fc"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/Lock.ts",
+          "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Lock.js#Lock",
+          "file": "packages/designer/src/blocks/AccessMatrix.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#AccessMatrix",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.account-summary": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/DetailView.tsx",
+          "sha256": "d064b3374ab33365e05114f43207600b8e831477d017641bd6bcdeee1e449575"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/DetailView.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#DetailView",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.activity-feed": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.empty-state"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/ActivityFeed.tsx",
+          "sha256": "2be69d4abbef5944b3e739ad362a229c497c5a1c89a7f9884c1fcc733cfac668"
+        },
+        {
+          "path": "packages/designer/src/blocks/EventItem.tsx",
+          "sha256": "1539ac734b51b1e87dc41121ac6cb7d9e4929bcd1ae00e93bb6a893ba001c536"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/ArrowRight.ts",
+          "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+        },
+        {
+          "path": "packages/designer/src/icons/Settings.ts",
+          "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
+          "file": "packages/designer/src/blocks/EventItem.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Settings.js#Settings",
+          "file": "packages/designer/src/blocks/EventItem.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ActivityFeed",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.article": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": [
+          "themes.font-mono"
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/ArticleBody.tsx",
+          "sha256": "b27e93d058450fa9d4f27f9869dc844e535e70b1cb20a0e621fcf5a9adb27ae1"
+        },
+        {
+          "path": "packages/designer/src/blocks/ArticleReading.tsx",
+          "sha256": "a3790bfe3c086ea5158da1fafc73513ee017ae7a3da391669d0b0c2e080cb1e6"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ArticleBody",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.audit-log": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/AuditLog.tsx",
+          "sha256": "9a56cc9b0ea7aeb05b9c57c08dfb98a42058fd8d704efdb319d6aef36174ac15"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "ambiguous slot ownership ./DataTable.js#DataTable: sections.data-grid, sections.data-table",
+          "file": "packages/designer/src/blocks/AuditLog.tsx",
+          "line": 3
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#AuditLog",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.band": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/SectionFrame.tsx",
+          "sha256": "a4e1c5df3f8887cc3283b41955c1a3342ab3f21ad3fc62aed11f2f9feedfcf29"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#SectionFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.boundary-message": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/EmptyState.tsx",
+          "sha256": "061a364db62ee42ea514ec459062d3d60546556187adb58f2304c97b3d81492f"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#EmptyState",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.call-to-action": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/CallToAction.tsx",
+          "sha256": "20eab1311a3d7a644cd6f00d4106236d9aecbda9041c685712e75d8b58486325"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#CallToAction",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.cards": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [
+          "assets.image"
+        ],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
+          "sha256": "4ff4197c1b20718cdbe2e789d2b53b38916a9917a73b58ce082576382ba53c74"
+        },
+        {
+          "path": "packages/designer/src/blocks/RecordCards.tsx",
+          "sha256": "0ac10fce292891b87343dfaaee5719fce9f92360b2d2b9a32ccef94f30bb6094"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#RecordCards",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.chat": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": [
+          "themes.font-mono"
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/chat/Chat.tsx",
+          "sha256": "66a8ebe2794e60325fb648af574294da742b7aab93647c13aec1f42c5ccc65cf"
+        },
+        {
+          "path": "packages/designer/src/blocks/chat/content.tsx",
+          "sha256": "59e19ceed7d4a0a27dcd95952fc6f29a79229fd3d2115598aebe615884bb4621"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/icons/ArrowRight.ts",
+          "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronDown.ts",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronUp.ts",
+          "sha256": "c36ddd23fcd3e3fa1a9d33723e69dafab41f96ed318c591daf1767534d973d55"
+        },
+        {
+          "path": "packages/designer/src/icons/FileText.ts",
+          "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
+          "file": "packages/designer/src/blocks/chat/Chat.tsx",
+          "line": 3
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ChevronUp.js#ChevronUp",
+          "file": "packages/designer/src/blocks/chat/Chat.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+          "file": "packages/designer/src/blocks/chat/Chat.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/FileText.js#FileText",
+          "file": "packages/designer/src/blocks/chat/Chat.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Chat",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.column-mapper": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/access-matrix/summary.ts",
+          "sha256": "fc91b0b809a347d177f03ff546bc6ff87d1ab784efb909408186937b056e5e94"
+        },
+        {
+          "path": "packages/designer/src/blocks/access-matrix/validate.ts",
+          "sha256": "c8bb9454a3f19068cc4e27c7370cdacadb4431a3f731aa74af242d6d5dc68a32"
+        },
+        {
+          "path": "packages/designer/src/blocks/column-mapper/issues.ts",
+          "sha256": "d7884b1f73b0560f7fa33fe8aa241d7ad525fcfb0d835258da531798d715f981"
+        },
+        {
+          "path": "packages/designer/src/blocks/ColumnMapper.tsx",
+          "sha256": "e7a0f44f2450d975f34174742be8940cc6fbf07ef602ffe9166257678f05f093"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ColumnMapper",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.comparison": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": [
+          "themes.font-mono"
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/canvas/CanvasLod.tsx",
+          "sha256": "2faddc7545e1ef3159c6f08bb9fb73c172d468b5c31e82daafe854c448989097"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/trend.ts",
+          "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/policies.ts",
+          "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+        },
+        {
+          "path": "packages/designer/src/blocks/library-board/candidate-prompt.ts",
+          "sha256": "9ec62f8fc0e1120522cf1cf3224573deb791e0d6ab1152a024ef662399a273ed"
+        },
+        {
+          "path": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
+          "sha256": "0a9185a0b61b3cc4ba31f811ced8bff1669f71640ccd2592bf99c56ac0c17f19"
+        },
+        {
+          "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
+          "sha256": "7c65867867830fb3f75e4320c5a0696eb33a6be458d36ef662f9a4f1d58d260a"
+        },
+        {
+          "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
+          "sha256": "2d313b684c96034d7b33cc2e0521055a806e6a164cf2a41adc211b8138e437b5"
+        },
+        {
+          "path": "packages/designer/src/blocks/library-board/model.ts",
+          "sha256": "d508a6c800a4163bde5c987512bc15104b00db5c9ee1923128b7fce7e1a69c88"
+        },
+        {
+          "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "sha256": "38f242e651591a9dfeb638fbac237781b931a60f4f4c94caeb4f1e3e09a324d3"
+        },
+        {
+          "path": "packages/designer/src/blocks/Matrix.tsx",
+          "sha256": "bf403bd0882fe25b9a7a8cfc6ef3343448a3a19a494e8cfb65afbc5b2487329d"
+        },
+        {
+          "path": "packages/designer/src/blocks/matrix/choices.tsx",
+          "sha256": "8b2e542f097f35a9bd42115e2979274c073e319155efb1d9027a0717bfc23b20"
+        },
+        {
+          "path": "packages/designer/src/blocks/matrix/grid.tsx",
+          "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
+        },
+        {
+          "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
+          "sha256": "8e50bf8776d3ff31b3f5a4ad08c1b889cb7850b578363c45b20a7f8de70bf323"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/runtime-ports.ts",
+          "sha256": "a57803847077519760f54df3277337f466bca2adb42c3e92aed53ea584f1ef45"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/runtime-snapshot-identity.ts",
+          "sha256": "1fa5e5d2cda0acb6f621209c6050b4c01bd694a0831b5ee18b49ca2e4db075af"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/Check.ts",
+          "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronDown.ts",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/icons/ExternalLink.ts",
+          "sha256": "1803843525669af0f404ee8a5640a2c219753f1dbb9e8f5711cde00581b8c9f9"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ChevronDown.js#ChevronDown",
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ExternalLink.js#ExternalLink",
+          "file": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Check.js#Check",
+          "file": "packages/designer/src/blocks/Matrix.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Matrix",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.consent": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/ConsentBanner.tsx",
+          "sha256": "61fba7843dc3b778f7f83988565537211c6a7620823c3826cacbc19aa4ff74bf"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/Check.ts",
+          "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Check.js#Check",
+          "file": "packages/designer/src/blocks/ConsentBanner.tsx",
+          "line": 3
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ConsentBanner",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.content": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/ContentSection.tsx",
+          "sha256": "6a90522c76468a0853eeb005662ebe62921ee9d2bf476cefc128b36cc8f4593a"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/SectionIntro.tsx",
+          "sha256": "5abb7ce8e5f7e13607b2065acbcb8048d7879e24a0d1f6b33fc4e5aafd6c2664"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ContentSection",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.data-grid": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-right"
+        ],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/data-table/empty-columns.ts",
+          "sha256": "d6d0e7a54139024b417415e72035e31a126e182fdc220aba6de2f97b60b8bed4"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
+          "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
+          "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/messages.ts",
+          "sha256": "8a94ebfc6e63c1f43782a2afb158a79ab77ebed517606b3051cd32b3351e94b0"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+          "sha256": "2eb90e4571137cce8a58109d221d32a64602201a26a2126d1f0e5fe7158ed2b1"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
+          "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/presentation.ts",
+          "sha256": "9e9a798d5186645619f200ea0ca029418ccd67c5d3a90c0bd1df3fbf63bfa125"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+          "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/view-model.ts",
+          "sha256": "49bb10250b1a5874c2251896f1503dc337e5ec5b7f8cd5599c23c533b3cdeb9f"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
+          "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+        },
+        {
+          "path": "packages/designer/src/blocks/DataTable.tsx",
+          "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+        },
+        {
+          "path": "packages/designer/src/blocks/table-model/index.ts",
+          "sha256": "3afd372dce33c7a5b58c8265eb9f46ce3b50b7da0ecf2613cb9961bc0f5eb1ed"
+        },
+        {
+          "path": "packages/designer/src/blocks/table-model/model.ts",
+          "sha256": "e8f0636f9ef841c4b1bcb9b8d0fcbec41c495bdbca991a2688e117e45c6af260"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+          "line": 3
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
+          "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#DataTable",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.data-table": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-right"
+        ],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/data-table/empty-columns.ts",
+          "sha256": "d6d0e7a54139024b417415e72035e31a126e182fdc220aba6de2f97b60b8bed4"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
+          "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
+          "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/messages.ts",
+          "sha256": "8a94ebfc6e63c1f43782a2afb158a79ab77ebed517606b3051cd32b3351e94b0"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+          "sha256": "2eb90e4571137cce8a58109d221d32a64602201a26a2126d1f0e5fe7158ed2b1"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
+          "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/presentation.ts",
+          "sha256": "9e9a798d5186645619f200ea0ca029418ccd67c5d3a90c0bd1df3fbf63bfa125"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+          "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/view-model.ts",
+          "sha256": "49bb10250b1a5874c2251896f1503dc337e5ec5b7f8cd5599c23c533b3cdeb9f"
+        },
+        {
+          "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
+          "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+        },
+        {
+          "path": "packages/designer/src/blocks/DataTable.tsx",
+          "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+        },
+        {
+          "path": "packages/designer/src/blocks/table-model/index.ts",
+          "sha256": "3afd372dce33c7a5b58c8265eb9f46ce3b50b7da0ecf2613cb9961bc0f5eb1ed"
+        },
+        {
+          "path": "packages/designer/src/blocks/table-model/model.ts",
+          "sha256": "e8f0636f9ef841c4b1bcb9b8d0fcbec41c495bdbca991a2688e117e45c6af260"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+          "line": 3
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
+          "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#DataTable",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.empty-state": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/EmptyState.tsx",
+          "sha256": "061a364db62ee42ea514ec459062d3d60546556187adb58f2304c97b3d81492f"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#EmptyState",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.error-state": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/ErrorState.tsx",
+          "sha256": "27b778211984c6b02e3e21d173f774e408038a8f1c655d57b903845465974827"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ErrorState",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.explorer": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Explorer.tsx",
+          "sha256": "610f83f327fdaac193f3e2e6a59eb25ba7f039214883c7aa36463479d781388f"
+        },
+        {
+          "path": "packages/designer/src/blocks/tree-model.ts",
+          "sha256": "fc9061aa49bfd02431c16ebda6a119cbc395ebe793ec1a2ebece5ee34e7c3f8d"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/icons/FileText.ts",
+          "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+        },
+        {
+          "path": "packages/designer/src/icons/Folder.ts",
+          "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/Explorer.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/FileText.js#FileText",
+          "file": "packages/designer/src/blocks/Explorer.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/Folder.js#Folder",
+          "file": "packages/designer/src/blocks/Explorer.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/Explorer.tsx",
+          "line": 7
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Explorer",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.faq": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Faq.server.tsx",
+          "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
+        },
+        {
+          "path": "packages/designer/src/blocks/Faq.tsx",
+          "sha256": "a217276e90166a430c2c3424cc86e17cb02999336044e1e38113fcdb3c4bc788"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Faq",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.features": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/FeatureGrid.tsx",
+          "sha256": "3125e9af4b0a7ace0d4d2ab4003611c580c096f4b7f848012e6efe907deb507a"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/anatomy.tsx",
+          "sha256": "687f460f46f64902a99b5bef501d22b02e3001e039ace5f203e31d86486ffe44"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/compat-features.tsx",
+          "sha256": "dde7091159c3f7f50c10ca635acfb81873a0f8d66c4dad29a53b0fe66cdaf166"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/stretched-link.tsx",
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/stretched-link.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#FeatureGrid",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.filter-builder": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/FilterBuilder.tsx",
+          "sha256": "b7aeb50a703ba244f2a19fb6662e94927c374d8a11b4d6e444b4b6e233b6d0ca"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#FilterBuilder",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.form": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Form.tsx",
+          "sha256": "74e76470057f394b6e0f8ab032dfdd03e6ef77c8596a3fff0b63839f64fbefb6"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/action-row.ts",
+          "sha256": "a6a5d775bce9eabccdae57892d623363f081b31aa44bb64855b6f1844f4b3ea3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Form",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.gallery": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.button",
+        "components.dialog"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.dialog"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Gallery.tsx",
+          "sha256": "63f3dabe0d6ef740580671baf2af3ba4103274a77218f268c6a15716f440e071"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Gallery",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.hero": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [
+          "assets.pattern"
+        ],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/backdrop/consumer-art.ts",
+          "sha256": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e"
+        },
+        {
+          "path": "packages/designer/src/backdrop/contract.ts",
+          "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
+        },
+        {
+          "path": "packages/designer/src/blocks/Hero.tsx",
+          "sha256": "63d56433e2c187ccf1ce7995d6506e118ef72c634f3e62e31cfedd8fac04d210"
+        },
+        {
+          "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
+          "sha256": "7a3c2031e7a084536d96f49bcaef4110e834e7337b631c6e8c4b6e18db0780dd"
+        },
+        {
+          "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
+          "sha256": "168d2703d891a585b18bce6d9eeb388bd50398cf24aa315c13bc425307c208b4"
+        },
+        {
+          "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
+          "sha256": "91c6c1f8b5fd752bc07815e29d99e16fd7ea8fe3a8f7dafcb0f166956f5f10c0"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/pattern-backdrop.ts",
+          "sha256": "57796833cdf801f240f9d27e21eb74ddbd6068413e1c38c0d7058c5aaee6a95f"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        },
+        {
+          "path": "packages/designer/src/tokens/color.ts",
+          "sha256": "a749fc92783397477cb934cdeb87f12fd4710ebda014db6066fc0bf2e59db1c2"
+        },
+        {
+          "path": "packages/designer/src/tokens/contrast-pairs.ts",
+          "sha256": "0ad6b9dd8950e7e617e7bc2e733c476263138a98e378d13827175ea1be18a32b"
+        },
+        {
+          "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
+          "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+        },
+        {
+          "path": "packages/designer/src/tokens/pattern.ts",
+          "sha256": "134c14989995caef7187c918155225381180acda4d6fe663cdbf0c927027b015"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/backdrop/consumer-art.ts",
+          "line": 1
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/backdrop/contract.ts",
+          "line": 108
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Hero",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.legal-prose": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.article",
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/LegalProse.tsx",
+          "sha256": "0659eb2b766a806f319ee76acbda3d72a584194eccc69bdb22b07d6bcbbcd358"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#LegalProse",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.link-index": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/trend.ts",
+          "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/anatomy.tsx",
+          "sha256": "687f460f46f64902a99b5bef501d22b02e3001e039ace5f203e31d86486ffe44"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
+          "sha256": "5960ebcfe2394927f14a489d004d6a6b3460382dc26dd2839a2c69e19dbc6f59"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/policies.ts",
+          "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/render.tsx",
+          "sha256": "ecf9c180fdc864f9fe3cbc0729c289ab85a264638290da5732fa1c425802aeb4"
+        },
+        {
+          "path": "packages/designer/src/blocks/NavGrid.tsx",
+          "sha256": "21fef41eb452ff91e79d82e4d68b1b4531dca9a4845ee2be6ea08e818b11db45"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/stretched-link.tsx",
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/stretched-link.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#NavGrid",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.logo-cloud": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/LogoCloud.tsx",
+          "sha256": "0271d696418eacc0d3e8e57767119a96ab71b3eeac9ab7bbb50e90288439a1dd"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#LogoCloud",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.logo-hero": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/LogoHero.tsx",
+          "sha256": "18747d6185ec0ec9d773ea1a30aea39143025e283c2f93365772f730c038050d"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "ambiguous slot ownership ./SectionFrame.js#SectionFrame: sections.band, sections.logo-mark",
+          "file": "packages/designer/src/blocks/LogoHero.tsx",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#LogoHero",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.logo-mark": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/SectionFrame.tsx",
+          "sha256": "a4e1c5df3f8887cc3283b41955c1a3342ab3f21ad3fc62aed11f2f9feedfcf29"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#SectionFrame",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.media": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.semantic-content"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeBare.tsx",
+          "sha256": "6a055e21cb54722f912738f98ba4c4048a9f516741e3b4a678fdfad643849018"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeBrowser.tsx",
+          "sha256": "85f2eae855dbf7e2ab6492bea4e13b7b5aa71d8515559d400b05c76c6086f3c3"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeCallouts.tsx",
+          "sha256": "83898d98b2facbea38f89d3b59611a24e705fed6b6404e83a41952ddcd05d48a"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeDevice.tsx",
+          "sha256": "aa3a3e3df3e34d4c28b688b9cea395aa6aa8f5cebfd83d7f7d7b55ceadb0f466"
+        },
+        {
+          "path": "packages/designer/src/blocks/media/ChromeSpecimen.tsx",
+          "sha256": "08ad08860d397382dc9003117e65231900ec3b2c7aa85acf4c1899ff77f36eda"
+        },
+        {
+          "path": "packages/designer/src/blocks/MediaFigure.tsx",
+          "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-assets/media.ts",
+          "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/importers/image-ratio.ts",
+          "sha256": "68f745f2ad1938be85590d0adbbff69b244a2d659c9df65cf3e77b7946153dab"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#MediaFigure",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.newsletter": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.button",
+        "components.icon",
+        "components.text-field"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.button",
+          "components.icon",
+          "components.text-field"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/NewsletterBand.tsx",
+          "sha256": "672c1b903e4a17916744eed14850dc525eb5132d96420073fd2f35763db571b3"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/XCircle.ts",
+          "sha256": "3bd98a7d6021773683520cc577f0ee156d7d0bfd81527597cd77f7b1eb7ac263"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/XCircle.js#XCircle",
+          "file": "packages/designer/src/blocks/NewsletterBand.tsx",
+          "line": 10
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#NewsletterBand",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.notices": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
+          "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+        },
+        {
+          "path": "packages/designer/src/blocks/NoticeList.tsx",
+          "sha256": "798becd61ed2db2cd98afc649f0426a33d315db0b725b93db101b333bcaa16f7"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#NoticeList",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.page-header": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/PageHeader.tsx",
+          "sha256": "d5a151e863db5c1295a23f52fad2065693cdca675789b539302790c13d423358"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#PageHeader",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.pagination": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [
+          "assets.icon-chevron-left",
+          "assets.icon-chevron-right"
+        ],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Pagination.tsx",
+          "sha256": "292c7ceaad3bd984c291e00ad5c1cd432ce3da02c6e15b01525c7ffbc3f1289e"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy-context.tsx",
+          "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+        },
+        {
+          "path": "packages/designer/src/components/Banner.copy.ts",
+          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../components/glyph-context.js#useGlyph",
+          "file": "packages/designer/src/blocks/Pagination.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Pagination",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.people": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/PeopleGrid.tsx",
+          "sha256": "86482a968e12987e764c98a56c65274dd904266b9d819d051a5a04168f5d766e"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/stretched-link.tsx",
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/stretched-link.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#PeopleGrid",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.pricing": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/PricingTable.tsx",
+          "sha256": "4fe3d3b5eb331ae0b696e032a777ab6ff0f11e2920e0f4f791785b6899ce0e15"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#PricingTable",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.record-detail": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/DetailView.tsx",
+          "sha256": "d064b3374ab33365e05114f43207600b8e831477d017641bd6bcdeee1e449575"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/DetailView.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#DetailView",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.resource-list": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.empty-state"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
+          "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+        },
+        {
+          "path": "packages/designer/src/blocks/ResourceList.tsx",
+          "sha256": "ffecdc2257f75763dd530570de1bf9905114a50d068a6e2578d7338b1286b225"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronDown.ts",
+          "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
+          "file": "packages/designer/src/blocks/ResourceList.tsx",
+          "line": 8
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#ResourceList",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.section-header": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/SectionHeader.tsx",
+          "sha256": "21394d59938905f29a573e214d30ad22b692e09d42f50b0a8e45f8816256f469"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#SectionHeader",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.sectioned-document": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.avatar",
+        "components.badge",
+        "components.card",
+        "components.icon",
+        "components.semantic-content",
+        "components.status-mark",
+        "sections.content",
+        "sections.media",
+        "sections.pricing",
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [
+          "assets.js"
+        ],
+        "components": [
+          "components.avatar",
+          "components.badge",
+          "components.card",
+          "components.icon",
+          "components.semantic-content",
+          "components.status-mark"
+        ],
+        "themes": [
+          "themes.font-mono"
+        ]
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/AnatomyCallouts.tsx",
+          "sha256": "54a65ad386c66bc21b601ff874abb322c41a57e43a558edf4eec2e8ccf62455e"
+        },
+        {
+          "path": "packages/designer/src/blocks/Faq.server.tsx",
+          "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/block-vars.ts",
+          "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/disclosure-row.server.tsx",
+          "sha256": "93affb8e100dec1e3ba798b0f09f7b1cf6b47adbd115d6dbc939f7298825577f"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/disclosure-row.tsx",
+          "sha256": "9c20a5226a3a94b1718208b89dcd67d992b7e1c97d0bb1427d3c9f8859b71e6e"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/ledger-data.ts",
+          "sha256": "967d06a6d841ed270a66c39ffe8aaef762ea2c695265cfcd38095a45379d294c"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/ledger-ids.ts",
+          "sha256": "5da5c03842196b121a48d3f1844f0f97d88e023973462f441827b5a1d72aef3c"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/trend.ts",
+          "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/anatomy.tsx",
+          "sha256": "687f460f46f64902a99b5bef501d22b02e3001e039ace5f203e31d86486ffe44"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/Item.tsx",
+          "sha256": "905e6b261973fd09a04d03dbf13142da2f001bb662807081475cfbd830c2bc74"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/Items.server.tsx",
+          "sha256": "fbff14142220857e2394b2e416268f0b3f96b8cb82044025c629c7dddf72ed2c"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/Items.tsx",
+          "sha256": "d8fa5e1146c7200797cee5a14970c8a87133ba77e15402fd864218fe245fc683"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
+          "sha256": "5960ebcfe2394927f14a489d004d6a6b3460382dc26dd2839a2c69e19dbc6f59"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/order-classes.ts",
+          "sha256": "ad18d9bf94966b8576a616848b72b49f754359a270ea16ed3813feab05f4a395"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/order.tsx",
+          "sha256": "cabd33aadfedeb0ecd83c25aa57d6bf9d641279bc8dbe89d2c2e970071cbf311"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/policies.ts",
+          "sha256": "64cb8c3d85df5e6d1cc846d6bdb36755dbb26b935be7e4964d8e636a3f78631a"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/render.tsx",
+          "sha256": "ecf9c180fdc864f9fe3cbc0729c289ab85a264638290da5732fa1c425802aeb4"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/reveal-policy.tsx",
+          "sha256": "5d5402274b543321f6a932fbd4bc9a6139178c8882e9f7f40bb443a2fa67aafb"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/reveal.server.tsx",
+          "sha256": "b0eafb2a2cf1804a1eebd2b8422cefaa7cd61290d221df811da9448af7458d4e"
+        },
+        {
+          "path": "packages/designer/src/blocks/items/reveal.tsx",
+          "sha256": "b0fc30cd5a5132feda5e41fa028025f3616c47b9ec57d627cc315d5a435f940d"
+        },
+        {
+          "path": "packages/designer/src/blocks/ledger-rows.tsx",
+          "sha256": "5087cab37037ab0a0e1c02bea3c44a12a73b35fded8581e77dc70d4912bd9e3e"
+        },
+        {
+          "path": "packages/designer/src/blocks/Matrix.server.tsx",
+          "sha256": "17390517e76ce9591faadceaa1ff0275d38ec2b538f57b6a34b88017637fd791"
+        },
+        {
+          "path": "packages/designer/src/blocks/matrix/grid.tsx",
+          "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
+        },
+        {
+          "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",
+          "sha256": "8e50bf8776d3ff31b3f5a4ad08c1b889cb7850b578363c45b20a7f8de70bf323"
+        },
+        {
+          "path": "packages/designer/src/blocks/matrix/static.tsx",
+          "sha256": "d1dec49e866e2c673e7d1222f9ee1af5ba7497893ea5ae78774427a8127b8431"
+        },
+        {
+          "path": "packages/designer/src/blocks/RecordLedger.tsx",
+          "sha256": "d543ae4aa3394e4ea2b3012000e2936231dc54509d2b68cae1991a9cd983d05a"
+        },
+        {
+          "path": "packages/designer/src/blocks/scene/geometry.ts",
+          "sha256": "3a48ab21b68a3fe13468c34465140b893c6fde7316b3332a9a0f7e5b4a731483"
+        },
+        {
+          "path": "packages/designer/src/blocks/scene/Scene.tsx",
+          "sha256": "22d1272815f1071959c0b8e380aa4544bbd5901f09a540197f73fc7b6522c007"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/specimen/parts.tsx",
+          "sha256": "899b12a57c040ab0c723c8ad6f71ac8b2c613b79424daa319bfc3e193e192f47"
+        },
+        {
+          "path": "packages/designer/src/blocks/specimen/Specimen.tsx",
+          "sha256": "0091357fd15a59387ff9f75defb3bd1e2e0e210f81a046a85ca912ab76879798"
+        },
+        {
+          "path": "packages/designer/src/blocks/specimen/SpecimenPanel.tsx",
+          "sha256": "8795d666a4cb51bbafef153895c7249c806261f53980986da2326b2771f2feb7"
+        },
+        {
+          "path": "packages/designer/src/blocks/Stat.tsx",
+          "sha256": "cd084edd1fa77d9da716cda0325b082fcc682b3bf17da8fe0b432197f0abbbe4"
+        },
+        {
+          "path": "packages/designer/src/blocks/stretched-link.tsx",
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+        },
+        {
+          "path": "packages/designer/src/blocks/Testimonial.server.tsx",
+          "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
+        },
+        {
+          "path": "packages/designer/src/blocks/Testimonial.tsx",
+          "sha256": "7d74918885accad81475c46c00499cd3d6fd0f0f2904f297010f922decb5e801"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/button-classes.ts",
+          "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/components/Meter.server.tsx",
+          "sha256": "47b0f78c3f1478addaaf06ae71728a6c3bfd1dd3c8485d081837e4bcf0bdb905"
+        },
+        {
+          "path": "packages/designer/src/icons/ArrowRight.ts",
+          "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+        },
+        {
+          "path": "packages/designer/src/icons/Briefcase.ts",
+          "sha256": "dab81f836f47fc08fa113053b3f8cbfd1331e3cce6485c42a71cf73311166394"
+        },
+        {
+          "path": "packages/designer/src/icons/Building2.ts",
+          "sha256": "c774892a801f2765135e929313deb96d44b62ea6ad21d03178a261686ed655a0"
+        },
+        {
+          "path": "packages/designer/src/icons/Calendar.ts",
+          "sha256": "a1e5fc91fbad729410ac3637f2be8a37951ddb30f4a552c5ff9f0b7430fe569a"
+        },
+        {
+          "path": "packages/designer/src/icons/Check.ts",
+          "sha256": "df7a0d203c39a358aba4b6cf7a9380e34352d38efe0947c0d30c0485ad509159"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/icons/Clock.ts",
+          "sha256": "1c2f0abc0105b9902bfe89c3d79b7493f80b0d9aa2674a44b55909ae56306bfd"
+        },
+        {
+          "path": "packages/designer/src/icons/FileCheck.ts",
+          "sha256": "93cb25323e680b6e02d37fe076b9672cc2cf91c4f7bb9cf9d41757ba16344f82"
+        },
+        {
+          "path": "packages/designer/src/icons/FileText.ts",
+          "sha256": "64a84d19799a4300dafca2175cc2ef9da054708f92a2fa18e7c95a40b39ab59f"
+        },
+        {
+          "path": "packages/designer/src/icons/Folder.ts",
+          "sha256": "5f10987d0993f001109aaf7d553706b504ee8b92adaaabdf430a3be6f6617902"
+        },
+        {
+          "path": "packages/designer/src/icons/Globe.ts",
+          "sha256": "fe5d866c8220c13289d604f83fca685f0cfe8b4bf66c17dbf66dc21ff2dcd8e2"
+        },
+        {
+          "path": "packages/designer/src/icons/Landmark.ts",
+          "sha256": "defe18c0251260c4f6e44882f36756daba7aaa6544b5c35794c59e0baefeb384"
+        },
+        {
+          "path": "packages/designer/src/icons/Layers.ts",
+          "sha256": "b59dcca2c5d4bbea7050a85b895eff429370bf5bdd005189c75c0d648e92d59b"
+        },
+        {
+          "path": "packages/designer/src/icons/Lock.ts",
+          "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+        },
+        {
+          "path": "packages/designer/src/icons/Receipt.ts",
+          "sha256": "e718142acbdde5943a83cff95c85d38db1776c83bf406178ff549a94cde7d092"
+        },
+        {
+          "path": "packages/designer/src/icons/Scale.ts",
+          "sha256": "714f4f993e88b1f58945144d4767f9bec3876e52be5bdac1ae212a7ee5372df6"
+        },
+        {
+          "path": "packages/designer/src/icons/Search.ts",
+          "sha256": "85a680f4b9b2a41659159f5c3a825fec027443760fc8527ca570c3ec646fa6a3"
+        },
+        {
+          "path": "packages/designer/src/icons/ShieldCheck.ts",
+          "sha256": "17dd064d3a3c7cd9ab4d006dcea05d9127f5b248d13c164cf0dde2a7d24091a4"
+        },
+        {
+          "path": "packages/designer/src/icons/Users.ts",
+          "sha256": "f5ba36adeb1462a29cfcf8edd3f7456756756449d73fdbb91948ce1ac4939104"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        },
+        {
+          "path": "packages/publisher/src/content/copy-provenance.ts",
+          "sha256": "40f7b9c7aae31e85532b69ae0791ef29373f17e83c2ef14a64f6a9332848433f"
+        },
+        {
+          "path": "packages/publisher/src/core/content-asset.ts",
+          "sha256": "3cac86a74516e1427500dc9bccb85b80b56d213cb6dedd44072e31ef38acb4f3"
+        },
+        {
+          "path": "packages/publisher/src/core/content-contract.ts",
+          "sha256": "09bf7b0fd9da5bbf3d21fee0b0e03957071d98c4f6ccd464ad265cbaa63d19c5"
+        },
+        {
+          "path": "packages/publisher/src/core/content-ground.ts",
+          "sha256": "188f61cf5c113d5e10131e36d674127ff0890a1a3c5a2240a5b8c294c371b48b"
+        },
+        {
+          "path": "packages/publisher/src/core/page-flow.ts",
+          "sha256": "62296b40af038bf92c4712903c38ce3132b8dd8bdafbce24fb63718b4ca952d8"
+        },
+        {
+          "path": "packages/publisher/src/core/sectioned-view.ts",
+          "sha256": "468b3ab707bb368a621716c1cbcd59ba2ffbf82182f7e120694c696a6805f31b"
+        },
+        {
+          "path": "packages/publisher/src/core/status-list-catalog.ts",
+          "sha256": "4ccbf551c74b16104476d703aa0e94060699ebf77dc836622df388cd04177896"
+        },
+        {
+          "path": "packages/publisher/src/internal/assets.ts",
+          "sha256": "28c51738e07dbe31d56c834b46e8e963b0812b332da1e8b3182f62a0f196dd41"
+        },
+        {
+          "path": "packages/publisher/src/internal/href.ts",
+          "sha256": "36c0690b4f606166f36ae1dd7a042674977126be921223e058d3df7346c096cc"
+        },
+        {
+          "path": "packages/publisher/src/internal/prose-text.ts",
+          "sha256": "2b608bac5f11fdfdf991ca27f89dc96a57a917066a81248c46d4ae0c98c71d85"
+        },
+        {
+          "path": "packages/publisher/src/web/buildAssetElement.tsx",
+          "sha256": "05563ac6324f7b29b7572ed2a8244099917db6ea939882f427a3839518b02619"
+        },
+        {
+          "path": "packages/publisher/src/web/views/landingViewGrounds.ts",
+          "sha256": "47a8c7c89733995dde15f1abf2c8113be9908214eccdf53abfeca312e69e6cb7"
+        },
+        {
+          "path": "packages/publisher/src/web/views/SectionedView.tsx",
+          "sha256": "123838b28855b25223f38e1d267991cc705b54389ce23ae16ae4d75f2dec50b3"
+        },
+        {
+          "path": "packages/publisher/src/web/views/SectionedViewActions.tsx",
+          "sha256": "09dafc673a414176939eda9e0e77cadd0006cac2dd694858d66bccd1ae67b3bb"
+        },
+        {
+          "path": "packages/publisher/src/web/views/SectionedViewBlocks.tsx",
+          "sha256": "29e9280b60b2bb082f3a9a0321557ba69b6771da5c4b9be2d4d93edfc1af1282"
+        },
+        {
+          "path": "packages/publisher/src/web/views/SectionedViewCanonical.ts",
+          "sha256": "a619a40546ff87889d253cafd2a6a08e107c25e472bd0b129bec9244e9050625"
+        },
+        {
+          "path": "packages/publisher/src/web/views/SectionedViewContent.tsx",
+          "sha256": "6ef68cfbc785b17b6d82357d32ee7025425aaf5a9310c4659473677ac6022109"
+        },
+        {
+          "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "sha256": "4feddbfeb9c813033488f664e30e79dec5dd8bc61381174c355260913a35f5a2"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/ArrowRight.js#ArrowRight",
+          "file": "packages/designer/src/blocks/items/order.tsx",
+          "line": 5
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/blocks/items/order.tsx",
+          "line": 71
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../../icons/Check.js#Check",
+          "file": "packages/designer/src/blocks/matrix/static.tsx",
+          "line": 6
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/stretched-link.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#ChevronRight",
+          "file": "packages/publisher/src/web/views/SectionedViewActions.tsx",
+          "line": 3
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../../internal/errors.js#RenderError",
+          "file": "packages/publisher/src/web/views/SectionedViewContent.tsx",
+          "line": 15
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Briefcase",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Building2",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Calendar",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Clock",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#FileCheck",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#FileText",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Folder",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Globe",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Landmark",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Layers",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Lock",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Receipt",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Scale",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Search",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#ShieldCheck",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import @clossys/designer/icons#Users",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved source export ../../internal/errors.js#RenderError",
+          "file": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
+          "line": 7
+        }
+      ]
+    },
+    "pin": {
+      "export": "./web#SectionedView",
+      "package": "@clossys/publisher",
+      "version": "0.13.0"
+    }
+  },
+  "sections.settings": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/FieldGroup.tsx",
+          "sha256": "84565a33469c93941625708527b706766affec68e30e30b38abe93adb2378bea"
+        },
+        {
+          "path": "packages/designer/src/blocks/SettingsSection.tsx",
+          "sha256": "9c7a57357fb6106ae16a3daabb8336d023a308851583e40c5da21a2f75f5f2d5"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#SettingsSection",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.sign-in-form": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Form.tsx",
+          "sha256": "74e76470057f394b6e0f8ab032dfdd03e6ef77c8596a3fff0b63839f64fbefb6"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/action-row.ts",
+          "sha256": "a6a5d775bce9eabccdae57892d623363f081b31aa44bb64855b6f1844f4b3ea3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Form",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.stats": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
+          "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+        },
+        {
+          "path": "packages/designer/src/blocks/internal/trend.ts",
+          "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+        },
+        {
+          "path": "packages/designer/src/blocks/Stat.tsx",
+          "sha256": "cd084edd1fa77d9da716cda0325b082fcc682b3bf17da8fe0b432197f0abbbe4"
+        },
+        {
+          "path": "packages/designer/src/blocks/StatGroup.tsx",
+          "sha256": "02fa44d96de9f536d64bd28291e6f8710f06aef340e5a747321277c60a1f7f43"
+        },
+        {
+          "path": "packages/designer/src/blocks/Stats/parts.tsx",
+          "sha256": "79d199fdf761fa9604c48b8f954161df8d13b1c85c6d03c0978ceae882cfd2bf"
+        },
+        {
+          "path": "packages/designer/src/blocks/Stats/surface.tsx",
+          "sha256": "7699e1a08f448d47ff4a181aa4e291e6c321045fad77781cc22ae88ee2324ea8"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#StatGroup",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.status-list": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/StatusList.tsx",
+          "sha256": "73e83e96e60d9681a56697ce03582984e1be1afbb2be1b94089fdf009812ac82"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#StatusList",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.steps": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
+          "sha256": "781475d5b202ae176c42b630d88c38b3afa70c03746a21e7de0db5179f7ec74d"
+        },
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#OrderedStepSequence",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.table-of-contents": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/ArticleReading.tsx",
+          "sha256": "a3790bfe3c086ea5158da1fafc73513ee017ae7a3da391669d0b0c2e080cb1e6"
+        },
+        {
+          "path": "packages/designer/src/blocks/TableOfContents.scroll-spy.ts",
+          "sha256": "3aa48106b768d662099c123984284a360dc7b0d723b64c0bfdc01025f41806b0"
+        },
+        {
+          "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
+          "sha256": "0b824794fc12cd18d9232801152392bd6d971e63f556ef66bf2f5de54b5e2c68"
+        },
+        {
+          "path": "packages/designer/src/blocks/TableOfContents.tsx",
+          "sha256": "f1b65dd73a3126360775a90a101eedee80dd3479f13a8bce64ac44a37d31ff95"
+        },
+        {
+          "path": "packages/designer/src/blocks/TableOfContentsDisclosure.tsx",
+          "sha256": "eec8eb6443e9906634ef6a9545641b46c4da40003ebc9450f0118496c8748d04"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/internal/brandmark.ts",
+          "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#TableOfContents",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.task-list": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.section-header"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/stretched-link.tsx",
+          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+        },
+        {
+          "path": "packages/designer/src/blocks/TaskList.tsx",
+          "sha256": "0f743fc94e24080b68b6c347a78f7e8c211d0733f910c76266db20fad71a9e45"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/components/internal/ui-vars.ts",
+          "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+        },
+        {
+          "path": "packages/designer/src/icons/ChevronRight.ts",
+          "sha256": "99e246ee2ef8a9b85999607d97a1152fbe6bf374f68c29c19ffa46ad7a502fb6"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF5",
+          "evidence": "unregistered asset import ../icons/ChevronRight.js#ChevronRight",
+          "file": "packages/designer/src/blocks/stretched-link.tsx",
+          "line": 4
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#TaskList",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.testimonials": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [
+          "components.semantic-content"
+        ],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/section-ground.ts",
+          "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/Testimonial.server.tsx",
+          "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
+        },
+        {
+          "path": "packages/designer/src/blocks/TestimonialSet.tsx",
+          "sha256": "282164efecbd1b6424354fd7bc83eb49cc8b33c6469e041d1d1f88ac6fb73ca3"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#TestimonialSet",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.timeline": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/Timeline.tsx",
+          "sha256": "25bb2fa38b17b8f40076bd1a39eaec804734757187c0f24551956bf6b83ba117"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#Timeline",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.usage": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [
+        "sections.empty-state"
+      ],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/UsageMeter.tsx",
+          "sha256": "3d69b266f801c25a55fd76b173709368f17e6142b2b018e95764bc878e165995"
+        },
+        {
+          "path": "packages/designer/src/blocks/UsageSummary.tsx",
+          "sha256": "c5078528d88acf4d01366ae7b5c0cc7c95f520d55c5c7271d8591aea4748f30d"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#UsageSummary",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  },
+  "sections.wizard": {
+    "consumption": {
+      "scanStatus": "lower-bound",
+      "scannedComposes": [],
+      "scannedReads": {
+        "assets": [],
+        "components": [],
+        "themes": []
+      },
+      "sourceFiles": [
+        {
+          "path": "packages/designer/src/blocks/FormWizard.tsx",
+          "sha256": "c22ae0dd2031ead7b9b014b9ed7a68edfbd9679d8d69a8fa03fa1a5934b72c76"
+        },
+        {
+          "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+          "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+        },
+        {
+          "path": "packages/designer/src/components/internal/cx.ts",
+          "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+        },
+        {
+          "path": "packages/designer/src/runtime/component-leaf.tsx",
+          "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+        }
+      ],
+      "unresolved": [
+        {
+          "code": "DF2",
+          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 2
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/components/internal/cx.ts",
+          "line": 80
+        },
+        {
+          "code": "DF2",
+          "evidence": "unresolved dynamic import; runtime source is not inferred",
+          "file": "packages/designer/src/runtime/component-leaf.tsx",
+          "line": 4
+        }
+      ]
+    },
+    "pin": {
+      "export": "./blocks#FormWizard",
+      "package": "@clossys/designer",
+      "version": "0.12.0"
+    }
+  }
+}

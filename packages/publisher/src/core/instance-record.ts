@@ -2,7 +2,7 @@
 export const INSTANCE_FRAME_BLOCK_IDS = Object.freeze(["SiteFrame", "AppFrame"] as const);
 export const INSTANCE_VIEW_BLOCK_IDS = Object.freeze([
   "AuthView", "CaptureView", "CollectionView", "ContactView", "DocumentView", "HeroView",
-  "LandingView", "LegalView", "MarketingView", "SectionedView", "StatusView", "IndexView", "DetailsView",
+  "LegalView", "MarketingView", "SectionedView", "StatusView", "IndexView", "DetailsView",
 ] as const);
 /** Mirrors the web adapter's surface kinds without importing that adapter. */
 export const INSTANCE_SITE_SURFACE_KINDS = Object.freeze(["site", "front-door", "admin", "demo"] as const);

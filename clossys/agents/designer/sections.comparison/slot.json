@@ -1,0 +1,256 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.comparison",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.organize",
+    "l2": "organize-comparison",
+    "order": 200
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "columns",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "rows",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "highlight",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "controls",
+        "type": "records",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "arrangement.library-board"
+      ]
+    },
+    "allowedComposes": [
+      "components.table",
+      "components.status-mark",
+      "components.badge",
+      "components.card",
+      "components.icon",
+      "components.radio-group",
+      "components.tooltip",
+      "components.button",
+      "components.dialog",
+      "components.menu",
+      "components.link"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.destructive",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.tracking-tight",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "substrates": [
+      "flow",
+      "canvas"
+    ],
+    "substrateTests": [
+      {
+        "substrate": "flow",
+        "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.test.tsx",
+        "name": "renders actual checked library board in flow"
+      },
+      {
+        "substrate": "canvas",
+        "file": "packages/designer/src/blocks/library-board/LibraryBoardSection.test.tsx",
+        "name": "renders actual checked library board in canvas and retains Edit through fallback"
+      }
+    ],
+    "passageSchema": "passages.comparison",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "columns[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "columns[].description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].cells[].text",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "highlight.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "controls[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.feature",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].cells[].value",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].cells[].delta",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "assets.icon-check"
+  ]
+}

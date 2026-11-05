@@ -188,7 +188,7 @@ export function classifyPackagesForPublish({ entries, verdicts, qualificationChe
       name: item.name,
       version: undefined,
       status: "registry-lookup-inconclusive",
-      reason: `registry lookup returned "${item.kind}" — excluded rather than guessed. A scheduled scripts/check-registry-parity.mjs run will report it if it is genuinely unpublished.`,
+      reason: `registry lookup returned "${item.kind}" — excluded rather than guessed. If it is genuinely unpublished, scripts/check-registry-parity.mjs reports it: per package in publish.yml, or on demand with "npm run check:registry-parity".`,
       path: undefined,
     });
   }

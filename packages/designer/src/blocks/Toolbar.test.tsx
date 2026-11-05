@@ -142,4 +142,24 @@ describe("Toolbar", () => {
     render(<Toolbar style={{ marginTop: "8px" }} leading={<AriaButton>Bold</AriaButton>} />);
     expect(screen.getByRole("toolbar").style.marginTop).toBe("8px");
   });
+  it("lays a header row out with the title at the start, actions at the end, and names the toolbar by its title", () => {
+    render(
+      <Toolbar
+        title={<h2>Members</h2>}
+        trailing={<AriaButton>Invite</AriaButton>}
+      />,
+    );
+    const toolbar = screen.getByRole("toolbar", { name: "Members" });
+    const heading = screen.getByRole("heading", { level: 2, name: "Members" });
+    const action = screen.getByRole("button", { name: "Invite" });
+    expect(toolbar).toContainElement(heading);
+    expect(heading.compareDocumentPosition(action) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(heading.parentElement).toHaveClass("min-w-0");
+    expect(action.parentElement).toHaveClass("ms-auto");
+  });
+
+  it("keeps an explicit accessible name over the title", () => {
+    render(<Toolbar aria-label="Member actions" title="Members" trailing={<AriaButton>Invite</AriaButton>} />);
+    expect(screen.getByRole("toolbar", { name: "Member actions" })).toBeInTheDocument();
+  });
 });

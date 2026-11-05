@@ -38,8 +38,8 @@ const signatures = {
   motion: ["transition-duration/duration", "transition-timing-function/easing"], breakpoint: ["@media (min-width)/length"],
 };
 const counts = {
-  surface: 24, text: 28, border: 9, control: 7, status: 12, chart: 22,
-  font: 7, space: 14, size: 26, icon: 4, brandmark: 6, radius: 8,
+  surface: 24, text: 29, border: 10, control: 12, status: 12, chart: 22,
+  font: 7, space: 14, size: 32, icon: 4, brandmark: 6, radius: 8,
   shadow: 4, blur: 2, ring: 5, layer: 11, opacity: 4, motion: 18, breakpoint: 6,
 };
 const interactive = [
@@ -63,7 +63,7 @@ const examples = [
   ["--radius-panel", "border-radius", "var(--radius-panel, var(--radius-surface, var(--radius-default, 3px)))", "DIV"],
   ["--ui-elevation-none", "box-shadow", "var(--ui-elevation-none, none)", "DIV"],
   ["--blur-glass", "backdrop-filter", "blur(var(--blur-glass, 20px))", "DIV"],
-  ["--ui-ring-on-inverse", "box-shadow", "var(--ui-ring-on-inverse, 0 0 0 1px rgba(245, 245, 245, 0.12))", "DIV"],
+  ["--ui-ring-on-inverse", "box-shadow", "var(--ui-ring-on-inverse, 0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0)))", "DIV"],
   ["--ui-z-modal", "z-index", "var(--ui-z-modal, 50)", "DIV"],
   ["--ui-alpha-disabled", "opacity", "var(--ui-alpha-disabled, 0.5)", "DIV"],
 ];
@@ -73,6 +73,9 @@ function specimen(property: string, copy: Omit<Parameters<typeof TokenPreview>[0
   return host;
 }
 
+// Literal current-contract inventory: never rebuilt from either runtime registry by this test.
+// Columns are property, authored value, specimen, CSS property, value type.
+const supportedProperties = JSON.parse(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "__fixtures__/supported-properties.json"), "utf8")) as readonly (readonly [string, string, string, string, string])[];
 const tokensCss = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../../../styles/tokens.css"), "utf8");
 const neutralProperties = Object.keys(TOKENS).filter(property => TOKENS[property]!.family === "neutral");
 function themeTokens(theme: "light" | "dark"): Record<string, TokenDefinition> {
@@ -102,10 +105,28 @@ function samplePaint(sample: HTMLElement, role: "color" | "background", tokens: 
 }
 
 describe("exact-property TokenPreview", () => {
-  it("partitions all 217 supported properties bidirectionally with zero unavailable", () => {
+  it("pins the literal 230-property inventory, application bindings and shipped CSS values independently", () => {
+    const expected = supportedProperties.map(([property]) => property);
+    expect(expected).toHaveLength(230);
+    expect(new Set(expected).size).toBe(230);
+    expect(Object.keys(TOKENS).sort()).toEqual(expected);
+    expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(expected);
+    const declarations = parseRootDeclarations(tokensCss);
+    expect([...declarations.keys()].sort()).toEqual(expected);
+    for (const [property, value, specimen, cssProperty, valueType] of supportedProperties) {
+      expect(TOKENS[property]?.property, property).toBe(property);
+      expect(TOKENS[property]?.value, property).toBe(value);
+      expect(declarations.get(property), property).toBe(value);
+      expect(TOKEN_GUIDANCE[property]?.specimen, property).toBe(specimen);
+      expect(TOKEN_GUIDANCE[property]?.application.cssProperty, property).toBe(cssProperty);
+      expect(TOKEN_GUIDANCE[property]?.application.valueType, property).toBe(valueType);
+    }
+  });
+
+  it("partitions all 230 supported properties bidirectionally with zero unavailable", () => {
     const supported = Object.keys(TOKEN_GUIDANCE);
     expect(Object.keys(TOKEN_GUIDANCE).sort()).toEqual(Object.keys(TOKENS).sort());
-    expect(supported).toHaveLength(217);
+    expect(supported).toHaveLength(230);
     expect(new Set(interactive).size).toBe(24);
     expect(supported.sort()).toEqual(Object.keys(TOKENS).sort());
     expect(interactive.slice().sort()).toEqual(supported.filter(property => ["motion", "breakpoint"].includes(TOKEN_GUIDANCE[property]!.specimen)).sort());
@@ -588,4 +609,13 @@ describe("exact-property TokenPreview", () => {
       } finally { mutable["--color-accent"] = original; }
     }
   });
+});
+
+it("uses the registered NativeAction binding as-is at both authored preview action sites", () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "index.tsx"), "utf8");
+  expect(source).toContain('import { NativeAction } from "../../components/NativeAction.js";');
+  expect(source.match(/<NativeAction\b/g)).toHaveLength(2);
+  expect(source).toContain('<NativeAction type="button" onClick={replay}>{replayLabel}</NativeAction>');
+  expect(source).toContain('<NativeAction type="button" style={{ ...plate, ...style }}>{sampleText}</NativeAction>');
+  expect(source).not.toMatch(/components\/Button\.js|<button\b|onPress=/);
 });

@@ -1,0 +1,95 @@
+{
+  "name": "navigation-tree",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "lucide-react",
+    "react-aria-components"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "navigation-tree.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { ChevronRightIcon } from \"lucide-react\"\nimport { cn } from \"cn\"\nimport {\n  Button,\n  Link,\n  Tree as TreePrimitive,\n  TreeItem as TreeItemPrimitive,\n  TreeItemContent,\n  type TreeItemProps,\n  type TreeProps,\n} from \"react-aria-components\"\n\n/**\n * Navigation tree: React Aria Tree (APG treeview) styled as the aria-nova\n * sidebar menu. Branches expand with the chevron or arrow keys; leaves are\n * links, and the current page carries aria-current=\"page\".\n */\nfunction NavigationTree<T extends object>({\n  className,\n  ...props\n}: Omit<TreeProps<T>, \"className\"> & { className?: string }) {\n  return (\n    <TreePrimitive\n      data-slot=\"navigation-tree\"\n      className={cn(\"flex w-full min-w-0 flex-col gap-0.5 text-sm text-sidebar-foreground outline-none\", className)}\n      {...props}\n    />\n  )\n}\n\n/** One node; nested NavigationTreeItem children make it a branch. */\nfunction NavigationTreeItem({\n  className,\n  title,\n  href,\n  current = false,\n  icon,\n  children,\n  textValue,\n  ...props\n}: Omit<TreeItemProps, \"className\" | \"children\" | \"href\"> & {\n  className?: string\n  title?: React.ReactNode\n  href?: string\n  current?: boolean\n  icon?: React.ReactNode\n  children?: React.ReactNode\n}) {\n  return (\n    <TreeItemPrimitive\n      data-slot=\"navigation-tree-item\"\n      data-current={current || undefined}\n      textValue={textValue}\n      className={cn(\n        \"group/navigation-tree-item rounded-md outline-none data-[disabled]:opacity-50 data-[focus-visible]:ring-2 data-[focus-visible]:ring-sidebar-ring\",\n        className\n      )}\n      {...props}\n    >\n      <TreeItemContent>\n        {({ hasChildItems, isExpanded, level }) => (\n          <div\n            data-slot=\"navigation-tree-item-content\"\n            className={cn(\n              \"flex h-8 items-center gap-2 rounded-md pr-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground\",\n              current && \"bg-sidebar-accent font-medium text-sidebar-accent-foreground\"\n            )}\n            style={{ paddingInlineStart: `calc(${level - 1} * var(--spacing) * 4 + var(--spacing) * 1)` }}\n          >\n            {hasChildItems ? (\n              <Button\n                slot=\"chevron\"\n                data-slot=\"navigation-tree-expand\"\n                className=\"flex size-5 shrink-0 items-center justify-center rounded-sm text-sidebar-foreground/70 outline-none data-[focus-visible]:ring-2 data-[focus-visible]:ring-sidebar-ring\"\n              >\n                <ChevronRightIcon className={cn(\"size-3.5 transition-transform rtl:rotate-180\", isExpanded && \"rotate-90 rtl:rotate-90\")} />\n              </Button>\n            ) : (\n              <span aria-hidden=\"true\" className=\"size-5 shrink-0\" />\n            )}\n            {icon && <span className=\"flex shrink-0 [&_svg:not([class*='size-'])]:size-4\">{icon}</span>}\n            {href ? (\n              <Link\n                href={href}\n                aria-current={current ? \"page\" : undefined}\n                className=\"min-w-0 flex-1 truncate outline-none\"\n              >\n                {title ?? textValue}\n              </Link>\n            ) : (\n              <span className=\"min-w-0 flex-1 truncate\">{title ?? textValue}</span>\n            )}\n          </div>\n        )}\n      </TreeItemContent>\n      {children}\n    </TreeItemPrimitive>\n  )\n}\n\nexport { NavigationTree, NavigationTreeItem }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.navigation-tree",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "npm:react-aria-components@1.21.1#Tree",
+        "shadcn-aria/sidebar@4.23.0"
+      ],
+      "hash": "sha256:aab21fbe877774b1f11aecfe573a855d340e78fcb777f2cc7be8056a90ae90eb",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "navigation-tree",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.navigation-tree",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-LAST4"
+      },
+      "reason": "React Aria Tree (APG treeview) styled as the aria-nova sidebar menu: chevron expand, link leaves with aria-current for the current page, level-based indent on the sidebar tokens.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; findings recorded, not pinned"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "lucide-react": "*",
+          "react-aria-components": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

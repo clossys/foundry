@@ -640,3 +640,14 @@ describe("ContactView devPreview", () => {
     expect(Object.keys(webServerEntry)).not.toContain("ContactViewDevPreview");
   });
 });
+
+
+it("uses the existing prose measure and non-length fallback through a utility class", () => {
+  const host = document.createElement("div");
+  host.innerHTML = markup();
+  const main = host.querySelector("main")!;
+  expect(main).toHaveClass("max-w-[var(--ui-width-prose-max,none)]");
+  expect(main.style.maxWidth).toBe("");
+  expect(main.querySelectorAll("h1")).toHaveLength(1);
+  expect(main.querySelector('input[name="website"]')).toHaveAttribute("tabindex", "-1");
+});

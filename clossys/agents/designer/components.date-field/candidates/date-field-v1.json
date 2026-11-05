@@ -1,0 +1,97 @@
+{
+  "name": "date-field",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn",
+    "react-aria-components"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "date-field.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  DateField as DateFieldPrimitive,\n  DateInput,\n  DateSegment,\n  FieldError,\n  Label,\n  Text,\n  TimeField as TimeFieldPrimitive,\n  type DateFieldProps,\n  type DateValue,\n  type TimeFieldProps,\n  type TimeValue,\n} from \"react-aria-components\"\n\nconst inputClassName =\n  \"flex h-8 w-full min-w-0 items-center rounded-lg border border-input bg-transparent px-2.5 py-1 text-base transition-colors outline-none data-[focus-within]:border-ring data-[focus-within]:ring-3 data-[focus-within]:ring-ring/50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[invalid]:border-destructive data-[invalid]:ring-3 data-[invalid]:ring-destructive/20 md:text-sm dark:bg-input/30\"\n\nconst segmentClassName =\n  \"rounded-sm px-0.5 tabular-nums caret-transparent outline-none data-[placeholder]:text-muted-foreground data-[type=literal]:px-0 data-[type=literal]:text-muted-foreground data-[focused]:bg-primary data-[focused]:text-primary-foreground\"\n\ntype Extra = {\n  className?: string\n  label?: React.ReactNode\n  description?: React.ReactNode\n  errorMessage?: string\n}\n\nfunction FieldChrome({ description, errorMessage }: Pick<Extra, \"description\" | \"errorMessage\">) {\n  return (\n    <>\n      <DateInput data-slot=\"date-field-input\" className={inputClassName}>\n        {(segment) => <DateSegment segment={segment} className={segmentClassName} />}\n      </DateInput>\n      {description !== undefined && <Text slot=\"description\" className=\"text-sm text-muted-foreground\">{description}</Text>}\n      <FieldError className=\"text-sm text-destructive\">{errorMessage}</FieldError>\n    </>\n  )\n}\n\n/** content.date: React Aria DateField (segmented, locale-aware). granularity and state.invalid pass through. */\nfunction DateField<T extends DateValue>({\n  className,\n  label,\n  description,\n  errorMessage,\n  ...props\n}: Omit<DateFieldProps<T>, \"className\"> & Extra) {\n  return (\n    <DateFieldPrimitive data-slot=\"date-field\" className={cn(\"group flex w-full flex-col gap-2\", className)} {...props}>\n      {label !== undefined && <Label className=\"text-sm leading-none font-medium select-none\">{label}</Label>}\n      <FieldChrome description={description} errorMessage={errorMessage} />\n    </DateFieldPrimitive>\n  )\n}\n\n/** content.time: React Aria TimeField with the same anatomy. */\nfunction TimeField<T extends TimeValue>({\n  className,\n  label,\n  description,\n  errorMessage,\n  ...props\n}: Omit<TimeFieldProps<T>, \"className\"> & Extra) {\n  return (\n    <TimeFieldPrimitive data-slot=\"time-field\" className={cn(\"group flex w-full flex-col gap-2\", className)} {...props}>\n      {label !== undefined && <Label className=\"text-sm leading-none font-medium select-none\">{label}</Label>}\n      <FieldChrome description={description} errorMessage={errorMessage} />\n    </TimeFieldPrimitive>\n  )\n}\n\nexport { DateField, TimeField }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.date-field",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "npm:react-aria-components@1.21.1#DateField",
+        "shadcn-aria/input@4.23.0"
+      ],
+      "hash": "sha256:6866498415f95ef30d92f1040678545fd18e63b4588bfcc16f389d35a0345bb6",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "date-field",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.date-field",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "React Aria DateField and TimeField segments styled as the aria-nova Input, with aria-nova Field label, description and error.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-FILE-UNMAPPED"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {
+          "react-aria-components": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--primary",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--font-sans",
+          "--ring"
+        ]
+      }
+    }
+  }
+}

@@ -1,12 +1,19 @@
-import { useEffect, useState } from "react";
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { TableOfContentsDisclosure } from "./TableOfContentsDisclosure.js";
+const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+import { articleTocCss, readingTarget } from "./ArticleReading.js";
+import { useHeadingScrollSpy } from "./TableOfContents.scroll-spy.js";
 import type { CSSProperties, ReactNode } from "react";
-import { Disclosure } from "../atoms/Disclosure.js";
-import { cx } from "../atoms/internal/cx.js";
+import { cx } from "../components/internal/cx.js";
 import {
   renderTableOfContentsInlineNav,
   renderTableOfContentsSidebar,
   validateTableOfContents,
 } from "./TableOfContents.server.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+/** Section root provenance (D1): the selected Foundry fill this block is. */
+const SECTION_STAMP = dsAttrs("sections", "sections.table-of-contents", "foundry/sections.table-of-contents");
 
 export interface TableOfContentsItem {
   /** The id of the target element in the page; the link is `#{id}`. No whitespace and no `#`. */
@@ -14,7 +21,7 @@ export interface TableOfContentsItem {
   /** The visible link text. */
   label: ReactNode;
   /** Heading depth, which sets the indent. Default 2. */
-  level?: 2 | 3;
+  level?: 2 | 3 | 4;
 }
 
 export interface TableOfContentsProps {
@@ -26,8 +33,12 @@ export interface TableOfContentsProps {
   presentation?: "sidebar" | "inline";
   /** Controlled current item. Must be one of the item ids, else a `TypeError`. */
   currentId?: string;
-  /** Track the current heading with an `IntersectionObserver`. Default true; ignored when `currentId` is given and by the server variant. */
-  trackCurrent?: boolean;
+  /** Track the current heading with an `IntersectionObserver`. Default true; `"css"` selects declarative target timelines with a static fallback. */
+  trackCurrent?: boolean | "css";
+  onCurrentChange?: (id: string) => void;
+  onNavigate?: (id: string) => void;
+  /** Three-level expandable page outline, using the registered Disclosure. */
+  nested?: boolean;
   className?: string;
   style?: CSSProperties;
 }
@@ -50,47 +61,31 @@ const BOX_CLASSES = "rounded-panel border border-line-base p-md";
 export function TableOfContents(props: TableOfContentsProps) {
   validateTableOfContents(props);
   const { label, items, presentation = "sidebar", currentId, trackCurrent, className, style } = props;
-  const tracking = currentId === undefined && trackCurrent !== false;
-  const idsKey = items.map((item) => item.id).join("\n");
-  const [observed, setObserved] = useState<string | undefined>(undefined);
-
-  useEffect(() => {
-    if (!tracking || typeof IntersectionObserver === "undefined") return;
-    const order = idsKey.split("\n");
-    const visible = new Set<string>();
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        const first = order.find((id) => visible.has(id));
-        if (first !== undefined) setObserved(first);
-      },
-      { rootMargin: "0px 0px -70% 0px" },
-    );
-    for (const id of order) {
-      const target = document.getElementById(id);
-      if (target) observer.observe(target);
-    }
-    return () => observer.disconnect();
-  }, [tracking, idsKey]);
+  const tracking = currentId === undefined && trackCurrent !== false && trackCurrent !== "css";
+  const observed = useHeadingScrollSpy(items.map(item => item.id), { enabled: tracking, onChange: props.onCurrentChange });
 
   const current = currentId ?? observed;
 
+  if (props.nested) {
+    const branch = (from: number, until: number): ReactNode => <SemanticContent as="ol">{items.slice(from, until).map((item, relative) => {
+      const at = from + relative, level = item.level ?? 2;
+      if (at > from && level > (items[from]?.level ?? 2)) return null;
+      let end = at + 1;
+      while (end < until && (items[end]!.level ?? 2) > level) end++;
+      const link = <Link href={"#" + item.id} data-reading-target={trackCurrent === "css" ? readingTarget(item.id).name : undefined} aria-current={item.id === current ? "location" : undefined}
+        onClick={event => { if (props.onNavigate) { event.preventDefault(); props.onNavigate(item.id); } }}>{item.label}</Link>;
+      return <SemanticContent as="li" key={item.id}>{link}{end > at + 1 ? <TableOfContentsDisclosure id={item.id} title={item.label}>{branch(at + 1, end)}</TableOfContentsDisclosure> : null}</SemanticContent>;
+    })}</SemanticContent>;
+    return <SemanticContent as="nav" {...SECTION_STAMP} aria-label={label} className={className} style={style}>{trackCurrent === "css" ? <style>{articleTocCss(items)}</style> : null}{branch(0, items.length)}</SemanticContent>;
+  }
   if (presentation === "inline") {
     return (
-      <div className={cx(BOX_CLASSES, className)} style={style}>
-        <Disclosure
-          title={label}
-          defaultExpanded
-          triggerClassName="text-ink-primary focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          panelClassName="ps-0"
-        >
-          {renderTableOfContentsInlineNav({ label, items }, current)}
-        </Disclosure>
-      </div>
+      <SemanticContent as="div" {...SECTION_STAMP} className={cx(BOX_CLASSES, className)} style={style}>
+        <TableOfContentsDisclosure id="article-toc" title={label}>
+          {renderTableOfContentsInlineNav({ label, items, onNavigate: props.onNavigate, trackCurrent }, current, props.onNavigate ? Link : undefined)}
+        </TableOfContentsDisclosure>
+      </SemanticContent>
     );
   }
-  return renderTableOfContentsSidebar({ label, items, className, style }, current);
+  return renderTableOfContentsSidebar({ label, items, className, style, onNavigate: props.onNavigate, trackCurrent }, current, props.onNavigate ? Link : undefined);
 }

@@ -1,0 +1,85 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.auth-shell",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.page-shells",
+    "l2": "page-shells-authentication",
+    "order": 228
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "stage": {
+      "accepts": [
+        "flow"
+      ],
+      "scroll": "document"
+    },
+    "root": "div",
+    "landmarks": [
+      {
+        "slot": "main",
+        "role": "main",
+        "topLevel": true,
+        "nameRequired": false,
+        "id": "main-content",
+        "tabIndex": -1
+      }
+    ],
+    "slots": [
+      {
+        "id": "skip-link",
+        "required": true,
+        "accepts": "host-node"
+      },
+      {
+        "id": "main",
+        "required": true,
+        "accepts": "view"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "statePorts": [],
+    "rendering": "server",
+    "breakpoints": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.primary",
+        "themes.radius"
+      ],
+      "assets": []
+    },
+    "composes": [
+      "components.semantic-content"
+    ],
+    "skipTarget": "main-content"
+  },
+  "inputs": [],
+  "uses": [
+    "components.semantic-content"
+  ]
+}

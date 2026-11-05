@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.captions",
+  "agent": "writer",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings.media-text",
+    "l2": "media-text-captions",
+    "order": 42
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "string",
+    "source": "writer",
+    "icu": true,
+    "maxChars": 1000,
+    "maxWords": 180,
+    "assetRef": {
+      "layer": "assets",
+      "required": true
+    }
+  },
+  "inputs": [
+    "advantage.proposition.proof",
+    "identity.visual.imagery"
+  ],
+  "uses": []
+}

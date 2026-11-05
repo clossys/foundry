@@ -1,0 +1,99 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "passages.account-summary",
+  "agent": "writer",
+  "ia": {
+    "l0": "passages",
+    "l1": "passages.organize",
+    "l2": "organize-summaries",
+    "order": 102
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "passage",
+    "source": "writer",
+    "sectionId": "sections.account-summary",
+    "passageSchema": "passages.account-summary",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "heading",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.name",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.name-label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.email",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 320
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "identity.email-label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "rows[].value",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 1000
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

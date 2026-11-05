@@ -1,0 +1,132 @@
+{
+  "name": "popover",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "popover.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\nimport {\n  DialogTrigger,\n  Heading,\n  Popover as PopoverPrimitive,\n  type DialogTriggerProps,\n  type PopoverProps as PopoverPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction PopoverTrigger({ children, ...props }: DialogTriggerProps) {\n  return (\n    <DialogTrigger data-slot=\"popover-trigger\" {...props}>\n      {children}\n    </DialogTrigger>\n  )\n}\n\nfunction Popover({\n  className,\n  placement = \"bottom\",\n  offset = 4,\n  crossOffset = 0,\n  ...props\n}: Omit<PopoverPrimitiveProps, \"className\"> & {\n  className?: string\n}) {\n  return (\n    <PopoverPrimitive\n      data-slot=\"popover-content\"\n      placement={placement}\n      offset={offset}\n      crossOffset={crossOffset}\n      className={cn(\n        \"z-50 flex w-72 origin-(--trigger-anchor-point) flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden duration-100 data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:fade-out-0 data-exiting:zoom-out-95 data-[placement=bottom]:slide-in-from-top-2 data-[placement=left]:slide-in-from-right-2 data-[placement=right]:slide-in-from-left-2 data-[placement=top]:slide-in-from-bottom-2\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction PopoverHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"popover-header\"\n      className={cn(\"flex flex-col gap-0.5 text-sm\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction PopoverTitle({\n  className,\n  ...props\n}: React.ComponentProps<typeof Heading>) {\n  return (\n    <Heading\n      data-slot=\"popover-title\"\n      className={cn(\"font-medium\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction PopoverDescription({\n  className,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"popover-description\"\n      className={cn(\"text-muted-foreground\", className)}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Popover,\n  PopoverDescription,\n  PopoverHeader,\n  PopoverTitle,\n  PopoverTrigger,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.popover",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/popover@4.23.0"
+      ],
+      "hash": "sha256:83ffd9794dd71c3245424b720562030bc46be6e50d499c5a8c71aa443c4f5cd4",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "popover.tsx": "registry/aria-nova/ui/popover.tsx"
+      }
+    },
+    "element": {
+      "id": "popover",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.popover",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "COMPONENT-FIXTURES"
+      },
+      "reason": "COMPONENT-FIXTURES: popover-v1 code unchanged (sha256:1e01180bf42a7b62f94c9e56e32ca74e4a383af32c1e03c046b8380e56f7f382); adds a preview fixture whose element tree composes the component's own exports with plain sample text, so the Studio card shows a realistic specimen.",
+      "createdAt": "2026-11-03T12:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--shadow",
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--ring",
+          "--sidebar-ring"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "popover.tsx",
+        "export": "PopoverTrigger",
+        "props": {
+          "defaultOpen": true,
+          "children": [
+            "Open",
+            {
+              "$component": "Popover",
+              "children": [
+                {
+                  "$component": "PopoverHeader",
+                  "children": [
+                    {
+                      "$component": "PopoverTitle",
+                      "children": [
+                        "Dimensions"
+                      ]
+                    },
+                    {
+                      "$component": "PopoverDescription",
+                      "children": [
+                        "Set the dimensions for the layer."
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

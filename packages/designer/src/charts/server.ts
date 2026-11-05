@@ -1,6 +1,6 @@
 /**
  * @clossys/designer/charts/server — the server-safe subset of
- * `@clossys/designer/charts`. See `atoms/server.ts`'s own header for the
+ * `@clossys/designer/charts`. See `components/server.ts`'s own header for the
  * full #375 rationale this file shares: `charts/index.ts` re-exports
  * every member eagerly from one module, so `LineChart` — which holds
  * its own hover state via `useState`, touching no third-party library —
@@ -16,7 +16,7 @@
  * control proving `charts/index.ts` still fails the identical probe.
  *
  * ADDITIVE ONLY: every name below already ships from `charts/index.ts`.
- * No wildcard subpath, no per-file deep export — see `atoms/server.ts`'s
+ * No wildcard subpath, no per-file deep export — see `components/server.ts`'s
  * header for why.
  */
 

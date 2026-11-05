@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET } from "../../components/internal/ui-vars.js";
 import { Item } from "./Item.js";
 import { Items } from "./Items.js";
 import type { ItemData, ItemSpan } from "./types.js";

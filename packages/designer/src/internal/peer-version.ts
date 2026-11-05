@@ -17,11 +17,11 @@
  * specific to that peer, but in short:
  *   - `react` reads its own exported `version` (a plain string, safe to
  *     import from anywhere) — guarded from every component subpath's own
- *     barrel: `atoms/index.ts`, `blocks/index.ts`, `shell/index.ts`,
+ *     barrel: `components/index.ts`, `blocks/index.ts`, `shell/index.ts`,
  *     `charts/index.ts`, `theme/index.ts`.
  *   - `react-aria-components` has no such export, but DOES declare
  *     `"./package.json"` in its own `exports` map, so its version is read
- *     via a static JSON import instead — guarded from `atoms/index.ts`,
+ *     via a static JSON import instead — guarded from `components/index.ts`,
  *     `blocks/index.ts`, `shell/index.ts` (see those files).
  *   - `react-dom` and `@internationalized/date` are declared peers with NO
  *     adapter import site anywhere in this package's own source (confirmed
@@ -35,13 +35,13 @@
  *     own doc comment explaining why "declared peer with no adapter import
  *     site" is a real, precedented category, not a gap.
  *   - `tailwind-merge` is imported from exactly one file,
- *     `atoms/internal/cx.ts` — but that file is transitively reachable
- *     from every single atom (`cx()` is this package's shared class-merge
+ *     `components/internal/cx.ts` — but that file is transitively reachable
+ *     from every single component (`cx()` is this package's shared class-merge
  *     helper), and `tailwind-merge` has neither an exported version NOR a
  *     `"./package.json"` exports entry (confirmed: its own `exports` map
  *     lists only `"."` and `"./es5"`). There is no signal this guard could
  *     read there without importing `node:fs`/`node:module` — and doing
- *     that from `cx.ts` would break every consumer bundling any atom for
+ *     that from `cx.ts` would break every consumer bundling any component for
  *     the browser (verified empirically with esbuild's own
  *     `--platform=browser`: an unconditional top-level `node:fs` import
  *     fails the BUILD, not just the run, regardless of whether the
@@ -103,7 +103,7 @@
  * this file's own tests.
  *
  * DELIBERATELY PURE — NO `node:*` IMPORTS IN THIS FILE. This file is
- * imported from every component subpath's own barrel (`atoms/index.ts`,
+ * imported from every component subpath's own barrel (`components/index.ts`,
  * `blocks/index.ts`, `shell/index.ts`, `charts/index.ts`,
  * `theme/index.ts`) — all of them reachable from a browser bundle, not
  * just a Node process. The Node-only fs-based resolver

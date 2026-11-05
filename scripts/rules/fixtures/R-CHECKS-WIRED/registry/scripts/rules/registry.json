@@ -1,0 +1,10 @@
+{
+  "rules": [
+    {
+      "id": "R-PROBE",
+      "owner_words": { "quote": "rules must become code, not prose", "date": "2026-11-03" },
+      "status": "unenforced",
+      "note": "Violation: a rule that no check enforces."
+    }
+  ]
+}

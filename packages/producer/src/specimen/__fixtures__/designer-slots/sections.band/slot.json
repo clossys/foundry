@@ -1,0 +1,82 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.band",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.parts",
+    "l2": "parts-structure",
+    "order": 173
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "ground.base",
+        "ground.sunken",
+        "ground.inverse",
+        "ground.transparent",
+        "measure.prose",
+        "measure.content",
+        "measure.wide"
+      ]
+    },
+    "allowedComposes": [
+      "components.semantic-content"
+    ],
+    "parts": [],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "unresolvedMemberAxes": [
+      "rhythm"
+    ],
+    "passageSchema": "passages.band",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": []
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.semantic-content"
+  ]
+}

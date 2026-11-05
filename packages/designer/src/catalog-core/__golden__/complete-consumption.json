@@ -1,0 +1,721 @@
+{
+  "counts": {
+    "assetEdges": 4,
+    "assets": 49,
+    "members": 673,
+    "orphanEdges": 0,
+    "resolvedMembers": 672,
+    "tokenEdges": 27,
+    "themes": 56,
+    "unusedAssets": 47,
+    "unusedTokens": 44
+  },
+  "leaves": [
+    {
+      "assets": [
+        "assets.mark"
+      ],
+      "consumedBy": [],
+      "id": "assets.app-icon",
+      "resolved": 2,
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [
+        "assets.mark"
+      ],
+      "consumedBy": [],
+      "id": "assets.favicon",
+      "resolved": 1,
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-arrow-right",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-business",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-check",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-down",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-left",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-right",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-chevron-up",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-close",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-danger",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-date",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-document",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-document-approved",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-external-link",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-folder",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-grid-view",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-guide",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-home",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-info",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-institution",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-integration",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-layers",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-legal",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-list-view",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-locked",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-organization",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-package",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-panel-left",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-payment",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-receipt",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-search",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-security",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-settings",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-success",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-team",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-theme-dark",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-theme-light",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-theme-system",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-time",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-user",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-warning",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.icon-website",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.image",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.image-ratio",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [
+        "assets.lockup"
+      ],
+      "consumedBy": [
+        "assets.lockup"
+      ],
+      "id": "assets.lockup",
+      "resolved": 2,
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [
+        "assets.mark"
+      ],
+      "consumedBy": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.mark"
+      ],
+      "id": "assets.mark",
+      "resolved": 3,
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.pattern",
+      "resolved": 6,
+      "themes": [],
+      "total": 6
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "assets.video",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "id": "themes.primary",
+      "resolved": 5,
+      "themes": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.primary",
+      "resolved": 5,
+      "themes": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.animate-marquee",
+      "resolved": 10,
+      "themes": [],
+      "total": 10
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.shadow"
+      ],
+      "id": "themes.border",
+      "resolved": 6,
+      "themes": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border"
+      ],
+      "total": 6
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.chart-1",
+      "resolved": 8,
+      "themes": [],
+      "total": 8
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.input",
+      "resolved": 5,
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.radius"
+      ],
+      "id": "themes.radius",
+      "resolved": 1,
+      "themes": [],
+      "total": 1
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.font-heading",
+      "resolved": 5,
+      "themes": [],
+      "total": 5
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.shadow"
+      ],
+      "id": "themes.shadow",
+      "resolved": 4,
+      "themes": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.shadow"
+      ],
+      "total": 4
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.ring",
+      "resolved": 2,
+      "themes": [
+        "themes.primary",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 2
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.tracking-tight",
+      "resolved": 9,
+      "themes": [],
+      "total": 9
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.radius",
+      "resolved": 12,
+      "themes": [],
+      "total": 12
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.shadow",
+      "resolved": 9,
+      "themes": [],
+      "total": 9
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.spacing",
+      "resolved": 10,
+      "themes": [],
+      "total": 10
+    },
+    {
+      "assets": [],
+      "consumedBy": [],
+      "id": "themes.destructive",
+      "resolved": 12,
+      "themes": [],
+      "total": 12
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent"
+      ],
+      "id": "themes.background",
+      "resolved": 11,
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent"
+      ],
+      "total": 11
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.radius"
+      ],
+      "id": "themes.radius",
+      "resolved": 3,
+      "themes": [
+        "themes.radius"
+      ],
+      "total": 3
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "assets.app-icon",
+        "assets.favicon",
+        "assets.lockup",
+        "assets.mark",
+        "themes.input",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "id": "themes.foreground",
+      "resolved": 8,
+      "themes": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "total": 8
+    },
+    {
+      "assets": [],
+      "consumedBy": [
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "id": "themes.font-sans",
+      "resolved": 3,
+      "themes": [
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "total": 3
+    }
+  ],
+  "orphans": []
+}

@@ -1,0 +1,23 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.warmth",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.voice",
+    "l2": "voice-tone",
+    "order": 1
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "voice-rule",
+    "valueType": "categorical-rule"
+  },
+  "inputs": [
+    "identity.brand.personality",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

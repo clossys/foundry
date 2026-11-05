@@ -1,0 +1,136 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.activity-feed",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ActivityFeed",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.activity-feed",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ActivityFeed",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "activity-feed": {
+      "composes": [
+        "sections.empty-state"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.empty-state"
+        ],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ActivityFeed.tsx",
+            "sha256": "2be69d4abbef5944b3e739ad362a229c497c5a1c89a7f9884c1fcc733cfac668"
+          },
+          {
+            "path": "packages/designer/src/blocks/EventItem.tsx",
+            "sha256": "1539ac734b51b1e87dc41121ac6cb7d9e4929bcd1ae00e93bb6a893ba001c536"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/ArrowRight.ts",
+            "sha256": "bb43905ab80409bed61222fce503e06df8489bafe2c4c2dff98a0f625e4c6d31"
+          },
+          {
+            "path": "packages/designer/src/icons/Settings.ts",
+            "sha256": "3eccf9da3ebd4c7db312a650d60d41d0ce2fa5489086df235573934bbc0710a3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/ArrowRight.js#ArrowRight",
+            "file": "packages/designer/src/blocks/EventItem.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Settings.js#Settings",
+            "file": "packages/designer/src/blocks/EventItem.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "ActivityFeed",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Each event renders through EventItem; host supplies labels and emptyState. Groups name event ids and every event must sit in exactly one group. Root is section; header and band are external.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ActivityFeed",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.activity-feed",
+      "slotMap": {
+        "events": "./blocks#ActivityFeed.events",
+        "filters": "./blocks#ActivityFeed.filters",
+        "grouping": "./blocks#ActivityFeed.groups"
+      },
+      "source": "foundry"
+    }
+  }
+}

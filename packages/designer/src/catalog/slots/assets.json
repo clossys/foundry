@@ -1,0 +1,984 @@
+[
+  {
+    "id": "assets.lockup",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "svg",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "positive",
+          "reversed"
+        ]
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.mark",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "svg",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "mono",
+          "positive",
+          "reversed"
+        ]
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.favicon",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "svg",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "small",
+          "vector"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "memberKinds": {
+        "small": "raster"
+      },
+      "optional": [
+        "small"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.app-icon",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "svg",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "maskable",
+          "standard"
+        ]
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.image-ratio",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.image",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.video",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "open",
+        "pattern": "^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$"
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.pattern",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "rules",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "dots",
+          "lines",
+          "grid",
+          "grain",
+          "noise",
+          "topo"
+        ]
+      },
+      "modes": [
+        "light"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-chevron-down",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-chevron-up",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-chevron-left",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-chevron-right",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-arrow-right",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-external-link",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-home",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-search",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-close",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-check",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-settings",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-list-view",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-grid-view",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-theme-light",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-theme-dark",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-theme-system",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-success",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-warning",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-danger",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-info",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-user",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-team",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-organization",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-website",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-institution",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-guide",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-document",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-document-approved",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-folder",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-date",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-time",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-payment",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-receipt",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-business",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-security",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-locked",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-legal",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-package",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-layers",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-integration",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "assets.icon-panel-left",
+    "layer": "assets",
+    "contract": {
+      "kind": "asset",
+      "valueKind": "glyph",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "grid": 24
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

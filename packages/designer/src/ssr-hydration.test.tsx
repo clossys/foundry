@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "./atoms/Button.js";
+import { Button } from "./components/Button.js";
 import { PageHeader } from "./blocks/PageHeader.js";
 import { CommandMenu, useCommandMenuShortcut } from "./blocks/CommandMenu.js";
 import { Shell } from "./shell/Shell.js";
@@ -108,14 +108,16 @@ describe("SSR and hydration", () => {
       await Promise.resolve();
     });
 
-    expect(container.querySelector("button")).toBeInTheDocument();
+    expect(container.querySelector('[role="radiogroup"]')).toHaveAttribute("aria-label", "Theme");
+    expect(container.querySelectorAll('[role="radio"]')).toHaveLength(3);
     expect(onRecoverableError).not.toHaveBeenCalled();
 
     // The one-tick correction (see ThemeProvider's own doc comment) has
     // now run, so the toggle reflects the stored "dark" preference even
     // though the server render — which has no localStorage — could not
     // have known about it.
-    expect(container.querySelector("button")?.getAttribute("aria-label")).toContain("Theme: Dark.");
+    expect(container.querySelector('[role="radio"][aria-label="Dark"]')).toHaveAttribute("aria-checked", "true");
+    expect(container.querySelector('[role="radio"][aria-label="System"]')).toHaveAttribute("aria-checked", "false");
 
     await act(async () => root?.unmount());
     container.remove();

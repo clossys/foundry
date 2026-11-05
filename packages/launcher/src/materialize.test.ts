@@ -3,7 +3,7 @@ import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readlinkSy
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { LATER_AT, assessmentFor, decide, decision, editLedger, reseal, withDecisions } from "./admission-fixture.js";
+import { DIRECTION_ROLE, LATER_AT, assessmentFor, decide, decision, editLedger, reseal, withDecisions } from "./admission-fixture.js";
 import type { Loose } from "./admission-fixture.js";
 import type { ReadinessRunner } from "./admission.js";
 import { buildAdmittedFixture, buildMaterializedFixture, readCloneLedger, writeSnapshot } from "./apply-step-fixture.js";
@@ -108,7 +108,7 @@ describe("materializeRepository", () => {
     expect((await materializeRepository(input)).exitCode).toBe(0);
     expect(await materializeRepository(input)).toEqual({ exitCode: 0, verdict: "materialized" });
 
-    const skill = skillPath("strategist");
+    const skill = skillPath(DIRECTION_ROLE);
     writeFileSync(join(fixture.clone, skill), "tampered\n");
     const diverged = await materializeRepository(input);
     expect(diverged.exitCode).toBe(1);

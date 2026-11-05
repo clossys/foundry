@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.operation.delivery",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.operation",
+    "order": 43
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How do we deliver the offer, to what standard, and who owns it?",
+    "mustContain": [
+      {
+        "key": "Steps",
+        "hint": "the delivery steps"
+      },
+      {
+        "key": "Standard",
+        "hint": "the quality bar, testable"
+      },
+      {
+        "key": "Owner",
+        "hint": "who owns delivery"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

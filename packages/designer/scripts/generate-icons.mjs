@@ -59,6 +59,7 @@ const outDir = join(root, "src", "icons");
  */
 const NAME_MAP = {
   "alert-triangle": "AlertTriangle",
+  "panel-left": "PanelLeft",
   "arrow-right": "ArrowRight",
   "book-open": "BookOpen",
   "box": "Box",

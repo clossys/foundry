@@ -1,0 +1,90 @@
+{
+  "name": "producer-system-empty",
+  "type": "registry:block",
+  "dependencies": [],
+  "registryDependencies": [
+    "components.empty"
+  ],
+  "meta": {
+    "slot": "sections.producer.system-empty",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.empty",
+          "files": [
+            "registry/aria-nova/ui/empty.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:76da54c621c6d04e05c2887980bd5957c72d950631c0c2c3047f46ffe298abbf",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "producer-system-empty",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.producer.system-empty",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "SYSTEMS-IA"
+      },
+      "reason": "SYSTEMS-IA D5 (owner: stub build and run): the Build and Run overviews are Publisher pages of the pinned frame plus this one section, the pinned stock Empty with stock parts only.",
+      "createdAt": "2026-11-04T00:00:00Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [
+          "studio.build.empty.title",
+          "studio.build.empty.description",
+          "studio.run.empty.title",
+          "studio.run.empty.description"
+        ],
+        "themeVars": [
+          "--muted-foreground",
+          "--foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  },
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "content": "import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@clossys/designer-ui';\n\n/** The `empty` input of `sections.producer.system-empty`: resolved Writer copy for a system that is not set up yet. */\nexport interface SystemEmptyInput { title: string; description: string }\n\n/** `sections.producer.system-empty`: a system with no team or steps yet, as the stock shadcn Empty (header, title, description). */\nexport default function SystemEmptySection({ empty, ...provenance }: { empty: SystemEmptyInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <Empty {...provenance}>\n    <EmptyHeader>\n      <EmptyTitle role=\"heading\" aria-level={1}>{empty.title}</EmptyTitle>\n      <EmptyDescription>{empty.description}</EmptyDescription>\n    </EmptyHeader>\n  </Empty>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"producer-system-empty\",\n  \"type\": \"registry:block\",\n  \"title\": \"System Empty\",\n  \"description\": \"A system that is not set up yet, as the stock shadcn Empty: header, title and description.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"components.empty\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/producer-system-empty/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ]
+}

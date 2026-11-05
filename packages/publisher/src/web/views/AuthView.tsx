@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
-import { PAGE_COLUMN_CLASSES, PageLayout, hasContent, pageColumnStyle } from "../internal/PageLayout.js";
+import { PAGE_COLUMN_CLASSES, PageColumn, PageLayout, hasContent } from "../internal/PageLayout.js";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";
 import { assertViewContentRoot, usesLegacyChrome } from "../internal/viewContentRoot.js";
 
@@ -231,13 +231,9 @@ export function AuthView({
   if (!legacyChrome) {
     assertViewContentRoot("AuthView", rest);
     return (
-      <div
-        {...rest}
-        className={mergeUiClasses(PAGE_COLUMN_CLASSES, className)}
-        style={pageColumnStyle("form", style)}
-      >
+      <PageColumn {...rest} measure="form" className={className} style={style}>
         {content}
-      </div>
+      </PageColumn>
     );
   }
 
@@ -252,8 +248,7 @@ export function AuthView({
       <main
         id={mainId || undefined}
         tabIndex={mainId ? -1 : undefined}
-        className={PAGE_COLUMN_CLASSES}
-        style={pageColumnStyle("form")}
+        className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-form-max,none)]`}
       >
         {content}
       </main>

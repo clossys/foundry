@@ -14,7 +14,7 @@ const hex = (character, size) => character.repeat(size);
 const qualificationBytes = "qualified bytes\n";
 const catalogBytes = "catalog bytes\n";
 const candidate = {
-  name: "@clossys/strategist", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
+  name: "@clossys/director", version: "0.1.1", packageTreeSha1: hex("a", 40), packageManifestSha256: hex("b", 64),
   tarball: { sha1: hex("c", 40), sha256: hex("d", 64), sha512: hex("e", 128) },
 };
 const qualification = {
@@ -24,14 +24,14 @@ const qualification = {
   policySha256: hex("3", 64), adapterSha256: hex("4", 64), fixtureSetSha256: hex("5", 64),
   transcript: { canonicalSha256: hex("b", 64) },
 };
-const tarballUrl = `${PUBLIC_NPM_REGISTRY}/@clossys/strategist/-/strategist-0.1.1.tgz`;
+const tarballUrl = `${PUBLIC_NPM_REGISTRY}/@clossys/director/-/director-0.1.1.tgz`;
 const historicalRepository = "https://github.com/clossys/" + "platform";
 function source() { return {
   schemaVersion: 1, kind: "foundry-later-publication-v1",
-  qualification: { path: "governance/release-qualifications/clossys-strategist-0.1.1.json", sha256: hash(qualificationBytes) },
+  qualification: { path: "governance/release-qualifications/clossys-director-0.1.1.json", sha256: hash(qualificationBytes) },
   candidate: structuredClone(candidate),
   source: Object.fromEntries(["reviewedCommit", "rootPackageJsonSha256", "rootPackageLockSha256", "policySha256", "adapterSha256", "fixtureSetSha256"].map((key) => [key, qualification[key]])),
-  catalog: { path: "governance/release-catalog.json", sha256: hash(catalogBytes), packageKey: "strategist" },
+  catalog: { path: "governance/release-catalog.json", sha256: hash(catalogBytes), packageKey: "director" },
   publication: { mode: "owner-present", publishedAt: "2026-08-30T00:00:00.000Z", reference: "https://evidence.example.invalid/publication" },
   registryProof: { schemaVersion: 1, kind: "public-npm-anonymous-registry-proof-v1", evidence: {
     registry: PUBLIC_NPM_REGISTRY, access: "anonymous", name: candidate.name, version: candidate.version,
@@ -41,7 +41,7 @@ function source() { return {
     packedManifestSha256: candidate.packageManifestSha256, size: 42,
   } },
 }; }
-function context() { return { recordPath: "governance/release-publications/later/strategist-0.1.1.json", recordBytes: "record\n", qualification, qualificationBytes, qualificationPath: "governance/release-qualifications/clossys-strategist-0.1.1.json", catalogBytes, catalog: { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "strategist"] }] } }; }
+function context() { return { recordPath: "governance/release-publications/later/director-0.1.1.json", recordBytes: "record\n", qualification, qualificationBytes, qualificationPath: "governance/release-qualifications/clossys-director-0.1.1.json", catalogBytes, catalog: { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "director"] }] } }; }
 function rules(record, overrides) { return validateLaterPublication(record, { ...context(), provenanceSourceValid: true, ...overrides }).map((item) => item.rule); }
 
 test("later-publication record binds qualified candidate, active catalogue, anonymous bytes, and owner evidence", () => {
@@ -76,8 +76,8 @@ test("later-publication rejects source, catalog, candidate and served-byte subst
 test("later-publication binds each record to its introduction catalog while requiring present allowlisting", () => {
   const firstCatalogBytes = "catalog before writer\n";
   const secondCatalogBytes = "catalog after writer\n";
-  const firstCatalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "strategist"] }] };
-  const secondCatalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "strategist", "writer"] }] };
+  const firstCatalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "director"] }] };
+  const secondCatalog = { defaultTarget: "clossys-npmjs", targets: [{ id: "clossys-npmjs", status: "active", packages: ["advisor", "starter", "controller", "director", "writer"] }] };
   const first = source(); first.catalog.sha256 = hash(firstCatalogBytes);
   assert.deepEqual(rules(first, { catalogBytes: firstCatalogBytes, catalog: firstCatalog, currentCatalog: secondCatalog }), []);
 
@@ -119,7 +119,7 @@ test("later-publication cannot substitute a sealed first-publication Trio member
 
 test("later-publication history rejects a rewrite followed by restoration", (t) => {
   const root = mkdtempSync(join(tmpdir(), "later-publication-history-")); t.after(() => rmSync(root, { recursive: true, force: true }));
-  const path = "governance/release-publications/later/strategist-0.1.1.json"; const absolute = join(root, path);
+  const path = "governance/release-publications/later/director-0.1.1.json"; const absolute = join(root, path);
   mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
   execFileSync("git", ["init", "-q"], { cwd: root }); execFileSync("git", ["config", "user.email", "test@example.invalid"], { cwd: root }); execFileSync("git", ["config", "user.name", "test"], { cwd: root });
   writeFileSync(absolute, "original\n"); execFileSync("git", ["add", path], { cwd: root }); execFileSync("git", ["commit", "-qm", "introduce"], { cwd: root });
@@ -133,7 +133,7 @@ test("later-publication history rejects a rewrite followed by restoration", (t) 
 function retainedMergeFixture(t, label) {
   const root = mkdtempSync(join(tmpdir(), `later-publication-${label}-`));
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const path = "governance/release-publications/later/strategist-0.1.1.json";
+  const path = "governance/release-publications/later/director-0.1.1.json";
   const absolute = join(root, path);
   mkdirSync(join(root, "governance/release-publications/later"), { recursive: true });
   execFileSync("git", ["init", "-q", "-b", "main"], { cwd: root });
@@ -338,7 +338,7 @@ test("trusted-publication v2 binds immutable provenance to the qualified served 
     invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
     // npm may render the escaped slash as lowercase `%2f`; endpoint identity
     // is the decoded path, never the casing of percent escapes.
-    attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fstrategist%400.1.1",
+    attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fdirector%400.1.1",
   };
   trusted.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
     ...trusted.registryProof.evidence, metadataUrl: publicNpmVersionUrl(PUBLIC_NPM_REGISTRY, candidate.name, candidate.version), repository: "clossys/foundry",
@@ -375,7 +375,7 @@ function replayRecord() {
     provenance: {
       repository: "https://github.com/clossys/foundry", workflow: ".github/workflows/publish.yml", ref: "refs/heads/main", event: "workflow_dispatch",
       sourceSha: hex("6", 40), builder: "https://github.com/actions/runner/github-hosted", invocation: "https://github.com/clossys/foundry/actions/runs/123/attempts/1",
-      attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fstrategist%400.1.1",
+      attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fdirector%400.1.1",
     },
   };
   value.registryProof = { schemaVersion: 2, kind: "public-npm-anonymous-registry-proof-v2", evidence: {
@@ -388,11 +388,11 @@ function replayRecord() {
     publicationSource: { sha: hex("6", 40), rootPackageJsonSha256: hex("7", 64), rootPackageLockSha256: hex("8", 64) },
   };
   value.runQualification = {
-    run: { id: 123, url: "https://github.com/clossys/foundry/actions/runs/123", headSha: hex("6", 40), conclusion: "failure", qualificationJob: { id: 124, name: "qualify (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/124" } },
-    artifact: { id: 125, name: "qualified-candidate-strategist", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
+    run: { id: 123, url: "https://github.com/clossys/foundry/actions/runs/123", headSha: hex("6", 40), conclusion: "failure", qualificationJob: { id: 124, name: "qualify (director)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/124" } },
+    artifact: { id: 125, name: "qualified-candidate-director", archiveSha256: `sha256:${hex("9", 64)}`, size: 42, url: "https://api.github.com/repos/clossys/foundry/actions/artifacts/125/zip" },
     transcript: { rawSha256: hex("a", 64), canonicalSha256: qualification.transcript?.canonicalSha256 ?? hex("b", 64), candidateTarball: structuredClone(candidate.tarball) },
-    publicationJob: { id: 126, name: "publish (strategist)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
-    anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fstrategist%400.1.1" },
+    publicationJob: { id: 126, name: "publish (director)", conclusion: "success", url: "https://github.com/clossys/foundry/actions/runs/123/job/126" },
+    anonymousRegistry: { packumentSha256: hex("c", 64), auditSha256: hex("d", 64), provenanceBundleSha256: hex("e", 64), signatureSha256: hex("f", 64), signatureKeyids: ["SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"], attestationUrl: "https://registry.npmjs.org/-/npm/v1/attestations/%40clossys%2fdirector%400.1.1" },
   };
   return value;
 }

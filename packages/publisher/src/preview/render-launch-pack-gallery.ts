@@ -1,3 +1,4 @@
+import { resolveDocumentLocale, type DocumentLocaleOptions } from "./render-document-locale.js";
 /**
  * The Launch-pack preview (issue #1204/#1207/#1208's own "off-the-shelf
  * boilerplate views a user relies on until they build custom views"): every
@@ -78,9 +79,10 @@ function escapeAttribute(text: string): string {
 }
 
 /** Wraps one rendered view's markup as a full, standalone, brand-bound page — the same three stylesheet links `gallery.html` itself uses. */
-function wrapStandalonePage(title: string, bodyHtml: string): string {
+function wrapStandalonePage(title: string, bodyHtml: string, options: DocumentLocaleOptions = {}): string {
+  const { locale, dir } = resolveDocumentLocale(options);
   return `<!DOCTYPE html>
-<html lang="en" data-brand-bound>
+<html lang="${locale}" dir="${dir}" data-brand-bound>
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -100,7 +102,7 @@ ${bodyHtml}
 }
 
 /** An email-width (600px) frame — the conventional email-client reading width — so an already-complete, self-contained email HTML document previews the way it will actually be read, without its own `<html>`/inline styles colliding with this gallery page's own. */
-function wrapEmailFramePage(title: string, emailHtml: string, plainText: string): string {
+function wrapEmailFramePage(title: string, emailHtml: string, plainText: string, options: DocumentLocaleOptions = {}): string {
   const body = `<main style="max-width: 640px; margin: 0 auto; padding: 2rem 1.5rem 4rem; display: flex; flex-direction: column; gap: 1.5rem;">
   <h1 style="font-size: 1.125rem; margin: 0;">${escapeHtml(title)}</h1>
   <iframe title="${escapeAttribute(title)}" srcdoc="${escapeAttribute(emailHtml)}" style="width: 600px; max-width: 100%; height: 720px; border: 1px solid #ddd; border-radius: 0.5rem; background: #fff;"></iframe>
@@ -109,21 +111,21 @@ function wrapEmailFramePage(title: string, emailHtml: string, plainText: string)
     <pre style="white-space: pre-wrap; font: 13px/1.5 ui-monospace, monospace;">${escapeHtml(plainText)}</pre>
   </details>
 </main>`;
-  return wrapStandalonePage(title, body);
+  return wrapStandalonePage(title, body, options);
 }
 
 // ---------------------------------------------------------------------------
 // Site pages
 // ---------------------------------------------------------------------------
 
-export function renderSitePages(): LaunchPackFile[] {
+export function renderSitePages(options: DocumentLocaleOptions = {}): LaunchPackFile[] {
   const files: LaunchPackFile[] = SITE_PAGE_FIXTURES.map((fixture) => {
     const { element } = renderWebDocument(fixture.document, { groups: fixture.groups, resolveCopyId: previewCopyLookup });
     const markup = renderToStaticMarkup(element);
-    return { file: `site-${fixture.slug}.html`, content: wrapStandalonePage(`Site — ${fixture.slug}`, markup) };
+    return { file: `site-${fixture.slug}.html`, content: wrapStandalonePage(`Site — ${fixture.slug}`, markup, options) };
   });
   const notFoundMarkup = renderToStaticMarkup(buildNotFoundElement());
-  files.push({ file: "site-not-found.html", content: wrapStandalonePage("Site — not-found", notFoundMarkup) });
+  files.push({ file: "site-not-found.html", content: wrapStandalonePage("Site — not-found", notFoundMarkup, options) });
   return files;
 }
 
@@ -131,7 +133,7 @@ export function renderSitePages(): LaunchPackFile[] {
 // Materials: company overviews + pitch deck
 // ---------------------------------------------------------------------------
 
-export function renderMaterialsSection(tokenOverrides: Record<string, string>): LaunchPackFile[] {
+export function renderMaterialsSection(tokenOverrides: Record<string, string>, options: DocumentLocaleOptions = {}): LaunchPackFile[] {
   const files: LaunchPackFile[] = [];
 
   for (const length of COMPANY_OVERVIEW_LENGTHS) {
@@ -146,13 +148,13 @@ export function renderMaterialsSection(tokenOverrides: Record<string, string>): 
     const title = previewCopyString(`preview.overview.title.${length}`);
     files.push({
       file: `materials-overview-${length}.html`,
-      content: wrapStandalonePage(title, `<p style="max-width: var(--ui-width-prose-max, none); margin: 1rem auto 0; padding: 0 1.5rem;"><a href="materials-index.html">&larr; Materials index</a></p>\n${markup}`),
+      content: wrapStandalonePage(title, `<p style="max-width: var(--ui-width-prose-max, none); margin: 1rem auto 0; padding: 0 1.5rem;"><a href="materials-index.html">&larr; Materials index</a></p>\n${markup}`, options),
     });
   }
 
   const deck = buildPitchDeck();
   const deckResult = renderSlidesDeck(deck, { resolveCopyId: previewCopyLookup, tokenOverrides });
-  files.push({ file: "materials-pitch-deck.html", content: renderPitchDeckHtml(deckResult, { title: previewCopyString("preview.deck.title") }) });
+  files.push({ file: "materials-pitch-deck.html", content: renderPitchDeckHtml(deckResult, { title: previewCopyString("preview.deck.title"), ...options }) });
 
   // "partner" (rather than "investor") is the audience this fixture demos:
   // `PITCH_DECK_DEFAULT_AUDIENCE_SELECTIONS` marks "financials"/"ask" as
@@ -164,7 +166,7 @@ export function renderMaterialsSection(tokenOverrides: Record<string, string>): 
   const partnerResult = renderSlidesDeck(partnerDeck, { resolveCopyId: previewCopyLookup, tokenOverrides });
   files.push({
     file: "materials-pitch-deck-partner.html",
-    content: renderPitchDeckHtml(partnerResult, { title: previewCopyString("preview.deck.title"), audience: "Partner" }),
+    content: renderPitchDeckHtml(partnerResult, { title: previewCopyString("preview.deck.title"), audience: "Partner", ...options }),
   });
 
   // The deck pages above are already complete, self-contained HTML
@@ -172,7 +174,7 @@ export function renderMaterialsSection(tokenOverrides: Record<string, string>): 
   // exactly as that function produced them — no `wrapStandalonePage`,
   // which would nest a second `<html>` document inside the first.
   const indexEntries = buildMaterialsIndexEntries();
-  files.push({ file: "materials-index.html", content: renderMaterialsIndexHtml(indexEntries) });
+  files.push({ file: "materials-index.html", content: renderMaterialsIndexHtml(indexEntries, options) });
 
   return files;
 }
@@ -181,7 +183,7 @@ export function renderMaterialsSection(tokenOverrides: Record<string, string>): 
 // Email kit
 // ---------------------------------------------------------------------------
 
-export function renderEmailSection(tokenOverrides: Record<string, string>): LaunchPackFile[] {
+export function renderEmailSection(tokenOverrides: Record<string, string>, options: DocumentLocaleOptions = {}): LaunchPackFile[] {
   const files: LaunchPackFile[] = [];
 
   const emailEntries: Array<{ file: string; title: string; doc: typeof LAUNCH_ANNOUNCEMENT_EMAIL }> = [
@@ -190,8 +192,8 @@ export function renderEmailSection(tokenOverrides: Record<string, string>): Laun
     { file: "email-follow-up.html", title: "Email — follow-up", doc: FOLLOW_UP_EMAIL },
   ];
   for (const entry of emailEntries) {
-    const result = renderEmailDocument(entry.doc, { lookup: previewCopyLookup, brand: tokenOverrides });
-    files.push({ file: entry.file, content: wrapEmailFramePage(entry.title, result.html, result.text) });
+    const result = renderEmailDocument(entry.doc, { lookup: previewCopyLookup, brand: tokenOverrides, ...options });
+    files.push({ file: entry.file, content: wrapEmailFramePage(entry.title, result.html, result.text, options) });
   }
 
   const person = buildSignaturePerson();
@@ -209,6 +211,7 @@ export function renderEmailSection(tokenOverrides: Record<string, string>): Laun
     <pre style="white-space: pre-wrap; font: 13px/1.5 ui-monospace, monospace;">${escapeHtml(signatureText)}</pre>
   </details>
 </main>`,
+      options,
     ),
   });
 
@@ -246,7 +249,7 @@ export function renderCardsSection(tokenOverrides: Record<string, string>): Card
 // index.html — links every file written
 // ---------------------------------------------------------------------------
 
-export function buildLaunchPackIndexHtml(sections: LaunchPackSection[]): string {
+export function buildLaunchPackIndexHtml(sections: LaunchPackSection[], options: DocumentLocaleOptions = {}): string {
   const sectionsHtml = sections
     .map(
       (section) => `<section style="display: flex; flex-direction: column; gap: 0.75rem; border-top: 1px solid #ddd; padding-top: 1.5rem;">
@@ -268,5 +271,6 @@ ${section.links.map((link) => `    <li><a href="${escapeAttribute(link.file)}">$
   </header>
 ${sectionsHtml}
 </main>`,
+    options,
   );
 }

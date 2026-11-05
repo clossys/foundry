@@ -5,7 +5,7 @@
  * can simulate how a real browser resolves the light/dark cascade this
  * package ships, rather than asking a reader to trust a comment.
  *
- * Deliberately narrow: it understands exactly the four selector "atoms"
+ * Deliberately narrow: it understands exactly the four selector "components"
  * this package's dark-mode cascade uses — `:root`, `[data-brand-bound]`,
  * `[data-theme="light"|"dark"]`, and `:not([data-theme="light"|"dark"])` —
  * and throws on anything else, so a selector this module can't account for
@@ -21,13 +21,13 @@ export interface CascadeState {
   readonly dataTheme: ThemeAttr;
 }
 
-type Atom =
+type SelectorComponent =
   | { readonly kind: "root" }
   | { readonly kind: "brand-bound" }
   | { readonly kind: "theme-attr"; readonly value: "light" | "dark" }
   | { readonly kind: "not-theme-attr"; readonly value: "light" | "dark" };
 
-const ATOM_PATTERNS: ReadonlyArray<{ re: RegExp; build: (m: RegExpMatchArray) => Atom }> = [
+const COMPONENT_PATTERNS: ReadonlyArray<{ re: RegExp; build: (m: RegExpMatchArray) => SelectorComponent }> = [
   { re: /^:root/, build: () => ({ kind: "root" }) },
   { re: /^\[data-brand-bound\]/, build: () => ({ kind: "brand-bound" }) },
   {
@@ -40,22 +40,22 @@ const ATOM_PATTERNS: ReadonlyArray<{ re: RegExp; build: (m: RegExpMatchArray) =>
   },
 ];
 
-/** Tokenize a selector into atoms, or throw if any part of it isn't one of the four known shapes. */
-function tokenize(selector: string): Atom[] {
+/** Tokenize a selector into components, or throw if any part of it isn't one of the four known shapes. */
+function tokenize(selector: string): SelectorComponent[] {
   let rest = selector;
-  const atoms: Atom[] = [];
+  const components: SelectorComponent[] = [];
   while (rest.length > 0) {
-    const hit = ATOM_PATTERNS.find((p) => p.re.test(rest));
+    const hit = COMPONENT_PATTERNS.find((p) => p.re.test(rest));
     if (!hit) {
       throw new Error(
         `cascade.tokenize: selector ${JSON.stringify(selector)} has an unrecognized remainder ${JSON.stringify(rest)} — this test module only understands :root, [data-brand-bound], [data-theme="..."], and :not([data-theme="..."]).`,
       );
     }
     const match = rest.match(hit.re)!;
-    atoms.push(hit.build(match));
+    components.push(hit.build(match));
     rest = rest.slice(match[0].length);
   }
-  return atoms;
+  return components;
 }
 
 /**
@@ -63,7 +63,7 @@ function tokenize(selector: string): Atom[] {
  * `[attr]`, and `:not([attr])` are all specificity class "c" (the
  * pseudo-class/attribute/class tier) at weight 1 each — there is no id,
  * inline style, or type selector anywhere in this package's own CSS, so
- * a plain atom count is the real, correct specificity, not a simplification.
+ * a plain component count is the real, correct specificity, not a simplification.
  */
 export function specificity(selector: string): number {
   return tokenize(selector).length;
@@ -71,16 +71,16 @@ export function specificity(selector: string): number {
 
 /** Does `selector` match an element in `state`? (`:root` always matches — nothing here simulates any other element.) */
 export function selectorMatches(selector: string, state: CascadeState): boolean {
-  return tokenize(selector).every((atom) => {
-    switch (atom.kind) {
+  return tokenize(selector).every((component) => {
+    switch (component.kind) {
       case "root":
         return true;
       case "brand-bound":
         return state.brandBound;
       case "theme-attr":
-        return state.dataTheme === atom.value;
+        return state.dataTheme === component.value;
       case "not-theme-attr":
-        return state.dataTheme !== atom.value;
+        return state.dataTheme !== component.value;
     }
   });
 }

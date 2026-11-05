@@ -1,0 +1,72 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.calendar",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-date",
+    "order": 116
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Calendar",
+    "memberRoots": {
+      "selection.single": "rac:Calendar",
+      "selection.range": "rac:RangeCalendar"
+    },
+    "members": {
+      "mode": "closed",
+      "names": [
+        "selection.single",
+        "selection.range"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.sidebar-primary",
+        "themes.radius",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.spacing"
+      ],
+      "assets": [
+        "assets.icon-chevron-left",
+        "assets.icon-chevron-right"
+      ]
+    },
+    "composes": [
+      "components.button",
+      "components.select"
+    ],
+    "apg": "grid"
+  },
+  "inputs": [],
+  "uses": [
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-right",
+    "components.button",
+    "components.select"
+  ]
+}

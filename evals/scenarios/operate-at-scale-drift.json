@@ -9,7 +9,7 @@
   "expect": {
     "state": "composed",
     "mustIncludeRoles": ["architect", "builder", "controller", "observer"],
-    "mustExcludeRoles": ["advisor", "bouncer", "butler", "customer", "designer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "publisher", "strategist", "writer"],
+    "mustExcludeRoles": ["advisor", "bouncer", "butler", "customer", "designer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "publisher", "director", "writer"],
     "maxRoles": 4,
     "sequence": ["architect", "controller", "builder", "observer"],
     "unsatisfiedNeeds": []

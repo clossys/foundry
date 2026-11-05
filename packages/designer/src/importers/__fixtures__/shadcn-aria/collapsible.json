@@ -1,0 +1,17 @@
+{
+  "name": "collapsible",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/collapsible.tsx",
+      "type": "registry:ui",
+      "content": "\"use client\"\n\nimport {\n  DisclosurePanel as CollapsibleContentPrimitive,\n  Disclosure as CollapsiblePrimitive,\n  Button as CollapsibleTriggerPrimitive,\n  type ButtonProps,\n  type DisclosurePanelProps,\n  type DisclosureProps,\n} from \"react-aria-components\"\n\nfunction Collapsible({ ...props }: DisclosureProps) {\n  return <CollapsiblePrimitive data-slot=\"collapsible\" {...props} />\n}\n\nfunction CollapsibleTrigger({ ...props }: ButtonProps) {\n  return (\n    <CollapsibleTriggerPrimitive\n      slot=\"trigger\"\n      data-slot=\"collapsible-trigger\"\n      {...props}\n    />\n  )\n}\n\nfunction CollapsibleContent({ ...props }: DisclosurePanelProps) {\n  return (\n    <CollapsibleContentPrimitive data-slot=\"collapsible-content\" {...props} />\n  )\n}\n\nexport { Collapsible, CollapsibleTrigger, CollapsibleContent }\n",
+      "sha256": "45c7e65d7960b07e99cbacec399945ad2f8a1f484096e7b80c0199a776c699a1"
+    }
+  ]
+}

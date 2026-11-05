@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.reach.geography",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.reach",
+    "order": 20
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Where do we sell first, and where not yet?",
+    "mustContain": [
+      {
+        "key": "Where",
+        "hint": "the first markets"
+      },
+      {
+        "key": "Not-yet",
+        "hint": "places we do not serve yet"
+      },
+      {
+        "key": "Why",
+        "hint": "why this order"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

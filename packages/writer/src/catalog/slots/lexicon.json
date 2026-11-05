@@ -1,0 +1,326 @@
+[
+  {
+    "id": "lexicon.formality",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "categorical-rule"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.warmth",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "categorical-rule"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.energy",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "categorical-rule"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.person",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "grammatical-person"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.mood",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "grammatical-mood"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.sentence-length",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "word-range"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.reading-level",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "voice-rule",
+      "valueType": "grade-range"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.brand-names",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "term",
+      "valueType": "name-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.preferred-terms",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "term",
+      "valueType": "term-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.avoid-terms",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "term",
+      "valueType": "term-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.avoid-patterns",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "pattern-rule",
+      "valueType": "regex-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.spelling-variant",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "term",
+      "valueType": "locale-tag"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.pronunciation",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "term",
+      "valueType": "pronunciation-map"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.product-claims",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "claim",
+      "valueType": "approved-claim-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.metric-claims",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "claim",
+      "valueType": "approved-metric-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.compliance-statements",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "claim",
+      "valueType": "approved-statement-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.comparison-claims",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "claim",
+      "valueType": "approved-comparison-list"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.number-format",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "number-format"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.plural-rules",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "plural-rule-set"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.date-format",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "date-format"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.time-format",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "time-format"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.currency-format",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "currency-format"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.unit-format",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "unit-format"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.capitalization",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "capitalization-rule"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.punctuation",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "punctuation-rule"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.direction",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "text-direction"
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "lexicon.expansion-budget",
+    "layer": "lexicon",
+    "contract": {
+      "kind": "lexicon",
+      "source": "writer",
+      "recordKind": "format",
+      "valueType": "expansion-ratio"
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

@@ -36,13 +36,16 @@ describe("resolveCopyRef", () => {
     });
   });
 
-  it("fails closed for a missing entry, wrong locale, draft entry, and missing parameter", () => {
+  it("fails closed for a missing entry, draft entry, and missing parameter", () => {
     expect(resolveCopyRef(registry, { id: "dashboard.missing" }).issues[0]?.reason).toBe("unknown-copy-id");
-    expect(resolveCopyRef(registry, { id: "dashboard.welcome", locale: "fr" }).issues[0]?.reason).toBe(
-      "locale-mismatch",
-    );
     expect(resolveCopyRef(registry, { id: "dashboard.pending" }).issues[0]?.reason).toBe("copy-not-approved");
     expect(resolveCopyRef(registry, { id: "dashboard.welcome" }).issues[0]?.reason).toBe("missing-placeholder-value");
+  });
+
+  it("reports the served locale when a request falls back to the registry default", () => {
+    const result = resolveCopyRef(registry, { id: "dashboard.welcome", locale: "fr", values: { name: "Ada" } });
+    expect(result.complete).toBe(true);
+    expect(result.resolution).toMatchObject({ text: "Welcome, Ada.", locale: "en", servedLocale: "en", chain: ["en"] });
   });
 
   it("fails closed instead of throwing when JavaScript callers supply an invalid registry or ref shape", () => {
@@ -276,7 +279,7 @@ describe("production resolution authorized by an approvalPlan", () => {
       ["the scopes widened after approval (corpus scope-widened)", () => bytesOf("delegated-copy-approval-scope-widened"), "subject-digest-mismatch"],
       ["the scopes reordered after approval (corpus scopes-reordered)", () => bytesOf("delegated-copy-approval-scopes-reordered"), "subject-digest-mismatch"],
       ["an unknown top-level key", () => encode({ ...plan("delegated-copy-approval-scoped"), extra: true }), "plan-invalid"],
-      ["a repeated mandate role (R9)", () => encode({ ...plan("delegated-copy-approval-scoped"), mandate: { ...plan("delegated-copy-approval-scoped").mandate, roles: ["strategist", "writer", "strategist"] } }), "plan-invalid"],
+      ["a repeated mandate role (R9)", () => encode({ ...plan("delegated-copy-approval-scoped"), mandate: { ...plan("delegated-copy-approval-scoped").mandate, roles: ["director", "writer", "director"] } }), "plan-invalid"],
       ["a decision time that does not parse", () => encode(scoped(decide("yesterday", "approved", SCOPED))), "plan-invalid"],
       ["tied approvals with different digests", () => encode(scoped(decide(T1, "approved", SCOPED), decide(T1, "approved", OTHER))), "latest-decisions-disagree"],
       ["tied approvals with different digests, reversed", () => encode(scoped(decide(T1, "approved", OTHER), decide(T1, "approved", SCOPED))), "latest-decisions-disagree"],

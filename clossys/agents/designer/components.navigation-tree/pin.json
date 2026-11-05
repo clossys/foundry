@@ -1,0 +1,7 @@
+{
+  "candidate": "navigation-tree-v2.json",
+  "sha256": "1a2e7ccd21317eb2faaf3fa779b7c0922eb71991d888f3cf5a014067025e750f",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (COMPOSE-SLOTS)",
+  "basis": "planner",
+  "at": "2026-11-03T21:45:00Z"
+}

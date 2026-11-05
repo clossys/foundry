@@ -16,7 +16,7 @@
  * fusing the packaging never reads as fusing the two halves' surfaces into
  * one export list. A future composer channel subpath's own exports get
  * added here too, the same way `designer`'s own internal barrel grew one
- * `export ... from` block per layer as `atoms`/`blocks`/`views`/`shell`/
+ * `export ... from` block per layer as `components`/`blocks`/`views`/`shell`/
  * `charts`/`icons` shipped.
  */
 export {
@@ -53,5 +53,11 @@ export type {
 } from "./document/index.js";
 
 // Frame appearance inputs; the package keeps explicit subpath exports.
-export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "./web/frame/index.js";
+export type { SiteLinkInput, SiteBrandInput, SiteShellInput, SiteFooterInput } from "@clossys/designer/frames";
 export type { SectionedViewHeroSection } from "./core/sectioned-view.js";
+
+export * from "./layouts/index.js";
+
+// Consumer-owned publication maps and their public protocol projections.
+export { checkContentMap, projectRoutes, projectNavigation, projectCommands, projectBreadcrumbs, projectSitemap, projectOutline, projectToc, projectRedirects, projectStaticParams, projectRobots, buildSecurityTxt, CONTENT_MAP_MAX_DEPTH } from "./content-map/index.js";
+export type { ContentMap, ContentMapEntry, ContentMapExternalEntry, ContentMapNode, ContentMapIndexing, ContentMapRedirectDeclaration, ContentMapRedirect, ContentMapStaticParams, ContentMapSource, ContentMapAction, ContentMapConstructs, ContentMapFinding, ContentMapFindingCode, ContentMapNavigationNode, ContentMapNavigation, ContentMapCommand, ContentMapCommandGroup, ContentMapBreadcrumb, ContentMapOutlineNode, ContentMapTocEntry, ContentMapSitemapEntry, ContentMapSitemapOptions, ContentMapCompleteRoute, ContentMapRouteOptions, ContentMapRoutes, ContentMapRobotsOptions, ContentMapRobots, SecurityTxtOptions } from "./content-map/index.js";

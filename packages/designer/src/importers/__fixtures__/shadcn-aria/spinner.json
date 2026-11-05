@@ -1,0 +1,17 @@
+{
+  "name": "spinner",
+  "type": "registry:ui",
+  "repository": "https://github.com/shadcn-ui/ui",
+  "commit": "daaf156ee00ed91cc7e6bdd937c1b4973152d141",
+  "sourceFormat": "pinned repository source; not generated live registry JSON",
+  "license": "MIT",
+  "notice": "LICENSE.md",
+  "files": [
+    {
+      "path": "apps/v4/registry/bases/aria/ui/spinner.tsx",
+      "type": "registry:ui",
+      "content": "import { cn } from \"cn\"\n\nimport { IconPlaceholder } from \"@/app/(create)/components/icon-placeholder\"\n\nfunction Spinner({ className, ...props }: React.ComponentProps<\"svg\">) {\n  return (\n    <IconPlaceholder\n      lucide=\"Loader2Icon\"\n      tabler=\"IconLoader\"\n      hugeicons=\"Loading03Icon\"\n      phosphor=\"SpinnerIcon\"\n      remixicon=\"RiLoaderLine\"\n      data-slot=\"spinner\"\n      role=\"status\"\n      aria-label=\"Loading\"\n      className={cn(\"size-4 animate-spin\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Spinner }\n",
+      "sha256": "494f71fd2733709d0e43be44e3353d9df215b370137af0195251cbdfdcc9e17b"
+    }
+  ]
+}

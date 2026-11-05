@@ -1,13 +1,13 @@
 /**
- * Class candidates for `styles/compiled.css` — atoms, blocks, and shell.
- * Pre-auth pages mount Hero and shell chrome; limiting the scan to atoms
+ * Class candidates for `styles/compiled.css` — components, blocks, shell, canonical Frames, and public Studio.
+ * Pre-auth pages mount Hero and shell chrome; limiting the scan to components
  * left those classes Tailwind-only and unstyled on the default CSS path.
  */
 
 import { join } from "node:path";
 import { scanClassCandidates, type ClassScanResult } from "./class-scan.js";
 
-export const COMPILED_CSS_SOURCE_DIRS = ["atoms", "blocks", "shell"] as const;
+export const COMPILED_CSS_SOURCE_DIRS = ["components", "blocks", "shell", "frames", "studio"] as const;
 
 export interface CompiledCssScanResult extends ClassScanResult {
   /** Per-directory file counts for reporting. */
@@ -15,8 +15,8 @@ export interface CompiledCssScanResult extends ClassScanResult {
 }
 
 /**
- * Directories whose components are exported (`./atoms`, `./blocks`, `./shell`,
- * `./charts`, `./theme`, plus token preview tooling). `styles/utilities.css` lists the classes of all of
+ * Directories whose components are exported (`./components`, `./blocks`, `./shell`,
+ * `./frames`, `./studio`, `./charts`, `./theme`, plus token preview tooling). `styles/utilities.css` lists the classes of all of
  * them; `compiled.css` keeps the narrower scan above.
  */
 export const UTILITIES_SOURCE_DIRS = [...COMPILED_CSS_SOURCE_DIRS, "charts", "theme", "tokens/preview"] as const;
@@ -24,7 +24,7 @@ export const UTILITIES_SOURCE_DIRS = [...COMPILED_CSS_SOURCE_DIRS, "charts", "th
 function scanDirs<D extends string>(packageRoot: string, dirs: readonly D[]): ClassScanResult & { byDir: Record<D, number> } {
   const candidates = new Set<string>();
   let filesScanned = 0;
-  const skippedByDesign = [...scanClassCandidates(join(packageRoot, "src", "atoms")).skippedByDesign];
+  const skippedByDesign = [...scanClassCandidates(join(packageRoot, "src", "components")).skippedByDesign];
   const byDir = {} as Record<D, number>;
 
   for (const dir of dirs) {

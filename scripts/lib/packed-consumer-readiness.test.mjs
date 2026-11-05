@@ -278,8 +278,8 @@ test("optional-peer policy is closed in both directions against packed metadata"
 
 // #533/#949: adding an export subpath to a package with an optional peer must
 // land here — a mutable record that describes today's source — rather than in
-// the frozen aggregate canary plan, which measures already-published tarballs
-// and cannot be edited at all. The finding a new subpath raises has to be
+// the retired frozen aggregate canary plan, which measured already-published
+// tarballs and could not be edited at all. The finding a new subpath raises has to be
 // clearable by editing the policy, or the gate is a constraint on package
 // design rather than a check.
 test("a new export subpath is a clearable optional-peer policy finding, not an unclearable one", () => {
@@ -331,6 +331,99 @@ test("the repository omission matrix is closed against every current publishable
   assert.deepEqual(validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY, { refusals: BY_DESIGN_REFUSALS }), []);
 });
 
+const addedRuntimeSpecifiers = {
+  "@clossys/designer": ["catalog", "catalog/server", "studio", "studio/queries", "studio/state", "catalog-bundles", "frames", "ref-verbatim"],
+  "@clossys/publisher": ["web/registered-route", "web/registered-route-check", "web/registered-route-wiring"],
+};
+test("each added runtime export is required in every optional-peer row", async () => {
+  const packages = await discoverPublishablePackages(process.cwd());
+  for (const [packageName, suffixes] of Object.entries(addedRuntimeSpecifiers)) {
+    for (const peer of Object.keys(OPTIONAL_PEER_POLICY[packageName])) {
+      for (const suffix of suffixes) {
+        const specifier = `${packageName}/${suffix}`;
+        assert.ok(Object.hasOwn(OPTIONAL_PEER_POLICY[packageName][peer], specifier), `${peer} misses ${specifier}`);
+        const omitted = structuredClone(OPTIONAL_PEER_POLICY);
+        delete omitted[packageName][peer][specifier];
+        assert.ok(validateOptionalPeerPolicy(packages, omitted, { refusals: BY_DESIGN_REFUSALS })
+          .includes(`${packageName} omission row ${peer} misses ${specifier}`));
+      }
+    }
+  }
+});
+
+test("actual shipped ref-verbatim source imports without any optional UI peer", async (t) => {
+  const root = await fixture(t);
+  const sourceRoot = join(process.cwd(), "packages/designer");
+  const manifest = JSON.parse(await readFile(join(sourceRoot, "package.json"), "utf8"));
+  const specifier = "@clossys/designer/ref-verbatim";
+  const exported = manifest.exports["./ref-verbatim"];
+  assert.equal(exported.import, "./scripts/check-ref-verbatim.mjs");
+  assert.ok(manifest.files.includes("scripts/check-ref-verbatim.mjs"));
+  assert.ok(manifest.files.includes("scripts/ref-verbatim"));
+  const packageRoot = join(root, "node_modules", manifest.name);
+  // Exact shipped source bytes, with no dist build or packed-artifact claim.
+  // Importing this entry does not invoke the verifier's lazy TypeScript API.
+  const sources = ["scripts/check-ref-verbatim.mjs", ...[
+    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only",
+  ].map((name) => `scripts/ref-verbatim/${name}.mjs`)];
+  for (const source of sources) {
+    await mkdir(dirname(join(packageRoot, source)), { recursive: true });
+    await writeFile(join(packageRoot, source), await readFile(join(sourceRoot, source)));
+  }
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify({
+    name: manifest.name, type: manifest.type, exports: { "./ref-verbatim": exported },
+  }));
+  const peers = Object.keys(manifest.peerDependenciesMeta).filter((peer) => manifest.peerDependenciesMeta[peer].optional);
+  const env = { PATH: process.env.PATH };
+  const absent = await runProcess(process.execPath, ["--input-type=module", "--eval", `
+    for (const peer of ${JSON.stringify(peers)}) {
+      try { import.meta.resolve(peer); process.exit(1); }
+      catch (error) { if (error.code !== "ERR_MODULE_NOT_FOUND") throw error; }
+    }
+  `], { cwd: root, env });
+  assert.equal(absent.exitCode, 0, absent.stderr);
+  const result = await importSpecifier(specifier, root, env);
+  assert.equal(result.exitCode, 0, result.stderr);
+  assert.equal(result.timedOut, false);
+  assert.equal(result.launchError, undefined);
+  for (const peer of peers) assert.equal(OPTIONAL_PEER_POLICY[manifest.name][peer][specifier], "imports", peer);
+});
+
+test("registered-route-check requires distinct browser/default outcomes and a browser marker", async () => {
+  const packages = await discoverPublishablePackages(process.cwd());
+  const specifier = "@clossys/publisher/web/registered-route-check";
+  const marker = BY_DESIGN_REFUSALS["@clossys/publisher"][specifier]?.browser;
+  assert.equal(typeof marker, "string");
+  assert.match(marker, /browser/);
+  for (const peer of Object.keys(OPTIONAL_PEER_POLICY["@clossys/publisher"])) {
+    const cell = OPTIONAL_PEER_POLICY["@clossys/publisher"][peer][specifier];
+    assert.deepEqual(Object.keys(cell).sort(), ["browser", "default"]);
+    assert.equal(cell.browser, "refuses");
+    const collapsed = structuredClone(OPTIONAL_PEER_POLICY);
+    collapsed["@clossys/publisher"][peer][specifier] = cell.default;
+    assert.ok(validateOptionalPeerPolicy(packages, collapsed, { refusals: BY_DESIGN_REFUSALS }).some((finding) => finding.includes(specifier) && finding.includes("collapses")));
+  }
+  for (const replacement of [undefined, "Registered route checking requires the server filesystem"]) {
+    const refusals = structuredClone(BY_DESIGN_REFUSALS);
+    if (replacement === undefined) delete refusals["@clossys/publisher"][specifier];
+    else refusals["@clossys/publisher"][specifier].browser = replacement;
+    assert.ok([...validateByDesignRefusals(packages, refusals), ...validateOptionalPeerPolicy(packages, OPTIONAL_PEER_POLICY, { refusals })].length > 0);
+  }
+});
+test("actual registered-route browser refusal source throws the declared marker", async (t) => {
+  const root = await fixture(t);
+  const specifier = "@clossys/publisher/web/registered-route-check";
+  const marker = BY_DESIGN_REFUSALS["@clossys/publisher"][specifier]?.browser;
+  assert.equal(typeof marker, "string");
+  const packageRoot = join(root, "node_modules", "@clossys", "publisher");
+  await mkdir(packageRoot, { recursive: true });
+  // Exact current source bytes in a Node-readable fixture, not a packed-artifact claim.
+  await writeFile(join(packageRoot, "refusal.mjs"), await readFile(join(process.cwd(), "packages/publisher/src/web/refuse-registered-route-browser.ts")));
+  await writeFile(join(packageRoot, "package.json"), JSON.stringify({ name: "@clossys/publisher", exports: { "./web/registered-route-check": { browser: "./refusal.mjs" } } }));
+  assert.equal(await judgeRuntimeImport({ packageName: "@clossys/publisher", specifier, condition: "browser", marker, consumer: root, env: process.env }), "refuses");
+  await assert.rejects(judgeRuntimeImport({ packageName: "@clossys/publisher", specifier, condition: "browser", marker: `${marker} wrong`, consumer: root, env: process.env }), /declared by-design refusal/);
+});
+
 test("Publisher's optional-peer matrix binds both default and react-server web outcomes", () => {
   const publisherExports = [
     "@clossys/publisher/assessment",
@@ -367,13 +460,64 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
     "@clossys/publisher/web/consent/preview": { default: "refuses", development: "imports", "react-server": "refuses" },
   });
   const rows = OPTIONAL_PEER_POLICY["@clossys/publisher"];
+  // Landed subpaths: the three Publisher view entries reject without their
+  // client peers, and content-route follows the web entry's two conditions.
+  const landedSpecifiers = [
+    "@clossys/publisher/archetypes", "@clossys/publisher/content", "@clossys/publisher/content-map",
+    "@clossys/publisher/content-map/cells", "@clossys/publisher/content/node", "@clossys/publisher/install",
+    "@clossys/publisher/specimen", "@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview",
+    "@clossys/publisher/web/publisher-v2",
+  ];
+  // `./web/host` (PublisherHost) reaches Designer's frames: it rejects without the React/Aria peers.
+  const landed = (rejected, contentRoute, host = "rejects") => ({
+    ...Object.fromEntries(landedSpecifiers.map((specifier) => [specifier, rejected.includes(specifier) ? "rejects" : "imports"])),
+    "@clossys/publisher/web/content-route": contentRoute,
+    "@clossys/publisher/web/host": host,
+  });
+  const views = ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"];
 
-  assert.deepEqual(rows["@internationalized/date"], expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"));
-  assert.deepEqual(rows.react, expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }, "rejects", "rejects"));
-  assert.deepEqual(rows["react-aria-components"], expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"));
-  assert.deepEqual(rows["react-dom"], expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"));
-  assert.deepEqual(rows["tailwind-merge"], expected([], { default: "imports", "react-server": "imports" }));
-  assert.deepEqual(rows.tailwindcss, expected());
+  assert.deepEqual(rows["@internationalized/date"], {
+    ...expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
+    "@clossys/publisher/web/registered-route": "rejects",
+    "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "imports" }),
+  });
+  assert.deepEqual(rows.react, {
+    ...expected(["@clossys/publisher/document", "@clossys/publisher/testing"], { default: "rejects", "react-server": "rejects" }, "rejects", "rejects"),
+    "@clossys/publisher/web/registered-route": "rejects",
+    "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "rejects" }),
+  });
+  assert.deepEqual(rows["react-aria-components"], {
+    ...expected([], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
+    "@clossys/publisher/web/registered-route": "rejects",
+    "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "imports" }),
+  });
+  assert.deepEqual(rows["react-dom"], {
+    ...expected(["@clossys/publisher/testing"], { default: "rejects", "react-server": "imports" }, "rejects", "rejects"),
+    "@clossys/publisher/web/registered-route": "rejects",
+    "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(views, { default: "rejects", "react-server": "imports" }),
+  });
+  assert.deepEqual(rows["tailwind-merge"], {
+    ...expected([], { default: "imports", "react-server": "imports" }),
+    "@clossys/publisher/web/registered-route": "imports",
+    "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed(["@clossys/publisher/web/admin-pages"], { default: "imports", "react-server": "imports" }, "imports"),
+  });
+  assert.deepEqual(rows.tailwindcss, {
+    ...expected(),
+    "@clossys/publisher/web/registered-route": "imports",
+    "@clossys/publisher/web/registered-route-check": { browser: "refuses", default: "imports" },
+    "@clossys/publisher/web/registered-route-wiring": { browser: "refuses", default: "imports" },
+    ...landed([], { default: "imports", "react-server": "imports" }, "imports"),
+  });
 });
 
 test("condition-aware optional-peer execution launches both default and react-server imports", async (t) => {
@@ -664,6 +808,17 @@ test("the packed-consumer run applies declarations to the packed tarball's own i
   const result = await run({ [REFUSALS_PACKAGE]: declaredRefusals });
   assert.equal(result.runtimeImports, 8);
   assert.equal(result.omissionRows, 1);
+  // Both wrong directions must contradict actual imports after physical peer removal.
+  for (const [specifier, wrongOutcome] of [["@example/refusals/client", "imports"], ["@example/refusals/copy", "rejects"]]) {
+    const wrong = structuredClone(policy);
+    wrong[REFUSALS_PACKAGE]["absent-peer"][specifier].default = wrongOutcome;
+    await assert.rejects(() => runPackedConsumerReadiness({ root, skipBuild: true, policy: wrong, refusals: { [REFUSALS_PACKAGE]: declaredRefusals } }), (error) => {
+      assert.match(error.message, /omission row absent-peer drifted: expected .*received /);
+      assert.ok(error.message.includes(specifier));
+      return true;
+    });
+  }
+
   // A declaration finding is reported as a refusal closure failure, not as
   // an optional-peer policy one.
   await assert.rejects(() => run({ [REFUSALS_PACKAGE]: { ...declaredRefusals, "@example/refusals/removed": { default: "removed subpath refuses every condition" } } }), (error) => {

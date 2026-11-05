@@ -1,0 +1,15 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "hero",
+  "type": "registry:block",
+  "registryDependencies": [
+    "sample-button"
+  ],
+  "files": [
+    {
+      "path": "registry/blocks/hero.tsx",
+      "type": "registry:block",
+      "content": "import * as React from \"react\";\nimport { cn } from \"@/lib/utils\";\nimport { SampleButton } from \"@/components/ui/sample-button\";\n\nexport function Hero({ eyebrow, title, body, action, secondary, className }: { eyebrow: string; title: string; body: string; action: string; secondary: string; className?: string }) {\n  return (\n    <section data-slot=\"hero\" className={cn(\"flex flex-col gap-6 bg-background px-6 py-16 text-foreground\", className)}>\n      <span className=\"text-sm font-medium text-muted-foreground\">{eyebrow}</span>\n      <h1 className=\"max-w-2xl text-4xl font-semibold tracking-tight\">{title}</h1>\n      <p className=\"max-w-xl text-lg text-muted-foreground\">{body}</p>\n      <div className=\"flex gap-3\">\n        <SampleButton>{action}</SampleButton>\n        <SampleButton variant=\"outline\">{secondary}</SampleButton>\n      </div>\n    </section>\n  );\n}\n"
+    }
+  ]
+}

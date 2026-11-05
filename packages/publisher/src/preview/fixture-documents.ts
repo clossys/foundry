@@ -1,5 +1,5 @@
 import { createElement } from "react";
-import { TextField } from "@clossys/designer/atoms";
+import { TextField } from "@clossys/designer/components";
 import { createCopyResolver } from "@clossys/writer";
 import type { ComposeDocument } from "../core/index.js";
 import type { SectionedViewDocument } from "../core/sectioned-view.js";

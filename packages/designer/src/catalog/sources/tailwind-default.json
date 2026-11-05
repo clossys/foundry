@@ -1,0 +1,13 @@
+{
+  "id": "tailwind-default",
+  "kind": "external",
+  "author": "third-party",
+  "license": "MIT",
+  "pin": {
+    "package": "tailwindcss",
+    "version": "4.3.3",
+    "file": "theme.css",
+    "sha256": "443d7af364200f8ec8352dc78e39485a118a1840d498c97967bf0ae402b39167"
+  },
+  "homepage": "https://tailwindcss.com"
+}

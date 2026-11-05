@@ -1,0 +1,20 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/producer#qualification-fixture",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "brief",
+      "label": "Brief",
+      "children": [
+        {
+          "id": "examples",
+          "label": "Examples",
+          "slots": [
+            "brief.qualification"
+          ]
+        }
+      ]
+    }
+  ]
+}

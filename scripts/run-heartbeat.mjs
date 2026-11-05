@@ -5,7 +5,7 @@
  * (packages/controller/src/heartbeat/schedule.ts) names as
  * `artifact: "scripts/run-heartbeat.mjs"`. Invokes the compiled
  * controller heartbeat CLI by dist path (mirrors
- * scripts/check-strategist-subject.mjs's own thin-wrapper pattern),
+ * scripts/check-director-subject.mjs's own thin-wrapper pattern),
  * forwarding every argument -- including --write -- unchanged.
  *
  * Foundry itself is the package producer here, not a client repository

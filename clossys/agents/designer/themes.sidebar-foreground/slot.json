@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.sidebar-foreground",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.colors",
+    "l2": "colors-sidebar",
+    "order": 27
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "color",
+    "emit": {
+      "default": "--sidebar-foreground"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "tier": "role"
+  },
+  "inputs": [],
+  "uses": []
+}

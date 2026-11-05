@@ -2,7 +2,7 @@
 // check-foreign-references — catch this repository naming an account or a
 // repository that is not its own.
 //
-//   node scripts/check-foreign-references.mjs [<dir>] [--json]
+//   node scripts/check-foreign-references.mjs [<dir>] [--json] [--redact]
 //
 // Exit 0 = every account-shaped and scope-shaped reference in this tree
 // resolves to this repository's own identity or to an admitted non-peer.
@@ -110,7 +110,7 @@
 //
 // WHAT IS ADMITTED, AND WHY IT IS NOT A BOUNDARY LEAK
 // ---------------------------------------------------
-// Four classes, in descending order of how much of the work they do:
+// Five classes, in descending order of how much of the work they do:
 //
 //   A. THIRD-PARTY npm SCOPES, DERIVED. Every scope that package-lock.json
 //      resolves from the public npm registry is a package this repository
@@ -136,6 +136,13 @@
 //      scopes are derived from the catalogue's strict schema, never from a
 //      handwritten peer exception, and admitted only in the finite release
 //      control surfaces below. They cannot license the same name elsewhere.
+//
+//   E. ADOPTED DESIGN SOURCES. governance/approved-design-sources.json names
+//      a finite set of source URLs and their exact adopting provenance files.
+//      The scanned file must itself carry provenance for that source, and only
+//      that source's exact namespace or repository is admitted. A directory,
+//      researched option, nearby provenance file or unrelated reference is not
+//      an admission. All remaining findings are still failures.
 //
 // None of B or C is a peer account: each is either a public ecosystem vendor
 // or a name that belongs to nobody. Enumerating them therefore discloses
@@ -165,6 +172,8 @@ import { existsSync, readFileSync, readdirSync, statSync, writeSync } from "node
 import { basename, dirname, extname, join, relative, resolve, sep } from "node:path";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+
+import { approvedDesignReference, designSourceProvenance, loadApprovedDesignSources } from "./lib/approved-design-sources.mjs";
 
 import { loadReleaseCatalog } from "./check-release-catalog.mjs";
 import {
@@ -513,6 +522,14 @@ function admittedForgeSlug(owner, repo, rel) {
   return null;
 }
 
+// Design-source admission is finite and backed by actual adopted registry records.
+// A source's own references are admitted only in a file carrying its provenance;
+// neither an approved registry nor a reference directory exempts a whole file.
+let approvedDesignSources;
+try { approvedDesignSources = loadApprovedDesignSources(root); }
+catch { die("cannot validate governance/approved-design-sources.json and its adopting provenance"); }
+let admittedDesignReferences = 0;
+
 // --------------------------------------------------------------------- walking
 
 // Same gitignore-aware walk scripts/check-public-safety.mjs uses, and for the
@@ -685,6 +702,8 @@ for (const file of files) {
   // identically to a human and defeats a naive match.
   contents = contents.replace(/[\u0000\u200B\u200C\u200D\u2060\u180E\u00AD\uFEFF]/g, "");
 
+  const carriedDesignSources = designSourceProvenance(contents, approvedDesignSources);
+
   contents.split("\n").forEach((line, index) => {
     const syntaxSpans = containerClassSpans(line);
     const isContainerSyntax = (match) => syntaxSpans.some(([start, end]) =>
@@ -693,6 +712,10 @@ for (const file of files) {
     const record = (kind, reference, name) => {
       referenceCount++;
       if (name !== null) return;
+      if (approvedDesignReference(kind, reference, carriedDesignSources, approvedDesignSources)) {
+        admittedDesignReferences++;
+        return;
+      }
       if (transitionPolicy && isIdentityTransitionControlSurface(rel)) {
         const oldScope = transitionPolicy.current.scope.toLowerCase();
         const newScope = transitionPolicy.candidate.scope.toLowerCase();
@@ -771,7 +794,9 @@ if (flags.has("--json")) {
         scannedFiles: files.length,
         referencesSeen: referenceCount,
         derivedThirdPartyScopes: [...derivedThirdPartyScopes.keys()].sort(),
-        findings,
+        admittedDesignReferences,
+        approvedDesignSources: approvedDesignSources.map(({ registry, url, provenanceFile }) => ({ registry, url, provenanceFile })),
+        findings: flags.has("--redact") ? findings.map(({ file, line, kind }) => ({ file, line, kind })) : findings,
         ok: findings.length === 0,
       },
       null,
@@ -790,6 +815,21 @@ console.log(
 if (findings.length === 0) {
   console.log(`\nPASS — this repository names no account or repository other than its own.`);
   process.exit(0);
+}
+
+if (flags.has("--redact")) {
+  const byFile = new Map();
+  for (const row of findings) {
+    if (!byFile.has(row.file)) byFile.set(row.file, []);
+    byFile.get(row.file).push(row);
+  }
+  console.log("\n  FOREIGN reference(s), redacted; every affected file:");
+  for (const [file, rows] of [...byFile].sort(([a], [b]) => a.localeCompare(b))) {
+    console.log(`    ${file} — ${rows.length} hit(s)`);
+    for (const row of rows) console.log(`      ${row.line}: ${row.kind}`);
+  }
+  console.log(`\ncheck-foreign-references: FAIL — ${findings.length} foreign reference(s); ${admittedDesignReferences} source-backed reference(s) admitted.`);
+  process.exit(1);
 }
 
 console.log(`\n  FOREIGN reference(s) — each names an account or repository that is not this one:\n`);

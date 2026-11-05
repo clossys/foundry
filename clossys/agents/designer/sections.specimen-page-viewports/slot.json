@@ -1,0 +1,91 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.specimen-page-viewports",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.specimens",
+    "l2": "specimens-content",
+    "order": 175
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": null,
+      "header": null
+    },
+    "slots": [
+      {
+        "name": "items",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "axes",
+        "type": "records",
+        "required": false
+      },
+      {
+        "name": "context",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "labels",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "renderParts",
+        "type": "region",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.semantic-content",
+      "components.grid-list",
+      "components.table",
+      "components.disclosure"
+    ],
+    "parts": [
+      "renderViewport"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.specimen-page-viewports",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "labels.show-all-variants",
+          "kind": "icu",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.dropdown-menu",
+    "components.select",
+    "components.table",
+    "themes.input"
+  ]
+}

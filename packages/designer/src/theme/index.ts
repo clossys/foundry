@@ -2,9 +2,9 @@
  * @clossys/designer/theme — the JavaScript half of this package's
  * theming contract, whose CSS half (`data-theme`, `prefers-color-scheme`)
  * already ships from `tokens.css`/`theme.css`. A SIBLING domain, like
- * `charts` and `shell`: it sits beside `atoms -> blocks`, not above or
- * below it, and it may import `atoms` and `icons` (its `Button`/`Icon`
- * atoms and glyph data) and nothing else in this package — see
+ * `charts` and `shell`: it sits beside `components -> blocks`, not above or
+ * below it, and it may import `components` and `icons` (its `ToggleGroup`/`Icon`
+ * components and glyph data) and nothing else in this package — see
  * `src/ladder.test.ts`, and this package's README, "Package structure".
  *
  * Three pieces ship:
@@ -18,7 +18,7 @@
  *      resolves `"system"` against a live `prefers-color-scheme`
  *      subscription (see `ThemeProvider.tsx`).
  *   3. `ThemeToggle` — an accessible control built from this package's own
- *      `Button`/`Icon` atoms (see `ThemeToggle.tsx` for the interaction
+ *      adopted `ToggleGroup`/`Icon` components (see `ThemeToggle.tsx` for the interaction
  *      design and why).
  */
 
@@ -27,12 +27,12 @@ import { assertPeerVersion } from "../internal/peer-version.js";
 import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 /**
- * `react` is one of this package's optional peers — see `atoms/index.ts`'s
+ * `react` is one of this package's optional peers — see `components/index.ts`'s
  * own, longer version of this comment for the full #182 rationale.
  * `ThemeProvider.tsx` and `ThemeToggle.tsx` both import `react` directly
- * (and `ThemeToggle.tsx` composes this package's own `Button`/`Icon`
- * atoms, but never imports `react-aria-components` itself), so this
- * barrel only needs the `react` guard, independent of `atoms/index.ts`'s:
+ * (and `ThemeToggle.tsx` composes the adopted `ToggleGroup` and this package's `Icon`
+ * components, but never imports `react-aria-components` itself), so this
+ * barrel only needs the `react` guard, independent of `components/index.ts`'s:
  * a consumer who imports only `@clossys/designer/theme` would otherwise
  * get no signal at all.
  */

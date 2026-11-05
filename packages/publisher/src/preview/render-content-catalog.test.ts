@@ -3,16 +3,17 @@ import "@testing-library/jest-dom/vitest";
 import { JSDOM } from "jsdom";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { LandingView } from "../web/views/LandingView.server.js";
+import { ServerLandingView as LandingView } from "@clossys/designer/frames";
 import { SectionedView } from "../web/views/SectionedView.server.js";
 import { previewSectionedDocument, previewCopyResolver } from "./fixture-documents.js";
 import { renderPreviewGalleryEntries } from "./render-preview-gallery.js";
-import { buttonLinkClassName } from "@clossys/designer/atoms/server";
 import { describe, expect, it } from "vitest";
 import { checkSectionVariety, resolveSectionedViewDocument, validateSectionedViewDocument } from "../core/sectioned-view.js";
 import type { ResolvedSectionedViewContentSection, ResolvedSectionedViewSpecimenPanel, ResolvedSectionedViewSpecimenPart, SectionedViewContentSection } from "../core/sectioned-view.js";
-import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument } from "./fixture-content-catalog.js";
-import { buildHistoricalContentCatalogHtml as buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup, splitLandingViewBands } from "./render-content-catalog.js";
+import { CONTENT_CATALOG_CALL_TO_ACTION, CONTENT_CATALOG_CAPTIONS, contentCatalogCopyResolver, contentCatalogDocument, contentCatalogPreviewCopyResolver, contentCatalogPreviewDocument } from "./fixture-content-catalog.js";
+import { buildHistoricalContentCatalogHtml as buildContentCatalogHtml, renderContentCatalog, renderContentCatalogMarkup } from "./render-content-catalog.js";
+
+const catalogDom = (html: string) => new JSDOM(html, { url: "https://example.test/" });
 
 const contentSections = contentCatalogDocument.sections.filter((section): section is SectionedViewContentSection => section.kind === "content-section");
 const resolved = resolveSectionedViewDocument(contentCatalogDocument, contentCatalogCopyResolver);
@@ -36,7 +37,7 @@ describe("content catalog fixture", () => {
       expect(section.block.groups.map((group) => group.items.length)).toEqual(section.id.endsWith("4") ? [2, 2, 2, 2] : [2, 2, 2]);
       expect(new Set(section.block.groups.flatMap((group) => group.items)).size).toBe(section.id.endsWith("4") ? 8 : 6);
     }
-    const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const dom = catalogDom(renderContentCatalogMarkup()).window.document;
     expect(dom.querySelector("#catalog-topics-groups-4 [data-items]")?.getAttribute("data-columns")).toBe("2");
     expect(dom.querySelectorAll("#catalog-topics-groups-3 [role=group][aria-labelledby]")).toHaveLength(3);
     expect(dom.querySelectorAll("#catalog-topics-groups-4 h3")).toHaveLength(8);
@@ -66,8 +67,10 @@ describe("content catalog fixture", () => {
     expect(matrices.some(block => block.sides.every(side => side.points?.length === 4 && side.visual === undefined))).toBe(true);
     const planned = planContentGrounds([resolved], { callToAction: true });
     expect(new Set(planned.bands.map(band => band.ground))).toEqual(new Set(["base", "sunken", "inverse"]));
-    const rendered = new JSDOM(renderContentCatalogMarkup()).window.document;
-    expect(new Set([...rendered.querySelectorAll("[data-landing-ground]")].map(band => band.getAttribute("data-landing-ground")))).toEqual(new Set(["base", "sunken", "inverse"]));
+    const rendered = catalogDom(renderContentCatalogMarkup()).window.document;
+    const nativeBands = [...rendered.querySelectorAll("main > section, main > [data-content-section]")];
+    expect(nativeBands).toHaveLength(contentCatalogPreviewDocument.sections.length);
+    expect(new Set(nativeBands.map(band => band.classList.contains("bg-surface-inverse") ? "inverse" : band.classList.contains("bg-surface-sunken") ? "sunken" : "base"))).toEqual(new Set(["base", "sunken", "inverse"]));
   });
 
   it("keeps actions where they belong: header-only bands and split text columns, never a stacked band with a block or media, and nothing after them", () => {
@@ -88,7 +91,7 @@ describe("content catalog fixture", () => {
   it("retains the highlighted after side on both matrices", () => {
     const matrices = resolvedContent.filter(section => section.block?.type === "matrix");
     expect(matrices).toHaveLength(2);
-    const root = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const root = catalogDom(renderContentCatalogMarkup()).window.document;
     for (const section of matrices) {
       expect(section.block?.type === "matrix" && section.block.featured).toBe("after");
       const sides = root.querySelectorAll(`#${section.id} [data-matrix-side]`);expect(sides).toHaveLength(2);expect(sides[1]!.querySelector("[data-featured]")?.getAttribute("data-featured")).toBe("true");
@@ -112,7 +115,7 @@ describe("content catalog fixture", () => {
     expect(hrefs("catalog-cards-text").every((href) => href === undefined)).toBe(true);
     expect(hrefs("catalog-topics-two").every((href) => href === undefined)).toBe(true);
 
-    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    const dom = catalogDom(buildContentCatalogHtml()).window.document;
     for (const id of ["catalog-features-plate", "catalog-topics-linked", "catalog-cards-visual"]) {
       const band = dom.getElementById(id);
       const links = [...(band?.querySelectorAll("[data-item-heading] > a[href]") ?? [])];
@@ -137,7 +140,7 @@ describe("content catalog fixture", () => {
   });
 
   it("shows the two lane tracks with exact actor joins and terminal semantics", () => {
-    const dom = new JSDOM(renderContentCatalogMarkup()).window.document;
+    const dom = catalogDom(renderContentCatalogMarkup()).window.document;
     const visual = dom.getElementById("catalog-steps-lanes-visual")!;
     const plain = dom.getElementById("catalog-steps-lanes-plain")!;
     expect([...visual.querySelectorAll("li[data-lane]")].map((li) => li.getAttribute("data-lane"))).toEqual(["a", "b", "a"]);
@@ -225,31 +228,41 @@ describe("content catalog fixture", () => {
 });
 
 describe("content catalog page", () => {
-  it("renders one LandingView band per caption, in caption order", () => {
+  it("renders one checked native section per caption, in caption order", () => {
     const render = renderContentCatalog();
     expect(render.bands.map((band) => band.caption.sectionId)).toEqual(CONTENT_CATALOG_CAPTIONS.map((caption) => caption.sectionId));
     expect(CONTENT_CATALOG_CAPTIONS).toHaveLength(contentCatalogDocument.sections.length + 1);
-    expect(render.bands.at(-1)?.markup).toContain('data-landing-call-to-action=""');
+    expect(render.bands.at(-1)?.markup).toContain('id="catalog-close"');
   });
 
-  it("is LandingView's markup unchanged, with chrome captions only between its bands", () => {
+  it("keeps native SectionedView markup unchanged while captions use structured children", () => {
     const html = buildContentCatalogHtml();
     const markup = renderContentCatalogMarkup();
-    const start = html.indexOf("<main");
-    const end = html.lastIndexOf("</main>") + "</main>".length;
-    const page = html.slice(start, end).replace(/<div class="catalog-caption"[^]*?<\/div>\n/g, "").replaceAll("\n", "");
-    expect(page).toBe(markup);
-    const cta = CONTENT_CATALOG_CALL_TO_ACTION;
-    expect(markup).toBe(renderToStaticMarkup(createElement(LandingView, {
-      document: resolved,
-      header: "reserved",
-      peek: false,
-      callToAction: { id: cta.id, eyebrow: cta.eyebrow, heading: cta.heading, description: cta.description,
-        action: createElement("a", { href: cta.actionHref, className: buttonLinkClassName("primary", "lg") }, cta.actionLabel) },
-    })));
-
-    const { bands } = splitLandingViewBands(markup);
-    for (const band of bands) expect(band).not.toContain("data-catalog-chrome");
+    const native = resolveSectionedViewDocument(contentCatalogPreviewDocument, contentCatalogPreviewCopyResolver);
+    expect(markup).toBe(renderToStaticMarkup(createElement(SectionedView, { document: native })));
+    const dom = catalogDom(html).window.document;
+    for (const caption of dom.querySelectorAll("[data-catalog-chrome=caption]")) caption.remove();
+    // Caption siblings change React's tree-position useId stems for Items groups.
+    // Canonicalize only those generated IDs and their labelledby references;
+    // every other byte, including authored IDs, stays in the exact comparison.
+    const groupIds = (main: Element): string => {
+      const clone = main.cloneNode(true) as Element;
+      const ids = new Map<string, string>();
+      for (const node of clone.querySelectorAll("[id]")) {
+        if (!/^_R_[0-9a-z]+_-items-group-\d+$/.test(node.id)) continue;
+        expect(ids.has(node.id)).toBe(false);
+        ids.set(node.id, `react-items-group-${ids.size}`);
+      }
+      for (const node of clone.querySelectorAll("[aria-labelledby]")) {
+        const references = node.getAttribute("aria-labelledby")!.split(/\s+/);
+        for (const id of references) expect([...clone.querySelectorAll("[id]")].some(target => target.id === id), id).toBe(true);
+        node.setAttribute("aria-labelledby", references.map(id => ids.get(id) ?? id).join(" "));
+      }
+      for (const node of clone.querySelectorAll("[id]")) node.id = ids.get(node.id) ?? node.id;
+      return clone.outerHTML;
+    };
+    expect(groupIds(dom.querySelector("main")!)).toBe(groupIds(catalogDom(markup).window.document.querySelector("main")!));
+    for (const band of renderContentCatalog().bands) expect(band.markup).not.toContain("data-catalog-chrome");
   });
 
   it("keeps standalone gallery disclosures native and usable without hydration", () => {
@@ -260,7 +273,7 @@ describe("content catalog page", () => {
     expect(entry!.markup.replace(annotations, "")).toBe(renderToStaticMarkup(createElement(SectionedView, {
       document: resolveSectionedViewDocument(previewSectionedDocument, previewCopyResolver),
     })));
-    const dom = new JSDOM(entry!.markup).window.document;
+    const dom = catalogDom(entry!.markup).window.document;
     expect(dom.querySelectorAll("#faq [data-items] details summary")).toHaveLength(4);
     expect(dom.querySelectorAll("[data-rac]")).toHaveLength(0);
     const details = dom.querySelector("details");
@@ -270,7 +283,7 @@ describe("content catalog page", () => {
   });
 
   it("keeps static catalog disclosures usable without hydration", () => {
-    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
+    const dom = catalogDom(buildContentCatalogHtml()).window.document;
     const faq = dom.querySelector("#catalog-faq");
     expect(faq).not.toBeNull();
     expect(faq?.querySelectorAll("details")).toHaveLength(6);
@@ -285,12 +298,12 @@ describe("content catalog page", () => {
   });
 
   it("captions every band in the chrome, outside the product markup", () => {
-    const dom = new JSDOM(buildContentCatalogHtml()).window.document;
-    const main = dom.querySelector("main[data-landing-view]");
+    const dom = catalogDom(buildContentCatalogHtml()).window.document;
+    const main = dom.querySelector(`main[aria-label="${contentCatalogPreviewDocument.id}"]`);
     expect(main).not.toBeNull();
     const children = [...(main?.children ?? [])];
     const captions = children.filter((child) => child.hasAttribute("data-catalog-chrome"));
-    const bands = children.filter((child) => child.tagName === "SECTION");
+    const bands = children.filter((child) => !child.hasAttribute("data-catalog-chrome"));
     expect(captions).toHaveLength(CONTENT_CATALOG_CAPTIONS.length);
     expect(bands).toHaveLength(CONTENT_CATALOG_CAPTIONS.length);
     children.forEach((child, index) => expect(child.hasAttribute("data-catalog-chrome")).toBe(index % 2 === 0));
@@ -308,7 +321,7 @@ describe("content catalog page", () => {
     const withBrand = buildContentCatalogHtml({ designerTokens: "t.css", utilities: "c.css", brand: "../brand/brand.css" });
     const hrefs = [...withBrand.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1]);
     expect(hrefs).toEqual(["t.css", "c.css", "../brand/brand.css"]);
-    expect(withBrand).toContain('<html lang="en" data-brand-bound>');
+    expect(withBrand).toContain('<html lang="en" dir="ltr" data-brand-bound>');
 
     const withoutBrand = buildContentCatalogHtml({ designerTokens: "t.css", utilities: "c.css", brand: null });
     expect([...withoutBrand.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)].map((match) => match[1])).toEqual(["t.css", "c.css"]);
@@ -316,19 +329,5 @@ describe("content catalog page", () => {
 
   it("is byte-identical across renders", () => {
     expect(buildContentCatalogHtml()).toBe(buildContentCatalogHtml());
-  });
-});
-
-describe("splitLandingViewBands", () => {
-  it("splits nested sections at the root only", () => {
-    const split = splitLandingViewBands('<main data-x=""><section a><section b>x</section></section><section c>y</section></main>');
-    expect(split.bands).toEqual(["<section a><section b>x</section></section>", "<section c>y</section>"]);
-    expect(split.rootOpen).toBe('<main data-x="">');
-  });
-
-  it("refuses content outside the bands and unbalanced markup", () => {
-    expect(() => splitLandingViewBands("<main><div>x</div><section>y</section></main>")).toThrow(/outside its bands/);
-    expect(() => splitLandingViewBands("<main><section>y</main>")).toThrow(/ends inside a band/);
-    expect(() => splitLandingViewBands("<div><section>y</section></div>")).toThrow(/one <main> root/);
   });
 });

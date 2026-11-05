@@ -1,0 +1,64 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.toggle-group",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-choice",
+    "order": 110
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:ToggleButtonGroup",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "selection.single",
+        "selection.multiple",
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": []
+    },
+    "composes": [
+      "components.toggle-button"
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

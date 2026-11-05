@@ -1,0 +1,124 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/frames.sheet",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./blocks#Drawer",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "frames.sheet",
+      "source": "foundry",
+      "sourceAddress": "./blocks#Drawer",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "frames": {
+    "sheet": {
+      "composes": [],
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/Drawer.tsx",
+            "sha256": "bee8b2f5da66237d651ed627b7c2a948cab8be593fc9b740de2c615e805adf65"
+          },
+          {
+            "path": "packages/designer/src/blocks/Panel.tsx",
+            "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/X.ts",
+            "sha256": "8f72143caaadd154476c699ee02546dd60ca49217afc4215220b8fbe9867f29e"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/X.js#X",
+            "file": "packages/designer/src/blocks/Drawer.tsx",
+            "line": 6
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/Drawer.tsx",
+            "line": 7
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "Drawer",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "members": [
+        "placement.bottom",
+        "placement.end",
+        "placement.start",
+        "wide.dismiss",
+        "wide.sheet"
+      ],
+      "propMap": {
+        "placement.bottom": "placement=bottom",
+        "placement.end": "placement=end",
+        "placement.start": "placement=start",
+        "wide.dismiss": "wide=dismiss",
+        "wide.sheet": "wide=sheet"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "frames.sheet",
+      "slots": {
+        "body": "children",
+        "footer": "footer",
+        "heading": "heading"
+      },
+      "statePorts": {
+        "open": "isOpen/onOpenChange"
+      }
+    }
+  }
+}

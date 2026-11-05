@@ -1,0 +1,177 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.chat",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.collect",
+    "l2": "collect-conversation",
+    "order": 217
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "parts",
+        "type": "records",
+        "required": true
+      },
+      {
+        "name": "composer",
+        "type": "region",
+        "required": true
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "part.message",
+        "part.bubble",
+        "part.attachment",
+        "part.trace",
+        "part.questionnaire",
+        "part.scroller"
+      ]
+    },
+    "allowedComposes": [
+      "components.text-field",
+      "components.button",
+      "components.file-trigger",
+      "components.avatar",
+      "components.spinner",
+      "components.link",
+      "components.tooltip"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "app",
+    "passageSchema": "passages.chat",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "parts[].content",
+          "kind": "rich",
+          "required": true,
+          "maxLength": {
+            "en": 2400
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "composer.placeholder",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "composer.label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "labels.status",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "parts[].timestamp",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "assets.icon-document",
+    "components.avatar",
+    "components.button",
+    "components.spinner"
+  ]
+}

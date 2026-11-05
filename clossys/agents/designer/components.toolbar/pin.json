@@ -1,0 +1,7 @@
+{
+  "candidate": "toolbar-v1.json",
+  "sha256": "e0b6fb9f7b74837f75e014a4ecccef548a7c6bb2c5fad050e950a2cedfd31105",
+  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (COMPOSE-SLOTS)",
+  "basis": "planner",
+  "at": "2026-11-03T21:45:00Z"
+}

@@ -1,0 +1,8 @@
+{
+  "fixtures": {
+    "title": "Throws"
+  },
+  "container": "canvas",
+  "theme": "neutral",
+  "width": 480
+}

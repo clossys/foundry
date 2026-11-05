@@ -1,0 +1,125 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.access-matrix",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#AccessMatrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.access-matrix",
+      "source": "foundry",
+      "sourceAddress": "./blocks#AccessMatrix",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "access-matrix": {
+      "composes": [],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/access-matrix/summary.ts",
+            "sha256": "fc91b0b809a347d177f03ff546bc6ff87d1ab784efb909408186937b056e5e94"
+          },
+          {
+            "path": "packages/designer/src/blocks/access-matrix/validate.ts",
+            "sha256": "c8bb9454a3f19068cc4e27c7370cdacadb4431a3f731aa74af242d6d5dc68a32"
+          },
+          {
+            "path": "packages/designer/src/blocks/AccessMatrix.tsx",
+            "sha256": "ab9214574b5cd103232a322398fa59a21ad4ff09efaca90ec1a733fc0973b5fc"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/icons/Lock.ts",
+            "sha256": "baaf147a4a1580802e2cecd2598df14c060fc829191a64af549a42ae175b15c2"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF5",
+            "evidence": "unregistered asset import ../icons/Lock.js#Lock",
+            "file": "packages/designer/src/blocks/AccessMatrix.tsx",
+            "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "AccessMatrix",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Permissions are grouped; the host also supplies value, labels and optional onChange. The source owns a native table rather than a component table leaf.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#AccessMatrix",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.access-matrix",
+      "slotMap": {
+        "permissions": "./blocks#AccessMatrix.groups[].permissions",
+        "roles": "./blocks#AccessMatrix.roles"
+      },
+      "source": "foundry"
+    }
+  }
+}

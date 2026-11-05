@@ -1,0 +1,15 @@
+{
+  "id": "single-role-director-only",
+  "description": "A generic client who confirms only that they can't explain what they are, and nothing else. The strategy-map and strategy-brief feeds are owned by Director, which has no upstream needs, so composition should pull in nothing extra. No real company; a synthetic client for regression coverage only.",
+  "confirmedProblems": [
+    { "id": "director-unclear-direction", "primary": true }
+  ],
+  "expect": {
+    "state": "composed",
+    "mustIncludeRoles": ["director"],
+    "mustExcludeRoles": ["advisor", "architect", "bouncer", "builder", "butler", "controller", "customer", "designer", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "observer", "publisher", "writer"],
+    "maxRoles": 5,
+    "sequence": ["director"],
+    "unsatisfiedNeeds": []
+  }
+}

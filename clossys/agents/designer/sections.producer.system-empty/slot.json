@@ -1,0 +1,43 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.producer.system-empty",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.producer",
+    "l2": "producer-pipeline",
+    "order": 266
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.producer.system-empty",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "A system that is not set up yet: the stock shadcn Empty with its header, title and description.",
+    "inputs": [
+      {
+        "name": "empty",
+        "kind": "data",
+        "required": true,
+        "description": "The resolved Writer title and description for the system's empty state."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "empty",
+        "version": "4.23.0",
+        "hash": "sha256:fc6a8c64f6c422c0ab8ed46e6e832f7b5536d06c787206dc54c56bfa1c841d23",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/empty.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [],
+  "uses": [
+    "components.empty"
+  ]
+}

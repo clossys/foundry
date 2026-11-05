@@ -67,7 +67,7 @@ describe("golden: A4 flyer — bleed, crop marks, page background, style roles, 
 
     expect(html).toBe(
       "<!doctype html>" +
-        '<html lang="en">' +
+        '<html lang="en" dir="ltr">' +
         "<head>" +
         '<meta charset="utf-8">' +
         "<title>acme-flyer</title>" +
@@ -128,7 +128,7 @@ describe("golden: Custom-sized landscape business card — no bleed/marks/backgr
 
     expect(html).toBe(
       "<!doctype html>" +
-        '<html lang="en">' +
+        '<html lang="en" dir="ltr">' +
         "<head>" +
         '<meta charset="utf-8">' +
         "<title>biz-card</title>" +
@@ -188,7 +188,7 @@ describe("golden: assetId — an <img> positioned by the slot's frame, exactly l
 
     expect(html).toBe(
       "<!doctype html>" +
-        '<html lang="en">' +
+        '<html lang="en" dir="ltr">' +
         "<head>" +
         '<meta charset="utf-8">' +
         "<title>acme-flyer-hero</title>" +

@@ -1,0 +1,26 @@
+{
+  "files": {
+    "LICENSE.md": "097350161b96f64f212c20944fec0377d1fce0e74cfd71cd433a273459ab9dc4",
+    "color-palette.scss": "eebb68f3c9be9cd319af1ae47beb3bbccd133df466faf934c01d4900abd3ed03",
+    "colors-LICENSE": "037b3e9eaff51477b270e9082f54b99175e4dd893548654f00995045b68294b8",
+    "colors.js.txt": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef"
+  },
+  "palette": {
+    "commit": "d1b1061ab67b1b5c909f55afb3aabba7a0777391",
+    "dependencyRange": "^11.37.0",
+    "lockfileVersion": "11.37.0",
+    "package": "@carbon/charts",
+    "sha256": "eebb68f3c9be9cd319af1ae47beb3bbccd133df466faf934c01d4900abd3ed03",
+    "url": "https://github.com/carbon-design-system/carbon-charts/blob/d1b1061ab67b1b5c909f55afb3aabba7a0777391/packages/core/scss/_color-palette.scss",
+    "version": "1.27.23"
+  },
+  "selection": "Ordered paired light/dark entries from Carbon categorical14, retaining first eight entries which clear 3:1 on all Foundry chart/base/sunken grounds in both modes; same upstream index in both modes. No hue/hex adjustment. This is a selected subset, not Carbon original first-eight sequence.",
+  "source": {
+    "commit": "6568a3389c2a82348c693b167b511dea66b7b269",
+    "file": "packages/colors/src/colors.js",
+    "package": "@carbon/colors",
+    "sha256": "20b19b199cc0b77d6f49c626e2eb03fb48f02f2d2282a7291d93644242d644ef",
+    "url": "https://github.com/carbon-design-system/carbon/blob/6568a3389c2a82348c693b167b511dea66b7b269/packages/colors/src/colors.js",
+    "version": "11.37.0"
+  }
+}

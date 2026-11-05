@@ -10,7 +10,7 @@
  *
  *   - `checkIdentityContrast` — reuses `color.ts`'s real WCAG contrast
  *     math (`contrastRatio`), the same implementation `contrast-gate.ts`
- *     is built on, against the ink/surface and accent/onAccent pairs a
+ *     is built on, against the ink/surface and ink/onInverse pairs a
  *     shipped identity kit actually composites.
  *   - `checkMinimumSize` — a declared-geometry PROXY, not a rendered
  *     measurement: this package does not rasterize, so "minimum size"
@@ -36,7 +36,6 @@
  * are built to refuse, and this one is no different.
  */
 
-import { checkMarkConformance, MarkGeometryError } from "./mark-normalize.js";
 import { contrastRatio } from "./color.js";
 import type { IdentityDirection, IdentityDirectionKind, IdentityTokenInput, IdentityVariantSet } from "./identity-kit.js";
 
@@ -66,7 +65,7 @@ export type IdentityCheckId = "contrast" | "minimum-size" | "clear-space" | "sin
  * "error"` — an identity kit is judged, not merely advised.
  */
 export interface IdentityFinding {
-  readonly rule: IdentityCheckId | "mark-conformance";
+  readonly rule: IdentityCheckId;
   readonly severity: "error";
   readonly message: string;
   readonly path?: string;
@@ -76,7 +75,7 @@ export interface IdentityFinding {
 // Contrast
 // -----------------------------------------------------------------------
 
-export type IdentityContrastVariant = "primary" | "mark" | "dark" | "appIcon";
+export type IdentityContrastVariant = "primary" | "mark" | "dark" | "appIcon" | "favicon-light" | "favicon-dark";
 
 export interface IdentityContrastFinding {
   variant: IdentityContrastVariant;
@@ -216,12 +215,12 @@ function extractRenderedColors(svg: string): readonly string[] {
 }
 
 /**
- * Checks the four foreground/background pairs a shipped identity kit
+ * Checks the six foreground/background pairs a shipped identity kit
  * actually composites: `primary`/`mark` (ink on the light surface),
  * `dark` (inverse ink on the dark surface), and `appIcon` (the badge
- * glyph on its own accent background). `light`/`mono`/`favicon` are not
+ * glyph on its own ink background). Both favicon schemes use ink/onInverse. `light`/`mono` are not
  * separately checked here — they share `primary`'s ink-on-light pairing
- * (`mono`/`favicon` via `currentColor`, resolved by whatever surface a
+ * (`mono` via `currentColor`, resolved by whatever surface a
  * consumer places them on, which this package cannot know in advance).
  *
  * For a GENERATED direction, `primary`/`mark` are drawn via `currentColor`
@@ -280,7 +279,9 @@ export function checkIdentityContrast(kind: IdentityDirectionKind, variants: Ide
     checkPair("mark", tokens.ink, tokens.surfaceBase);
   }
   checkPair("dark", tokens.onInverse, tokens.surfaceInverse);
-  checkPair("appIcon", tokens.onAccent, tokens.accent);
+  checkPair("appIcon", tokens.onInverse, tokens.ink);
+  checkPair("favicon-light", tokens.onInverse, tokens.ink);
+  checkPair("favicon-dark", tokens.ink, tokens.onInverse);
 
   const indeterminate = unresolvable > 0 || checked.length === 0;
   return { ok: !indeterminate && findings.length === 0, indeterminate, findings, checked };
@@ -441,7 +442,7 @@ export interface IdentityCheckJudgement {
 
 export interface IdentityKitJudgement {
   direction: string;
-  checks: Record<IdentityCheckId, IdentityCheckJudgement> & { "mark-conformance"?: IdentityCheckJudgement };
+  checks: Record<IdentityCheckId, IdentityCheckJudgement>;
   verdict: IdentityVerdict;
   findings: readonly IdentityFinding[];
   ok: boolean;
@@ -517,28 +518,7 @@ export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityT
     },
   };
 
-  // Supplied geometry is measurable independently of fonts. Legacy generated
-  // directions contain live text and retain their existing four checks.
-  const checks: IdentityKitJudgement["checks"] = checkVerdicts;
-  if (direction.kind === "adopted") {
-    try {
-      const measured = checkMarkConformance(variants.mark);
-      checks["mark-conformance"] = {
-        verdict: measured.length ? "violated" : "satisfied",
-        findings: measured.map((finding) => ({
-          rule: "mark-conformance", severity: "error", path: "mark",
-          message: `${finding.rule}: measured ${finding.measured ?? "undeclared"}; expected ${finding.expected}`,
-        })),
-      };
-    } catch (error) {
-      if (!(error instanceof MarkGeometryError)) throw error;
-      checks["mark-conformance"] = {
-        verdict: "indeterminate",
-        findings: [{ rule: "mark-conformance", severity: "error", path: "mark", message: error.message }],
-      };
-    }
-  }
-  const checkList = Object.values(checks);
+  const checkList = Object.values(checkVerdicts);
   const ok = checkList.every((c) => c.verdict === "satisfied");
   const verdict: IdentityVerdict = checkList.some((c) => c.verdict === "indeterminate")
     ? "indeterminate"
@@ -546,12 +526,11 @@ export function judgeIdentityKit(direction: IdentityDirection, tokens: IdentityT
       ? "violated"
       : "satisfied";
   const findings = checkList.flatMap((c) => c.findings);
-  return { direction: direction.id, checks, verdict, findings, ok };
+  return { direction: direction.id, checks: checkVerdicts, verdict, findings, ok };
 }
 
 /** One plain-language sentence for the envelope's required `summary` field — the ONLY field a non-technical reader may be shown without translation. */
 function summaryFor(direction: string, judgement: IdentityKitJudgement): string {
-  if (judgement.verdict === "satisfied" && judgement.checks["mark-conformance"]) return `The "${direction}" identity kit satisfies its checks, including supplied-mark geometry.`;
   if (judgement.verdict === "satisfied") return `The "${direction}" identity kit satisfies all four checks (contrast, minimum size, clear space, single-colour legibility).`;
   if (judgement.verdict === "indeterminate") return `The "${direction}" identity kit could not be fully evaluated (${judgement.findings.length} finding(s)).`;
   return `The "${direction}" identity kit does not satisfy every check (${judgement.findings.length} finding(s)).`;

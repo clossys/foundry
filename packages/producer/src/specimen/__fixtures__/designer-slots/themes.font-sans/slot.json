@@ -1,0 +1,31 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.font-sans",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.typography",
+    "l2": "typography-fonts",
+    "order": 32
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "fontFamily",
+    "emit": {
+      "default": "--font-sans"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [],
+  "uses": []
+}

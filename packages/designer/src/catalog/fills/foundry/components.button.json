@@ -1,0 +1,154 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.icon"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.button",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#Button",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.button",
+      "source": "foundry",
+      "sourceAddress": "./components#Button",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "button": {
+      "composes": [
+        "components.icon"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "Button",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "ground.base",
+        "shape.icon-only",
+        "shape.text",
+        "size.lg",
+        "size.md",
+        "size.sm",
+        "state.disabled",
+        "state.focus-visible",
+        "state.hover",
+        "variant.danger",
+        "variant.ghost",
+        "variant.outline",
+        "variant.primary",
+        "variant.secondary"
+      ],
+      "pin": {
+        "export": "./components#Button",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "ground.base": "./components#Button.ground=base",
+        "shape.icon-only": "./components#IconButton",
+        "shape.text": "./components#Button",
+        "size.lg": "./components#Button.size=lg",
+        "size.md": "./components#Button.size=md",
+        "size.sm": "./components#Button.size=sm",
+        "state.disabled": "./components#Button.isDisabled",
+        "state.focus-visible": "./components#Button[data-focus-visible]",
+        "state.hover": "./components#Button[data-hovered]",
+        "variant.danger": "./components#Button.variant=danger",
+        "variant.ghost": "./components#Button.variant=ghost",
+        "variant.outline": "./components#Button.variant=outline",
+        "variant.primary": "./components#Button.variant=primary",
+        "variant.secondary": "./components#Button.variant=secondary"
+      },
+      "props": [
+        "aria-label",
+        "children",
+        "className",
+        "ground",
+        "isDisabled",
+        "isPending",
+        "onPress",
+        "size",
+        "slot",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-right"
+        ],
+        "components": [
+          "components.icon"
+        ],
+        "themes": [
+          "themes.primary",
+          "themes.sidebar-primary",
+          "themes.border",
+          "themes.input",
+          "themes.sidebar-border",
+          "themes.radius",
+          "themes.ring",
+          "themes.sidebar-ring",
+          "themes.spacing",
+          "themes.destructive",
+          "themes.background",
+          "themes.card",
+          "themes.popover",
+          "themes.secondary",
+          "themes.accent",
+          "themes.muted",
+          "themes.sidebar",
+          "themes.sidebar-accent",
+          "themes.foreground",
+          "themes.card-foreground",
+          "themes.popover-foreground",
+          "themes.primary-foreground",
+          "themes.secondary-foreground",
+          "themes.accent-foreground",
+          "themes.muted-foreground",
+          "themes.sidebar-foreground",
+          "themes.sidebar-primary-foreground",
+          "themes.sidebar-accent-foreground",
+          "themes.font-sans",
+          "themes.font-heading",
+          "themes.font-mono"
+        ]
+      },
+      "root": "rac:Button",
+      "slot": "components.button",
+      "source": "foundry"
+    }
+  }
+}

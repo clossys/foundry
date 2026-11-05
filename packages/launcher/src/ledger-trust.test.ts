@@ -334,7 +334,7 @@ describe("reconcileWholeFile", () => {
       });
       expect(reconcileWholeFile(state({ path: skill, base: X, occupied: true, skillsManifest: manifest, phase: "apply" }))).toEqual({ write: false, reason: "unowned-existing" });
       expect(reconcileWholeFile(state({ path: skill, base: H, occupied: true, skillsManifest: manifest }))).toEqual({ write: false, reason: "unowned-existing" });
-      expect(reconcileWholeFile(state({ path: ".agents/skills/clossys-strategist/SKILL.md", base: X, occupied: true, skillsManifest: manifest }))).toEqual({
+      expect(reconcileWholeFile(state({ path: ".agents/skills/clossys-director/SKILL.md", base: X, occupied: true, skillsManifest: manifest }))).toEqual({
         write: false,
         reason: "unowned-existing",
       });

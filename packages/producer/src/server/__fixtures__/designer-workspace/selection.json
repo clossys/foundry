@@ -1,0 +1,83 @@
+{
+  "schema": "clossys.selection/1",
+  "pins": {
+    "themes.preset": {
+      "element": "neutral",
+      "version": 1,
+      "hash": "sha256:38dd26375fc8fa60eb8792df1b31c64601a352f8c216a133e69a9013ef093d63",
+      "event": "e1"
+    },
+    "components.button": {
+      "element": "sample-button",
+      "version": 1,
+      "hash": "sha256:8177fc6c4d6dba3e6af863ad3177a06d96b8e9bca147fad86e62a75d4839ff39",
+      "event": "e2"
+    },
+    "components.card": {
+      "element": "sample-card",
+      "version": 1,
+      "hash": "sha256:9785fb0ce1a108bb2e8389dd6851ce4ff46f20b16809ec4f8b13a882e12f209e",
+      "event": "e3"
+    },
+    "sections.hero": {
+      "element": "hero",
+      "version": 2,
+      "hash": "sha256:f896e31dab3213c8e386a2d610aa79cab3816f3d9fb51521a458d9482065a243",
+      "event": "e5"
+    }
+  },
+  "history": [
+    {
+      "id": "e1",
+      "at": "2026-10-30T00:00:00Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "themes.preset",
+      "element": "neutral",
+      "version": 1,
+      "hash": "sha256:38dd26375fc8fa60eb8792df1b31c64601a352f8c216a133e69a9013ef093d63"
+    },
+    {
+      "id": "e2",
+      "at": "2026-10-30T00:00:01Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "components.button",
+      "element": "sample-button",
+      "version": 1,
+      "hash": "sha256:8177fc6c4d6dba3e6af863ad3177a06d96b8e9bca147fad86e62a75d4839ff39"
+    },
+    {
+      "id": "e3",
+      "at": "2026-10-30T00:00:02Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "components.card",
+      "element": "sample-card",
+      "version": 1,
+      "hash": "sha256:9785fb0ce1a108bb2e8389dd6851ce4ff46f20b16809ec4f8b13a882e12f209e"
+    },
+    {
+      "id": "e4",
+      "at": "2026-10-30T00:00:03Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "sections.hero",
+      "element": "hero",
+      "version": 1,
+      "hash": "sha256:aebd846672272190b3194be3dbd08ae9dfd333b3baa3273553ea8229f050cb93"
+    },
+    {
+      "id": "e5",
+      "at": "2026-10-30T01:00:01Z",
+      "by": "fixture",
+      "action": "pin",
+      "slot": "sections.hero",
+      "element": "hero",
+      "version": 2,
+      "hash": "sha256:f896e31dab3213c8e386a2d610aa79cab3816f3d9fb51521a458d9482065a243",
+      "from": "version",
+      "reason": "fixture: try the split hero"
+    }
+  ]
+}

@@ -1,0 +1,167 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.consent",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.respond",
+    "l2": "respond-messages",
+    "order": 227
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "copy",
+        "type": "copy",
+        "required": true
+      },
+      {
+        "name": "actions",
+        "type": "action",
+        "required": true,
+        "max": 2
+      },
+      {
+        "name": "policy",
+        "type": "action",
+        "required": true,
+        "max": 1
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "allowedComposes": [
+      "components.button",
+      "components.link",
+      "components.card",
+      "components.icon",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.destructive",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "site",
+    "passageSchema": "passages.consent",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "copy.title",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "copy.body",
+          "kind": "rich",
+          "required": true,
+          "maxLength": {
+            "en": 2400
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "actions[].label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "policy.label",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; W6 composition check (strict, consent-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed); 4 styled raw element attribute(s); imports outside the stock parts: @/components/ui/icon (absent from the component layer), @/components/ui/semantic-content (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
+  }
+}

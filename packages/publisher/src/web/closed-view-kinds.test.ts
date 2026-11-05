@@ -75,7 +75,7 @@ describe("SectionedView render boundary — the same closed kinds as the documen
   const kindRefusal = (kind: string): boolean => {
     const resolved = {
       id: "acme-kinds",
-      resolutions: [{ ref: { id: "acme.hero.heading" }, text: "Acme placeholder heading", recordId: "acme", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "acme.hero.heading" }],
+      resolutions: [{ ref: { id: "acme.hero.heading" }, text: "Acme placeholder heading", recordId: "acme", revision: "1", locale: "en", servedLocale: "en", chain: ["en"], source: { kind: "consumer", reference: "fixture" }, entryId: "acme.hero.heading" }],
       sections: [{ id: "x", kind, ground: "base", heading: "Acme placeholder heading" }],
     };
     try {

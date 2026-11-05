@@ -1,0 +1,56 @@
+{
+  "schema": "clossys.element/1",
+  "id": "studio-home",
+  "package": "producer",
+  "layer": "sections",
+  "slot": "sections.studio.home",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "customized",
+    "parent": {
+      "version": 2,
+      "hash": "sha256:3a8aa87264b75e35f5c566b305375ada8efc8d779e44d541c3ad1f3321c4c9b8"
+    },
+    "ownerRequest": "studio-current-ui-draft-studio-home-20261101",
+    "source": {
+      "registry": "foundry",
+      "item": "packages/producer/studio/sections/studio-home",
+      "version": "902f695cc3720af807baa814508b67a769dcda4c",
+      "url": "https://github.com/clossys/foundry/tree/902f695cc3720af807baa814508b67a769dcda4c/packages/producer/studio/sections/studio-home",
+      "hash": "sha256:bf95a0ac8f841908a945369924813b019862c441d1dca556bc729a1e80b4e71a"
+    },
+    "path": "create"
+  },
+  "license": {
+    "spdx": "MIT",
+    "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+    "file": "LICENCE.md"
+  },
+  "creator": {
+    "agent": "codex",
+    "model": "unknown",
+    "by": "current-source payload draft preparation"
+  },
+  "reason": "DRAFT only: preserve current owner-authoritative Studio UI bytes as a new immutable payload. NEED: actual current trusted-reference lineage and whole-file or exact-part proof remain unresolved; no production qualification, selection or pin approval is claimed.",
+  "createdAt": "2026-11-02T00:02:40.221Z",
+  "checks": [],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": [
+      "--card",
+      "--card-foreground",
+      "--muted-foreground"
+    ]
+  },
+  "payload": [
+    "LICENCE.md",
+    "index.tsx",
+    "registry-item.json"
+  ],
+  "version": 3,
+  "hash": "sha256:5aa8d200daf1d9c2340575452e594c377eff80bb6641429109a8aefa341f9c10"
+}

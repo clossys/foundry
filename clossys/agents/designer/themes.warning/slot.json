@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.warning",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.colors",
+    "l2": "colors-actions",
+    "order": 14
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "color",
+    "emit": {
+      "default": "--warning"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light",
+      "dark"
+    ],
+    "tier": "role"
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.operation.technology",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.operation",
+    "order": 44
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Which technology is strategic, and which is commodity?",
+    "mustContain": [
+      {
+        "key": "Strategic",
+        "hint": "technology we own and invest in"
+      },
+      {
+        "key": "Commodity",
+        "hint": "technology we rent"
+      },
+      {
+        "key": "Rule",
+        "hint": "how we decide between them"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -1,0 +1,75 @@
+{
+  "name": "labeled-handle",
+  "type": "registry:component",
+  "dependencies": [
+    "@xyflow/react"
+  ],
+  "registryDependencies": [
+    "https://ui.reactflow.dev/base-handle"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2019-2025 webkid GmbH\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "labeled-handle.tsx",
+      "type": "registry:component",
+      "content": "import React, { type ComponentProps } from \"react\";\nimport { type HandleProps } from \"@xyflow/react\";\n\nimport { cn } from \"@/lib/utils\";\nimport { BaseHandle } from \"@/components/base-handle\";\n\nconst flexDirections = {\n  top: \"flex-col\",\n  right: \"flex-row-reverse justify-end\",\n  bottom: \"flex-col-reverse justify-end\",\n  left: \"flex-row\",\n};\n\nexport function LabeledHandle({\n  className,\n  labelClassName,\n  handleClassName,\n  title,\n  position,\n  ...props\n}: HandleProps &\n  ComponentProps<\"div\"> & {\n    title: string;\n    handleClassName?: string;\n    labelClassName?: string;\n  }) {\n  const { ref, ...handleProps } = props;\n\n  return (\n    <div\n      title={title}\n      className={cn(\n        \"relative flex items-center\",\n        flexDirections[position],\n        className,\n      )}\n      ref={ref}\n    >\n      <BaseHandle\n        position={position}\n        className={handleClassName}\n        {...handleProps}\n      />\n      <label className={cn(\"text-foreground px-3\", labelClassName)}>\n        {title}\n      </label>\n    </div>\n  );\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.flow.labeled-handle",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "reactflow/labeled-handle@20261103"
+      ],
+      "hash": "sha256:9c4819063fbba809fef0d40f35552f73c5a350d202cfff03d18a44f9c179bdf2",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "labeled-handle.tsx": "labeled-handle.tsx"
+      }
+    },
+    "element": {
+      "id": "labeled-handle",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.flow.labeled-handle",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "CANVAS-PARTS"
+      },
+      "reason": "Stock React Flow UI reactflow/labeled-handle@20261103 adopted unmodified (shadcn add-time alias normalization only) for components.flow.labeled-handle; the approved-registry item the reference map marks direct for this slot.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {
+          "@xyflow/react": "12.12.1"
+        },
+        "registry": [
+          "components.flow.base-handle"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--foreground",
+          "--secondary"
+        ]
+      }
+    }
+  }
+}

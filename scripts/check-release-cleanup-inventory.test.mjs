@@ -16,6 +16,7 @@ import {
 } from "./check-release-cleanup-inventory.mjs";
 import { loadTransitionPolicy } from "./lib/package-identity-transition.mjs";
 import { discoverGateTestFiles } from "./lib/gate-test-set.mjs";
+import { parseSteps } from "./run-check-steps.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const inventory = JSON.parse(readFileSync(join(root, INVENTORY_PATH), "utf8"));
@@ -33,7 +34,7 @@ const REPLACEMENT_FLOORS = [
   ["@clossys/advisor", "0.1.6"],
   ["@clossys/starter", "0.1.5"],
   ["@clossys/controller", "0.8.24"],
-  ["@clossys/strategist", "0.1.2"],
+  ["@clossys/director", "0.1.2"],
 ];
 
 // Builds a scratch `packages/<slug>/package.json` tree so the manifest loop
@@ -64,7 +65,14 @@ test("the checked-in cleanup inventory is a sealed valid observation", () => {
 
 test("the inventory validator is blocking in the aggregate and CI", () => {
   const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
-  assert.match(manifest.scripts.check, /npm run check:release-cleanup-inventory/);
+  // The root `check` aggregate is scripts/run-check-steps.mjs: each argument is a step it runs.
+  const runner = "node scripts/run-check-steps.mjs ";
+  assert.ok(manifest.scripts.check.startsWith(runner), `root check must run through ${runner.trim()}`);
+  const steps = parseSteps(manifest.scripts.check.slice(runner.length).trim().split(/\s+/));
+  assert.ok(
+    steps.some(step => step.script === "check:release-cleanup-inventory" && !step.workspace),
+    "root check must run check:release-cleanup-inventory as a root step",
+  );
   assert.ok(
     discoverGateTestFiles().includes("scripts/check-release-cleanup-inventory.test.mjs"),
     "check:gates must discover and run scripts/check-release-cleanup-inventory.test.mjs",

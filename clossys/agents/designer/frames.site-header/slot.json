@@ -1,0 +1,126 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.site-header",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.regions",
+    "l2": "headers",
+    "order": 232
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "header",
+    "landmarks": [
+      {
+        "slot": "brand",
+        "role": "banner",
+        "topLevel": true,
+        "nameRequired": false
+      },
+      {
+        "slot": "nav",
+        "role": "navigation",
+        "topLevel": false,
+        "nameRequired": true
+      }
+    ],
+    "slots": [
+      {
+        "id": "brand",
+        "required": true,
+        "accepts": "components.logo"
+      },
+      {
+        "id": "nav",
+        "required": false,
+        "accepts": "components.link"
+      },
+      {
+        "id": "actions",
+        "required": false,
+        "accepts": "components.button"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "surface.solid",
+        "surface.transparent",
+        "surface.glass",
+        "tone.base",
+        "tone.inverse",
+        "nav-placement.leading",
+        "nav-placement.centered",
+        "position.sticky",
+        "position.static"
+      ]
+    },
+    "statePorts": [],
+    "rendering": "server",
+    "breakpoints": [
+      "sm",
+      "md",
+      "lg",
+      "xl",
+      "2xl"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.radius",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": [
+        "assets.lockup",
+        "assets.mark",
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.logo",
+      "components.link",
+      "components.button",
+      "components.icon",
+      "components.badge",
+      "components.disclosure",
+      "components.dialog"
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; W6 composition check (strict, site-header-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed), components.logo (pinned derived); 9 styled raw element attribute(s); imports outside the stock parts: react, lucide-react, cn, react-aria-components, @/components/ui/icon (absent from the component layer), @/components/ui/logo (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. The only direct item, tailark-oss/mist-hero-section-1-header@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
+  }
+}

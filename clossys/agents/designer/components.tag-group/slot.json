@@ -1,0 +1,62 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.tag-group",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-tags",
+    "order": 111
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:TagGroup",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "removable",
+        "selection.none",
+        "selection.single",
+        "selection.multiple"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.tracking-tight",
+        "themes.radius",
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans"
+      ],
+      "assets": [
+        "assets.icon-close"
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "assets.icon-close"
+  ]
+}

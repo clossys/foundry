@@ -2,7 +2,7 @@ import type { FrontDoorResolver } from "../frontDoorFormSupport.js";
 import { useId, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import type { FrontDoorNouns } from "@clossys/writer";
-import { Button, TextField } from "@clossys/designer/atoms";
+import { Button, TextField } from "@clossys/designer/components";
 import { Form } from "@clossys/designer/blocks";
 import { resolveFormCopy, useFocusRequest } from "../frontDoorFormSupport.js";
 

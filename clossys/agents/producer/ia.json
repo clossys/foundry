@@ -1,0 +1,51 @@
+{
+  "schema": "clossys.ia/1",
+  "source": "@clossys/producer#src/pipeline/steps/decisions.ts",
+  "extensions": [],
+  "nodes": [
+    {
+      "id": "direct",
+      "label": "Direct",
+      "children": [
+        {
+          "id": "direct.pin",
+          "label": "Pin",
+          "slots": [
+            "pin.director",
+            "pick.director"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "design",
+      "label": "Design",
+      "children": [
+        {
+          "id": "design.pin",
+          "label": "Pin",
+          "slots": [
+            "pin.designer",
+            "pick.designer",
+            "pin.writer",
+            "pick.writer"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "publish",
+      "label": "Publish",
+      "children": [
+        {
+          "id": "publish.pin",
+          "label": "Pin",
+          "slots": [
+            "pin.publisher",
+            "pick.publisher"
+          ]
+        }
+      ]
+    }
+  ]
+}

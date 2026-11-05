@@ -41,7 +41,7 @@ describe("quiet-action utility (the T4 chevron nudge)", () => {
     expect(movementOutside(block, NO_PREFERENCE)).toEqual([]);
     const motion = block.slice(block.indexOf(NO_PREFERENCE));
     expect(motion).toContain("translate: calc(var(--spacing-xs, 4px) / 2) 0;");
-    expect(motion).toContain("transition-duration: var(--ui-duration-fast, 160ms);");
+    expect(motion).toContain("transition-duration: var(--ui-duration-fast, 120ms);");
     expect(motion).toContain("transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));");
   });
 
@@ -62,11 +62,12 @@ describe("icon-control utilities (the icon-only control boxes)", () => {
     expect(block).not.toContain("position:");
   });
 
-  it("sm is a 36px box whose ::before pads the hit area back to 44px", () => {
+  it("sm is a 28px square on the small control height whose ::before pads the hit area back to 44px", () => {
     const block = utilityBlock("icon-control-sm");
-    expect(block).toContain("inline-size: calc(var(--ui-layout-tap-target, 44px) - var(--spacing-sm, 8px));");
+    expect(block).toContain("inline-size: var(--ui-control-h-sm, 28px);");
+    expect(block).toContain("block-size: var(--ui-control-h-sm, 28px);");
     expect(block).toContain("position: relative;");
-    expect(block).toMatch(/&::before \{[^}]*inset: calc\(var\(--spacing-sm, 8px\) \/ -2\);/);
+    expect(block).toMatch(/&::before \{[^}]*inset: calc\(\(var\(--ui-control-h-sm, 28px\) - var\(--ui-layout-tap-target, 44px\)\) \/ 2\);/);
   });
 
   it("both compile into compiled.css", () => {

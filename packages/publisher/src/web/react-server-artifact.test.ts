@@ -61,7 +61,7 @@ function runProbe(reactServer: boolean) {
     const sectioned = web.SectionedView({
       document: {
         id: "sectioned-server-proof",
-        resolutions: [{ ref: { id: "sectioned.proof" }, text: "Server-safe sections", recordId: "proof", revision: "1", locale: "en", source: { kind: "consumer", reference: "fixture" }, entryId: "sectioned.proof" }],
+        resolutions: [{ ref: { id: "sectioned.proof" }, text: "Server-safe sections", recordId: "proof", revision: "1", locale: "en", servedLocale: "en", chain: ["en"], source: { kind: "consumer", reference: "fixture" }, entryId: "sectioned.proof" }],
         sections: [
           { id: "hero", kind: "hero", ground: "base", heading: "Server-safe sections" },
           { id: "steps", kind: "ordered-step-sequence", ground: "sunken", heading: "Steps", items: [{ id: "one", ordinal: "1", heading: "Start" }] },
@@ -86,13 +86,13 @@ function runProbe(reactServer: boolean) {
     const ref = key => ({id:"landing."+key});
     const resolver = createCopyResolver({id:"landing",locale:"en",revision:"1",source:{kind:"consumer",reference:"packed-proof"},entries:Object.entries(copy).map(([key,text])=>({id:ref(key).id,text,context:"Packed proof",status:"approved"}))});
     const landingDocument = resolveSectionedViewDocument({id:"landing",sections:[{id:"landing-hero",kind:"hero",ground:"inverse",heading:ref("heading")},{id:"landing-content",kind:"content-section",heading:ref("heading"),block:{type:"items",recipe:"faq",items:["one","two","three","four"].map(id=>({id,heading:ref("question"),description:ref("answer")}))}},{id:"landing-legacy",kind:"faq",ground:"sunken",layout:"split",heading:ref("legacy"),items:["one","two","three","four"].map(id=>({id,question:ref("question"),answer:ref("answer")}))}]},resolver);
-    const landing = web.LandingView({document:landingDocument,header:"reserved",peek:false});
+    const landing = web.SectionedView({document:landingDocument});
     const landingCase = (kind, layout) => {
       const sections = landingDocument.sections
         .filter(section => section.kind === "hero" || section.kind === kind)
         .map(section => section.kind === "faq" ? { ...section, layout } : section);
       const ids = new Set(sections.map(section => section.id));
-      return web.LandingView({
+      return web.SectionedView({
         document: {
           ...landingDocument,
           sections,
@@ -100,8 +100,6 @@ function runProbe(reactServer: boolean) {
             viewGrounds: landingDocument.viewGrounds.filter(id => ids.has(id)),
           }),
         },
-        header: "reserved",
-        peek: false,
       });
     };
     const landingCases = {
@@ -206,11 +204,12 @@ function runProbe(reactServer: boolean) {
         footer: { ground: "inverse", legal: { entity: frameRef("legal"), links: [] } },
       };
       const heroDocument = resolveSectionedViewDocument({ id: "packed-frame", sections: [{ id: "packed-frame-hero", kind: "hero", ground: "inverse", heading: ref("heading") }] }, resolver);
+      const { Hero } = await import("@clossys/designer/blocks/server");
       const framed = fit => createElement(web.SiteFrame, {
         shell: frameShell,
         resolveCopy: frameResolver,
         resolveAsset: () => ({ type: "image", src: "/mark.svg", width: 48, height: 48, alt: "Packed mark" }),
-      }, createElement(web.LandingView, { document: heroDocument, header: "overlay", fit, peek: false, landmark: "none" }));
+      }, createElement(Hero, { id: "packed-frame-hero", heading: heroDocument.sections[0].heading, ground: "inverse", className: fit === "viewport" ? "min-h-dvh" : "flex-1" }));
       result.frameHtml = renderToStaticMarkup(framed("frame"));
       result.viewportHtml = renderToStaticMarkup(framed("viewport"));
       result.html = renderToStaticMarkup([element, sectioned]);
@@ -300,9 +299,9 @@ describe("packed frame release", () => {
     expect(menuIcon).toContain(' aria-hidden="true"');
     expect(menuButton).not.toMatch(/>\s*[^<\s]/);
     expect(html).toContain('class="flex min-h-dvh flex-col"');
-    expect(html).toMatch(/data-landing-hero=""[^>]*class="[^"]*flex-1/);
+    expect(html).toMatch(/data-ds-leaf="sections.hero"[^>]*class="[^"]*flex-1/);
     expect(html).not.toContain("min-height:100dvh");
-    expect(normal.viewportHtml).toContain("min-height:100dvh");
+    expect(normal.viewportHtml).toContain("min-h-dvh");
   });
 });
 
@@ -337,6 +336,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("exports the exact same runtime names from the ordinary and react-server targets", () => {
     expect(server.keys).toEqual(normal.keys);
+    expect(server.keys).not.toContain("LandingView");
     expect(server.keys).toEqual(expect.arrayContaining(["CaptureView", "CollectionView", "ContactView", "DocumentView", "SectionedView", "IndexView", "DetailsView"]));
   });
 
@@ -380,13 +380,13 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.contract!.text).toEqual(expect.arrayContaining(["Share", "Check", "Review", "Return", "Optional supporting lead."]));
   });
 
-  it("renders packed canonical and published Landing FAQs through entry-specific Items", () => {
+  it("renders packed checked canonical and published FAQs through entry-specific Items", () => {
     expect(normal.landingHtml?.match(/<button /g)).toHaveLength(8);expect(normal.landingHtml).not.toContain("<summary");expect(normal.landingHtml).toContain("data-rac");
     expect(server.landingTags?.filter(tag=>tag==="summary")).toHaveLength(8);expect(server.landingTags).not.toContain("button");
     expect(server.landingText).toEqual(expect.arrayContaining(["Packed landing page","Packed question?","Packed answer.","Published questions"]));
   });
 
-  it("renders canonical packed Landing disclosures through each entry", () => {
+  it("renders canonical packed sectioned disclosures through each entry", () => {
     const ordinary = normal.landingCases!.canonical;
     const native = server.landingCases!.canonical;
     expect(ordinary.html?.match(/<button /g)).toHaveLength(4);
@@ -427,7 +427,7 @@ describe("packed Publisher web React-server boundary", () => {
 
   it("rejects a packed Designer 0.2.5 graph that the former lower bound accepted before SectionedView's missing blocks fail at import", () => {
     const adversarialRoot = join(fixtureRoot, "designer-0.2.5");
-    mkdirSync(join(adversarialRoot, "dist", "atoms"), { recursive: true });
+    mkdirSync(join(adversarialRoot, "dist", "components"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "blocks"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "shell"), { recursive: true });
     writeFileSync(
@@ -437,7 +437,7 @@ describe("packed Publisher web React-server boundary", () => {
         version: "0.2.5",
         type: "module",
         exports: {
-          "./atoms/server": "./dist/atoms/server.js",
+          "./components/server": "./dist/components/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
           "./tokens": "./dist/tokens.js",
@@ -446,7 +446,7 @@ describe("packed Publisher web React-server boundary", () => {
       }),
     );
     writeFileSync(
-      join(adversarialRoot, "dist", "atoms", "server.js"),
+      join(adversarialRoot, "dist", "components", "server.js"),
       "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     writeFileSync(
@@ -552,7 +552,7 @@ describe("packed Publisher web React-server boundary", () => {
     // graph reaches, except `MarketingChapter`) without depending on the
     // live registry, so the test stays deterministic as the registry moves.
     const adversarialRoot = join(fixtureRoot, "designer-0.4.7-shaped");
-    mkdirSync(join(adversarialRoot, "dist", "atoms"), { recursive: true });
+    mkdirSync(join(adversarialRoot, "dist", "components"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "blocks"), { recursive: true });
     mkdirSync(join(adversarialRoot, "dist", "shell"), { recursive: true });
     writeFileSync(
@@ -562,7 +562,7 @@ describe("packed Publisher web React-server boundary", () => {
         version: "0.4.7",
         type: "module",
         exports: {
-          "./atoms/server": "./dist/atoms/server.js",
+          "./components/server": "./dist/components/server.js",
           "./blocks/server": "./dist/blocks/server.js",
           "./shell/server": "./dist/shell/server.js",
           "./tokens": "./dist/tokens.js",
@@ -571,7 +571,7 @@ describe("packed Publisher web React-server boundary", () => {
       }),
     );
     writeFileSync(
-      join(adversarialRoot, "dist", "atoms", "server.js"),
+      join(adversarialRoot, "dist", "components", "server.js"),
       "export const Badge = ({ children }) => children; export const Card = ({ children }) => children; export const mergeUiClasses = (...names) => names.filter(Boolean).join(' ');\n",
     );
     // Every block Publisher's web graph names, at the shape Designer 0.4.7

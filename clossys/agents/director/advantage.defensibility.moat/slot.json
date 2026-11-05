@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.defensibility.moat",
+  "agent": "director",
+  "ia": {
+    "l1": "advantage",
+    "l2": "advantage.defensibility",
+    "order": 27
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What advantage compounds over time, and by what mechanism?",
+    "mustContain": [
+      {
+        "key": "Moat",
+        "hint": "the compounding advantage"
+      },
+      {
+        "key": "Mechanism",
+        "hint": "how it compounds"
+      },
+      {
+        "key": "Milestone",
+        "hint": "the point where it starts to hold"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

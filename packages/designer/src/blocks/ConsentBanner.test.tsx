@@ -8,6 +8,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ConsentBanner } from "./ConsentBanner.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 
 function setup(overrides: Partial<Parameters<typeof ConsentBanner>[0]> = {}) {
   const onAccept = vi.fn();
@@ -342,7 +343,7 @@ describe("ConsentBanner: opaque and responsive", () => {
 
   it("carries no transition or animation classes and no fixed positioning on its own elements", () => {
     const { root } = setup();
-    // The Button atom's own classes are out of scope; check every other element.
+    // The Button component's own classes are out of scope; check every other element.
     const own = [root, ...root.querySelectorAll("*")].filter((el) => el.tagName !== "BUTTON");
     for (const el of own) {
       expect(el.getAttribute("class") ?? "").not.toMatch(
@@ -384,9 +385,10 @@ function consentCardUtility(): string {
 describe("CONSENT-1 card presentation", () => {
   it("preserves the immutable-base banner HTML by default and by explicit opt-in", () => {
     for (const presentation of [undefined, "banner"] as const) {
-      const html = renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />)
+      const html = withoutDsAttrs(renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />))
         .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
-      expect(createHash("sha256").update(html).digest("hex")).toBe("cfb61e6eb29a35cd8d643f517852d1ce9027db3dabd53e1b0483035c195405d0");
+      // Re-pinned after the Foundry Button base and secondary edge changed (8909907f3, ad1a46c90): only the two choice buttons' classes differ.
+      expect(createHash("sha256").update(html).digest("hex")).toBe("a004cf6a1ef1fc0a87379a1a57f9d72981b0ef9a65e4fbed9eae9c2fb8de9b56");
     }
   });
 
@@ -529,7 +531,7 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
     expect(accept.parentElement).toHaveClass("grid", "grid-cols-2", "gap-sm");
     expect(accept).not.toHaveClass("whitespace-nowrap");
     const card = consentCardUtility();
-    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 160ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
+    expect(card).toMatch(/& button \{\s*min-block-size: var\(--ui-layout-tap-target, 44px\);\s*transition-duration: var\(--ui-duration-fast, 120ms\);\s*transition-timing-function: var\(--ease-default, cubic-bezier\(\.2, 0, 0, 1\)\);/);
   });
 });
 

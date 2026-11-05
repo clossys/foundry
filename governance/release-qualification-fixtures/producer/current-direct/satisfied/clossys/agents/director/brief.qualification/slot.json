@@ -1,0 +1,14 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "brief.qualification",
+  "agent": "director",
+  "ia": {
+    "l1": "brief",
+    "l2": "examples",
+    "order": 0
+  },
+  "kind": "brief",
+  "contract": {},
+  "inputs": [],
+  "uses": []
+}

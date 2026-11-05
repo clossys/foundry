@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from "react";
-import { Badge, type BadgeVariant } from "../../atoms/Badge.js";
-import { Button } from "../../atoms/Button.js";
+import { Badge, type BadgeVariant } from "../../components/Badge.js";
+import { Button } from "../../components/Button.js";
 import { DetailView } from "../DetailView.js";
 import { EmptyState } from "../EmptyState.js";
 import { SectionHeader } from "../SectionHeader.js";

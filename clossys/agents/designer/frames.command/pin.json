@@ -1,0 +1,7 @@
+{
+  "candidate": "command-v3.json",
+  "sha256": "d6c0506bee4264f2b36e1c5f6b2d2c69926c4245a5d07a5343fc412b32ed69dd",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "basis": "planner",
+  "at": "2026-11-05T02:54:54.709Z"
+}

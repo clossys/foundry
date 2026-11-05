@@ -1,0 +1,504 @@
+{
+  "schema": 1,
+  "//": "Sub-checks of `npm run check:studio` (packages/producer). Each runs in its cwd (repository-relative) under /bin/sh with STUDIO_ORIGIN (default http://127.0.0.1:4617) and STUDIO_CHECK_OUT (a fresh temp directory) set. kind: static = a rule over the checked-in tree; test = a test suite; live = a rendered check against the Studio at STUDIO_ORIGIN; browser = a browser proof on its own fixture server. scripts/check-orphan-checks.mjs reads this file to trace what check:studio reaches.",
+  "checks": [
+    {
+      "id": "producer check:studio-map",
+      "cwd": "packages/producer",
+      "run": "npm run check:studio-map",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:studio-routes",
+      "cwd": "packages/producer",
+      "run": "npm run check:studio-routes",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:assemble-only",
+      "cwd": "packages/producer",
+      "run": "npm run check:assemble-only",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:routes-published",
+      "cwd": "packages/producer",
+      "run": "npm run check:routes-published",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:studio-template",
+      "cwd": "packages/producer",
+      "run": "npm run check:studio-template",
+      "kind": "static"
+    },
+    {
+      "id": "producer test:assemble-only",
+      "cwd": "packages/producer",
+      "run": "npm run test:assemble-only",
+      "kind": "static"
+    },
+    {
+      "id": "producer check-no-page-jsx",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/check-no-page-jsx.cjs",
+      "kind": "static"
+    },
+    {
+      "id": "producer scripts/build-studio.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/build-studio.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/compose-studio.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/compose-studio.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/generate-studio-map.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/generate-studio-map.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/pack-five.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/pack-five.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/preview-studio-config.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/preview-studio-config.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-checks-copy.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-checks-copy.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-contract-copy.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-contract-copy.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-copy.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-copy.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-draft-items.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-draft-items.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-options-copy.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-options-copy.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-payload.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-payload.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/studio-references-copy.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/studio-references-copy.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/check-no-handrolling.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/check-no-handrolling.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/check-no-page-jsx.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/check-no-page-jsx.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/check-studio-map.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/check-studio-map.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/check-studio-routes.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/check-studio-routes.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/check-theme-parity.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/check-theme-parity.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/p0-propagate.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/p0-propagate.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/p0-studio-check.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/p0-studio-check.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/p0-studio-mutations.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/p0-studio-mutations.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/studio-navigation.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/studio-navigation.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/studio-overflow.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/studio-overflow.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/checks/studio-upgrade.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/checks/studio-upgrade.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/frames/studio-shell/app-sidebar.rail.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/frames/studio-shell/app-sidebar.rail.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio/frames/studio-shell/stock-frame.test.cjs",
+      "cwd": "packages/producer",
+      "run": "node --test studio/frames/studio-shell/stock-frame.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio vitest",
+      "cwd": "packages/producer",
+      "run": "npx vitest run --config vitest.studio.config.ts",
+      "kind": "test"
+    },
+    {
+      "id": "producer studio-dom-check (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/studio-dom-check.mjs \"$STUDIO_ORIGIN\" --out \"$STUDIO_CHECK_OUT/studio-dom.json\"",
+      "kind": "live"
+    },
+    {
+      "id": "producer studio-modules-check (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/studio-modules-check.mjs \"$STUDIO_ORIGIN\" --out \"$STUDIO_CHECK_OUT/studio-modules.json\"",
+      "kind": "live"
+    },
+    {
+      "id": "producer check-no-handrolling (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/check-no-handrolling.cjs \"$STUDIO_ORIGIN\"",
+      "kind": "live"
+    },
+    {
+      "id": "producer check-theme-parity (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/check-theme-parity.cjs \"$STUDIO_ORIGIN\" \"$STUDIO_ORIGIN\"",
+      "kind": "live"
+    },
+    {
+      "id": "producer publisher-preview (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/publisher-preview.cjs \"$STUDIO_ORIGIN\"",
+      "kind": "live"
+    },
+    {
+      "id": "producer p0-studio-check (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/p0-studio-check.cjs --origin \"$STUDIO_ORIGIN\" --screenshots \"$STUDIO_CHECK_OUT/p0\"",
+      "kind": "live"
+    },
+    {
+      "id": "producer p0-studio-mutations",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/p0-studio-mutations.cjs --output \"$STUDIO_CHECK_OUT/p0-mutations\"",
+      "kind": "browser"
+    },
+    {
+      "id": "designer check (usage-graph)",
+      "cwd": "packages/designer",
+      "run": "npm run check",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:surface-leaves",
+      "cwd": "packages/designer",
+      "run": "npm run check:surface-leaves",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:surface-leaves",
+      "cwd": "packages/designer",
+      "run": "npm run test:surface-leaves",
+      "kind": "test"
+    },
+    {
+      "id": "designer check:studio-page-modules",
+      "cwd": "packages/designer",
+      "run": "npm run check:studio-page-modules",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:studio-page-modules",
+      "cwd": "packages/designer",
+      "run": "npm run test:studio-page-modules",
+      "kind": "test"
+    },
+    {
+      "id": "designer test:usage-graph",
+      "cwd": "packages/designer",
+      "run": "npm run test:usage-graph",
+      "kind": "test"
+    },
+    {
+      "id": "designer check:references",
+      "cwd": "packages/designer",
+      "run": "npm run check:references",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:references",
+      "cwd": "packages/designer",
+      "run": "npm run test:references",
+      "kind": "test"
+    },
+    {
+      "id": "designer check:slot-contracts",
+      "cwd": "packages/designer",
+      "run": "npm run check:slot-contracts",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:section-tokens",
+      "cwd": "packages/designer",
+      "run": "npm run test:section-tokens",
+      "kind": "test"
+    },
+    {
+      "id": "designer check:page-overflow",
+      "cwd": "packages/designer",
+      "run": "npm run check:page-overflow",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:provenance",
+      "cwd": "packages/designer",
+      "run": "npm run check:provenance",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:ref-verbatim",
+      "cwd": "packages/designer",
+      "run": "npm run check:ref-verbatim",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:compiled-css",
+      "cwd": "packages/designer",
+      "run": "npm run check:compiled-css",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:designer-receipt",
+      "cwd": "packages/designer",
+      "run": "npm run check:designer-receipt",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:process",
+      "cwd": "packages/designer",
+      "run": "npm run check:process",
+      "kind": "static"
+    },
+    {
+      "id": "designer check:default-candidates",
+      "cwd": "packages/designer",
+      "run": "npm run check:default-candidates",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:process",
+      "cwd": "packages/designer",
+      "run": "npm run test:process",
+      "kind": "test"
+    },
+    {
+      "id": "designer check-section-tokens",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-section-tokens.mjs --root ../../clossys --components ui/components.json",
+      "kind": "static"
+    },
+    {
+      "id": "designer check-one-leaf-source",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-one-leaf-source.mjs --scope components",
+      "kind": "static"
+    },
+    {
+      "id": "designer check-fill-source-imports",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-fill-source-imports.mjs",
+      "kind": "static"
+    },
+    {
+      "id": "designer check-rendered-class-rules",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-rendered-class-rules.mjs",
+      "kind": "static"
+    },
+    {
+      "id": "designer check-specimen-token-host-parts",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-specimen-token-host-parts.mjs",
+      "kind": "static"
+    },
+    {
+      "id": "designer check-surface-history-continuity",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-surface-history-continuity.mjs",
+      "kind": "static"
+    },
+    {
+      "id": "designer check-surface-source-identity",
+      "cwd": "packages/designer",
+      "run": "node scripts/check-surface-source-identity.mjs",
+      "kind": "static"
+    },
+    {
+      "id": "designer components-coverage --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/components-coverage.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer sections-frames-coverage --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/sections-frames-coverage.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer page-dogfood --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/page-dogfood.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer generate-specimen-surface-evidence --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/generate-specimen-surface-evidence.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer generate-default-component-preview --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/generate-default-component-preview.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer generate-copy-ports --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/generate-copy-ports.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer generate-surface-consumption --check",
+      "cwd": "packages/designer",
+      "run": "node scripts/generate-surface-consumption.mjs --check",
+      "kind": "static"
+    },
+    {
+      "id": "designer scripts/ref-verbatim/adaptations.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/ref-verbatim/adaptations.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer scripts/ref-verbatim/data-fit.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/ref-verbatim/data-fit.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer scripts/sections-frames-source.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/sections-frames-source.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer scripts/surface-history-continuity.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/surface-history-continuity.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer scripts/surface-source-identity.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/surface-source-identity.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer scripts/surface-source-runtime.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/surface-source-runtime.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer-ui stock-frame-picks.b6a.test.mjs",
+      "cwd": "packages/designer/ui",
+      "run": "node --test stock-frame-picks.b6a.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer-ui studio-frames.test.cjs",
+      "cwd": "packages/designer/ui",
+      "run": "node --test studio-frames.test.cjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer-ui studio-home-stock-reference.test.mjs",
+      "cwd": "packages/designer/ui",
+      "run": "node --test studio-home-stock-reference.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer-ui studio-home-stock.source.test.mjs",
+      "cwd": "packages/designer/ui",
+      "run": "node --test studio-home-stock.source.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "designer-ui vitest",
+      "cwd": "packages/designer",
+      "run": "npx vitest run --config vitest.ui.config.ts",
+      "kind": "test"
+    }
+  ]
+}

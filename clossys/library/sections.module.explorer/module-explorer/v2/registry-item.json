@@ -1,0 +1,20 @@
+{
+ "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+ "name": "module-explorer",
+ "type": "registry:block",
+ "title": "Explorer Module",
+ "description": "The page's map as a searchable tree, IA level 1 on top; click brings a part into view, the part in view is highlighted.",
+ "author": "Clossys",
+ "dependencies": [],
+ "registryDependencies": [
+  "command"
+ ],
+ "files": [
+  {
+   "path": "index.tsx",
+   "type": "registry:component",
+   "target": "studio/sections/module-explorer/index.tsx",
+   "content": "import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@clossys/designer-ui';\n\n/** One explorer row: a group or a leaf of the page's IA, and the page part it brings into view. */\nexport interface ExplorerItem { id: string; label: string; depth: number; target: string }\n/** One top group: the page's IA level 1. */\nexport interface ExplorerGroup { id: string; label: string; items: readonly ExplorerItem[] }\n\n/** The `explorer` input of `sections.module.explorer`. `active` is the target in view; `onSelect` brings one into view. */\nexport interface ExplorerInput {\n  label: string;\n  searchLabel: string;\n  empty: string;\n  groups: readonly ExplorerGroup[];\n  active?: string;\n  onSelect: (target: string) => void;\n}\n\nconst INDENT = ['pl-2', 'pl-5', 'pl-8', 'pl-11'] as const;\n\n/**\n * `sections.module.explorer`: the page's map as a searchable tree (shadcn command). IA level 1 is the\n * top grouping; each row brings its page part into view, and the row in view is highlighted.\n */\nexport default function ExplorerSection({ explorer }: { explorer: ExplorerInput }) {\n  const selected = explorer.groups.flatMap(group => group.items).find(item => item.target === explorer.active);\n  return <Command data-studio-section=\"module-explorer\" className=\"rounded-none! bg-transparent p-0\">\n    <CommandInput placeholder={explorer.searchLabel} />\n    <CommandList\n      aria-label={explorer.label}\n      className=\"max-h-none\"\n      selectionMode=\"single\"\n      selectedKeys={selected ? [selected.id] : []}\n      renderEmptyState={() => <CommandEmpty>{explorer.empty}</CommandEmpty>}\n    >\n      {explorer.groups.map(group => <CommandGroup key={group.id} id={group.id} heading={group.label}>\n        {group.items.map(item => <CommandItem\n          key={item.id}\n          id={item.id}\n          textValue={item.label}\n          data-explorer-target={item.target}\n          className={`${INDENT[Math.min(item.depth, INDENT.length - 1)]} [&>svg:last-child]:hidden`}\n          shouldCloseOnSelect={false}\n          onAction={() => explorer.onSelect(item.target)}\n        >{item.label}</CommandItem>)}\n      </CommandGroup>)}\n    </CommandList>\n  </Command>;\n}\n"
+  }
+ ]
+}

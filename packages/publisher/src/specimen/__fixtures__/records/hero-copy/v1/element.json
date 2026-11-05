@@ -1,0 +1,7 @@
+{
+  "id": "hero-copy",
+  "version": 1,
+  "kind": "copy",
+  "payload": "hero-copy.md",
+  "reason": "fixture: hero copy for a marketing section"
+}

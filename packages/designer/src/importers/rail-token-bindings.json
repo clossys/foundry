@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "utilities": [
+    {
+      "utility": "tracking-tight",
+      "member": "themes.tracking-tight.default",
+      "output": "tracking-(--tracking-meta)"
+    },
+    {
+      "utility": "tracking-widest",
+      "member": "themes.tracking-tight.default",
+      "output": "tracking-(--tracking-label)"
+    },
+    {
+      "utility": "max-w-sm",
+      "output": "max-w-(--ui-width-notice-max)"
+    },
+    {
+      "utility": "max-w-xs",
+      "output": "max-w-(--ui-width-notice-max)"
+    },
+    {
+      "utility": "max-h-72",
+      "output": "max-h-(--ui-width-notice-max)"
+    },
+    {
+      "utility": "leading-normal",
+      "output": "leading-(--leading-heading)"
+    },
+    {
+      "utility": "leading-snug",
+      "output": "leading-(--leading-heading)"
+    },
+    {
+      "utility": "h-px",
+      "output": "h-(--ui-border-hairline)"
+    },
+    {
+      "utility": "translate-x-px",
+      "output": "translate-x-(--ui-border-hairline)"
+    },
+    {
+      "utility": "-translate-x-px",
+      "output": "-translate-x-(--ui-border-hairline)"
+    },
+    {
+      "utility": "w-[2px]",
+      "output": "w-(--ui-border-rule)"
+    },
+    {
+      "utility": "ring-1",
+      "output": "ring-(length:--ui-border-hairline)"
+    },
+    {
+      "utility": "ring-2",
+      "output": "ring-(length:--ui-border-rule)"
+    },
+    {
+      "utility": "duration-200",
+      "output": "duration-(--ui-duration-default)"
+    },
+    {
+      "utility": "duration-150",
+      "output": "duration-(--ui-duration-fast)"
+    },
+    {
+      "utility": "ease-linear",
+      "output": "ease-(--ease-default)"
+    },
+    {
+      "utility": "ease-in-out",
+      "output": "ease-(--ease-default)"
+    },
+    {
+      "utility": "z-10",
+      "output": "z-(--ui-z-sticky)"
+    },
+    {
+      "utility": "z-20",
+      "output": "z-(--ui-z-aside)"
+    },
+    {
+      "utility": "z-50",
+      "output": "z-(--ui-z-modal)"
+    },
+    {
+      "utility": "bg-black/10",
+      "output": "bg-(--color-overlay-scrim)"
+    }
+  ],
+  "variables": [
+    {
+      "input": "--sidebar-width-icon",
+      "property": "--ui-layout-sidebar-rail-w"
+    },
+    {
+      "input": "--sidebar-width",
+      "property": "--ui-layout-sidebar-w"
+    }
+  ]
+}

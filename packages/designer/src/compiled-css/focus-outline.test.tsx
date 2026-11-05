@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Banner } from "../atoms/Banner.js";
+import { Banner } from "../components/Banner.js";
 import { Faq } from "../blocks/Faq.server.js";
 import { Home } from "../icons/index.js";
 import { SiteHeader } from "../shell/SiteHeader.js";

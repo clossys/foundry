@@ -1,0 +1,184 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.data-grid",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.data-grid",
+      "source": "foundry",
+      "sourceAddress": "./blocks#DataTable",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "data-grid": {
+      "composes": [
+        "sections.section-header"
+      ],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [
+          "sections.section-header"
+        ],
+        "scannedReads": {
+          "assets": [
+            "assets.icon-chevron-down",
+            "assets.icon-chevron-right"
+          ],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/data-table/empty-columns.ts",
+            "sha256": "d6d0e7a54139024b417415e72035e31a126e182fdc220aba6de2f97b60b8bed4"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
+            "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
+            "sha256": "698120d91a2ec0fef3f634701d9f49eb4ef98eb54159e4aa249db40309e40bf3"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/messages.ts",
+            "sha256": "8a94ebfc6e63c1f43782a2afb158a79ab77ebed517606b3051cd32b3351e94b0"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "sha256": "2eb90e4571137cce8a58109d221d32a64602201a26a2126d1f0e5fe7158ed2b1"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
+            "sha256": "9a960ecfb59ae3f6e8a4bb019727c73439f76571feab842b26d23c04f9d0e896"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/presentation.ts",
+            "sha256": "9e9a798d5186645619f200ea0ca029418ccd67c5d3a90c0bd1df3fbf63bfa125"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+            "sha256": "b4806634d3950d6c2195edef9148e5001d0bd618b1cc3d3b0cb963d741a6106b"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/view-model.ts",
+            "sha256": "49bb10250b1a5874c2251896f1503dc337e5ec5b7f8cd5599c23c533b3cdeb9f"
+          },
+          {
+            "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
+            "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+          },
+          {
+            "path": "packages/designer/src/blocks/DataTable.tsx",
+            "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+          },
+          {
+            "path": "packages/designer/src/blocks/table-model/index.ts",
+            "sha256": "3afd372dce33c7a5b58c8265eb9f46ce3b50b7da0ecf2613cb9961bc0f5eb1ed"
+          },
+          {
+            "path": "packages/designer/src/blocks/table-model/model.ts",
+            "sha256": "e8f0636f9ef841c4b1bcb9b8d0fcbec41c495bdbca991a2688e117e45c6af260"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "line": 3
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../components/glyph-context.js#useGlyph",
+            "file": "packages/designer/src/blocks/data-table/ModelTable.tsx",
+            "line": 5
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/blocks/data-table/TableSurface.tsx",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "DataTable",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Cells are rendered by the column definitions (cell renderers); pinning binds the view model's pinnedColumns, a leading prefix of at most three visible columns. Host supplies rowKey, label and onModelChange.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#DataTable",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {},
+      "reads": {
+        "assets": [
+          "assets.icon-chevron-down",
+          "assets.icon-chevron-right"
+        ],
+        "themes": []
+      },
+      "slot": "sections.data-grid",
+      "slotMap": {
+        "cells": "./blocks#DataTable.columns",
+        "pinning": "./blocks#DataTable.model.pinnedColumns",
+        "rows": "./blocks#DataTable.rows"
+      },
+      "source": "foundry"
+    }
+  }
+}

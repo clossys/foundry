@@ -19,7 +19,7 @@
     { "id": "messenger-delivery-confidence", "statement": "Messages go out and we don't know if they actually arrived.", "groundedInRole": "messenger" },
     { "id": "observer-blind-spots", "statement": "We can't tell what's really happening in our own systems.", "groundedInRole": "observer" },
     { "id": "publisher-verified-release", "statement": "We're not sure what's actually live, or that it matches what we approved.", "groundedInRole": "publisher" },
-    { "id": "strategist-unclear-direction", "statement": "We can't explain what we are.", "groundedInRole": "strategist" },
+    { "id": "director-unclear-direction", "statement": "We can't explain what we are.", "groundedInRole": "director" },
     { "id": "writer-unapproved-copy", "statement": "Our words don't sound like us, or nobody signed off on them.", "groundedInRole": "writer" }
   ]
 }

@@ -1,0 +1,85 @@
+import { describe, expect, it } from "vitest";
+import mapping from "./maps/blocks-to-sections.json" with { type: "json" };
+import retired from "./retired/sections.json" with { type: "json" };
+import slots from "./slots/sections.json" with { type: "json" };
+import { BLOCK_ENTRIES } from "./blocks.js";
+
+// Independent taxonomy inventory: aliases identify a home, never runtime equivalence.
+const legacyByLeaf: Record<string, readonly string[]> = {
+  "section-header": ["say.section-header", "say.section-intro"],
+  pagination: ["form.pagination", "form.load-more"],
+  hero: ["say.hero"], "page-header": ["say.page-header"],
+  content: ["say.takeaway", "say.chapter"], article: ["prose.article"],
+  features: ["items.features", "items.statement", "items.feature-grid"],
+  testimonials: ["say.testimonial", "say.testimonial-set"],
+  "logo-cloud": ["items.logo-cloud"], people: ["items.people-grid"],
+  media: ["say.media-figure"], gallery: ["items.media-gallery"],
+  faq: ["items.faq", "items.legacy-faq"],
+  steps: ["items.steps", "items.ordered-step-sequence"], timeline: ["items.timeline"],
+  cards: ["items.cards"], "resource-list": ["items.resource-list"], "task-list": ["items.task-list"],
+  comparison: ["matrix.comparison"], pricing: ["matrix.pricing"],
+  stats: ["items.stat", "items.stat-grid"], "status-list": ["items.status-list"], usage: ["items.usage-meter"],
+  "data-table": ["matrix.data-table", "matrix.grouped-table"], "data-grid": ["matrix.data-grid"],
+  "record-detail": ["matrix.detail", "items.record-ledger"],
+  "activity-feed": ["items.activity-feed", "items.event-item"], "audit-log": ["matrix.audit-log"],
+  form: ["form.form"], newsletter: ["form.newsletter-band"], wizard: ["form.form-wizard"],
+  settings: ["form.settings-section", "form.save-bar"], "column-mapper": ["form.column-mapper"],
+  "access-matrix": ["matrix.access-matrix"], chat: ["form.chat"],
+  "link-index": ["items.link-index", "items.topics", "items.nav-grid"],
+  "table-of-contents": ["prose.table-of-contents"], explorer: ["items.explorer"],
+  "filter-builder": ["form.filter-builder"], "empty-state": ["say.empty-state"],
+  "error-state": ["say.error-state"], notices: ["say.notice-stack"],
+};
+const expected = Object.fromEntries(Object.entries(legacyByLeaf).flatMap(([leaf, ids]) => ids.map(id => [id, `sections.${leaf}`])));
+const unmapped = [
+  "say.info-tip", "say.lockup", "items.item", "matrix.panel", "form.field-group", "form.file-field",
+  "items.tree", "form.toolbar", "form.bulk-action-bar", "form.confirm-dialog",
+  "items.app-navigation", "form.account-menu", "form.command-menu", "items.page-bar", "matrix.drawer",
+  "matrix.resizable-pane", "form.consent-banner", "items.notification-center",
+  "items.specimen-stack", "say.specimen", "matrix.specimen-panel", "say.anatomy-callouts", "matrix.scene",
+  "matrix.catalog-workspace", "matrix.flow-canvas", "matrix.catalog-browser", "matrix.canvas-surface",
+  "items.raw", "matrix.raw", "items.relation-graph", "form.refresh-status", "say.call-to-action", "items.usage-summary",
+];
+
+describe("legacy block section homes", () => {
+  it("maps 57 legacy addresses and the new logo block to 43 of the 51 section leaves", () => {
+    expect(mapping).toEqual({ ...expected, "say.logo-hero": "sections.logo-hero" });
+    expect(Object.keys(mapping)).toHaveLength(58);
+    expect(new Set(Object.values(mapping)).size).toBe(43);
+    const targets = new Set(slots.map(slot => slot.id));
+    // Five live wave-one Sections extend the old 46-leaf inventory without adding legacy aliases.
+    expect(targets.size).toBe(51);
+    for (const target of Object.values(mapping)) expect(targets.has(target), target).toBe(true);
+    expect([...targets].filter(target => !Object.values(mapping).includes(target)).sort()).toEqual(["sections.account-summary", "sections.band", "sections.boundary-message", "sections.call-to-action", "sections.consent", "sections.legal-prose", "sections.logo-mark", "sections.sign-in-form"]);
+  });
+
+  it("agrees with existing retirement aliases without replacing legacy IDs", () => {
+    expect(mapping).toEqual({ ...Object.fromEntries(retired.filter(row => row.id !== "sections.error-message").map(row => [row.id, row.replacedBy])), "say.logo-hero": "sections.logo-hero" });
+    expect(BLOCK_ENTRIES).toHaveLength(91);
+    expect(BLOCK_ENTRIES.map(block => block.id).sort()).toEqual([...Object.keys(expected), "say.logo-hero", ...unmapped].sort());
+  });
+
+  it("attaches homes to mapped entries and leaves the other 32 addresses absent", () => {
+    const mapped = BLOCK_ENTRIES.filter(block => block.sectionLeaf !== undefined);
+    expect(Object.fromEntries(mapped.map(block => [block.id, block.sectionLeaf]))).toEqual({ ...expected, "say.logo-hero": "sections.logo-hero" });
+    expect(BLOCK_ENTRIES.filter(block => block.sectionLeaf === undefined).map(block => block.id).sort()).toEqual([...unmapped].sort());
+    for (const block of BLOCK_ENTRIES.filter(block => unmapped.includes(block.id))) expect(block).not.toHaveProperty("sectionLeaf");
+  });
+
+  it("keeps recipes and unbuilt specs distinct from public implementations", () => {
+    const recipes = ["items.features", "items.statement", "items.faq", "items.steps", "matrix.comparison", "items.link-index", "items.topics"];
+    for (const id of recipes) {
+      const block = BLOCK_ENTRIES.find(block => block.id === id);
+      expect(block?.export, id).toBeNull();
+      expect(block?.recipeOf, id).toBe(id === "matrix.comparison" ? "matrix.raw" : "items.raw");
+    }
+    for (const id of ["matrix.data-grid", "form.save-bar", "form.load-more"]) {
+      const block = BLOCK_ENTRIES.find(block => block.id === id);
+      expect(block?.export, id).toBeNull();
+      expect(block?.built, id).toBe("no");
+    }
+    for (const [id, name] of [["items.stat", "Stat"], ["items.usage-meter", "UsageMeter"], ["items.event-item", "EventItem"], ["say.testimonial", "Testimonial"], ["matrix.grouped-table", "GroupedTable"], ["items.record-ledger", "RecordLedger"], ["form.filter-builder", "FilterBuilder"], ["form.form-wizard", "FormWizard"], ["form.settings-section", "SettingsSection"], ["items.cards", "RecordCards"], ["items.stat-grid", "StatGroup"], ["items.media-gallery", "Gallery"], ["say.error-state", "ErrorState"], ["say.notice-stack", "NoticeList"], ["say.call-to-action", "CallToAction"], ["items.timeline", "Timeline"], ["items.activity-feed", "ActivityFeed"], ["matrix.audit-log", "AuditLog"]]) {
+      expect(BLOCK_ENTRIES.find(block => block.id === id)?.export, id).toBe(name);
+    }
+  });
+});

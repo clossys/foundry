@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.metric-claims",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.claims",
+    "l2": "claims-metrics",
+    "order": 14
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "claim",
+    "valueType": "approved-metric-list"
+  },
+  "inputs": [
+    "advantage.proposition.proof"
+  ],
+  "uses": []
+}

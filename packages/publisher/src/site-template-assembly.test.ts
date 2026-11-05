@@ -669,7 +669,7 @@ describe("template file rules", () => {
   const rel = (file: string) => file.slice(APP_DIR.length + 1).split("\\").join("/");
 
   it("reads the four records only in app/site-records.ts", () => {
-    const needles = ["brand-facts.json", "copy-registry.json", "legal/terms.json", "legal/privacy.json"];
+    const needles = ["site-identity.json", "copy-registry.json", "legal/terms.json", "legal/privacy.json"];
     const readers = appFiles.filter((file) => needles.some((needle) => readFileSync(file, "utf8").includes(needle)));
     expect(readers.map(rel)).toEqual(["site-records.ts"]);
   });
@@ -678,7 +678,7 @@ describe("template file rules", () => {
     for (const name of ["site-wiring.ts", "site-copy.ts"]) {
       const source = readFileSync(join(APP_DIR, name), "utf8");
       expect(source).not.toMatch(/from\s+["']next(\/|["'])/);
-      expect(source).not.toMatch(/clossys\/(strategist|writer|publisher)\/.*\.json/);
+      expect(source).not.toMatch(/clossys\/(director|writer|publisher)\/.*\.json/);
     }
   });
 

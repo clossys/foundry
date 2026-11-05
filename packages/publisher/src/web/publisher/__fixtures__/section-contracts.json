@@ -1,0 +1,247 @@
+{
+  "fixture": true,
+  "sourceHead": "a0ba6077005d6aa3dda1585c575a283f90891438",
+  "sourcePath": "packages/designer/src/catalog/slots/sections.json",
+  "sections": [
+    {
+      "id": "sections.article",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "body",
+            "type": "region",
+            "required": true
+          },
+          {
+            "name": "toc",
+            "type": "region",
+            "required": false
+          }
+        ]
+      },
+      "members": []
+    },
+    {
+      "id": "sections.content",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "header",
+            "type": "region",
+            "required": false
+          },
+          {
+            "name": "body",
+            "type": "region",
+            "required": true
+          },
+          {
+            "name": "media",
+            "type": "media",
+            "required": false
+          },
+          {
+            "name": "footnote",
+            "type": "copy",
+            "required": false
+          }
+        ]
+      },
+      "members": [
+        "layout.stacked",
+        "layout.split-start",
+        "layout.split-end"
+      ]
+    },
+    {
+      "id": "sections.empty-state",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "illustration",
+            "type": "media",
+            "required": false
+          },
+          {
+            "name": "actions",
+            "type": "action",
+            "required": false,
+            "max": 2
+          }
+        ]
+      },
+      "members": [
+        "kind.empty",
+        "kind.no-results",
+        "kind.first-use",
+        "scope.region",
+        "scope.page"
+      ]
+    },
+    {
+      "id": "sections.error-state",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "code",
+            "type": "copy",
+            "required": false
+          },
+          {
+            "name": "retry",
+            "type": "action",
+            "required": false
+          },
+          {
+            "name": "report",
+            "type": "action",
+            "required": false
+          }
+        ]
+      },
+      "members": [
+        "kind.not-found",
+        "kind.failure",
+        "kind.forbidden",
+        "kind.offline"
+      ]
+    },
+    {
+      "id": "sections.form",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "fields",
+            "type": "region",
+            "required": true
+          },
+          {
+            "name": "submit",
+            "type": "action",
+            "required": true
+          },
+          {
+            "name": "error-summary",
+            "type": "region",
+            "required": false
+          }
+        ]
+      },
+      "members": []
+    },
+    {
+      "id": "sections.hero",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "header",
+            "type": "region",
+            "required": true
+          },
+          {
+            "name": "media",
+            "type": "media",
+            "required": false
+          },
+          {
+            "name": "actions",
+            "type": "action",
+            "required": false,
+            "max": 2
+          }
+        ]
+      },
+      "members": [
+        "layout.editorial",
+        "layout.split",
+        "size.display",
+        "size.compact",
+        "size.default"
+      ]
+    },
+    {
+      "id": "sections.page-header",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "title",
+            "type": "copy",
+            "required": true
+          },
+          {
+            "name": "description",
+            "type": "copy",
+            "required": false
+          },
+          {
+            "name": "breadcrumbs",
+            "type": "region",
+            "required": false
+          },
+          {
+            "name": "actions",
+            "type": "action",
+            "required": false,
+            "max": 2
+          },
+          {
+            "name": "meta",
+            "type": "region",
+            "required": false
+          }
+        ]
+      },
+      "members": [
+        "config.standard",
+        "config.record"
+      ]
+    },
+    {
+      "id": "sections.resource-list",
+      "status": "draft",
+      "contract": {
+        "surface": "both",
+        "slots": [
+          {
+            "name": "records",
+            "type": "records",
+            "required": true
+          },
+          {
+            "name": "selection",
+            "type": "records",
+            "required": false
+          },
+          {
+            "name": "toolbar",
+            "type": "region",
+            "required": false
+          },
+          {
+            "name": "pagination",
+            "type": "region",
+            "required": false
+          }
+        ]
+      },
+      "members": [
+        "mode",
+        "names"
+      ]
+    }
+  ]
+}

@@ -124,7 +124,7 @@ Unit D, unit E, unit F and unit G have no ticket yet (see "Unowned work").
 - **O-2 Designer owns controlled presentation and no state.** `ConsentBanner`
   stays presentational. It holds no consent state, reads or writes no
   storage, makes no network call and ships no wording. Every state it shows
-  arrives through props. The notice is this block, not the atom `Banner`.
+  arrives through props. The notice is this block, not the component `Banner`.
 - **O-3 Publisher owns assembly through structural ports.** Publisher
   composes the Designer notice with copy it has resolved against Writer.
   It reaches the lifecycle and the transport only through port types that it

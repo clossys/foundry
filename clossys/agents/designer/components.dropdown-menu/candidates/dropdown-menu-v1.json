@@ -1,0 +1,95 @@
+{
+  "name": "dropdown-menu",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "dropdown-menu.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cva } from \"class-variance-authority\"\nimport { cn } from \"cn\"\nimport {\n  composeRenderProps,\n  Header as HeaderPrimitive,\n  MenuItem as MenuItemPrimitive,\n  Menu as MenuPrimitive,\n  MenuSection as MenuSectionPrimitive,\n  MenuTrigger as MenuTriggerPrimitive,\n  Popover as PopoverPrimitive,\n  Separator as SeparatorPrimitive,\n  SubmenuTrigger as SubmenuTriggerPrimitive,\n  type MenuItemProps as MenuItemPrimitiveProps,\n  type MenuSectionProps as MenuSectionPrimitiveProps,\n} from \"react-aria-components\"\n\nimport { CheckIcon, ChevronRightIcon } from \"lucide-react\"\n\nfunction DropdownMenuTrigger({\n  ...props\n}: React.ComponentProps<typeof MenuTriggerPrimitive>) {\n  return <MenuTriggerPrimitive data-slot=\"dropdown-menu-trigger\" {...props} />\n}\n\nfunction DropdownMenu({\n  \"data-slot\": dataSlot = \"dropdown-menu-content\",\n  placement = \"bottom start\",\n  offset = 4,\n  crossOffset = 0,\n  className,\n  children,\n  ...props\n}: Omit<\n  React.ComponentProps<typeof MenuPrimitive<object>>,\n  \"children\" | \"className\"\n> &\n  Pick<\n    React.ComponentProps<typeof PopoverPrimitive>,\n    \"placement\" | \"offset\" | \"crossOffset\"\n  > & {\n    \"data-slot\"?: string\n    className?: string\n    children?: React.ReactNode\n  }) {\n  return (\n    <PopoverPrimitive\n      data-slot={dataSlot}\n      placement={placement}\n      offset={offset}\n      crossOffset={crossOffset}\n      className={cn(\n        \"z-50 w-(--trigger-width) min-w-32 origin-(--trigger-anchor-point) overflow-x-hidden overflow-y-auto rounded-lg bg-popover p-1 text-popover-foreground shadow-md ring-1 ring-foreground/10 duration-100 outline-none data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:overflow-hidden data-exiting:fade-out-0 data-exiting:zoom-out-95 data-[placement=bottom]:slide-in-from-top-2 data-[placement=left]:slide-in-from-right-2 data-[placement=right]:slide-in-from-left-2 data-[placement=top]:slide-in-from-bottom-2 **:data-[slot$=-item]:data-focused:bg-foreground/10\",\n        className\n      )}\n    >\n      <MenuPrimitive\n        className=\"max-h-[inherit] overflow-x-hidden overflow-y-auto outline-hidden\"\n        {...props}\n      >\n        {children}\n      </MenuPrimitive>\n    </PopoverPrimitive>\n  )\n}\n\nfunction DropdownMenuGroup({\n  ...props\n}: Omit<MenuSectionPrimitiveProps<object>, \"children\"> & {\n  children?: React.ReactNode\n}) {\n  return <MenuSectionPrimitive data-slot=\"dropdown-menu-group\" {...props} />\n}\n\nfunction DropdownMenuLabel({\n  className,\n  inset,\n  ...props\n}: React.ComponentProps<typeof HeaderPrimitive> & {\n  inset?: boolean\n}) {\n  return (\n    <HeaderPrimitive\n      data-slot=\"dropdown-menu-label\"\n      data-inset={inset}\n      className={cn(\n        \"px-1.5 py-1 text-xs font-medium text-muted-foreground data-inset:pl-7\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst dropdownMenuItemVariants = cva(\n  \"group/dropdown-menu-item relative flex cursor-default items-center outline-hidden select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n  {\n    variants: {\n      selectionMode: {\n        none: \"gap-1.5 rounded-md px-1.5 py-1 text-sm focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 data-[variant=destructive]:focus:text-destructive dark:data-[variant=destructive]:focus:bg-destructive/20 [&_svg:not([class*='size-'])]:size-4 data-[variant=destructive]:*:[svg]:text-destructive\",\n        single:\n          \"gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4\",\n        multiple:\n          \"gap-1.5 rounded-md py-1 pr-8 pl-1.5 text-sm focus:bg-accent focus:text-accent-foreground focus:**:text-accent-foreground data-inset:pl-7 [&_svg:not([class*='size-'])]:size-4\",\n      },\n    },\n  }\n)\n\nfunction DropdownMenuItem({\n  className,\n  inset,\n  variant = \"default\",\n  children,\n  ...props\n}: MenuItemPrimitiveProps<object> & {\n  inset?: boolean\n  variant?: \"default\" | \"destructive\"\n}) {\n  return (\n    <MenuItemPrimitive\n      data-slot=\"dropdown-menu-item\"\n      data-inset={inset}\n      data-variant={variant}\n      textValue={typeof children === \"string\" ? children : props.textValue}\n      className={composeRenderProps(className, (className, { selectionMode }) =>\n        cn(dropdownMenuItemVariants({ selectionMode }), className)\n      )}\n      {...props}\n    >\n      {composeRenderProps(\n        children,\n        (children, { isSelected, selectionMode }) => (\n          <>\n            {selectionMode !== \"none\" ? (\n              <span\n                className=\"pointer-events-none absolute right-2 flex items-center justify-center\"\n                data-slot={\n                  selectionMode === \"single\"\n                    ? \"dropdown-menu-radio-item-indicator\"\n                    : \"dropdown-menu-checkbox-item-indicator\"\n                }\n              >\n                {isSelected ? (\n                  <CheckIcon\n                  />\n                ) : null}\n              </span>\n            ) : null}\n            {children}\n          </>\n        )\n      )}\n    </MenuItemPrimitive>\n  )\n}\n\nfunction DropdownMenuSub({\n  ...props\n}: React.ComponentProps<typeof SubmenuTriggerPrimitive>) {\n  return <SubmenuTriggerPrimitive data-slot=\"dropdown-menu-sub\" {...props} />\n}\n\nfunction DropdownMenuSubTrigger({\n  className,\n  inset,\n  children,\n  ...props\n}: MenuItemPrimitiveProps<object> & {\n  inset?: boolean\n}) {\n  return (\n    <MenuItemPrimitive\n      data-slot=\"dropdown-menu-sub-trigger\"\n      data-inset={inset}\n      textValue={typeof children === \"string\" ? children : props.textValue}\n      className={cn(\n        \"flex cursor-default items-center gap-1.5 rounded-md px-1.5 py-1 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-inset:pl-7 data-open:bg-accent data-open:text-accent-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children) => (\n        <>\n          {children}\n          <ChevronRightIcon\n            className=\"ml-auto\"\n          />\n        </>\n      ))}\n    </MenuItemPrimitive>\n  )\n}\n\nfunction DropdownMenuSubContent({\n  placement = \"end top\",\n  crossOffset = -3,\n  offset = 0,\n  className,\n  ...props\n}: React.ComponentProps<typeof DropdownMenu>) {\n  return (\n    <DropdownMenu\n      data-slot=\"dropdown-menu-sub-content\"\n      className={cn(\n        \"w-auto min-w-[96px] rounded-lg bg-popover p-1 text-popover-foreground shadow-lg ring-1 ring-foreground/10 duration-100\",\n        className\n      )}\n      placement={placement}\n      crossOffset={crossOffset}\n      offset={offset}\n      {...props}\n    />\n  )\n}\n\nfunction DropdownMenuSeparator({\n  className,\n  ...props\n}: React.ComponentProps<typeof SeparatorPrimitive>) {\n  return (\n    <SeparatorPrimitive\n      data-slot=\"dropdown-menu-separator\"\n      className={cn(\"-mx-1 my-1 h-px bg-border\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction DropdownMenuShortcut({\n  className,\n  ...props\n}: React.ComponentProps<\"span\">) {\n  return (\n    <span\n      data-slot=\"dropdown-menu-shortcut\"\n      className={cn(\n        \"ml-auto text-xs tracking-widest text-muted-foreground group-focus/dropdown-menu-item:text-accent-foreground\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  DropdownMenuTrigger,\n  DropdownMenu,\n  DropdownMenuGroup,\n  DropdownMenuLabel,\n  DropdownMenuItem,\n  DropdownMenuSeparator,\n  DropdownMenuShortcut,\n  DropdownMenuSub,\n  DropdownMenuSubTrigger,\n  DropdownMenuSubContent,\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.dropdown-menu",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/dropdown-menu@4.23.0"
+      ],
+      "hash": "sha256:141fa0475d6b5895cdd74bf917e260727847ab8535a52993e4dd161691a64953",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "dropdown-menu.tsx": "registry/aria-nova/ui/dropdown-menu.tsx"
+      }
+    },
+    "element": {
+      "id": "dropdown-menu",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.dropdown-menu",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER"
+      },
+      "reason": "Stock shadcn-aria/dropdown-menu@4.23.0 adopted unmodified (shadcn add-time normalization only) as the initial candidate for components.dropdown-menu.",
+      "createdAt": "2026-11-02T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--radius",
+          "--shadow",
+          "--ring",
+          "--sidebar-ring",
+          "--tracking-tight",
+          "--spacing",
+          "--destructive",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground"
+        ]
+      }
+    }
+  }
+}

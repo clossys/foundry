@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.checks",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 242
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.checks",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The checks recorded for a leaf, each passing or reported.",
+    "inputs": [
+      {
+        "name": "checks",
+        "kind": "data",
+        "required": true,
+        "description": "Check rows."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.card",
+    "components.table"
+  ]
+}

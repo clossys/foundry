@@ -1,0 +1,33 @@
+{
+  "schema": "clossys.provenance-rule/1",
+  "package": "designer",
+  "rule": "Every library item version a consumer pins or proposes is adopted (lineage.mode verbatim) or customized (lineage.mode customized) from a trusted reference, recorded as lineage.source with registry, item, version and hash. The trusted registries are the registries of references/manifest.json; the item, version and hash must match a manifest item. lineage.mode original is allowed only in a consumer-asset slot.",
+  "trustedRegistries": "references/manifest.json#registries",
+  "consumerAssets": {
+    "why": "Brand marks and media the consumer owns; no registry ships them.",
+    "slots": [
+      "components.logo",
+      "assets.lockup",
+      "assets.mark",
+      "assets.favicon",
+      "assets.app-icon",
+      "assets.image",
+      "assets.video"
+    ]
+  },
+  "classes": [
+    {
+      "slots": "themes.font-*",
+      "sourceTypes": ["registry:font"],
+      "why": "A font comes from its font provider (a shadcn registry:font item or the Fontsource package of the Google Fonts family), with family and version recorded."
+    },
+    {
+      "slots": "themes.*",
+      "sourceTypes": ["registry:theme", "registry:style"],
+      "sourceItems": ["shadcn/neutral"],
+      "why": "A theme is a shadcn theme preset (or a trusted theme registry item) customized with the consumer's brand tokens."
+    }
+  ],
+  "need": "When no trusted reference fits the slot contract, Designer raises a NEED for the owner (skill/library-needs.md) and leaves the slot unfilled; it never creates an original item outside a consumer-asset slot.",
+  "check": "designer-provenance-check (scripts/check-provenance.mjs)"
+}

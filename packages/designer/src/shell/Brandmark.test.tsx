@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import ts from "typescript";
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
+import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
 import { scanStyleSources } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
@@ -21,7 +22,7 @@ const packageRoot = join(here, "..", "..");
 const brandmarkSource = readFileSync(join(here, "Brandmark.tsx"), "utf8");
 const badgePlateSource = readFileSync(join(here, "badge-plate.ts"), "utf8");
 const shellVarsSource = readFileSync(join(here, "..", "internal", "brandmark.ts"), "utf8");
-const logomarkSource = readFileSync(join(here, "..", "atoms", "Logomark.tsx"), "utf8");
+const logomarkSource = readFileSync(join(here, "..", "components", "Logomark.tsx"), "utf8");
 const tokensCss = readFileSync(join(packageRoot, "styles", "tokens.css"), "utf8");
 
 const brandmarkConstantStatements = shellVarsSource.match(/export const (?:UI_)?BRANDMARK_\w+\s*=[^;]+;/g) ?? [];
@@ -36,14 +37,16 @@ const HEIGHT_PX: Record<BrandmarkSize, number> = { sm: 24, md: 36, lg: 48 };
 const GAP_RATIO = 8 / 48;
 const GAP_PX: Record<BrandmarkSize, number> = { sm: 4, md: 6, lg: 8 };
 
-function props(variant: BrandmarkVariant, size: BrandmarkSize): BrandmarkProps {
+type ImageVariant = Exclude<BrandmarkVariant, "text">;
+const IMAGE_VARIANTS = BRANDMARK_VARIANTS.filter((variant): variant is ImageVariant => variant !== "text");
+function props(variant: ImageVariant, size: BrandmarkSize): Extract<BrandmarkProps, { variant: ImageVariant }> {
   return variant === "lockup"
     ? { variant, size, label: LABEL, markSrc: MARK_SRC, wordmark: WORDMARK }
     : { variant, size, label: LABEL, markSrc: MARK_SRC };
 }
 
-const COMBOS: Array<[BrandmarkVariant, BrandmarkSize]> = BRANDMARK_VARIANTS.flatMap((variant) =>
-  BRANDMARK_SIZES.map((size): [BrandmarkVariant, BrandmarkSize] => [variant, size]),
+const COMBOS: Array<[ImageVariant, BrandmarkSize]> = IMAGE_VARIANTS.flatMap((variant) =>
+  BRANDMARK_SIZES.map((size): [ImageVariant, BrandmarkSize] => [variant, size]),
 );
 
 // Generic synthetic identity fixtures: the rectangle is the complete painted
@@ -104,7 +107,7 @@ describe("Brandmark: REV4 presentation contract regressions", () => {
     expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
   });
 
-  it.each(BRANDMARK_VARIANTS.flatMap(variant =>
+  it.each(IMAGE_VARIANTS.flatMap(variant =>
     (["mobile", "responsive"] as const).flatMap(presentation =>
       (["shared", "self"] as const).map(plate => [plate, variant, presentation] as const))),
   )("preserves %s plates for %s / %s explicit mobile artwork", (plate, variant, presentation) => {
@@ -140,8 +143,8 @@ describe("Brandmark: REV4 presentation contract regressions", () => {
 });
 
 describe("Brandmark: the closed sets", () => {
-  it("are exactly the specified variants and sizes (6 combinations)", () => {
-    expect([...BRANDMARK_VARIANTS]).toEqual(["mark", "lockup"]);
+  it("are exactly the specified variants and sizes (6 image combinations)", () => {
+    expect([...BRANDMARK_VARIANTS]).toEqual(["mark", "lockup", "text"]);
     expect([...BRANDMARK_SIZES]).toEqual(["sm", "md", "lg"]);
     expect(COMBOS).toHaveLength(6);
   });
@@ -340,7 +343,7 @@ function refusal(node: ReactElement): string {
 
 describe("Brandmark: the label must name the link", () => {
   it.each(["", " ", "   ", "\t\n "])("refuses an empty or whitespace-only label (%j) for both variants, naming the prop", (label) => {
-    for (const variant of BRANDMARK_VARIANTS) {
+    for (const variant of IMAGE_VARIANTS) {
       const base = props(variant, "md");
       const message = refusal(<Brandmark {...base} label={label} />);
       expect(message).toContain("label");
@@ -510,7 +513,7 @@ const NO_PLATE_GOLDEN: Readonly<Record<string, string>> = {
 };
 
 describe("Brandmark: plate", () => {
-  function sharedProps(variant: BrandmarkVariant, size: BrandmarkSize): BrandmarkProps {
+  function sharedProps(variant: ImageVariant, size: BrandmarkSize): Extract<BrandmarkProps, { variant: ImageVariant }> {
     return { ...props(variant, size), plate: "shared" };
   }
 
@@ -690,7 +693,7 @@ describe("frozen legacy SSR without tailwind-merge", () => {
     vi.resetModules();
     vi.doMock("tailwind-merge", () => { throw Object.assign(new Error("absent optional peer"), { code: "ERR_MODULE_NOT_FOUND" }); });
     warning = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const { cx } = await import("../atoms/internal/cx.js");
+    const { cx } = await import("../components/internal/cx.js");
     expect(cx("first", "second")).toBe("first second");
     expect(warning).toHaveBeenCalledTimes(1);
     absentBrandmark = (await import("./Brandmark.js")).Brandmark;
@@ -707,6 +710,7 @@ describe("frozen legacy SSR without tailwind-merge", () => {
   it.each(ABSENT_HEADER_GOLDENS)("preserves default/image/accent header $name", entry => {
     const Header = absentHeader;
     const Component = absentBrandmark;
-    expect(renderToStaticMarkup(<Header {...entry.header as Parameters<typeof Header>[0]} brand={<Component {...entry.props as BrandmarkProps} />} />)).toBe(entry.html);
+    // The frozen goldens predate the frame DOM provenance stamp (asserted in frames/frames-wiring.test.ts).
+    expect(withoutDsAttrs(renderToStaticMarkup(<Header {...entry.header as Parameters<typeof Header>[0]} brand={<Component {...entry.props as BrandmarkProps} />} />))).toBe(entry.html);
   });
 });

@@ -1,14 +1,10 @@
-import type { ReactNode } from "react";
-import {
-  UNSTABLE_Toast as AriaToast,
-  UNSTABLE_ToastContent as AriaToastContent,
-  UNSTABLE_ToastRegion as AriaToastRegion,
-  Text,
-  type QueuedToast,
-} from "react-aria-components";
-import { Button } from "../atoms/Button.js";
-import { cx } from "../atoms/internal/cx.js";
-import { UI_ELEVATION_FLOATING } from "../atoms/internal/ui-vars.js";
+import { useLocale } from "react-aria-components";
+import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
+import type { QueuedToast, UNSTABLE_ToastQueue as ToastQueue } from "react-aria-components";
+import { Button } from "../components/Button.js";
+import { Toast, ToastContent, ToastRegion, ToastText, type ToastPlacement } from "../components/Toast.js";
+import { cx } from "../components/internal/cx.js";
+import { UI_ELEVATION_FLOATING } from "../components/internal/ui-vars.js";
 import { UI_Z_TOAST } from "./internal/shell-vars.js";
 import { toastQueue, type ToastRecord, type ToastVariant } from "./internal/toast-queue.js";
 
@@ -28,6 +24,21 @@ const VARIANT_CLASSES: Record<ToastVariant, string> = {
   info: "border-status-info bg-status-info-tint text-status-info-text",
 };
 
+/**
+ * Viewport-edge distances, in px, of the area a frame reserves for toasts (its stage). A frame supplies it so the
+ * portalled viewport anchors to the stage corner instead of the window corner, clear of the frame's header and dock.
+ * Internal to the frame contract; not a public prop.
+ */
+export interface ToasterFrameInset { blockEnd: number; inlineEnd: number; direction: "ltr" | "rtl" }
+const ToasterFrameInsetContext = createContext<ToasterFrameInset | null>(null);
+export const ToasterFrameInsetProvider = ToasterFrameInsetContext.Provider;
+function frameInsetStyle(inset: ToasterFrameInset | null): CSSProperties {
+  if (!inset) return {};
+  const edge = (px: number) => `calc(${px}px + var(--spacing-md))`;
+  // Physical sides override both logical class insets, whatever direction the toast region itself resolves.
+  return inset.direction === "rtl" ? { bottom: edge(inset.blockEnd), left: edge(inset.inlineEnd), right: "auto" } : { bottom: edge(inset.blockEnd), right: edge(inset.inlineEnd), left: "auto" };
+}
+
 export interface ToasterProps {
   /**
    * Accessible label for the toast viewport landmark.
@@ -36,12 +47,23 @@ export interface ToasterProps {
   "aria-label"?: string;
   /** Merged onto the toast viewport's own root element. */
   className?: string;
+  /**
+   * The queue this Toaster draws. Defaults to the app-wide queue the `toast` API feeds; a bounded host
+   * (a preview cell) passes its own so its toasts never reach the page's Toaster.
+   */
+  queue?: ToastQueue<ToastRecord>;
+  /**
+   * `viewport` portals the stack to the window (or frame stage) corner; `container` draws it in place
+   * inside whatever element mounts the Toaster.
+   * @default "viewport"
+   */
+  placement?: ToastPlacement;
 }
 
 /**
  * The toast viewport — a runtime service, not a layout component (see this
  * package's README, "Placement rules": a portal, a queue, and an
- * imperative API put a toast stack outside the atoms/blocks/views/shell
+ * imperative API put a toast stack outside the components/blocks/views/shell
  * ladder entirely). Ships from this subpath anyway, standalone rather than
  * as `Shell.Toaster`, for two reasons:
  *
@@ -65,7 +87,8 @@ export interface ToasterProps {
  * `toast(...)`, also `info`-variant) from anywhere in the application,
  * including code with no JSX in it at all.
  *
- * Built on react-aria-components' `ToastRegion`/`Toast`/`ToastContent` —
+ * Drawn through the Foundry Toast parts (`components/Toast.tsx`), which wrap
+ * react-aria-components' `ToastRegion`/`ToastList`/`Toast`/`ToastContent` —
  * the installed version (1.20.0) ships them (as `UNSTABLE_*`, its own
  * naming for a still-evolving API surface, not a signal that the behavior
  * itself is unreliable). Between them these primitives supply: portal
@@ -75,37 +98,51 @@ export interface ToasterProps {
  * mouse hover OR keyboard focus anywhere inside it, and resuming when
  * both end (`useToastRegion`'s own `pauseAll`/`resumeAll` wiring — nothing
  * about hover/focus pausing is reimplemented here); and the region's own
- * `role="region"` landmark. None of that is hand-rolled here.
+ * `role="region"` landmark. None of that is hand-rolled here. The
+ * `container` placement keeps the per-toast parts but draws the queue in
+ * place through `ToastList`, without the portal, landmark or region-level
+ * timer pause; it exists for bounded hosts such as a preview cell.
  *
  * One thing IS overridden from react-aria-components' own default: its
  * `ToastContent` always renders `role="alert"` (assertive) for every
  * variant, with no notion of a lower-urgency toast. That's wrong for this
  * package's success/info/warning toasts, which should interrupt a screen
  * reader user no more than a status update does — see `ToasterContent`
- * below, which passes its own `role`/`aria-live` to `ToastContent` instead
+ * below, which passes `urgency` to the Foundry `ToastContent`, which sets
+ * `role`/`aria-live` on react-aria-components' `ToastContent` instead
  * (`alert`/`assertive` for `danger` only; `status`/`polite` for the rest).
- * `ToastContent` accepts both as ordinary `HTMLAttributes`, and merges its
+ * That part accepts both as ordinary `HTMLAttributes`, and merges its
  * own react-aria-components-supplied defaults with whatever's passed to it
  * via `mergeProps(contextProps, props)` — the caller's value applies last,
  * so this override is a normal prop, not a hack.
  */
-export function Toaster({ "aria-label": ariaLabel, className }: ToasterProps) {
+export function Toaster({ "aria-label": ariaLabel, className, queue = toastQueue, placement = "viewport" }: ToasterProps) {
+  const { direction } = useLocale();
+  const frameInset = useContext(ToasterFrameInsetContext);
+  if (placement === "container") {
+    return (
+      <ToastRegion style={{ direction }} queue={queue} placement="container" className={cx("flex flex-col gap-sm", className)}>
+        {queuedToast => <ToasterItem toast={queuedToast} queue={queue} />}
+      </ToastRegion>
+    );
+  }
   return (
-    <AriaToastRegion
-      queue={toastQueue}
+    <ToastRegion
+      queue={queue}
       aria-label={ariaLabel}
       className={cx("fixed bottom-md end-md flex flex-col gap-sm", className)}
-      style={{ zIndex: UI_Z_TOAST }}
+      style={{ direction: frameInset?.direction ?? direction, zIndex: UI_Z_TOAST, ...frameInsetStyle(frameInset) }}
+      data-toaster-placement={frameInset ? "frame" : "viewport"}
     >
-      {({ toast: queuedToast }) => <ToasterItem toast={queuedToast} />}
-    </AriaToastRegion>
+      {queuedToast => <ToasterItem toast={queuedToast} queue={queue} />}
+    </ToastRegion>
   );
 }
 
-function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }) {
-  const { variant, title, description } = queuedToast.content;
+function ToasterItem({ toast: queuedToast, queue }: { toast: QueuedToast<ToastRecord>; queue: ToastQueue<ToastRecord> }) {
+  const { variant, title, description, action } = queuedToast.content;
   return (
-    <AriaToast
+    <Toast
       toast={queuedToast}
       className={cx(
         "flex w-[min(24rem,90vw)] items-start gap-sm rounded-control border p-md",
@@ -114,14 +151,17 @@ function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }
       style={{ boxShadow: UI_ELEVATION_FLOATING }}
     >
       <ToasterContent variant={variant}>
-        <Text slot="title" className="block text-body font-body">
+        <ToastText slot="title" className="block text-body font-body">
           {title}
-        </Text>
+        </ToastText>
         {description ? (
-          <Text slot="description" className="mt-xs block text-body-s">
+          <ToastText slot="description" className="mt-xs block text-body-s">
             {description}
-          </Text>
+          </ToastText>
         ) : null}
+        {action ? <Button data-toast-part="action" variant="secondary" size="sm" onPress={event => { action.onPress(event); queue.close(queuedToast.key); }} isDisabled={action.isDisabled}>
+          {action.label}
+        </Button> : null}
       </ToasterContent>
       {/*
         Plain `variant="ghost"` — its default `text-ink-primary`, not this
@@ -133,13 +173,13 @@ function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }
       <Button slot="close" variant="ghost" size="sm" className="shrink-0 px-xs py-xs">
         <span aria-hidden="true">×</span>
       </Button>
-    </AriaToast>
+    </Toast>
   );
 }
 
 /**
- * Wraps a toast's title/description in react-aria-components' own
- * `ToastContent`, overriding `role`/`aria-live` per variant — see
+ * Wraps a toast's title/description in the Foundry `ToastContent` (over
+ * react-aria-components' own), overriding `role`/`aria-live` per variant — see
  * `Toaster`'s own docs above for why the override is necessary and why
  * it's safe (a normal prop, merged over react-aria-components' own default
  * via `mergeProps`, with this component's value applying last).
@@ -147,12 +187,8 @@ function ToasterItem({ toast: queuedToast }: { toast: QueuedToast<ToastRecord> }
 function ToasterContent({ variant, children }: { variant: ToastVariant; children: ReactNode }) {
   const isError = variant === "danger";
   return (
-    <AriaToastContent
-      role={isError ? "alert" : "status"}
-      aria-live={isError ? "assertive" : "polite"}
-      className="flex-1"
-    >
+    <ToastContent urgency={isError ? "alert" : "status"} className="flex-1">
       {children}
-    </AriaToastContent>
+    </ToastContent>
   );
 }

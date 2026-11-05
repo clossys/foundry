@@ -1,0 +1,35 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.scroll-area",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.containment",
+    "l2": "containment-structure",
+    "order": 157
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "presentational",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [],
+      "components": []
+    },
+    "composes": []
+  },
+  "inputs": [],
+  "uses": []
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-leaf-header",
+  "type": "registry:block",
+  "title": "Leaf Header",
+  "description": "The head of a leaf page: back link to its library, name, shown version, status, id and IA trail, and status notes.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-leaf-header/index.tsx"
+    }
+  ]
+}

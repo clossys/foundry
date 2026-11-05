@@ -6,7 +6,7 @@
  * social card, and the content catalog (a function index and seven pages of native examples), all rendered against a
  * consumer `brand.css` after Designer's brand-file coverage check passes
  * (issue #1204/#1207/#1208).
- * Fixture copy lives in this package; Writer and Strategist are unchanged.
+ * Fixture copy lives in this package; Writer and Director are unchanged.
  * When a brand-asset roster JSON file is also given, and it is complete,
  * also writes the public brand guide (`guide.html`) and the internal
  * system audit (`audit.html`) from the same brand.css and roster (issue

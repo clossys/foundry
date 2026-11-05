@@ -1,0 +1,10 @@
+import { Button } from "@clossys/designer/components";
+
+export function CleanFrame({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col">
+      <main>{children}</main>
+      <Button>Save</Button>
+    </div>
+  );
+}

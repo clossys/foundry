@@ -1,10 +1,20 @@
-import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
+import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type ComponentType, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { Brandmark, type BrandmarkProps } from "./Brandmark.js";
-import { buttonLinkClassName } from "../atoms/button-classes.js";
-import { Icon, type IconNode } from "../atoms/Icon.js";
-import { cx } from "../atoms/internal/cx.js";
+import { componentLeaf } from "../runtime/component-leaf.js";
+import { Icon, type IconNode } from "../components/Icon.js";
+import { cx } from "../components/internal/cx.js";
 import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
 import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_Z_SHELL } from "./internal/shell-vars.js";
+import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
+import { dsAttrs } from "../catalog-core/provenance-attrs.js";
+
+/** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
+const FRAME_STAMP = dsAttrs("frames", "frames.site-header", "foundry/frames.site-header");
+
+/** Real LinkButton secondary export from the consumer's selected button source. */
+const SelectedLinkButton = componentLeaf<ComponentType<Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "children"> & {
+  children: ReactNode; variant: "default" | "secondary" | "ghost"; size: "sm";
+}>>("components.button", "LinkButton");
 
 /** One header surface: an in-flow solid plate, an always-transparent row, or fixed scroll glass. */
 export type SiteHeaderSurface = "solid" | "transparent" | "glass";
@@ -37,6 +47,8 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
    * @default "solid"
    */
   surface?: SiteHeaderSurface;
+  /** Solid/transparent position. Omission preserves normal flow; glass stays fixed and refuses static. */
+  position?: "sticky" | "static";
   /** Theme-relative inherited ink and the matching solid/glass plate. @default "base" */
   tone?: SiteHeaderTone;
   /** Keeps glass painted while a menu is open. Other surfaces ignore this hint. @default false */
@@ -68,10 +80,11 @@ function orderedActions(children: ReactNode): ReactNode[] {
 }
 
 /** Persistent site banner with one responsive row and one surface/ink contract. Server-safe: no hooks. */
-function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surface = "solid", tone = "base",
+function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surface = "solid", tone = "base", position,
   menuOpen = false, className, style, ...rest }: SiteHeaderProps) {
   if (surface !== "solid" && surface !== "transparent" && surface !== "glass")
     throw new TypeError("SiteHeader: surface must be solid, transparent or glass.");
+  const headerPosition = resolveFrameHeaderOptions("frames.site-header", { surface, position }).position;
   const glass = surface === "glass";
   const solid = surface === "solid";
   const leading = navPlacement === "leading";
@@ -81,16 +94,18 @@ function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surfac
     ? cloneElement(headerBrand, {
         ...(headerBrand.props.tone === undefined ? { tone: tone === "inverse" ? "inverse" : "auto" } : {}),
         ...(headerBrand.props.tone === undefined && headerBrand.props.className === undefined ? { className: "text-inherit" } : {}),
-        ...(headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
+        ...(headerBrand.props.variant !== "text" && headerBrand.props.markInk === undefined ? { markInk: "accent" } : {}),
       } satisfies Partial<BrandmarkProps>)
     : brand;
   return (
-    <header {...rest} data-header-root="" data-surface={surface} data-tone={tone}
+    <header {...FRAME_STAMP} {...rest} data-header-root="" data-surface={surface} data-tone={tone}
       {...(glass ? { "data-placement": "overlay", "data-menu-open": menuOpen ? "" : undefined } : {})}
       className={cx("site-header-contract site-header-ink py-sm", INK_CLASSES[tone],
         glass ? "site-header-overlay" : solid ? cx(colors.surface, "border-b", colors.border) : undefined,
         leading ? "site-header-leading" : undefined, className)}
-      style={{ position: glass ? "fixed" : "relative", zIndex: UI_Z_SHELL,
+      style={{ position: headerPosition,
+        ...(headerPosition === "sticky" ? { zIndex: "var(--ui-z-sticky, 10)", insetBlockStart: 0 }
+          : position === "static" ? {} : { zIndex: UI_Z_SHELL }),
         ...(glass ? { insetBlockStart: 0, insetInline: 0 } : {}),
         ...(solid ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}), ...style }}>
       <div className="site-header-row">
@@ -119,10 +134,9 @@ export interface SiteHeaderActionLinkProps
   icon?: IconNode;
   /**
    * Marks this link as the current item of its set, for example the
-   * environment the page belongs to. Renders `aria-current="true"` and an
+   * environment the page belongs to. Renders `aria-current="page"` and an
    * inset bar along the bottom edge, visible in the icon-only layout too.
-   * The value is `true` rather than `page` because the link points to the
-   * set member's home, which is not necessarily the page being shown.
+   * Set this only when the destination is the current page.
    */
   isCurrent?: boolean;
   /**
@@ -161,14 +175,15 @@ function SiteHeaderActionLink({
   style,
   ...rest
 }: SiteHeaderActionLinkProps) {
-  const look = buttonLinkClassName(variant, "sm");
   return (
-    <a
+    <SelectedLinkButton
       {...rest}
       href={href}
-      aria-current={isCurrent ? "true" : undefined}
+      variant={variant === "primary" ? "default" : variant}
+      size="sm"
+      aria-current={isCurrent ? "page" : undefined}
       data-header-action-ghost={variant === "ghost" ? "" : undefined}
-      className={cx(look, className)}
+      className={className}
       style={{
         minHeight: UI_LAYOUT_TAP_TARGET,
         minWidth: UI_LAYOUT_TAP_TARGET,
@@ -177,7 +192,7 @@ function SiteHeaderActionLink({
       }}
     >
       {icon ? <><Icon glyph={icon} decorative size="sm" /><span className="sr-only tablet:not-sr-only">{label}</span></> : label}
-    </a>
+    </SelectedLinkButton>
   );
 }
 

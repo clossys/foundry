@@ -1,0 +1,12 @@
+{
+  "id": "sample-card",
+  "version": 1,
+  "kind": "component",
+  "payload": "sample-card.json",
+  "reason": "fixture: a card composing a sibling button record",
+  "dependencies": {
+    "elements": [
+      "sample-button"
+    ]
+  }
+}

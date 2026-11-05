@@ -126,7 +126,7 @@ export interface ContactSubmission {
  *   body is out of scope.
  *
  * Email shape (`malformed`), deliberately conservative because the value becomes
- * a `replyTo` address: exactly one `@`; local part is a dot-atom of
+ * a `replyTo` address: exactly one `@`; local part is a dot-component of
  * `A–Z a–z 0–9 ! # $ % & ' * + / = ? ^ _ \` { | } ~ -` with no leading,
  * trailing or doubled dot and at most 64 characters; domain is two or more
  * dot-separated labels of `A–Z a–z 0–9 -`, each non-empty and not starting or

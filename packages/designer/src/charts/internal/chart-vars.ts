@@ -1,9 +1,9 @@
 /**
  * Raw CSS custom-property reads for this package's token-layer chart-color
  * family (`--color-chart-*`) — the charts layer's equivalent of
- * `atoms/internal/ui-vars.ts`. SVG presentation attributes (`fill`,
+ * `components/internal/ui-vars.ts`. SVG presentation attributes (`fill`,
  * `stroke`) and inline `style` both take a `var(...)` string directly, so
- * there is no Tailwind class to reach for here the way an atom would —
+ * there is no Tailwind class to reach for here the way an component would —
  * every chart mark reads color through one of these constants instead of a
  * hardcoded hex, so it follows `data-theme`/`prefers-color-scheme` the same
  * way every other token-driven surface in this package does.

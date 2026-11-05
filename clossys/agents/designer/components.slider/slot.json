@@ -1,0 +1,47 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.slider",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.inputs",
+    "l2": "inputs-number",
+    "order": 113
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Slider",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "selection.single",
+        "selection.range",
+        "orientation.horizontal",
+        "orientation.vertical"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.sidebar-primary",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.spacing"
+      ],
+      "assets": []
+    },
+    "apg": "slider"
+  },
+  "inputs": [],
+  "uses": []
+}

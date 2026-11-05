@@ -1,0 +1,6 @@
+import { Slot } from "@radix-ui/react-slot";
+import type { ListState } from "react-stately";
+
+export function HeadlessFrame({ state }: { state: ListState<object> }) {
+  return <Slot>{state.collection.size}</Slot>;
+}

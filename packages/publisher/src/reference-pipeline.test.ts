@@ -1,5 +1,6 @@
 import { createCopyResolver, validateCopyRegistryShape } from "@clossys/writer";
 import type { CopyRegistry } from "@clossys/writer";
+import launchContract from "@clossys/publisher/strategy-brief.json";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { createResolvedOutputManifest } from "./core/output-manifest.js";
@@ -38,9 +39,8 @@ const registry: CopyRegistry = {
 };
 
 const provenance: StrategyProvenance = {
-  strategyId: "reference-strategy",
-  revision: "fixture-1",
-  records: [{ kind: "fact", id: "reference.category", revision: "fixture-1" }],
+  contract: launchContract.id,
+  refs: launchContract.requires.map((cell) => ({ cell, version: 1 })),
   fingerprint: "sha256:reference-fixture",
 };
 
@@ -129,6 +129,18 @@ describe("reference pipeline fixture", () => {
     ];
     expect(manifests.map((manifest) => manifest.channel)).toEqual(["web", "email", "image", "print", "slides"]);
     expect(manifests.every((manifest) => manifest.provenance?.fingerprint === provenance.fingerprint)).toBe(true);
+    for (const manifest of manifests) {
+      expect(manifest.provenance).toEqual({
+        contract: "publisher.launch",
+        refs: [
+          { cell: "focus.reach.channel", version: 1 },
+          { cell: "focus.offer.included", version: 1 },
+        ],
+        fingerprint: provenance.fingerprint,
+      });
+      expect(manifest.provenance).not.toBe(provenance);
+      expect(manifest.provenance?.refs[0]).not.toBe(provenance.refs[0]);
+    }
     expect(manifests.map((manifest) => manifest.copy?.flatMap((copy) => copy.entryIds))).toEqual([
       ["reference.brand", "reference.description", "reference.form", "reference.heading", "reference.web-description", "reference.web-title"],
       ["reference.email-body", "reference.email-preheader", "reference.email-subject"],
@@ -140,6 +152,19 @@ describe("reference pipeline fixture", () => {
     // second store for rendered copy or per-request interpolation values.
     expect(JSON.stringify(manifests)).not.toContain("Heading");
     expect(JSON.stringify(manifests)).not.toContain("someone");
+  });
+
+  it.each(["strategyId", "revision", "records"])("refuses legacy %s metadata at the resolved manifest boundary", (field) => {
+    const surface: SurfaceDocument = {
+      id: "legacy.email",
+      channel: "email",
+      meta: { channel: "email", subject: ref("email-subject"), preheader: ref("email-preheader") },
+      template: "reference-email",
+      bindings: [{ slot: "body", copy: ref("email-body") }],
+    };
+    const resolved = resolveSurfaceDocument(surface, copyResolver);
+    const legacy = { ...provenance, [field]: field === "records" ? [] : "fixture-1" };
+    expect(() => createResolvedOutputManifest(surface, resolved, [], legacy)).toThrow(/Legacy strategy provenance: migrate/);
   });
 
   it("fails closed for unresolved approved sources and malformed source bindings", () => {

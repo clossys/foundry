@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.number-format",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.formats",
+    "l2": "formats-numbers-and-plurals",
+    "order": 17
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "format",
+    "valueType": "number-format"
+  },
+  "inputs": [
+    "focus.reach.geography"
+  ],
+  "uses": []
+}

@@ -4,20 +4,20 @@
  * export in this directory (`./icons`) is built from.
  *
  * Declared HERE, inside `./icons` — the pure-data leaf this package's ladder
- * puts BELOW `atoms` (see `src/ladder.test.ts`) — rather than inside
- * `atoms/Icon.tsx` itself: every file in this directory needs it, and none
- * of them may import UP into `atoms/` to get it. That direction is
+ * puts BELOW `components` (see `src/ladder.test.ts`) — rather than inside
+ * `components/Icon.tsx` itself: every file in this directory needs it, and none
+ * of them may import UP into `components/` to get it. That direction is
  * enforced, not just documented — `ladder.test.ts` fails the build the
- * moment a file under `src/icons/` imports from `atoms/` (or `blocks/`,
+ * moment a file under `src/icons/` imports from `components/` (or `blocks/`,
  * `views/`, `shell/`, `charts/`).
  *
- * `atoms/Icon.tsx` imports this exact type
+ * `components/Icon.tsx` imports this exact type
  * (`import type { IconNode } from "../icons/types.js"`) — the one
- * permitted cross-layer edge, `icons -> atoms`, so both sides share one
+ * permitted cross-layer edge, `icons -> components`, so both sides share one
  * definition rather than maintaining two independently-typed copies of the
  * same tuple shape. That's a type-only import (erased at compile time, zero
  * runtime cost either way) of a plain structural type — importing it costs
- * an `atoms` consumer nothing at the type level and nothing at all at
+ * an `components` consumer nothing at the type level and nothing at all at
  * runtime, which is what makes it safe for `Icon` to depend on even though
  * `Icon` itself never imports any of this directory's glyph VALUES.
  */

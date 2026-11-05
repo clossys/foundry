@@ -2,8 +2,13 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { ToggleGroup, ToggleGroupItem } from "../components/ToggleGroup.js";
 import { DEFAULT_STORAGE_KEY, ThemeProvider } from "./ThemeProvider.js";
-import { ThemeToggle } from "./ThemeToggle.js";
+import { ThemeToggle as ShellFixtureThemeToggle, type ThemeToggleProps } from "./ThemeToggle.js";
+import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
+const ThemeToggle = withShellCopy(ShellFixtureThemeToggle);
+
+
 
 function installMatchMediaMock(initialMatches = false) {
   const mql = {
@@ -32,83 +37,116 @@ afterEach(() => {
 });
 
 describe("ThemeToggle", () => {
-  it("renders a button describing the current preference and what activating it does", () => {
+  it("shows three explicit icon-only radio options and the selected preference", () => {
     renderToggle();
-    expect(
-      screen.getByRole("button", { name: "Theme: System. Activate to switch to Light." }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("radiogroup", { name: "Theme" })).toBeInTheDocument();
+    expect(screen.getAllByRole("radio")).toHaveLength(3);
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    for (const name of ["Light", "Dark"]) expect(screen.getByRole("radio", { name })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "System" })).toHaveAttribute("data-selected");
+    for (const radio of screen.getAllByRole("radio")) expect(radio.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
-  it("cycles System -> Light -> Dark -> System on repeated activation", async () => {
+  it("selects Dark directly in one activation and keeps System directly available", async () => {
     const user = userEvent.setup();
     renderToggle();
-
-    await user.click(screen.getByRole("button", { name: /^Theme: System\./ }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
-    expect(screen.getByRole("button", { name: "Theme: Light. Activate to switch to Dark." })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /^Theme: Light\./ }));
-    expect(document.documentElement.getAttribute("data-theme")).toBe("dark");
-    expect(screen.getByRole("button", { name: "Theme: Dark. Activate to switch to System." })).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: /^Theme: Dark\./ }));
-    expect(document.documentElement.hasAttribute("data-theme")).toBe(false);
-    expect(screen.getByRole("button", { name: "Theme: System. Activate to switch to Light." })).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Dark" }));
+    expect(document.documentElement).toHaveAttribute("data-theme", "dark");
+    expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
+    await user.click(screen.getByRole("radio", { name: "System" }));
+    expect(document.documentElement).not.toHaveAttribute("data-theme");
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
   });
 
-  it("is keyboard operable — Enter activates it", async () => {
+  it("uses Appearance Toolbar arrows for focus and Space/Enter for selection", async () => {
     const user = userEvent.setup();
     renderToggle();
+    expect(screen.getByRole("toolbar", {name:"Appearance"})).toContainElement(screen.getByRole("radiogroup",{name:"Theme"}));
     await user.tab();
-    expect(screen.getByRole("button")).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "System" })).toHaveFocus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("radio", { name: "Light" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Light" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    await user.keyboard(" ");
+    expect(screen.getByRole("radio", { name: "Light" })).toBeChecked();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("radio", { name: "Dark" })).toHaveFocus();
+    expect(screen.getByRole("radio", { name: "Light" })).toBeChecked();
     await user.keyboard("{Enter}");
-    expect(document.documentElement.getAttribute("data-theme")).toBe("light");
+    expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
   });
 
-  it("persists the new preference to the configured storage key", async () => {
+  it("standalone ToggleGroup APG probe: ArrowRight checks the newly focused radio", async () => {
+    const user = userEvent.setup();
+    render(<ToggleGroup aria-label="Standalone appearance" selectionMode="single" defaultSelectedKeys={["system"]}>
+      <ToggleGroupItem id="system">System</ToggleGroupItem><ToggleGroupItem id="light">Light</ToggleGroupItem><ToggleGroupItem id="dark">Dark</ToggleGroupItem>
+    </ToggleGroup>);
+    await user.tab();
+    expect(screen.getByRole("radio", {name:"System"})).toHaveFocus();
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("radio", {name:"Light"})).toHaveFocus();
+    expect(screen.getByRole("radio", {name:"Light"})).toBeChecked();
+  });
+
+  it("persists direct selection and announces the change", async () => {
     const user = userEvent.setup();
     renderToggle();
-    await user.click(screen.getByRole("button"));
-    expect(window.localStorage.getItem(DEFAULT_STORAGE_KEY)).toBe("light");
+    await user.click(screen.getByRole("radio", { name: "Dark" }));
+    expect(window.localStorage.getItem(DEFAULT_STORAGE_KEY)).toBe("dark");
+    expect(screen.getByRole("status")).toHaveTextContent("Theme set to Dark");
   });
 
-  it("announces the change through a polite live region", async () => {
+  it("does not empty the selection when the selected option is pressed", async () => {
     const user = userEvent.setup();
     renderToggle();
-    await user.click(screen.getByRole("button"));
-    expect(screen.getByRole("status")).toHaveTextContent("Theme set to Light");
+    await user.click(screen.getByRole("radio", { name: "System" }));
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
   });
 
-  it("defaults to a ghost, small button but lets a consumer override variant/size", () => {
-    renderToggle(<ThemeToggle variant="secondary" size="lg" />);
-    // No visible assertion on classes here (that's this package's own
-    // token-gate territory) — this just confirms the props reach the
-    // underlying Button rather than being silently dropped in favor of
-    // the component's own defaults.
-    expect(screen.getByRole("button")).toBeInTheDocument();
-  });
-
-  it("forwards a consumer className onto the underlying button", () => {
-    renderToggle(<ThemeToggle className="my-toggle" />);
-    expect(screen.getByRole("button").className).toContain("my-toggle");
-  });
-
-  it("reads preference, toggle, and announcement copy from message props", async () => {
+  it("forwards the fill's appearance, class, style and disabled group props", async () => {
     const user = userEvent.setup();
-    renderToggle(
-      <ThemeToggle
-        preferenceLabels={{ system: "Sistema", light: "Claro", dark: "Oscuro" }}
-        toggleLabel={(current, next, labels) => `Tema: ${labels[current]}. Cambiar a ${labels[next]}.`}
-        preferenceAnnouncement={(next, labels) => `Tema en ${labels[next]}`}
-      />,
-    );
-    expect(screen.getByRole("button", { name: "Tema: Sistema. Cambiar a Claro." })).toBeInTheDocument();
-    await user.click(screen.getByRole("button"));
-    expect(screen.getByRole("status")).toHaveTextContent("Tema en Claro");
+    renderToggle(<ThemeToggle variant="outline" size="sm" className="my-toggle" style={{ marginInlineStart: 12 }} isDisabled />);
+    const group = screen.getByRole("radiogroup");
+    expect(group).toHaveClass("my-toggle");
+    expect(group).toHaveAttribute("data-variant", "outline");
+    expect(group).toHaveAttribute("data-size", "sm");
+    expect(group).toHaveStyle({ marginInlineStart: "12px" });
+    expect(group.style.getPropertyValue("--gap")).toBe("calc(var(--spacing-xs) * 2)");
+    for (const radio of screen.getAllByRole("radio")) expect(radio).toBeDisabled();
+    await user.click(screen.getByRole("radio", { name: "Dark" }));
+    expect(screen.getByRole("radio", { name: "System" })).toBeChecked();
   });
 
-  it("does not overwrite a caller aria-label passed through rest", () => {
-    renderToggle(<ThemeToggle aria-label="Custom theme control" />);
-    expect(screen.getByRole("button", { name: "Custom theme control" })).toBeInTheDocument();
+  it("reads option, tooltip and announcement copy from host messages", async () => {
+    const user = userEvent.setup();
+    const tooltip = vi.fn<NonNullable<ThemeToggleProps["toggleLabel"]>>((current, target, labels) => `Tema: ${labels[current]}. Elegir ${labels[target]}.`);
+    renderToggle(<ThemeToggle aria-label="Tema" preferenceLabels={{ system: "Sistema", light: "Claro", dark: "Oscuro" }}
+      toggleLabel={tooltip} preferenceAnnouncement={(next, labels) => `Tema en ${labels[next]}`} />);
+    expect(screen.getByRole("radiogroup", { name: "Tema" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Sistema" })).toBeChecked();
+    expect(tooltip).toHaveBeenCalledWith("system", "dark", { system: "Sistema", light: "Claro", dark: "Oscuro" });
+    await user.click(screen.getByRole("radio", { name: "Oscuro" }));
+    expect(screen.getByRole("status")).toHaveTextContent("Tema en Oscuro");
+  });
+
+  it("provides the named option tooltip on hover", async () => {
+    const user = userEvent.setup();
+    renderToggle();
+    await user.hover(screen.getByRole("radio", { name: "Dark" }));
+    expect(await screen.findByRole("tooltip", {}, { timeout: 2500 })).toHaveTextContent("Dark");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+  });
+});
+
+describe("ThemeToggle controlled by its host", () => {
+  it("selects the supplied preference and reports a choice without a ThemeProvider", async () => {
+    const onPreferenceChange = vi.fn();
+    render(<ThemeToggle preference="dark" onPreferenceChange={onPreferenceChange} />);
+    expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
+    await userEvent.click(screen.getByRole("radio", { name: "Light" }));
+    expect(onPreferenceChange).toHaveBeenCalledExactlyOnceWith("light");
   });
 });

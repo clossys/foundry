@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.model.margin",
+  "agent": "director",
+  "ia": {
+    "l1": "advantage",
+    "l2": "advantage.model",
+    "order": 29
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What does one unit earn, and which lever moves it?",
+    "mustContain": [
+      {
+        "key": "Unit",
+        "hint": "the unit of economics"
+      },
+      {
+        "key": "Target",
+        "hint": "the target margin"
+      },
+      {
+        "key": "Lever",
+        "hint": "the lever that moves it most"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

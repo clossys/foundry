@@ -1,0 +1,1953 @@
+{
+  "package": "designer",
+  "fetchedWith": "shadcn CLI 4.23.0 registry endpoints and GitHub raw at pinned commits",
+  "registries": {
+    "shadcn": {
+      "namespace": "@shadcn",
+      "kind": "registry-json",
+      "style": "radix-nova",
+      "source": "https://ui.shadcn.com/r/styles/radix-nova/{name}.json",
+      "special": {
+        "neutral": "https://ui.shadcn.com/r/colors/neutral.json"
+      },
+      "version": "4.23.0",
+      "versionBasis": "registry endpoint used by shadcn CLI 4.23.0, served at fetchedAt; upstream source commit recorded in upstream",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE.md": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+      }
+    },
+    "shadcn-aria": {
+      "namespace": "@shadcn-aria",
+      "kind": "registry-json",
+      "style": "aria-nova",
+      "source": "https://ui.shadcn.com/r/styles/aria-nova/{name}.json",
+      "bareDependencies": "self",
+      "version": "4.23.0",
+      "versionBasis": "registry endpoint used by shadcn CLI 4.23.0 for the aria-nova style (components.json style aria-nova), served at the registry's fetchedAt; upstream source commit recorded in upstream",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE.md": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+      }
+    },
+    "magicui": {
+      "namespace": "@magicui",
+      "kind": "registry-json",
+      "source": "https://magicui.design/r/{name}.json",
+      "version": "efe76fc",
+      "versionBasis": "registry endpoint served at fetchedAt; byte-identical to the built registry JSON committed upstream at the commit recorded in upstream",
+      "upstream": "github.com/magicuidesign/magicui@efe76fc5755eca1142dd4f74c1d6f0ace2887e3c",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE.md": "https://raw.githubusercontent.com/magicuidesign/magicui/efe76fc5755eca1142dd4f74c1d6f0ace2887e3c/LICENSE.md"
+      }
+    },
+    "diceui": {
+      "namespace": "@diceui",
+      "kind": "registry-json",
+      "style": "new-york",
+      "source": "https://diceui.com/r/new-york/{name}.json",
+      "version": "04aad54",
+      "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
+      "upstream": "github.com/sadmann7/diceui@04aad54e7cb02f209b31f294cea020208a3deed6",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/sadmann7/diceui/04aad54e7cb02f209b31f294cea020208a3deed6/LICENSE"
+      }
+    },
+    "tailark-oss": {
+      "namespace": "@tailark-oss",
+      "kind": "github-files",
+      "style": "radix",
+      "source": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/registry/bases/radix/{path}",
+      "version": "8139698",
+      "versionBasis": "registry host did not resolve; source files from the MIT GitHub repository (radix base; mist kit, plus the dusk and veil kits for blocks with no mist equivalent that passes the consumer flavour) at a pinned commit",
+      "upstream": "github.com/tailark/blocks@8139698115c1341bfd2e3e286c04bb4d8146f472",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENCE.md": "https://raw.githubusercontent.com/tailark/blocks/8139698115c1341bfd2e3e286c04bb4d8146f472/LICENCE.md"
+      },
+      "items": {
+        "mist-hero-section-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/hero-section/one/hero-section.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-hero-section-1-header",
+            "@tailark-oss/mist-button",
+            "@tailark-oss/core-spotify",
+            "@tailark-oss/core-supabase",
+            "@tailark-oss/core-vercel"
+          ]
+        },
+        "mist-hero-section-1-header": {
+          "type": "registry:component",
+          "files": [
+            "mist/blocks/hero-section/one/header.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button",
+            "@tailark-oss/mist-logo"
+          ]
+        },
+        "mist-content-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/content/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button",
+            "@tailark-oss/mist-toggle-group"
+          ]
+        },
+        "mist-features-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/features/one/features.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-card",
+            "@tailark-oss/mist-features-1-table"
+          ]
+        },
+        "mist-features-1-table": {
+          "type": "registry:component",
+          "files": [
+            "mist/blocks/features/one/table.tsx"
+          ]
+        },
+        "mist-call-to-action-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/call-to-action/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button"
+          ]
+        },
+        "mist-testimonials-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/testimonials/one.tsx"
+          ]
+        },
+        "mist-logo-cloud-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/logo-cloud/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/core-hulu",
+            "@tailark-oss/core-spotify",
+            "@tailark-oss/core-supabase",
+            "@tailark-oss/core-vercel"
+          ]
+        },
+        "mist-team-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/team/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button"
+          ]
+        },
+        "mist-faqs-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/faqs/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-accordion"
+          ]
+        },
+        "mist-comparator-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/comparator/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button"
+          ]
+        },
+        "mist-pricing-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/pricing/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button",
+            "@tailark-oss/mist-card",
+            "@tailark-oss/core-spotify",
+            "@tailark-oss/core-supabase",
+            "@tailark-oss/core-vercel"
+          ]
+        },
+        "mist-stats-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/stats/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-card"
+          ]
+        },
+        "mist-contact-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/contact/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-button",
+            "@tailark-oss/mist-card",
+            "@tailark-oss/mist-input",
+            "@tailark-oss/mist-label",
+            "@tailark-oss/mist-select",
+            "@tailark-oss/mist-textarea"
+          ]
+        },
+        "mist-footer-1": {
+          "type": "registry:block",
+          "files": [
+            "mist/blocks/footer/one.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-logo"
+          ]
+        },
+        "mist-accordion": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/accordion.tsx"
+          ]
+        },
+        "mist-button": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/button.tsx"
+          ]
+        },
+        "mist-card": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/card.tsx"
+          ]
+        },
+        "mist-input": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/input.tsx"
+          ]
+        },
+        "mist-label": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/label.tsx"
+          ]
+        },
+        "mist-logo": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/logo.tsx"
+          ]
+        },
+        "mist-select": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/select.tsx"
+          ]
+        },
+        "mist-textarea": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/textarea.tsx"
+          ]
+        },
+        "mist-toggle": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/toggle.tsx"
+          ]
+        },
+        "mist-toggle-group": {
+          "type": "registry:ui",
+          "files": [
+            "mist/ui/toggle-group.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/mist-toggle"
+          ]
+        },
+        "dusk-hero-section-4": {
+          "type": "registry:block",
+          "files": [
+            "dusk/blocks/hero-section/four/hero-section.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/dusk-hero-section-4-header",
+            "@tailark-oss/dusk-button",
+            "@tailark-oss/dusk-kbd",
+            "@tailark-oss/dusk-hero-section-4-logo-cloud"
+          ]
+        },
+        "dusk-hero-section-4-header": {
+          "type": "registry:component",
+          "files": [
+            "dusk/blocks/hero-section/four/header.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/dusk-button",
+            "@tailark-oss/dusk-logo"
+          ]
+        },
+        "dusk-hero-section-4-logo-cloud": {
+          "type": "registry:component",
+          "files": [
+            "dusk/blocks/hero-section/four/logo-cloud.tsx"
+          ],
+          "registryDependencies": [
+            "@tailark-oss/core-spotify",
+            "@tailark-oss/core-vercel",
+            "@tailark-oss/core-supabase",
+            "@tailark-oss/core-hulu",
+            "@tailark-oss/core-bolt",
+            "@tailark-oss/core-beacon"
+          ]
+        },
+        "dusk-button": {
+          "type": "registry:ui",
+          "files": [
+            "dusk/ui/button.tsx"
+          ]
+        },
+        "dusk-kbd": {
+          "type": "registry:ui",
+          "files": [
+            "dusk/ui/kdb.tsx"
+          ]
+        },
+        "dusk-logo": {
+          "type": "registry:ui",
+          "files": [
+            "dusk/ui/logo.tsx"
+          ]
+        },
+        "veil-team-1": {
+          "type": "registry:block",
+          "files": [
+            "veil/blocks/team/one.tsx"
+          ]
+        }
+      },
+      "skipDependencies": {
+        "^@tailark-oss/core-": "third-party brand logo SVG (trademark artwork); not adopted, consumers supply their own logos"
+      }
+    },
+    "lucide": {
+      "namespace": "lucide",
+      "kind": "github-files",
+      "source": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/{path}",
+      "version": "1.65.0",
+      "versionBasis": "lucide release tag 1.65.0 (lucide-react 1.65.0 renders the same icon nodes)",
+      "upstream": "github.com/lucide-icons/lucide@1.65.0",
+      "license": "ISC",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/lucide-icons/lucide/1.65.0/LICENSE"
+      },
+      "itemFiles": [
+        "icons/{name}.svg"
+      ],
+      "itemType": "icon",
+      "aliases": {
+        "building-2": "building-complex"
+      },
+      "aliasNote": "lucide-react exports Building2 as a deprecated alias of building-complex; the alias target's SVG is stored under the mapped name"
+    },
+    "tailwindcss-typography": {
+      "namespace": "@tailwindcss",
+      "kind": "github-files",
+      "source": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/{path}",
+      "version": "0.5.20",
+      "versionBasis": "@tailwindcss/typography release tag v0.5.20; plugin source files from the MIT GitHub repository at the tagged commit",
+      "upstream": "github.com/tailwindlabs/tailwindcss-typography@e3714a3fe55551ce9d51eec4721183ed6b1d5cd1",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/tailwindlabs/tailwindcss-typography/e3714a3fe55551ce9d51eec4721183ed6b1d5cd1/LICENSE"
+      },
+      "items": {
+        "typography": {
+          "type": "registry:lib",
+          "files": [
+            "src/index.js",
+            "src/styles.js",
+            "src/utils.js"
+          ]
+        }
+      }
+    },
+    "fontsource": {
+      "namespace": "@fontsource-variable",
+      "kind": "github-files",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/{path}",
+      "version": "5.3.0",
+      "versionBasis": "npm package @fontsource-variable/inter-tight@5.3.0 (immutable npm version, served by jsDelivr); Fontsource self-hosts the Google Fonts family",
+      "upstream": "github.com/fontsource/font-files (fonts/variable/inter-tight, npm publishHash eb0ef990773f983b)",
+      "license": "OFL-1.1",
+      "licenseFiles": {
+        "LICENSE": "https://cdn.jsdelivr.net/npm/@fontsource-variable/inter-tight@5.3.0/LICENSE"
+      },
+      "items": {
+        "inter-tight": {
+          "type": "registry:font",
+          "files": [
+            "package.json",
+            "metadata.json"
+          ]
+        }
+      }
+    },
+    "fontsource-source-serif-4": {
+      "namespace": "@fontsource-variable",
+      "kind": "github-files",
+      "source": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/{path}",
+      "version": "5.3.1",
+      "versionBasis": "npm package @fontsource-variable/source-serif-4@5.3.1 (immutable npm version, served by jsDelivr); Fontsource self-hosts the Google Fonts family",
+      "upstream": "github.com/fontsource/font-files (fonts/variable/source-serif-4)",
+      "license": "OFL-1.1",
+      "licenseFiles": {
+        "LICENSE": "https://cdn.jsdelivr.net/npm/@fontsource-variable/source-serif-4@5.3.1/LICENSE"
+      },
+      "items": {
+        "source-serif-4": {
+          "type": "registry:font",
+          "files": [
+            "package.json",
+            "metadata.json"
+          ]
+        }
+      }
+    },
+    "assistant-ui": {
+      "namespace": "@assistant-ui",
+      "kind": "registry-json",
+      "source": "https://r.assistant-ui.com/{name}.json",
+      "version": "ff654d8",
+      "versionBasis": "registry endpoint served at fetchedAt; upstream HEAD commit at fetch time",
+      "upstream": "github.com/assistant-ui/assistant-ui@ff654d8156680b839774296ef644b57ab1078425",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/assistant-ui/assistant-ui/ff654d8156680b839774296ef644b57ab1078425/LICENSE"
+      }
+    },
+    "shadcn-app": {
+      "namespace": "@shadcn-app",
+      "kind": "github-files",
+      "source": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/{path}",
+      "version": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "versionBasis": "exact official repository source commit; application components and example source files, not generated registry JSON",
+      "upstream": "github.com/shadcn-ui/ui@b8d7baa15b1dca5716f13153e63795fc3d741f6b",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE.md": "https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/LICENSE.md"
+      },
+      "items": {
+        "block-viewer": {
+          "type": "application:component",
+          "files": [
+            "apps/v4/components/block-viewer.tsx"
+          ]
+        },
+        "skeleton-example": {
+          "type": "registry:example",
+          "files": [
+            "apps/v4/registry/bases/aria/examples/skeleton-example.tsx"
+          ]
+        },
+        "card-example": {
+          "type": "registry:example",
+          "files": [
+            "apps/v4/registry/bases/aria/examples/card-example.tsx"
+          ]
+        },
+        "studio-home-section-cards": {
+          "type": "application:component",
+          "files": [
+            "apps/v4/registry/bases/aria/blocks/dashboard-01/components/section-cards.tsx"
+          ]
+        }
+      }
+    },
+    "corsair-ui": {
+      "namespace": "@corsair-ui",
+      "kind": "registry-json",
+      "style": "default",
+      "source": "https://kevingirelli.github.io/corsair-ui/r/{name}.json",
+      "version": "ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "versionBasis": "Published registry JSON supplied as original raw bytes; every embedded source matches the immutable upstream commit recorded in upstream. The upstream registry/default sources use Radix Slot; default denotes that upstream source directory and native Radix engine family, not radix-nova.",
+      "upstream": "github.com/KevinGirelli/corsair-ui@ecfd4f59e03694ff35741096d5371e4fec3c80e2",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/KevinGirelli/corsair-ui/ecfd4f59e03694ff35741096d5371e4fec3c80e2/LICENSE"
+      }
+    },
+    "reactflow": {
+      "namespace": "@reactflow",
+      "kind": "registry-json",
+      "source": "https://ui.reactflow.dev/registry/{name}.json",
+      "version": "20261103",
+      "versionBasis": "React Flow UI registry endpoint (the URL `shadcn add https://ui.reactflow.dev/<name>` redirects to), served at fetchedAt; the registry publishes no version or source commit, so the version is the fetch date; licence file from github.com/xyflow/xyflow at the commit recorded in upstream",
+      "upstream": "github.com/xyflow/xyflow@1bc405cd113618c17fd181b931a9fe573bec9fee",
+      "license": "MIT",
+      "licenseFiles": {
+        "LICENSE": "https://raw.githubusercontent.com/xyflow/xyflow/1bc405cd113618c17fd181b931a9fe573bec9fee/LICENSE"
+      }
+    }
+  },
+  "direct": [
+    {
+      "registry": "lucide",
+      "name": "chevron-down",
+      "slots": [
+        "assets.icon-chevron-down"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-up",
+      "slots": [
+        "assets.icon-chevron-up"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-left",
+      "slots": [
+        "assets.icon-chevron-left"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "chevron-right",
+      "slots": [
+        "assets.icon-chevron-right"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "arrow-right",
+      "slots": [
+        "assets.icon-arrow-right"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "external-link",
+      "slots": [
+        "assets.icon-external-link"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "house",
+      "slots": [
+        "assets.icon-home"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "panel-left",
+      "slots": [
+        "assets.icon-panel-left"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "search",
+      "slots": [
+        "assets.icon-search"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "x",
+      "slots": [
+        "assets.icon-close"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "check",
+      "slots": [
+        "assets.icon-check"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "settings",
+      "slots": [
+        "assets.icon-settings"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "list",
+      "slots": [
+        "assets.icon-list-view"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "layout-grid",
+      "slots": [
+        "assets.icon-grid-view"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "sun",
+      "slots": [
+        "assets.icon-theme-light"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "moon",
+      "slots": [
+        "assets.icon-theme-dark"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "monitor",
+      "slots": [
+        "assets.icon-theme-system"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "circle-check",
+      "slots": [
+        "assets.icon-success"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "triangle-alert",
+      "slots": [
+        "assets.icon-warning"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "circle-x",
+      "slots": [
+        "assets.icon-danger"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "info",
+      "slots": [
+        "assets.icon-info"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "user",
+      "slots": [
+        "assets.icon-user"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "users",
+      "slots": [
+        "assets.icon-team"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "building-2",
+      "slots": [
+        "assets.icon-organization"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "globe",
+      "slots": [
+        "assets.icon-website"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "landmark",
+      "slots": [
+        "assets.icon-institution"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "book-open",
+      "slots": [
+        "assets.icon-guide"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "file-text",
+      "slots": [
+        "assets.icon-document"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "file-check",
+      "slots": [
+        "assets.icon-document-approved"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "folder",
+      "slots": [
+        "assets.icon-folder"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "calendar",
+      "slots": [
+        "assets.icon-date"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "clock",
+      "slots": [
+        "assets.icon-time"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "credit-card",
+      "slots": [
+        "assets.icon-payment"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "receipt",
+      "slots": [
+        "assets.icon-receipt"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "briefcase",
+      "slots": [
+        "assets.icon-business"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "shield",
+      "slots": [
+        "assets.icon-security"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "lock",
+      "slots": [
+        "assets.icon-locked"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "scale",
+      "slots": [
+        "assets.icon-legal"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "package",
+      "slots": [
+        "assets.icon-package"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "layers",
+      "slots": [
+        "assets.icon-layers"
+      ]
+    },
+    {
+      "registry": "lucide",
+      "name": "plug",
+      "slots": [
+        "assets.icon-integration"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "aspect-ratio",
+      "slots": [
+        "assets.image-ratio"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "grid-pattern",
+      "slots": [
+        "assets.pattern"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "button",
+      "slots": [
+        "components.button",
+        "components.link"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "toggle",
+      "slots": [
+        "components.toggle-button"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "command",
+      "slots": [
+        "components.command",
+        "frames.command"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "dropdown-menu",
+      "slots": [
+        "components.dropdown-menu"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "button-group",
+      "slots": [
+        "components.toolbar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "field",
+      "slots": [
+        "components.field",
+        "components.form",
+        "sections.form"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "input",
+      "slots": [
+        "components.text-field"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "input-group",
+      "slots": [
+        "components.search-field"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "checkbox",
+      "slots": [
+        "components.checkbox"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "radio-group",
+      "slots": [
+        "components.radio-group"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "switch",
+      "slots": [
+        "components.switch"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "select",
+      "slots": [
+        "components.select"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "combobox",
+      "slots": [
+        "components.combo-box"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "toggle-group",
+      "slots": [
+        "components.toggle-group"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "tags-input",
+      "slots": [
+        "components.tag-group"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "slider",
+      "slots": [
+        "components.slider"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "calendar",
+      "slots": [
+        "components.date-picker",
+        "components.calendar"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "color-picker",
+      "slots": [
+        "components.color-picker"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "file-upload",
+      "slots": [
+        "components.file-trigger"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "table",
+      "slots": [
+        "components.table",
+        "sections.data-table"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "item",
+      "slots": [
+        "components.grid-list",
+        "components.item",
+        "sections.resource-list",
+        "sections.task-list"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "file-tree",
+      "slots": [
+        "components.tree"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "progress",
+      "slots": [
+        "components.meter",
+        "components.progress-bar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "badge",
+      "slots": [
+        "components.badge"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "kbd",
+      "slots": [
+        "components.keyboard"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "avatar",
+      "slots": [
+        "components.avatar"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "media-player",
+      "slots": [
+        "components.media-player"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "chart",
+      "slots": [
+        "components.chart-bar",
+        "components.chart-line",
+        "components.chart-area",
+        "components.chart-sparkline"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "alert",
+      "slots": [
+        "components.banner",
+        "sections.notices"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sonner",
+      "slots": [
+        "components.toast"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "empty",
+      "slots": [
+        "components.empty",
+        "sections.empty-state",
+        "sections.error-state"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "status",
+      "slots": [
+        "components.status-mark"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "spinner",
+      "slots": [
+        "components.spinner"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "skeleton",
+      "slots": [
+        "components.skeleton"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "breadcrumb",
+      "slots": [
+        "components.breadcrumbs"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "tabs",
+      "slots": [
+        "components.tabs"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sidebar",
+      "slots": [
+        "components.navigation-tree",
+        "components.sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "card",
+      "slots": [
+        "components.card",
+        "sections.cards"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "separator",
+      "slots": [
+        "components.separator"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "collapsible",
+      "slots": [
+        "components.disclosure"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "resizable",
+      "slots": [
+        "components.resize-handle"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "scroll-area",
+      "slots": [
+        "components.scroll-area"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "dialog",
+      "slots": [
+        "components.dialog"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "popover",
+      "slots": [
+        "components.popover"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "tooltip",
+      "slots": [
+        "components.tooltip"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sheet",
+      "slots": [
+        "components.sheet",
+        "frames.inspector",
+        "frames.sheet"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "pagination",
+      "slots": [
+        "sections.pagination"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-hero-section-1",
+      "slots": [
+        "sections.hero"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-content-1",
+      "slots": [
+        "sections.content"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-features-1",
+      "slots": [
+        "sections.features"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-call-to-action-1",
+      "slots": [
+        "sections.call-to-action"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-testimonials-1",
+      "slots": [
+        "sections.testimonials"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-logo-cloud-1",
+      "slots": [
+        "sections.logo-cloud"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-team-1",
+      "slots": [
+        "sections.people"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "safari",
+      "slots": [
+        "sections.media"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "carousel",
+      "slots": [
+        "sections.gallery"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-faqs-1",
+      "slots": [
+        "sections.faq"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "timeline",
+      "slots": [
+        "sections.timeline"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-comparator-1",
+      "slots": [
+        "sections.comparison"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-pricing-1",
+      "slots": [
+        "sections.pricing"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-stats-1",
+      "slots": [
+        "sections.stats"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-contact-1",
+      "slots": [
+        "sections.form"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "stepper",
+      "slots": [
+        "sections.wizard"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "message",
+      "slots": [
+        "sections.chat"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "login-03",
+      "slots": [
+        "sections.sign-in-form",
+        "frames.auth-shell"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "scroll-spy",
+      "slots": [
+        "sections.table-of-contents"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "faceted",
+      "slots": [
+        "sections.filter-builder"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sidebar-07",
+      "slots": [
+        "frames.app-shell",
+        "frames.app-header",
+        "frames.app-sidebar"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "sidebar-15",
+      "slots": [
+        "frames.studio-shell"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-hero-section-1-header",
+      "slots": [
+        "frames.site-header"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "mist-footer-1",
+      "slots": [
+        "frames.site-footer"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "neutral",
+      "slots": [
+        "themes.background",
+        "themes.foreground",
+        "themes.card",
+        "themes.card-foreground",
+        "themes.popover",
+        "themes.popover-foreground",
+        "themes.primary",
+        "themes.primary-foreground",
+        "themes.secondary",
+        "themes.secondary-foreground",
+        "themes.accent",
+        "themes.accent-foreground",
+        "themes.destructive",
+        "themes.muted",
+        "themes.muted-foreground",
+        "themes.border",
+        "themes.input",
+        "themes.ring",
+        "themes.chart-1",
+        "themes.chart-2",
+        "themes.chart-3",
+        "themes.chart-4",
+        "themes.chart-5",
+        "themes.sidebar",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent",
+        "themes.sidebar-accent-foreground",
+        "themes.sidebar-border",
+        "themes.sidebar-ring",
+        "themes.radius"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "font-inter",
+      "slots": [
+        "themes.font-sans"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "font-jetbrains-mono",
+      "slots": [
+        "themes.font-mono"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "marquee",
+      "slots": [
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical"
+      ]
+    },
+    {
+      "registry": "magicui",
+      "name": "animated-shiny-text",
+      "slots": [
+        "themes.animate-shiny-text"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "textarea",
+      "slots": [
+        "components.textarea"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "accordion",
+      "slots": [
+        "components.accordion"
+      ]
+    },
+    {
+      "registry": "shadcn",
+      "name": "navigation-menu",
+      "slots": [
+        "components.navigation-menu"
+      ]
+    },
+    {
+      "registry": "diceui",
+      "name": "skip-nav",
+      "slots": [
+        "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "tailwindcss-typography",
+      "name": "typography",
+      "slots": [
+        "sections.legal-prose",
+        "sections.article",
+        "sections.sectioned-document"
+      ]
+    },
+    {
+      "registry": "fontsource",
+      "name": "inter-tight",
+      "slots": [
+        "themes.font-heading"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "avatar",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "badge",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "breadcrumb",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "button",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "card",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "checkbox",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "command",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dialog",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dropdown-menu",
+      "slots": [
+        "components.menu"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "field",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input-group",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "input",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "label",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "popover",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "scroll-area",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "select",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "separator",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sheet",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "skeleton",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "switch",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "table",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "tabs",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "textarea",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "tooltip",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-07",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-11",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sidebar-15",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "dashboard-01",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "empty",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "empty-example",
+      "slots": [
+        "sections.boundary-message"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "item",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "item-example",
+      "slots": [
+        "sections.activity-feed",
+        "sections.link-index",
+        "sections.specimen-asset-grid",
+        "sections.specimen-color-ramp",
+        "sections.specimen-icon-grid",
+        "sections.specimen-motion-player",
+        "sections.specimen-radius-ladder",
+        "sections.specimen-rich-passage",
+        "sections.specimen-spacing-ladder",
+        "sections.specimen-swatch",
+        "sections.specimen-type-ladder",
+        "sections.status-list"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-scroller-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "message-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "questionnaire-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sonner",
+      "slots": []
+    },
+    {
+      "registry": "shadcn",
+      "name": "navigation-menu-example",
+      "slots": [
+        "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sonner-example",
+      "slots": [
+        "frames.site-shell"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "slider",
+      "slots": [
+        "components.slider"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "radio-group",
+      "slots": [
+        "components.radio-group"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "progress",
+      "slots": [
+        "components.meter",
+        "components.progress-bar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "combobox",
+      "slots": [
+        "components.combo-box"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "button-group",
+      "slots": [
+        "components.toolbar"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "table-example",
+      "slots": [
+        "sections.access-matrix",
+        "sections.audit-log",
+        "sections.data-grid",
+        "sections.data-table",
+        "sections.specimen-copy-in-context",
+        "sections.specimen-frame-viewports",
+        "sections.specimen-page-viewports",
+        "sections.specimen-section-viewports",
+        "sections.specimen-variant-matrix"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "carousel-example",
+      "slots": [
+        "sections.gallery"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "alert-example",
+      "slots": [
+        "sections.notices"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "pagination-example",
+      "slots": [
+        "sections.pagination"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "command-example",
+      "slots": [
+        "frames.command"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "sheet-example",
+      "slots": [
+        "frames.inspector",
+        "frames.sheet"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "field-example",
+      "slots": [
+        "sections.settings"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "progress-example",
+      "slots": [
+        "sections.usage"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "aspect-ratio-example",
+      "slots": [
+        "sections.media"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "dusk-hero-section-4",
+      "slots": [
+        "sections.hero"
+      ]
+    },
+    {
+      "registry": "tailark-oss",
+      "name": "veil-team-1",
+      "slots": [
+        "sections.people"
+      ]
+    },
+    {
+      "registry": "fontsource-source-serif-4",
+      "name": "source-serif-4",
+      "slots": [
+        "themes.font-serif"
+      ]
+    },
+    {
+      "registry": "shadcn-aria",
+      "name": "separator-example",
+      "slots": [
+        "sections.content"
+      ]
+    },
+    {
+      "registry": "assistant-ui",
+      "name": "elements-comparison-card",
+      "slots": [
+        "sections.comparison"
+      ]
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "block-viewer",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "skeleton-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "card-example",
+      "slots": []
+    },
+    {
+      "registry": "shadcn-app",
+      "name": "studio-home-section-cards",
+      "slots": [
+        "sections.studio.home"
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "hero",
+      "slots": [
+        "sections.hero"
+      ]
+    },
+    {
+      "registry": "corsair-ui",
+      "name": "nav-link",
+      "slots": []
+    },
+    {
+      "registry": "reactflow",
+      "name": "base-node",
+      "slots": [
+        "components.flow.base-node",
+        "components.flow.node-header"
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "base-handle",
+      "slots": [
+        "components.flow.base-handle"
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "labeled-handle",
+      "slots": [
+        "components.flow.labeled-handle"
+      ]
+    },
+    {
+      "registry": "reactflow",
+      "name": "node-status-indicator",
+      "slots": [
+        "components.flow.node-status"
+      ]
+    }
+  ],
+  "skipped": [
+    {
+      "ref": "consumer-owned items",
+      "slots": [
+        "assets.lockup",
+        "assets.mark",
+        "assets.favicon",
+        "assets.app-icon",
+        "assets.image",
+        "assets.video",
+        "components.logo",
+        "sections.article",
+        "frames.document",
+        "themes.font-heading"
+      ],
+      "reason": "consumer-owned: authored in the consumer's own registry, not a Foundry reference"
+    },
+    {
+      "ref": "gap rows",
+      "slots": [
+        "components.number-field",
+        "components.date-field",
+        "components.chart-status-strip",
+        "components.chart-scatter",
+        "components.chart-heatmap",
+        "components.chart-range",
+        "components.chart-waterfall",
+        "sections.page-header",
+        "sections.steps",
+        "sections.status-list",
+        "sections.usage",
+        "sections.account-summary",
+        "sections.record-detail",
+        "sections.activity-feed",
+        "sections.audit-log",
+        "sections.newsletter",
+        "sections.settings",
+        "sections.link-index",
+        "sections.explorer",
+        "sections.consent"
+      ],
+      "reason": "gap: the map names no approved source yet"
+    },
+    {
+      "ref": "lucide-react",
+      "slots": [
+        "components.icon"
+      ],
+      "reason": "npm package; the mapped lucide icons are referenced individually"
+    },
+    {
+      "ref": "@tailwindcss/typography",
+      "slots": [
+        "components.semantic-content"
+      ],
+      "reason": "npm Tailwind plugin, not a registry item"
+    },
+    {
+      "ref": "@plate/editor-basic",
+      "slots": [
+        "components.rich-text"
+      ],
+      "reason": "registry @plate is not in this unit's registry list (shadcn, Magic UI, Tailark OSS, Dice UI, lucide)"
+    },
+    {
+      "ref": "@reui/data-grid",
+      "slots": [
+        "sections.data-grid"
+      ],
+      "reason": "registry @reui is approved-alternate only and not in this unit's registry list"
+    },
+    {
+      "ref": "unset",
+      "slots": [
+        "themes.font-serif"
+      ],
+      "reason": "Tailwind default or unset theme value, not a registry item"
+    },
+    {
+      "ref": "tailwind default",
+      "slots": [
+        "themes.tracking-tight",
+        "themes.spacing",
+        "themes.shadow"
+      ],
+      "reason": "Tailwind default or unset theme value, not a registry item"
+    }
+  ]
+}

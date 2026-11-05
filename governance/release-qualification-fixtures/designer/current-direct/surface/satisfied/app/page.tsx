@@ -1,4 +1,4 @@
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 import { ArticleBody, Hero, SectionFrame } from "@clossys/designer/blocks";
 
 export default function Page() {

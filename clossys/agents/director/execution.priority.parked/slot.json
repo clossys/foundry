@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.priority.parked",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.priority",
+    "order": 50
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What are we deliberately not doing now, and when do we look again?",
+    "mustContain": [
+      {
+        "key": "Parked",
+        "hint": "what is parked"
+      },
+      {
+        "key": "Why",
+        "hint": "why it waits"
+      },
+      {
+        "key": "Revisit",
+        "hint": "when or on what signal we look again"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

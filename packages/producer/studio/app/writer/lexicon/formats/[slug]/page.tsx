@@ -1,0 +1,28 @@
+// Installed by Publisher (clossys publish --install --next). Reinstall rather than editing this file.
+import { createElement } from "react";
+import { notFound } from "next/navigation";
+import { PublishedPage, publishedLeaf } from "../../../../../components/StudioInstalledPage";
+
+/** The leaves the record store held at install, from the content map's static params. */
+const leaves: { slug: string }[] = [
+  { slug: "lexicon.number-format" },
+  { slug: "lexicon.plural-rules" },
+  { slug: "lexicon.date-format" },
+  { slug: "lexicon.time-format" },
+  { slug: "lexicon.currency-format" },
+  { slug: "lexicon.unit-format" },
+  { slug: "lexicon.capitalization" },
+  { slug: "lexicon.punctuation" },
+  { slug: "lexicon.direction" },
+  { slug: "lexicon.expansion-budget" },
+];
+export const dynamicParams = true;
+export function generateStaticParams() {
+  return leaves;
+}
+
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  if (!(await publishedLeaf("writer-lexicon.formats", slug))) notFound();
+  return createElement(PublishedPage, { page: "writer-lexicon.formats", slug });
+}

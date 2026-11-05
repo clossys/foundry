@@ -1,0 +1,22 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "lexicon.time-format",
+  "agent": "writer",
+  "ia": {
+    "l0": "lexicon",
+    "l1": "lexicon.formats",
+    "l2": "formats-dates-and-times",
+    "order": 20
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "lexicon",
+    "source": "writer",
+    "recordKind": "format",
+    "valueType": "time-format"
+  },
+  "inputs": [
+    "focus.reach.geography"
+  ],
+  "uses": []
+}

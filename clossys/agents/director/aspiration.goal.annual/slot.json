@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "aspiration.goal.annual",
+  "agent": "director",
+  "ia": {
+    "l1": "aspiration",
+    "l2": "aspiration.goal",
+    "order": 13
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What must be true at the end of this year to stay on the long-term path?",
+    "mustContain": [
+      {
+        "key": "Target",
+        "hint": "the year-end target, with a number"
+      },
+      {
+        "key": "Date",
+        "hint": "the year-end date"
+      },
+      {
+        "key": "Path",
+        "hint": "how it steps toward the long-term target"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

@@ -1,0 +1,129 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.stats",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#StatGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.stats",
+      "source": "foundry",
+      "sourceAddress": "./blocks#StatGroup",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "stats": {
+      "composes": [],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/internal/section-content-gutter.ts",
+            "sha256": "330c44a01a51488d6781d166ea8f2ca1a6d5e4ad4f39c2a68b73b9a2cd1337e2"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/trend.ts",
+            "sha256": "4aa7cce812d8e68674aca3ccfe5580fa421661d7652e2c2d1eabfd69d1c1b466"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stat.tsx",
+            "sha256": "cd084edd1fa77d9da716cda0325b082fcc682b3bf17da8fe0b432197f0abbbe4"
+          },
+          {
+            "path": "packages/designer/src/blocks/StatGroup.tsx",
+            "sha256": "02fa44d96de9f536d64bd28291e6f8710f06aef340e5a747321277c60a1f7f43"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stats/parts.tsx",
+            "sha256": "79d199fdf761fa9604c48b8f954161df8d13b1c85c6d03c0978ceae882cfd2bf"
+          },
+          {
+            "path": "packages/designer/src/blocks/Stats/surface.tsx",
+            "sha256": "7699e1a08f448d47ff4a181aa4e291e6c321045fad77781cc22ae88ee2324ea8"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "StatGroup",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Each item renders one Stat (label, value, optional delta/trend and description); no sparkline or meter composition is claimed.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#StatGroup",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.grid": "./blocks#StatGroup.layout=grid",
+        "layout.row": "./blocks#StatGroup.layout=row"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.stats",
+      "slotMap": {
+        "stats": "./blocks#StatGroup.items"
+      },
+      "source": "foundry"
+    }
+  }
+}

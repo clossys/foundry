@@ -11,19 +11,9 @@
  * without updating both halves in lockstep — a silent drift here breaks
  * the other half's compile, not this package's own tests.
  *
- * No runtime schema library. That follows this repository's own
- * precedent, restated once more because it matters more here than
- * anywhere else: `@example/catalog`, `@example/policy`,
- * `@example/ui/tokens`, and `@clossys/writer/voice` all ship zero
- * runtime dependencies; only `@example/ui` carries any, and only
- * because it wraps React primitives it genuinely cannot hand-roll. This
- * package's entire job is dependency-free data shape validation — the
- * same job `@example/strategy`'s `validation.ts` and
- * `@clossys/writer/voice`'s `schema.ts` already do, in plain type
- * guards, for their own shapes. `schema.ts` follows that pattern closely
- * rather than pulling in a schema library (and its own major-version
- * churn, a real cost for a *public* package's consumers) for what one
- * file of type guards already covers.
+ * Types and structural shape validation remain data-only. The resolver
+ * uses pinned ICU parsing and formatting engines; those dependencies do
+ * not turn this module or schema.ts into a runtime schema framework.
  *
  * This file ships no example content of anyone's real copy. Every field
  * here is either required-and-generic or a structural placeholder —
@@ -73,7 +63,7 @@ export type CopyEntryId = string;
  */
 export type CopyLocale = string;
 
-/** Values permitted when a `CopyRef` fills a registered `{placeholder}`. */
+/** Serializable ICU argument values. Date/time arguments use finite epoch milliseconds. */
 export type CopyValue = string | number | boolean;
 
 /**
@@ -338,8 +328,14 @@ export interface CopyResolution {
   recordId: string;
   revision: string;
   locale: CopyLocale;
+  /** Canonical locale that supplied the text; populated by the built-in resolver. */
+  servedLocale?: CopyLocale;
+  /** Full shared fallback chain, including locales after the selected entry. */
+  chain?: CopyLocale[];
   source: CopySource;
   entryId: CopyEntryId;
+  /** Lifecycle marker on built-in preview drafts; approved results retain their legacy shape. */
+  status?: CopyEntryStatus;
   /** Present only when the resolved entry carries an approval record. */
   approval?: CopyResolutionApproval;
 }

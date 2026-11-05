@@ -14,14 +14,14 @@ const SCOPE = SCOPE_FILE.scope;
 const PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-24T12:00:00Z",
-  mandate: { problem: "FOUNDER-PROSE nobody understands what we sell", primaryProblemId: "strategist-unclear-direction", roles: ["writer", "designer", "strategist"] },
+  mandate: { problem: "FOUNDER-PROSE nobody understands what we sell", primaryProblemId: "director-unclear-direction", roles: ["writer", "designer", "director"] },
   whereWeAre: ["FOUNDER-PROSE status line"],
   recommendedNext: null,
   decisions: [],
   blockers: [],
   staffing: [
     { repository: "example-owner/site", roles: ["writer", "designer"] },
-    { repository: "example-owner/docs", roles: ["writer", "strategist"] },
+    { repository: "example-owner/docs", roles: ["writer", "director"] },
   ],
 };
 
@@ -35,13 +35,13 @@ describe("packageRequest", () => {
   it("names every staffed role's package once and the starter package, sorted", () => {
     expect(packageRequest(PLAN)).toEqual({
       state: "satisfied",
-      names: [`${SCOPE}/designer`, `${SCOPE}/starter`, `${SCOPE}/strategist`, `${SCOPE}/writer`],
+      names: [`${SCOPE}/designer`, `${SCOPE}/director`, `${SCOPE}/starter`, `${SCOPE}/writer`],
       findings: [],
     });
   });
 
   it("maps each role to its package through the catalogue, whose own scoped name agrees", () => {
-    for (const role of ["writer", "designer", "strategist"]) {
+    for (const role of ["writer", "designer", "director"]) {
       expect(CAPABILITY_CATALOGUE.roles.find((entry) => entry.role === role)?.scopeName).toBe(`${SCOPE}/${role}`);
     }
   });
@@ -60,7 +60,7 @@ describe("packageRequest", () => {
     const catalogue: CapabilityCatalogue = { ...CAPABILITY_CATALOGUE, roles: CAPABILITY_CATALOGUE.roles.map((entry) => ({ ...entry, scopeName: `@example/${entry.role}` })) };
     expect(packageRequest(PLAN, { catalogue, packageScope: { scope: "@example", registry: SCOPE_FILE.registry } })).toMatchObject({
       state: "satisfied",
-      names: ["@example/designer", "@example/starter", "@example/strategist", "@example/writer"],
+      names: ["@example/designer", "@example/director", "@example/starter", "@example/writer"],
     });
   });
 
@@ -83,7 +83,7 @@ describe("packageRequest", () => {
     const plan = {
       ...PLAN,
       mandate: { ...PLAN.mandate, roles: [...PLAN.mandate.roles, "integrator", "advisor"] },
-      staffing: [{ ...PLAN.staffing![0]!, roles: ["writer", "integrator", "designer"] }, { ...PLAN.staffing![1]!, roles: ["advisor", "strategist", "writer", "integrator"] }],
+      staffing: [{ ...PLAN.staffing![0]!, roles: ["writer", "integrator", "designer"] }, { ...PLAN.staffing![1]!, roles: ["advisor", "director", "writer", "integrator"] }],
     };
     const result = packageRequest(plan);
     expect(result.state).toBe("violated");
@@ -98,7 +98,7 @@ describe("packageRequest", () => {
 
   it("names no package for a hub-only role in the mandate, which is left unstaffed", () => {
     const plan = { ...PLAN, mandate: { ...PLAN.mandate, roles: [...PLAN.mandate.roles, "integrator", "advisor"] } };
-    expect(packageRequest(plan)).toEqual({ state: "satisfied", names: [`${SCOPE}/designer`, `${SCOPE}/starter`, `${SCOPE}/strategist`, `${SCOPE}/writer`], findings: [] });
+    expect(packageRequest(plan)).toEqual({ state: "satisfied", names: [`${SCOPE}/designer`, `${SCOPE}/director`, `${SCOPE}/starter`, `${SCOPE}/writer`], findings: [] });
   });
 
   it("refuses a catalogue entry whose scoped name is not in the packed scope", () => {

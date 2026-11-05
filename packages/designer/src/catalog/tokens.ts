@@ -184,7 +184,7 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
   {
     id: "--color-ink-muted", label: "Ink muted",
     l1: "color", l2: "ink", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
-    modes: "per-mode", reference: { light: { literal: "oklch(0.54 0 0)" }, dark: { literal: "oklch(0.66 0 0)" } },
+    modes: "per-mode", reference: { light: { literal: "oklch(0.54 0 0)" }, dark: { literal: "oklch(0.7763 0 0)" } },
     utilities: ["bg-ink-muted", "text-ink-muted", "border-ink-muted"],
     pairs: [
       { fg: "--color-ink-muted", bg: "--color-surface-raised", min: 3 },
@@ -270,6 +270,19 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
     utilities: ["bg-line-on-inverse", "text-line-on-inverse", "border-line-on-inverse"],
     pairs: [],
     sourceRows: [19], previousIds: [],
+  },
+  {
+    id: "--color-line-control", label: "Line control",
+    l1: "color", l2: "line", tier: "brand-required", lever: false, inTheme: true, lifecycle: "draft", ownerReview: "not-yet-reviewed",
+    modes: "per-mode", reference: { light: { literal: "oklch(0.62 0 0)" }, dark: { literal: "oklch(0.54 0 0)" } },
+    utilities: ["bg-line-control", "text-line-control", "border-line-control"],
+    pairs: [
+      { fg: "--color-line-control", bg: "--color-surface-base", min: 3 },
+      { fg: "--color-line-control", bg: "--color-surface-sunken", min: 3 },
+      { fg: "--color-line-control", bg: "--color-surface-raised", min: 3 },
+    ],
+    sourceRows: [], previousIds: [],
+    notes: ["Resting control boundary (VF-8); the base line stays a decorative hairline."],
   },
   {
     id: "--color-line-panel", label: "Line panel",
@@ -1642,7 +1655,7 @@ export const TOKEN_ENTRIES: readonly TokenEntry[] = [
   {
     id: "--ui-duration-fast", label: "Duration fast",
     l1: "motion", l2: "duration", tier: "fixed-standard", lever: false, inTheme: false, lifecycle: "draft", ownerReview: "not-yet-reviewed",
-    modes: "invariant", reference: { literal: "160ms" },
+    modes: "invariant", reference: { literal: "120ms" },
     utilities: [],
     pairs: [],
     sourceRows: [161, 165], previousIds: ["--ui-duration-overlay"],

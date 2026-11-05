@@ -1,6 +1,7 @@
+import { SemanticContent } from "../components/SemanticContent.js";
 import type { ReactNode } from "react";
-import { Avatar } from "../atoms/Avatar.server.js";
-import { cx } from "../atoms/internal/cx.js";
+import { Avatar } from "../components/Avatar.server.js";
+import { cx } from "../components/internal/cx.js";
 import type { TestimonialBaseProps, TestimonialProps } from "./Testimonial.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 
@@ -23,12 +24,12 @@ export function renderTestimonial(
       <blockquote className={cx("text-blockquote font-display", colors.primary)}>{quote}</blockquote>
       <figcaption className="flex items-center gap-sm">
         {avatar}
-        <div className="flex flex-col">
-          <span className={cx("text-body font-body font-medium", colors.primary)}>{attributorName}</span>
+        <SemanticContent as="div" className="flex flex-col">
+          <SemanticContent as="span" className={cx("text-body font-body font-medium", colors.primary)}>{attributorName}</SemanticContent>
           {attributorRole ? (
-            <span className={cx("text-body-s", colors.secondary)}>{attributorRole}</span>
+            <SemanticContent as="span" className={cx("text-body-s", colors.secondary)}>{attributorRole}</SemanticContent>
           ) : null}
-        </div>
+        </SemanticContent>
       </figcaption>
     </figure>
   );

@@ -59,7 +59,7 @@ independent evidence of accuracy (review #1413, reviewer B's N3). What the
 scores actually rest on: `mustIncludeRoles` is hand-authored, anchored to
 `docs/contracts/kit-presets.json` for the four preset scenarios and to
 reasoned `needs` dependency pull-ins for the rest (for example, Designer
-alone must pull in Strategist) — chosen independently of what the code
+alone must pull in Director) — chosen independently of what the code
 under test happens to output. `sequence`, by contrast, is NOT independent:
 each fixture's `sequence` array is a snapshot of the engine's own output at
 authoring time, so a sequence check only proves the order hasn't drifted,

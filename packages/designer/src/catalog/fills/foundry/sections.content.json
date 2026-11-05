@@ -1,0 +1,130 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/sections.content",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "adopted"
+      ],
+      "pin": {
+        "export": "./blocks#ContentSection",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "sections.content",
+      "source": "foundry",
+      "sourceAddress": "./blocks#ContentSection",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "sections": {
+    "content": {
+      "composes": [],
+      "configs": {},
+      "consumption": {
+        "scanStatus": "lower-bound",
+        "scannedComposes": [],
+        "scannedReads": {
+          "assets": [],
+          "components": [],
+          "themes": []
+        },
+        "sourceFiles": [
+          {
+            "path": "packages/designer/src/blocks/ContentSection.tsx",
+            "sha256": "6a90522c76468a0853eeb005662ebe62921ee9d2bf476cefc128b36cc8f4593a"
+          },
+          {
+            "path": "packages/designer/src/blocks/internal/block-vars.ts",
+            "sha256": "33e9c7bd8700ff201b8ba138ca4f10dd7de910a23d260019e676470b918cceb5"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+          },
+          {
+            "path": "packages/designer/src/blocks/SectionIntro.tsx",
+            "sha256": "5abb7ce8e5f7e13607b2065acbcb8048d7879e24a0d1f6b33fc4e5aafd6c2664"
+          },
+          {
+            "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
+            "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+          },
+          {
+            "path": "packages/designer/src/components/internal/ui-vars.ts",
+            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+          },
+          {
+            "path": "packages/designer/src/runtime/component-leaf.tsx",
+            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+          }
+        ],
+        "unresolved": [
+          {
+            "code": "DF2",
+            "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 2
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/components/internal/cx.ts",
+            "line": 80
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/component-leaf.tsx",
+            "line": 4
+          }
+        ]
+      },
+      "impl": {
+        "export": "ContentSection",
+        "kind": "package",
+        "module": "@clossys/designer/blocks"
+      },
+      "license": "MIT",
+      "notes": [
+        "Header is spread across heading, eyebrow, description and actions; there is no single section-header region prop. Source uses SectionIntro rather than the frozen section-header fill.",
+        "Source-only import and token-read measurements are lower bounds; shared anatomy, accessibility, contrast and consumer runtime conformance remain unmeasured. Content bindings describe host adaptation points, not type-equivalent converters."
+      ],
+      "parts": [],
+      "pin": {
+        "export": "./blocks#ContentSection",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "layout.split-end": "./blocks#ContentSection.layout=split-end",
+        "layout.split-start": "./blocks#ContentSection.layout=split-start",
+        "layout.stacked": "./blocks#ContentSection.layout=stacked"
+      },
+      "reads": {
+        "assets": [],
+        "themes": []
+      },
+      "slot": "sections.content",
+      "slotMap": {
+        "aside": "./blocks#ContentSection.aside",
+        "body": "./blocks#ContentSection.children",
+        "footnote": "./blocks#ContentSection.footnote",
+        "header": "./blocks#ContentSection.heading,eyebrow,description,actions",
+        "media": "./blocks#ContentSection.media"
+      },
+      "source": "foundry"
+    }
+  }
+}

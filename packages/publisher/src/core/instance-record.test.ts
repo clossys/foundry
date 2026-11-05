@@ -4,7 +4,7 @@ import { checkImportPurity } from "../../../../scripts/lib/import-purity.mjs";
 import type { InstanceRecord } from "./instance-record.js";
 const base = (): InstanceRecord => ({
   instanceId: "standard.home", label: "Home", path: "/", surface: "site",
-  frameBlockRef: { blockId: "SiteFrame", configId: "site" }, viewBlockRef: { blockId: "LandingView", configId: "home" },
+  frameBlockRef: { blockId: "SiteFrame", configId: "site" }, viewBlockRef: { blockId: "SectionedView", configId: "home" },
   context: { medium: "web" }, packIds: ["pack.example"],
 });
 const collection = () => ({ instances: [base()], packs: [{ packId: "pack.example", label: "Example", instanceIds: ["standard.home"] }] });
@@ -21,7 +21,7 @@ describe("Instance and Pack record contracts", () => {
     expect(base().frameBlockRef).toEqual({ blockId: "SiteFrame", configId: "site" });
   });
   it("accepts each named built-in View under its declared site pairing", () => {
-    for (const blockId of ["AuthView", "CaptureView", "CollectionView", "ContactView", "DocumentView", "HeroView", "LandingView", "LegalView", "MarketingView", "SectionedView", "StatusView"]) {
+    for (const blockId of ["AuthView", "CaptureView", "CollectionView", "ContactView", "DocumentView", "HeroView", "LegalView", "MarketingView", "SectionedView", "StatusView"]) {
       expect(core.validateInstanceRecord({ ...base(), frameBlockRef: { blockId: "SiteFrame", configId: blockId === "AuthView" ? "front-door" : "site" }, viewBlockRef: { blockId, configId: "example" } })).toEqual({ status: "valid" });
     }
   });
@@ -96,7 +96,7 @@ describe("Instance and Pack record contracts", () => {
   });
   it("pins the hand-selected accepted set against near misses through the real validator", () => {
     const cases: [unknown, boolean][] = [
-      ["LandingView", true], ["MarketingView", true], ["StatusView", true], ["LandingViews", false], ["landingView", false],
+      ["SectionedView", true], ["LandingView", false], ["MarketingView", true], ["StatusView", true], ["LandingViews", false], ["landingView", false],
       ["Landingview", false], ["Landing-View", false], ["Landing_View", false], ["LаndingView", false], ["ErrorView", false],
       ["BoundaryView", false], ["", false], [null, false], [[], false], [{ blockId: "LandingView" }, false], [1, false],
     ];

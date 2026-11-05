@@ -105,7 +105,9 @@ describe("PackReviewView", () => {
 
   it("holds the page to the form measure token", () => {
     const { container } = render(<PackReviewView {...props()} />);
-    expect((container.querySelector("main") as HTMLElement).style.maxWidth).toBe("var(--ui-width-form-max, none)");
+    const main = container.querySelector("main") as HTMLElement;
+    expect(main).toHaveClass("max-w-[var(--ui-width-form-max,none)]");
+    expect(main.style.maxWidth).toBe("");
   });
 
   it("lists each page with its badge and links each page and each forced state", () => {

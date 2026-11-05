@@ -442,6 +442,27 @@
         "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
         "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
       }
+    },
+    "@clossys/producer": {
+      "packageKey": "producer",
+      "recordStem": "clossys-producer",
+      "packageDir": "packages/producer",
+      "adapterPath": "governance/release-qualification-adapters/producer/current-direct.json",
+      "fixturePath": "governance/release-qualification-fixtures/producer/current-direct",
+      "archetypes": {
+        "current-direct": { "status": "required" },
+        "prior-minor": { "status": "unsupported", "reason": "No supported prior-minor consumer line is declared." },
+        "oldest-supported": { "status": "unsupported", "reason": "No oldest supported migration line is declared." },
+        "control-plane": { "status": "unsupported", "reason": "Consumer agent and deployment topology remains consumer-owned." }
+      },
+      "dimensions": {
+        "position": { "status": "unsupported", "reason": "A disposable consumer makes no installed position claim." },
+        "completion": { "status": "unsupported", "reason": "Slot model validation is not consumer completion." },
+        "rollback": { "status": "required" },
+        "duplicate": { "status": "unsupported", "reason": "CLI cases do not establish npm graph deduplication of first-party dependencies." },
+        "cadence": { "status": "unsupported", "reason": "Cadence is not established by a disposable installation canary." },
+        "closeWindow": { "status": "unsupported", "reason": "Close-window evidence is not established by a disposable installation canary." }
+      }
     }
   }
 }

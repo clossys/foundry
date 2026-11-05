@@ -16,10 +16,16 @@ describe("view link region heading references", () => {
     expect(regions).toHaveLength(2);
     const ids = regions.map(region => {
       const heading = within(region).getByRole("heading", { level: 2, name: "Next destinations" });
-      expect(heading.id).not.toBe("");
-      expect(region).toHaveAttribute("aria-labelledby", heading.id);
+      const targetId = region.getAttribute("aria-labelledby")!;
+      const target = region.ownerDocument.getElementById(targetId);
+      expect(targetId).not.toBe("");
+      expect(target).toContainElement(heading);
+      expect(target?.textContent).toBe("Next destinations");
+      expect(heading).toHaveClass("text-h3", "font-display", "text-ink-primary");
+      // The label reference names the visible h2 itself: the id sits on the heading, not on a wrapper block.
+      expect(target).toBe(heading);
       expect(region).not.toHaveAttribute("aria-label");
-      return heading.id;
+      return targetId;
     });
     expect(new Set(ids).size).toBe(2);
   });
@@ -27,12 +33,16 @@ describe("view link region heading references", () => {
     const html = renderToStaticMarkup(pair());
     expect(renderToStaticMarkup(pair())).toBe(html);
     const doc = new JSDOM(html).window.document;
-    const regions = [...doc.querySelectorAll("section")];
+    // Each view is one Section root (its page column); the link regions are the sections inside them.
+    const columns = [...doc.querySelectorAll("section[data-designer-section-frame]")];
+    expect(columns).toHaveLength(2);
+    const regions = [...doc.querySelectorAll("section:not([data-designer-section-frame])")];
     expect(regions).toHaveLength(2);
+    regions.forEach((region, index) => expect(region.parentElement?.closest("section")).toBe(columns[index]));
     const ids = regions.map(region => {
       const id = region.getAttribute("aria-labelledby");
       expect(id).toBeTruthy();
-      expect(region.querySelector("h2")?.id).toBe(id);
+      expect(doc.getElementById(id!)?.contains(region.querySelector("h2"))).toBe(true);
       expect(doc.getElementById(id!)?.textContent).toBe("Next destinations");
       expect(region.hasAttribute("aria-label")).toBe(false);
       return id;

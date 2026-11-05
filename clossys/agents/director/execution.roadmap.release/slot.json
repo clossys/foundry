@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "execution.roadmap.release",
+  "agent": "director",
+  "ia": {
+    "l1": "execution",
+    "l2": "execution.roadmap",
+    "order": 52
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What do we release next, to whom, and through which channel?",
+    "mustContain": [
+      {
+        "key": "Release",
+        "hint": "what ships"
+      },
+      {
+        "key": "Audience",
+        "hint": "who gets it"
+      },
+      {
+        "key": "Channel",
+        "hint": "where it is released"
+      }
+    ]
+  },
+  "inputs": [
+    "focus.lifecycle.acquisition"
+  ],
+  "uses": []
+}

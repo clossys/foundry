@@ -1,0 +1,35 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.visual.style",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.visual",
+    "order": 36
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What should our look feel like, what is its signature, and what do we avoid?",
+    "mustContain": [
+      {
+        "key": "Feel",
+        "hint": "the feeling, in words"
+      },
+      {
+        "key": "Signature",
+        "hint": "the one recognisable move"
+      },
+      {
+        "key": "Avoid",
+        "hint": "looks we avoid"
+      }
+    ]
+  },
+  "inputs": [
+    "identity.brand.essence",
+    "identity.verbal.voice"
+  ],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

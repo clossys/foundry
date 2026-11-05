@@ -1,0 +1,67 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.producer.team-strip",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.producer",
+    "l2": "producer-pipeline",
+    "order": 265
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.producer.team-strip",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "The system's team: one stock outline Item per seat holder in one stock Card, with a stock Avatar initial, its name, one line on what it does, and stock Badges for its seat kinds (You, AI, Code), AI tier and step count. Each Item links to its lane on the workflow map (?seat=<id>); the highlighted holder shows the stock muted Item.",
+    "inputs": [
+      {
+        "name": "team",
+        "kind": "data",
+        "required": true,
+        "description": "The resolved team label and one card per roster entry (plus Unassigned while a step has no holder): id, name, initial, seat-kind labels, tier label, one-line description, step-count label, lane link, link label and whether its lane is highlighted."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "avatar",
+        "version": "4.23.0",
+        "hash": "sha256:32dcb71ec3c8218efde9067e5332f63cb3bc6d5ad4abc6a490db26e04ecd2f4a",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/avatar.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "badge",
+        "version": "4.23.0",
+        "hash": "sha256:8baa90939e0ced544f4523d00142ce28b506f9105387cd16ab163b5fec361a95",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/badge.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "item",
+        "version": "4.23.0",
+        "hash": "sha256:d77118866e85aa15a62c24e3475ad410f23a7851c46932d92a73f8c493cf53f9",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/item.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [],
+  "uses": [
+    "components.avatar",
+    "components.badge",
+    "components.card",
+    "components.item"
+  ]
+}

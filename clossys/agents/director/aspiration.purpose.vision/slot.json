@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "aspiration.purpose.vision",
+  "agent": "director",
+  "ia": {
+    "l1": "aspiration",
+    "l2": "aspiration.purpose",
+    "order": 9
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What does the world look like when we have succeeded, and by when?",
+    "mustContain": [
+      {
+        "key": "Picture",
+        "hint": "the future state, concrete"
+      },
+      {
+        "key": "Horizon",
+        "hint": "the year it describes"
+      },
+      {
+        "key": "Role",
+        "hint": "our part in that picture"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

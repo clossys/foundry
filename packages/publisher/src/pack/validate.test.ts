@@ -9,7 +9,7 @@ const LATER = "2026-09-22T01:00:00.000Z";
 function item(overrides: Partial<PackItem> & Pick<PackItem, "id">): PackItem {
   return {
     layer: "foundation",
-    owner: "strategist",
+    owner: "director",
     visibility: "internal",
     needs: [],
     status: "found",

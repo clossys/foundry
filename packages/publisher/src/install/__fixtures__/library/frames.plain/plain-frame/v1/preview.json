@@ -1,0 +1,11 @@
+{
+  "fixtures": {
+    "title": {
+      "$copy": "frame.title"
+    }
+  },
+  "copy": {
+    "frame.title": "Sample site"
+  },
+  "container": "page"
+}

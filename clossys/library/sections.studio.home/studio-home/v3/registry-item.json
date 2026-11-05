@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-home",
+  "type": "registry:block",
+  "title": "Studio Home",
+  "description": "Home: the workspace agents as cards with their purpose, cell counts and a link to each library, and the owner's open requests when the Needs module is open.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-home/index.tsx"
+    }
+  ]
+}

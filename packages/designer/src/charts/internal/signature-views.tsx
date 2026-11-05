@@ -285,6 +285,7 @@ export function AreaView({
                       : undefined
                   }
                 />
+                {active !== null ? <ChartFrame.Tooltip plot={plot} x={geometry.px[active]!} y={plot.y} text={label} /> : null}
               </>
             ) : null}
           </>
@@ -559,6 +560,9 @@ export function HeatmapView({
                 ))}
               </g>
             ) : null}
+            {!loading && !empty && active !== null ? <ChartFrame.Tooltip plot={plot}
+              x={plot.x + ((active % columns.length) * plot.width) / columns.length}
+              y={plot.y} text={name(active)} /> : null}
           </>
         )}
       </ChartFrame>
@@ -801,6 +805,7 @@ export function StatusView({
                     }
                   />
                 ))}
+                {active !== null ? <ChartFrame.Tooltip plot={plot} x={scale(coordinate(intervals[active]!.from))} y={plot.y} text={name(active)} /> : null}
               </>
             ) : null}
           </>

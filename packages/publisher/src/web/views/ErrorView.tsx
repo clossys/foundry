@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms/server";
+import { mergeUiClasses } from "@clossys/designer/components/server";
 import { EmptyState } from "@clossys/designer/blocks/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
@@ -35,7 +35,7 @@ export interface ErrorViewProps extends Omit<HTMLAttributes<HTMLDivElement>, "ti
    */
   description?: ReactNode;
   /**
-   * Slot for the ONE primary recovery control — typically a `Button` atom
+   * Slot for the ONE primary recovery control — typically a `Button` component
    * ("Go home", "Try again"). Passed straight through to `EmptyState`. It
    * stays a `ReactNode` because template bindings fill it with text; put a
    * secondary destination in `description` as a text link. Optional: a 403

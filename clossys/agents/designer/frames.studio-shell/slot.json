@@ -1,0 +1,103 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.studio-shell",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.extensions",
+    "l2": "extensions",
+    "order": 239
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "frames.studio-shell",
+    "package": "producer",
+    "layer": "frames",
+    "purpose": "The Studio app shell, shadcn sidebar-15: the left sidebar holds the N1 navigation (sidebar-07 content) and the right sidebar holds the chat. The header's far-left icon toggles the left sidebar; its far-right icon, after a vertical separator, toggles the chat; both open states persist in cookies. Every other header icon opens one popover from the page manifest (navigator, checks, versions, copy link, request change); Esc and an outside click close it, ?p= keeps it open across reloads, and each is a command menu entry with its shortcut. Below 768px both sidebars are sheets. #studio-main is the page scroller.",
+    "inputs": [
+      {
+        "name": "navigation",
+        "kind": "data",
+        "required": true,
+        "description": "Rail navigation projected from the Studio map."
+      },
+      {
+        "name": "commands",
+        "kind": "data",
+        "required": true,
+        "description": "Command menu groups projected from the Studio map: every page."
+      },
+      {
+        "name": "breadcrumbs",
+        "kind": "data",
+        "required": true,
+        "description": "Ancestry of the open page projected from the Studio map."
+      },
+      {
+        "name": "popovers",
+        "kind": "data",
+        "required": false,
+        "description": "The manifest modules then actions, one header icon each: a module popover places its pinned module section; an action popover shows the link or prompt it copies."
+      },
+      {
+        "name": "body",
+        "kind": "prop",
+        "required": false,
+        "description": "plain stacks the sections; detail keeps the first section as the head."
+      },
+      {
+        "name": "head",
+        "kind": "prop",
+        "required": false,
+        "description": "The first placed section of a detail body, above the rest."
+      }
+    ],
+    "limits": {
+      "scroller": "#studio-main",
+      "chatWidth": "16rem",
+      "chatInlineAt": 1024,
+      "sheetBelow": 768,
+      "popoverParam": "p",
+      "leftCookie": "sidebar_state",
+      "chatCookie": "chat_state"
+    },
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "sidebar-15",
+        "version": "4.23.0",
+        "hash": "sha256:de94990d0f3ca773db4084e0adda5b96cde677015625c313285a79df960e93e4",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-15.json"
+      },
+      {
+        "registry": "shadcn",
+        "item": "sidebar-07",
+        "version": "4.23.0",
+        "hash": "sha256:cb3b5a933d64347eb59403336ca1be71d991fcd50921142e7ed4fe974afe7d60",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/sidebar-07.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "flow"
+  },
+  "inputs": [],
+  "uses": [
+    "assets.icon-chevron-right",
+    "assets.icon-theme-dark",
+    "assets.icon-theme-light",
+    "components.avatar",
+    "components.button",
+    "components.card",
+    "components.command",
+    "components.dropdown-menu",
+    "components.empty",
+    "components.popover",
+    "components.scroll-area",
+    "components.separator",
+    "components.sheet",
+    "components.sidebar",
+    "components.skeleton",
+    "components.tooltip"
+  ]
+}

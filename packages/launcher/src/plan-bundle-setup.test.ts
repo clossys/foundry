@@ -251,7 +251,7 @@ describe("planApplyBundle: the adoption pass of a setup set", () => {
 
   it("does not adopt a skill the manifest does not record, or records at other bytes", () => {
     const path = ".agents/skills/clossys-writer/SKILL.md";
-    for (const skillsManifest of [null, [{ name: "writer", sha256: "0".repeat(64) }], [{ name: "strategist", sha256: sha(OLD_WRITER).slice(7) }]]) {
+    for (const skillsManifest of [null, [{ name: "writer", sha256: "0".repeat(64) }], [{ name: "director", sha256: sha(OLD_WRITER).slice(7) }]]) {
       const set = only(setupInputs(setupObservation({ files: [{ path: "package-lock.json", sha256: sha("lock") }, { path, sha256: sha(OLD_WRITER) }], skillsManifest })));
       expect(set.refused).toContainEqual({ path, reason: "unowned-existing", item: "skills" });
       expect(fileAt(set, path)).toBeUndefined();

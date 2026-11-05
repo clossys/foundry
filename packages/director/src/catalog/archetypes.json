@@ -1,0 +1,47 @@
+{
+  "default": [
+    "context.customer.need",
+    "context.competition.alternative",
+    "aspiration.purpose.mission",
+    "aspiration.purpose.vision",
+    "aspiration.goal.long-term",
+    "focus.category.definition",
+    "focus.segment.core",
+    "focus.offer.included",
+    "focus.offer.excluded",
+    "focus.reach.channel",
+    "focus.lifecycle.acquisition",
+    "advantage.proposition.promise",
+    "advantage.proposition.proof",
+    "advantage.defensibility.differentiator",
+    "advantage.model.pricing",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.naming.name",
+    "identity.verbal.narrative",
+    "identity.verbal.voice",
+    "identity.visual.style",
+    "capability.operation.delivery",
+    "execution.priority.bet",
+    "execution.measure.north-star"
+  ],
+  "extras": {
+    "product-saas": [
+      "focus.lifecycle.retention",
+      "capability.operation.technology",
+      "execution.measure.driver"
+    ],
+    "services": [
+      "capability.team.role",
+      "capability.competency.critical",
+      "advantage.model.margin"
+    ],
+    "marketplace": [
+      "focus.segment.next",
+      "focus.lifecycle.retention",
+      "advantage.defensibility.moat",
+      "execution.measure.driver",
+      "context.customer.buying"
+    ]
+  }
+}

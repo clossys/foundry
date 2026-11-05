@@ -222,3 +222,19 @@ describe("Matrix", () => {
     expect(container.querySelector("[data-comparison-arrow]")).toBeNull();
   });
 });
+
+it("S4-6 preserves the sides root and host identity without an overall title or band", () => {
+  let clicks = 0;
+  const { container } = render(<Matrix sides={SIDES} id="matrix" dir="rtl" data-host="yes" className="gap-xl" style={{ marginTop: 7 }} onClick={() => clicks++} />);
+  const root = container.firstElementChild as HTMLElement;
+  expect(root.tagName).toBe("DIV");
+  expect(root).toHaveAttribute("id", "matrix");
+  expect(root).toHaveAttribute("dir", "rtl");
+  expect(root).toHaveAttribute("data-host", "yes");
+  expect(root).toHaveClass("gap-xl");
+  expect(root.style.marginTop).toBe("7px");
+  expect(root.querySelectorAll("h1,h2,h3,h4,h5,h6")).toHaveLength(2);
+  expect(root.querySelectorAll("[data-designer-section-frame]")).toHaveLength(0);
+  expect(root.querySelectorAll("#matrix")).toHaveLength(0);
+  root.click(); expect(clicks).toBe(1);
+});

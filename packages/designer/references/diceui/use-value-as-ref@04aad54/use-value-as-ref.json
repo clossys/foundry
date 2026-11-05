@@ -1,0 +1,15 @@
+{
+  "name": "use-value-as-ref",
+  "type": "registry:hook",
+  "files": [
+    {
+      "path": "hooks/use-value-as-ref.ts",
+      "type": "registry:hook",
+      "content": "import { useLayoutEffect } from \"radix-ui/internal\";\nimport * as React from \"react\";\n\nfunction useValueAsRef<T>(value: T) {\n  const ref = React.useRef<T>(value);\n\n  useLayoutEffect(() => {\n    ref.current = value;\n  });\n\n  return ref;\n}\n\nexport { useValueAsRef };\n",
+      "target": ""
+    }
+  ],
+  "dependencies": [
+    "radix-ui"
+  ]
+}

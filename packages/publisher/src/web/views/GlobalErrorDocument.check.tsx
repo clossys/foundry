@@ -6,7 +6,7 @@
  * runtime.
  */
 import type { CopyResolver } from "@clossys/writer";
-import type { SiteShellInput } from "../frame/types.js";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import type { AssetResolver } from "../types.js";
 import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 
@@ -16,9 +16,10 @@ declare const shell: SiteShellInput;
 
 const head = {
   lang: "en",
+  localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] },
   documentTitle: { page: "Something went wrong", brand: "Example Studio" },
   icon: { href: "/icon.svg" },
-} as const;
+};
 
 // The framed shape: SiteFrame plus StatusView props.
 export const framed = (
@@ -36,6 +37,12 @@ export const framed = (
 
 // The deprecated ErrorView shape still compiles for one release.
 export const errorViewShape = <GlobalErrorDocument {...head} status={500} title="Something went wrong" />;
+
+const { localeManifest: _localeManifest, ...headWithoutManifest } = head;
+// @ts-expect-error the deprecated shape also requires Writer's locale declarations
+export const errorViewWithoutManifest = <GlobalErrorDocument {...headWithoutManifest} status={500} title="Something went wrong" />;
+// @ts-expect-error the framed shape requires Writer's locale declarations
+export const framedWithoutManifest = <GlobalErrorDocument {...headWithoutManifest} shell={shell} resolveCopy={resolveCopy} resolveAsset={resolveAsset} status="500" />;
 
 // The two shapes do not mix: `title` belongs to the ErrorView shape.
 // @ts-expect-error title is not a framed prop

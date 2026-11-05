@@ -1,0 +1,12 @@
+import { RegisteredRoutePage } from "@clossys/publisher/web";
+import { DataTable } from "@clossys/designer/blocks";
+import { registry, useRuntime } from "./runtime";
+
+export default function Page() {
+  return (
+    <div>
+      <RegisteredRoutePage registry={registry} routeId="instances" useRuntime={useRuntime} />
+      <DataTable rows={[]} />
+    </div>
+  );
+}

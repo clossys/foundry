@@ -1,0 +1,63 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.dialog",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.containment",
+    "l2": "containment-overlays",
+    "order": 155
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Dialog",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "role.modal",
+        "dismissable"
+      ]
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.shadow",
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono",
+        "themes.ring",
+        "themes.sidebar-ring"
+      ],
+      "assets": [
+        "assets.icon-close"
+      ]
+    },
+    "apg": "dialog-modal"
+  },
+  "inputs": [],
+  "uses": []
+}

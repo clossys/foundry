@@ -128,10 +128,10 @@ describe("role-owned fit-signal surface discovery (issue #1172)", () => {
 
 describe("role-owned status surface discovery (issue #1172)", () => {
   it("resolves a declared read-only status probe through the role's own bin mapping", () => {
-    install("@clossys/strategist", { name: "@clossys/strategist", version: "3.0.0", bin: { "strategist-status": "dist/status.js" }, foundry: { status: { bin: "strategist-status", invocation: "single-json-input" } } }, ["dist/status.js"]);
-    const discovery = discoverRoleStatusSurface(root, "@clossys/strategist");
+    install("@clossys/director", { name: "@clossys/director", version: "3.0.0", bin: { "director-status": "dist/status.js" }, foundry: { status: { bin: "director-status", invocation: "single-json-input" } } }, ["dist/status.js"]);
+    const discovery = discoverRoleStatusSurface(root, "@clossys/director");
     expect(discovery.absence).toBeNull();
-    expect(discovery.surface).toMatchObject({ role: "@clossys/strategist", version: "3.0.0", bin: "strategist-status", invocation: "single-json-input" });
+    expect(discovery.surface).toMatchObject({ role: "@clossys/director", version: "3.0.0", bin: "director-status", invocation: "single-json-input" });
   });
 
   it("never infers a status surface from a role that ships CLIs but declares none", () => {
@@ -152,10 +152,10 @@ describe("role-owned status surface discovery (issue #1172)", () => {
 
 describe("role-owned outputs declaration discovery (issue #1172)", () => {
   it("resolves a declared set of output paths, all under clossys/<role>/", () => {
-    install("@clossys/writer", { name: "@clossys/writer", version: "4.0.0", foundry: { outputs: ["clossys/writer/registry.json", "clossys/writer/voice-record.md"] } });
+    install("@clossys/writer", { name: "@clossys/writer", version: "4.0.0", foundry: { outputs: ["clossys/agents/writer/registry.json", "clossys/agents/writer/voice-record.md"] } });
     const discovery = discoverRoleOutputsDeclaration(root, "@clossys/writer");
     expect(discovery.absence).toBeNull();
-    expect(discovery.declaration).toMatchObject({ role: "@clossys/writer", version: "4.0.0", paths: ["clossys/writer/registry.json", "clossys/writer/voice-record.md"] });
+    expect(discovery.declaration).toMatchObject({ role: "@clossys/writer", version: "4.0.0", paths: ["clossys/agents/writer/registry.json", "clossys/agents/writer/voice-record.md"] });
   });
 
   it("never infers an outputs declaration from a role that declares none", () => {
@@ -179,7 +179,7 @@ describe("role-owned outputs declaration discovery (issue #1172)", () => {
   });
 
   it("refuses a role-folder escape written with a `\\` separator, even though it starts with the right prefix", () => {
-    install("@clossys/writer", { name: "@clossys/writer", version: "1.0.0", foundry: { outputs: ["clossys/writer/..\\..\\designer/x.json"] } });
+    install("@clossys/writer", { name: "@clossys/writer", version: "1.0.0", foundry: { outputs: ["clossys/agents/writer/..\\..\\designer/x.json"] } });
     expect(discoverRoleOutputsDeclaration(root, "@clossys/writer").absence).toBe("output-path-outside-role-folder");
   });
 });
@@ -188,10 +188,10 @@ describe("role-owned solves declaration discovery (schema version 2, issue #1172
   const ENTRY = { problem: "cant-explain-what-we-are", statement: "We can't explain what we are.", metric: "strategy-traceability-rate", proofCase: "some-case", evidence: "designed" };
 
   it("resolves a declared set of solves entries, including an empty array", () => {
-    install("@clossys/strategist", { name: "@clossys/strategist", version: "3.0.0", foundry: { solves: [ENTRY] } });
-    const discovery = discoverRoleSolvesDeclaration(root, "@clossys/strategist");
+    install("@clossys/director", { name: "@clossys/director", version: "3.0.0", foundry: { solves: [ENTRY] } });
+    const discovery = discoverRoleSolvesDeclaration(root, "@clossys/director");
     expect(discovery.absence).toBeNull();
-    expect(discovery.declaration).toMatchObject({ role: "@clossys/strategist", version: "3.0.0", entries: [ENTRY] });
+    expect(discovery.declaration).toMatchObject({ role: "@clossys/director", version: "3.0.0", entries: [ENTRY] });
 
     install("@clossys/builder", { name: "@clossys/builder", version: "1.0.0", foundry: { solves: [] } });
     expect(discoverRoleSolvesDeclaration(root, "@clossys/builder").declaration).toMatchObject({ entries: [] });
@@ -215,10 +215,10 @@ describe("role-owned solves declaration discovery (schema version 2, issue #1172
 
 describe("role-owned needs declaration discovery (schema version 2, issue #1172)", () => {
   it("resolves a declared set of needs entries", () => {
-    install("@clossys/designer", { name: "@clossys/designer", version: "1.0.0", foundry: { needs: [{ producerRole: "@clossys/strategist", artifact: "direction" }] } });
+    install("@clossys/designer", { name: "@clossys/designer", version: "1.0.0", foundry: { needs: [{ producerRole: "@clossys/director", artifact: "direction" }] } });
     const discovery = discoverRoleNeedsDeclaration(root, "@clossys/designer");
     expect(discovery.absence).toBeNull();
-    expect(discovery.declaration).toMatchObject({ role: "@clossys/designer", entries: [{ producerRole: "@clossys/strategist", artifact: "direction" }] });
+    expect(discovery.declaration).toMatchObject({ role: "@clossys/designer", entries: [{ producerRole: "@clossys/director", artifact: "direction" }] });
   });
 
   it("never infers a needs declaration from a role that declares none", () => {
@@ -234,10 +234,10 @@ describe("role-owned needs declaration discovery (schema version 2, issue #1172)
 
 describe("role-owned feeds declaration discovery (schema version 2, issue #1172)", () => {
   it("resolves a declared set of feeds entries, all under clossys/<role>/", () => {
-    install("@clossys/strategist", { name: "@clossys/strategist", version: "1.0.0", foundry: { feeds: [{ artifact: "direction", path: "clossys/strategist/direction.json" }] } });
-    const discovery = discoverRoleFeedsDeclaration(root, "@clossys/strategist");
+    install("@clossys/advisor", { name: "@clossys/advisor", version: "1.0.0", foundry: { feeds: [{ artifact: "direction", path: "clossys/advisor/direction.json" }] } });
+    const discovery = discoverRoleFeedsDeclaration(root, "@clossys/advisor");
     expect(discovery.absence).toBeNull();
-    expect(discovery.declaration).toMatchObject({ role: "@clossys/strategist", entries: [{ artifact: "direction", path: "clossys/strategist/direction.json" }] });
+    expect(discovery.declaration).toMatchObject({ role: "@clossys/advisor", entries: [{ artifact: "direction", path: "clossys/advisor/direction.json" }] });
   });
 
   it("never infers a feeds declaration from a role that declares none", () => {
@@ -246,7 +246,28 @@ describe("role-owned feeds declaration discovery (schema version 2, issue #1172)
   });
 
   it("refuses a path outside this role's own clossys/<role>/ folder", () => {
-    install("@clossys/strategist", { name: "@clossys/strategist", version: "1.0.0", foundry: { feeds: [{ artifact: "direction", path: "clossys/designer/direction.json" }] } });
-    expect(discoverRoleFeedsDeclaration(root, "@clossys/strategist").absence).toBe("feeds-path-outside-role-folder");
+    install("@clossys/director", { name: "@clossys/director", version: "1.0.0", foundry: { feeds: [{ artifact: "direction", path: "clossys/designer/direction.json" }] } });
+    expect(discoverRoleFeedsDeclaration(root, "@clossys/director").absence).toBe("feeds-path-outside-role-folder");
+  });
+});
+
+
+describe("consumer layout outputs and feeds", () => {
+  it.each(["director", "designer", "writer", "publisher", "advisor"])("resolves %s declarations at its own layout path", (name) => {
+    const role = `@clossys/${name}`;
+    const prefix = name === "advisor" ? `clossys/${name}` : `clossys/agents/${name}`;
+    const path = `${prefix}/tree.json`;
+    install(role, { name: role, version: "1.0.0", foundry: { outputs: [path], feeds: [{ artifact: "tree", path }] } });
+    expect(discoverRoleOutputsDeclaration(root, role)).toMatchObject({ absence: null, declaration: { paths: [path] } });
+    expect(discoverRoleFeedsDeclaration(root, role)).toMatchObject({ absence: null, declaration: { entries: [{ artifact: "tree", path }] } });
+  });
+
+  it.each(["director", "designer", "writer", "publisher"])("refuses legacy, cross-agent and traversal paths for %s", (name) => {
+    const role = `@clossys/${name}`;
+    for (const path of [`clossys/${name}/tree.json`, "clossys/agents/other/tree.json", `clossys/agents/${name}/../other/tree.json`, `clossys/agents/${name}/..\\other/tree.json`]) {
+      install(role, { name: role, version: "1.0.0", foundry: { outputs: [path], feeds: [{ artifact: "tree", path }] } });
+      expect(discoverRoleOutputsDeclaration(root, role).absence).toBe("output-path-outside-role-folder");
+      expect(discoverRoleFeedsDeclaration(root, role).absence).toBe("feeds-path-outside-role-folder");
+    }
   });
 });

@@ -1,0 +1,1168 @@
+[
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--accent"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.accent",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--accent-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.accent-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "duration",
+      "emit": {
+        "default": "--animate-marquee"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.animate-marquee",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "duration",
+      "emit": {
+        "default": "--animate-marquee-vertical"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.animate-marquee-vertical",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "duration",
+      "emit": {
+        "default": "--animate-shiny-text"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.animate-shiny-text",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--background"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.background",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--border"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.border",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--card"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.card",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--card-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.card-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--chart-1"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.chart-1",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--chart-2"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.chart-2",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--chart-3"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.chart-3",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--chart-4"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.chart-4",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--chart-5"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.chart-5",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--destructive"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.destructive",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "fontFamily",
+      "emit": {
+        "default": "--font-heading"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.font-heading",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "fontFamily",
+      "emit": {
+        "default": "--font-mono"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.font-mono",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "fontFamily",
+      "emit": {
+        "default": "--font-sans"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.font-sans",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "fontFamily",
+      "emit": {
+        "default": "--font-serif"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.font-serif",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--input"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.input",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--muted"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.muted",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--muted-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.muted-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--popover"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.popover",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--popover-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.popover-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--primary"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.primary",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--primary-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.primary-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "dimension",
+      "emit": {
+        "default": "--radius"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.radius",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--ring"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.ring",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--secondary"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.secondary",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--secondary-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.secondary-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "shadow",
+      "emit": {
+        "2xs": "--shadow-2xs",
+        "xs": "--shadow-xs",
+        "sm": "--shadow-sm",
+        "md": "--shadow-md",
+        "lg": "--shadow-lg",
+        "xl": "--shadow-xl",
+        "2xl": "--shadow-2xl"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "2xs",
+          "xs",
+          "sm",
+          "md",
+          "lg",
+          "xl",
+          "2xl"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.shadow",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-accent"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-accent",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-accent-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-accent-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-border"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-border",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-primary"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-primary",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-primary-foreground"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-primary-foreground",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "color",
+      "emit": {
+        "default": "--sidebar-ring"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light",
+        "dark"
+      ],
+      "tier": "role"
+    },
+    "id": "themes.sidebar-ring",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias",
+      "wcag-2.2#1.4.3"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "dimension",
+      "emit": {
+        "default": "--spacing"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.spacing",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  },
+  {
+    "contract": {
+      "$type": "number",
+      "emit": {
+        "default": "--tracking-tight"
+      },
+      "kind": "token",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "default"
+        ]
+      },
+      "modes": [
+        "light"
+      ],
+      "tier": "scale"
+    },
+    "id": "themes.tracking-tight",
+    "layer": "themes",
+    "requires": [
+      "dtcg#format",
+      "dtcg#alias"
+    ],
+    "status": "draft"
+  }
+]

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://ui.shadcn.com/schema/registry-item.json",
+  "name": "studio-options",
+  "type": "registry:block",
+  "title": "Leaf Options",
+  "description": "Options pending approval, for every agent: the pinned or active version beside every newer unpinned version or draft, framed or as changed strings.",
+  "author": "Clossys",
+  "dependencies": [],
+  "registryDependencies": [
+    "card"
+  ],
+  "files": [
+    {
+      "path": "index.tsx",
+      "type": "registry:component",
+      "target": "studio/sections/studio-options/index.tsx"
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { buttonLinkClassName, Icon } from "@clossys/designer/atoms/server";
+import { buttonLinkClassName, Icon } from "@clossys/designer/components/server";
 import { ChevronRight } from "@clossys/designer/icons";
 import { resolveRoleActionEmphasis } from "../../core/sectioned-view.js";
 import type { SectionedViewActionEmphasis, SectionedViewContentActionEmphasis, SectionedViewGround } from "../../core/sectioned-view.js";

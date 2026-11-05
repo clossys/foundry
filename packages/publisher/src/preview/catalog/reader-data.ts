@@ -127,7 +127,7 @@ function prepare(fixture: CatalogFixture): CatalogFixture {
     const section = structuredClone(fixture.section);
     rewrite(section, fixture.id);
     if (section.kind === 'content-section') {
-        section.size = ['say-media-stacked', 'media-converge', 'items-connected'].includes(fixture.id) ? 'display' : 'standard';
+        section.size = ['say-close', 'say-media-stacked', 'media-converge', 'items-connected'].includes(fixture.id) ? 'display' : 'standard';
         // Canonical authored ground is inverse or omitted; the map is preview presentation.
         if (grounds[fixture.id] === 'inverse') section.ground = 'inverse';
         else delete section.ground;

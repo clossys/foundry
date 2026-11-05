@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://clossys.com/schemas/producer/source-receipt.schema.json",
+  "title": "Page-check source receipt (dist/check/source-receipt.json)",
+  "description": "Derived from src/check/page-manifest.ts readPageCheckSource (written by scripts/generate-page-check-receipt.mjs).",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "sourceHead",
+    "sourceDirty"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "sourceHead": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "sourceDirty": {
+      "type": "boolean"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { buttonLinkClassName } from "@clossys/designer/atoms";
+import { buttonLinkClassName } from "@clossys/designer/components";
 import { SiteFrame, StatusView } from "@clossys/publisher/web";
 import { siteText } from "./site-copy";
 import type { SiteCopyMap, SiteErrorCopyIds } from "./site-copy";

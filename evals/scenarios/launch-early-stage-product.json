@@ -2,7 +2,7 @@
   "id": "launch-early-stage-product",
   "description": "A generic, early-stage product client: the site doesn't explain what the product is, the copy hasn't been approved by anyone, and there is no evidence a real person would keep using it. No real company; a synthetic client for regression coverage only.",
   "confirmedProblems": [
-    { "id": "strategist-unclear-direction", "primary": true },
+    { "id": "director-unclear-direction", "primary": true },
     { "id": "designer-interface-quality" },
     { "id": "writer-unapproved-copy" },
     { "id": "customer-would-they-keep-it" },
@@ -10,10 +10,10 @@
   ],
   "expect": {
     "state": "composed",
-    "mustIncludeRoles": ["strategist", "designer", "writer", "customer", "publisher"],
+    "mustIncludeRoles": ["director", "designer", "writer", "customer", "publisher"],
     "mustExcludeRoles": ["advisor", "architect", "bouncer", "builder", "butler", "controller", "giver", "influencer", "inspector", "integrator", "keeper", "locksmith", "messenger", "observer"],
     "maxRoles": 5,
-    "sequence": ["strategist", "designer", "writer", "publisher", "customer"],
+    "sequence": ["director", "designer", "writer", "publisher", "customer"],
     "unsatisfiedNeeds": []
   }
 }

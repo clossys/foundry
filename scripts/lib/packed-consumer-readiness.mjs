@@ -36,8 +36,8 @@ const bouncerExports = [
 ];
 const bouncerWebExports = bouncerExports.filter((specifier) => specifier.includes("/web"));
 const designerExports = [
-  "@clossys/designer/atoms",
-  "@clossys/designer/atoms/server",
+  "@clossys/designer/components",
+  "@clossys/designer/components/server",
   "@clossys/designer/blocks",
   "@clossys/designer/blocks/server",
   "@clossys/designer/charts",
@@ -45,6 +45,9 @@ const designerExports = [
   "@clossys/designer/gate",
   "@clossys/designer/icons",
   "@clossys/designer/render-environment",
+  // Shipped .mjs source: importSpecifier source-fixture probes import with
+  // each optional peer omitted. Bare import does not invoke lazy TypeScript.
+  "@clossys/designer/ref-verbatim",
   "@clossys/designer/shell",
   "@clossys/designer/shell/server",
   "@clossys/designer/theme",
@@ -54,15 +57,15 @@ const designerExports = [
   "@clossys/designer/tokens/preview",
 ];
 const designerClientExports = [
-  "@clossys/designer/atoms",
+  "@clossys/designer/components",
   "@clossys/designer/blocks",
   "@clossys/designer/shell",
   "@clossys/designer/theme",
 ];
 const designerReactExports = [
   "@clossys/designer/tokens/preview",
-  "@clossys/designer/atoms",
-  "@clossys/designer/atoms/server",
+  "@clossys/designer/components",
+  "@clossys/designer/components/server",
   "@clossys/designer/blocks",
   "@clossys/designer/blocks/server",
   "@clossys/designer/charts",
@@ -70,6 +73,27 @@ const designerReactExports = [
   "@clossys/designer/shell",
   "@clossys/designer/shell/server",
   "@clossys/designer/theme",
+];
+// Subpaths added by the designer/writer/publisher landing; each row below
+// records its measured outcome (`npm run check:packed-consumer -- --package <name>`).
+const designerLandedExports = [
+  "@clossys/designer/catalog/dogfood/node",
+  "@clossys/designer/catalog/node",
+  "@clossys/designer/frames/error",
+  "@clossys/designer/studio/route",
+  "@clossys/designer/studio/route/server",
+];
+const publisherLandedExports = [
+  "@clossys/publisher/archetypes",
+  "@clossys/publisher/content",
+  "@clossys/publisher/content-map",
+  "@clossys/publisher/content-map/cells",
+  "@clossys/publisher/content/node",
+  "@clossys/publisher/install",
+  "@clossys/publisher/specimen",
+  "@clossys/publisher/web/admin-pages",
+  "@clossys/publisher/web/preview",
+  "@clossys/publisher/web/publisher-v2",
 ];
 const publisherExports = [
   "@clossys/publisher/assessment",
@@ -122,11 +146,6 @@ const publisherExports = [
  * plays no part in it. Everywhere else `refuses` is an invalid outcome. A
  * failure that happens only when a peer is omitted is not a by-design
  * refusal: it stays `rejects`, and it must name the omitted peer.
- *
- * `governance/public-npm-aggregate-canary.json` carries rows of the same shape
- * and is NOT the file to edit -- it is frozen measurement of already-published
- * tarballs, and it stopped asking anything of this tree in #533. See
- * `validateAggregateCanary`'s header in `public-npm-aggregate-canary.mjs`.
  */
 export const OPTIONAL_PEER_POLICY = {
   "@clossys/bouncer": {
@@ -168,14 +187,56 @@ export const OPTIONAL_PEER_POLICY = {
       "@clossys/controller/repository": "imports",
       "@clossys/controller/review": "imports",
       "@clossys/controller/review/github": "imports",
+      "@clossys/controller/review/cli": "imports",
+      "@clossys/controller/review/pure": "imports",
     },
   },
   "@clossys/designer": {
-    "@internationalized/date": omissionRow(designerExports, designerClientExports),
-    react: omissionRow(designerExports, designerReactExports),
-    "react-aria-components": omissionRow(designerExports, designerClientExports),
-    "react-dom": omissionRow(designerExports, designerClientExports),
-    // #749: atoms/internal/cx.ts used to import tailwind-merge STATICALLY,
+    "@internationalized/date": {
+      ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "imports",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    react: {
+      ...omissionRow(designerExports, designerReactExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "rejects"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "rejects",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    "react-aria-components": {
+      ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "imports",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    "react-dom": {
+      ...omissionRow(designerExports, designerClientExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("rejects", "imports"),
+      "@clossys/designer/studio": "rejects",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "imports",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    // #749: components/internal/cx.ts used to import tailwind-merge STATICALLY,
     // so every one of designerReactExports (the entry points that reach
     // it) rejected the moment tailwind-merge was omitted -- a bare
     // import, before any component ever rendered. cx.ts now resolves it
@@ -187,8 +248,28 @@ export const OPTIONAL_PEER_POLICY = {
     // makes this row's real, measured shape identical to tailwindcss's
     // below: nothing rejects on import. See #878 for the measurement that
     // retired the old row (which this test caught drifting from reality).
-    "tailwind-merge": omissionRow(designerExports),
-    tailwindcss: omissionRow(designerExports),
+    "tailwind-merge": {
+      ...omissionRow(designerExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("imports", "imports"),
+      "@clossys/designer/studio": "imports",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "imports",
+      ...omissionRow(designerLandedExports, ["@clossys/designer/studio/route"]),
+    },
+    tailwindcss: {
+      ...omissionRow(designerExports),
+      "@clossys/designer/catalog": "imports",
+      "@clossys/designer/catalog-bundles": "imports",
+      "@clossys/designer/catalog/server": "imports",
+      "@clossys/designer/frames": conditionOutcomes("imports", "imports"),
+      "@clossys/designer/studio": "imports",
+      "@clossys/designer/studio/queries": "imports",
+      "@clossys/designer/studio/state": "imports",
+      ...omissionRow(designerLandedExports),
+    },
   },
   "@clossys/keeper": {
     react: { "@clossys/keeper": "imports", "@clossys/keeper/web": "rejects" },
@@ -199,16 +280,50 @@ export const OPTIONAL_PEER_POLICY = {
   },
   "@clossys/publisher": {
     // #1941's consent subpaths. `consent` is the measured default outcome of
-    // `./web/consent` (the client entry reaches Designer's atoms and blocks).
+    // `./web/consent` (the client entry reaches Designer's components and blocks).
     // The refusal cells read `refuses` in every row (declared in
     // BY_DESIGN_REFUSALS): `react-server` on `./web/consent` and
     // `./web/consent/preview`, the preview's `default` (its real entry sits
     // under `development`, measured as `imports`) and `browser` on
     // `./consent-copy` (its server entry is `default`, measured as `imports`).
-    "@internationalized/date": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
-    react: publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects", consent: "rejects" }),
-    "react-aria-components": publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
-    "react-dom": publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+    // `./web/host` (PublisherHost) reaches Designer's frames, so it rejects without the
+    // React/Aria peers and imports without tailwind-merge or tailwindcss (measured per peer).
+    "@internationalized/date": {
+      ...publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+      "@clossys/publisher/web/registered-route": "rejects",
+      "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "imports"),
+      "@clossys/publisher/web/host": "rejects",
+      ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
+    },
+    react: {
+      ...publisherOmissionRow({ rejected: ["@clossys/publisher/document", "@clossys/publisher/testing"], web: { default: "rejects", reactServer: "rejects" }, client: "rejects", consent: "rejects" }),
+      "@clossys/publisher/web/registered-route": "rejects",
+      "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "rejects"),
+      "@clossys/publisher/web/host": "rejects",
+      ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
+    },
+    "react-aria-components": {
+      ...publisherOmissionRow({ web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+      "@clossys/publisher/web/registered-route": "rejects",
+      "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "imports"),
+      "@clossys/publisher/web/host": "rejects",
+      ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
+    },
+    "react-dom": {
+      ...publisherOmissionRow({ rejected: ["@clossys/publisher/testing"], web: { default: "rejects", reactServer: "imports" }, client: "rejects", consent: "rejects" }),
+      "@clossys/publisher/web/registered-route": "rejects",
+      "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/content-route": conditionOutcomes("rejects", "imports"),
+      "@clossys/publisher/web/host": "rejects",
+      ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview", "@clossys/publisher/web/publisher-v2"]),
+    },
     // #749/#878: publisher/web reaches designer's cx() transitively
     // (publisher has no tailwind-merge import site of its own -- grep
     // confirms it appears only in fixture peer-name lists inside
@@ -218,8 +333,24 @@ export const OPTIONAL_PEER_POLICY = {
     // nothing rejects on import. Left unmeasured/unverified here would be
     // an assumption, not evidence -- see #878's PR body for the actual
     // `--package publisher` run this literal was set from.
-    "tailwind-merge": publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
-    tailwindcss: publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
+    "tailwind-merge": {
+      ...publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
+      "@clossys/publisher/web/registered-route": "imports",
+      "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/content-route": conditionOutcomes("imports", "imports"),
+      "@clossys/publisher/web/host": "imports",
+      ...omissionRow(publisherLandedExports, ["@clossys/publisher/web/admin-pages"]),
+    },
+    tailwindcss: {
+      ...publisherOmissionRow({ web: { default: "imports", reactServer: "imports" } }),
+      "@clossys/publisher/web/registered-route": "imports",
+      "@clossys/publisher/web/registered-route-check": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/registered-route-wiring": { "browser": "refuses", "default": "imports" },
+      "@clossys/publisher/web/content-route": conditionOutcomes("imports", "imports"),
+      "@clossys/publisher/web/host": "imports",
+      ...omissionRow(publisherLandedExports),
+    },
   },
 };
 
@@ -275,6 +406,12 @@ export const BY_DESIGN_REFUSALS = {
   // #1941: the browser consent subpaths. Each marker is a fragment of the
   // message its refusal module throws.
   "@clossys/publisher": {
+    "@clossys/publisher/web/registered-route-check": {
+      browser: 'Registered route source checking requires the server filesystem and refuses the "browser" condition',
+    },
+    "@clossys/publisher/web/registered-route-wiring": {
+      browser: 'Registered route source checking requires the server filesystem and refuses the "browser" condition',
+    },
     "@clossys/publisher/consent-copy": {
       browser: 'The consent-copy subpath of the publisher package is server-only and refuses the "browser" condition',
     },
@@ -581,11 +718,10 @@ function policyOutcomeShapeFindings(manifest, peer, specifier, value, conditions
     // so one string is a claim about two unmeasured things rather than a
     // shorthand for one measured thing. The object branch below is checked for
     // exact condition coverage; this branch used to return before reaching it,
-    // which is how a string could silently opt out of that check. The frozen
+    // which is how a string could silently opt out of that check. The retired
     // aggregate plan carried its own copy of this rule against the source
     // tree; #533 moved it here, where it runs against the manifest each caller
-    // actually measured -- packed source for `check:packed-consumer`, the
-    // installed frozen tarball for the aggregate canary's own execution join.
+    // actually measured -- packed source for `check:packed-consumer`.
     if (expected.length !== 1 || expected[0] !== "default") {
       return [`${prefix} collapses its ${expected.join("/")} outcomes into one string`];
     }

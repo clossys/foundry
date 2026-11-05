@@ -6,16 +6,19 @@ import * as React from "react";
 import * as jsxRuntime from "react/jsx-runtime";
 import ts from "typescript";
 import { execFileSync } from "node:child_process";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render as renderBare, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { renderToStaticMarkup } from "react-dom/server";
+import { renderToStaticMarkup as renderToStaticMarkupBare } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "@clossys/designer/atoms";
+import { Button } from "@clossys/designer/components";
 import { groupRows, parseDataTableViewModel, type DataTableViewModel } from "@clossys/designer/blocks";
 import { IndexView, type IndexViewProps } from "./IndexView.js";
 import * as web from "../index.js";
 import * as client from "../client.js";
 import * as server from "../server.js";
+import { hostedRender, hostedMarkup } from "../__fixtures__/shell-copy.js";
+const render = hostedRender(renderBare);
+const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
 afterEach(cleanup);
 type Row = { id: string; name: string; state: string };
@@ -185,7 +188,7 @@ describe("IndexView", () => {
     }
   });
 
-  it("authors arrangement only and delegates content markup to shipped Blocks and atoms", () => {
+  it("authors arrangement only and delegates content markup to shipped Blocks and components", () => {
     const source = readFileSync(join(import.meta.dirname, "IndexView.tsx"), "utf8");
     expect(source).not.toMatch(/<\s*(?:h[1-6]|p|table|thead|tbody|tr|td|th|button|nav|main|footer|header)\b/);
     expect(source).not.toMatch(/\b(?:AppFrame|SiteFrame|SiteHeader|SiteFooter)\s*[,}]/);

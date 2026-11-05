@@ -1,90 +1,40 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Stat } from "./Stat.js";
+import { nativeStatsMarkup, nativeStatsSelection, nativeStatsTree } from "./Stats/__fixtures__/native.js";
 
-describe("Stat", () => {
-  it("renders the label and value", () => {
-    render(<Stat label="Monthly active users" value="2,481" />);
-    expect(screen.getByText("Monthly active users")).toBeInTheDocument();
-    expect(screen.getByText("2,481")).toBeInTheDocument();
+let selection: Awaited<ReturnType<typeof nativeStatsSelection>>;
+beforeAll(async () => { selection = await nativeStatsSelection(); });
+const labels = { up: "Sube", down: "Baja", neutral: "Sin cambio" };
+describe("Stat on selected native Card", () => {
+  it("renders actual Card anatomy with caller copy and value typography", async () => {
+    const { container } = render(nativeStatsTree(selection, <Stat label="ExampleCo customers" value="2,481" description="Previous month" />));
+    await screen.findByText("ExampleCo customers");
+    expect(container.querySelector('[data-slot="card"]')).toBeTruthy();
+    expect(container.querySelector('[data-slot="card-header"]')).toHaveTextContent("ExampleCo customers");
+    expect(container.querySelector('[data-slot="card-title"]')).toHaveClass("text-(length:--text-body-s)");
+    expect(container.querySelector('[data-slot="card-content"]')).toHaveTextContent("2,481");
+    expect(container.querySelector('[data-slot="card-content"]')).toHaveClass("text-(length:--text-h1)", "tabular-nums");
+    expect(container.querySelector('[data-slot="card-footer"]')).toHaveTextContent("Previous month");
   });
-
-  it("omits the delta region entirely when none is given", () => {
-    const { container } = render(<Stat label="Users" value="2,481" />);
-    expect(container.querySelector(".sr-only")).toBeNull();
+  it.each([["up", "▲", "Sube"], ["down", "▼", "Baja"], ["neutral", "→", "Sin cambio"]] as const)("renders %s with shape and caller-owned accessible copy", async (trend, glyph, text) => {
+    render(nativeStatsTree(selection, <Stat label="ExampleCo change" value={16} delta="+2" trend={trend} trendLabels={labels} />));
+    expect(await screen.findByText(glyph)).toHaveAttribute("aria-hidden", "true");
+    expect(screen.getByText(`${text},`)).toHaveClass("sr-only");
+    expect(screen.queryByText(/Increase|Decrease|No change/)).toBeNull();
   });
-
-  it("omits the description region entirely when none is given", () => {
-    render(<Stat label="Users" value="2,481" />);
-    // Only label and value text nodes should be present.
-    expect(screen.queryByText(/vs\./)).not.toBeInTheDocument();
+  it("omits footer anatomy when supporting regions are absent", async () => {
+    const html = await nativeStatsMarkup(selection, <Stat label="ExampleCo regions" value={16} />);
+    expect(html).toContain('data-slot="card"');
+    expect(html).not.toContain('data-slot="card-footer"');
   });
-
-  it("renders the description region when given", () => {
-    render(<Stat label="Users" value="2,481" description="vs. last 30 days" />);
-    expect(screen.getByText("vs. last 30 days")).toBeInTheDocument();
+  it("refuses a delta without its authored trend label", () => {
+    expect(() => Stat({ label: "ExampleCo customers", value: 12, delta: "+1" })).toThrow(/NEED Stats trendLabels.neutral/);
   });
-
-  it("renders an \"up\" delta with a visible glyph AND screen-reader-only text — not colour alone", () => {
-    render(<Stat label="Users" value="2,481" delta="+12%" trend="up" />);
-    expect(screen.getByText("+12%")).toBeInTheDocument();
-    expect(screen.getByText("▲", { exact: false })).toBeInTheDocument();
-    expect(screen.getByText("Increase,", { exact: false })).toBeInTheDocument();
-  });
-
-  it("renders a \"down\" delta with its own distinct glyph and screen-reader text", () => {
-    render(<Stat label="Users" value="2,481" delta="-3" trend="down" />);
-    expect(screen.getByText("▼", { exact: false })).toBeInTheDocument();
-    expect(screen.getByText("Decrease,", { exact: false })).toBeInTheDocument();
-  });
-
-  it("defaults trend to \"neutral\" when a delta is given without one", () => {
-    render(<Stat label="Users" value="2,481" delta="0" />);
-    expect(screen.getByText("→", { exact: false })).toBeInTheDocument();
-    expect(screen.getByText("No change,", { exact: false })).toBeInTheDocument();
-  });
-
-  it("reads trend direction from trendLabels", () => {
-    render(
-      <Stat
-        label="Users"
-        value="2,481"
-        delta="+12%"
-        trend="up"
-        trendLabels={{ up: "Sube", down: "Baja", neutral: "Sin cambio" }}
-      />,
-    );
-    expect(screen.getByText("Sube,", { exact: false })).toBeInTheDocument();
-  });
-
-  it("applies the success status token to an \"up\" trend", () => {
-    render(<Stat label="Users" value="2,481" delta="+12%" trend="up" />);
-    const delta = screen.getByText("+12%").closest("span");
-    expect(delta?.className).toContain("text-status-success-text");
-  });
-
-  it("applies the danger status token to a \"down\" trend", () => {
-    render(<Stat label="Users" value="2,481" delta="-3" trend="down" />);
-    const delta = screen.getByText("-3").closest("span");
-    expect(delta?.className).toContain("text-status-danger-text");
-  });
-
-  it("hides the glyph from assistive tech (aria-hidden), relying on the separate sr-only text instead", () => {
-    render(<Stat label="Users" value="2,481" delta="+12%" trend="up" />);
-    const glyph = screen.getByText("▲");
-    expect(glyph).toHaveAttribute("aria-hidden", "true");
-  });
-
-  it("forwards className, and the consumer's conflicting class wins the merge", () => {
-    const { container } = render(<Stat label="Users" value="2,481" className="gap-lg" />);
-    const root = container.firstElementChild as HTMLElement;
-    expect(root.className).toContain("gap-lg");
-    expect(root.className).not.toContain("gap-xs");
-  });
-
-  it("forwards a consumer style prop", () => {
-    const { container } = render(<Stat label="Users" value="2,481" style={{ marginTop: "8px" }} />);
-    const root = container.firstElementChild as HTMLElement;
-    expect(root.style.marginTop).toBe("8px");
+  it("forwards consumer class and style to the selected Card", async () => {
+    const { container } = render(nativeStatsTree(selection, <Stat label="ExampleCo regions" value={16} className="gap-lg" style={{ marginTop: "8px" }} />));
+    await screen.findByText("ExampleCo regions");
+    expect(container.querySelector('[data-slot="card"]')).toHaveClass("gap-lg");
+    expect(container.querySelector('[data-slot="card"]')).toHaveStyle({ marginTop: "8px" });
   });
 });

@@ -1,0 +1,79 @@
+{
+  "name": "logo-hero",
+  "type": "registry:block",
+  "registryDependencies": [
+    "logo"
+  ],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "logo-hero/logo-hero.tsx",
+      "type": "registry:block",
+      "content": "import type * as React from \"react\"\n\n\nimport { Logo } from \"@/components/ui/logo\"\n\n/** Brand hero: the lockup (mark beside the brand name) large and centered on the band. */\nexport default function LogoHero({ name = \"Clossys\", mark }: { name?: string; mark?: React.ReactNode }) {\n  return (\n    <section data-slot=\"logo-hero\" data-brand=\"named\" className=\"py-16 md:py-24\">\n      <div className=\"mx-auto flex max-w-5xl justify-center px-6\">\n        <Logo content=\"lockup\" size=\"lg\" name={name} mark={mark} />\n      </div>\n    </section>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.logo-hero",
+    "source": {
+      "kind": "original",
+      "ref": [],
+      "license": "MIT"
+    },
+    "com.clossys.origin": {
+      "kind": "authored",
+      "license": "MIT",
+      "note": "create (FILL-DESIGNER-3): brand hero composed of the Logo lockup at lg on a centered band."
+    },
+    "element": {
+      "id": "logo-hero",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.logo-hero",
+      "kind": "registry:block",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "FILL-DESIGNER-3"
+      },
+      "reason": "CREATE (FILL-DESIGNER-3; no trusted reference): brand hero composed of the Logo lockup at lg on a centered band.",
+      "createdAt": "2026-11-03T00:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "fail",
+          "strict": true,
+          "findings": [
+            "REF-NO-SOURCE"
+          ],
+          "note": "pin gate only; not pinnable until the gate admits derived/original code"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": [
+          "logo"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text"
+        ]
+      }
+    }
+  }
+}

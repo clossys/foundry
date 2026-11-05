@@ -19,7 +19,7 @@ boxes is the same failure in a different hat.
 
 Foundry's other voices are hired roles (Designer, Writer, Publisher,
 Inspector). The keep is not a twenty-first contractor. It is a **synthetic
-user**: a first-person inhabit of the named Strategist Audience, with a
+user**: a first-person inhabit of the named Director Audience, with a
 fresh look, as if they just landed.
 
 | | Contractor / QA / specialist | Synthetic user |
@@ -29,10 +29,10 @@ fresh look, as if they just landed.
 | After a no | Negotiate the rubric. | I would not keep this. The doer fixes; they do not talk me out of it. |
 
 The inhabit runs in a **separate session** from Designer, Writer, Publisher,
-Strategist, and Inspector. Independence is the session. The voice is the
+Director, and Inspector. Independence is the session. The voice is the
 user. Both are required.
 
-Forbidden voices on a keep: designer, writer, publisher, strategist,
+Forbidden voices on a keep: designer, writer, publisher, director,
 inspector, builder, QA, reviewer, auditor, critic-with-a-rubric.
 
 ---
@@ -44,7 +44,7 @@ negotiated and 3 is reported as 5.
 
 | Seat | Who | Allowed | Forbidden |
 |------|-----|---------|-----------|
-| **Doer** | Designer and Writer (together); Strategist for direction | Make the page. Fix what the user named. | Inhabit the user. Write the keep. Call 3 done. Split a self-review into a visual half and a verbal half. |
+| **Doer** | Designer and Writer (together); Director for direction | Make the page. Fix what the user named. | Inhabit the user. Write the keep. Call 3 done. Split a self-review into a visual half and a verbal half. |
 | **User** | Synthetic inhabit of the named Audience, separate session | Speak in the first person as that person. One comprehensive keep/fail. | Edit the page. Become a reviewer. Score against Designer or Writer gates. Let the doer rewrite a no. |
 | **Sealer** | Publisher | Seal after a user keep. Prove the shipped bytes. | Inhabit the user. Treat "the surface rendered" as a keep. Seal a fail. |
 | **Rules judge** | Inspector | Judge whether the *change* satisfies declared rules. | Inhabit the user. Fitness for a person is not a rule scan. |
@@ -80,9 +80,9 @@ grade specialists. The keep is the user.
 All of the following must hold, or the page is **below 3**:
 
 - **One display heading** through Designer `Hero` (`text-display-l` / `font-display`): not clipped, not stacked thesis lines masquerading as one H1.
-- **Exactly one primary CTA** in the fold. `Hero.actions` are `Button` atoms. No second pill competing for primary attention in the first viewport.
+- **Exactly one primary CTA** in the fold. `Hero.actions` are `Button` components. No second pill competing for primary attention in the first viewport.
 - **Chrome does not intersect the first viewport** — chat, consent, locale pickers, dev overlays, and similar chrome are findings when they steal the fold. Chat starts closed on `/`.
-- **Stylesheet the app loads** contains the Hero/Button utilities required by `designer-hero-css-check`, via the default path: `tokens.css` + `compiled.css` (one path; no mixed `compiled.css` and `theme.css` + `@source`).
+- **Stylesheet the app loads** contains the Hero/Button utilities, via the default path: `tokens.css` + `compiled.css` (one path; no mixed `compiled.css` and `theme.css` + `@source`).
 - **Fold copy is not wallpaper** — generic positioning phrases any competitor could reuse (including case variants of built-in examples such as “AI-native”, “AI intelligence”, and “for founders” as the headline thesis). `writer-check --live` reports `fold-wallpaper` on declared live trees.
 - **`heroMediaKind` is honest** — `product-surface`, `original-art`, or `none` in fold measurement JSON. Never decorative stock or metaphor imagery. Supply evidence; `designer-fold-check` fails closed when measurement is missing or invalid.
 - **Ground rhythm is visible** — spacing and type rhythm read as intentional, not accidental markdown. Empty collections use `EmptyState` honestly instead of blank holes.
@@ -91,7 +91,6 @@ All of the following must hold, or the page is **below 3**:
 
 **Gates that prove 3 (not 4 or 5):**
 
-- `designer-hero-css-check` on the CSS file the app loads
 - `designer-fold-check` on fold measurement JSON (`--also` for an additional viewport)
 - `writer-check --live` with `--voice-record` on trees the page actually renders (includes `fold-wallpaper`)
 
@@ -108,8 +107,8 @@ The synthetic-user keep (**5**) is a **second pass** after the mechanical floor 
 green. It is not a substitute for fold-check **3**, and the doer walk must not
 self-certify exceptional keep.
 
-**Precondition:** `designer-hero-css-check`, `designer-fold-check`, and
-`writer-check --live` are green. Do not start inhabit or visual taste before
+**Precondition:** `designer-fold-check` and `writer-check --live` are
+green. Do not start inhabit or visual taste before
 `designer-fold-check` is green on fold measurement JSON. HTTP 200 and a heading
 string in markup are not keep evidence.
 
@@ -117,7 +116,7 @@ string in markup are not keep evidence.
 not the source tree alone.
 
 **Independence:** a **separate session** from Designer, Writer, Publisher, and
-Strategist on that walk. The model that authored the page must not inhabit the
+Director on that walk. The model that authored the page must not inhabit the
 user for that walk. The inhabit must be vision-capable; this document does not
 pin a vendor.
 
@@ -140,7 +139,7 @@ not auto-invoke the inhabit.
 Everything in **3**, plus:
 
 - A **named type record executed** — display face, H1 minimum size, measure cap, monospace only for eyebrows/data; cite or author `templates/brand-type.template.json` and run `designer-type-check` (not invented ad hoc during the walk that proves 3).
-- **Fold copy contains a domain noun** a competitor cannot reuse — aligned with Strategist do-not language and Writer slot discipline.
+- **Fold copy contains a domain noun** a competitor cannot reuse — aligned with Director do-not language and Writer slot discipline.
 - **Fold media is the thing** — the product surface with real data, or original art of the artifact being made, at a scale that *is* the page, not a card-in-a-slot screenshot.
 - **One visual device** that is not a generic dark/light SaaS band.
 
@@ -150,7 +149,7 @@ Everything in **3**, plus:
 
 ## 5 exceptional (synthetic user keep)
 
-Everything in **4**, plus a keep spoken **as** the named Strategist Audience,
+Everything in **4**, plus a keep spoken **as** the named Director Audience,
 not about them:
 
 - **First person, fresh look.** "I am [Audience.name]. I just landed. I came
@@ -182,11 +181,11 @@ green one, is not a keep.
 
 ## Operating wave
 
-1. **Strategist** — direction and Audience records, until citable. Strategist
+1. **Director** — direction and Audience records, until citable. Director
    supplies who the user is and does not inhabit them (they authored the
    positioning being expressed).
-2. **Designer and Writer together** — tokens→atoms→blocks in parallel with
-   copy. Prove 3 with the gates above. Do not start if Strategist still has
+2. **Designer and Writer together** — tokens→components→blocks in parallel with
+   copy. Prove 3 with the gates above. Do not start if Director still has
    no citable direction.
 3. **Synthetic user keep** — separate session, first person as the named
    Audience, fresh look. Doers do not attend as the user.
@@ -207,8 +206,8 @@ green one, is not a keep.
 
 ## Package roles (mechanical vs authored)
 
-- **Strategist** — Audience records that name who the user is. Not the user.
-- **Designer** — tokens, `Hero`, `Button`, fold measurement schema, `designer-hero-css-check`, `designer-fold-check`. Doer.
+- **Director** — Audience records that name who the user is. Not the user.
+- **Designer** — tokens, `Hero`, `Button`, fold measurement schema, `designer-fold-check`. Doer.
 - **Writer** — copy slots, live trees, `fold-wallpaper` on wallpaper fold phrases. Doer.
 - **Publisher** — `MarketingView` mount; `heroActions` carries the single primary CTA; `heroMedia` is product surface or original art. Sealer, not the user.
 - **Inspector** — pre-landing *rules*. Not a person landing on the page.

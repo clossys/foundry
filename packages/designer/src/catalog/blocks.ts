@@ -1,88 +1,37 @@
+import { BLOCK_DISPLAY_TREE, blockPlacement } from "./display.js";
+import sectionHomes from "./maps/blocks-to-sections.json" with { type: "json" };
+import legalProseFill from "./fills/foundry/sections.legal-prose.json" with { type: "json" };
+import sectionSlots from "./slots/sections.json" with { type: "json" };
 import type {
   BlockContract,
   BlockEntry,
-  BlockGroupMap,
   BlockId,
-  BlockPlacement,
   Catalog,
-  CatalogTree,
   WorkRef,
 } from "./types.js";
-
-/** Block display tree: 5 L1 functions, 33 L2 families. */
-export const BLOCK_GROUPS: CatalogTree<BlockGroupMap> = [
-  {
-    id: "explain",
-    label: "Explain",
-    children: [
-      { id: "headings", label: "Headings" },
-      { id: "sections", label: "Sections" },
-      { id: "capabilities", label: "Capabilities" },
-      { id: "evidence", label: "Evidence" },
-      { id: "media", label: "Media" },
-      { id: "reading", label: "Reading" },
-      { id: "sequence", label: "Sequence" },
-      { id: "brand", label: "Brand" },
-      { id: "specimens", label: "Specimens" },
-    ],
-  },
-  {
-    id: "organize",
-    label: "Organize",
-    children: [
-      { id: "collection", label: "Collection" },
-      { id: "comparison", label: "Comparison" },
-      { id: "offers", label: "Offers" },
-      { id: "metrics", label: "Metrics" },
-      { id: "records", label: "Records" },
-      { id: "activity", label: "Activity" },
-      { id: "containers", label: "Containers" },
-    ],
-  },
-  {
-    id: "collect",
-    label: "Collect",
-    children: [
-      { id: "forms", label: "Forms" },
-      { id: "fields", label: "Fields" },
-      { id: "import", label: "Import" },
-      { id: "settings", label: "Settings" },
-      { id: "access", label: "Access" },
-      { id: "conversation", label: "Conversation" },
-    ],
-  },
-  {
-    id: "navigate",
-    label: "Navigate",
-    children: [
-      { id: "destinations", label: "Destinations" },
-      { id: "app-navigation", label: "App navigation" },
-      { id: "hierarchy", label: "Hierarchy" },
-      { id: "in-page", label: "In-page" },
-      { id: "actions", label: "Actions" },
-      { id: "paging", label: "Paging" },
-      { id: "filtering", label: "Filtering" },
-    ],
-  },
-  {
-    id: "respond",
-    label: "Respond",
-    children: [
-      { id: "states", label: "States" },
-      { id: "decisions", label: "Decisions" },
-      { id: "notices", label: "Notices" },
-      { id: "notifications", label: "Notifications" },
-    ],
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** A placement; an L2 from another L1 is a type error. */
-const at = <L1 extends keyof BlockGroupMap>(l1: L1, l2: BlockGroupMap[L1]): BlockPlacement =>
-  ({ l1, l2 }) as BlockPlacement;
+const legalProse = legalProseFill.sections["legal-prose"];
+const legalProseMetadata = legalProseFill.$extensions["com.clossys.fill"];
+const legalProseSource = legalProse.consumption.sourceFiles.find(file =>
+  file.path === `packages/designer/src/blocks/${legalProse.impl.export}.tsx`);
+const legalProseSlot = sectionSlots.find(slot => slot.id === legalProseMetadata.slot);
+if (legalProseMetadata.mode !== "implementation" || legalProseMetadata.slot !== legalProse.slot ||
+    legalProseSlot?.contract.kind !== "section" || legalProse.impl.kind !== "package" ||
+    legalProse.impl.module !== `${legalProseMetadata.pin.package}/blocks` ||
+    legalProseMetadata.pin.export !== `./blocks#${legalProse.impl.export}` || !legalProseSource) {
+  throw new Error("Legal prose requires its canonical section contract and own package implementation.");
+}
+
+/** Canonical sections exported by the blocks barrel without a legacy block address. */
+export const CANONICAL_SECTION_BLOCK_REGISTRATIONS = [{
+  id: legalProseMetadata.slot,
+  export: legalProse.impl.export,
+  source: legalProseSource.path.replace(/^packages\/designer\//, ""),
+}] as const;
 
 const pr = (number: number, state: "draft" | "ready"): WorkRef => ({ kind: "pull-request", number, state });
 
@@ -104,9 +53,9 @@ const WAITING =
   "Not built. Waits until a named consumer renders a placeholder or hand-rolls the pattern, or the owner names it.";
 
 /** Exported on the default branch and vendored by the consumer. */
-const built = (place: BlockPlacement, exportName: string, { stableCandidate = false, ...leaf }: Leaf): BlockEntry => ({
+const built = (exportName: string, { stableCandidate = false, ...leaf }: Leaf): BlockEntry => ({
   ...leaf,
-  ...place,
+  ...blockPlacement(leaf.id),
   ...draft,
   export: exportName,
   built: "yes",
@@ -114,9 +63,9 @@ const built = (place: BlockPlacement, exportName: string, { stableCandidate = fa
 });
 
 /** Exported on the default branch; the consumer's vendored copy has not caught up. */
-const exported = (place: BlockPlacement, exportName: string, leaf: Leaf): BlockEntry => ({
+const exported = (exportName: string, leaf: Leaf): BlockEntry => ({
   ...leaf,
-  ...place,
+  ...blockPlacement(leaf.id),
   ...draft,
   export: exportName,
   built: "exported",
@@ -125,9 +74,9 @@ const exported = (place: BlockPlacement, exportName: string, leaf: Leaf): BlockE
 });
 
 /** Built as a configuration of another leaf's export; no export of its own. */
-const recipe = (place: BlockPlacement, of: BlockId, leaf: Leaf): BlockEntry => ({
+const recipe = (of: BlockId, leaf: Leaf): BlockEntry => ({
   ...leaf,
-  ...place,
+  ...blockPlacement(leaf.id),
   ...draft,
   export: null,
   built: "yes",
@@ -136,9 +85,9 @@ const recipe = (place: BlockPlacement, of: BlockId, leaf: Leaf): BlockEntry => (
 });
 
 /** Still exported so existing references resolve; new work uses the successor. */
-const deprecated = (place: BlockPlacement, exportName: string, successor: BlockId, leaf: Leaf): BlockEntry => ({
+const deprecated = (exportName: string, successor: BlockId, leaf: Leaf): BlockEntry => ({
   ...leaf,
-  ...place,
+  ...blockPlacement(leaf.id),
   lifecycle: "deprecated",
   successor,
   signedOff: false,
@@ -149,9 +98,9 @@ const deprecated = (place: BlockPlacement, exportName: string, successor: BlockI
 });
 
 /** A registered draft spec row: not built, zero configs. */
-const spec = (place: BlockPlacement, leaf: Leaf): BlockEntry => ({
+const spec = (leaf: Leaf): BlockEntry => ({
   ...leaf,
-  ...place,
+  ...blockPlacement(leaf.id),
   ...draft,
   export: null,
   built: "no",
@@ -173,111 +122,83 @@ const PAGE_HEADER_CONTRACT: BlockContract = {
 // Leaves: shared inventory below; catalog.coverage.test.ts reports counts (repository test, not shipped).
 // ---------------------------------------------------------------------------
 
-const HEADINGS = at("explain", "headings");
-const SECTIONS = at("explain", "sections");
-const CAPABILITIES = at("explain", "capabilities");
-const EVIDENCE = at("explain", "evidence");
-const MEDIA = at("explain", "media");
-const READING = at("explain", "reading");
-const SEQUENCE = at("explain", "sequence");
-const BRAND = at("explain", "brand");
-const SPECIMENS = at("explain", "specimens");
-const COLLECTION = at("organize", "collection");
-const COMPARISON = at("organize", "comparison");
-const OFFERS = at("organize", "offers");
-const METRICS = at("organize", "metrics");
-const RECORDS = at("organize", "records");
-const ACTIVITY = at("organize", "activity");
-const CONTAINERS = at("organize", "containers");
-const FORMS = at("collect", "forms");
-const FIELDS = at("collect", "fields");
-const IMPORT = at("collect", "import");
-const SETTINGS = at("collect", "settings");
-const ACCESS = at("collect", "access");
-const CONVERSATION = at("collect", "conversation");
-const DESTINATIONS = at("navigate", "destinations");
-const APP_NAVIGATION = at("navigate", "app-navigation");
-const HIERARCHY = at("navigate", "hierarchy");
-const IN_PAGE = at("navigate", "in-page");
-const ACTIONS = at("navigate", "actions");
-const PAGING = at("navigate", "paging");
-const FILTERING = at("navigate", "filtering");
-const STATES = at("respond", "states");
-const DECISIONS = at("respond", "decisions");
-const NOTICES = at("respond", "notices");
-const NOTIFICATIONS = at("respond", "notifications");
+// Explicit legacy addresses; membership is verified against the section registry and retired aliases.
+const sectionLeafByBlock: Readonly<Partial<Record<BlockId, NonNullable<BlockEntry["sectionLeaf"]>>>> =
+  sectionHomes as Readonly<Partial<Record<BlockId, NonNullable<BlockEntry["sectionLeaf"]>>>>;
 
 /** Block leaves, in display order. */
 export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   // Explain / Headings
-  built(HEADINGS, "Hero", { id: "say.hero", label: "Hero" }),
-  built(HEADINGS, "PageHeader", {
+  built("Hero", { id: "say.hero", label: "Hero" }),
+  built("LogoHero", { id: "say.logo-hero", label: "Logo hero", contract: { requiredFields: ["mark", "name"], axes: [], slots: [], configs: [], surface: "marketing", specimen: null, alsoUsedFor: [] } }),
+  built("PageHeader", {
     id: "say.page-header",
     label: "Page header",
     stableCandidate: true,
     contract: PAGE_HEADER_CONTRACT,
     notes: [STABLE_CANDIDATE],
   }),
-  built(HEADINGS, "SectionHeader", { id: "say.section-header", label: "Section header" }),
-  built(HEADINGS, "SectionIntro", { id: "say.section-intro", label: "Section intro" }),
+  built("SectionHeader", { id: "say.section-header", label: "Section header" }),
+  built("SectionIntro", { id: "say.section-intro", label: "Section intro" }),
 
   // Explain / Sections
-  built(SECTIONS, "ContentSection", { id: "say.takeaway", label: "Content section" }),
-  deprecated(SECTIONS, "MarketingChapter", "say.takeaway", { id: "say.chapter", label: "Marketing chapter" }),
+  built("ContentSection", { id: "say.takeaway", label: "Content section" }),
+  deprecated("MarketingChapter", "say.takeaway", { id: "say.chapter", label: "Marketing chapter" }),
+  built("CallToAction", { id: "say.call-to-action", label: "Call to action" }),
 
   // Explain / Capabilities
-  recipe(CAPABILITIES, "items.raw", { id: "items.features", label: "Feature list" }),
-  recipe(CAPABILITIES, "items.raw", { id: "items.statement", label: "Statement row" }),
-  deprecated(CAPABILITIES, "FeatureGrid", "items.features", { id: "items.feature-grid", label: "Feature grid" }),
+  recipe("items.raw", { id: "items.features", label: "Feature list" }),
+  recipe("items.raw", { id: "items.statement", label: "Statement row" }),
+  deprecated("FeatureGrid", "items.features", { id: "items.feature-grid", label: "Feature grid" }),
 
   // Explain / Evidence
-  built(EVIDENCE, "Testimonial", { id: "say.testimonial", label: "Testimonial" }),
-  exported(EVIDENCE, "TestimonialSet", { id: "say.testimonial-set", label: "Testimonial set" }),
-  exported(EVIDENCE, "LogoCloud", { id: "items.logo-cloud", label: "Logo cloud" }),
-  exported(EVIDENCE, "PeopleGrid", { id: "items.people-grid", label: "People grid" }),
+  built("Testimonial", { id: "say.testimonial", label: "Testimonial" }),
+  exported("TestimonialSet", { id: "say.testimonial-set", label: "Testimonial set" }),
+  exported("LogoCloud", { id: "items.logo-cloud", label: "Logo cloud" }),
+  exported("PeopleGrid", { id: "items.people-grid", label: "People grid" }),
 
   // Explain / Media
-  built(MEDIA, "MediaFigure", { id: "say.media-figure", label: "Media figure" }),
-  spec(MEDIA, { id: "items.media-gallery", label: "Media gallery", inFlight: pr(2391, "draft") }),
+  built("MediaFigure", { id: "say.media-figure", label: "Media figure" }),
+  built("Gallery", { id: "items.media-gallery", label: "Media gallery" }),
 
   // Explain / Reading
-  built(READING, "ArticleBody", {
+  built("ArticleBody", {
     id: "prose.article",
     label: "Article body",
     stableCandidate: true,
     notes: [STABLE_CANDIDATE],
   }),
-  recipe(READING, "items.raw", { id: "items.faq", label: "FAQ" }),
-  deprecated(READING, "Faq", "items.faq", { id: "items.legacy-faq", label: "FAQ (legacy)" }),
-  spec(READING, { id: "say.info-tip", label: "Info tip" }),
+  recipe("items.raw", { id: "items.faq", label: "FAQ" }),
+  deprecated("Faq", "items.faq", { id: "items.legacy-faq", label: "FAQ (legacy)" }),
+  spec({ id: "say.info-tip", label: "Info tip" }),
 
   // Explain / Sequence
-  recipe(SEQUENCE, "items.raw", { id: "items.steps", label: "Steps" }),
-  deprecated(SEQUENCE, "OrderedStepSequence", "items.steps", {
+  recipe("items.raw", { id: "items.steps", label: "Steps" }),
+  deprecated("OrderedStepSequence", "items.steps", {
     id: "items.ordered-step-sequence",
     label: "Ordered steps (legacy)",
   }),
-  spec(SEQUENCE, { id: "items.timeline", label: "Timeline", inFlight: pr(2391, "draft") }),
+  exported("Timeline", { id: "items.timeline", label: "Timeline" }),
 
   // Explain / Brand
-  exported(BRAND, "Lockup", { id: "say.lockup", label: "Lockup" }),
+  exported("Lockup", { id: "say.lockup", label: "Lockup" }),
 
   // Explain / Specimens
-  recipe(SPECIMENS, "items.raw", { id: "items.specimen-stack", label: "Specimen stack" }),
-  built(SPECIMENS, "Specimen", { id: "say.specimen", label: "Specimen" }),
-  built(SPECIMENS, "SpecimenPanel", { id: "matrix.specimen-panel", label: "Specimen panel" }),
-  built(SPECIMENS, "AnatomyCallouts", { id: "say.anatomy-callouts", label: "Anatomy callouts" }),
-  built(SPECIMENS, "Scene", { id: "matrix.scene", label: "Scene" }),
+  recipe("items.raw", { id: "items.specimen-stack", label: "Specimen stack" }),
+  built("Specimen", { id: "say.specimen", label: "Specimen" }),
+  built("SpecimenPanel", { id: "matrix.specimen-panel", label: "Specimen panel" }),
+  built("AnatomyCallouts", { id: "say.anatomy-callouts", label: "Anatomy callouts" }),
+  built("Scene", { id: "matrix.scene", label: "Scene" }),
 
   // Organize / Collection
-  built(COLLECTION, "Items", { id: "items.raw", label: "Items" }),
-  built(COLLECTION, "Item", { id: "items.item", label: "Item" }),
-  recipe(COLLECTION, "items.raw", { id: "items.cards", label: "Card grid" }),
-  exported(COLLECTION, "TaskList", { id: "items.task-list", label: "Task list" }),
+  built("Items", { id: "items.raw", label: "Items" }),
+  built("Item", { id: "items.item", label: "Item" }),
+  built("RecordCards", { id: "items.cards", label: "Card grid" }),
+  exported("TaskList", { id: "items.task-list", label: "Task list" }),
 
   // Organize / Comparison
-  built(COMPARISON, "Matrix", { id: "matrix.raw", label: "Matrix" }),
-  recipe(COMPARISON, "matrix.raw", {
+  built("Matrix", { id: "matrix.raw", label: "Matrix" }),
+  recipe("matrix.raw", {
     id: "matrix.comparison",
     label: "Comparison table",
     inFlight: pr(2390, "draft"),
@@ -285,7 +206,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   }),
 
   // Organize / Offers
-  built(OFFERS, "PricingTable", {
+  built("PricingTable", {
     id: "matrix.pricing",
     label: "Pricing table",
     inFlight: pr(2390, "draft"),
@@ -293,49 +214,50 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   }),
 
   // Organize / Metrics
-  built(METRICS, "Stat", { id: "items.stat", label: "Stat" }),
-  recipe(METRICS, "items.raw", { id: "items.stat-grid", label: "Stat grid" }),
-  built(METRICS, "StatusList", { id: "items.status-list", label: "Status list" }),
-  exported(METRICS, "UsageMeter", { id: "items.usage-meter", label: "Usage meter" }),
+  built("Stat", { id: "items.stat", label: "Stat" }),
+  built("StatGroup", { id: "items.stat-grid", label: "Stat grid" }),
+  built("StatusList", { id: "items.status-list", label: "Status list" }),
+  exported("UsageMeter", { id: "items.usage-meter", label: "Usage meter" }),
+  exported("UsageSummary", { id: "items.usage-summary", label: "Usage summary", notes: ["A list of usage meter records."] }),
 
   // Organize / Records
-  built(RECORDS, "DataTable", { id: "matrix.data-table", label: "Data table" }),
-  built(RECORDS, "DetailView", { id: "matrix.detail", label: "Detail view" }),
-  built(RECORDS, "RecordLedger", { id: "items.record-ledger", label: "Record ledger" }),
-  exported(RECORDS, "GroupedTable", { id: "matrix.grouped-table", label: "Grouped table" }),
-  exported(RECORDS, "ResourceList", {
+  built("DataTable", { id: "matrix.data-table", label: "Data table" }),
+  built("DetailView", { id: "matrix.detail", label: "Detail view" }),
+  built("RecordLedger", { id: "items.record-ledger", label: "Record ledger" }),
+  exported("GroupedTable", { id: "matrix.grouped-table", label: "Grouped table" }),
+  exported("ResourceList", {
     id: "items.resource-list",
     label: "Resource list",
-    notes: ["Built on the grid list atom."],
+    notes: ["Built on the grid list component."],
   }),
-  spec(RECORDS, { id: "matrix.data-grid", label: "Data grid" }),
+  spec({ id: "matrix.data-grid", label: "Data grid" }),
 
   // Organize / Activity
-  exported(ACTIVITY, "EventItem", { id: "items.event-item", label: "Event item" }),
-  spec(ACTIVITY, { id: "items.activity-feed", label: "Activity feed" }),
-  spec(ACTIVITY, { id: "matrix.audit-log", label: "Audit log" }),
+  exported("EventItem", { id: "items.event-item", label: "Event item" }),
+  exported("ActivityFeed", { id: "items.activity-feed", label: "Activity feed", notes: ["Built on the event item block."] }),
+  exported("AuditLog", { id: "matrix.audit-log", label: "Audit log", notes: ["Built on the data table block."] }),
 
   // Organize / Containers
-  built(CONTAINERS, "Panel", { id: "matrix.panel", label: "Panel" }),
-  built(CONTAINERS, "Drawer", { id: "matrix.drawer", label: "Drawer" }),
-  built(CONTAINERS, "ResizablePane", {
+  built("Panel", { id: "matrix.panel", label: "Panel" }),
+  built("Drawer", { id: "matrix.drawer", label: "Drawer" }),
+  built("ResizablePane", {
     id: "matrix.resizable-pane",
     label: "Resizable pane",
-    notes: ["Depends on the owner decision for the resize handle atom: rebuilt with it, or parked with it."],
+    notes: ["Depends on the owner decision for the resize handle component: rebuilt with it, or parked with it."],
   }),
-  exported(CONTAINERS, "CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
-  exported(CONTAINERS, "FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
-  exported(CONTAINERS, "CatalogBrowser", { id: "matrix.catalog-browser", label: "Catalog browser" }),
-  exported(CONTAINERS, "CanvasSurface", { id: "matrix.canvas-surface", label: "Canvas surface" }),
+  exported("CatalogWorkspace", { id: "matrix.catalog-workspace", label: "Catalog workspace" }),
+  exported("FlowCanvas", { id: "matrix.flow-canvas", label: "Flow canvas" }),
+  exported("CatalogBrowser", { id: "matrix.catalog-browser", label: "Catalog browser" }),
+  exported("CanvasSurface", { id: "matrix.canvas-surface", label: "Canvas surface" }),
 
   // Collect / Forms
-  built(FORMS, "Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
-  exported(FORMS, "NewsletterBand", { id: "form.newsletter-band", label: "Newsletter band" }),
-  spec(FORMS, { id: "form.form-wizard", label: "Form wizard" }),
+  built("Form", { id: "form.form", label: "Form", stableCandidate: true, notes: [STABLE_CANDIDATE] }),
+  exported("NewsletterBand", { id: "form.newsletter-band", label: "Newsletter band" }),
+  exported("FormWizard", { id: "form.form-wizard", label: "Form wizard" }),
 
   // Collect / Fields
-  built(FIELDS, "FieldGroup", { id: "form.field-group", label: "Field group" }),
-  spec(FIELDS, {
+  built("FieldGroup", { id: "form.field-group", label: "Field group" }),
+  spec({
     id: "form.file-field",
     label: "File field",
     inFlight: { kind: "issue", number: 2357 },
@@ -343,84 +265,83 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   }),
 
   // Collect / Import
-  exported(IMPORT, "ColumnMapper", { id: "form.column-mapper", label: "Column mapper" }),
+  exported("ColumnMapper", { id: "form.column-mapper", label: "Column mapper" }),
 
   // Collect / Settings
-  spec(SETTINGS, {
+  exported("SettingsSection", {
     id: "form.settings-section",
     label: "Settings section",
-    notes: ["Check the admin routes for a consumer before building."],
+    notes: ["Its saveBar region hosts the save bar; form.save-bar stays a separate spec."],
   }),
-  spec(SETTINGS, {
+  spec({
     id: "form.save-bar",
     label: "Save bar",
     notes: ["Check the admin routes for a consumer before building."],
   }),
 
   // Collect / Access
-  exported(ACCESS, "AccessMatrix", { id: "matrix.access-matrix", label: "Access matrix" }),
+  exported("AccessMatrix", { id: "matrix.access-matrix", label: "Access matrix" }),
 
   // Collect / Conversation
-  exported(CONVERSATION, "Chat", { id: "form.chat", label: "Chat" }),
+  exported("Chat", { id: "form.chat", label: "Chat" }),
 
   // Navigate / Destinations
-  recipe(DESTINATIONS, "items.raw", { id: "items.link-index", label: "Link index" }),
-  recipe(DESTINATIONS, "items.raw", { id: "items.topics", label: "Topic list" }),
-  built(DESTINATIONS, "NavGrid", { id: "items.nav-grid", label: "Nav grid" }),
+  recipe("items.raw", { id: "items.link-index", label: "Link index" }),
+  recipe("items.raw", { id: "items.topics", label: "Topic list" }),
+  built("NavGrid", { id: "items.nav-grid", label: "Nav grid" }),
 
   // Navigate / App navigation
-  built(APP_NAVIGATION, "AppNavigation", { id: "items.app-navigation", label: "App navigation" }),
-  built(APP_NAVIGATION, "AccountMenu", { id: "form.account-menu", label: "Account menu" }),
-  built(APP_NAVIGATION, "CommandMenu", { id: "form.command-menu", label: "Command menu" }),
-  exported(APP_NAVIGATION, "PageBar", {
+  built("AppNavigation", { id: "items.app-navigation", label: "App navigation" }),
+  built("AccountMenu", { id: "form.account-menu", label: "Account menu" }),
+  built("CommandMenu", { id: "form.command-menu", label: "Command menu" }),
+  exported("PageBar", {
     id: "items.page-bar",
     label: "Page bar",
     notes: ["Extracted from the app frame by merged pull request 2398."],
   }),
 
   // Navigate / Hierarchy
-  exported(HIERARCHY, "Tree", { id: "items.tree", label: "Tree" }),
-  exported(HIERARCHY, "Explorer", { id: "items.explorer", label: "Explorer" }),
-  exported(HIERARCHY, "RelationGraph", { id: "items.relation-graph", label: "Relation graph" }),
+  exported("Tree", { id: "items.tree", label: "Tree" }),
+  exported("Explorer", { id: "items.explorer", label: "Explorer" }),
+  exported("RelationGraph", { id: "items.relation-graph", label: "Relation graph" }),
 
   // Navigate / In-page
-  exported(IN_PAGE, "TableOfContents", { id: "prose.table-of-contents", label: "Table of contents" }),
+  exported("TableOfContents", { id: "prose.table-of-contents", label: "Table of contents" }),
 
   // Navigate / Actions
-  built(ACTIONS, "Toolbar", { id: "form.toolbar", label: "Toolbar" }),
-  spec(ACTIONS, { id: "form.bulk-action-bar", label: "Bulk action bar" }),
+  built("Toolbar", { id: "form.toolbar", label: "Toolbar" }),
+  spec({ id: "form.bulk-action-bar", label: "Bulk action bar" }),
 
   // Navigate / Paging
-  built(PAGING, "Pagination", { id: "form.pagination", label: "Pagination" }),
-  spec(PAGING, { id: "form.load-more", label: "Load more" }),
+  built("Pagination", { id: "form.pagination", label: "Pagination" }),
+  spec({ id: "form.load-more", label: "Load more" }),
 
   // Navigate / Filtering
-  spec(FILTERING, { id: "form.filter-builder", label: "Filter builder" }),
+  exported("FilterBuilder", { id: "form.filter-builder", label: "Filter builder" }),
 
   // Respond / States
-  built(STATES, "EmptyState", {
+  built("EmptyState", {
     id: "say.empty-state",
     label: "Empty state",
     stableCandidate: true,
     notes: [STABLE_CANDIDATE],
   }),
-  spec(STATES, {
-    id: "say.error-state",
-    label: "Error state",
-    notes: ["Check the admin routes for a consumer before building."],
-  }),
+  built("ErrorState", { id: "say.error-state", label: "Error state" }),
 
   // Respond / Decisions
-  built(DECISIONS, "ConfirmDialog", { id: "form.confirm-dialog", label: "Confirm dialog" }),
-  built(DECISIONS, "ConsentBanner", { id: "form.consent-banner", label: "Consent banner" }),
+  built("ConfirmDialog", { id: "form.confirm-dialog", label: "Confirm dialog" }),
+  built("ConsentBanner", { id: "form.consent-banner", label: "Consent banner" }),
 
   // Respond / Notices
-  spec(NOTICES, { id: "say.notice-stack", label: "Notice stack" }),
-  spec(NOTICES, { id: "form.refresh-status", label: "Refresh status" }),
+  built("NoticeList", { id: "say.notice-stack", label: "Notice stack" }),
+  spec({ id: "form.refresh-status", label: "Refresh status" }),
 
   // Respond / Notifications
-  spec(NOTIFICATIONS, { id: "items.notification-center", label: "Notification center" }),
-];
+  spec({ id: "items.notification-center", label: "Notification center" }),
+].map((block): BlockEntry => {
+  const sectionLeaf = sectionLeafByBlock[block.id];
+  return sectionLeaf === undefined ? block : { ...block, sectionLeaf };
+});
 
 const MODEL_API = "Data-model API for a block; not a component.";
 const HOOK = "Hook paired with a block; not a component.";
@@ -493,8 +414,8 @@ export const BLOCK_EXPORT_EXCLUSIONS: Readonly<Record<string, string>> = {
   minimapModel: MODEL_API,
 };
 
-export const BLOCK_CATALOG: Catalog<"blocks", BlockGroupMap, BlockEntry> = {
+export const BLOCK_CATALOG = {
   kind: "blocks",
-  groups: BLOCK_GROUPS,
+  groups: BLOCK_DISPLAY_TREE,
   entries: BLOCK_ENTRIES,
-};
+} satisfies Catalog<"blocks", Record<string, string>, BlockEntry>;

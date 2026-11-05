@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "layer": "themes",
+  "from": "tokens",
+  "note": "Migration notes only: the retired tokens layer ids and their themes successors. Nothing reads an old id at runtime.",
+  "renamed": [
+    {
+      "old": "tokens.accent-color",
+      "new": [
+        "themes.primary"
+      ]
+    },
+    {
+      "old": "tokens.status-color",
+      "new": [
+        "themes.destructive"
+      ]
+    },
+    {
+      "old": "tokens.surface-color",
+      "new": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent"
+      ]
+    },
+    {
+      "old": "tokens.text-color",
+      "new": [
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ]
+    },
+    {
+      "old": "tokens.border-color",
+      "new": [
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border"
+      ]
+    },
+    {
+      "old": "tokens.action-color",
+      "new": [
+        "themes.primary",
+        "themes.sidebar-primary"
+      ]
+    },
+    {
+      "old": "tokens.control-color",
+      "new": [
+        "themes.input"
+      ]
+    },
+    {
+      "old": "tokens.focus-color",
+      "new": [
+        "themes.ring",
+        "themes.sidebar-ring"
+      ]
+    },
+    {
+      "old": "tokens.categorical-color",
+      "new": [
+        "themes.chart-1",
+        "themes.chart-2",
+        "themes.chart-3",
+        "themes.chart-4",
+        "themes.chart-5"
+      ]
+    },
+    {
+      "old": "tokens.typeface",
+      "new": [
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ]
+    },
+    {
+      "old": "tokens.display-face",
+      "new": [
+        "themes.font-heading"
+      ]
+    },
+    {
+      "old": "tokens.letter-spacing",
+      "new": [
+        "themes.tracking-tight"
+      ]
+    },
+    {
+      "old": "tokens.spacing",
+      "new": [
+        "themes.spacing"
+      ]
+    },
+    {
+      "old": "tokens.radius",
+      "new": [
+        "themes.radius"
+      ]
+    },
+    {
+      "old": "tokens.control-radius",
+      "new": [
+        "themes.radius"
+      ]
+    },
+    {
+      "old": "tokens.surface-radius",
+      "new": [
+        "themes.radius"
+      ]
+    },
+    {
+      "old": "tokens.shadow",
+      "new": [
+        "themes.shadow"
+      ]
+    },
+    {
+      "old": "tokens.elevation",
+      "new": [
+        "themes.shadow"
+      ]
+    },
+    {
+      "old": "tokens.animation",
+      "new": [
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text"
+      ]
+    }
+  ],
+  "deleted": [
+    "tokens.color-ramp",
+    "tokens.scrim-color",
+    "tokens.gradient",
+    "tokens.chart-color",
+    "tokens.sequential-color",
+    "tokens.diverging-color",
+    "tokens.font-weight",
+    "tokens.font-size",
+    "tokens.display-size",
+    "tokens.heading-size",
+    "tokens.body-size",
+    "tokens.caption-size",
+    "tokens.code-size",
+    "tokens.line-height",
+    "tokens.breakpoint",
+    "tokens.content-size",
+    "tokens.region-width",
+    "tokens.gutter",
+    "tokens.container-width",
+    "tokens.density",
+    "tokens.border-width",
+    "tokens.icon-size",
+    "tokens.icon-stroke",
+    "tokens.brandmark-size",
+    "tokens.blur",
+    "tokens.focus-shadow",
+    "tokens.z-index",
+    "tokens.duration",
+    "tokens.behavior-timing",
+    "tokens.transition-duration",
+    "tokens.easing",
+    "tokens.transition-easing",
+    "tokens.shift-distance",
+    "tokens.control-size",
+    "tokens.touch-target",
+    "tokens.state-opacity",
+    "tokens.focus-outline"
+  ]
+}

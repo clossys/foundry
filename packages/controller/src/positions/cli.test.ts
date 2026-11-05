@@ -23,7 +23,7 @@ const legacyLedger090 = {
     { package: "@clossys/locksmith", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
     { package: "@clossys/integrator", disposition: "open", reason: "Synthetic schema fixture; exercises a complete open position.", positionIds: ["fixture-integrator"] },
     { package: "@clossys/observer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
-    { package: "@clossys/strategist", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
+    { package: "@clossys/director", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
     { package: "@clossys/writer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
     { package: "@clossys/designer", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },
     { package: "@clossys/publisher", disposition: "not-applicable", reason: "Synthetic schema fixture; no consumer decision.", positionIds: [] },

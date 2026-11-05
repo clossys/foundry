@@ -1,7 +1,7 @@
 import type { ItemData } from "@clossys/designer/blocks/server";
 import type { CopyResolver } from "@clossys/writer";
 import type { LegalDocument } from "../../document/legal.js";
-import type { SiteShellInput } from "../frame/types.js";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import type { AssetResolver } from "../types.js";
 import { StatusView, type StatusViewProps } from "./StatusView.js";
 import { LegalView, type LegalViewLabels, type LegalViewProps } from "./LegalView.js";
@@ -51,7 +51,7 @@ void <LegalView {...legal} related={{ label: "Related", items: [{ id: "guide", h
 
 declare const shell: SiteShellInput;
 declare const resolveAsset: AssetResolver;
-const head = { lang: "en", documentTitle: { page: "Something went wrong", brand: "Example Studio" }, icon: { href: "/icon.svg" } };
+const head = { lang: "en", localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] }, documentTitle: { page: "Something went wrong", brand: "Example Studio" }, icon: { href: "/icon.svg" } };
 const frame = { shell, resolveCopy, resolveAsset, status: "500" };
 void <GlobalErrorDocument {...head} {...frame} />;
 void <GlobalErrorDocument {...head} {...frame} routes={collection} />;

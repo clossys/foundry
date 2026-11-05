@@ -1,0 +1,46 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.references",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 251
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.references",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Uses and used by, in both directions across agents, and the lineage of each version.",
+    "inputs": [
+      {
+        "name": "references",
+        "kind": "data",
+        "required": true,
+        "description": "Links in both directions and lineage rows."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "card",
+        "version": "4.23.0",
+        "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.table"
+  ]
+}

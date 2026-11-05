@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "assets.app-icon",
+  "agent": "designer",
+  "ia": {
+    "l0": "assets",
+    "l1": "assets.app-identity",
+    "l2": "app-identity-application",
+    "order": 48
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "asset",
+    "valueKind": "svg",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "maskable",
+        "standard"
+      ]
+    },
+    "modes": [
+      "light"
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

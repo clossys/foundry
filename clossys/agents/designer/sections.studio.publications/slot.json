@@ -1,0 +1,46 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.studio.publications",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.extensions",
+    "l2": "extensions",
+    "order": 250
+  },
+  "kind": "element",
+  "contract": {
+    "schema": "clossys.slot-contract/1",
+    "slot": "sections.studio.publications",
+    "package": "producer",
+    "layer": "sections",
+    "purpose": "Each publication with its configured root and its full route table: path, page, frame, sections, status and the leaf page.",
+    "inputs": [
+      {
+        "name": "publications",
+        "kind": "data",
+        "required": true,
+        "description": "Publications with root and routes."
+      }
+    ],
+    "limits": {},
+    "references": [
+      {
+        "registry": "shadcn",
+        "item": "table",
+        "version": "4.23.0",
+        "hash": "sha256:7c761c65cbdd8a04693fbde181016cf3af26590ebc57c1073a47fd6a0e188561",
+        "url": "https://ui.shadcn.com/r/styles/radix-nova/table.json"
+      }
+    ],
+    "checkSuite": "studio",
+    "specimenKind": "data"
+  },
+  "inputs": [],
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.table"
+  ]
+}

@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 /** Display data supplied by the host; initials use Avatar's name fallback. */
 export interface AccountMenuActor {
   name: string;
@@ -41,6 +43,10 @@ export interface AccountMenuProps {
   /** Section IDs must be unique within this menu. */
   sections: readonly AccountMenuSection[];
   contextLabel?: string;
+  /** Additional host-composed Menu.Section or Menu.Item content. */
+  menuContent?: ReactNode;
+  /** Host-owned controls beside the menu inside the account popup. */
+  controls?: ReactNode;
   /** Collapsed trigger name and tooltip only; non-empty overrides actor.name. Expanded labels retain the visible name. */
   triggerLabel?: string;
   /** @default false */

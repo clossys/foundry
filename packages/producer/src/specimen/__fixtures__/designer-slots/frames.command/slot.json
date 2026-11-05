@@ -1,0 +1,105 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "frames.command",
+  "agent": "designer",
+  "ia": {
+    "l0": "frames",
+    "l1": "frames.overlay-shells",
+    "l2": "overlay-shells-commands",
+    "order": 235
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "frame",
+    "root": "dialog",
+    "landmarks": [],
+    "slots": [
+      {
+        "id": "search",
+        "required": true,
+        "accepts": "components.search-field"
+      },
+      {
+        "id": "groups",
+        "required": true,
+        "accepts": "host-node"
+      },
+      {
+        "id": "empty",
+        "required": false,
+        "accepts": "host-node"
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "shortcut.on",
+        "shortcut.off"
+      ]
+    },
+    "statePorts": [
+      {
+        "id": "open",
+        "type": "boolean"
+      },
+      {
+        "id": "query",
+        "type": "string"
+      }
+    ],
+    "rendering": "client",
+    "breakpoints": [],
+    "allowedReads": {
+      "themes": [
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.shadow",
+        "themes.spacing",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius"
+      ],
+      "assets": [
+        "assets.icon-search",
+        "assets.icon-close"
+      ]
+    },
+    "composes": [
+      "components.dialog",
+      "components.search-field",
+      "components.keyboard",
+      "components.tooltip",
+      "components.button",
+      "components.icon"
+    ]
+  },
+  "inputs": [],
+  "uses": [
+    "components.button",
+    "components.dialog",
+    "components.icon",
+    "components.keyboard",
+    "components.search-field",
+    "components.tooltip"
+  ]
+}

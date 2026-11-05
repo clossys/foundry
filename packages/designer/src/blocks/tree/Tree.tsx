@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { TOKENS } from "../../tokens/tokens.js";
-import { cx } from "../../atoms/internal/cx.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { cx } from "../../components/internal/cx.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { Item } from "../items/Item.js";
 import { hasContent } from "../items/policies.js";
 import type { ItemData } from "../items/types.js";

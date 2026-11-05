@@ -1,0 +1,161 @@
+{
+  "layer": "patterns",
+  "nodes": [
+    {
+      "id": "headings",
+      "label": "Headings",
+      "children": [
+        {
+          "id": "headings-headlines",
+          "label": "Headlines",
+          "leaves": [
+            "patterns.headline",
+            "patterns.headline-subhead",
+            "patterns.eyebrow-headline"
+          ]
+        },
+        {
+          "id": "headings-section-titles",
+          "label": "Section titles",
+          "leaves": [
+            "patterns.section-title"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "actions",
+      "label": "Actions",
+      "children": [
+        {
+          "id": "actions-calls-to-action",
+          "label": "Calls to action",
+          "leaves": [
+            "patterns.primary-action",
+            "patterns.secondary-action"
+          ]
+        },
+        {
+          "id": "actions-links",
+          "label": "Links",
+          "leaves": [
+            "patterns.inline-link"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "messages",
+      "label": "Messages",
+      "children": [
+        {
+          "id": "messages-problems",
+          "label": "Problems",
+          "leaves": [
+            "patterns.error-message",
+            "patterns.warning-message"
+          ]
+        },
+        {
+          "id": "messages-outcomes",
+          "label": "Outcomes",
+          "leaves": [
+            "patterns.confirmation"
+          ]
+        },
+        {
+          "id": "messages-states",
+          "label": "States",
+          "leaves": [
+            "patterns.empty-state"
+          ]
+        },
+        {
+          "id": "messages-help",
+          "label": "Help",
+          "leaves": [
+            "patterns.hint",
+            "patterns.tooltip"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "forms",
+      "label": "Forms",
+      "children": [
+        {
+          "id": "forms-fields",
+          "label": "Fields",
+          "leaves": [
+            "patterns.form-field"
+          ]
+        },
+        {
+          "id": "forms-consent",
+          "label": "Consent",
+          "leaves": [
+            "patterns.consent-line"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "data-and-lists",
+      "label": "Data and lists",
+      "children": [
+        {
+          "id": "data-and-lists-items",
+          "label": "Items",
+          "leaves": [
+            "patterns.feature-bullet",
+            "patterns.stat",
+            "patterns.pricing-item"
+          ]
+        },
+        {
+          "id": "data-and-lists-tables",
+          "label": "Tables",
+          "leaves": [
+            "patterns.table-header",
+            "patterns.table-caption"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "attribution",
+      "label": "Attribution",
+      "children": [
+        {
+          "id": "attribution-quotes",
+          "label": "Quotes",
+          "leaves": [
+            "patterns.quote",
+            "patterns.testimonial"
+          ]
+        },
+        {
+          "id": "attribution-figures",
+          "label": "Figures",
+          "leaves": [
+            "patterns.figure-caption"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "identity",
+      "label": "Identity",
+      "children": [
+        {
+          "id": "identity-messaging-kit",
+          "label": "Messaging kit",
+          "leaves": [
+            "patterns.messaging-kit"
+          ]
+        }
+      ]
+    }
+  ]
+}

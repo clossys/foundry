@@ -1,14 +1,25 @@
 /**
  * Coverage for the catalog manifests: each catalog's leaf ids are frozen (the
  * live manifest must equal the literal list below), and every real token,
- * glyph, atom and block this package declares or exports has exactly one
+ * glyph, component and block this package declares or exports has exactly one
  * home. Changing a frozen list is a deliberate, reviewed edit.
  */
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import ts from "typescript";
+import { importShadcnAriaRail } from "../importers/shadcn-aria-rail.js";
+import { componentOf } from "../catalog-core/resolve-components.js";
+import { componentSecondaryExports } from "../catalog-core/component-secondary-exports.js";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import * as ATOM_EXPORTS from "../atoms/index.js";
+import * as RAIL_SIDEBAR from "../components/sidebar/sidebar.js";
+import * as RAIL_COMMAND from "../components/command/command.js";
+import * as RAIL_SHEET from "../components/sheet/sheet.js";
+import * as RAIL_EMPTY from "../components/empty/empty.js";
+import * as RAIL_ITEM from "../components/item/item.js";
+import * as RAIL_SCROLL_AREA from "../components/scroll-area/scroll-area.js";
+import * as RAIL_DROPDOWN_MENU from "../components/dropdown-menu/dropdown-menu.js";
+import * as COMPONENT_EXPORTS from "../components/index.js";
 import * as BLOCK_EXPORTS from "../blocks/index.js";
 import * as CHART_EXPORTS from "../charts/index.js";
 import * as ICON_EXPORTS from "../icons/index.js";
@@ -17,8 +28,8 @@ import { IDENTITY_VARIANT_ROLES } from "../tokens/identity-kit.js";
 import { TOKENS } from "../tokens/tokens.js";
 import {
   ASSET_ENTRIES,
-  ATOM_ENTRIES,
-  ATOM_EXPORT_EXCLUSIONS,
+  COMPONENT_ENTRIES,
+  COMPONENT_EXPORT_EXCLUSIONS,
   BLOCK_CATALOG,
   BLOCK_ENTRIES,
   BLOCK_EXPORT_EXCLUSIONS,
@@ -27,14 +38,17 @@ import {
   TOKEN_EXCLUSIONS,
 } from "./index.js";
 import type { TokenId } from "./types.js";
+import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "./blocks.js";
+import legalProseFill from "./fills/foundry/sections.legal-prose.json" with { type: "json" };
+import sectionSlots from "./slots/sections.json" with { type: "json" };
 
-/** Frozen token leaf ids, 168. */
+/** Frozen token leaf ids, 169. */
 const FROZEN_TOKEN_IDS: readonly string[] = [
   "--color-surface-base", "--color-surface-sunken", "--color-surface-raised", "--color-surface-inverse",
   "--color-surface-inverse-raised", "--color-surface-aside", "--color-surface-selected",
   "--color-surface-glass", "--color-surface-glass-inverse", "--color-ink-primary", "--color-ink-secondary",
   "--color-ink-muted", "--color-ink-link", "--color-ink-on-inverse", "--color-ink-on-inverse-muted",
-  "--color-ink-on-primary", "--color-line-base", "--color-line-strong", "--color-line-on-inverse",
+  "--color-ink-on-primary", "--color-line-base", "--color-line-strong", "--color-line-on-inverse", "--color-line-control",
   "--color-line-panel", "--color-primary", "--color-primary-text", "--color-primary-hover",
   "--color-primary-tint", "--color-primary-on-inverse", "--color-control-tonal",
   "--color-control-tonal-hover", "--color-control-tonal-inverse", "--color-control-tonal-inverse-hover",
@@ -94,12 +108,12 @@ const FROZEN_ICON_IDS: readonly string[] = [
   "Calendar", "Clock",
   "CreditCard", "Receipt", "Briefcase",
   "ShieldCheck", "Lock", "Scale",
-  "Box", "Layers", "Plug",
+  "Box", "Layers", "Plug", "PanelLeft",
 ];
 
-/** Frozen atom leaf ids, 78. */
-const FROZEN_ATOM_IDS: readonly string[] = [
-  "act.button", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button",
+/** Frozen component leaf ids, 79. */
+const FROZEN_COMPONENT_IDS: readonly string[] = [
+  "act.button", "act.native-action", "act.icon-button", "act.menu", "act.toolbar", "act.toggle-button",
   "act.link", "act.breadcrumb", "reveal.tabs", "act.navigation-tree",
   "enter.text-field", "enter.textarea", "enter.search-field", "enter.token-field",
   "enter.checkbox", "enter.checkbox-group", "enter.switch", "enter.radio-group", "enter.segmented-control",
@@ -176,6 +190,7 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "items.topics",
   "items.tree",
   "items.usage-meter",
+  "items.usage-summary",
   "matrix.access-matrix",
   "matrix.audit-log",
   "matrix.canvas-surface",
@@ -197,12 +212,14 @@ const FROZEN_BLOCK_IDS: readonly string[] = [
   "prose.article",
   "prose.table-of-contents",
   "say.anatomy-callouts",
+  "say.call-to-action",
   "say.chapter",
   "say.empty-state",
   "say.error-state",
   "say.hero",
   "say.info-tip",
   "say.lockup",
+  "say.logo-hero",
   "say.media-figure",
   "say.notice-stack",
   "say.page-header",
@@ -229,10 +246,10 @@ function aliases(value: unknown): TokenId[] {
 describe("token catalog coverage", () => {
   const ids = TOKEN_ENTRIES.map((entry) => entry.id);
 
-  it("matches the frozen id list exactly, 168 leaves", () => {
+  it("matches the frozen id list exactly, 169 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_TOKEN_IDS).toHaveLength(168);
-    expect(ids).toHaveLength(168);
+    expect(FROZEN_TOKEN_IDS).toHaveLength(169);
+    expect(ids).toHaveLength(169);
     expect([...ids].sort()).toEqual([...FROZEN_TOKEN_IDS].sort());
   });
 
@@ -294,8 +311,8 @@ describe("icon catalog coverage", () => {
 
   it("matches the frozen id list exactly, 40 glyphs", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_ICON_IDS).toHaveLength(40);
-    expect(ids).toHaveLength(40);
+    expect(FROZEN_ICON_IDS).toHaveLength(41);
+    expect(ids).toHaveLength(41);
     expect([...ids].sort()).toEqual([...FROZEN_ICON_IDS].sort());
   });
 
@@ -343,22 +360,67 @@ describe("asset catalog coverage", () => {
   });
 });
 
-describe("atom catalog coverage", () => {
-  const ids = ATOM_ENTRIES.map((entry) => entry.id);
-  const leafExports = ATOM_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
+const rail = importShadcnAriaRail();
+const railModules: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
+  sidebar: RAIL_SIDEBAR, command: RAIL_COMMAND, sheet: RAIL_SHEET, empty: RAIL_EMPTY,
+  item: RAIL_ITEM, "scroll-area": RAIL_SCROLL_AREA, "dropdown-menu": RAIL_DROPDOWN_MENU,
+};
+const railPublic = Object.entries(railModules).flatMap(([leaf, module]) => {
+  const fill = componentOf(rail.fills.find(doc => componentOf(doc).slot === `components.${leaf}`)!);
+  if (fill.impl.kind !== "source") throw new Error("Expected authenticated source implementation");
+  const anatomy = componentSecondaryExports(fill, rail.files).map(row => row.name);
+  // This exported hook is parent support API, never component anatomy or an independent leaf.
+  const support = leaf === "sidebar" ? ["useSidebar"] : [];
+  return [fill.impl.export, ...anatomy, ...support].map(name => ({ name, leaf: fill.slot, module }));
+});
+
+describe("component catalog coverage", () => {
+  const ids = COMPONENT_ENTRIES.map((entry) => entry.id);
+  const leafExports = COMPONENT_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
   const packageRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
-  it("matches the frozen id list exactly, 78 leaves", () => {
+  it("matches the frozen id list exactly, 79 leaves", () => {
     expect(duplicates(ids)).toEqual([]);
-    expect(FROZEN_ATOM_IDS).toHaveLength(78);
-    expect(ids).toHaveLength(78);
-    expect([...ids].sort()).toEqual([...FROZEN_ATOM_IDS].sort());
+    expect(FROZEN_COMPONENT_IDS).toHaveLength(79);
+    expect(ids).toHaveLength(79);
+    expect([...ids].sort()).toEqual([...FROZEN_COMPONENT_IDS].sort());
   });
 
-  it("places every atom and chart export exactly once: as a leaf or an exclusion", () => {
-    const exported = [...Object.keys(ATOM_EXPORTS), ...Object.keys(CHART_EXPORTS)];
+  it("places every new rail root, anatomy value and support API at its exact source parent", () => {
+    expect([...new Set(railPublic.map(row => row.leaf))].sort()).toEqual([
+      "components.command", "components.dropdown-menu", "components.empty", "components.item",
+      "components.scroll-area", "components.sheet", "components.sidebar",
+    ]);
+    expect(duplicates(railPublic.map(row => row.name))).toEqual([]);
+    for (const [leaf, module] of Object.entries(railModules)) {
+      const fill = componentOf(rail.fills.find(doc => componentOf(doc).slot === `components.${leaf}`)!);
+      if (fill.impl.kind !== "source") throw new Error("Expected source implementation");
+      const file = rail.files.find(file => file.path === fill.impl.entry)!;
+      expect(readFileSync(join(packageRoot, "src", file.path), "utf8")).toBe(file.content.replace(
+        /((?:from\s*|import\s*)["'])(\.[^"']+)(["'])/g,
+        (_match, before, specifier, after) => before + specifier + (/\.(js|json)$/.test(specifier) ? "" : ".js") + after));
+      const ast = ts.createSourceFile(file.path, file.content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+      const functions = new Set(ast.statements.filter(ts.isFunctionDeclaration).filter(node => node.body).map(node => node.name!.text));
+      const declared = ast.statements.filter(ts.isExportDeclaration).flatMap(node => {
+        if (!node.exportClause || !ts.isNamedExports(node.exportClause) || node.moduleSpecifier) throw new Error("Expected local named source exports");
+        return node.exportClause.elements.filter(binding => !node.isTypeOnly && !binding.isTypeOnly).map(binding => binding.name.text);
+      }).sort();
+      expect(Object.keys(module).sort(), leaf).toEqual(declared);
+      expect(railPublic.filter(row => row.leaf === fill.slot).map(row => row.name).sort(), leaf).toEqual(declared);
+      for (const name of declared) {
+        expect(functions.has(name), `${leaf}#${name}`).toBe(true);
+        expect((COMPONENT_EXPORTS as Record<string, unknown>)[name], name).toBe(module[name]);
+      }
+      if (leaf === "sidebar") expect(componentSecondaryExports(fill, rail.files).map(row => row.name)).not.toContain("useSidebar");
+    }
+  });
+
+  it("places every component and chart export exactly once: as a leaf or an exclusion", () => {
+    // Source-adoption additions have the independent parent proof above; retain every earlier catalog omission.
+    const additions = new Set(railPublic.map(row => row.name));
+    const exported = [...Object.keys(COMPONENT_EXPORTS).filter(name => !additions.has(name)), ...Object.keys(CHART_EXPORTS)];
     expect(duplicates(exported)).toEqual([]);
-    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(ATOM_EXPORT_EXCLUSIONS)];
+    const accounted = [...leafExports.filter((name) => name !== "Toaster"), ...Object.keys(COMPONENT_EXPORT_EXCLUSIONS)];
     expect(duplicates(accounted)).toEqual([]);
     expect([...exported].sort()).toEqual([...accounted].sort());
   });
@@ -368,13 +430,13 @@ describe("atom catalog coverage", () => {
     expect(leafExports.filter((name) => name === "Toaster")).toHaveLength(1);
   });
 
-  it("counts 47 leaves on the default branch (9 parked), 14 in flight and 17 gaps", () => {
-    const count = (status: string) => ATOM_ENTRIES.filter((entry) => entry.status === status).length;
-    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([38, 9, 14, 17]);
+  it("counts 49 leaves on the default branch (9 parked), 13 in flight and 17 gaps", () => {
+    const count = (status: string) => COMPONENT_ENTRIES.filter((entry) => entry.status === status).length;
+    expect([count("main"), count("parked"), count("in-flight"), count("gap")]).toEqual([40, 9, 13, 17]);
   });
 
   it("gives built leaves an export and real files, and unbuilt leaves neither", () => {
-    for (const entry of ATOM_ENTRIES) {
+    for (const entry of COMPONENT_ENTRIES) {
       const built = entry.status === "main" || entry.status === "parked";
       expect(entry.export !== null, entry.id).toBe(built);
       expect(entry.files.length > 0, entry.id).toBe(built);
@@ -383,9 +445,9 @@ describe("atom catalog coverage", () => {
   });
 
   it("parks exactly the charts", () => {
-    for (const entry of ATOM_ENTRIES) {
-      expect(entry.status === "parked", entry.id).toBe(entry.l2 === "charts");
-      expect(entry.disposition === "park", entry.id).toBe(entry.l2 === "charts");
+    for (const entry of COMPONENT_ENTRIES) {
+      expect(entry.status === "parked", entry.id).toBe(entry.l2?.startsWith("charts-") ?? false);
+      expect(entry.disposition === "park", entry.id).toBe(entry.l2?.startsWith("charts-") ?? false);
     }
   });
 });
@@ -404,9 +466,27 @@ describe("block catalog coverage", () => {
   it("places every blocks export exactly once: as a leaf or an exclusion", () => {
     const exported = Object.keys(BLOCK_EXPORTS);
     const leafExports = BLOCK_ENTRIES.flatMap((entry) => (entry.export === null ? [] : [entry.export]));
-    const accounted = [...leafExports, ...Object.keys(BLOCK_EXPORT_EXCLUSIONS)];
+    const sectionExports = CANONICAL_SECTION_BLOCK_REGISTRATIONS.map(entry => entry.export);
+    const accounted = [...leafExports, ...sectionExports, ...Object.keys(BLOCK_EXPORT_EXCLUSIONS)];
     expect(duplicates(accounted)).toEqual([]);
     expect([...exported].sort()).toEqual([...accounted].sort());
+  });
+
+  it("registers LegalProse exactly once at its existing canonical section and own implementation", () => {
+    const fill = legalProseFill.sections["legal-prose"];
+    expect(CANONICAL_SECTION_BLOCK_REGISTRATIONS).toEqual([{
+      id: "sections.legal-prose", export: "LegalProse", source: "src/blocks/LegalProse.tsx",
+    }]);
+    const [registration] = CANONICAL_SECTION_BLOCK_REGISTRATIONS;
+    expect(registration.id).toBe(fill.slot);
+    expect(registration.export).toBe(fill.impl.export);
+    expect(legalProseFill.$extensions["com.clossys.fill"].slot).toBe(registration.id);
+    expect(sectionSlots.filter(slot => slot.id === registration.id).map(slot => slot.id)).toEqual([registration.id]);
+    expect(sectionSlots.find(slot => slot.id === registration.id)?.contract.kind).toBe("section");
+    expect(fill.consumption.sourceFiles.map(file => file.path)).toContain(`packages/designer/${registration.source}`);
+    expect(existsSync(join(dirname(fileURLToPath(import.meta.url)), "..", registration.source.replace(/^src\//, "")))).toBe(true);
+    expect(BLOCK_ENTRIES.some(entry => entry.export === registration.export)).toBe(false);
+    expect(BLOCK_EXPORT_EXCLUSIONS).not.toHaveProperty(registration.export);
   });
 
   it("points every recipe at a built leaf with its own export", () => {

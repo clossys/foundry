@@ -4,7 +4,7 @@
  * lockup. This package ships no product logo, favicon PNGs, or social
  * images; it validates the shape downstream gates consume.
  *
- * Build glyph markup with the same token-backed shell as the `Icon` atom
+ * Build glyph markup with the same token-backed shell as the `Icon` component
  * (`viewBox="0 0 24 24"`, `stroke="currentColor"`, `--ui-icon-*` sizing,
  * `--ui-icon-stroke`) so marks stay on-brand when tokens change.
  */
@@ -61,7 +61,7 @@ export function validateMasterMark(mark: Partial<MasterMark>): asserts mark is M
   }
 }
 
-/** Inline style matching `Icon` at size `lg` (see `atoms/Icon.tsx`). */
+/** Inline style matching `Icon` at size `lg` (see `components/Icon.tsx`). */
 export const MASTER_MARK_ICON_SHELL_STYLE =
   "width:var(--ui-icon-lg, var(--spacing-2xl, 32px));height:var(--ui-icon-lg, var(--spacing-2xl, 32px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)";
 

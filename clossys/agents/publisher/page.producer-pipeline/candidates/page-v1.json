@@ -1,0 +1,106 @@
+{
+  "schema": "clossys.page/1",
+  "path": "/producer/pipeline",
+  "title": "Pipeline",
+  "frame": "frames.studio-shell",
+  "sections": [
+    "sections.studio.page-header",
+    "sections.producer.pipeline-header",
+    "sections.producer.pipeline-flow",
+    "sections.producer.pipeline-legend"
+  ],
+  "copy": {},
+  "nav": {
+    "nav": true,
+    "group": "producer"
+  },
+  "meta": {
+    "source": {
+      "kind": "original",
+      "ref": []
+    },
+    "entry": {
+      "fields": {
+        "kind": "page",
+        "note": "PIPELINE-CANVAS 2026-11-03: the read-only pipeline canvas. The pipeline loader reads packages/producer/pipeline/graph.json only (GET /api/pipeline); the flow renders its step and edge ids unchanged. Copy is studio.pipeline.* Writer keys."
+      },
+      "blocks": {
+        "Actions": [],
+        "Route": {
+          "body": "plain",
+          "data": {
+            "loader": "pipeline",
+            "purpose": "studio.pipeline.description",
+            "description": "studio.pipeline.description"
+          },
+          "inputs": {
+            "sections.studio.page-header": "header",
+            "sections.producer.pipeline-header": "header",
+            "sections.producer.pipeline-flow": "flow",
+            "sections.producer.pipeline-legend": "legend"
+          },
+          "manifest": {
+            "navigator": "outline",
+            "modules": [
+              {
+                "id": "outline",
+                "icon": "assets.icon-outline",
+                "label": "studio.outline-label",
+                "section": "sections.module.outline",
+                "source": "page.outline",
+                "shortcut": "o"
+              },
+              {
+                "id": "checks",
+                "icon": "assets.icon-checks",
+                "label": "studio.checks",
+                "section": "sections.module.checks",
+                "source": "page.checks",
+                "shortcut": "c"
+              }
+            ],
+            "actions": [],
+            "wiring": [
+              {
+                "do": "open outline",
+                "expect": "outline open"
+              },
+              {
+                "do": "open checks",
+                "expect": "checks open"
+              },
+              {
+                "do": "select outline",
+                "expect": "target in view and highlighted"
+              },
+              {
+                "do": "cmdk",
+                "expect": "every popover listed with its shortcut"
+              },
+              {
+                "do": "key o",
+                "expect": "outline open"
+              },
+              {
+                "do": "key escape",
+                "expect": "popover closed"
+              },
+              {
+                "do": "click outside",
+                "expect": "popover closed"
+              }
+            ]
+          }
+        }
+      },
+      "publication": "studio",
+      "entryId": "producer-pipeline",
+      "entryMeta": {
+        "pin": {
+          "nav": true,
+          "group": "producer"
+        }
+      }
+    }
+  }
+}

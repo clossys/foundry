@@ -28,8 +28,8 @@ const PLAN: AdvisorPlan = corpusPlan("blockers-without-due").plan;
 const BRIEF: EngagementBrief = {
   schemaVersion: 1,
   problem: "Our site doesn't explain what we do.",
-  roles: [{ role: "strategist", why: "Directly confirmed.", goal: { metric: "message-clarity-score", direction: "maintain" }, inputsFrom: [], outputsTo: ["writer"] }],
-  sequence: ["strategist"],
+  roles: [{ role: "director", why: "Directly confirmed.", goal: { metric: "message-clarity-score", direction: "maintain" }, inputsFrom: [], outputsTo: ["writer"] }],
+  sequence: ["director"],
   deliverables: ["A positioning brief every later role reads first."],
 };
 
@@ -65,7 +65,7 @@ describe("packed plan, brief, inventory and registry snapshot contracts", () => 
   it("export the brief contract's public problem placeholder, and a brief carrying it validates", () => {
     const definitions = PLAN_CONTRACTS["engagement-brief.json"]!.definitions as Record<string, { const: unknown }>;
     expect(PUBLIC_PROBLEM_PLACEHOLDER).toBe(definitions.publicProblemPlaceholder!.const);
-    expect(validateEngagementBrief({ ...BRIEF, problem: PUBLIC_PROBLEM_PLACEHOLDER, staffedHere: ["strategist"] })).toEqual([]);
+    expect(validateEngagementBrief({ ...BRIEF, problem: PUBLIC_PROBLEM_PLACEHOLDER, staffedHere: ["director"] })).toEqual([]);
   });
 
   it("list exactly ADVISOR_BLOCKER_KINDS as the blocker kinds, in order", () => {

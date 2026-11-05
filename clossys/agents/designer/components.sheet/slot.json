@@ -1,0 +1,68 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "components.sheet",
+  "agent": "designer",
+  "ia": {
+    "l0": "components",
+    "l1": "components.containment",
+    "l2": "containment-overlays",
+    "order": 161
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "component",
+    "root": "rac:Dialog+Modal+ModalOverlay",
+    "members": {
+      "mode": "closed",
+      "names": []
+    },
+    "props": [],
+    "allowedReads": {
+      "themes": [
+        "themes.primary",
+        "themes.sidebar-primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.radius",
+        "themes.shadow",
+        "themes.ring",
+        "themes.sidebar-ring",
+        "themes.spacing",
+        "themes.destructive",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground"
+      ],
+      "assets": [
+        "assets.icon-close"
+      ],
+      "components": [
+        "components.icon"
+      ]
+    },
+    "composes": [
+      "components.icon"
+    ]
+  },
+  "inputs": [],
+  "uses": [
+    "assets.icon-close",
+    "components.button"
+  ]
+}

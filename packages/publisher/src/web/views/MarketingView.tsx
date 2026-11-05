@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/atoms";
+import { mergeUiClasses } from "@clossys/designer/components";
 import { Faq, FeatureGrid, Hero, type SectionGround } from "@clossys/designer/blocks";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell";
 import { siteHeaderPresentation, type SiteChromeGround } from "../internal/viewChromeGround.js";

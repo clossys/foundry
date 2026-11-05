@@ -1,0 +1,187 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "sections.content",
+  "agent": "designer",
+  "ia": {
+    "l0": "sections",
+    "l1": "sections.explain",
+    "l2": "explain-reading",
+    "order": 183
+  },
+  "kind": "element",
+  "contract": {
+    "kind": "section",
+    "root": "section",
+    "anatomy": {
+      "band": "sections.band",
+      "header": "sections.section-header"
+    },
+    "slots": [
+      {
+        "name": "header",
+        "type": "region",
+        "required": false
+      },
+      {
+        "name": "body",
+        "type": "region",
+        "required": true
+      },
+      {
+        "name": "media",
+        "type": "media",
+        "required": false
+      },
+      {
+        "name": "footnote",
+        "type": "copy",
+        "required": false
+      }
+    ],
+    "members": {
+      "mode": "closed",
+      "names": [
+        "layout.stacked",
+        "layout.split-start",
+        "layout.split-end"
+      ]
+    },
+    "allowedComposes": [
+      "components.link",
+      "components.semantic-content"
+    ],
+    "parts": [
+      "sections.band",
+      "sections.section-header"
+    ],
+    "allowedReads": {
+      "themes": [
+        "themes.spacing",
+        "themes.background",
+        "themes.card",
+        "themes.popover",
+        "themes.secondary",
+        "themes.accent",
+        "themes.muted",
+        "themes.sidebar",
+        "themes.sidebar-accent",
+        "themes.animate-marquee",
+        "themes.animate-marquee-vertical",
+        "themes.animate-shiny-text",
+        "themes.primary",
+        "themes.border",
+        "themes.input",
+        "themes.sidebar-border",
+        "themes.tracking-tight",
+        "themes.destructive",
+        "themes.foreground",
+        "themes.card-foreground",
+        "themes.popover-foreground",
+        "themes.primary-foreground",
+        "themes.secondary-foreground",
+        "themes.accent-foreground",
+        "themes.muted-foreground",
+        "themes.sidebar-foreground",
+        "themes.sidebar-primary-foreground",
+        "themes.sidebar-accent-foreground",
+        "themes.font-sans",
+        "themes.font-heading",
+        "themes.font-mono"
+      ],
+      "assets": []
+    },
+    "data": "host-injected",
+    "surface": "both",
+    "passageSchema": "passages.content",
+    "copy": {
+      "sourceLocale": "en",
+      "fields": [
+        {
+          "key": "header.eyebrow",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.heading",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.description",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "header.actions[].label",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 120
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "body[].text",
+          "kind": "plain",
+          "required": true,
+          "maxLength": {
+            "en": 8000
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "body[].items[]",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 8000
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "media.title",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "media.series[].name",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 160
+          },
+          "dir": "auto"
+        },
+        {
+          "key": "footnote",
+          "kind": "plain",
+          "required": false,
+          "maxLength": {
+            "en": 480
+          },
+          "dir": "auto"
+        }
+      ]
+    }
+  },
+  "inputs": [],
+  "uses": [
+    "components.separator"
+  ]
+}

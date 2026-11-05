@@ -1,0 +1,36 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "themes.tracking-tight",
+  "agent": "designer",
+  "ia": {
+    "l0": "themes",
+    "l1": "themes.typography",
+    "l2": "typography-tracking",
+    "order": 39
+  },
+  "kind": "element",
+  "contract": {
+    "$type": "number",
+    "emit": {
+      "default": "--tracking-tight"
+    },
+    "kind": "token",
+    "members": {
+      "mode": "closed",
+      "names": [
+        "default"
+      ]
+    },
+    "modes": [
+      "light"
+    ],
+    "tier": "scale"
+  },
+  "inputs": [],
+  "uses": [],
+  "notNeeded": {
+    "reason": "no approved-registry source; W6 composition check (strict, tracking-tight-v1.json unmodified) fails REF-COMP-PART: a token value, not code, so there are no parts to compose. Tailwind v4 default value: shadcn/neutral@4.23.0 and no vendored registry item defines it (references/manifest.json skipped: 'tailwind default'); candidate v1 fails REF-NO-SOURCE.",
+    "since": "2026-11-03",
+    "decidedBy": "migrated"
+  }
+}

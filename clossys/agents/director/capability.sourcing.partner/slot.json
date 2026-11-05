@@ -1,0 +1,30 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "capability.sourcing.partner",
+  "agent": "director",
+  "ia": {
+    "l1": "capability",
+    "l2": "capability.sourcing",
+    "order": 41
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Who do we rely on, what do they give us, and what is the risk?",
+    "mustContain": [
+      {
+        "key": "Partner",
+        "hint": "the partner or supplier"
+      },
+      {
+        "key": "Gives",
+        "hint": "what they give us"
+      },
+      {
+        "key": "Risk",
+        "hint": "what happens if they change terms"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": []
+}

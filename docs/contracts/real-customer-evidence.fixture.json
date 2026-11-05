@@ -12,7 +12,7 @@
     "basis": "existing-support-relationship-terms",
     "confirmedBy": "butler",
     "confirmedAt": "2026-09-10T00:00:00.000Z",
-    "scope": "Use in Strategist's evidence base and Customer's persona calibration; no further sharing."
+    "scope": "Use in Director's evidence base and Customer's persona calibration; no further sharing."
   },
   "summary": "The client asked twice, in the same thread, how to find the generated pull request after approving a plan; both replies pointed them to the client's own repository Pull Requests tab.",
   "lifecycle": {

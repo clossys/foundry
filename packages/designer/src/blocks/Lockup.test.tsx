@@ -92,9 +92,9 @@ describe("Lockup: mark and live wordmark regions", () => {
     expect(container.firstElementChild).toHaveClass("inline-flex", "items-center", "text-ink-primary", "consumer-class");
   });
 
-  it("composes Logomark through the permitted block-to-atom direction", () => {
+  it("composes Logomark through the permitted block-to-component direction", () => {
     const source = readFileSync(join(import.meta.dirname, "Lockup.tsx"), "utf8");
-    expect(source).toMatch(/import\s*\{[^}]*Logomark[^}]*\}\s*from\s*["']\.\.\/atoms\//);
+    expect(source).toMatch(/import\s*\{[^}]*Logomark[^}]*\}\s*from\s*["']\.\.\/components\//);
     expect(source).toMatch(/<Logomark\b/);
     expect(source).not.toMatch(/(?:import|export)[^;]*["'][^"']*\/shell\//);
   });

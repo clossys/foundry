@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Link } from "../atoms/Link.js";
-import { Button } from "../atoms/Button.js";
-import { UI_BORDER_HAIRLINE } from "../atoms/internal/ui-vars.js";
+import { Link } from "../components/Link.js";
+import { Button } from "../components/Button.js";
+import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { layoutRelationGraph, relationGraphHref } from "./relation-graph-layout.js";
 import type { RelationGraphProps } from "./relation-graph-types.js";
 

@@ -28,6 +28,7 @@ export { List } from "./List.js";
 export { Lock } from "./Lock.js";
 export { Monitor } from "./Monitor.js";
 export { Moon } from "./Moon.js";
+export { PanelLeft } from "./PanelLeft.js";
 export { Plug } from "./Plug.js";
 export { Receipt } from "./Receipt.js";
 export { Scale } from "./Scale.js";

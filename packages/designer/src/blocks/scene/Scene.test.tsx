@@ -9,6 +9,8 @@ import { layoutScene, sceneRelationText } from "./geometry.js";
 import { scanCompiledCssSources } from "../../compiled-css/scan-sources.js";
 import type { SceneInput } from "./types.js";
 const sourceDir = dirname(fileURLToPath(import.meta.url));
+// The scene block ends at the next top-level comment header: since 0d04b4c23 it is no longer the last block in theme-keys.css.
+const sceneSection = (css: string) => css.split("/* Static scenes:")[1]?.split(/\n\/\* /)[0];
 const rows = [{ id: "amount", label: "Amount", value: "12.0M", figure: true }, { id: "limit", label: "Limit", value: "15.0M" }];
 const sources = ["agreement", "report", "schedule"].map(id => ({ id, format: "pdf" as const, title: id, origin: "Archive" }));
 const inputs: SceneInput[] = [
@@ -34,7 +36,7 @@ describe("Scene", () => {
  it.each(inputs)("has byte-identical static rendering with no handlers or animation: $template", input => { const a = renderToStaticMarkup(view(input)); expect(a).toBe(renderToStaticMarkup(view(input))); expect(a).not.toMatch(/\son\w+=|<script|<animate|animation/); });
  it("retires the rotation utility while retaining clipped responsive linear content", () => {
   const css = readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8");
-  const sceneCss = css.split("/* Static scenes:")[1]!;
+  const sceneCss = sceneSection(css)!;
   expect(sceneCss).toBeTruthy();
   expect(sceneCss).not.toMatch(/@utility\s+scene-tilt\b|--ui-scene-tilt|--k\b|(?:^|[;{])\s*(?:rotate|transform(?:-origin|-box)?)\s*:/m);
   for (const threshold of [800, 520, 900]) expect(css).toContain(`min-width: ${threshold}px`);
@@ -95,7 +97,7 @@ describe("Scene", () => {
  it("publishes source exports, static recipes and only numeric layout custom properties", async () => {
   const server = await import("../server.js"); expect(server.Scene).toBe(Scene); expect(typeof server.layoutScene).toBe("function"); expect(typeof server.sceneRelationText).toBe("function");
   const source = readFileSync(resolve(sourceDir, "Scene.tsx"), "utf8"); expect(source).not.toMatch(/useId|useState|useEffect|useRef|use client/);
-  const css = readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8").split("/* Static scenes:")[1]!;
+  const css = sceneSection(readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8"))!;
   expect(css).not.toMatch(/var\(--[\w-]+\)/); expect(css).not.toMatch(/animation|transition|#[a-fA-F0-9]{3,8}/);
   const { container } = render(view(inputs[0]!)); for (const node of container.querySelectorAll<HTMLElement>("[style]")) for (const property of Array.from({ length: node.style.length }, (_, i) => node.style.item(i))) expect(["--sc-w"]).toContain(property);
  });

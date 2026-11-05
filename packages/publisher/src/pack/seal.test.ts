@@ -69,7 +69,7 @@ function manifest(): PackManifest {
   return {
     schemaVersion: 1,
     items: [
-      item({ id: "strategy-brief", layer: "foundation", owner: "strategist", visibility: "internal", status: "published", verifiedAt: "2026-09-04T00:00:00Z", publishedTo: ["internal"] }),
+      item({ id: "strategy-brief", layer: "foundation", owner: "director", visibility: "internal", status: "published", verifiedAt: "2026-09-04T00:00:00Z", publishedTo: ["internal"] }),
       item({ id: "website", needs: ["strategy-brief"] }),
       item({ id: "materials-site", visibility: "internal", needs: ["strategy-brief"] }),
       item({ id: "email-kit", needs: ["website"] }),

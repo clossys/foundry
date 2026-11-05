@@ -61,7 +61,7 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
     prose: true,
     reason: "reads docs/changelogs/<dir>.md for every package (issue #1420 review round 3, N1 reopened by #1429)",
   },
-  "node:scripts/check-strategist-subject.mjs": {
+  "node:scripts/check-director-subject.mjs": {
     prose: true,
     reason:
       "scans docs/*.md excluding docs/contracts/**, docs/changelogs/**, and every OTHER root-style docs/*.md filename (see the script's own otherRootMarkdown list) -- in practice, docs/PUBLISHING.md and docs/RELEASING.md, both top-level docs/*.md files classify-change-tier.mjs's classifyPath() calls 'prose' (issue #1420 review round 3)",
@@ -104,13 +104,8 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
 
   // ---- Dependency-free structural/governance gates: NOT prose ------------
   "node:scripts/check-package-identity-transition.mjs": { prose: false, reason: "reads governance/package-identity-transition.json and package manifests only" },
-  "node:scripts/check-public-npm-aggregate-canary.mjs": { prose: false, reason: "reads the public npm registry and governance/** records, not docs/ or .changesets/" },
-  "node:scripts/check-public-npm-aggregate-closures.mjs": { prose: false, reason: "same class as check-public-npm-aggregate-canary.mjs" },
-  "node:scripts/check-public-npm-aggregate-transcripts.mjs": { prose: false, reason: "same class as check-public-npm-aggregate-canary.mjs" },
-  "node:scripts/lib/public-npm-aggregate-canary.test.mjs": { prose: false, reason: "unit tests for the canary script above, fixture-only" },
-  "node:scripts/check-public-npm-aggregate-canary-v2.mjs": { prose: false, reason: "same class as check-public-npm-aggregate-canary.mjs" },
-  "node:scripts/lib/public-npm-aggregate-canary-v2.test.mjs": { prose: false, reason: "unit tests for the v2 canary script, fixture-only" },
   "node:scripts/check-release-cleanup-inventory.mjs": { prose: false, reason: "reads governance/** release-cleanup records only" },
+  "node:scripts/check-package-visibility.mjs": { prose: false, reason: "--declarations-only reads governance/release-catalog.json, package-scope.json and docs/contracts/package-retention.json (JSON, not prose); no network" },
   "node:scripts/set-scope.mjs": { prose: false, reason: "writes package-scope.json and derived manifest fields, reads no docs/ or .changesets/ path" },
   "node:scripts/set-registry.mjs": { prose: false, reason: "writes registry fields into package manifests only" },
   "node:scripts/set-prepublish-hook.mjs": { prose: false, reason: "writes/validates package.json lifecycle hooks only" },
@@ -168,9 +163,9 @@ export const GATED_SCRIPT_PROSE_INPUTS = {
   "node:scripts/observation-bundle.test.mjs": { prose: false, reason: "unit tests for observation-bundle.mjs, fixture-only" },
   "node:scripts/gate-run-history.test.mjs": { prose: false, reason: "reads the built @clossys/observer package's own gate-run-history reader, fixture-only" },
   "node:scripts/check-fleet-coverage.test.mjs": { prose: false, reason: "reads the built @clossys/observer package's fleet-coverage collector, fixture-only" },
-  "node:scripts/check-strategist-subject.test.mjs": {
+  "node:scripts/check-director-subject.test.mjs": {
     prose: false,
-    reason: "exercises check-strategist-subject.mjs against SYNTHETIC fixture doc trees under a temp directory, never the live repository's own docs/ tree -- the real gate (check-strategist-subject.mjs, above) is the one marked prose:true",
+    reason: "exercises check-director-subject.mjs against SYNTHETIC fixture doc trees under a temp directory, never the live repository's own docs/ tree -- the real gate (check-director-subject.mjs, above) is the one marked prose:true",
   },
 
   // ---- infrastructure: no docs/.changesets/ read at all -------------------

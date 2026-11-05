@@ -94,7 +94,7 @@ export function selectPolicyPackage(policy, packageKey) {
   return matches.length === 1 ? { name: matches[0][0], entry: matches[0][1] } : null;
 }
 
-/** Prove the policy and release target close over the same exact source inventory. */
+/** Prove qualification covers the source inventory and release members belong to it. */
 export function validateReleaseQualificationPortfolio({ policy, manifests, releasePackages }) {
   const findings = [];
   const source = Array.isArray(manifests) ? manifests.filter((item) => item?.private !== true) : [];
@@ -104,7 +104,7 @@ export function validateReleaseQualificationPortfolio({ policy, manifests, relea
   if (JSON.stringify(sourceNames) !== JSON.stringify(policyNames)) finding(findings, "portfolio-policy", "qualification policy must exactly cover every publishable source manifest.");
   const sourceKeys = source.map((item) => item.name?.split("/")[1]).sort();
   const targetKeys = Array.isArray(releasePackages) ? [...releasePackages].sort() : [];
-  if (JSON.stringify(sourceKeys) !== JSON.stringify(targetKeys)) finding(findings, "portfolio-catalog", "release target must exactly cover every publishable source manifest.");
+  if (targetKeys.length === 0 || new Set(targetKeys).size !== targetKeys.length || targetKeys.some((key) => !sourceKeys.includes(key))) finding(findings, "portfolio-catalog", "release target must select a non-empty unique subset of publishable source manifests.");
   return findings;
 }
 

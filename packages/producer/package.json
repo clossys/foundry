@@ -1,0 +1,114 @@
+{
+  "name": "@clossys/producer",
+  "version": "0.1.0",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "clossys": "dist/cli/index.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "README.md",
+    "LICENSE",
+    "skill",
+    "pipeline",
+    "!dist/**/__fixtures__/**",
+    "!dist/**/__tests__/**",
+    "!dist/**/__mocks__/**",
+    "!dist/**/__snapshots__/**",
+    "!dist/**/*.test.*",
+    "!src/**/__fixtures__/**",
+    "!src/**/__tests__/**",
+    "!src/**/__mocks__/**",
+    "!src/**/__snapshots__/**",
+    "!src/**/*.test.*"
+  ],
+  "sideEffects": false,
+  "description": "Private executable tooling scaffold for agent resolution and clossys command dispatch.",
+  "keywords": [
+    "cli",
+    "agents",
+    "typescript"
+  ],
+  "author": "Clossys",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/clossys/foundry.git",
+    "directory": "packages/producer"
+  },
+  "bugs": {
+    "url": "https://github.com/clossys/foundry/issues"
+  },
+  "homepage": "https://github.com/clossys/foundry/tree/main/packages/producer#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && node scripts/generate-studio-map.mjs && node dist/cli/index.js compile && node scripts/generate-page-check-receipt.mjs",
+    "compile": "node dist/cli/index.js compile",
+    "generate:studio-map": "node scripts/generate-studio-map.mjs",
+    "check:studio-map": "node studio/checks/check-studio-map.cjs",
+    "check:studio-routes": "node studio/checks/check-studio-routes.cjs",
+    "check:assemble-only": "node scripts/check-assemble-only.mjs",
+    "check:routes-published": "node scripts/check-routes-published.mjs",
+    "check:slot-options": "node scripts/check-slot-options.mjs",
+    "check:slot-state": "node scripts/check-slot-state.mjs",
+    "check:studio-template": "node scripts/check-studio-template.mjs",
+    "check:studio": "node scripts/check-studio.mjs",
+    "check:generated-derived": "node scripts/check-generated-derived.mjs",
+    "test:assemble-only": "node --test scripts/check-assemble-only.test.mjs",
+    "check:pipeline": "node scripts/check-pipeline.mjs",
+    "test:pipeline": "node --test scripts/check-pipeline.test.mjs",
+    "generate:pipeline-graph": "node dist/cli/index.js pipeline graph --root ../.. --out pipeline/graph.json",
+    "capture:studio": "node scripts/capture-studio.mjs",
+    "check:studio-capture": "node scripts/capture-studio.mjs",
+    "test:studio-capture": "node --test scripts/capture-studio.test.mjs",
+    "prepublishOnly": "node ../../scripts/check-name-collision.mjs . && npm run build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "studio:check": "node studio/checks/p0-studio-check.cjs",
+    "studio:propagate": "node studio/checks/p0-propagate.mjs",
+    "studio:mutation-proof": "node studio/checks/p0-studio-mutations.cjs",
+    "studio:compose": "node scripts/compose-studio.mjs"
+  },
+  "dependencies": {
+    "@clossys/designer": "0.12.0",
+    "@clossys/publisher": "0.13.0",
+    "@clossys/director": "0.6.0",
+    "@clossys/writer": "0.6.0",
+    "@tailwindcss/oxide": "4.3.3",
+    "@xyflow/react": "12.12.1",
+    "esbuild": "0.28.2",
+    "next": "16.4.1",
+    "react": "19.3.0",
+    "react-aria-components": "1.21.1",
+    "react-dom": "19.3.0",
+    "shadcn": "4.23.0",
+    "tailwind-merge": "3.7.0",
+    "tailwindcss": "4.3.3"
+  },
+  "devDependencies": {
+    "@clossys/designer-ui": "0.0.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/jsdom": "21.1.7",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "jsdom": "26.1.0",
+    "typescript": "~6.0.0",
+    "vitest": "^5.0.1"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  }
+}

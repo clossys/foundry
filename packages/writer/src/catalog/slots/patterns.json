@@ -1,0 +1,442 @@
+[
+  {
+    "id": "patterns.headline",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "headline", "required": true, "maxChars": 100, "maxWords": 18}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.headline-subhead",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "headline", "required": true, "maxChars": 100, "maxWords": 18},
+          {"id": "subhead", "required": true, "maxChars": 180, "maxWords": 32}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.eyebrow-headline",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "eyebrow", "required": true, "maxChars": 48, "maxWords": 6},
+          {"id": "headline", "required": true, "maxChars": 100, "maxWords": 18}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.section-title",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "title", "required": true, "maxChars": 100, "maxWords": 18},
+          {"id": "description", "required": false, "maxChars": 240, "maxWords": 45}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.primary-action",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "verb", "required": true, "maxChars": 24, "maxWords": 3},
+          {"id": "object", "required": true, "maxChars": 48, "maxWords": 6}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.secondary-action",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "verb", "required": true, "maxChars": 24, "maxWords": 3},
+          {"id": "object", "required": true, "maxChars": 48, "maxWords": 6}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.inline-link",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "label", "required": true, "maxChars": 80, "maxWords": 12},
+          {"id": "accessible-name", "required": false, "maxChars": 160, "maxWords": 24}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.error-message",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "what", "required": true, "maxChars": 160, "maxWords": 28},
+          {"id": "why", "required": true, "maxChars": 240, "maxWords": 45},
+          {"id": "next", "required": true, "maxChars": 160, "maxWords": 28}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.warning-message",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "what", "required": true, "maxChars": 160, "maxWords": 28},
+          {"id": "consequence", "required": true, "maxChars": 200, "maxWords": 35}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.confirmation",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "what-happened", "required": true, "maxChars": 160, "maxWords": 28},
+          {"id": "undo", "required": false, "maxChars": 80, "maxWords": 12}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.empty-state",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "title", "required": true, "maxChars": 100, "maxWords": 18},
+          {"id": "body", "required": true, "maxChars": 400, "maxWords": 72},
+          {"id": "action", "required": false, "maxChars": 80, "maxWords": 12}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.hint",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "text", "required": true, "maxChars": 240, "maxWords": 45}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.tooltip",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "text", "required": true, "maxChars": 240, "maxWords": 45}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.form-field",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "label", "required": true, "maxChars": 80, "maxWords": 12},
+          {"id": "help", "required": false, "maxChars": 200, "maxWords": 35},
+          {"id": "error", "required": false, "maxChars": 240, "maxWords": 45},
+          {"id": "placeholder", "required": false, "maxChars": 80, "maxWords": 12}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.consent-line",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "statement", "required": true, "maxChars": 400, "maxWords": 72},
+          {"id": "policy-link", "required": true, "maxChars": 80, "maxWords": 12}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.feature-bullet",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "title", "required": true, "maxChars": 100, "maxWords": 18},
+          {"id": "body", "required": true, "maxChars": 400, "maxWords": 72}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.stat",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "value", "required": true, "maxChars": 48, "maxWords": 10},
+          {"id": "label", "required": true, "maxChars": 80, "maxWords": 12}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.pricing-item",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "name", "required": true, "maxChars": 80, "maxWords": 12},
+          {"id": "price", "required": true, "maxChars": 48, "maxWords": 10},
+          {"id": "interval", "required": true, "maxChars": 48, "maxWords": 6},
+          {"id": "note", "required": false, "maxChars": 180, "maxWords": 32}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.table-header",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "label", "required": true, "maxChars": 80, "maxWords": 12},
+          {"id": "description", "required": false, "maxChars": 240, "maxWords": 45}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.table-caption",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "caption", "required": true, "maxChars": 400, "maxWords": 72}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.quote",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "quote", "required": true, "maxChars": 1200, "maxWords": 220},
+          {"id": "attribution", "required": true, "maxChars": 160, "maxWords": 28}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.testimonial",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "quote", "required": true, "maxChars": 1200, "maxWords": 220},
+          {"id": "person", "required": true, "maxChars": 80, "maxWords": 12},
+          {"id": "role", "required": true, "maxChars": 100, "maxWords": 18},
+          {"id": "company", "required": true, "maxChars": 100, "maxWords": 18}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.figure-caption",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "caption", "required": true, "maxChars": 400, "maxWords": 72},
+          {"id": "credit", "required": false, "maxChars": 160, "maxWords": 28}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "patterns.messaging-kit",
+    "layer": "patterns",
+    "contract": {
+      "kind": "pattern",
+      "source": "writer",
+      "icu": true,
+      "parts": {
+        "mode": "closed",
+        "items": [
+          {"id": "pitch-one-liner", "required": true, "maxChars": 160, "maxWords": 28},
+          {"id": "pitch-elevator", "required": true, "maxChars": 600, "maxWords": 110},
+          {"id": "pitch-paragraph", "required": true, "maxChars": 1200, "maxWords": 220},
+          {"id": "boilerplate-short", "required": true, "maxChars": 600, "maxWords": 110},
+          {"id": "boilerplate-medium", "required": true, "maxChars": 1200, "maxWords": 220},
+          {"id": "boilerplate-long", "required": true, "maxChars": 2400, "maxWords": 440}
+        ]
+      }
+    },
+    "requires": [],
+    "status": "draft"
+  }
+]

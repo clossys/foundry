@@ -1,0 +1,41 @@
+{
+  "name": "Clossys",
+  "sources": {
+    "assets.mark": {
+      "candidate": "mark-v2.json",
+      "hash": "sha256:fad5f7207ca75e693177d312baf0800bd5754d50c26200cc873f6634b2c2189d"
+    },
+    "assets.favicon": {
+      "candidate": "favicon-v2.json",
+      "hash": "sha256:4992311380c32d75f1f64fcaed3d903b76e5674d54b9bf6692536014b0fe1006"
+    },
+    "assets.app-icon": {
+      "candidate": "app-icon-v2.json",
+      "hash": "sha256:9b8a8061faed4b1966fac63e4bc359e4d411a3e95fee2e6a3b2df033a2dda6db"
+    },
+    "assets.lockup": {
+      "candidate": "lockup-v2.json",
+      "hash": "sha256:faf73ffd979087a4ec33bb4f14bb5843659ef9af55b7a4bdb7f79656ef0e513a"
+    },
+    "assets.image": {
+      "candidate": "image-v2.json",
+      "hash": "sha256:789c6582030b4a3998436ec5ec9b9a7dc3b7d0ffbc454d88d6d8a58687871a85"
+    }
+  },
+  "files": {
+    "mark": {
+      "light": "sha256:4171bb9d4770973a16c3d3222c7dd4e32142a50a8e8288f48b8853215a2f515d",
+      "dark": "sha256:4171bb9d4770973a16c3d3222c7dd4e32142a50a8e8288f48b8853215a2f515d"
+    },
+    "favicon": "sha256:4171bb9d4770973a16c3d3222c7dd4e32142a50a8e8288f48b8853215a2f515d",
+    "appIcon": "sha256:baeaf3fe60b7e245bf6fe12f9e53011eda0ec8b83849d7e22a0aa454aa47d084",
+    "lockup": {
+      "light": "sha256:3c76f98832aaf0f10cd9d18e7f640f2b93486adff45fe3320c57295cd00c2172",
+      "dark": "sha256:3c76f98832aaf0f10cd9d18e7f640f2b93486adff45fe3320c57295cd00c2172"
+    },
+    "image": {
+      "default": "sha256:aa230bccd0af384371603a0ed1fb3fc0cf19ea3172e6793440fa21bb345151fd",
+      "placeholder": "sha256:4171bb9d4770973a16c3d3222c7dd4e32142a50a8e8288f48b8853215a2f515d"
+    }
+  }
+}

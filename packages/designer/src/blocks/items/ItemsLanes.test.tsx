@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
 import type { ItemData, ItemsProps } from "./types.js";
-import { UI_BORDER_HAIRLINE } from "../../atoms/internal/ui-vars.js";
+import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { TOKENS } from "../../tokens/tokens.js";
 
 function IdSlot({ label }: { label: string }) {

@@ -1,0 +1,8 @@
+{
+  "by": "owner",
+  "llm": null,
+  "human": {
+    "procedure": "Record a judge seat's choice among the slot's options with clossys pick designer/<slot> <candidate-id> --by agent:<seat>; it replaces a bulk, planner or agent pin, never an owner pick, and shows as confirm until you pin.",
+    "command": "clossys pick"
+  }
+}

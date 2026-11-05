@@ -1,0 +1,89 @@
+{
+  "name": "scroll-area",
+  "type": "registry:ui",
+  "registryDependencies": [],
+  "dependencies": [
+    "cn"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "scroll-area.tsx",
+      "type": "registry:ui",
+      "content": "\n\nimport * as React from \"react\"\nimport { cn } from \"cn\"\n\nfunction ScrollArea({\n  className,\n  children,\n  ...props\n}: React.ComponentProps<\"div\">) {\n  // Use native scrollbar-width and scrollbar-color to customize the scrollbar.\n  return (\n    <div\n      data-slot=\"scroll-area\"\n      className={cn(\n        \"relative [scrollbar-width:thin] [scrollbar-color:var(--color-border)_transparent] overflow-auto outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:outline-1\",\n        className\n      )}\n      {...props}\n    >\n      {children}\n    </div>\n  )\n}\n\nexport { ScrollArea }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.scroll-area",
+    "source": {
+      "kind": "registry",
+      "ref": [
+        "shadcn-aria/scroll-area@4.23.0"
+      ],
+      "hash": "sha256:c554e5d0060d064f4f23f70c64707de90db2631e9ba32b8c74e726ca77796bb9",
+      "license": "MIT"
+    },
+    "refVerbatim": {
+      "files": {
+        "scroll-area.tsx": "registry/aria-nova/ui/scroll-area.tsx"
+      }
+    },
+    "element": {
+      "id": "scroll-area",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.scroll-area",
+      "kind": "registry:ui",
+      "license": "MIT",
+      "creator": {
+        "agent": "designer",
+        "model": "claude-opus-5-5",
+        "by": "COMPONENT-FIXTURES"
+      },
+      "reason": "COMPONENT-FIXTURES: scroll-area-v1 code unchanged (sha256:7ebbe104bf3e59134a6dc31d0f12590b1769d14ca26a1566eabeabf2f406cac5); adds a preview fixture whose element tree composes the component's own exports with plain sample text, so the Studio card shows a realistic specimen.",
+      "createdAt": "2026-11-03T12:00:00Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "pass",
+          "strict": true
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--ring",
+          "--sidebar-ring"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "scroll-area.tsx",
+        "export": "ScrollArea",
+        "props": {
+          "className": "h-40 w-full max-w-sm rounded-md border p-4 text-sm leading-relaxed",
+          "children": [
+            "Release notes. Version 2.4 adds keyboard navigation across every list, faster search across large workspaces, and a new compact density. Version 2.3 introduced shared templates, so a team can start new documents from an approved layout. Version 2.2 brought offline drafts that sync when you reconnect, plus clearer conflict messages when two people edit the same paragraph. Version 2.1 reworked notifications into a single inbox with filters for mentions, replies and assignments."
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
+    }
+  }
+}

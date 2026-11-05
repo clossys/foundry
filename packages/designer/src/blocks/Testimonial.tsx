@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Avatar } from "../atoms/Avatar.js";
+import { Avatar } from "../components/Avatar.js";
 import { renderTestimonial } from "./Testimonial.server.js";
 
 export interface TestimonialBaseProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
@@ -31,7 +31,7 @@ export type TestimonialProps = TestimonialBaseProps &
          * package (see that component's own doc comment): this prop is
          * only optional in the branch of `TestimonialProps` where
          * `avatarSrc` is absent too. Rendered via this package's own
-         * `Avatar` atom, which independently requires `alt` at ITS own
+         * `Avatar` component, which independently requires `alt` at ITS own
          * type level — belt and suspenders, not redundant, since `Avatar`
          * enforces the contract for anyone composing it directly while
          * this union enforces it for anyone composing `Testimonial`.
@@ -64,8 +64,8 @@ export type TestimonialProps = TestimonialBaseProps &
  *
  * **The avatar is optional and, when present, required to carry real alt
  * text at the type level** — see `TestimonialProps`' own discriminated
- * union. Composed from this package's own `Avatar` atom (blocks may import
- * atoms) rather than a bare `<img>`, so the initials fallback and
+ * union. Composed from this package's own `Avatar` component (blocks may import
+ * components) rather than a bare `<img>`, so the initials fallback and
  * image-load-failure handling `Avatar` already implements come for free.
  */
 export function Testimonial({

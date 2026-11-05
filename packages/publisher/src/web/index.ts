@@ -1,3 +1,7 @@
+export { PublisherInstancesView } from "./instances/PublisherInstancesView.js";
+export { prepareConstructRendering, CONSTRUCT_FORMAT_RENDERERS } from "../formats/construct-rendering.js";
+export type { ConstructRenderFormat, RenderedConstruct, ConstructWebResult, ConstructDeckResult, PreparedConstructRendering } from "../formats/construct-rendering.js";
+export type { PublisherInstancesViewProps } from "./instances/PublisherInstancesView.js";
 /**
  * @clossys/publisher/web — the `web` channel renderer. Takes a
  * `ComposeDocument` with `channel: "web"` and emits the rendered
@@ -10,6 +14,8 @@
  */
 
 export { renderWebDocument } from "./renderWebDocument.js";
+export { PublisherCompositionsView } from "./compositions/PublisherCompositionsView.js";
+export type { CompositionsConsumerLibrary, PublisherCompositionsViewProps } from "./compositions/PublisherCompositionsView.js";
 export { buildWebHeadMetadata } from "./headMetadata.js";
 export { SiteMetadataError, buildSiteMetadata, formatPageTitle } from "./siteMetadata.js";
 export type {
@@ -39,7 +45,7 @@ export { createWebRenderer } from "./internal/createWebRenderer.js";
 export { evaluateWebRouteManifest, evaluateWebRouteManifestWithSources, scanRouteSourceForDirectComposition } from "./checkWebRoutes.js";
 export type { WebRouteCheckResult, WebRouteFinding, WebRouteManifest, WebRouteManifestEntry } from "./checkWebRoutes.js";
 export { AuthView, BoundaryView, BrandGuideView, CaptureView, CollectionView, DocumentView, ErrorView, MarketingView, PackReviewView, SectionedView, StatusView, SystemAuditView } from "./views/index.js";
-export type { AuthViewProps, BoundaryViewProps, BrandGuideAssetLink, BrandGuideFact, BrandGuideSpecimen, BrandGuideViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice, SectionedViewLandmark, SectionedViewProps, StatusViewProps, SystemAuditViewProps } from "./views/index.js";
+export type { AuthViewProps, BoundaryViewProps, BrandGuideAssetLink, BrandGuideFact, BrandGuideSpecimen, BrandGuideViewProps, CaptureViewProps, CollectionViewEmptyState, CollectionViewEntry, CollectionViewLink, CollectionViewPagination, CollectionViewProps, DocumentViewEffectiveDate, DocumentViewProps, ErrorViewProps, MarketingFaqItem, MarketingFeatureItem, MarketingViewProps, PackReviewViewBrandKit, PackReviewViewExport, PackReviewViewFact, PackReviewViewFaqItem, PackReviewViewLabels, PackReviewViewPage, PackReviewViewProps, PackReviewViewState, PackReviewViewStrategy, PackReviewViewVoice, SectionedViewCallToAction, SectionedViewLandmark, SectionedViewProps, StatusViewProps, SystemAuditViewProps } from "./views/index.js";
 export { PageView } from "./views/index.js";
 export type { PageViewProps } from "./views/index.js";
 
@@ -69,6 +75,8 @@ export type {
 
 export { LegalView } from "./views/index.js";
 export type { LegalViewFramedLabels, LegalViewLabels, LegalViewProps } from "./views/index.js";
+export { NativeLegalView } from "./views/index.js";
+export type { NativeLegalViewDocument, NativeLegalViewProps } from "./views/index.js";
 
 // The contact handler is server-only: import it from server code, never a client bundle.
 export {
@@ -100,8 +108,8 @@ export type {
   StubContactDelivery,
 } from "./contact/index.js";
 
-export { HeroView, LandingView } from "./views/index.js";
-export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction, LandingViewCallToAction, LandingViewHeader, LandingViewProps } from "./views/index.js";
+export { HeroView } from "./views/index.js";
+export type { HeroViewFooter, HeroViewGround, HeroViewProps, LandingViewAction } from "./views/index.js";
 export { LANDING_VIEW_CALL_TO_ACTION_GROUND, LANDING_VIEW_CLOSING_GROUND, planLandingViewGrounds } from "./views/index.js";
 export type { LandingViewBandGround, LandingViewBandRole, LandingViewGroundPlan, LandingViewGroundRepeat } from "./views/index.js";
 export { ContactView } from "./views/index.js";
@@ -116,21 +124,8 @@ export { ActivateForm, ResetForm } from "./views/index.js";
 export type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult, ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./views/index.js";
 
 // The page frame: owns the skip link, banner, the page's one <main> and contentinfo; views render chrome-free inside it.
-export { SITE_MAIN_ID, SITE_PAGE_LAYERS, SITE_SURFACE_KINDS, SiteFrame, siteShellFor } from "./frame/index.js";
-export type {
-  SiteBrandInput,
-  SiteChromeGround,
-  SiteEnvironmentLinkInput,
-  SiteFooterInput,
-  SiteFrameConfig,
-  SiteFrameInput,
-  SiteFrameProps,
-  SiteIconLinkInput,
-  SiteLinkInput,
-  SitePageLayer,
-  SiteShellInput,
-  SiteSurfaceKind,
-} from "./frame/index.js";
+// The frames.site-shell surface runtime renderer: Publisher's registry beside Designer's (@clossys/designer/frames).
+export { SITE_SHELL_RUNTIME_POINTER, siteShellRuntimeCallbacks, siteShellRuntimePointers, siteShellRuntimeRenderers } from "./site-shell-runtime.js";
 
 // Kept after the views: the share card reads Designer names newer than the views do, and a Designer that lacks the views' names must fail on those first.
 export {
@@ -165,8 +160,39 @@ export type { ContactFormCopy, ContactFormDevPreview, ContactFormProps, ContactF
 
 export type { SectionedViewHeroSection } from "../core/sectioned-view.js";
 
-export { SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions } from "./frame/site-frame-contract.js";
-export type { SiteFramePresentationConfig } from "./frame/site-frame-contract.js";
 
 export { IndexView, DetailsView } from "./views/index.js";
 export type { IndexViewCollection, IndexViewProps, IndexViewRowRoute, IndexViewTable, DetailsViewBlock, DetailsViewLayout, DetailsViewProps, DetailsViewRegion, DetailsViewSection, DetailsViewSectionState, DetailsViewTab } from "./views/index.js";
+
+export { PublisherBoard, buildPublisherBoard } from "./publisher/board/index.js";
+export type { AssemblyOwner, AssemblyOwnerTarget, AssemblyOwnerHref } from "./publisher/assembly/assembly.js";
+export type { PublisherLane, PublisherPipelineItem, PublishStageEvidence, PublishStage, PublishStageStatus } from "./publisher/pipeline.js";
+
+export { PublisherFormatsView } from "./formats/PublisherFormatsView.js";
+export type { PublisherFormatsViewProps } from "./formats/PublisherFormatsView.js";
+export { AppPack } from "./publisher/app/AppPack.js";
+export { projectAppInventory } from "./publisher/app/inventory.js";
+export type { AppInventory, AppRoute, AppLane, AppMissingDecision, AppInventoryProjection, AppPageProjection, AppSubrowProjection, AppScopedStateDeclaration } from "./publisher/app/inventory.js";
+export type { AppPageBindingInput, AppSubrowBindingInput, AppPipelineInput, AppPipelineMessages } from "./publisher/app/pipeline.js";
+
+export type { ProductionSettings, ProductionSettingsByItem, PublisherProductionState, PublisherInputRequest, PublisherInputRequests } from "./publisher/production-settings.js";
+export type { AppPackProps } from "./publisher/app/AppPack.js";
+
+export { PublisherSection } from "./publisher/PublisherSection.js";
+export type { PublisherSectionProps } from "./publisher/PublisherSection.js";
+export { projectPublisherSections } from "./publisher/publisher-sections.js";
+export type { PublisherSectionCommand, PublisherSectionData, PublisherSectionsInput, PublisherCell, PublisherTableRow } from "./publisher/publisher-sections.js";
+export { ProductionSettingsFields, useProductionDraft } from "./publisher/ProductionSettingsForm.js";
+export type { ProductionSettingsFieldsProps } from "./publisher/ProductionSettingsForm.js";
+export { ContentRoutePage, prepareContentRoute, ContentRouteNeedsError, bindContentRoute } from "./content-route.js";
+export { ContentRouteHost, contentRouteCopyResolver } from "./content-route.js";
+export { PublisherHost, PublisherHostNeedError, writerShellCopyResolver } from "./publisher-host.js";
+export type { PublisherHostProps } from "./publisher-host.js";
+export { selectContentRoute } from "./content-route-binding.js";
+export { createContentRouteManifest, emitContentRoutePage } from "./content-route-source.js";
+export type { CreateContentRouteManifestInput } from "./content-route-manifest.js";
+export type * from "./content-route-types.js";
+
+export { SiteFrame, siteShellFor, SITE_SURFACE_KINDS, SITE_PAGE_LAYERS, SITE_MAIN_ID, SITE_FRAME_CONTRACT, SITE_FRAME_CONFIG_SCHEMA, normalizeSiteFrameConfig, normalizeSiteFrameActions, type SiteBrandInput, type SiteChromeGround, type SiteEnvironmentLinkInput, type SiteFooterInput, type SiteFrameConfig, type SiteFrameInput, type SiteFrameProps, type SiteIconLinkInput, type SiteLinkInput, type SitePageLayer, type SiteShellInput, type SiteSurfaceKind, type SiteFramePresentationConfig } from "@clossys/designer/frames"; // removed by CX-2
+
+export { projectSiteShellNavigation, type SiteShellNavigationOptions, type SiteShellNavigationProjection } from "./frame/registered-navigation.js";

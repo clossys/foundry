@@ -1,0 +1,45 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.error-message",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.messages",
+    "l2": "messages-problems",
+    "order": 56
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "what",
+          "required": true,
+          "maxChars": 160,
+          "maxWords": 28
+        },
+        {
+          "id": "why",
+          "required": true,
+          "maxChars": 240,
+          "maxWords": 45
+        },
+        {
+          "id": "next",
+          "required": true,
+          "maxChars": 160,
+          "maxWords": 28
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.brand.personality",
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

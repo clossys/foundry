@@ -1,11 +1,11 @@
 /**
  * `scanClassCandidates` — the source of truth for what goes INTO
  * `generate.ts`'s real Tailwind compile. Walks a directory (this package's
- * own `src/atoms/` in real use — see `cli.ts`) and extracts every string
+ * own `src/components/` in real use — see `cli.ts`) and extracts every string
  * literal that is SHAPED like a Tailwind class name, from the same files
  * `VARIANT_CLASSES`/`SIZE_CLASSES`/`BASE`-style class tables live in
- * (`Button.tsx`, `Badge.tsx`, `Card.tsx`, and every other atom — see the
- * README's "No `class-variance-authority`" note: every atom's classes are a
+ * (`Button.tsx`, `Badge.tsx`, `Card.tsx`, and every other component — see the
+ * README's "No `class-variance-authority`" note: every component's classes are a
  * plain string literal, never built up with a template expression or a
  * runtime concatenation helper, so a static text scan is a complete,
  * non-approximate source of truth here — unlike `style-scan.ts`, which
@@ -53,7 +53,7 @@ export interface ClassScanOptions {
 
 const DEFAULT_EXTENSIONS = [".ts", ".tsx"];
 /**
- * `internal/` is skipped by default: this package's own `atoms/internal/`
+ * `internal/` is skipped by default: this package's own `components/internal/`
  * carries `cx.ts` (a merge helper, no class literals of its own beyond
  * doc-comment examples) and `ui-vars.ts` (raw `var(...)` reads used via the
  * `style` prop, never `className` — see that file's own header). Neither
@@ -124,9 +124,9 @@ const MAX_CANDIDATE_LENGTH = 60;
  * matters — so rather than add real comment-awareness (`style-scan.ts`'s
  * heavier `computeSkipRegions` machinery) for a case this codebase never
  * actually needs, this scanner drops single-quote matching entirely:
- * confirmed by inspection that no atom anywhere in this package writes a
+ * confirmed by inspection that no component anywhere in this package writes a
  * class-bearing string literal in single quotes — every real example
- * (`Button.tsx`, `Badge.tsx`, `Card.tsx`, every other atom) uses double
+ * (`Button.tsx`, `Badge.tsx`, `Card.tsx`, every other component) uses double
  * quotes exclusively, including for `cx(...)` calls and object-literal
  * class tables. A single-quoted arbitrary-value bracket segment like
  * Tailwind's own `content-['/']` still gets through fine: it lives INSIDE a

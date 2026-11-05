@@ -1,0 +1,65 @@
+{
+  "schema": "clossys.element/1",
+  "id": "studio-home",
+  "package": "producer",
+  "layer": "sections",
+  "slot": "sections.studio.home",
+  "kind": "registry:block",
+  "lineage": {
+    "mode": "customized",
+    "source": {
+      "registry": "shadcn",
+      "item": "card",
+      "version": "4.23.0",
+      "hash": "sha256:69068c65eee0d6d9d173a02f443efcc11d4520e181c6de2ec9991bd0a3ce087e",
+      "url": "https://ui.shadcn.com/r/styles/radix-nova/card.json"
+    }
+  },
+  "license": {
+    "spdx": "MIT",
+    "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+    "file": "LICENCE.md"
+  },
+  "creator": {
+    "agent": "designer",
+    "model": "claude-opus-5-5",
+    "by": "STUDIO-PUB"
+  },
+  "reason": "Registers the Home overview Studio already shows (moved from components/CellsWorkspace.tsx), rebuilt from Designer components only.",
+  "createdAt": "2026-10-31T12:00:00Z",
+  "checks": [
+    {
+      "id": "lineage.reference",
+      "suite": "studio",
+      "type": "fixed",
+      "status": "pass",
+      "at": "2026-10-31T12:00:00Z"
+    },
+    {
+      "id": "studio.ds-only",
+      "suite": "studio",
+      "type": "fixed",
+      "status": "pass",
+      "at": "2026-10-31T12:00:00Z"
+    }
+  ],
+  "deps": {
+    "npm": {},
+    "elements": []
+  },
+  "reads": {
+    "copyKeys": [],
+    "themeVars": [
+      "--card",
+      "--card-foreground",
+      "--muted-foreground"
+    ]
+  },
+  "version": 1,
+  "hash": "sha256:a19cd69445524d763a8134bae2f3b07c01971e8ebf4208af534865f792b68979",
+  "payload": [
+    "LICENCE.md",
+    "index.tsx",
+    "registry-item.json"
+  ]
+}

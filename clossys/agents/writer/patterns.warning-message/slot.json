@@ -1,0 +1,38 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "patterns.warning-message",
+  "agent": "writer",
+  "ia": {
+    "l0": "patterns",
+    "l1": "patterns.messages",
+    "l2": "messages-problems",
+    "order": 57
+  },
+  "kind": "strings",
+  "contract": {
+    "kind": "pattern",
+    "source": "writer",
+    "icu": true,
+    "parts": {
+      "mode": "closed",
+      "items": [
+        {
+          "id": "what",
+          "required": true,
+          "maxChars": 160,
+          "maxWords": 28
+        },
+        {
+          "id": "consequence",
+          "required": true,
+          "maxChars": 200,
+          "maxWords": 35
+        }
+      ]
+    }
+  },
+  "inputs": [
+    "identity.verbal.voice"
+  ],
+  "uses": []
+}

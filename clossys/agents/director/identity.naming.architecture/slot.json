@@ -1,0 +1,32 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "identity.naming.architecture",
+  "agent": "director",
+  "ia": {
+    "l1": "identity",
+    "l2": "identity.naming",
+    "order": 33
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How are products, plans and features named against the master name?",
+    "mustContain": [
+      {
+        "key": "Model",
+        "hint": "branded house, house of brands or endorsed"
+      },
+      {
+        "key": "Rule",
+        "hint": "the naming rule"
+      },
+      {
+        "key": "Example",
+        "hint": "one worked name"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 3,
+  "varyOn": "angle"
+}

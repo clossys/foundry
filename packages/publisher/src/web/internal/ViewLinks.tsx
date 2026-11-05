@@ -1,5 +1,6 @@
 import { useId, type ReactElement } from "react";
 import { Item, Items } from "@clossys/designer/blocks/server";
+import { SemanticContent } from "@clossys/designer/components/server";
 import type { ItemData } from "@clossys/designer/blocks/server";
 
 /** Caller-owned heading and destinations for a quiet view-level link collection. */
@@ -45,7 +46,7 @@ export function renderViewLinks(value: ViewLinksInput | undefined, owner: keyof 
 function ViewLinksSection({ value }: { value: ViewLinksInput }): ReactElement {
   const headingId = useId();
   return <section aria-labelledby={headingId} className="flex flex-col gap-lg">
-    <h2 id={headingId} className="text-h3 font-display text-ink-primary">{value.label}</h2>
+    <SemanticContent as="h2" id={headingId} className="text-h3 font-display text-ink-primary">{value.label}</SemanticContent>
     {value.items.length === 1
       ? <Item {...value.items[0]!} treatment="plain" size="standard" ground="base" headingLevel={3} />
       : <Items items={value.items} arrangement="rows" columns={1} treatment="plain" size="standard" scale="item" ground="base" headingLevel={3} />}

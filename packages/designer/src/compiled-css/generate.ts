@@ -150,7 +150,7 @@ const GENERATED_FILE_HEADER = `/* ═══════════════�
  * \`npm test\` — \`src/compiled-css/check.test.ts\` runs the same
  * re-derive-and-diff check as part of this package's ordinary test suite.
  *
- * Scope: \`atoms\`, \`blocks\`, and \`shell\` — enough for a pre-auth page
+ * Scope: \`components\`, \`blocks\`, and \`shell\` — enough for a pre-auth page
  * (Hero, feature blocks, site chrome) on the default \`tokens.css\` +
  * \`compiled.css\` path without Tailwind. \`charts\` and \`theme\` remain
  * Tailwind-native only.
@@ -355,7 +355,7 @@ function addExplicitFallbacksForInternalProperties(css: string): string {
  * package.json's `peerDependenciesMeta`) — optional so a token-only or
  * `compiled.css`-only consumer never needs it. This module (see its own
  * header) is the one place in this package that imports the real
- * `tailwindcss` package, and — unlike `atoms/index.ts` and friends — it is
+ * `tailwindcss` package, and — unlike `components/index.ts` and friends — it is
  * a repository-internal build tool with no `exports` subpath of its own,
  * so it is never reachable by an external consumer, browser or otherwise;
  * the Node-only `resolveInstalledPeerVersion` is safe to use here

@@ -8,8 +8,8 @@ import ts from "typescript";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { SITE_MAIN_ID } from "../frame/types.js";
-import type { SiteShellInput } from "../frame/types.js";
+import { SITE_MAIN_ID } from "@clossys/designer/frames";
+import type { SiteShellInput } from "@clossys/designer/frames";
 import { SiteMetadataError } from "../siteMetadata.js";
 import { GlobalErrorDocument } from "./GlobalErrorDocument.js";
 import { StatusView } from "./StatusView.js";
@@ -18,7 +18,7 @@ import * as server from "../../../dist/web/server.js";
 import type { StatusViewProps } from "./StatusView.js";
 import type { GlobalErrorDocumentErrorViewProps, GlobalErrorDocumentFramedProps, GlobalErrorDocumentProps } from "./GlobalErrorDocument.js";
 
-const ALLOWED_IMPORTS = ["react", "../frame/SiteFrame.js", "../frame/types.js", "./ErrorView.js", "./StatusView.js", "./statusDocument.js"];
+const ALLOWED_IMPORTS = ["react", "@clossys/designer/frames", "./ErrorView.js", "./StatusView.js", "./statusDocument.js"];
 
 /** Every module specifier named by an `import` statement or an `export ... from` re-export. */
 const MODULE_SPECIFIER =
@@ -73,6 +73,7 @@ const shell: SiteShellInput = {
 
 const head = {
   lang: "en",
+  localeManifest: { locales: [{ tag: "en", dir: "ltr" as const, state: "active" as const }] },
   documentTitle: { page: "Something went wrong", brand: "Example Studio" },
   icon: { href: "/icon.svg", type: "image/svg+xml" },
 };
@@ -238,6 +239,7 @@ describe("GlobalErrorDocument", () => {
       expect(root.hasAttribute("lang")).toBe(false);
       expect(root.hasAttribute("icon")).toBe(false);
       expect(root.hasAttribute("documenttitle")).toBe(false);
+      expect(root.hasAttribute("localemanifest")).toBe(false);
       expect(root.className).not.toContain("font-sans");
     });
   });
@@ -247,7 +249,7 @@ describe("GlobalErrorDocument", () => {
 
     it("imports only react, the frame, the status view, the deprecated error view and the shared status document head", () => {
       expect(moduleSpecifiers(source)).toEqual(
-        expect.arrayContaining(["../frame/SiteFrame.js", "./StatusView.js", "./ErrorView.js", "./statusDocument.js"]),
+        expect.arrayContaining(["@clossys/designer/frames", "./StatusView.js", "./ErrorView.js", "./statusDocument.js"]),
       );
       for (const specifier of moduleSpecifiers(source)) {
         expect(ALLOWED_IMPORTS).toContain(specifier);
@@ -402,7 +404,7 @@ describe("README global-error example", () => {
     throw new Error(`Unexpected README example import: ${specifier}`);
   };
   // Run the actual documented component with the shared frame fixture, so its guard is tested rather than duplicated.
-  new Function("require", "exports", "frame", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset });
+  new Function("require", "exports", "frame", "localeManifest", compiled.outputText)(requireExample, exports, { shell, resolveCopy, resolveAsset }, head.localeManifest);
 
   it("renders an empty digest without a reference or an exception", () => {
     const error = Object.assign(new Error("fixture"), { digest: "" });
