@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
-import { globRegExp, isGoverned, orphanFindings, simpleCommands } from "./check-orphan-checks.mjs";
+import { commandList, globRegExp, isGoverned, orphanFindings, reachable, simpleCommands } from "./check-orphan-checks.mjs";
 
 /** A throwaway repository: { "path": "contents" }; objects are written as JSON. */
 function tree(files) {
@@ -31,6 +31,27 @@ test("splits POSIX command lists and keeps quoted words whole", () => {
   assert.equal(globRegExp("src/**/*.test.{ts,tsx}").test("src/a/b.test.tsx"), true);
   assert.equal(globRegExp("src/**/*.test.{ts,tsx}").test("src/b.test.ts"), true);
   assert.equal(globRegExp("src/**/*.test.{ts,tsx}").test("studio/b.test.ts"), false);
+});
+
+test("a step after an && that cannot succeed is not reached; the root check aggregate reaches every step (gate F6)", async () => {
+  assert.deepEqual(commandList("a && b || c; d | e").map(({ words, op }) => `${op} ${words.join(" ")}`), ["null a", "&& b", "|| c", "; d", "| e"]);
+  const scripts = {
+    check: "npm run gate && npm run check:a; false && npm run check:b | cat; false || npm run check:e; true || npm run check:f; node scripts/run-check-steps.mjs gate check:c check:studio --workspace=@x/producer",
+    gate: "node scripts/gate.mjs", "check:a": "node scripts/a.mjs", "check:b": "node scripts/b.mjs", "check:c": "node scripts/c.mjs", "check:e": "node scripts/e.mjs", "check:f": "node scripts/f.mjs",
+  };
+  const root = tree({
+    "package.json": rootManifest(scripts),
+    "packages/producer/package.json": { name: "@x/producer", scripts: { "check:studio": "node scripts/s.mjs" } },
+    ...Object.fromEntries(["gate", "a", "b", "c", "e", "f"].map(name => [`scripts/${name}.mjs`, ""])),
+    "packages/producer/scripts/s.mjs": "",
+  });
+  try {
+    const steps = graph => ["check:a", "check:b", "check:c", "check:e", "check:f"].filter(name => graph.scripts.has(`.#${name}`)).concat(graph.scripts.has("packages/producer#check:studio") ? ["studio"] : []);
+    // gate may pass, so the step after it can run; `false &&` (and its pipeline) and `true ||` cannot.
+    assert.deepEqual(steps(await reachable(root)), ["check:a", "check:c", "check:e", "studio"]);
+    // A script known to fail every time: what follows its && is not reached, the aggregate still runs all.
+    assert.deepEqual(steps(await reachable(root, { failing: new Set([".#gate"]) })), ["check:c", "check:e", "studio"]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test("a check file nothing runs is an orphan; npm run, node --test, vitest include and imports reach files", async () => {

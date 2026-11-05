@@ -11,13 +11,16 @@
  *   - any `*.test.{mjs,cjs,js,ts,tsx,mts,cts,jsx}`.
  *
  * Reachability is a static trace, no command runs:
- *   - root `check` and `test` are parsed as POSIX command lists (`&&`, `||`, `;`, `|`);
+ *   - root `check` and `test` are parsed as POSIX command lists (`&&`, `||`, `;`, `|`); a step after
+ *     `&&` counts only if the step before can exit 0 (`false`, `exit N` and the scripts named in
+ *     `failing` cannot), a step after `||` only if the one before can fail;
  *   - `npm run <s>` / `npm test` follow the script in the current package, `--workspace`/`-w`,
  *     `--prefix` or every workspace for `--workspaces`;
  *   - `node <file>`, `node --test <file|glob>...`, `tsx <file>`, `sh|bash <file>` reach the files;
  *   - `vitest run [--config C] [filters]` reaches the files its config `include` globs match;
  *   - a reached JS/TS file reaches what it imports, requires, dynamically imports or names with
  *     `new URL('./x', import.meta.url)`, relative specifiers only;
+ *   - scripts/run-check-steps.mjs (the root `check` aggregate) runs each argument as an npm script;
  *   - three runners dispatch dynamically and are expanded explicitly: scripts/build-workspaces.mjs
  *     (every workspace `build`), scripts/run-gate-suites.mjs (scripts/lib/gate-test-set.mjs) and
  *     packages/producer/scripts/check-studio.mjs (its check-studio.json sub-checks).
@@ -30,6 +33,8 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
+import { parseSteps } from "./run-check-steps.mjs";
+
 const here = dirname(fileURLToPath(import.meta.url));
 export const SCOPE = Object.freeze(["packages/producer", "packages/designer"]);
 export const EXEMPTIONS_FILE = "scripts/check-orphan-checks.exemptions.json";
@@ -38,6 +43,7 @@ const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".next", ".git", ".t
 const JS = /\.(?:mjs|cjs|js)$/;
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const TEST = /\.test\.(?:mjs|cjs|js|ts|tsx|mts|cts|jsx)$/;
+const CHECK_STEPS_RUNNER = "scripts/run-check-steps.mjs";
 const STUDIO_RUNNER = "packages/producer/scripts/check-studio.mjs";
 const STUDIO_MANIFEST = "packages/producer/scripts/check-studio.json";
 
@@ -67,12 +73,15 @@ export function scopeFiles(root) {
   return SCOPE.filter(dir => existsSync(join(root, dir))).flatMap(dir => walk(root, dir, [])).sort();
 }
 
-/** Split a command string into simple commands of shell words, honouring quotes and `\` escapes. */
-export function simpleCommands(command) {
+/**
+ * Split a command string into simple commands, honouring quotes and `\` escapes. Each entry is
+ * { words, op }: `op` is the list operator before it (`&&`, `||`, `;`, `|`, `&`, newline, or null first).
+ */
+export function commandList(command) {
   const commands = [];
-  let words = [], word = "", quote = null, has = false;
+  let words = [], word = "", quote = null, has = false, op = null;
   const endWord = () => { if (has) words.push(word); word = ""; has = false; };
-  const endCommand = () => { endWord(); if (words.length) commands.push(words); words = []; };
+  const endCommand = next => { endWord(); if (words.length) { commands.push({ words, op }); op = next; } else if (op === null) op = next; words = []; };
   for (let i = 0; i < command.length; i++) {
     const c = command[i];
     if (quote) {
@@ -83,12 +92,18 @@ export function simpleCommands(command) {
     }
     if (c === "'" || c === '"') { quote = c; has = true; continue; }
     if (c === "\\" && i + 1 < command.length) { word += command[++i]; has = true; continue; }
-    if (c === "&" || c === "|" || c === ";" || c === "\n") { endCommand(); if (command[i + 1] === c) i++; continue; }
+    if (c === "&" || c === "|" || c === ";" || c === "\n") { const double = command[i + 1] === c && c !== "\n"; endCommand(double ? c + c : c); if (double) i++; continue; }
     if (c === " " || c === "\t") { endWord(); continue; }
     word += c; has = true;
   }
-  endCommand();
+  endCommand(null);
+  if (commands.length) commands[0].op = null;
   return commands;
+}
+
+/** Split a command string into simple commands of shell words (the operators dropped). */
+export function simpleCommands(command) {
+  return commandList(command).map(command => command.words);
 }
 
 /** A small glob to RegExp translation: `**`, `*`, `?`, `{a,b}` and `?(x)` (vitest default include). */
@@ -191,32 +206,47 @@ export function workspaces(root) {
  * Returns the reached file set and the scripts followed (keyed `<dir>#<script>`, root dir ".").
  * `files` may pass a previous `repositoryFiles(root)` listing to skip the walk on repeated traces.
  */
-export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({ dir: ".", script })), files = repositoryFiles(root) } = {}) {
+const OK = Object.freeze({ ok: true, fail: false }), FAILS = Object.freeze({ ok: false, fail: true }), MAY = Object.freeze({ ok: true, fail: true });
+/** Two commands that both run: the pair exits 0 only if each can, and fails if either can. */
+const both = (a, b) => ({ ok: a.ok && b.ok, fail: a.fail || b.fail });
+
+export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({ dir: ".", script })), files = repositoryFiles(root), failing = new Set() } = {}) {
   const packages = workspaces(root);
+  const statuses = new Map();
   const byName = new Map([...packages].map(([dir, manifest]) => [manifest.name, dir]));
   const reached = new Set(), scripts = new Set(), queue = [];
   const reach = rel => { if (rel && !reached.has(rel) && existsSync(join(root, rel))) { reached.add(rel); queue.push(rel); } };
   const packageOf = cwd => { for (let dir = cwd; ; dir = posix.dirname(dir)) { if (packages.has(dir)) return dir; if (dir === "." || dir === "") return "."; } };
 
+  // A script runs; its status says whether it can exit 0 (`ok`) and whether it can fail (`fail`).
   const runScript = (dir, name) => {
     const key = `${dir}#${name}`;
-    if (scripts.has(key)) return;
+    if (scripts.has(key)) return statuses.get(key) ?? MAY;
     const command = packages.get(dir)?.scripts?.[name];
-    if (typeof command !== "string") return;
+    if (typeof command !== "string") return MAY;
     scripts.add(key);
-    runCommand(command, dir);
+    const status = runCommand(command, dir);
+    statuses.set(key, failing.has(key) ? FAILS : status);
+    return statuses.get(key);
   };
+  // A command list: a step after `&&` runs only if the one before can succeed, after `||` only if
+  // it can fail, and a `|` stage only if its pipeline runs. Steps that cannot run are not traced.
   const runCommand = (command, cwd) => {
-    for (const words of simpleCommands(command)) {
+    let last = MAY, ran = true;
+    for (const { words, op } of commandList(command)) {
+      if ((op === "&&" && !last.ok) || (op === "||" && !last.fail) || (op === "|" && !ran)) { ran = false; continue; }
+      ran = true;
       while (words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0])) words.shift();
-      if (!words.length) continue;
+      if (!words.length) { last = MAY; continue; }
       const [program, ...args] = words;
-      if (program === "cd" && args[0]) { cwd = posix.normalize(posix.join(cwd, args[0])); continue; }
-      if (program === "npm" || program === "pnpm") npm(args, cwd);
-      else if (program === "npx") runWords(args.filter(arg => arg !== "--yes" && arg !== "-y"), cwd);
-      else runWords(words, cwd);
+      if (program === "cd" && args[0]) { cwd = posix.normalize(posix.join(cwd, args[0])); last = MAY; continue; }
+      if (program === "npm" || program === "pnpm") last = npm(args, cwd);
+      else if (program === "npx") last = runWords(args.filter(arg => arg !== "--yes" && arg !== "-y"), cwd);
+      else last = runWords(words, cwd);
     }
+    return last;
   };
+  const scriptDir = (cwd, workspace) => workspace ? byName.get(workspace) ?? posix.normalize(workspace) : packageOf(cwd);
   const npm = (args, cwd) => {
     let all = false, prefix, script, scripted = false;
     const targets = [];
@@ -228,23 +258,26 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
       else if (arg.startsWith("--workspace=")) targets.push(arg.slice(12));
       else if (arg === "--prefix" || arg === "-C") prefix = args[++i];
       else if (arg.startsWith("--prefix=")) prefix = arg.slice(9);
-      else if (arg === "exec" || arg === "x") { runWords(args.slice(i + 1).filter(a => a !== "--"), cwd); return; }
+      else if (arg === "exec" || arg === "x") return runWords(args.slice(i + 1).filter(a => a !== "--"), cwd);
       else if (arg.startsWith("-")) continue;
       else if (!scripted && ["run", "run-script", "rum", "urn"].includes(arg)) scripted = true;
       else if (!scripted && ["test", "t", "tst"].includes(arg)) { script = "test"; break; }
       else if (!scripted && ["start", "stop", "restart"].includes(arg)) { script = arg; break; }
       else if (scripted && !script) script = arg;
     }
-    if (!script) return;
+    if (!script) return MAY;
     const dirs = all ? [...packages.keys()].filter(dir => dir !== ".")
       : targets.length ? targets.map(target => byName.get(target) ?? posix.normalize(target)).filter(dir => packages.has(dir))
       : [packageOf(prefix ? posix.normalize(posix.join(cwd, prefix)) : cwd)];
-    for (const dir of dirs) runScript(dir, script);
+    return dirs.length ? dirs.reduce((status, dir) => both(status, runScript(dir, script)), OK) : MAY;
   };
   const runWords = (words, cwd) => {
     const [program, ...args] = words;
-    if (!program) return;
-    if (program === "vitest") { for (const file of vitestFiles(root, cwd, args, files)) reach(file); return; }
+    if (!program) return MAY;
+    if (program === "false") return FAILS;
+    if (program === "true" || program === ":") return OK;
+    if (program === "exit") return /^0?$/.test(args[0] ?? "") ? OK : /^\d+$/.test(args[0]) ? FAILS : MAY;
+    if (program === "vitest") { for (const file of vitestFiles(root, cwd, args, files)) reach(file); return MAY; }
     if (program === "node" || program === "tsx" || program === "ts-node") {
       const test = args.includes("--test");
       let script = false;
@@ -255,12 +288,22 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
           continue;
         }
         if (test) { for (const file of expand(cwd, arg)) reach(file); continue; }
-        if (!script) { reachPath(cwd, arg); script = true; }
+        if (!script) {
+          reachPath(cwd, arg); script = true;
+          if (posix.normalize(posix.join(cwd, arg)) === CHECK_STEPS_RUNNER) return runSteps(args.slice(i + 1), cwd);
+        }
       }
-      return;
+      return MAY;
     }
-    if ((program === "sh" || program === "bash") && args[0] && !args[0].startsWith("-")) { reachPath(cwd, args[0]); return; }
+    if ((program === "sh" || program === "bash") && args[0] && !args[0].startsWith("-")) { reachPath(cwd, args[0]); return MAY; }
     if (/^\.{0,2}\//.test(program)) reachPath(cwd, program);
+    return MAY;
+  };
+  // scripts/run-check-steps.mjs runs every step even after one fails: all are traced; it fails if any must.
+  const runSteps = (args, cwd) => {
+    let steps;
+    try { steps = parseSteps(args); } catch { return MAY; }
+    return steps.reduce((status, step) => both(status, runScript(scriptDir(cwd, step.workspace), step.script)), OK);
   };
   const reachPath = (cwd, path) => { if (path && !path.includes("$")) reach(posix.normalize(posix.join(cwd, path))); };
   const expand = (cwd, pattern) => {

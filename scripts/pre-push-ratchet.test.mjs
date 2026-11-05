@@ -40,9 +40,10 @@ function repository() {
   const root = mkdtempSync(join(tmpdir(), "pre-push-ratchet-test-"));
   git(root, "init", "-q");
   const base = commit(root, {
-    "package.json": { name: "fixture", private: true, workspaces: ["packages/*"], scripts: { check: "npm run check:rules && npm run check:studio --workspace=packages/producer", "check:rules": "node scripts/check-rules.mjs" } },
+    "package.json": { name: "fixture", private: true, workspaces: ["packages/*"], scripts: { check: "node scripts/run-check-steps.mjs check:rules check:studio --workspace=packages/producer", "check:rules": "node scripts/check-rules.mjs" } },
     "scripts/check-rules.mjs": readFileSync(join(here, "check-rules.mjs"), "utf8"),
     "scripts/check-orphan-checks.mjs": readFileSync(join(here, "check-orphan-checks.mjs"), "utf8"),
+    "scripts/run-check-steps.mjs": readFileSync(join(here, "run-check-steps.mjs"), "utf8"),
     "scripts/rules/registry.json": registry([enforced]),
     "scripts/rules/fixtures/R-PROBE/data/violations.txt": "planted\n",
     "packages/producer/package.json": { name: "@fixture/producer", private: true, scripts: { "check:studio": "node scripts/check-studio.mjs" } },

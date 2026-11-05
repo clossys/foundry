@@ -9,7 +9,8 @@
  *                        named in `pending_wire` and is not wired here yet (still a failing rule);
  *   unknown-check        a listed check names no package script or no check:studio sub-check;
  *   unreachable          a listed check is not reachable from root `check`/`test`
- *                        (the scripts/check-orphan-checks.mjs graph);
+ *                        (the scripts/check-orphan-checks.mjs graph), counting a step after
+ *                        check:rules in an `&&` chain as unreached whenever check:rules has findings;
  *   fixture-missing      an enforcing check has no fixture run, or its fixture path is absent;
  *   fixture-passed       a check exits 0 (or not with the expected code) on its fixture;
  *   fixture-not-detected a check fails on its fixture without reporting the expected violation;
@@ -40,6 +41,8 @@ export const STUDIO_SCRIPT = "packages/producer#check:studio";
 /** Root scripts that are themselves rule checks and must map to a rule. */
 export const META_CHECKS = Object.freeze(["check:orphan-checks", "check:rules"]);
 const SUB = "check:studio#";
+/** This meta-check's own script: it exits 1 whenever it reports a finding. */
+const SELF = ".#check:rules";
 const ID = /^R-[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
@@ -109,7 +112,7 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
   const add = (rule, id, message) => findings.push({ rule, id, message });
   const packages = workspaces(root);
   const files = repositoryFiles(root);
-  const graph = await reachable(root, { files });
+  const wiring = [];
   const subChecks = new Map(existsSync(join(root, STUDIO_MANIFEST)) ? (readJson(join(root, STUDIO_MANIFEST)).checks ?? []).map(check => [check.id, check]) : []);
   const traces = new Map();
   const trace = async (key, entry) => {
@@ -125,8 +128,7 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
       listed.add(ref);
       const entry = entryOf(ref, packages, subChecks);
       if (!entry) { add("unknown-check", row.id, `${ref} names no package script or check:studio sub-check`); continue; }
-      const wired = ref.startsWith(SUB) ? graph.scripts.has(STUDIO_SCRIPT) : graph.scripts.has(ref);
-      if (!wired) add("unreachable", row.id, `${ref} is not reachable from root check or test`);
+      wiring.push({ id: row.id, ref });
     }
     if (row.status === "unenforced") { add("unenforced", row.id, row.note ?? "no check enforces this rule"); continue; }
     if (row.status === "pending-wire") {
@@ -184,6 +186,19 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
     }
     if (mapped && exemptions.has(ref)) add("exemption-stale", ref, "exempt, but a rule lists it: drop the exemption");
     if (!mapped && !exemptions.has(ref)) add("unmapped", ref, "no rule lists this check and it has no exemption");
+  }
+  // Reachability last: check:rules exits 1 on any finding, so a step after it in an `&&` chain cannot
+  // run then. Trace first as if it passed; if anything is found (or the trace itself finds a gap),
+  // trace again with check:rules failing and count only what still runs.
+  const wired = graph => ({ ref }) => ref.startsWith(SUB) ? graph.scripts.has(STUDIO_SCRIPT) : graph.scripts.has(ref);
+  const passing = await reachable(root, { files });
+  let gaps = wiring.filter(item => !wired(passing)(item));
+  const failing = findings.length || gaps.length ? await reachable(root, { files, failing: new Set([SELF]) }) : passing;
+  gaps = wiring.filter(item => !wired(failing)(item));
+  for (const { id, ref } of gaps) {
+    add("unreachable", id, wired(passing)({ ref })
+      ? `${ref} is not reachable from root check or test: it runs only after ${SELF.slice(2)} in an && chain, and ${SELF.slice(2)} exits 1 on these findings`
+      : `${ref} is not reachable from root check or test`);
   }
   return { rules: doc.rules.length, enforced, findings };
 }

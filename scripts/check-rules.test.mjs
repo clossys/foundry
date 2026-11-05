@@ -66,6 +66,25 @@ test("an enforced rule whose check fails on its fixture holds; unenforced, passi
   assert.equal(result.enforced, 2, "R-HOLDS and R-UNWIRED fail on their fixtures; R-UNWIRED is still reported unreachable");
 });
 
+test("a check after check:rules in an && chain is unreachable while check:rules has findings; the aggregate reaches it (gate F6)", async () => {
+  const rows = [
+    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+    { id: "R-OPEN", owner_words: words, status: "unenforced", note: "an open rule: check:rules exits 1" },
+  ];
+  const root = repository(rows);
+  const manifest = (check, at = root) => writeFileSync(join(at, "package.json"), JSON.stringify({ name: "fixture", private: true, scripts: { check, "check:a": "node scripts/check-a.mjs --root .", "check:rules": "node -e 0" } }));
+  manifest("npm run check:rules && npm run check:a");
+  const chained = await ruleFindings(root);
+  assert.deepEqual(kinds(chained), ["unenforced R-OPEN", "unreachable R-HOLDS"]);
+  assert.match(chained.findings.find(finding => finding.rule === "unreachable").message, /runs only after check:rules in an && chain/);
+  manifest("node scripts/run-check-steps.mjs check:rules check:a");
+  assert.deepEqual(kinds(await ruleFindings(root)), ["unenforced R-OPEN"]);
+  // With no other finding, check:rules can pass, so a step after it is reached.
+  const held = repository(rows.slice(0, 1));
+  manifest("npm run check:rules && npm run check:a", held);
+  assert.deepEqual(kinds(await ruleFindings(held)), []);
+});
+
 test("a meta-check no rule lists is unmapped unless exempt with a reason; stale and empty exemptions fail", async () => {
   const held = [{ id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs")] }];
   assert.deepEqual(kinds(await ruleFindings(repository(held, []))), ["unmapped .#check:rules"]);
