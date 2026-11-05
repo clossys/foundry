@@ -91,9 +91,22 @@ export function lineageReferences(refs: unknown): Ref[] {
     && /^\d+\.\d+\.\d+$/.test((row as Ref).version ?? '') && /^sha256:[a-f0-9]{64}$/.test((row as Ref).hash ?? ''));
 }
 
+/**
+ * The committed record store and the vendored reference snapshots do not change while the suite runs,
+ * so they are listed and parsed once. A probe copy (any other root) is written to between reads and is
+ * always read fresh.
+ */
+const committedSlots = (() => { let listed: ReturnType<typeof listSlots> | undefined; return () => (listed ??= listSlots(CLOSSYS, 'designer')); })();
+const designerSlots = (clossys: string) => (clossys === CLOSSYS ? committedSlots() : listSlots(clossys, 'designer'));
+const vendored = new Map<string, unknown>();
+function onceFor<T>(key: string, read: () => T): T {
+  if (!vendored.has(key)) vendored.set(key, read());
+  return vendored.get(key) as T;
+}
+
 /** Read only the exact valid canonical pin; a stale legacy record cannot authorize markup. */
 function pinnedElement(folder: string, prefix: string, clossys: string): { item: any; slot: string; version: number } | undefined {
-  const entries = listSlots(clossys, 'designer').filter(entry => entry.id.startsWith(prefix) && entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate)?.[1] === folder);
+  const entries = designerSlots(clossys).filter(entry => entry.id.startsWith(prefix) && entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate)?.[1] === folder);
   if (entries.length !== 1) return undefined;
   const entry = entries[0]!, name = entry.pin!.candidate;
   if (!entry.candidates.includes(name)) return undefined;
@@ -115,13 +128,13 @@ export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references =
 export function elementBlockMarkup(folder: string, prefix: 'frames.' | 'sections.', clossys = CLOSSYS, references = REFERENCES): Set<string> {
   const pinned = pinnedElement(folder, prefix, clossys);
   if (!pinned) return new Set();
-  const manifest = JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'));
+  const manifest = onceFor(`manifest:${references}`, () => JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'))) as any;
   const markup = new Set<string>();
   for (const ref of lineageReferences(pinned.item.meta.source.ref)) {
     const exact = manifest.items.find((item: any) => item.registry === ref.registry && item.name === ref.item && item.version === ref.version && item.hash === ref.hash);
     if (!exact) continue;
     const root = join(ref.registry === 'shadcn' ? references : join(references, '..', ref.registry), `${ref.item}@${ref.version}`, 'registry');
-    if (existsSync(root)) for (const line of referenceMarkup(root)) markup.add(line);
+    if (existsSync(root)) for (const line of onceFor(`markup:${root}`, () => referenceMarkup(root))) markup.add(line);
   }
   return markup;
 }
@@ -357,7 +370,9 @@ describe('Studio sections are ds-only', () => {
     expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual(['studio-slot-groups -> ../studio-specimen']);
     const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-canonical-')));
     try {
-      cpSync(join(CLOSSYS, 'agents/designer'), join(probe, 'agents/designer'), { recursive: true });
+      // Only the records this probe reads and rewrites: copying the whole store dominated the test's time.
+      for (const entry of ['ia.json', 'frames.studio-shell', 'sections.studio.home', 'sections.studio.specimen'])
+        cpSync(join(CLOSSYS, 'agents/designer', entry), join(probe, 'agents/designer', entry), { recursive: true });
       expect(frameBlockMarkup('studio-shell', probe)).toEqual(frameBlockMarkup('studio-shell'));
       const frame = listSlots(probe, 'designer').find(entry => entry.id === 'frames.studio-shell')!;
       const pin = join(frame.dir, 'pin.json');
