@@ -5,7 +5,7 @@
  * Five derived products come from the consumer's pins alone:
  *   icons       studio/generated/studio-icons.ts: one icon per pinned assets.icon-* slot, drawn
  *               from the glyph its pinned candidate carries (R-ICONS-FROM-PINS).
- *   provenance  studio/generated/studio-provenance.json: per assembled section the
+ *   provenance  studio/generated/studio-provenance.json: per assembled frame and section the
  *               data-clossys-slot/candidate/hash markers, from the page records and pins
  *               (R-PROVENANCE-GENERATED).
  *   uses        every slot.json `uses`: what the pinned candidate actually imports or
@@ -127,10 +127,10 @@ export function provenanceJson(rows) {
   return json(out);
 }
 
-/** The pinned sections the Studio page records assemble (studio-map.json items), with their pins. */
+/** The pinned frames and sections the Studio page records assemble (studio-map.json items), with their pins. */
 export function studioSectionPins(clossysRoot, studioMapPath = join(producer, 'studio', 'generated', 'studio-map.json')) {
   const projection = JSON.parse(readFileSync(studioMapPath, 'utf8'));
-  return (projection.items ?? []).filter(item => item.slot.startsWith('sections.')).map(item => {
+  return (projection.items ?? []).filter(item => /^(?:frames|sections)\./.test(item.slot)).map(item => {
     const entry = pinned(clossysRoot, 'designer', item.slot);
     if (!entry) throw new Error(`${item.slot} has no intact pin`);
     return { slot: item.slot, candidate: entry.candidate, sha256: entry.sha256 };
@@ -480,6 +480,8 @@ export function checkGeneratedDerived({ root = repo, clossysRoot = join(root, 'c
   // Provenance reaches the DOM through the generated assembly bindings, not hand-typed folder markers.
   const bindings = join(generated, 'assembly-bindings.ts');
   if (!existsSync(bindings) || !/from ['"]\.\/studio-provenance\.json['"]/.test(readFileSync(bindings, 'utf8'))) findings.push({ rule: 'R-PROVENANCE-GENERATED', file: posix(relative(root, bindings)), detail: 'assembly bindings do not apply the generated provenance markers' });
+  // Every bound frame and section receives its markers: a bare `"<slot>": FrameN,` / `SectionN,` binding drops them.
+  else for (const [, slot] of readFileSync(bindings, 'utf8').matchAll(/^\s*"((?:frames|sections)\.[^"]+)": (?!marked\()/gm)) findings.push({ rule: 'R-PROVENANCE-GENERATED', file: posix(relative(root, bindings)), detail: `${slot} is bound without its generated provenance markers` });
   const uses = deriveUses(clossysRoot, root);
   writeFileSync(join(temp, 'uses.json'), usesJson(uses));
   const committed = committedUses(clossysRoot);

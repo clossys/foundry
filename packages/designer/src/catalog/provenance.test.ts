@@ -83,6 +83,42 @@ describe("designer-provenance-check", () => {
     expect(elementFindings(root, "sections.legal-prose/legal-prose-v2.json", { rule, manifest })).toEqual([]);
   });
 
+  it("gives a slot marked not needed no option, still checks it under --all, and still checks a pinned slot that also says not needed", () => {
+    const root = consumer([
+      { slot: "sections.consent", element: "consent", version: 1, lineage: { mode: "original" } },
+      { slot: "sections.legal-prose", element: "legal-prose", version: 1, lineage: { mode: "original" }, pinned: true },
+    ]);
+    const mark = (slot: string, notNeeded: unknown) => {
+      const path = join(root, "agents", "designer", slot, "slot.json");
+      writeFileSync(path, JSON.stringify({ ...JSON.parse(readFileSync(path, "utf8")), notNeeded }));
+    };
+    const declined = { reason: "no approved-registry source", since: "2026-11-04", decidedBy: "planner:test" };
+    expect(provenanceFindings(root, { rule, manifest }).violations).toHaveLength(2);
+    mark("sections.consent", declined);
+    mark("sections.legal-prose", declined);
+    const result = provenanceFindings(root, { rule, manifest });
+    expect(result.violations).toEqual([expect.stringMatching(/^pin sections\.legal-prose\/legal-prose-v1\.json: original item/)]);
+    expect(result.checked).toEqual(["sections.legal-prose/legal-prose-v1.json"]);
+    expect(provenanceFindings(root, { rule, manifest, all: true }).violations).toHaveLength(2);
+    // A malformed marker is not the not-needed state: the option is checked again.
+    mark("sections.consent", { reason: "" });
+    expect(provenanceFindings(root, { rule, manifest }).violations).toHaveLength(2);
+  });
+
+  it("reads a candidate derived only from the consumer's own asset slots as an original: allowed in a consumer-asset slot only", () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "provenance-")));
+    const own = { kind: "derived", ref: ["clossys/agents/designer/assets.mark/candidates/mark-v2.json", "clossys/agents/designer/assets.logo"] };
+    const outside = { kind: "derived", ref: ["clossys/agents/designer/assets.mark/candidates/mark-v2.json", "packages/producer/studio/public/studio-mark.svg"] };
+    const item = (slot: string, source: unknown) => ({ name: slot.split(".").at(-1), type: "registry:block", files: [], meta: { slot, source } });
+    writeDesignerSlot(root, { id: "components.logo", candidates: { "logo-v1.json": item("components.logo", own) }, pin: "logo-v1.json" });
+    writeDesignerSlot(root, { id: "components.badge", candidates: { "badge-v1.json": item("components.badge", own) }, pin: "badge-v1.json" });
+    writeDesignerSlot(root, { id: "assets.lockup", candidates: { "lockup-v1.json": item("assets.lockup", outside) }, pin: "lockup-v1.json" });
+    expect([...provenanceFindings(root, { rule, manifest }).violations].sort()).toEqual([
+      expect.stringMatching(/^pin assets\.lockup\/lockup-v1\.json: customized item has no lineage\.source/),
+      expect.stringMatching(/^pin components\.badge\/badge-v1\.json: original item in components\.badge, which is not a consumer-asset slot/),
+    ]);
+  });
+
   it("reads pins only through the slot-model reader: a legacy selection store is ignored", () => {
     const root = consumer([{ slot: "components.logo", element: "logo", version: 1, lineage: { mode: "original" }, pinned: true }]);
     writeFileSync(join(root, "selection.json"), JSON.stringify({ pins: { "sections.legal-prose": { element: "legal-prose", version: 1 } } }));

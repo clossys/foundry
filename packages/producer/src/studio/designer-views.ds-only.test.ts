@@ -46,6 +46,12 @@ const classPassthrough = (attribute: ts.JsxAttribute) => !!attribute.initializer
   && !!attribute.initializer.expression && ts.isIdentifier(attribute.initializer.expression) && attribute.initializer.expression.text === 'className';
 const classAttribute = (node: ts.JsxOpeningElement | ts.JsxSelfClosingElement) => node.attributes.properties.find((attribute): attribute is ts.JsxAttribute => ts.isJsxAttribute(attribute) && attribute.name.getText() === 'className');
 
+/**
+ * An icon glyph (`<XIcon>` / `<Icon>`: a lucide or generated Studio icon, not a Designer component)
+ * sized with one literal `size-N` class: shadcn's own stock icon idiom, not a restyle. Any other class fails.
+ */
+const iconSize = (tag: string, value: ts.JsxAttributeValue | undefined) => /^(?:[A-Z][A-Za-z0-9]*)?Icon$/.test(tag)
+  && !!value && ts.isStringLiteral(value) && /^size-(?:[0-9]+(?:\.5)?)$/.test(value.text);
 /** `<tag> <className>` pairs of the raw elements in one reference block's source files. */
 export function referenceMarkup(root: string): Set<string> {
   const pairs = new Set<string>();
@@ -233,7 +239,7 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
           // The generated provenance markers are typed `data-clossys-*` only, so their spread carries no styling.
           if (ts.isJsxSpreadAttribute(attribute) && attribute.expression.getText(source) === 'provenance' && markerTyped) continue;
           if (attr === 'className' || attr === '{...spread}') violations.push(`${label}: <${tag} ${attr}>`);
-        } else if (attr === 'className' && !(((kind === 'frame' || kind === 'section') && block) || classPassthrough(attribute as ts.JsxAttribute))) {
+        } else if (attr === 'className' && !(((kind === 'frame' || kind === 'section') && block) || classPassthrough(attribute as ts.JsxAttribute) || iconSize(tag, value))) {
           // A class string on a Designer component restyles the registered component: anything but
           // forwarding the caller's own `className` prop unchanged, or (in a frame or section) the exact
           // component-and-class pair the reference blocks its pinned lineage names carry.
@@ -359,6 +365,9 @@ describe('Studio sections are ds-only', () => {
     try {
       writeFileSync(join(probe, 'Probe.tsx'), "import { X } from 'other-ui';\nimport { Y } from '../elsewhere';\nimport { Card } from '@clossys/designer-ui';\nexport const A = () => <div className=\"p-4\"><Card className=\"gap-2\"><X /><Y /></Card></div>;\n");
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports other-ui', 'imports ../elsewhere', '<div className>', '<Card className>']);
+      // An icon glyph sized with one stock `size-N` class passes; any other class on it is a restyle.
+      writeFileSync(join(probe, 'Probe.tsx'), "import { Card } from '@clossys/designer-ui';\nexport const A = ({ Icon }: { Icon: () => null }) => <Card><Icon className=\"size-4\" /><ArrowIcon className=\"size-3.5\" /><ArrowIcon className=\"size-4 text-red-500\" /><Icon className={x} /><CardIcon className=\"p-1\" /></Card>;\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<ArrowIcon className>', '<Icon className>', '<CardIcon className>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
   it('covers every Studio renderer and every Studio frame in the component layer', () => {

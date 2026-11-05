@@ -21,14 +21,15 @@ import Section14 from "../sections/studio-contract";
 import Section15 from "../sections/studio-history";
 import Section16 from "../sections/studio-references";
 
-/** Pinned page frame per frame slot. */
-export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
-  "frames.studio-shell": Frame0,
-};
-/** The generated DOM provenance markers (slot id, candidate file, content hash) one section root carries. */
+/** The generated DOM provenance markers (slot id, candidate file, content hash) one frame or section root carries. */
 export type StudioProvenance = Readonly<Record<'data-clossys-slot' | 'data-clossys-candidate' | 'data-clossys-hash', string>>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
-const marked = (Section: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Section, { ...props, ...marks }); };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each frame and section types its own input; the assembly binds it by name.
+const marked = (Block: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Block, { ...props, ...marks }); };
+
+/** Pinned page frame per frame slot, with its provenance markers. */
+export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
+  "frames.studio-shell": marked(Frame0, (provenance as Record<string, StudioProvenance>)["frames.studio-shell"]),
+};
 
 /** Pinned section per section slot; each takes one prop, named by its contract input, plus its provenance markers. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.

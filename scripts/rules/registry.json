@@ -55,6 +55,7 @@
         "check:studio#producer check-rendered-provenance (live)"
       ],
       "related": [
+        "check:studio#producer derive-element-deps",
         "check:studio#producer studio vitest",
         "check:studio#producer studio/checks/check-no-handrolling.test.cjs",
         "check:studio#producer check-no-handrolling (live)",
@@ -77,7 +78,7 @@
           "expect": "probe-section/index\\.tsx: imports other-ui"
         }
       ],
-      "note": "Unenforced: both gating checks are red on this tree. (1) The ds-only vitest (packages/producer#test) scans sections, frames, renderers, every app/ file, every Foundry component-layer file under designer-ui/src/foundry and every src/server emitter; it flags inline style and injected HTML on any element and any className on a Designer component other than a forwarded className prop or a pair the pinned lineage's reference block carries. 27 tests red: 14 pinned sections and frames.studio-shell restyle Designer components (need new Designer candidates), app/layout.tsx and components/StudioPage.tsx, the 6 Foundry component-layer files (no Designer slot or installer), and 4 server emitters that write hand markup (no pinned specimen sections). (2) check-rendered-provenance (live) fails any rendered element on any Studio map route outside a root carrying the current pin's generated provenance; frames, the Foundry chrome and server pages carry none."
+      "note": "Unenforced: both gating checks are red on this tree. (1) The ds-only vitest (packages/producer#test) scans sections, frames, renderers, every app/ file, every Foundry component-layer file under designer-ui/src/foundry and every src/server emitter; it flags inline style and injected HTML on any element and any className on a Designer component other than a forwarded className prop, a stock size-N class on an icon glyph, or a pair the pinned lineage's reference block carries. 26 tests red: 14 pinned sections and frames.studio-shell restyle Designer components (need new Designer candidates), app/layout.tsx (theme script and body classes; installed layouts), the 6 Foundry component-layer files (no Designer slot or installer), and 4 server emitters that write hand markup (no pinned specimen frame). (2) check-rendered-provenance (live) fails any rendered element on any Studio map route outside a root carrying the current pin's generated provenance; the assembly now binds markers to frames too, but the pinned frames.studio-shell candidate does not place them on its root, so every route is red until a Designer frame candidate does."
     },
     {
       "id": "R-SHADCN-STOCK",

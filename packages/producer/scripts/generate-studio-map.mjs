@@ -368,14 +368,15 @@ import provenance from './studio-provenance.json';
 ${frames.map((item, i) => `import Frame${i} from ${JSON.stringify(item.module)};`).join('\n')}
 ${sections.map((item, i) => `import Section${i} from ${JSON.stringify(item.module)};`).join('\n')}
 
-/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} page frame per frame slot. */
-export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
-${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: Frame${i},`).join('\n')}
-};
-/** The generated DOM provenance markers (slot id, candidate file, content hash) one section root carries. */
+/** The generated DOM provenance markers (slot id, candidate file, content hash) one frame or section root carries. */
 export type StudioProvenance = Readonly<Record<'data-clossys-slot' | 'data-clossys-candidate' | 'data-clossys-hash', string>>;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
-const marked = (Section: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Section, { ...props, ...marks }); };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- each frame and section types its own input; the assembly binds it by name.
+const marked = (Block: ComponentType<any>, marks: StudioProvenance): ComponentType<any> => function Marked(props: object) { return createElement(Block, { ...props, ...marks }); };
+
+/** ${target === 'preview' ? 'Draft preview' : 'Pinned'} page frame per frame slot, with its provenance markers. */
+export const studioFrames: Record<string, ComponentType<StudioShellProps>> = {
+${frames.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Frame${i}, (provenance as Record<string, StudioProvenance>)[${JSON.stringify(item.slot)}]),`).join('\n')}
+};
 
 /** ${target === 'preview' ? 'Draft preview' : 'Pinned'} section per section slot; each takes one prop, named by its contract input, plus its provenance markers. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- each section types its own input; the assembly binds it by name.
@@ -386,9 +387,9 @@ ${sections.map((item, i) => `  ${JSON.stringify(item.slot)}: marked(Section${i},
   const copy = target === 'preview'
     ? await studioCopyRegistry(clossysRoot, { target: 'preview', absentPin: 'newest-draft' })
     : await studioCopyRegistry(clossysRoot);
-  // Derived products: the icon map from the pinned icon glyphs, each section's DOM provenance from its binding, the consumer brand from its pinned assets.
+  // Derived products: the icon map from the pinned icon glyphs, each frame's and section's DOM provenance from its binding, the consumer brand from its pinned assets.
   const files = { 'studio-copy.json': json(copy), 'studio-map.json': json(projection), 'studio-map.ts': module, 'assembly-bindings.ts': bindings,
-    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(sections), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
+    'studio-icons.ts': iconsModule(clossysRoot), 'studio-provenance.json': provenanceJson(items.filter(item => /^(?:frames|sections)\./.test(item.slot))), 'studio-brand.json': brandJson(clossysRoot), 'studio-flow-theme.css': flowThemeCss(clossysRoot) };
   if (check && (await readdir(outputDir)).some(name => !Object.hasOwn(files, name))) throw new Error('Unexpected file in generated Studio projection');
   if (!check) {
     await mkdir(outputDir, { recursive: true });

@@ -6329,7 +6329,7 @@
     },
     {
       "path": "generated/assembly-bindings.ts",
-      "sha256": "9e83d105a3e565ef6992258b43693e047dfc454e863081a89454035667db2421"
+      "sha256": "60b31b59fa4569dc088445e5d86357d32c7eaf35467b51610719692bd96597c6"
     },
     {
       "path": "generated/studio-brand.json",
@@ -6357,7 +6357,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "f775a3c8d8a3c945559c291f8f13d6833fb7b9d65e8b4afbac6fd9fc21c52dad"
+      "sha256": "a708e84d6ed531cd7245d3fcfd352a6ac592e6f2c5ed955bfccfe7c7211df7af"
     }
   ]
 }
