@@ -238,11 +238,23 @@
         "quote": "every L3 is a slot, candidates are files, one pinned",
         "date": "2026-10-31"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "packages/designer#check:slot-contracts"
       ],
-      "note": "slot-resolve no-pin/multi-pin runs only inside clossys check, never from root check (W4 pin schema)."
+      "note": "check:slot-pins runs the clossys check slot resolver from root check through check:studio and fails on a needed slot with no pin, more than one pin, a pin off its candidate bytes or an unvendored pinned source; a not-needed slot holds no pin. The fixture is a needed Director slot with one candidate and no pin.",
+      "checks": [
+        "packages/producer#check:slot-pins"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-PINS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-pins",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-pins.mjs --root {fixture}",
+          "expect": "^\\s+director:identity\\.brand\\.essence \\[no-pin\\]"
+        }
+      ]
     },
     {
       "id": "R-ONE-BRAND",

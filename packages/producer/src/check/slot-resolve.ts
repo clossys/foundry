@@ -23,6 +23,8 @@ export interface SlotPin { id: string; hash?: string }
 export interface SlotStore {
   agent: AgentKind; ia: string[]; iaSource: string;
   candidates: Record<string, SlotCandidate[]>; pins: Record<string, SlotPin[]>;
+  /** IA slots the loader decides are `not-needed` (slot.json `notNeeded`): they hold no pin by design. */
+  notNeeded?: readonly string[];
   errors?: string[];
 }
 export interface SlotFinding { code: SlotFailureCode; message: string }
@@ -42,8 +44,9 @@ export function resolveSlots(stores: readonly SlotStore[], writer: ReadonlyMap<s
       add("not-in-ia", "Slot is absent from the declared IA.");
       if (candidates.length) add("orphan-candidate", "Candidate files have no IA slot.");
     }
-    if (!candidates.length) add("no-candidate", "No candidate file exists.");
-    if (!pins.length) add("no-pin", "No candidate is pinned.");
+    const notNeeded = store.notNeeded?.includes(slot) && !pins.length;
+    if (!candidates.length && !notNeeded) add("no-candidate", "No candidate file exists.");
+    if (!pins.length && !notNeeded) add("no-pin", "No candidate is pinned.");
     if (pins.length > 1) add("multi-pin", "More than one candidate is pinned.");
     let source: SlotSource | null = null;
     const keys = new Set<string>();
@@ -55,9 +58,12 @@ export function resolveSlots(stores: readonly SlotStore[], writer: ReadonlyMap<s
       for (const issue of candidate.schemaIssues) add("schema", issue);
       source = candidate.source ?? null;
       if (!source || validateSource(source, "source").length) add("no-source", "Candidate source does not satisfy the slot model contract.");
-      if (source?.kind === "registry" && Array.isArray(source.ref)) for (const ref of source.ref) {
-        if (!references.has(ref) || (source.hash !== undefined && references.get(ref) !== source.hash)) add("source-ref-unknown", "Registry source ref or hash does not match the references manifest.");
-      }
+      // Every ref is a vendored manifest item; `source.hash` is the primary (first) ref's tree hash,
+      // as check-ref-verbatim proves it.
+      const registry = source?.kind === "registry" && Array.isArray(source.ref) ? source : undefined;
+      registry?.ref.forEach((ref, index) => {
+        if (!references.has(ref) || (index === 0 && registry.hash !== undefined && references.get(ref) !== registry.hash)) add("source-ref-unknown", "Registry source ref or hash does not match the references manifest.");
+      });
       for (const key of candidate.copyKeys) keys.add(key);
     }
     let resolved = 0;
@@ -95,7 +101,7 @@ function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
     const ia = readIa(root, agent);
     if (!ia || validateIa(ia).length) continue;
     const entries = listSlots(root, agent);
-    const store: SlotStore = { agent, ia: entries.map(entry => entry.id), iaSource: ia.source, candidates: Object.create(null), pins: Object.create(null) };
+    const store: SlotStore = { agent, ia: entries.map(entry => entry.id), iaSource: ia.source, candidates: Object.create(null), pins: Object.create(null), notNeeded: entries.filter(entry => entry.state.state === "not-needed").map(entry => entry.id) };
     stores.push(store);
     for (const entry of entries) {
       store.candidates[entry.id] = [];
