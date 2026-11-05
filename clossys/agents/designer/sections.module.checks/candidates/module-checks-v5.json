@@ -1,0 +1,122 @@
+{
+  "name": "module-checks",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, CardDescription, CardTitle, Field, FieldContent, FieldDescription, FieldGroup, FieldTitle, LinkButton, Separator } from '@clossys/designer-ui';\n\nexport type ModuleCheckTone = 'secondary' | 'outline' | 'destructive';\n\n/** One finding: a failing check, a pending option or an open need, with where it lives. */\nexport interface ModuleCheckRow { id: string; badge: string; tone: ModuleCheckTone; title: string; detail?: string; href?: string; openLabel?: string }\nexport interface ModuleCheckGroup { id: 'failing' | 'options' | 'needs'; label: string; empty: string; rows: readonly ModuleCheckRow[] }\n\n/** The `checks` input of `sections.module.checks`: the open page's findings, display-ready. */\nexport interface ModuleChecksInput { summary: string; groups: readonly ModuleCheckGroup[] }\n\n/**\n * `sections.module.checks`: what needs attention on the open page, as shadcn item rows in three\n * groups: failing checks, pending options and open needs. Read-only: each row links to its leaf.\n */\nexport default function ModuleChecksSection({ checks, ...provenance }: { checks: ModuleChecksInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <FieldGroup {...provenance} className=\"gap-4\">\n    <CardDescription>{checks.summary}</CardDescription>\n    {checks.groups.map((group, index) => <FieldGroup key={group.id} data-module-checks-group={group.id} className=\"gap-2\">\n      {index > 0 && <Separator />}\n      <CardTitle role=\"heading\" aria-level={3} className=\"flex items-center gap-2 text-sm\">{group.label}<Badge variant=\"ghost\" className=\"tabular-nums\">{group.rows.length}</Badge></CardTitle>\n      {group.rows.length\n        ? group.rows.map(row => <Field key={row.id} data-module-check={row.id} className=\"gap-1\">\n          <FieldContent className=\"gap-1\">\n            <FieldTitle className=\"flex-wrap\"><Badge variant={row.tone}>{row.badge}</Badge>{row.title}</FieldTitle>\n            {row.detail && <FieldDescription className=\"text-xs leading-relaxed\">{row.detail}</FieldDescription>}\n            {row.href && <LinkButton variant=\"link\" size=\"xs\" href={row.href} className=\"h-auto self-start p-0\">{row.openLabel ?? row.title}</LinkButton>}\n          </FieldContent>\n        </Field>)\n        : <FieldDescription>{group.empty}</FieldDescription>}\n    </FieldGroup>)}\n  </FieldGroup>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"module-checks\",\n  \"type\": \"registry:block\",\n  \"title\": \"Checks Module\",\n  \"description\": \"The open page's failing checks, pending options and open needs as item rows.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"components.badge\",\n    \"components.button\",\n    \"components.card\",\n    \"components.field\",\n    \"components.separator\"\n  ],\n  \"files\": [\n    {\n      \"path\": \"index.tsx\",\n      \"type\": \"registry:component\",\n      \"target\": \"studio/sections/module-checks/index.tsx\"\n    }\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.module.checks",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.field",
+          "files": [
+            "registry/aria-nova/ui/field.tsx",
+            "registry/aria-nova/ui/label.tsx"
+          ]
+        },
+        {
+          "slot": "components.separator",
+          "files": [
+            "registry/aria-nova/ui/separator.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:fa0f39b3b5bdc6ddc8954ee20e30c005382d6253295780d3e8f8ae697eb01a13",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "module-checks",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.module.checks",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "planner:FLAT-SLOTS"
+      },
+      "reason": "Provenance is generated at compile: the root spreads the data-clossys-slot/candidate/hash markers the assembly derives from the page record and pins, in place of a hand-typed folder marker; owner go 2026-11-03 GEN-DERIVED. v5: registry-item registryDependencies name the five declared parts (no unused item dependency).",
+      "createdAt": "2026-11-05T00:00:00Z",
+      "checks": [
+        {
+          "id": "lineage.reference",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T22:00:00Z"
+        },
+        {
+          "id": "studio.ds-only",
+          "suite": "studio",
+          "type": "fixed",
+          "status": "pass",
+          "at": "2026-10-31T22:00:00Z"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--muted-foreground",
+          "--border",
+          "--destructive"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

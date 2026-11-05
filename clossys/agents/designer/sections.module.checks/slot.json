@@ -53,7 +53,6 @@
     "components.button",
     "components.card",
     "components.field",
-    "components.item",
     "components.separator"
   ]
 }
