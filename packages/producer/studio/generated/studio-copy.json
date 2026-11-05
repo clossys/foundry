@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "03af60d2de97926f16f3f4955ac64773b49e48ec8660b7505603e04365e06f28",
+  "revision": "21e48130a0eb1a3d8dfcc513f9c6af1d33b8d9b5d9edbf295dfbac7434d068b3",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -1906,6 +1906,12 @@
     {
       "id": "studio.pipeline.node.evidence",
       "text": "Record evidence",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.node.specimen.evidence",
+      "text": "Measure specimen evidence",
       "context": "lib/pipeline-flow.ts",
       "status": "draft"
     },

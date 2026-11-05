@@ -1491,7 +1491,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.site-shell/slot.json",
-      "sha256": "e9f853302be746265a7e5544eaf3b57081ee9cf5d6056dd618b0d8c1fee0330e"
+      "sha256": "3f4f3b2baa16de28242c9e964cf41590697d7c0ed8754c83a29db64fd1fb7f6b"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v12.json",
@@ -5354,12 +5354,12 @@
       "sha256": "0d974eb32e0459440d7ceefd90c017af5d917dddaac98e8c44ab733f96bd993f"
     },
     {
-      "path": "clossys/agents/writer/strings.common/candidates/studio-v13.md",
-      "sha256": "9de0199593a09095aaed941d0800efd2ac605e0b148170ee3f5d00450da28c77"
+      "path": "clossys/agents/writer/strings.common/candidates/studio-v14.md",
+      "sha256": "0dc9ee3e6d0a3481b4cdb0f3eecb731ae0dc80564e7b420e71643283762deae7"
     },
     {
       "path": "clossys/agents/writer/strings.common/pin.json",
-      "sha256": "3ac0dc0a961206208f5b2dcc48d7b49ad2d663dcb1db9821e3ab3ab06afee28b"
+      "sha256": "e95a39400d595f5c822d223b0da455b0159c79e72de0a8a54656524fc5f2216e"
     },
     {
       "path": "clossys/agents/writer/strings.common/slot.json",
@@ -6421,7 +6421,7 @@
     },
     {
       "path": "generated/studio-copy.json",
-      "sha256": "f78f22394e99a7d3a989e88615d08c93c908c3a6c37c04a133e21170dbd5ca38"
+      "sha256": "70efd04ddf38d9aa9cf3d3bbf5da46cc8566393a34b723abdaf3203055fb5c1c"
     },
     {
       "path": "generated/studio-flow-theme.css",

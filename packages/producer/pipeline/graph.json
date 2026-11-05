@@ -916,13 +916,10 @@
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/director/briefs/**"
+          "glob": "clossys/evidence/director/briefs/**"
         },
         {
-          "glob": "clossys/agents/director/citations.json"
-        },
-        {
-          "glob": "clossys/agents/director/reports/*.json"
+          "glob": "clossys/evidence/director/reports/*.json"
         }
       ],
       "command": {
@@ -4069,17 +4066,12 @@
     {
       "step": "director.store",
       "port": "output",
-      "glob": "clossys/agents/director/briefs/**"
+      "glob": "clossys/evidence/director/briefs/**"
     },
     {
       "step": "director.store",
       "port": "output",
-      "glob": "clossys/agents/director/citations.json"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/reports/*.json"
+      "glob": "clossys/evidence/director/reports/*.json"
     },
     {
       "step": "options",
