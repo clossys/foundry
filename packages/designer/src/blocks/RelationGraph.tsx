@@ -18,7 +18,7 @@ const CLASSES = {
   list: "relative m-0 flex list-none flex-col gap-lg p-0",
   layered: " tablet-lg:grid",
   node: "relative flex min-w-0 flex-col gap-sm rounded-panel bg-surface-raised p-md ",
-  selected: "border-accent",
+  selected: "border-primary",
   unselected: "border-line-base",
   kind: "text-caption text-ink-secondary",
   status: "m-0 text-caption",

@@ -89,8 +89,8 @@ describe("RecordLedger", () => {
 it("keeps a middle flag on the logical start edge and retains the row hairline color", () => {
   const { container } = render(<RecordLedger id="middle" form="record" ground="sunken" head={{ title: "Record" }} groups={[{ id: "rows", label: "Rows", rows: [{ id: "first", label: "First" }, { id: "flag", label: "Review", flag: true }] }]} caption="Sample data." flagLabel="Attention:" />);
   const row = container.querySelector("[data-flag]")!;
-  expect(row).toHaveClass("border-t", "border-line-base", "border-s-accent");
-  expect(row).not.toHaveClass("border-accent");
+  expect(row).toHaveClass("border-t", "border-line-base", "border-s-primary");
+  expect(row).not.toHaveClass("border-primary");
   expect(row).toHaveStyle({ borderBlockStartWidth: "var(--ui-border-hairline, 1px)", borderInlineStartWidth: "var(--ui-border-rule, 2px)" });
 });
 

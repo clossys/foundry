@@ -151,7 +151,7 @@ describe("primary action palette", () => {
     render(<Button>Save</Button>);
     const control = screen.getByRole("button");
     expect(control.className.split(" ")).toEqual(expect.arrayContaining(["bg-action", "text-ink-on-action", "hover:bg-action-hover", "data-pressed:bg-action-pressed"]));
-    expect(control.className).not.toContain("bg-accent");
+    expect(control.className).not.toContain("bg-primary");
   });
   it("uses inverse action fill and primary ink on the inverse ground", async () => {
     render(<Button ground="inverse">Save</Button>);

@@ -81,7 +81,7 @@ describe("TableOfContents", () => {
     const links = screen.getAllByRole("link");
     expect(links[1]).toHaveAttribute("aria-current", "location");
     expect(links.filter(link => link.hasAttribute("aria-current"))).toHaveLength(1);
-    expect(links[1]).toHaveClass("border-accent", "font-medium", "text-ink-primary", "forced-colors:border-current");
+    expect(links[1]).toHaveClass("border-primary", "font-medium", "text-ink-primary", "forced-colors:border-current");
     expect(links[0]).toHaveClass("border-transparent", "text-ink-secondary");
     expect(links[0]).not.toHaveClass("font-medium");
   });
@@ -165,7 +165,7 @@ describe("TableOfContents", () => {
     render(view());
     for (const link of screen.getAllByRole("link")) {
       expect(link.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link).toHaveClass("flex", "items-center", "border-s-2", "pe-sm", "text-body-s", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
+      expect(link).toHaveClass("flex", "items-center", "border-s-2", "pe-sm", "text-body-s", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
     }
   });
 
@@ -195,7 +195,7 @@ describe("TableOfContents", () => {
     expect(box).toHaveClass("rounded-panel", "border", "border-line-base", "p-md", "mt-lg");
     const trigger = screen.getByRole("button", { name: LABEL });
     expect(trigger).toHaveAttribute("aria-expanded", "true");
-    expect(trigger).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
+    expect(trigger).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
     const nav = screen.getByRole("navigation", { name: LABEL });
     expect(nav).toBeVisible();
     expect(nav.parentElement).toHaveClass("ps-0");

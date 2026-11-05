@@ -45,8 +45,8 @@ export interface OrderedStepSequenceProps extends Omit<HTMLAttributes<HTMLElemen
 }
 
 const STEP_LINE_CLASSES: Record<SectionGround, { line: string; border: string; ink: string; ordinal: string }> = {
-  base: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent-tint text-accent-text" },
-  sunken: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent-tint text-accent-text" },
+  base: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent text-accent-text" },
+  sunken: { line: "bg-line-strong", border: "border-line-strong", ink: "text-line-strong", ordinal: "bg-accent text-accent-text" },
   inverse: { line: "bg-line-on-inverse", border: "border-line-on-inverse", ink: "text-line-on-inverse", ordinal: "border border-line-on-inverse text-ink-on-inverse" },
 };
 

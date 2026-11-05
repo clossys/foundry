@@ -102,7 +102,7 @@ describe("Matrix grid", () => {
     expect(badge).toHaveClass("rounded-pill", "text-caption");
     expect(badge).toHaveClass("whitespace-nowrap", "shrink-0");
     expect(header).toHaveClass("text-end", "tabular-nums");
-    expect(header.className).not.toContain("border-t-accent");
+    expect(header.className).not.toContain("border-t-primary");
     expect(header.style.borderBlockStartWidth).toBe("");
     expect(() => html({ ...props, featuredLabel: undefined })).toThrow(/featuredLabel/);
   });
@@ -111,7 +111,7 @@ describe("Matrix grid", () => {
     const { container } = render(<Matrix {...grid()} featured={{ row: "row-1" }} featuredLabel="Selected row" headingLevel={5} />);
     const selected = screen.getByRole("rowheader", { name: /Previous record/ });
     expect(within(selected).getByText("Selected row")).toHaveClass("rounded-pill");
-    expect(selected.className).not.toContain("border-s-accent");
+    expect(selected.className).not.toContain("border-s-primary");
     expect(selected.style.borderInlineStartWidth).toBe("");
     expect([...container.querySelectorAll("tbody th h5")].map(node => node.textContent)).toEqual(["Current record", "Previous record"]);
     expect(screen.getAllByRole("columnheader").map(node => node.textContent)).toEqual(["Column 1", "Column 2", "Column 3"]);
@@ -136,7 +136,7 @@ describe("Matrix grid", () => {
 
   it.each(["base", "sunken", "inverse"] as const)("uses grounded tokens and checked status/delta backings (%s)", ground => {
     render(<Matrix {...grid()} ground={ground} featured={{ column: "column-1" }} featuredLabel="Selected" />);
-    expect(screen.getByRole("columnheader", { name: /Column 2/ }).className).not.toMatch(/border-t-accent/);
+    expect(screen.getByRole("columnheader", { name: /Column 2/ }).className).not.toMatch(/border-t-primary/);
     expect(screen.getByRole("columnheader", { name: /Column 2/ }).style.borderBlockStartWidth).toBe("");
     const delta = screen.getByText("+12%");
     const status = screen.getByText("Reviewed").closest("[data-tone]");

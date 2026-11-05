@@ -84,10 +84,10 @@ const DASH_CLASSES: Record<SectionGround, string> = {
   inverse: "block h-px w-sm bg-ink-on-inverse-muted",
 };
 const CHECK_CLASSES: Record<SectionGround, string> = {
-  base: "text-accent", sunken: "text-accent", inverse: "text-accent-on-inverse",
+  base: "text-primary", sunken: "text-primary", inverse: "text-accent-on-inverse",
 };
 const FEATURED_CLASSES: Record<SectionGround, string> = {
-  base: "border-t-accent", sunken: "border-t-accent", inverse: "border-t-accent-on-inverse",
+  base: "border-t-primary", sunken: "border-t-primary", inverse: "border-t-accent-on-inverse",
 };
 const SIDE_ROW_CLASSES = {
   plain: {

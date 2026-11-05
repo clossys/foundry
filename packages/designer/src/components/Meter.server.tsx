@@ -9,7 +9,7 @@ export const FILL_CLASSES: Record<MeterTone, string> = {
   danger: "bg-status-danger",
   info: "bg-status-info-tint text-status-info",
   neutral: "bg-ink-secondary",
-  accent: "bg-accent",
+  accent: "bg-primary",
 };
 
 // Texture for the two tones a solid fill cannot tell apart in greyscale,

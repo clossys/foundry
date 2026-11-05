@@ -2,7 +2,7 @@
  * Raw CSS custom-property reads for the handful of this package's token-layer
  * values that have no Tailwind utility namespace — see that package's
  * README, the "no Tailwind namespace, raw var() only" table. Everything
- * else this package styles with is a Tailwind class (`bg-accent`,
+ * else this package styles with is a Tailwind class (`bg-primary`,
  * `text-ink-primary`, ...); these are the exceptions.
  *
  * Every read below carries an explicit fallback (the token's own shipped
@@ -13,14 +13,14 @@
  */
 
 /** Focus-visible ring. Applied only when `isFocusVisible` is true. */
-export const UI_RING_FOCUS = "var(--ui-ring-focus, 0 0 0 2px var(--color-accent, oklch(0.4748 0 0)))";
+export const UI_RING_FOCUS = "var(--ui-ring-focus, 0 0 0 2px var(--primary, oklch(0.4748 0 0)))";
 
 /**
  * The control focus outline (Button, Link, and every icon-only control inside a composite part): a
  * solid outline on the focus-ring token, offset by the focus-offset token. A solid outline survives
  * forced-colours mode, which a box-shadow ring does not.
  */
-export const UI_OUTLINE_FOCUS = "var(--ui-border-focus, 2px) solid var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)))";
+export const UI_OUTLINE_FOCUS = "var(--ui-border-focus, 2px) solid var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)))";
 /** The same outline on an inverse ground. */
 export const UI_OUTLINE_FOCUS_INVERSE = "var(--ui-border-focus, 2px) solid var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)))";
 /** Offset of the control focus outline. */

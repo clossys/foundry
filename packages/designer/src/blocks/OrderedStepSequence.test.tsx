@@ -60,7 +60,7 @@ describe("OrderedStepSequence", () => {
   it("draws the connector in line-strong and the ordinal as an accent-tint disc on the light grounds", () => {
     const { container } = render(<OrderedStepSequence items={ITEMS} />);
     expect(container.querySelector("[data-step-connector]")).toHaveClass("bg-line-strong");
-    expect(screen.getByText("01")).toHaveClass("bg-accent-tint", "text-accent-text", "rounded-pill", "size-2xl", "tabular-nums");
+    expect(screen.getByText("01")).toHaveClass("bg-accent", "text-accent-text", "rounded-pill", "size-2xl", "tabular-nums");
     expect(screen.getByText("01").className).not.toMatch(/\bborder\b/);
   });
 

@@ -359,7 +359,7 @@ describe("golden: MarketingView", () => {
         '<div class="flex flex-col gap-lg">' +
         '<div class="flex flex-col border-t border-line-base">' +
         '<div class="group/faq block border-b border-line-base" data-rac="">' +
-        '<button id="react-aria-_R_6eH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none text-ink-primary" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
+        '<button id="react-aria-_R_6eH1_" class="flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary summary-marker-none text-ink-primary" data-rac="" type="button" tabindex="0" data-react-aria-pressable="true" aria-expanded="false" aria-controls="react-aria-_R_6eH2_" slot="trigger">' +
         "<span>Placeholder question A?</span>" +
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 disclosure-icon-motion" style="width:var(--ui-icon-md, var(--spacing-xl, 24px));height:var(--ui-icon-md, var(--spacing-xl, 24px));flex-shrink:0;stroke-width:var(--ui-icon-stroke, 2)" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>' +
         "</button>" +
@@ -783,9 +783,9 @@ describe("golden: SectionedView content-section", () => {
 
 /** Designer `buttonLinkClassName` at `md`, as an in-section action renders it. */
 const PRIMARY_MD =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-primary text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 const OUTLINE_MD =
-  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 /**
  * Captured from this renderer; Designer `ContentSection` stacked anatomy. A
@@ -803,9 +803,9 @@ const INTRO_BAND_HTML =
   "<p class=\"text-body-l text-pretty text-ink-secondary mt-xl\">Placeholder intro." +
   "</p>" +
   "<div data-section-intro-actions=\"\" class=\"flex flex-wrap items-center gap-x-lg gap-y-sm text-ink-primary mt-2xl\">" +
-  "<a href=\"/start\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-accent text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" data-action-emphasis=\"primary\">Start a record" +
+  "<a href=\"/start\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-primary text-ink-on-accent hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary\" data-action-emphasis=\"primary\">Start a record" +
   "</a>" +
-  "<a href=\"/more\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" data-action-emphasis=\"secondary\">Read the guide" +
+  "<a href=\"/more\" class=\"inline-flex items-center justify-center gap-sm rounded-control text-body font-body transition-colors motion-reduce:transition-none px-md py-sm text-body bg-transparent ring-inset ring-current ring-1 hover:ring-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary\" data-action-emphasis=\"secondary\">Read the guide" +
   "</a>" +
   "</div>" +
   "</div>" +

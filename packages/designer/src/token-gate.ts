@@ -110,7 +110,7 @@
  *     strings (bare-literal matching) or a SUBSTRING check against a
  *     referenced token's composite value (fallback sync-status — see
  *     `fallbackSyncStatus`, needed because a token like `--ui-ring-focus`'s
- *     own registry value, `"0 0 0 2px var(--color-accent, oklch(0.4748 0
+ *     own registry value, `"0 0 0 2px var(--primary, oklch(0.4748 0
  *     0))"`, is a composite string a single fallback literal like `2px` is
  *     only ONE PIECE of, so exact-string equality is the wrong test for
  *     that case specifically). Neither is a real CSS value parser — a
@@ -298,7 +298,7 @@ function bareLiteralFinding(
  * risk": a token like `--spacing-lg` (`"16px"`) or `--color-chart-
  * categorical-1` (`"#2a78d6"`) has a SIMPLE, single-value default an exact
  * comparison handles directly; a token like `--ui-ring-focus`
- * (`"0 0 0 2px var(--color-accent, oklch(0.4748 0 0))"`) has a COMPOSITE
+ * (`"0 0 0 2px var(--primary, oklch(0.4748 0 0))"`) has a COMPOSITE
  * value a single fallback literal (`2px`) is only one PIECE of — exact
  * equality would wrongly call that "drifted" the moment the fallback is
  * correct, so a substring check is the fallback test for the composite

@@ -159,7 +159,7 @@ function TableColumnResizer({ "aria-label": ariaLabel }: { "aria-label"?: string
     >
       <span
         aria-hidden="true"
-        className="h-full w-px bg-line-base group-data-hovered:bg-accent group-data-resizing:bg-accent group-data-focus-visible:bg-accent"
+        className="h-full w-px bg-line-base group-data-hovered:bg-primary group-data-resizing:bg-primary group-data-focus-visible:bg-primary"
       />
     </AriaColumnResizer>
   );
@@ -214,7 +214,7 @@ function TableRow<T extends object>({ className, style, ...rest }: TableRowProps
           // read — the same pattern `Breadcrumb.Item` already uses for its
           // `not-last:after:content-['/']` separator.
           "not-last:border-b border-line-base outline-none",
-          renderProps.isSelected ? "bg-accent-tint" : "",
+          renderProps.isSelected ? "bg-accent" : "",
           renderProps.isDisabled ? "text-ink-muted" : "",
           className,
         )

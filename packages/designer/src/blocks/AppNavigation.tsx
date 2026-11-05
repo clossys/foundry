@@ -70,7 +70,7 @@ export interface AppNavigationProps {
 
 /** The disclosure chevron turns on the theme's default transition duration (bound to --ui-duration-fast) and snaps under reduced motion. */
 const CHEVRON_MOTION = "transition-transform motion-reduce:transition-none";
-const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-control-tonal-hover focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2";
+const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control border-0 bg-transparent px-sm py-sm text-start text-ink-primary no-underline hover:no-underline hover:bg-control-tonal-hover focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2";
 
 /*
  * A destination's icon sits in a small-icon slot (`--ui-icon-sm`, 16px) and a
@@ -81,7 +81,7 @@ const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control 
  * an outline instead, because neither paint survives there.
  */
 const ICON_SLOT = { inlineSize: "var(--ui-icon-sm)" } as const;
-const CURRENT = "bg-surface-selected font-medium border-s-accent forced-colors:outline-solid forced-colors:outline-1 forced-colors:outline-current";
+const CURRENT = "bg-surface-selected font-medium border-s-primary forced-colors:outline-solid forced-colors:outline-1 forced-colors:outline-current";
 function smallIcon(icon: ReactNode): ReactNode {
   return isValidElement(icon) && icon.type === Icon ? cloneElement(icon as ReactElement<{ size?: string }>, { size: "sm" }) : icon;
 }
@@ -186,7 +186,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
     return <NavigationTreeItem key={node.id} id={node.id} textValue={node.label} href={node.href}
       data-navigation-node-id={node.id}
       data-active-ancestor={node.id === ancestor ? "true" : undefined}
-      className={cx("min-w-0 rounded-control data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-accent data-focus-visible:-outline-offset-2", parentId && "ms-md border-s border-line-base ps-sm")}>
+      className={cx("min-w-0 rounded-control data-focus-visible:outline-solid data-focus-visible:outline-2 data-focus-visible:outline-primary data-focus-visible:-outline-offset-2", parentId && "ms-md border-s border-line-base ps-sm")}>
       <NavigationTreeItemContent>{({ isExpanded }) =>
         <SemanticContent as="div" className="flex min-w-0 items-center gap-xs rounded-control">
           {(node.href !== undefined || node.onAction) && destination(node, parentId)}
@@ -221,17 +221,17 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
   const changeCollapsed = () => { setCollapsed(!collapsed); onCollapsedChange?.(!collapsed); };
   const wideControl = collapsed
     ? expandLabel === undefined
-      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary"
           aria-expanded={false} aria-label={openLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
-      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary"
           aria-expanded={false} aria-label={expandLabel} onPress={changeCollapsed}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
     : collapseLabel === undefined
-      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+      ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary"
           aria-expanded={true} aria-label={closeLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>
-      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+      : <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary"
           aria-expanded={true} aria-label={collapseLabel} onPress={changeCollapsed}><Icon glyph={ChevronLeft} decorative size="sm" className="rtl:rotate-180" /></Button>;
   const measuredControl = <SemanticContent as="span" ref={corner} id={instance + "-trigger"} className="contents">{trigger ?? (narrow
-    ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent"
+    ? <Button variant="ghost" className="icon-control-md shrink-0 border-0 bg-transparent p-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary"
         aria-expanded={requested} aria-label={openLabel}><Icon glyph={ChevronRight} decorative size="sm" className="rtl:rotate-180" /></Button>
     : wideControl)}</SemanticContent>;
   const control = triggerContainer ? createPortal(measuredControl, triggerContainer) : measuredControl;

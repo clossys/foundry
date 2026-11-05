@@ -36,9 +36,9 @@ describe("IconButton", () => {
   it("fires onPress, and a consumer class wins the merge", async () => {
     const onPress = vi.fn();
     const user = userEvent.setup();
-    render(<IconButton icon={ChevronRight} label="Next" onPress={onPress} className="bg-accent" />);
+    render(<IconButton icon={ChevronRight} label="Next" onPress={onPress} className="bg-primary" />);
     const button = screen.getByRole("button", { name: "Next" });
-    expect(button.className.split(" ")).toContain("bg-accent");
+    expect(button.className.split(" ")).toContain("bg-primary");
     expect(button.className.split(" ")).not.toContain("bg-surface-raised");
     await user.click(button);
     expect(onPress).toHaveBeenCalledTimes(1);

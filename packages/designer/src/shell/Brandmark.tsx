@@ -213,7 +213,7 @@ export function Brandmark(props: BrandmarkProps) {
       ? "inline-flex items-center no-underline text-background"
       : "inline-flex items-center no-underline text-ink-primary",
     "focus-visible:outline-2 focus-visible:outline-offset-2",
-    inverse ? "focus-visible:outline-background" : "focus-visible:outline-accent",
+    inverse ? "focus-visible:outline-background" : "focus-visible:outline-primary",
     className,
   );
 
@@ -255,7 +255,7 @@ export function Brandmark(props: BrandmarkProps) {
     <span
       aria-hidden
       data-brand-mark={outermost ? "" : undefined}
-      className="inline-block shrink-0 bg-accent"
+      className="inline-block shrink-0 bg-primary"
       style={{
         height: side,
         width: side,

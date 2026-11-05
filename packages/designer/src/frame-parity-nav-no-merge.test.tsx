@@ -14,6 +14,6 @@ describe("inverse trigger without the optional class merger", () => {
     expect(trigger).toHaveClass("text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
     expect(trigger).not.toHaveClass("text-ink-primary");
     expect(trigger).not.toHaveClass("hover:bg-surface-sunken");
-    expect(trigger).not.toHaveClass("focus-visible:outline-accent");
+    expect(trigger).not.toHaveClass("focus-visible:outline-primary");
   });
 });

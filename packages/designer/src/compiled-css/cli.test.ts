@@ -48,7 +48,7 @@ describe("main --write", () => {
     expect(code).toBe(0);
     const written = readFileSync(join(dir, "styles", "compiled.css"), "utf8");
     expect(written).toContain("@layer foundry-ui-compiled");
-    expect(written).toContain(".bg-accent {");
+    expect(written).toContain(".bg-primary {");
   });
 
   it("returns 2 when every compiled-css source dir is empty", async () => {

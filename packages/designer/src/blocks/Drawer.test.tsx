@@ -82,7 +82,7 @@ describe("Drawer", () => {
     const trigger = screen.getByRole("button", { name: "Open tools" });
     await userEvent.click(trigger);
     const close = await screen.findByRole("button", { name: "Close tools" });
-    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-accent");
+    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-primary");
     expect(close).toHaveAccessibleName("Close tools");
     const glyph = close.querySelector("svg");
     expect(glyph).not.toBeNull();

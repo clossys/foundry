@@ -134,7 +134,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
   if (role === "animation") return <figure data-layer="themes" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     {/* The member's own keyframes run on the sample only while playing; reduced motion keeps it still. */}
-    <span aria-hidden="true" data-motion-target="" className={join("block size-xl rounded-control bg-accent", playing && "animate-(--studio-specimen-value) motion-reduce:animate-none")} />
+    <span aria-hidden="true" data-motion-target="" className={join("block size-xl rounded-control bg-primary", playing && "animate-(--studio-specimen-value) motion-reduce:animate-none")} />
     <Toggle size="sm" variant="outline" isSelected={playing} onChange={setPlaying}>{playLabel}</Toggle>
   </figure>;
   const timing = role === "duration"
@@ -143,7 +143,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
   return <figure data-layer="themes" data-token-specimen="motion" data-kind="motion" data-playing={String(playing)} {...bound(css)}
     className={join("m-0 grid justify-items-start gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.motion.className)}>
     <div className="flex items-center gap-sm">
-      {curve ? <svg aria-hidden="true" data-easing-curve="" viewBox="0 0 1 1" className="size-xl shrink-0 overflow-visible fill-none stroke-accent">
+      {curve ? <svg aria-hidden="true" data-easing-curve="" viewBox="0 0 1 1" className="size-xl shrink-0 overflow-visible fill-none stroke-primary">
         <path d={`M0 1 C${curve[0]} ${1 - curve[1]} ${curve[2]} ${1 - curve[3]} 1 0`} strokeWidth="2" vectorEffect="non-scaling-stroke" />
       </svg> : null}
       {/* The track mirrors in right-to-left documents, so the dot always travels from the inline start. */}
@@ -157,7 +157,7 @@ function MotionSpecimen({ css, role, linear, curve, playLabel }: { css: string; 
             // Reduced motion shows where the movement ends, with no transition.
             "motion-reduce:transition-none motion-reduce:translate-x-full",
           )}>
-            <span className="block size-md rounded-pill bg-accent" />
+            <span className="block size-md rounded-pill bg-primary" />
           </span>
         </span>
       </span>
@@ -171,7 +171,7 @@ function RulerSpecimen({ css, leaf }: { css: string; leaf: string }): ReactEleme
   return <figure data-layer="themes" data-token-specimen="ruler" data-kind="ruler" data-ruler-scale={ruler.scale} {...bound(css, { "--studio-ruler-bar": `calc(${css} * ${ruler.factor})` })}
     className={join("m-0 grid gap-xs overflow-hidden", TOKEN_SPECIMEN_WIDTHS.ruler.className)}>
     <span aria-hidden="true" className="relative block h-sm w-(--ui-layout-sidebar-w) overflow-hidden rounded-pill bg-surface-sunken">
-      <span data-ruler-bar="" className="absolute inset-y-0 start-0 block w-(--studio-ruler-bar) max-w-full rounded-pill bg-accent" />
+      <span data-ruler-bar="" className="absolute inset-y-0 start-0 block w-(--studio-ruler-bar) max-w-full rounded-pill bg-primary" />
     </span>
     <span aria-hidden="true" className={join("relative block h-lg w-(--ui-layout-sidebar-w)", CAPTION)}>
       {ruler.ticks.map((tick, index) => <span key={tick} data-ruler-tick={tick} className={join("absolute top-0", TICK_POSITIONS[index])}>{index === ruler.ticks.length - 1 ? `${tick}${SAMPLES.unit}` : tick}</span>)}
@@ -193,7 +193,7 @@ function LayerFanSpecimen({ css, property }: { css: string; property?: string })
         })}
         className={join(
           "absolute block h-xl w-3xl rounded-control border start-(--plate-x) top-(--plate-y) z-(--plate-z)",
-          current ? "border-accent bg-accent" : "border-line-strong bg-surface-raised",
+          current ? "border-primary bg-primary" : "border-line-strong bg-surface-raised",
         )} />;
     })}
   </figure>;
@@ -250,7 +250,7 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
       <span aria-hidden="true" data-specimen-target="" className="block h-2xl w-3xl rounded-control bg-surface-raised shadow-(--studio-specimen-value)" />
     </Card>);
     case "blur": return frame(kind, css, <Card variant="plate" className="relative flex items-center gap-xs p-md">
-      <span aria-hidden="true" className="block size-lg shrink-0 rounded-pill bg-accent" />
+      <span aria-hidden="true" className="block size-lg shrink-0 rounded-pill bg-primary" />
       <SemanticContent as="span" aria-hidden="true" className="text-body-l font-semibold text-ink-primary">{SAMPLES.glyphs}</SemanticContent>
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
     </Card>);
@@ -270,14 +270,14 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
       </span>, "p-sm", target ? { [target]: css } : undefined);
     }
     case "opacity": return frame(kind, css, <Card variant="plate" className="flex items-center gap-xs p-md">
-      <span aria-hidden="true" className="block size-lg rounded-control bg-accent" />
-      <span aria-hidden="true" data-specimen-target="" className="block size-lg rounded-control bg-accent opacity-(--studio-specimen-value)" />
+      <span aria-hidden="true" className="block size-lg rounded-control bg-primary" />
+      <span aria-hidden="true" data-specimen-target="" className="block size-lg rounded-control bg-primary opacity-(--studio-specimen-value)" />
     </Card>);
     case "density": {
       // One sample row; the member applies to its own role: the gap, the padding or the row height.
       const role = key === "gap" ? "gap-(--studio-specimen-value) p-xs" : key === "pad" ? "gap-xs p-(--studio-specimen-value)" : "gap-xs px-xs h-(--studio-specimen-value)";
       return frame(kind, css, <span aria-hidden="true" data-specimen-target="" data-density-role={key} className={join("inline-flex items-center rounded-control border border-line-strong bg-surface-raised", role)}>
-        <span className="block size-lg rounded-subtle bg-accent-tint" /><span className="block size-lg rounded-subtle bg-accent-tint" />
+        <span className="block size-lg rounded-subtle bg-accent" /><span className="block size-lg rounded-subtle bg-accent" />
       </span>);
     }
     case "focus": {

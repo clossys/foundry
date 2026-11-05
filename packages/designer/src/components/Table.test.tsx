@@ -363,7 +363,7 @@ describe("Table column resizing", () => {
     expect(resizer).not.toBeNull();
     expect(resizer.className).toContain("end-0");
     expect(resizer.className).not.toMatch(/\bright-0\b/);
-    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-resizing:bg-accent");
+    expect(resizer.querySelector("[aria-hidden='true']")!.getAttribute("class")).toContain("group-data-resizing:bg-primary");
   });
 
   it("a table outside a resizable container keeps its non-resizing markup", () => {
@@ -381,6 +381,6 @@ describe("Table visual pass (VF-1 components-07, sf-15)", () => {
   it("paints a selected row with the accent tint", () => {
     render(<SelectableTable selectedKeys={[ROWS[0]!.id]} onSelectionChange={() => {}} />);
     const selected = screen.getAllByRole("row").find((row) => row.getAttribute("aria-selected") === "true");
-    expect(selected).toHaveClass("bg-accent-tint");
+    expect(selected).toHaveClass("bg-accent");
   });
 });

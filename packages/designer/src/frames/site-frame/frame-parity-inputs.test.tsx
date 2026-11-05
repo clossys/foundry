@@ -65,7 +65,7 @@ for (const mode of ["server", "client"] as const) {
       const shell = { ...base, brand: { ...variantBrand, tone: "inverse" } } as SiteShellInput;
       expect(output(frame(shell), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-background", "focus-visible:outline-background");
       const auto = { ...defaults.inverse, brand: { ...variantBrand, tone: "auto" } } as SiteShellInput;
-      expect(output(frame(auto), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-primary", "focus-visible:outline-accent");
+      expect(output(frame(auto), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-primary", "focus-visible:outline-primary");
       expect(output(frame({ ...defaults.inverse, brand: variantBrand } as SiteShellInput), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-inherit");
     }
   });
@@ -106,7 +106,7 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector(".site-header-nav-links")).toBeNull();
     // The header logomark is the brand asset painted in the accent token by default.
     expect(root.querySelector("header img")).toBeNull();
-    expect(root.querySelector("header [data-brand-mark].bg-accent")!.getAttribute("style")).toMatch(/mask-image: ?url\("\/mark\.svg"\)/);
+    expect(root.querySelector("header [data-brand-mark].bg-primary")!.getAttribute("style")).toMatch(/mask-image: ?url\("\/mark\.svg"\)/);
     expect(root.querySelector('header a[aria-label="Example home"]')).toHaveTextContent("Example");
     const actions = root.querySelectorAll('header a[href="/start"]');
     expect(actions).toHaveLength(2);

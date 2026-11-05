@@ -90,7 +90,7 @@ describe("NavGrid", () => {
     expect(link).toHaveAttribute("data-card-link");
     expect(link).not.toHaveTextContent("Manage your plan and invoices.");
     expect(link.querySelector('[data-testid="billing-icon"]')).toBeNull();
-    expect(link).toHaveClass("after:absolute", "after:inset-0", "after:rounded-control", "focus-visible:after:outline-2", "focus-visible:after:outline-accent");
+    expect(link).toHaveClass("after:absolute", "after:inset-0", "after:rounded-control", "focus-visible:after:outline-2", "focus-visible:after:outline-primary");
     const tile = container.querySelector("[data-nav-grid-card]") as HTMLElement;
     expect(tile).toHaveClass("relative", "isolate");
     expect(tile).toHaveTextContent("Manage your plan and invoices.");

@@ -48,7 +48,7 @@ export function GroupedTable<Row>({ caption, rowHeader, groups, rows, rowKey, em
   const columnCount = 1 + groups.reduce((count, group) => count + group.columns.length, 0);
   return (
     <Card variant="outline" className={cx("p-0 overflow-hidden", className)}>
-      <div role="region" aria-labelledby={captionId} tabIndex={0} className="overflow-x-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent focus-visible:-outline-offset-2">
+      <div role="region" aria-labelledby={captionId} tabIndex={0} className="overflow-x-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2">
         <table className="w-full border-collapse text-body-s text-ink-primary">
           <caption id={captionId} className="p-md text-start font-medium">{caption}</caption>
           <colgroup span={1} />

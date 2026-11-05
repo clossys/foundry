@@ -39,12 +39,12 @@ describe("cx", () => {
   });
 
   it("lets a consumer's className win a real conflict, in the exact shape every component uses: cx(builtIn, className)", () => {
-    const builtIn = "bg-accent text-ink-on-accent px-md py-sm rounded-control";
+    const builtIn = "bg-primary text-ink-on-accent px-md py-sm rounded-control";
     const consumerClassName = "bg-status-danger px-lg rounded-pill";
     const classes = cx(builtIn, consumerClassName).split(" ");
 
     expect(classes).toContain("bg-status-danger");
-    expect(classes).not.toContain("bg-accent");
+    expect(classes).not.toContain("bg-primary");
     expect(classes).toContain("px-lg");
     expect(classes).not.toContain("px-md");
     expect(classes).toContain("rounded-pill");

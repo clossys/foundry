@@ -1,9 +1,11 @@
 {
   "schema": "clossys.legacy-color-map/1",
-  "decidedBy": "planner:GATES-RED round 4 (G7 inverse swap; round 3 map)",
+  "decidedBy": "planner:GATES-RED round 4 (G4 brand accent migrated; G7 inverse swap; round 3 map)",
   "rule": "Each legacy Foundry colour key (a `--color-<name>` in styles/theme-keys.css `@theme inline`) maps to the stock shadcn semantic variable with the same role, or to null when no shadcn variable has that role. The legacy brand/action colour maps to `primary`; a hover or highlight surface maps to shadcn `accent`. The inverse plate is the shadcn foreground/background swap: the plate is `foreground`, its raised plate `card-foreground`, its ink and focus ring `background`, its action colour `primary-foreground`; an inverse state that was a translucent or muted tone of that ink keeps the opacity its legacy key had, as `alpha` (a percentage modifier on the same variable, never a new variable). The remaining state and variant keys (hover, pressed, tint, text), glass tones, status hues, the neutral scale and the scrim have no shadcn role and stay null: no variable is invented for them.",
+  "migrated": {
+    "accent": { "shadcn": "primary", "role": "brand/action colour (the approved action-colour slot)", "note": "G4: every old-meaning use was recomposed to primary and the hand-authored key removed, so --color-accent is the generated shadcn highlight key." }
+  },
   "map": {
-    "accent": { "shadcn": "primary", "role": "brand/action colour (the approved action-colour slot)" },
     "accent-hover": { "shadcn": null, "role": "action colour, hover state" },
     "accent-on-inverse": { "shadcn": "primary-foreground", "role": "action colour on the inverse plate" },
     "accent-text": { "shadcn": null, "role": "action colour as accessible text variant" },

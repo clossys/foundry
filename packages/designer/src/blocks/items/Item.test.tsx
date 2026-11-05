@@ -56,7 +56,7 @@ describe("Item", () => {
     const { container } = render(<Item {...base} href="/one" treatment="plate" />);
     const plate = container.querySelector("[data-item]");
     expect(plate).toHaveClass("border", "border-transparent");
-    expect(plate).not.toHaveClass("border-accent", "border-t-accent");
+    expect(plate).not.toHaveClass("border-primary", "border-t-primary");
     expect(plate).toHaveStyle({ borderWidth: "var(--ui-border-hairline, 1px)" });
   });
   it("names its only link from the title and leaves other slots outside it", () => {

@@ -243,7 +243,7 @@ describe("SpecimenPanel", () => {
     expect(screen.getByText("Alex Lane")).toHaveClass("text-ink-primary");
     const disc = screen.getByText("AL");
     expect(disc).toHaveAttribute("aria-hidden", "true");
-    expect(disc).toHaveClass("size-2xl", "rounded-pill", "bg-accent-tint", "text-accent-text");
+    expect(disc).toHaveClass("size-2xl", "rounded-pill", "bg-accent", "text-accent-text");
     expect(screen.getByText("Nothing is sent until someone reviews it.")).toHaveClass("text-ink-secondary");
   });
 

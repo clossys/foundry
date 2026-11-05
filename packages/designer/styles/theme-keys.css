@@ -17,6 +17,7 @@
 
 @theme inline {
   /* BEGIN GENERATED shadcn colour keys: emitted from src/catalog/slots/themes.json by src/compiled-css/shadcn-theme-keys.ts (npm run generate:compiled-css). Do not edit. */
+  --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-background: var(--background);
   --color-border: var(--border);
@@ -50,7 +51,7 @@
   /* END GENERATED shadcn colour keys */
   --default-transition-duration: var(--ui-duration-fast, 120ms);
   --default-transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
-  --color-focus-ring: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+  --color-focus-ring: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)));
   --color-focus-ring-on-inverse: var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
   --radius-overlay: var(--ui-radius-overlay, var(--radius-control, 6px));
 
@@ -88,7 +89,6 @@
   --color-action-on-inverse: var(--color-action-on-inverse, #FAFAFA);
   --color-action-on-inverse-hover: var(--color-action-on-inverse-hover, #E5E5E5);
   --color-ink-on-action: var(--color-ink-on-action, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
-  --color-accent:                 var(--color-accent, oklch(0.4748 0 0));
   --color-accent-text:            var(--color-accent-text, oklch(0.36 0 0));
   --color-accent-hover:           var(--color-accent-hover, oklch(0.36 0 0));
   --color-accent-tint:            var(--color-accent-tint, oklch(0.4748 0 0 / 0.1));
@@ -1186,7 +1186,7 @@
 @utility focus-ring {
   outline: var(--ui-border-focus, 2px) solid transparent;
   outline-offset: var(--ui-focus-offset, 2px);
-  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0))); }
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0))); }
   @media (forced-colors: active) {
     &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
   }
@@ -1194,7 +1194,7 @@
 @utility focus-ring-inset {
   outline: var(--ui-border-focus, 2px) solid transparent;
   outline-offset: calc(-1 * var(--ui-focus-offset, 2px));
-  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0))); }
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0))); }
   @media (forced-colors: active) {
     &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
   }
@@ -1282,7 +1282,7 @@
   border-block-end-style: solid;
   border-block-end-width: var(--ui-border-rule, 2px);
   border-block-end-color: transparent;
-  &[data-selected] { border-block-end-color: var(--color-accent, currentColor); }
+  &[data-selected] { border-block-end-color: var(--primary, currentColor); }
 }
 
 /* A theme switch flips every colour at once, not through each control's transition. */
@@ -1324,7 +1324,7 @@
 @utility scene-wire { fill: none; stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); vector-effect: non-scaling-stroke; }
 @utility scene-wire-subject { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
 @utility scene-subject-outline { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
-@utility scene-accent { fill: none; stroke: var(--color-accent, oklch(0.4748 0 0)); stroke-width: var(--ui-border-rule, 2px); vector-effect: non-scaling-stroke; }
+@utility scene-accent { fill: none; stroke: var(--primary, oklch(0.4748 0 0)); stroke-width: var(--ui-border-rule, 2px); vector-effect: non-scaling-stroke; }
 @utility scene-terminal { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-ink-muted, oklch(0.54 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
 @utility scene-terminal-subject { fill: var(--color-ink-primary, oklch(0.2178 0 0)); stroke: var(--color-ink-primary, oklch(0.2178 0 0)); }
 @utility scene-panel { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0))); stroke-width: var(--ui-border-panel, var(--ui-border-hairline, 1px)); rx: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); }
@@ -1355,7 +1355,7 @@
 @utility scene-linear-status { padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
 @utility scene-linear-person { display: flex; align-items: center; gap: var(--spacing-md, 12px); padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
 @utility scene-linear-disc { display: inline-grid; place-items: center; flex: none; inline-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); block-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); border-radius: var(--radius-pill, 999px); background: var(--color-surface-sunken, oklch(0.9401 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); }
-@utility scene-linear-mark { outline: var(--ui-border-rule, 2px) solid var(--color-accent, oklch(0.4748 0 0)); outline-offset: var(--spacing-xs, 4px); }
+@utility scene-linear-mark { outline: var(--ui-border-rule, 2px) solid var(--primary, oklch(0.4748 0 0)); outline-offset: var(--spacing-xs, 4px); }
 @utility scene-linear-findings { display: flex; flex-direction: column; gap: var(--spacing-sm, 8px); padding: 0; margin: 0; list-style: none; }
 @utility scene-linear-finding { display: flex; flex-direction: column; gap: var(--spacing-xs, 4px); padding: var(--spacing-md, 12px) var(--spacing-lg, 16px); background: var(--color-surface-raised, oklch(1 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); border-radius: var(--radius-default, 3px); }
 @utility scene-linear-subject { border-color: var(--color-ink-primary, oklch(0.2178 0 0)); border-width: var(--ui-border-rule, 2px); }

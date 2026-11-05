@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
 import { NavDisclosure } from "./NavDisclosure.js";
 
 // Captured from main before adding trigger.
-const DEFAULT_LABEL = "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"_R_0_\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent nav-disclosure-toggle\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Sections menu</button><div id=\"_R_0_\" class=\"nav-disclosure-panel\"><a href=\"#about\">About</a></div></nav>";
+const DEFAULT_LABEL = "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"_R_0_\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary nav-disclosure-toggle\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Sections menu</button><div id=\"_R_0_\" class=\"nav-disclosure-panel\"><a href=\"#about\">About</a></div></nav>";
 
 describe("NavDisclosure trigger", () => {
   it("keeps the default label output byte-identical", () => {

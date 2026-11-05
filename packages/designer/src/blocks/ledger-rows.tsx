@@ -5,7 +5,7 @@ import { UI_BORDER_HAIRLINE, UI_BORDER_RULE } from "../components/internal/ui-va
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { hasLedgerContent, type LedgerRowData } from "./internal/ledger-data.js";
 
-const FLAG_CLASSES: Record<SectionGround, string> = { base: "border-s-accent", sunken: "border-s-accent", inverse: "border-s-accent-on-inverse" };
+const FLAG_CLASSES: Record<SectionGround, string> = { base: "border-s-primary", sunken: "border-s-primary", inverse: "border-s-accent-on-inverse" };
 const LIST_CLASSES = "m-0 list-none p-0 flex flex-col";
 const ROW_CLASSES = "grid min-w-0 ledger-row-grid items-start gap-x-lg text-body-s";
 

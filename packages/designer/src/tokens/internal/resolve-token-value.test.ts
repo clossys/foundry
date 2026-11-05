@@ -82,11 +82,11 @@ describe("resolveTokenValue", () => {
     // box-shadow value, not the WHOLE value — see this file's own header,
     // "WHAT COUNTS AS A WHOLE-VALUE ALIAS".
     const tokens: Readonly<Record<string, TokenDefinition>> = {
-      "--ui-ring-focus": def("--ui-ring-focus", "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))"),
+      "--ui-ring-focus": def("--ui-ring-focus", "0 0 0 2px var(--primary, oklch(0.4748 0 0))"),
       "--color-accent": def("--color-accent", "oklch(0.4748 0 0)"),
     };
     const result = resolveTokenValue("--ui-ring-focus", tokens);
-    expect(result.value).toBe("0 0 0 2px var(--color-accent, oklch(0.4748 0 0))");
+    expect(result.value).toBe("0 0 0 2px var(--primary, oklch(0.4748 0 0))");
     expect(result.chain).toEqual(["--ui-ring-focus"]);
   });
 

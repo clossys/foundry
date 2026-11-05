@@ -21,7 +21,7 @@ export interface ProgressBarProps extends Omit<AriaProgressBarProps, "children">
 }
 
 const TRACK_CLASSES = "h-2 w-full overflow-hidden rounded-pill bg-surface-sunken";
-const FILL_CLASSES = "h-full rounded-pill bg-accent transition-[width] motion-reduce:transition-none";
+const FILL_CLASSES = "h-full rounded-pill bg-primary transition-[width] motion-reduce:transition-none";
 
 /**
  * Determinate and indeterminate progress, built on react-aria-components'

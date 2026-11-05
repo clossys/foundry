@@ -229,7 +229,7 @@ export function PricingTable({
               key={tier.id}
               className={cx(
                 "flex h-full flex-col items-start gap-md",
-                tier.isHighlighted ? "border-2 border-accent" : undefined,
+                tier.isHighlighted ? "border-2 border-primary" : undefined,
               )}
             >
               <CardHeader>

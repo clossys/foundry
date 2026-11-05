@@ -467,7 +467,7 @@ describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
   it("marks the current destination with the selected surface and an accent edge, never an outline", () => {
     render(<AppNavigation tree={tree} activeId="blocks" />);
     const current = screen.getByRole("link", { name: "Blocks" });
-    expect(current).toHaveClass("bg-surface-selected", "border-s-accent", "font-medium");
+    expect(current).toHaveClass("bg-surface-selected", "border-s-primary", "font-medium");
     expect(current.style.borderInlineStartWidth).toBe("var(--ui-border-rule)");
     expect(current).not.toHaveClass("outline-solid", "outline-line-strong", "font-semibold");
     const rest = screen.getByRole("link", { name: "Home" });

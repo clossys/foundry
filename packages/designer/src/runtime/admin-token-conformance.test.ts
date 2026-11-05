@@ -35,7 +35,7 @@ function withoutTokenReads(source: string): string {
 
 describe("admin renderer token conformance", () => {
   it("retains usable normal and inverse focus roles when token CSS is unavailable", () => {
-    expect(UI_OUTLINE_FOCUS).toContain(`var(--color-focus-ring, var(--color-accent, ${TOKENS["--color-accent"]!.value}))`);
+    expect(UI_OUTLINE_FOCUS).toContain(`var(--color-focus-ring, var(--primary, ${TOKENS["--color-accent"]!.value}))`);
     expect(UI_OUTLINE_FOCUS_INVERSE).toContain(`var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, ${TOKENS["--color-ink-on-inverse"]!.value}))`);
     expect(UI_OUTLINE_FOCUS).toContain("var(--ui-border-focus, 2px)");
   });

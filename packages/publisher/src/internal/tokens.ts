@@ -465,8 +465,8 @@ function replaceOklchOccurrences(value: string): string {
  * `var()` calls stripped).
  *
  * Handles, per the task this module was built against:
- *   - a bare reference: `var(--color-accent)`.
- *   - a reference with a fallback: `var(--color-accent, oklch(0.5 0 0))` —
+ *   - a bare reference: `var(--primary)`.
+ *   - a reference with a fallback: `var(--primary, oklch(0.5 0 0))` —
  *     the fallback is used verbatim (itself recursively resolved for any
  *     `var()` it contains) whenever `--color-accent` is absent from
  *     `flat`.

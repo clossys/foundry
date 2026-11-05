@@ -22,7 +22,7 @@ function ruleBody(selector: string): string {
 const outlineNoneRule = ruleBody(".outline-none");
 const focusWidthRule = ruleBody(".focus-visible\\:outline-2:focus-visible");
 const focusOffsetRule = ruleBody(".focus-visible\\:outline-offset-2:focus-visible");
-const focusColorRule = ruleBody(".focus-visible\\:outline-accent:focus-visible");
+const focusColorRule = ruleBody(".focus-visible\\:outline-primary:focus-visible");
 
 function resolvedFocusOutlineStyle(className: string): string {
   const poisonedStyle = /--tw-outline-style:\s*([^;]+);/.exec(outlineNoneRule)?.[1]?.trim();

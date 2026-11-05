@@ -71,7 +71,7 @@ describe("Hero specimen through the real selected-component provider", () => {
     expect(heading.classList.contains("leading-display")).toBe(member !== "size.compact");
     const backdrop = root.querySelector('[data-hero-backdrop]')!;
     expect(checkBackdropElement(backdrop)).toMatchObject({ ok: true });
-    expect(backdrop.querySelector("path")).toHaveAttribute("fill", "var(--color-accent)");
+    expect(backdrop.querySelector("path")).toHaveAttribute("fill", "var(--primary)");
     expect(root.querySelectorAll('[data-hero-scrim]')).toHaveLength(member === "backdrop.scrim.strong" ? 5 : 4);
     expect(root.querySelector('img[title]')).toHaveAttribute("title", HERO_SPECIMEN_COPY["media.title"]);
   });

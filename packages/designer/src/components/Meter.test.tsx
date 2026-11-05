@@ -146,7 +146,7 @@ describe("Meter", () => {
 
   it("fills in the brand accent for the accent tone", () => {
     const markup = renderToStaticMarkup(<Meter value={3} scaleMax={4} tone="accent" valueText="75%" />);
-    expect(part(markup, "fill")).toContain("bg-accent");
+    expect(part(markup, "fill")).toContain("bg-primary");
   });
 
   it("sets the value as a large, light focal figure with emphasis figure, body-small by default", () => {

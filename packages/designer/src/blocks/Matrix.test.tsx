@@ -75,7 +75,7 @@ describe("Matrix", () => {
     expect([...plates].filter(plate => plate.getAttribute("data-featured") === "true")).toHaveLength(1);
     const plate = container.querySelector(`[data-matrix-side="${featured}"] > div`) as HTMLElement;
     expect(plate).toHaveAttribute("data-featured", "true");
-    expect(plate).toHaveClass("border-t", "border-t-accent");
+    expect(plate).toHaveClass("border-t", "border-t-primary");
     expect(plate.style.borderBlockStartWidth).toBe("var(--ui-border-hairline, 1px)");
     expect([...container.querySelectorAll("[data-matrix-side]")].map(side => side.getAttribute("data-matrix-side"))).toEqual(["first", "second"]);
   });
@@ -149,7 +149,7 @@ describe("Matrix", () => {
     const { container } = render(<Matrix sides={SIDES} ground={ground} featured="second" headingLevel={4} id="options" aria-label="Options" style={{ inlineSize: "100%" }} />);
     const fill = ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised";
     for (const plate of container.querySelectorAll("[data-variant=plate]")) expect(plate).toHaveClass(fill);
-    expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
+    expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-primary");
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");
     expect(screen.getByLabelText("Options")).toHaveAttribute("id", "options");
     expect(screen.getByLabelText("Options")).toHaveStyle({ inlineSize: "100%" });

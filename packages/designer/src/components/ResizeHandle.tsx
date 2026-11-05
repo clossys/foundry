@@ -74,7 +74,7 @@ export function ResizeHandle({
       aria-valuenow={current} aria-valuemin={min} aria-valuemax={max}
       dir={dir}
       className={cx(
-        "flex shrink-0 items-center justify-center focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "flex shrink-0 items-center justify-center focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
         horizontalMovement ? "cursor-col-resize" : "cursor-row-resize", className,
       )}
       style={{

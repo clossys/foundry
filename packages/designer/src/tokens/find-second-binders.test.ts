@@ -22,7 +22,7 @@ describe("findSecondBinders", () => {
   it("reports an application stylesheet that binds a --color-* slot", () => {
     const brand = write("brand/brand.css", ":root[data-brand-bound] { --color-accent: #2a78d6; }");
     const second = write("apps/web/globals.css", ":root { --color-accent: #000; --color-ink: #111; }");
-    write("apps/admin/globals.css", '@import "../../brand/designer.css";\n.x { color: var(--color-accent, red); }');
+    write("apps/admin/globals.css", '@import "../../brand/designer.css";\n.x { color: var(--primary, red); }');
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([{ file: second, slots: ["--color-accent", "--color-ink"] }]);
   });
 
@@ -71,7 +71,7 @@ describe("findSecondBinders", () => {
 
   it("does not flag var(--color-*) reads", () => {
     const brand = write("brand/brand.css", ":root { --color-accent: #2a78d6; }");
-    write("apps/web/a.css", ".x { color: var(--color-accent, red); border-color: var(--color-line, red); background: var(--color-*, blue); }");
+    write("apps/web/a.css", ".x { color: var(--primary, red); border-color: var(--color-line, red); background: var(--color-*, blue); }");
     expect(findSecondBinders(join(dir, "apps"), brand)).toEqual([]);
   });
 

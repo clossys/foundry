@@ -49,7 +49,7 @@ export function TokenValuePreview({ id, member, sampleText, lightLabel, darkLabe
   if (member.$type === "fontFamily") return <span data-token-value-preview={id} data-preview-kind="font" style={{ fontFamily: light }}>{sampleText}</span>;
   if (member.slot === "themes.font-heading" && name === "optical-size") return <SemanticContent as="span" data-token-value-preview={id} data-preview-kind="font" data-specimen-target="" className="text-body-l"
     style={{ "--studio-specimen-value": light, fontVariationSettings: '"opsz" var(--studio-specimen-value)' } as CSSProperties}>{sampleText}</SemanticContent>;
-  if (member.$type === "dimension") return <span data-token-value-preview={id} className="grid gap-xs"><span aria-hidden="true" data-preview-kind="ruler" className="block max-w-full bg-accent" style={{ blockSize: "var(--spacing-sm)", inlineSize: light }} /><code>{light}</code></span>;
+  if (member.$type === "dimension") return <span data-token-value-preview={id} className="grid gap-xs"><span aria-hidden="true" data-preview-kind="ruler" className="block max-w-full bg-primary" style={{ blockSize: "var(--spacing-sm)", inlineSize: light }} /><code>{light}</code></span>;
   return <code data-token-value-preview={id} data-preview-kind="text">{light}</code>;
 }
 

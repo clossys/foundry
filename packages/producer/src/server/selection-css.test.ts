@@ -157,8 +157,8 @@ describe("selected runtime CSS closure", () => {
       theme: "@theme inline { --color-accent: var(--accent); }",
     };
     const css = await selectionCss(new Map([["selected.tsx", 'export const View = () => <div className="bg-(--color-action) text-sm" />;']]), undefined, consumer);
-    expect(declarations(css, "bg-accent").get("background-color")).toContain("var(--color-accent,");
-    expect(declarations(css, "bg-accent").get("background-color")).not.toContain("var(--accent)");
+    expect(declarations(css, "bg-primary").get("background-color")).toContain("var(--primary,");
+    expect(declarations(css, "bg-primary").get("background-color")).not.toContain("var(--accent)");
     const root = declarations(css, ":root");
     expect(declarations(css, "bg-(--color-action)").get("background-color")?.replace("var(--color-action)", root.get("--color-action")!)).toBe("oklch(0.4 0.1 180)");
     expect(declarations(css, "text-sm").get("font-size")?.replace("var(--text-sm)", root.get("--text-sm")!)).toBe("19px");

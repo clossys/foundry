@@ -287,7 +287,7 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
       {header.nav?.items.map(item => {
         const selected = item.id === header.nav?.activeId;
         return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} buttonVariant="ghost"
-          className={"whitespace-nowrap border-b-2 " + (selected ? "border-accent text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
+          className={"whitespace-nowrap border-b-2 " + (selected ? "border-primary text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
       })}
     </nav>
     <SemanticContent as="div" ref={actions} style={embedded ? { gridColumn: "-2 / -1", gridRow: 1 } : undefined} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</SemanticContent>

@@ -242,7 +242,7 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
       const tier = renderedTier(cell.leaf, tiers, live), info = data.cells?.[cell.leaf];
       return <CanvasPlaced key={cell.leaf} rect={cell.rect} dimmed={dim(cell.leaf)} data-system-cell={cell.leaf} data-system-tier={tier}
         data-selected={cell.leaf === selectedLeaf ? "" : undefined}
-        className={cx("flex flex-col gap-xs overflow-hidden rounded-control border bg-surface-raised p-xs", cell.leaf === selectedLeaf ? "border-accent" : "border-line-base")}>
+        className={cx("flex flex-col gap-xs overflow-hidden rounded-control border bg-surface-raised p-xs", cell.leaf === selectedLeaf ? "border-primary" : "border-line-base")}>
         <div className="flex min-w-0 items-center justify-between gap-xs">
           <Button variant="ghost" size="sm" className={cx(CANVAS_COUNTER_SCALED_TITLE, "min-w-0 truncate")} onPress={() => onSelect?.(cell.leaf)}>{readStudioMessage(copy,`studio.ia.item.${cell.leaf}`)}</Button>
           {info?.source ? <Badge variant={info.tone ?? "neutral"}><StudioDataValue kind="source" value={info.source}/></Badge> : null}

@@ -37,8 +37,8 @@ const COLUMN_CLASSES: Readonly<Record<number, string>> = {
 };
 
 const FOCUS_CLASSES: Readonly<Record<SectionGround, string>> = {
-  base: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-  sunken: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+  base: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
+  sunken: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
   inverse: "focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-on-inverse",
 };
 

@@ -65,7 +65,7 @@ export function Logomark({ src, size, tone = "auto", plate = "self", title, pres
       const artwork = <span data-brand-mark="" aria-hidden={title ? true : undefined} title={title}
         className="relative inline-block shrink-0" style={{ width: artWidth, height: artHeight, overflow: "hidden" }}>
         {silhouette
-          ? <span className="bg-accent" style={{ ...sourceStyle, maskImage: mask, WebkitMaskImage: mask,
+          ? <span className="bg-primary" style={{ ...sourceStyle, maskImage: mask, WebkitMaskImage: mask,
               maskSize: "100% 100%", WebkitMaskSize: "100% 100%", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat" }} />
           : <img src={src} alt="" style={sourceStyle} />}
       </span>;

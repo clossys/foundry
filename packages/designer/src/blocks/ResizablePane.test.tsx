@@ -20,14 +20,14 @@ describe("ResizablePane", () => {
     expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent-on-inverse");
     rerender(<ResizablePane {...props} ground="base">Content</ResizablePane>);
     expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-accent-on-inverse");
-    expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent");
+    expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-primary");
   });
 
   it("ships the inverse focus utility with a passing neutral-token contrast", () => {
     // Source/compiled CSS and analytical token proof, not browser painting or brand qualification.
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     const selector = String.raw`.focus-visible\:outline-accent-on-inverse:focus-visible`;
-    const ordinary = String.raw`.focus-visible\:outline-accent:focus-visible`;
+    const ordinary = String.raw`.focus-visible\:outline-primary:focus-visible`;
     const start = css.indexOf(selector);
     expect(start).toBeGreaterThan(css.indexOf(ordinary));
     const rule = css.slice(start, css.indexOf("}", start));

@@ -43,7 +43,7 @@ function expectAccentMark(anchor: Element | null) {
   expect(anchor!.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("data-brand-mark", "");
   expect(mark).toHaveAttribute("aria-hidden", "true");
-  expect(mark).toHaveClass("bg-accent");
+  expect(mark).toHaveClass("bg-primary");
   expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
 }
 function output(shell: SiteShellInput, server = false) {
@@ -209,7 +209,7 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   expect(mark).toHaveAttribute("data-brand-mark", "");
   expect(brand.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("aria-hidden", "true");
-  expect(mark).toHaveClass("bg-accent");
+  expect(mark).toHaveClass("bg-primary");
   expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
   expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-background");
   expect(brand.children[1]).toHaveTextContent("Example");
@@ -231,7 +231,7 @@ it.each(INK_CASES)("paints the %s header logomark in the accent token when markI
   const mark = anchor.firstElementChild as HTMLElement;
   expect(anchor.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("data-brand-mark", "");
-  expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
+  expect(mark.matches(".bg-primary") || mark.querySelector(".bg-primary") !== null).toBe(true);
   expect(anchor.innerHTML).toContain('mask-image:url(&quot;/mark.svg&quot;)');
   // The wordmark keeps the surface ink; only the mark carries the accent.
   if (anchor.children[1]) expect(anchor.children[1].className).not.toMatch(/\b(?:text|bg)-/);
@@ -242,7 +242,7 @@ it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is im
   const anchor = within(output(shell, server).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
   expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
-  expect(anchor.querySelector(".bg-accent")).toBeNull();
+  expect(anchor.querySelector(".bg-primary")).toBeNull();
 });
 
 it.each([false, true])("puts every full-label action in defined panel order in every frame layout (server=%s)", server => {
@@ -359,5 +359,5 @@ it.each([false, true])("gives the ghost mobile action the toggle's inverse ink o
   }
   expect(action).not.toHaveClass("text-ink-primary");
   expect(action).not.toHaveClass("hover:bg-control-tonal-hover");
-  expect(action).not.toHaveClass("focus-visible:outline-accent");
+  expect(action).not.toHaveClass("focus-visible:outline-primary");
 });

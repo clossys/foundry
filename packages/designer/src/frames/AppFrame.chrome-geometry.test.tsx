@@ -72,7 +72,7 @@ it("binds frame controls and main to the one focus-ring token, never the raw acc
   render(<AppFrame {...props}><p>Page</p></AppFrame>);
   for (const element of [screen.getByRole("button", { name: "Find commands" }), screen.getByRole("main")]) {
     expect(element).toHaveClass("focus-visible:outline-focus-ring");
-    expect(element).not.toHaveClass("focus-visible:outline-accent");
+    expect(element).not.toHaveClass("focus-visible:outline-primary");
   }
 });
 

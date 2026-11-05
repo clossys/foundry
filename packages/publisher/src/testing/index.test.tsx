@@ -189,9 +189,9 @@ describe("conforming surfaces", () => {
 
 describe("each rule fires", () => {
   it("preserves exact legacy primary tokens and counts mixed-token controls together", () => {
-    const legacy = () => <main><h1>Missing</h1><a href="/" className="bg-accent">Home</a></main>;
+    const legacy = () => <main><h1>Missing</h1><a href="/" className="bg-primary">Home</a></main>;
     expect(rulesFor({ surface: "not-found", render: legacy, title })).toEqual([]);
-    const mixed = () => <main><h1>Missing</h1><a href="/" className="bg-accent">Home</a><button className="bg-action">Retry</button></main>;
+    const mixed = () => <main><h1>Missing</h1><a href="/" className="bg-primary">Home</a><button className="bg-action">Retry</button></main>;
     expect(rulesFor({ surface: "not-found", render: mixed, title })).toContain("one-primary-action");
     const substring = () => <main><h1>Missing</h1><a href="/" className="bg-accent-hover">Home</a></main>;
     expect(rulesFor({ surface: "not-found", render: substring, title })).toContain("one-primary-action");

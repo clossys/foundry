@@ -29,7 +29,7 @@ describe("Tree selected row (VF-1 studio-23)", () => {
     const beta = screen.getByRole("row", { name: /Beta/ });
     await user.click(alpha);
     expect(alpha).toHaveAttribute("aria-selected", "true");
-    expect(alpha).toHaveClass("bg-accent-tint", "border-s-2", "border-s-accent");
+    expect(alpha).toHaveClass("bg-accent", "border-s-2", "border-s-primary");
     expect(beta).toHaveClass("border-s-2", "border-s-transparent", "hover:bg-control-tonal-hover");
     expect(beta).not.toHaveClass("hover:bg-surface-sunken");
   });

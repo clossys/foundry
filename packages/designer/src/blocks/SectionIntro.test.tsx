@@ -87,7 +87,7 @@ describe("buttonLinkClassName", () => {
   it("gives an anchor the Button look with a focus-visible outline, without the button-only classes", () => {
     const look = buttonLinkClassName("primary", "lg").split(" ");
     expect(look).toEqual(expect.arrayContaining(["bg-action", "text-ink-on-action", "hover:bg-action-hover", "data-pressed:bg-action-pressed", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-focus-ring"]));
-    for (const oldClass of ["bg-accent", "text-ink-on-accent", "focus-visible:outline-accent"]) expect(look).not.toContain(oldClass);
+    for (const oldClass of ["bg-primary", "text-ink-on-accent", "focus-visible:outline-primary"]) expect(look).not.toContain(oldClass);
     expect(look).not.toContain("outline-none");
     expect(look).not.toContain("disabled:cursor-not-allowed");
   });
@@ -114,7 +114,7 @@ describe("buttonLinkClassName outline", () => {
     expect(outline.filter((token) => token === "border" || token.startsWith("border-"))).toEqual([]);
     expect(outline.filter((token) => token.startsWith("text-ink-"))).toEqual([]);
     expect(outline).not.toContain("outline-none");
-    expect(outline).not.toContain("focus-visible:outline-accent");
+    expect(outline).not.toContain("focus-visible:outline-primary");
   });
 
   it("takes the ground's primary ink from the actions row, so the edge reads on light and dark grounds", () => {
@@ -152,6 +152,6 @@ describe("iconButtonLinkClassName", () => {
     expect(inverse).toEqual(expect.arrayContaining(["bg-card-foreground", "text-background", "border-background/14", "active:border-background"]));
     expect(inverse).not.toContain("bg-surface-raised");
     expect(base).not.toContain("outline-none");
-    expect(base).not.toContain("focus-visible:outline-accent");
+    expect(base).not.toContain("focus-visible:outline-primary");
   });
 });

@@ -189,7 +189,7 @@ describe("SiteFrame", () => {
     expect(brand).toHaveTextContent("Example");
     // The header logomark is the resolved asset painted in the accent token by default.
     expect(brand.querySelector("img")).toBeNull();
-    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-accent");
+    expect(brand.querySelector("[data-brand-mark]")).toHaveClass("bg-primary");
     expect(renderToStaticMarkup(frame(siteShellFor(CONFIG, "site"), <p>content</p>))).toContain("mask-image:url(&quot;/brand/mark.svg&quot;)");
     const nav = container.querySelector('header nav[aria-label="Primary"]') as HTMLElement;
     expect([...nav.querySelectorAll(".nav-disclosure-panel > ul:first-child a")].map((a) => [a.textContent, a.getAttribute("href")])).toEqual([
@@ -592,7 +592,7 @@ describe("siteShellFor", () => {
     expect(environment).toHaveClass("site-header-environment-ghost");
     expect(header.querySelectorAll(".site-header-environment-ghost")).toHaveLength(1);
     expect(environment).toHaveClass("hover:bg-surface-sunken");
-    expect(environment).not.toHaveClass("bg-accent");
+    expect(environment).not.toHaveClass("bg-primary");
     expect(environment.querySelector("svg")).not.toBeNull();
     const currents = [...container.querySelectorAll('header a[aria-current="true"]')];
     expect(currents).toHaveLength(1);
@@ -1449,7 +1449,7 @@ it.each(["light", "dark"] as const)("keeps inverse environment-only links readab
       expect(link).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
       expect(link).not.toHaveClass("text-ink-primary");
       expect(link).not.toHaveClass("hover:bg-surface-sunken");
-      expect(link).not.toHaveClass("focus-visible:outline-accent");
+      expect(link).not.toHaveClass("focus-visible:outline-primary");
       expect(link.querySelector("svg")).toHaveAttribute("stroke", "currentColor");
       expect(link.querySelector<SVGElement>("svg")!.style.color).toBe("");
       expect(link.querySelector("span")).toHaveTextContent(kind === "front-door" ? "App" : kind === "admin" ? "Admin" : "Demo");

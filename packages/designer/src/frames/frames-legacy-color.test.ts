@@ -53,9 +53,10 @@ describe("legacy colour map (H-TOKEN)", () => {
     for (const [legacy, target] of Object.entries(legacyMap.map)) if (target.shadcn) expect(emitted.has(target.shadcn), legacy).toBe(true);
   });
 
-  it("keeps the generated shadcn key region fresh, with the legacy brand accent as its only collision", () => {
+  it("keeps the generated shadcn key region fresh, with no collision now the legacy brand accent is migrated (G4)", () => {
     expect(renderThemeKeys(themes, themeKeysCss)).toBe(themeKeysCss);
-    expect(shadcnColorKeys(themes, themeKeysCss).collisions).toEqual(["--color-accent"]);
+    expect(shadcnColorKeys(themes, themeKeysCss).collisions).toEqual([]);
+    expect(themeKeysCss).toContain("--color-accent: var(--accent);");
   });
 });
 

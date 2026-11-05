@@ -317,7 +317,7 @@ describe("packed Publisher web React-server boundary", () => {
     expect(server.summaryClasses[0]).not.toMatch(/\boutline-none\b/);
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-2");
     expect(server.summaryClasses[0]).toContain("focus-visible:outline-offset-2");
-    expect(server.summaryClasses[0]).toContain("focus-visible:outline-accent");
+    expect(server.summaryClasses[0]).toContain("focus-visible:outline-primary");
   });
 
   it("hides the packed native summary's marker in favour of the Designer chevron", () => {

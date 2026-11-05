@@ -41,7 +41,7 @@ export function staticInspection(props: SignatureChartProps): Inspection {
   };
 }
 const focusClass =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function State({ loading, empty, labels }: { loading?: boolean; empty: boolean; labels: SignatureChartLabels }) {
   return loading || empty ? (
