@@ -2,17 +2,28 @@
 import { beforeAll, expect, it } from "vitest";
 import { resolve } from "../catalog-core/api.js";
 import { emitSurfaces } from "../catalog-core/surface-emit.js";
-import { checkNativeSpecimenEvidence, replayNativeSpecimenEvidence, specimenSurfaceEnvironment, type NativeSpecimenEvidence } from "./qualify-specimen-surfaces.js";
-import data from "../catalog/native-specimen-evidence.json" with { type: "json" };
+import { existsSync } from "node:fs";
+import { dirname, relative, resolve as pathResolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { INSTALLED_NATIVE_SPECIMEN_EVIDENCE, checkNativeSpecimenEvidence, installedNativeSpecimenEvidence, replayNativeSpecimenEvidence, specimenSurfaceEnvironment, type NativeSpecimenEvidence } from "./qualify-specimen-surfaces.js";
 import type { CompositeEngineInput } from "../catalog-core/types.js";
 
 let input: CompositeEngineInput;
+let data: NativeSpecimenEvidence;
 beforeAll(async () => {
+  data = await installedNativeSpecimenEvidence();
   const { prepareStudioSelection } = await import("../../../producer/dist/server/selection-defaults.js");
   input = (await prepareStudioSelection()).input;
 }, 30_000);
 const s8 = (engine: CompositeEngineInput) => resolve(engine).surfaces!.check.findings.filter(row => row.code === "S8" && row.severity === "error");
-const evidence = () => structuredClone(data) as unknown as NativeSpecimenEvidence;
+const evidence = () => structuredClone(data);
+const packageRoot = pathResolve(dirname(fileURLToPath(import.meta.url)), "../..");
+
+it("replays the evidence the installed build carries, never a checked-in source copy", () => {
+  expect(relative(packageRoot, INSTALLED_NATIVE_SPECIMEN_EVIDENCE)).toBe("dist/catalog/native-specimen-evidence.json");
+  expect(existsSync(pathResolve(packageRoot, "src/catalog/native-specimen-evidence.json"))).toBe(false);
+  expect(data.version).toBe(1);
+});
 
 it("replays all14 real compiler certificates while retaining the canonical source's separate S5 refusal", () => {
   expect(input.surfaceOptions!.measurements).toHaveLength(14);

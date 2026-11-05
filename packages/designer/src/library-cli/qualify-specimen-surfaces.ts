@@ -1,5 +1,4 @@
 /** Replay real source-built compiler facts only after exact current input equivalence. No runtime compiler. */
-import data from "../catalog/native-specimen-evidence.json" with { type: "json" };
 import { readFile } from "node:fs/promises";
 import { dirname, resolve as pathResolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,8 +22,17 @@ export interface NativeSpecimenEvidence {
   command: SurfaceCommandReceipt;
   certificates: readonly Pick<SurfaceMeasurement, "slot" | "source" | "compiled" | "checks">[];
 }
-const shipped = data as unknown as NativeSpecimenEvidence;
 const fail = (message: string): never => { throw new Error(`Native specimen source evidence unavailable: ${message}`); };
+/** The evidence ships inside the installed build: the workspace build writes it from that same build. */
+export const INSTALLED_NATIVE_SPECIMEN_EVIDENCE = pathResolve(dirname(fileURLToPath(import.meta.url)), "../../dist/catalog/native-specimen-evidence.json");
+let installedEvidence: Promise<NativeSpecimenEvidence> | undefined;
+export function installedNativeSpecimenEvidence(): Promise<NativeSpecimenEvidence> {
+  installedEvidence ??= readFile(INSTALLED_NATIVE_SPECIMEN_EVIDENCE, "utf8").then(text => JSON.parse(text) as NativeSpecimenEvidence, error => {
+    installedEvidence = undefined;
+    return fail(error?.code === "ENOENT" ? "the installed build carries no evidence; the workspace build generates it" : String(error?.message ?? error));
+  });
+  return installedEvidence;
+}
 const native = SPECIMEN_SECTION_EXPORTS.map(row => row.id).sort();
 const same = (a: unknown, b: unknown) => stableStringify(a) === stableStringify(b);
 
@@ -58,7 +66,8 @@ export async function checkNativeSpecimenEvidence(evidence: NativeSpecimenEviden
 }
 
 /** Independent installed package authentication; no TypeScript or development-only package is loaded. */
-export async function specimenSurfaceEnvironment(input: CompositeEngineInput, evidence: NativeSpecimenEvidence = shipped) {
+export async function specimenSurfaceEnvironment(input: CompositeEngineInput, supplied?: NativeSpecimenEvidence) {
+  const evidence = supplied ?? await installedNativeSpecimenEvidence();
   await checkNativeSpecimenEvidence(evidence);
   const installed = await Promise.all(evidence.packages.map(row => installedSurfaceDependency(row.module)));
   if (new Set(evidence.packages.map(row => row.module)).size !== evidence.packages.length || !same(installed.map(row => row.dependency), evidence.dependencies)) fail("dependency inventory differs");
@@ -93,4 +102,4 @@ export async function replayNativeSpecimenEvidence(input: CompositeEngineInput, 
   if (findings.length) fail(JSON.stringify(findings));
   return qualified;
 }
-export async function qualifySpecimenSurfaces(input: CompositeEngineInput): Promise<CompositeEngineInput> { return replayNativeSpecimenEvidence(input, shipped); }
+export async function qualifySpecimenSurfaces(input: CompositeEngineInput): Promise<CompositeEngineInput> { return replayNativeSpecimenEvidence(input, await installedNativeSpecimenEvidence()); }

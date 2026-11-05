@@ -1,7 +1,0 @@
-{
-  "schemaVersion": 1,
-  "catalog": "@clossys/director#strategy-v1",
-  "archetype": "product-saas",
-  "core": "archetype",
-  "active": { "identity.brand.essence": 1 }
-}
