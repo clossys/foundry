@@ -58,6 +58,7 @@
             "themes.card",
             "themes.foreground",
             "themes.muted-foreground",
+            "themes.ring",
             "themes.sidebar"
           ]
         },
@@ -72,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/components/Card.tsx",
-            "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -88,7 +89,7 @@
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "8111bc25bfa6ff1c88a923d31d6f21a5feeab98271db714c6c54f8afa1cfc84f"
+            "sha256": "013dacd352981ed40e999b7ceda9417c62174d6e0c9243e462379b112b32a4d4"
           }
         ],
         "unresolved": [
@@ -137,6 +138,7 @@
           "themes.card",
           "themes.foreground",
           "themes.muted-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },

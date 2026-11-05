@@ -52,7 +52,9 @@
             "components.link",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -73,7 +75,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+            "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -146,7 +148,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.features",
       "slotMap": {

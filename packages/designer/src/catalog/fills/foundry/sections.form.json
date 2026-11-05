@@ -48,7 +48,9 @@
             "components.link",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -69,7 +71,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -121,7 +123,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.form",
       "slotMap": {

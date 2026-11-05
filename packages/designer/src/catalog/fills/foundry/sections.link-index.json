@@ -62,7 +62,9 @@
             "components.semantic-content",
             "components.status-mark"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -87,7 +89,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
-            "sha256": "21fef41eb452ff91e79d82e4d68b1b4531dca9a4845ee2be6ea08e818b11db45"
+            "sha256": "7b5f451476b42f20248835726cd0c710284e29ba083ab644bbc26a8e9120fbbd"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -95,7 +97,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+            "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -107,7 +109,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
           },
           {
             "path": "packages/designer/src/icons/ChevronRight.ts",
@@ -166,7 +168,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.link-index",
       "slotMap": {

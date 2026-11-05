@@ -30,7 +30,9 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -43,7 +45,7 @@
           },
           {
             "path": "packages/designer/src/runtime/frames/document.tsx",
-            "sha256": "57ae877432f27fd700501aeb4930e4220dec33a30090f1a4fd5409acc74f016a"
+            "sha256": "63a658021c899d8a2336d5942e93e9ec7fe63449141b3df210d18fdd9f7c6c12"
           }
         ],
         "unresolved": []
@@ -63,7 +65,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "frames.document",
       "slots": {

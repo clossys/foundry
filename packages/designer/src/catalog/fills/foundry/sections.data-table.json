@@ -113,11 +113,15 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-            "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+            "sha256": "4f19902b436d6ca808e06bcb8e030fe436d0b3ca3e6d49e47fbc37888d16f529"
           },
           {
             "path": "packages/designer/src/blocks/DataTable.tsx",
             "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
           },
           {
             "path": "packages/designer/src/blocks/table-model/index.ts",

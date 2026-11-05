@@ -130,13 +130,13 @@ describe("real package-surface library golden", () => {
   beforeAll(async () => { fixture = await packageSurfaceLibrary(); }, 300_000);
   it("pins the composite, value, component and surface portion hashes", () => {
     const { library } = fixture;
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:f7b52c012181583a66bd6ecaf6e20ed3c49a08d39e67b15e586f3bcfa8be0357"`);
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:1a6a42c25b2f425fc9033d3aacb6961bad0570b4b6e6c1a3b75e0606c221b1c2"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
-    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:ffebe600665203cafbc4c000d452a3cd7440611adb4d7e84f2228169c11d0496"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:557b0369f21b3f267d5a789a08a35e53063574d9456dce36705766f40cd8ef81"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"331a9856d97b7c6c2e5e5ae77e1e4ad8a3dd2976c423bf68d111a87344c7fb79"`);
+    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:529ab6f3aea9e9189237753005893a98d2949c3f95483a1e9bc73483336523eb"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:fe76930a4aa23b50b8cf5e97b834d503c8e9fd9e49b48168095000310cbab9eb"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"c9becaf959970735c9f3352503b1b461e9b55a0d292145aca2224bf60b7532c6"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

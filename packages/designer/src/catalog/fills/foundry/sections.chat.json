@@ -34,6 +34,7 @@
       "composes": [
         "components.avatar",
         "components.button",
+        "components.icon",
         "components.link",
         "components.semantic-content",
         "components.text-field"
@@ -44,6 +45,7 @@
         "scannedComposes": [
           "components.avatar",
           "components.button",
+          "components.icon",
           "components.link",
           "components.semantic-content",
           "components.text-field"
@@ -53,6 +55,7 @@
           "components": [
             "components.avatar",
             "components.button",
+            "components.icon",
             "components.link",
             "components.semantic-content",
             "components.text-field"
@@ -64,7 +67,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/chat/Chat.tsx",
-            "sha256": "66a8ebe2794e60325fb648af574294da742b7aab93647c13aec1f42c5ccc65cf"
+            "sha256": "853a3841123c7831ac400563b952cf4152c56e238d8630cfbe9170c8897e0836"
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",

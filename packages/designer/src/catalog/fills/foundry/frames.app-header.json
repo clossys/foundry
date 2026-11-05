@@ -25,6 +25,7 @@
     "app-header": {
       "composes": [
         "components.button",
+        "components.dialog",
         "components.icon",
         "components.link",
         "components.menu",
@@ -36,6 +37,7 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.button",
+          "components.dialog",
           "components.icon",
           "components.link",
           "components.menu",
@@ -47,6 +49,7 @@
           "assets": [],
           "components": [
             "components.button",
+            "components.dialog",
             "components.icon",
             "components.link",
             "components.menu",
@@ -54,7 +57,9 @@
             "components.semantic-content",
             "components.toggle-button"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -67,11 +72,15 @@
           },
           {
             "path": "packages/designer/src/blocks/page-bar-layout.ts",
-            "sha256": "43f39d1272e7e324abc53b987f8dfffa48161907e186e6c930f2ac1fbc6606df"
+            "sha256": "63a563d79f47cd30a1c30f59a146c57197361fb33ace739df71fe5cd58765d8a"
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "3509338db32d1fe369e025cf74a05838fdc801d52392a7db8909b67366b409f1"
+            "sha256": "7fd722f93dcea17a0dc0bb812995b63d12d611445f6de9fdf1f5b4e4a87df4ac"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
           },
           {
             "path": "packages/designer/src/catalog-core/frame-header-options.ts",
@@ -79,7 +88,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
           },
           {
             "path": "packages/designer/src/icons/Check.ts",
@@ -140,7 +149,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "frames.app-header",
       "slots": {

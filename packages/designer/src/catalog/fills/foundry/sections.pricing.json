@@ -49,12 +49,14 @@
             "components.semantic-content",
             "components.table"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PricingTable.tsx",
-            "sha256": "4fe3d3b5eb331ae0b696e032a777ab6ff0f11e2920e0f4f791785b6899ce0e15"
+            "sha256": "9c2a7573d5e5686b422fca2cae8461afe8ae827af80d704072c77d87c9bd4eb8"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -113,7 +115,9 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.pricing",
       "slotMap": {

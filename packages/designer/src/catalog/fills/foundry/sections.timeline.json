@@ -43,12 +43,14 @@
             "components.card",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Timeline.tsx",
-            "sha256": "25bb2fa38b17b8f40076bd1a39eaec804734757187c0f24551956bf6b83ba117"
+            "sha256": "6d69594e8b70e3e21376450d60cac4bb1f2f85611df579e646c02b28adfe8f1c"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -103,7 +105,9 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.timeline",
       "slotMap": {

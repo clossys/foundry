@@ -57,7 +57,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FilterBuilder.tsx",
-            "sha256": "b7aeb50a703ba244f2a19fb6662e94927c374d8a11b4d6e444b4b6e233b6d0ca"
+            "sha256": "3c11081dabf787f5540c68c52c8604be5032a2bcb2299b94ba04b256721b0389"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

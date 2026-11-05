@@ -4,6 +4,7 @@
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.button",
+        "components.dialog",
         "components.icon",
         "components.link",
         "components.menu",
@@ -15,6 +16,7 @@
         "assets": [],
         "components": [
           "components.button",
+          "components.dialog",
           "components.icon",
           "components.link",
           "components.menu",
@@ -22,7 +24,9 @@
           "components.semantic-content",
           "components.toggle-button"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -35,11 +39,15 @@
         },
         {
           "path": "packages/designer/src/blocks/page-bar-layout.ts",
-          "sha256": "43f39d1272e7e324abc53b987f8dfffa48161907e186e6c930f2ac1fbc6606df"
+          "sha256": "63a563d79f47cd30a1c30f59a146c57197361fb33ace739df71fe5cd58765d8a"
         },
         {
           "path": "packages/designer/src/blocks/PageBar.tsx",
-          "sha256": "3509338db32d1fe369e025cf74a05838fdc801d52392a7db8909b67366b409f1"
+          "sha256": "7fd722f93dcea17a0dc0bb812995b63d12d611445f6de9fdf1f5b4e4a87df4ac"
+        },
+        {
+          "path": "packages/designer/src/blocks/shell-menu.tsx",
+          "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
         },
         {
           "path": "packages/designer/src/catalog-core/frame-header-options.ts",
@@ -47,7 +55,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/Check.ts",
@@ -144,6 +152,7 @@
           "themes.muted-foreground",
           "themes.primary",
           "themes.primary-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },
@@ -170,7 +179,7 @@
         },
         {
           "path": "packages/designer/src/blocks/shell-menu.tsx",
-          "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
+          "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -186,11 +195,11 @@
         },
         {
           "path": "packages/designer/src/components/Banner.copy.ts",
-          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
         },
         {
           "path": "packages/designer/src/components/Card.tsx",
-          "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
         },
         {
           "path": "packages/designer/src/components/Dialog.tsx",
@@ -238,7 +247,7 @@
         },
         {
           "path": "packages/designer/src/frames/FrameDock.tsx",
-          "sha256": "4dfe06ab7839a40cad325303a15061c904c37719e663466bc69532d23158f5bf"
+          "sha256": "7ca799d3334b2fb910d1067b8cc586331793f962ef228f03f45c32a628e8be77"
         },
         {
           "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -396,7 +405,9 @@
           "components.navigation-tree",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -409,7 +420,7 @@
         },
         {
           "path": "packages/designer/src/blocks/AppNavigation.tsx",
-          "sha256": "ccd50822fa369c2679d5b0a28101a1b3b5e23365dcf880b6bb55a50378cfc474"
+          "sha256": "3f925a05fe32cf6b0833c75b23169c475decff5b54480435dde79153917a0b73"
         },
         {
           "path": "packages/designer/src/blocks/frame-navigation.ts",
@@ -429,7 +440,7 @@
         },
         {
           "path": "packages/designer/src/components/Banner.copy.ts",
-          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -544,6 +555,7 @@
           "themes.muted-foreground",
           "themes.primary",
           "themes.primary-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },
@@ -554,7 +566,7 @@
         },
         {
           "path": "packages/designer/src/components/Card.tsx",
-          "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -636,7 +648,7 @@
         },
         {
           "path": "packages/designer/src/components/Banner.copy.ts",
-          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
         },
         {
           "path": "packages/designer/src/icons/X.ts",
@@ -675,7 +687,9 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -688,7 +702,7 @@
         },
         {
           "path": "packages/designer/src/runtime/frames/document.tsx",
-          "sha256": "57ae877432f27fd700501aeb4930e4220dec33a30090f1a4fd5409acc74f016a"
+          "sha256": "63a658021c899d8a2336d5942e93e9ec7fe63449141b3df210d18fdd9f7c6c12"
         }
       ],
       "unresolved": []
@@ -723,6 +737,7 @@
           "themes.card",
           "themes.foreground",
           "themes.muted-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },
@@ -741,7 +756,7 @@
         },
         {
           "path": "packages/designer/src/components/Card.tsx",
-          "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -900,6 +915,7 @@
           "themes.card",
           "themes.foreground",
           "themes.muted-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },
@@ -914,7 +930,7 @@
         },
         {
           "path": "packages/designer/src/components/Card.tsx",
-          "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -930,7 +946,7 @@
         },
         {
           "path": "packages/designer/src/shell/SiteFooter.tsx",
-          "sha256": "8111bc25bfa6ff1c88a923d31d6f21a5feeab98271db714c6c54f8afa1cfc84f"
+          "sha256": "013dacd352981ed40e999b7ceda9417c62174d6e0c9243e462379b112b32a4d4"
         }
       ],
       "unresolved": [
@@ -979,6 +995,7 @@
           "themes.card",
           "themes.foreground",
           "themes.muted-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },
@@ -993,7 +1010,7 @@
         },
         {
           "path": "packages/designer/src/components/Card.tsx",
-          "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -1057,6 +1074,7 @@
           "components.semantic-content"
         ],
         "themes": [
+          "themes.background",
           "themes.primary"
         ]
       },
@@ -1067,7 +1085,7 @@
         },
         {
           "path": "packages/designer/src/components/button-classes.ts",
-          "sha256": "e0ac95371ab8fd8d381a4b0079f72236c95730044f0a7b305ad146926d6fe583"
+          "sha256": "26677b87360f6824dc62bcc33b4a50612043f9388b8d3028605c5759231286d3"
         },
         {
           "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
@@ -1282,7 +1300,9 @@
           "components.icon",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -1291,7 +1311,7 @@
         },
         {
           "path": "packages/designer/src/blocks/EventItem.tsx",
-          "sha256": "1539ac734b51b1e87dc41121ac6cb7d9e4929bcd1ae00e93bb6a893ba001c536"
+          "sha256": "6515e6512cf30f11116b24879362a0e6ec7ff4420adacb9b2a540b6c8ea4833e"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1756,6 +1776,7 @@
       "scannedComposes": [
         "components.avatar",
         "components.button",
+        "components.icon",
         "components.link",
         "components.semantic-content",
         "components.text-field"
@@ -1765,6 +1786,7 @@
         "components": [
           "components.avatar",
           "components.button",
+          "components.icon",
           "components.link",
           "components.semantic-content",
           "components.text-field"
@@ -1776,7 +1798,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/chat/Chat.tsx",
-          "sha256": "66a8ebe2794e60325fb648af574294da742b7aab93647c13aec1f42c5ccc65cf"
+          "sha256": "853a3841123c7831ac400563b952cf4152c56e238d8630cfbe9170c8897e0836"
         },
         {
           "path": "packages/designer/src/blocks/chat/content.tsx",
@@ -1951,7 +1973,8 @@
           "components.table"
         ],
         "themes": [
-          "themes.font-mono"
+          "themes.font-mono",
+          "themes.primary"
         ]
       },
       "sourceFiles": [
@@ -1989,11 +2012,11 @@
         },
         {
           "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-          "sha256": "38f242e651591a9dfeb638fbac237781b931a60f4f4c94caeb4f1e3e09a324d3"
+          "sha256": "39af1919d028475cd12a255663bf9e935b1dc2ca813538b219d134a894e75e2c"
         },
         {
           "path": "packages/designer/src/blocks/Matrix.tsx",
-          "sha256": "bf403bd0882fe25b9a7a8cfc6ef3343448a3a19a494e8cfb65afbc5b2487329d"
+          "sha256": "7f82df5dd40953fb39c3b85aecb9b02e6856c3404089bed002a77f43bc4a6274"
         },
         {
           "path": "packages/designer/src/blocks/matrix/choices.tsx",
@@ -2010,6 +2033,10 @@
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
           "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+        },
+        {
+          "path": "packages/designer/src/blocks/shell-menu.tsx",
+          "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2029,7 +2056,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/Check.ts",
@@ -2183,7 +2210,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ContentSection.tsx",
-          "sha256": "6a90522c76468a0853eeb005662ebe62921ee9d2bf476cefc128b36cc8f4593a"
+          "sha256": "cb3260f31ea59d024f7ac98d6fddcd8af510bd1e26c0e0d24a24c257a22a12d3"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -2207,7 +2234,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -2315,11 +2342,15 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-          "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+          "sha256": "4f19902b436d6ca808e06bcb8e030fe436d0b3ca3e6d49e47fbc37888d16f529"
         },
         {
           "path": "packages/designer/src/blocks/DataTable.tsx",
           "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+        },
+        {
+          "path": "packages/designer/src/blocks/shell-menu.tsx",
+          "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
         },
         {
           "path": "packages/designer/src/blocks/table-model/index.ts",
@@ -2461,11 +2492,15 @@
         },
         {
           "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-          "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+          "sha256": "4f19902b436d6ca808e06bcb8e030fe436d0b3ca3e6d49e47fbc37888d16f529"
         },
         {
           "path": "packages/designer/src/blocks/DataTable.tsx",
           "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+        },
+        {
+          "path": "packages/designer/src/blocks/shell-menu.tsx",
+          "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
         },
         {
           "path": "packages/designer/src/blocks/table-model/index.ts",
@@ -2769,12 +2804,14 @@
           "components.disclosure",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Faq.server.tsx",
-          "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
+          "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
         },
         {
           "path": "packages/designer/src/blocks/Faq.tsx",
@@ -2844,7 +2881,9 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -2865,7 +2904,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+          "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2941,7 +2980,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/FilterBuilder.tsx",
-          "sha256": "b7aeb50a703ba244f2a19fb6662e94927c374d8a11b4d6e444b4b6e233b6d0ca"
+          "sha256": "3c11081dabf787f5540c68c52c8604be5032a2bcb2299b94ba04b256721b0389"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2998,7 +3037,9 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -3019,7 +3060,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -3179,11 +3220,11 @@
         },
         {
           "path": "packages/designer/src/tokens/contrast-pairs.ts",
-          "sha256": "0ad6b9dd8950e7e617e7bc2e733c476263138a98e378d13827175ea1be18a32b"
+          "sha256": "de2ae08e89e000b38385410ad0739b8406477270253dd034d96b6419baf4753d"
         },
         {
           "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
-          "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+          "sha256": "f275a93674312946c0fa1c73c827dae315d11578be1d2c675669924f3466dfc8"
         },
         {
           "path": "packages/designer/src/tokens/pattern.ts",
@@ -3318,7 +3359,9 @@
           "components.semantic-content",
           "components.status-mark"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -3343,7 +3386,7 @@
         },
         {
           "path": "packages/designer/src/blocks/NavGrid.tsx",
-          "sha256": "21fef41eb452ff91e79d82e4d68b1b4531dca9a4845ee2be6ea08e818b11db45"
+          "sha256": "7b5f451476b42f20248835726cd0c710284e29ba083ab644bbc26a8e9120fbbd"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3351,7 +3394,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+          "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3363,7 +3406,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
@@ -3422,12 +3465,14 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/LogoCloud.tsx",
-          "sha256": "0271d696418eacc0d3e8e57767119a96ab71b3eeac9ab7bbb50e90288439a1dd"
+          "sha256": "5966c3128d689374b9b380b282b1125d7dd385152741406bd1c044e60e09c349"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -3443,7 +3488,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -3713,7 +3758,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/XCircle.ts",
@@ -3894,7 +3939,7 @@
         },
         {
           "path": "packages/designer/src/components/Banner.copy.ts",
-          "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+          "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -3953,7 +3998,9 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -3966,7 +4013,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+          "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3978,7 +4025,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
@@ -4039,12 +4086,14 @@
           "components.semantic-content",
           "components.table"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/PricingTable.tsx",
-          "sha256": "4fe3d3b5eb331ae0b696e032a777ab6ff0f11e2920e0f4f791785b6899ce0e15"
+          "sha256": "9c2a7573d5e5686b422fca2cae8461afe8ae827af80d704072c77d87c9bd4eb8"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -4161,6 +4210,7 @@
       "scannedComposes": [
         "components.button",
         "components.grid-list",
+        "components.icon",
         "components.menu",
         "components.semantic-content",
         "components.skeleton",
@@ -4171,6 +4221,7 @@
         "components": [
           "components.button",
           "components.grid-list",
+          "components.icon",
           "components.menu",
           "components.semantic-content",
           "components.skeleton"
@@ -4184,7 +4235,11 @@
         },
         {
           "path": "packages/designer/src/blocks/ResourceList.tsx",
-          "sha256": "ffecdc2257f75763dd530570de1bf9905114a50d068a6e2578d7338b1286b225"
+          "sha256": "eae5ac29dc26c24be0ffe2b801916b44a9772e255397c9594f74a3761aecf124"
+        },
+        {
+          "path": "packages/designer/src/blocks/shell-menu.tsx",
+          "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4196,7 +4251,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -4332,7 +4387,11 @@
           "components.status-mark"
         ],
         "themes": [
-          "themes.font-mono"
+          "themes.accent",
+          "themes.background",
+          "themes.font-mono",
+          "themes.primary",
+          "themes.primary-foreground"
         ]
       },
       "sourceFiles": [
@@ -4342,7 +4401,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Faq.server.tsx",
-          "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
+          "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -4394,7 +4453,7 @@
         },
         {
           "path": "packages/designer/src/blocks/items/order.tsx",
-          "sha256": "cabd33aadfedeb0ecd83c25aa57d6bf9d641279bc8dbe89d2c2e970071cbf311"
+          "sha256": "e6e5c9cda897845ead4539a1ec4b564e67a357e3ead493778ece8826a3efb991"
         },
         {
           "path": "packages/designer/src/blocks/items/policies.ts",
@@ -4418,7 +4477,7 @@
         },
         {
           "path": "packages/designer/src/blocks/ledger-rows.tsx",
-          "sha256": "5087cab37037ab0a0e1c02bea3c44a12a73b35fded8581e77dc70d4912bd9e3e"
+          "sha256": "92c54874012bc8fd01eab44e054edb6fd8e0493f8471dabba1ec31660899568e"
         },
         {
           "path": "packages/designer/src/blocks/Matrix.server.tsx",
@@ -4434,7 +4493,7 @@
         },
         {
           "path": "packages/designer/src/blocks/matrix/static.tsx",
-          "sha256": "d1dec49e866e2c673e7d1222f9ee1af5ba7497893ea5ae78774427a8127b8431"
+          "sha256": "d43520c5f126450ddff91680d6ff2c63d6cd46f8064bf07175df87e754f95a30"
         },
         {
           "path": "packages/designer/src/blocks/RecordLedger.tsx",
@@ -4462,7 +4521,7 @@
         },
         {
           "path": "packages/designer/src/blocks/specimen/SpecimenPanel.tsx",
-          "sha256": "8795d666a4cb51bbafef153895c7249c806261f53980986da2326b2771f2feb7"
+          "sha256": "014bf0ed3ef0ed0d994151d345ec2fbe85dce824a1578cd83a95a0ade3f9a092"
         },
         {
           "path": "packages/designer/src/blocks/Stat.tsx",
@@ -4470,7 +4529,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+          "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
         },
         {
           "path": "packages/designer/src/blocks/Testimonial.server.tsx",
@@ -4486,7 +4545,7 @@
         },
         {
           "path": "packages/designer/src/components/button-classes.ts",
-          "sha256": "e0ac95371ab8fd8d381a4b0079f72236c95730044f0a7b305ad146926d6fe583"
+          "sha256": "26677b87360f6824dc62bcc33b4a50612043f9388b8d3028605c5759231286d3"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -4494,11 +4553,11 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/components/Meter.server.tsx",
-          "sha256": "47b0f78c3f1478addaaf06ae71728a6c3bfd1dd3c8485d081837e4bcf0bdb905"
+          "sha256": "6722cde47d126ee4de73605604d041277089293991b1551be3f76a46e150234c"
         },
         {
           "path": "packages/designer/src/icons/ArrowRight.ts",
@@ -4650,7 +4709,7 @@
         },
         {
           "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
-          "sha256": "4feddbfeb9c813033488f664e30e79dec5dd8bc61381174c355260913a35f5a2"
+          "sha256": "f084f29902e4439720050ec0d9e0aa603d6275f4416533381fa005b81a805964"
         }
       ],
       "unresolved": [
@@ -4895,7 +4954,9 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -4916,7 +4977,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -5105,12 +5166,14 @@
         "components": [
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.accent"
+        ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
-          "sha256": "781475d5b202ae176c42b630d88c38b3afa70c03746a21e7de0db5179f7ec74d"
+          "sha256": "a21143487383a6b91ddd938f922555878a453e9332bd0ca2e283bce9c670bcba"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
@@ -5171,7 +5234,9 @@
           "components.link",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -5184,7 +5249,7 @@
         },
         {
           "path": "packages/designer/src/blocks/TableOfContents.server.tsx",
-          "sha256": "0b824794fc12cd18d9232801152392bd6d971e63f556ef66bf2f5de54b5e2c68"
+          "sha256": "3df1e2bcef977c6293df2849a05c1f0ccd563b6fbb3a622c682e37e12ec84123"
         },
         {
           "path": "packages/designer/src/blocks/TableOfContents.tsx",
@@ -5204,7 +5269,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/internal/brandmark.ts",
@@ -5262,7 +5327,9 @@
           "components.semantic-content",
           "components.status-mark"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -5271,7 +5338,7 @@
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
-          "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+          "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
         },
         {
           "path": "packages/designer/src/blocks/TaskList.tsx",
@@ -5287,7 +5354,7 @@
         },
         {
           "path": "packages/designer/src/components/internal/ui-vars.ts",
-          "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
+          "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
         },
         {
           "path": "packages/designer/src/icons/ChevronRight.ts",
@@ -5412,12 +5479,14 @@
           "components.card",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Timeline.tsx",
-          "sha256": "25bb2fa38b17b8f40076bd1a39eaec804734757187c0f24551956bf6b83ba117"
+          "sha256": "6d69594e8b70e3e21376450d60cac4bb1f2f85611df579e646c02b28adfe8f1c"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

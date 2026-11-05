@@ -54,6 +54,7 @@
             "components.semantic-content"
           ],
           "themes": [
+            "themes.background",
             "themes.primary"
           ]
         },
@@ -64,7 +65,7 @@
           },
           {
             "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "e0ac95371ab8fd8d381a4b0079f72236c95730044f0a7b305ad146926d6fe583"
+            "sha256": "26677b87360f6824dc62bcc33b4a50612043f9388b8d3028605c5759231286d3"
           },
           {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
@@ -126,6 +127,7 @@
       "reads": {
         "assets": [],
         "themes": [
+          "themes.background",
           "themes.primary"
         ]
       },

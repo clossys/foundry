@@ -106,11 +106,11 @@
           },
           {
             "path": "packages/designer/src/tokens/contrast-pairs.ts",
-            "sha256": "0ad6b9dd8950e7e617e7bc2e733c476263138a98e378d13827175ea1be18a32b"
+            "sha256": "de2ae08e89e000b38385410ad0739b8406477270253dd034d96b6419baf4753d"
           },
           {
             "path": "packages/designer/src/tokens/internal/resolve-token-value.ts",
-            "sha256": "dfb52251355c0efcbb3c9211f2277b9d430654528479ee1dc457c1b4d2df71b1"
+            "sha256": "f275a93674312946c0fa1c73c827dae315d11578be1d2c675669924f3466dfc8"
           },
           {
             "path": "packages/designer/src/tokens/pattern.ts",

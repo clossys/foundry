@@ -45,6 +45,7 @@
             "themes.card",
             "themes.foreground",
             "themes.muted-foreground",
+            "themes.ring",
             "themes.sidebar"
           ]
         },
@@ -59,7 +60,7 @@
           },
           {
             "path": "packages/designer/src/components/Card.tsx",
-            "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -134,6 +135,7 @@
           "themes.card",
           "themes.foreground",
           "themes.muted-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },

@@ -91,6 +91,7 @@
             "themes.muted-foreground",
             "themes.primary",
             "themes.primary-foreground",
+            "themes.ring",
             "themes.sidebar"
           ]
         },
@@ -117,7 +118,7 @@
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",
-            "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
+            "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -133,11 +134,11 @@
           },
           {
             "path": "packages/designer/src/components/Banner.copy.ts",
-            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
           },
           {
             "path": "packages/designer/src/components/Card.tsx",
-            "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
           },
           {
             "path": "packages/designer/src/components/Dialog.tsx",
@@ -185,7 +186,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "4dfe06ab7839a40cad325303a15061c904c37719e663466bc69532d23158f5bf"
+            "sha256": "7ca799d3334b2fb910d1067b8cc586331793f962ef228f03f45c32a628e8be77"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -348,6 +349,7 @@
           "themes.muted-foreground",
           "themes.primary",
           "themes.primary-foreground",
+          "themes.ring",
           "themes.sidebar"
         ]
       },
