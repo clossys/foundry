@@ -12,9 +12,12 @@ import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 
 // The visual-contract suite binds the compiled component namespace directly.
 // Consumer selection and overrides are exercised by LogoCloud.a270.test.tsx.
+// The factory imports the three leaf modules it returns, never the components
+// barrel: the barrel re-exports modules that import this mocked module, so
+// awaiting it here waits on itself and the file never loads.
 vi.mock("../runtime/component-leaf.js", async () => {
-  const [base, item] = await Promise.all([import("../components/index.js"), import("../components/item/item.js")]);
-  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? base.Link : base.SemanticContent };
+  const [link, content, item] = await Promise.all([import("../components/Link.client.js"), import("../components/SemanticContent.js"), import("../components/item/item.js")]);
+  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? link.Link : content.SemanticContent };
 });
 
 type BrowserStep =
