@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, cpSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, statSync, symlinkSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { isBuiltin } from 'node:module';
@@ -137,15 +137,56 @@ const RENDERER_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react']);
 const UI_FRAME_RUNTIME = new Set(['react', 'lucide-react']);
 const UI_FRAMES = ['foundry/block-viewer-iframe.tsx', 'foundry/layout.tsx', 'foundry/studio-frames.tsx'];
 // Every code extension the ref-verbatim gate accepts (`CODE_FILE`), so a `.jsx`/`.js`/`.mjs` file cannot sit outside the scan.
-const sourceFiles = (folder: string) => readdirSync(folder).filter(name => CODE_FILE.test(name) && !name.endsWith('.d.ts') && !/\.test\.[cm]?[jt]sx?$/.test(name)).map(name => join(folder, name));
+const isSource = (name: string) => CODE_FILE.test(name) && !name.endsWith('.d.ts') && !/\.test\.[cm]?[jt]sx?$/.test(name);
+const sourceFiles = (folder: string) => readdirSync(folder).filter(isSource).map(name => join(folder, name));
+// A section or frame folder is scanned to every depth: a subfolder file is still the folder's code.
+const sourceFilesDeep = (folder: string): string[] => readdirSync(folder, { withFileTypes: true }).flatMap(entry =>
+  entry.isDirectory() ? sourceFilesDeep(join(folder, entry.name)) : isSource(entry.name) ? [join(folder, entry.name)] : []);
+const MODULE_EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.cjs', '.mts', '.cts'];
+const isFile = (path: string) => existsSync(path) && statSync(path).isFile();
+/** The real path of the nearest existing ancestor of `path`, with the missing remainder appended. */
+function realPathOf(path: string): string {
+  if (existsSync(path)) return realpathSync(path);
+  const parent = dirname(path);
+  return parent === path ? path : join(realPathOf(parent), basename(path));
+}
+
+/**
+ * Where a relative specifier imported by `file` lands on disk, as a real path (symlinks followed, from the
+ * importing file's own real location): the module file a resolver would pick (exact, with a code extension,
+ * a `.js`-style specifier's TypeScript source, or a directory's `index`), else the unresolved path under its
+ * real existing ancestor. A directory carrying a `package.json` may point anywhere, so it resolves to nothing.
+ */
+export function resolveRelative(file: string, specifier: string): string | undefined {
+  const base = resolve(dirname(realpathSync(file)), specifier);
+  const stem = base.replace(/\.[cm]?jsx?$/, '');
+  const files = [base, ...MODULE_EXTENSIONS.map(ext => base + ext), ...(stem === base ? [] : MODULE_EXTENSIONS.map(ext => stem + ext))];
+  const found = files.find(isFile);
+  if (found) return realpathSync(found);
+  if (existsSync(base) && statSync(base).isDirectory()) {
+    if (existsSync(join(base, 'package.json'))) return undefined;
+    const index = MODULE_EXTENSIONS.map(ext => join(base, `index${ext}`)).find(isFile);
+    if (index) return realpathSync(index);
+  }
+  return realPathOf(base);
+}
 const within = (file: string, specifier: string, root: string) => specifier.startsWith('.') && resolve(dirname(file), specifier).startsWith(root + sep);
 
 function importAllowed(kind: Kind, file: string, folder: string, specifier: string, typeOnly: boolean, composes: ReadonlySet<string>): boolean {
-  if (specifier === COMPONENT_LAYER || composes.has(specifier)) return true;
+  if (specifier === COMPONENT_LAYER) return true;
   if (kind === 'section' || kind === 'frame') {
-    const inside = specifier.startsWith('./') && !resolve(folder, specifier).slice(folder.length + 1).includes(sep);
-    return inside || (kind === 'frame' && (FRAME_RUNTIME.has(specifier) || typeOnly));
+    if (kind === 'frame' && typeOnly) return true;
+    if (!specifier.startsWith('.')) return kind === 'frame' && FRAME_RUNTIME.has(specifier);
+    // Every relative specifier is resolved to the real file it loads, which must stay inside the folder.
+    const target = resolveRelative(file, specifier);
+    if (!target) return false;
+    const root = realpathSync(folder);
+    if (target.startsWith(root + sep)) return true;
+    // A declared sibling section or a frame's runtime module, named exactly as written from the folder's own top level.
+    const atTop = dirname(realpathSync(file)) === root;
+    return atTop && (composes.has(specifier) || (kind === 'frame' && FRAME_RUNTIME.has(specifier)));
   }
+  if (composes.has(specifier)) return true;
   if (typeOnly) return true;
   if (kind === 'renderer') return RENDERER_RUNTIME.has(specifier) || isBuiltin(specifier) || (specifier.startsWith('@clossys/') && !specifier.startsWith(`${COMPONENT_LAYER}/`)) || within(file, specifier, PRODUCER);
   return UI_FRAME_RUNTIME.has(specifier) || within(file, specifier, UI_SRC);
@@ -185,7 +226,7 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
 }
 
 export function dsOnlyViolations(folder: string, kind: 'section' | 'frame' = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set()): string[] {
-  return sourceFiles(folder).flatMap(file => fileViolations(file, kind, composes, blockMarkup, folder));
+  return sourceFilesDeep(folder).flatMap(file => fileViolations(file, kind, composes, blockMarkup, folder));
 }
 
 const RENDERER_FILES = RENDERER_DIRS.flatMap(dir => sourceFiles(join(STUDIO, dir))).map(file => relative(STUDIO, file)).sort();
@@ -309,6 +350,37 @@ describe('Studio sections are ds-only', () => {
       ]);
       expect(fileViolations(join(probe, 'Dyn.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Dyn.tsx: imports react-aria-components', 'Dyn.tsx: imports ./local']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+
+  it('resolves every relative import to its real path inside the folder and scans subfolders (gate R2)', () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-contain-')));
+    try {
+      const folder = join(root, 'sections/probe');
+      mkdirSync(join(folder, 'sub'), { recursive: true });
+      mkdirSync(join(root, 'sections/studio-options'), { recursive: true });
+      mkdirSync(join(root, 'components'), { recursive: true });
+      writeFileSync(join(root, 'sections/studio-options/index.tsx'), 'export const X = 1;\n');
+      writeFileSync(join(root, 'components/X.tsx'), 'export const X = 1;\n');
+      symlinkSync(join(root, 'components/X.tsx'), join(folder, 'linked.tsx'));
+      writeFileSync(join(folder, 'own.tsx'), 'export const Own = 1;\n');
+      writeFileSync(join(folder, 'index.tsx'), [
+        "import { X } from './../studio-options';",
+        "import { Y } from './../../components/X';",
+        "import { Z } from './sub';",
+        "import { L } from './linked';",
+        "import { Own } from './own';",
+        "import { Again } from './sub/../own';",
+        'export const A = () => <Z />;',
+      ].join('\n') + '\n');
+      writeFileSync(join(folder, 'sub/index.tsx'), "import { Own } from '../own';\nimport { Out } from '../../studio-options';\nexport const Z = () => <div className=\"p-4\" />;\n");
+      expect(dsOnlyViolations(folder).map(line => line.split(': ').at(-1)).sort()).toEqual([
+        '<div className>', 'imports ../../studio-options', 'imports ./../../components/X', 'imports ./../studio-options', 'imports ./linked',
+      ]);
+      expect(dsOnlyViolations(folder).filter(line => line.endsWith('<div className>')).map(line => resolve(STUDIO, line.split(': ')[0]!))).toEqual([join(folder, 'sub/index.tsx')]);
+      expect(dsOnlyViolations(folder, 'frame').map(line => line.split(': ').at(-1)).sort()).toEqual([
+        '<div className>', 'imports ../../studio-options', 'imports ./../../components/X', 'imports ./../studio-options', 'imports ./linked',
+      ]);
+    } finally { rmSync(root, { recursive: true, force: true }); }
   });
 
   it('admits only the marker-typed provenance spread on raw markup', () => {
