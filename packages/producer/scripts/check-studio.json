@@ -33,6 +33,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:copy-source",
+      "cwd": "packages/producer",
+      "run": "npm run check:copy-source",
+      "kind": "static"
+    },
+    {
       "id": "producer test:assemble-only",
       "cwd": "packages/producer",
       "run": "npm run test:assemble-only",
@@ -84,6 +90,12 @@
       "id": "producer scripts/studio-contract-copy.test.mjs",
       "cwd": "packages/producer",
       "run": "node --test scripts/studio-contract-copy.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/check-copy-rendered.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/check-copy-rendered.test.mjs",
       "kind": "test"
     },
     {
@@ -199,6 +211,12 @@
       "cwd": "packages/producer",
       "run": "npx vitest run --config vitest.studio.config.ts",
       "kind": "test"
+    },
+    {
+      "id": "producer check-copy-rendered (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/check-copy-rendered.mjs \"$STUDIO_ORIGIN\" --json \"$STUDIO_CHECK_OUT/copy-rendered.json\"",
+      "kind": "live"
     },
     {
       "id": "producer studio-dom-check (live)",

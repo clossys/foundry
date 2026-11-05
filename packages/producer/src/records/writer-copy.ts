@@ -19,6 +19,8 @@ export const WRITER_KEY = /^studio\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
 export interface WriterCopy {
   /** The source locale: the first locale of the pinned Writer candidates. */
   readonly locale: string;
+  /** Every key the pinned Writer copy holds. */
+  readonly ids: readonly string[];
   /** Whether the pinned Writer copy holds this key. */
   has(id: string): boolean;
   /** The key's text, ICU arguments filled; throws on a key the pinned copy does not hold. */
@@ -58,6 +60,7 @@ export function writerCopy(consumer: string): WriterCopy {
   const sourceLocale = locale;
   const copy: WriterCopy = {
     locale: sourceLocale,
+    ids: [...seen],
     has: id => seen.has(id),
     text: (id: string, values?: Values) => {
       const result = resolve({ id, locale: sourceLocale, ...(values ? { values } : {}) } as never) as { text: string } | undefined;

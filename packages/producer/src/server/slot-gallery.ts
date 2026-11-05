@@ -75,7 +75,8 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   if (!parsed.ok) throw new Error(`Invalid record candidate: ${id}`);
   if (agent === 'writer') {
     out.rows = parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[]).map((row, index) => ({
-      key: `${index}`, label: `${row.locale}: ${row.record.context}`,
+      // A row's label is its Writer record key, `<locale>/<context>`, as the detail's Key column shows it.
+      key: `${index}`, label: `${row.locale}/${row.record.context}`,
       text: typeof row.record.text === 'string' ? row.record.text : JSON.stringify(row.record),
     }));
   } else {

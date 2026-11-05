@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { copyRef, type CopyText } from "./copy-ref.js";
 import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
-import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
+import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
@@ -35,6 +35,18 @@ export interface SlotDetail {
   /** Each check names its words by Writer copy key; ids, candidate names and issues stay data. */
   checks: { label: CopyText; ok: boolean; detail: CopyText }[];
 }
+
+/**
+ * The Writer key that says why an input blocks a slot. A reason the pinned Writer copy has no
+ * words for yet shows as its code, which check-copy-rendered reports until the Writer names it.
+ */
+const BLOCK_COPY: Partial<Record<BlockReason, string>> = {
+  missing: "studio.missing",
+  unpinned: "studio.unpinned",
+  "hash-drift": "studio.check-pin-hash-mismatch",
+  "invalid-candidate": "studio.error.candidate-invalid",
+};
+const blockCopy = (reason: BlockReason) => BLOCK_COPY[reason] ? copyRef(BLOCK_COPY[reason]!) : reason;
 
 /** Undefined means no such IA slot; an empty IA slot still returns a full detail. */
 export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDetail | undefined {
@@ -94,7 +106,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       ...candidates.map(candidate => ({ label: candidate.name, ok: !candidate.issues.length, detail: candidate.issues.length ? candidate.issues.join("; ") : copyRef("studio.check-candidate-format-valid") })),
       { label: copyRef("studio.check-slot-placed"), ok: placed, detail: placed ? copyRef("studio.check-slot-placed") : copyRef("studio.check-slot-misplaced") },
       { label: copyRef("studio.check-inputs-ready"), ok: inputReadiness.ready, detail: inputReadiness.ready ? copyRef("studio.check-inputs-ready") : copyRef("studio.check-inputs-blocked") },
-      ...inputReadiness.blockedBy.map(({ slot, reason }) => ({ label: slot, ok: false, detail: reason })),
+      ...inputReadiness.blockedBy.map(({ slot, reason }) => ({ label: slot, ok: false, detail: blockCopy(reason) })),
       ...refs.map(ref => ({ label: ref, ok: index.has(ref), detail: index.has(ref) ? copyRef("studio.check-reference-resolves") : copyRef("studio.check-reference-unknown") })),
     ],
   };

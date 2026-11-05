@@ -63,6 +63,8 @@
     "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:studio-template": "node scripts/check-studio-template.mjs",
+    "check:copy-source": "node scripts/check-copy-source.mjs",
+    "check:copy-rendered": "node studio/checks/check-copy-rendered.mjs",
     "check:studio": "node scripts/check-studio.mjs",
     "check:generated-derived": "node scripts/check-generated-derived.mjs",
     "test:assemble-only": "node --test scripts/check-assemble-only.test.mjs",

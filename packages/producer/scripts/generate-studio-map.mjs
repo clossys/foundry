@@ -3,6 +3,8 @@ import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { projectRedirects } from '@clossys/publisher/content-map';
+import { validateCopyRegistryShape } from '@clossys/writer';
+import { resolveCopyRef } from '@clossys/writer/resolve';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
@@ -238,14 +240,20 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
       if (!meta.id.startsWith('studio.')) continue;
       if (!Array.isArray(meta.bindings) || !meta.bindings.every(binding => typeof binding === 'string')) throw new Error(`Invalid Studio Writer bindings: ${meta.id}`);
       if (entries.some(row => row.id === meta.id)) throw new Error(`Duplicate Studio Writer copy: ${meta.id}`);
-      entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', '), status: 'draft' });
+      // A record's context is where it is bound; an unbound record keeps its own Writer context (its `###` heading).
+      entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', ') || match[1].trim(), status: 'draft' });
     }
   }
   const reference = previewDrafts ? `clossys/agents/writer#${JSON.stringify(sources)}` : 'clossys/agents/writer';
   const revision = previewDrafts ? JSON.stringify(sources) : revisions.join('');
-  if (locale === undefined) throw new Error('Studio Writer copy has no pinned strings slot');
-  return { id: 'studio-copy', locale, revision: createHash('sha256').update(revision).digest('hex'),
+  // No pinned strings slot: an empty registry whose locale is undetermined (BCP 47 `und`); no key resolves.
+  const registry = { id: 'studio-copy', locale: locale ?? 'und', revision: createHash('sha256').update(revision).digest('hex'),
     source: { kind: 'consumer', reference }, entries };
+  // A registry the Writer resolver refuses resolves no key at all: refuse it here, by finding, not at render.
+  const refused = entries.length > 0 && resolveCopyRef(registry, { id: entries[0].id }, { target: 'preview' }).issues?.some(issue => issue.reason === 'invalid-registry');
+  const findings = refused ? validateCopyRegistryShape(registry) : [];
+  if (refused) throw new Error(`Studio Writer copy is not a valid copy registry: ${findings.slice(0, 5).map(finding => finding.message).join('; ')}${findings.length > 5 ? ` (+${findings.length - 5} more)` : ''}`);
+  return registry;
 }
 
 /** Studio's assembly module, relative to its app directory: what every installed route mounts. */

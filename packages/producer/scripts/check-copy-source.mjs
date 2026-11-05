@@ -10,39 +10,58 @@
  *   prop      no string literal that reads as copy (a capital letter or a space) in a copy-named
  *             object property (`label`, `title`, `name`, `description`, ...) in studio/** or in the
  *             server rows Studio shows (src/server/slot-detail.ts and the specimen projections).
- *   record    no literal `label` or `prompt` field in a pinned Publisher page record or publication:
- *             a record holds Writer keys (`studio.<key>`) only.
+ *   record    no literal `label`, `prompt`, `title` or `message` field, and no literal `name` in a
+ *             publication `tree`, in a pinned Publisher page record or publication: a record holds
+ *             Writer keys (`studio.<key>`) only.
  *   label     no function that turns an id into a label (humanize, sentence, a capitalised first
  *             letter, `label: id`) outside the one resolver, src/records/slot-labels.ts (read by
  *             src/publish/expand-tabs.ts into the content-map projection).
+ *   names     every slot and every IA node, group and layer of every agent has its Writer name in
+ *             the pinned `strings.names` (the resolver throws on a missing one at render).
+ *   keys      every Writer key the Studio and Producer sources and the Publisher records name
+ *             (`studioCopy('studio.x')`, `StudioCopyError(...)`, `copyRef(...)`, `copy: '...'`, a
+ *             record field) is a record of the pinned Writer copy; a key built from a template
+ *             names a prefix some pinned key has.
+ *   message   Studio never shows a thrown or served message: no `.message`/`.error` read of a caught
+ *             error, a rejection, or a served JSON value in studio/** outside lib/studio-copy.ts
+ *             (whose `errorText` shows a StudioCopyError's Writer text, or a Writer fallback). This is
+ *             what keeps the Producer's JSON error strings (src/server) from ever rendering.
+ *   lang      the document's `<html lang>` is the Writer's source locale (an expression), not a literal.
  *
- * Usage: node packages/producer/scripts/check-copy-source.mjs [--rev <git rev>]
- * With --rev the files are read from that commit (to prove the check fails before a fix).
+ * Usage: node packages/producer/scripts/check-copy-source.mjs [--root <repository>] [--rev <git rev>] [--all]
+ *   --root  check another repository-shaped tree (a fixture) instead of this repository
+ *   --rev   check that commit of this repository (to prove the check fails before a fix)
+ * Each finding prints as `<rule> <where>: <message>`. Exit 0 when every rule holds, 1 on a finding.
  */
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { listSlots, readIa } from '../dist/records/slots.js';
+import { iaNameKey, pinnedNames, slotNameKey } from '../dist/records/slot-labels.js';
+import { WRITER_KEY, writerCopy } from '../dist/records/writer-copy.js';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
-const revAt = process.argv.indexOf('--rev');
-const rev = revAt > 0 ? process.argv[revAt + 1] : undefined;
-
-const git = (...args) => execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+const here = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const flag = name => { const at = process.argv.indexOf(name); return at > 0 ? process.argv[at + 1] : undefined; };
+const rev = flag('--rev');
+/** The tree checked: --root, a snapshot of --rev (the paths this check reads), or this repository. */
+let repo = resolve(flag('--root') ?? here);
+if (rev) {
+  repo = realpathSync(mkdtempSync(join(tmpdir(), 'check-copy-source-')));
+  process.on('exit', () => rmSync(repo, { recursive: true, force: true }));
+  const paths = ['clossys', 'packages/producer/studio', 'packages/producer/src', 'packages/designer/ui/src/foundry'];
+  const present = paths.filter(path => { try { execFileSync('git', ['-C', here, 'cat-file', '-e', `${rev}:${path}`]); return true; } catch { return false; } });
+  execFileSync('/bin/sh', ['-c', 'git -C "$1" archive "$2" -- "${@:4}" | tar -x -C "$3"', 'sh', here, rev, repo, ...present]);
+}
 const read = path => {
-  if (rev) { try { return git('show', `${rev}:${path}`); } catch { return undefined; } }
   const file = join(repo, path);
   return existsSync(file) ? readFileSync(file, 'utf8') : undefined;
 };
-/** Every tracked-or-present file under a directory, repository-relative. */
+/** Every present file under a directory, repository-relative. */
 function walk(dir) {
-  if (rev) {
-    let out = '';
-    try { out = git('ls-tree', '-r', '--name-only', rev, '--', dir); } catch { return []; }
-    return out.split('\n').filter(Boolean);
-  }
   const root = join(repo, dir);
   if (!existsSync(root)) return [];
   const files = [];
@@ -72,7 +91,7 @@ const serverRows = [`${SERVER}/slot-detail.ts`, `${SERVER}/slot-gallery.ts`, `${
 
 const parse = (file, text) => ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
 const lineOf = (source, node) => source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
-const COPY_ATTRIBUTE = name => /^(?:aria-label|aria-description|title|placeholder|label|description|alt)$/.test(name) || /Label$/.test(name);
+const COPY_ATTRIBUTE = name => /^(?:aria-(?:label|description|roledescription|valuetext|placeholder|braillelabel|brailleroledescription)|title|placeholder|label|description|alt)$/.test(name) || /Label$/.test(name);
 const COPY_PROPERTY = new Set(['label', 'title', 'name', 'description', 'placeholder', 'heading', 'empty', 'summary', 'plan', 'email', 'initials', 'badge', 'detail', 'message', 'loading', 'text', 'openLabel', 'statusLabel', 'emptyTitle']);
 /** A literal that reads as copy: it has a letter and either a capital or a space. */
 const reads = value => /[A-Za-z]/.test(value) && (/[A-Z]/.test(value) || /\s/.test(value.trim()));
@@ -112,23 +131,28 @@ for (const file of [...studioSources, ...designerFrames, ...serverRows]) {
 }
 
 /* record */
+const KEY = WRITER_KEY;
+const publisherKeys = [];
 {
-  const KEY = /^studio\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
   const publisher = 'clossys/agents/publisher';
+  const COPY_FIELD = new Set(['label', 'prompt', 'title', 'message']);
   const slots = [...new Set(walk(publisher).map(file => file.slice(publisher.length + 1).split('/')[0]).filter(name => /^(?:page|publication)\./.test(name)))];
   for (const slot of slots) {
     const pin = JSON.parse(read(`${publisher}/${slot}/pin.json`) ?? 'null');
     if (!pin) continue;
     const bytes = read(`${publisher}/${slot}/candidates/${pin.candidate}`);
     if (!bytes || createHash('sha256').update(bytes).digest('hex') !== pin.sha256) continue;
-    const visit = (value, path) => {
-      if (Array.isArray(value)) value.forEach((item, index) => visit(item, `${path}[${index}]`));
+    const visit = (value, path, tree) => {
+      if (Array.isArray(value)) value.forEach((item, index) => visit(item, `${path}[${index}]`, tree));
       else if (value && typeof value === 'object') for (const [key, item] of Object.entries(value)) {
-        if ((key === 'label' || key === 'prompt') && typeof item === 'string' && !KEY.test(item)) fail('record', `${slot}/${pin.candidate} ${path}.${key}`, `literal ${key} "${item.slice(0, 48).replace(/\n/g, ' ')}" (a record holds Writer keys only)`);
-        else visit(item, `${path}.${key}`);
+        const copy = COPY_FIELD.has(key) || (tree && key === 'name');
+        if (copy && typeof item === 'string') {
+          if (KEY.test(item)) publisherKeys.push({ key: item, where: `${slot}/${pin.candidate} ${path}.${key}` });
+          else fail('record', `${slot}/${pin.candidate} ${path}.${key}`, `literal ${key} "${item.slice(0, 48).replace(/\n/g, ' ')}" (a record holds Writer keys only)`);
+        } else visit(item, `${path}.${key}`, tree || key === 'tree');
       }
     };
-    visit(JSON.parse(bytes), '$');
+    visit(JSON.parse(bytes), '$', false);
   }
 }
 
@@ -153,12 +177,110 @@ for (const file of [...studioSources, ...designerFrames, ...serverRows]) {
   }
 }
 
-const rules = ['jsx', 'prop', 'record', 'label'];
+const consumer = join(repo, 'clossys');
+const AGENTS = ['director', 'designer', 'writer', 'publisher', 'producer'];
+
+/* names */
+if (existsSync(join(consumer, 'agents'))) {
+  const names = pinnedNames(consumer);
+  const need = (context, where) => { if (!names.has(context)) fail('names', where, `no Writer name for ${context} (pinned writer/strings.names)`); };
+  for (const agent of AGENTS) {
+    let ia;
+    try { ia = readIa(consumer, agent); } catch (error) { fail('names', `clossys/agents/${agent}/ia.json`, `unreadable IA: ${error.message}`); continue; }
+    if (!ia) continue;
+    for (const node of ia.nodes) { need(iaNameKey(agent, node.id), `${agent} IA node ${node.id}`); for (const child of node.children) need(iaNameKey(agent, child.id), `${agent} IA group ${child.id}`); }
+    for (const layer of ia.layers ?? []) need(iaNameKey(agent, layer.id), `${agent} IA layer ${layer.id}`);
+    for (const entry of listSlots(consumer, agent)) {
+      need(slotNameKey(agent, entry.id), `${agent} slot ${entry.id}`);
+      if (!ia.layers) need(iaNameKey(agent, entry.position.l0 ?? agent), `${agent} slot ${entry.id} layer`);
+    }
+  }
+}
+
+/* keys */
+{
+  let copy;
+  try { copy = writerCopy(consumer); } catch (error) { fail('keys', 'clossys/agents/writer', `the pinned Writer copy does not load: ${error.message}`); }
+  if (copy) {
+    const held = copy.ids;
+    const sources = new Set([...studioSources, ...walk('packages/producer/src').filter(file => /\.tsx?$/.test(file) && !TEST.test(file) && !file.endsWith('.d.ts'))]);
+    const CALL = /^(?:studioCopy|StudioCopyError|copyRef|copyText)$/;
+    const named = [...publisherKeys];
+    const prefixes = [];
+    for (const file of sources) {
+      const text = read(file);
+      if (text === undefined) continue;
+      const source = parse(file, text);
+      const visit = node => {
+        const callee = ts.isCallExpression(node) || ts.isNewExpression(node) ? node.expression : undefined;
+        const name = callee && (ts.isIdentifier(callee) ? callee.text : ts.isPropertyAccessExpression(callee) ? callee.name.text : '');
+        const argument = name && (CALL.test(name) || (name === 'text' && ts.isPropertyAccessExpression(callee))) ? node.arguments?.[0] : undefined;
+        const property = ts.isPropertyAssignment(node) && node.name.getText(source).replace(/^["']|["']$/g, '') === 'copy' ? node.initializer : undefined;
+        for (const value of [argument, property]) {
+          if (!value) continue;
+          for (const literal of literals(value)) {
+            if (ts.isTemplateExpression(literal)) { if (literal.head.text.startsWith('studio.')) prefixes.push({ prefix: literal.head.text, where: `${file}:${lineOf(source, literal)}` }); }
+            else if (KEY.test(literal.text)) named.push({ key: literal.text, where: `${file}:${lineOf(source, literal)}` });
+          }
+        }
+        ts.forEachChild(node, visit);
+      };
+      visit(source);
+    }
+    if (process.argv.includes('--counts')) console.log(`keys: ${named.length} named, ${prefixes.length} prefixes, ${held.length} held`);
+    for (const row of named) if (!copy.has(row.key)) fail('keys', row.where, `${row.key} is no record of the pinned Writer copy`);
+    for (const row of prefixes) if (!held.some(id => id.startsWith(row.prefix))) fail('keys', row.where, `no pinned Writer key starts with ${row.prefix}`);
+  }
+}
+
+/* message */
+{
+  const ALLOWED = new Set([`${STUDIO}/lib/studio-copy.ts`]);
+  const SERVED = /^(?:value|json|body|data|payload|response|result|parsed|reply)$/;
+  const ERROR = /^(?:error|err|e|cause|reason|failure|exception|rejection)$/;
+  // Build configuration (`*.config.mjs`) runs at build time and renders nothing.
+  for (const file of studioSources.filter(path => !/\/[^/]+\.config\.[cm]?[jt]s$/.test(path))) {
+    if (ALLOWED.has(file)) continue;
+    const text = read(file);
+    if (text === undefined) continue;
+    const source = parse(file, text);
+    const caught = new Set();
+    const visit = node => {
+      if (ts.isCatchClause(node) && node.variableDeclaration && ts.isIdentifier(node.variableDeclaration.name)) caught.add(node.variableDeclaration.name.text);
+      const bare = expression => ts.isParenthesizedExpression(expression) || ts.isAsExpression(expression) || ts.isNonNullExpression(expression) || ts.isTypeAssertionExpression(expression) || ts.isSatisfiesExpression(expression) ? bare(expression.expression) : expression;
+      if (ts.isPropertyAccessExpression(node) && (node.name.text === 'message' || node.name.text === 'error') && ts.isIdentifier(bare(node.expression))) {
+        const receiver = bare(node.expression).text;
+        if (caught.has(receiver) || ERROR.test(receiver) || SERVED.test(receiver)) fail('message', `${file}:${lineOf(source, node)}`, `${receiver}.${node.name.text} shows a thrown or served message (use errorText / a Writer key)`);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+}
+
+/* lang */
+for (const file of studioSources.filter(file => file.endsWith('.tsx'))) {
+  const text = read(file);
+  if (text === undefined) continue;
+  const source = parse(file, text);
+  const visit = node => {
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && node.tagName.getText(source) === 'html') {
+      for (const attribute of node.attributes.properties) {
+        if (ts.isJsxAttribute(attribute) && attribute.name.getText(source) === 'lang' && attribute.initializer && (ts.isStringLiteral(attribute.initializer) || (ts.isJsxExpression(attribute.initializer) && literals(attribute.initializer.expression).length)))
+          fail('lang', `${file}:${lineOf(source, attribute)}`, 'a literal <html lang>: the document language is the Writer source locale');
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+}
+
+const rules = ['jsx', 'prop', 'record', 'label', 'names', 'keys', 'message', 'lang'];
 for (const rule of rules) {
   const rows = findings.filter(row => row.rule === rule);
   console.log(`${rows.length ? 'FAIL' : 'ok  '} ${rule}${rows.length ? ` (${rows.length})` : ''}`);
-  for (const row of process.argv.includes('--all') ? rows : rows.slice(0, 12)) console.log(`     ${row.where}: ${row.message}`);
-  if (!process.argv.includes('--all') && rows.length > 12) console.log(`     ... ${rows.length - 12} more`);
+  for (const row of process.argv.includes('--all') ? rows : rows.slice(0, 12)) console.log(`${rule.padEnd(8)} ${row.where}: ${row.message}`);
+  if (!process.argv.includes('--all') && rows.length > 12) console.log(`         ... ${rows.length - 12} more`);
 }
 console.log(findings.length ? `check-copy-source: ${findings.length} findings${rev ? ` at ${rev}` : ''}` : `check-copy-source: every rule holds${rev ? ` at ${rev}` : ''}`);
 process.exit(findings.length ? 1 : 0);

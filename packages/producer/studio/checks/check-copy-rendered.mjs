@@ -17,12 +17,16 @@
  *          (a cell's text, a token value; never an element's source files), or a registry id
  *          (a slot id, an IA id, a candidate file name), or
  *   none   no letter at all (numbers, punctuation, glyphs).
+ * A string of such parts joined by ` · ` (a trail, a version line) passes when every part does.
+ * Text of a Writer candidate that is not the pin (an option, a preview) is data only on that
+ * slot's own route and the gallery routes above it.
  * Publisher records are never a source of rendered text: a page title comes from a Writer key.
  * Anything else is a literal the Studio rendered without a registry entry, and fails.
  *
- * Usage: node studio/checks/check-copy-rendered.mjs [origin] [--root DIR] [--routes N] [--json FILE]
+ * Usage: node studio/checks/check-copy-rendered.mjs [origin] [--root DIR] [--pages DIR] [--routes N] [--json FILE]
  *   origin   the running Studio (default $STUDIO_ORIGIN or http://127.0.0.1:4617)
  *   --root   the repository whose clossys/ the Studio serves (default this repository)
+ *   --pages  read each route's rendered page from DIR/<route>/index.html instead of an origin (a fixture)
  *   --routes only the first N routes (a probe; the gate itself always runs every route)
  * Exit 0 when every rendered string resolves, 1 on any finding, 2 when no browser or Studio is reachable.
  */
@@ -60,6 +64,9 @@ export function pinnedCandidates(repo, agent) {
 }
 
 const normal = text => text.replace(/\s+/g, ' ').trim();
+const sha256 = bytes => createHash('sha256').update(bytes).digest('hex');
+/** A recorded content hash as the history section shows it: its first 8 characters (`shortHash`). */
+export const shortHash = hash => hash.replace(/^sha256:/, '').slice(0, 8);
 const escape = text => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** The literal runs of an ICU message: its text outside every argument. */
@@ -113,10 +120,26 @@ export function templateMatcher(text) {
   return new RegExp(`^${source(icuParts(text)).replace(/(?:\\ |\s)+/g, '\\s*')}$`);
 }
 
+/**
+ * The words of one Writer record: its text, or, for a structured record (a voice rule, a pattern
+ * part), every string field but its id and context, which are its key.
+ */
+export function recordWords(record, add) {
+  if (!record || typeof record !== 'object') return;
+  if (typeof record.text === 'string') { add(record.text); return; }
+  const walk = (value, key) => {
+    if (typeof value === 'string') { if (key !== 'id' && key !== 'context') add(value); return; }
+    if (value && typeof value === 'object') for (const [name, item] of Object.entries(value)) walk(item, Array.isArray(value) ? key : name);
+  };
+  walk(record);
+}
+
 /** The registry universe a rendered string may come from. */
 export async function registryUniverse(repo) {
   const { parseWriterSlotBody } = await import('@clossys/writer/slot-body');
   const copy = new Set(), templates = [], data = new Set(), ids = new Set();
+  // slot id -> the words of its Writer candidates that are not the pin (data on that slot's routes only).
+  const options = new Map();
   const addCopy = text => {
     const value = normal(text);
     if (!value) return;
@@ -131,7 +154,7 @@ export async function registryUniverse(repo) {
     const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(bytes);
     if (!match) continue;
     const locales = JSON.parse(/^locales: (.+)$/m.exec(match[1])?.[1] ?? '["en"]');
-    for (const row of parseWriterSlotBody(match[2], locales)) if (typeof row.record?.text === 'string') addCopy(row.record.text);
+    for (const row of parseWriterSlotBody(match[2], locales)) recordWords(row.record, addCopy);
   }
   // Record data: what a slot page shows of a record as the record itself (a contract fact, a
   // record key, a candidate field, a pin event), never as words about it.
@@ -162,29 +185,40 @@ export async function registryUniverse(repo) {
       for (const name of existsSync(dir) ? readdirSync(dir) : []) {
         ids.add(name); ids.add(name.replace(/\.[a-z]+$/, ''));
         const bytes = readFileSync(join(dir, name), 'utf8');
+        // A candidate's content hash is its identity (the options and history rows show it, full or short).
+        const hash = sha256(readFileSync(join(dir, name)));
+        data.add(hash); data.add(shortHash(hash));
         if (name.endsWith('.json')) { try { strings(JSON.parse(bytes), skip); } catch { /* not JSON data */ } continue; }
         const front = /^---\n([\s\S]*?)\n---\n/.exec(bytes)?.[1];
         // Markdown: its frontmatter fields (a Writer source line) are data; its body is data only for Director and Designer.
         for (const line of front?.split('\n') ?? []) { const value = line.replace(/^[\w-]+:\s*/, ''); try { strings(JSON.parse(value), skip); } catch { strings(value, skip); } }
-        if (agent === 'director' || agent === 'designer') for (const line of bytes.split('\n')) { const text = normal(line.replace(/^[#>*\-\s]+/, '')); if (text) data.add(text); }
+        if (agent === 'director' || agent === 'designer') for (const line of bytes.split('\n')) {
+          // A record line is data as written (a `- ` bullet included) and as its text.
+          for (const text of [normal(line.replace(/^[#>*\-\s]+/, '')), normal(line)]) if (text) data.add(text);
+        }
+        if (agent === 'writer' && name.endsWith('.md') && front !== undefined) {
+          const locales = JSON.parse(/^locales: (.+)$/m.exec(front)?.[1] ?? '["en"]');
+          const body = bytes.slice(bytes.indexOf('\n---\n') + 5);
+          const words = options.get(slot) ?? new Set();
+          let locale = '';
+          for (const line of body.split('\n')) {
+            if (line.startsWith('## ')) locale = line.slice(3).trim();
+            // A Writer record's key (`<locale>/<context>`) is shown as the record's key: data.
+            else if (line.startsWith('### ')) { const key = line.slice(4).trim(); ids.add(key); ids.add(`${locale}/${key}`); }
+          }
+          try { for (const row of parseWriterSlotBody(body, locales)) recordWords(row.record, text => { const value = normal(text); if (value) words.add(value); }); }
+          catch { /* a malformed candidate shows its issues, not its words */ }
+          options.set(slot, words);
+        }
       }
-      if (!existsSync(join(root, slot, 'pin.json'))) continue;
-      for (const event of pinHistory(consumer, agent, slot)) {
+      // Pin history is the slot's record even after an unpin: every event a history row can show.
+      let history = [];
+      try { history = pinHistory(consumer, agent, slot); } catch { /* no readable history */ }
+      for (const event of history) {
         for (const value of [event.candidate, event.commit, event.sha256, event.decidedBy, event.at, event.basis]) if (typeof value === 'string' && value) data.add(normal(value));
-        data.add(normal(`${event.candidate} · ${event.commit}`));
+        if (typeof event.sha256 === 'string') data.add(shortHash(event.sha256));
       }
     }
-  }
-  for (const { slot, name, bytes } of pinnedCandidates(repo, 'writer')) {
-    // A Writer record's key (`<locale>/<context>`) is shown as the record's key: data.
-    const match = /^---\n([\s\S]*?)\n---\n([\s\S]*)$/.exec(bytes);
-    if (!match || !name.endsWith('.md')) continue;
-    let locale = '';
-    for (const line of match[2].split('\n')) {
-      if (line.startsWith('## ')) locale = line.slice(3).trim();
-      else if (line.startsWith('### ')) { const key = line.slice(4).trim(); ids.add(key); ids.add(`${locale}/${key}`); }
-    }
-    void slot;
   }
   for (const agent of ['director', 'designer', 'writer', 'publisher', 'producer']) {
     const file = join(repo, 'clossys/agents', agent, 'ia.json');
@@ -194,17 +228,38 @@ export async function registryUniverse(repo) {
     for (const layer of ia.layers ?? []) ids.add(layer.id);
   }
   const locale = JSON.parse(/^locales: (.+)$/m.exec(pinnedCandidates(repo, 'writer').find(row => row.name.endsWith('.md'))?.bytes ?? '')?.[1] ?? '["en"]')[0];
-  return { copy, templates, data, ids, locale };
+  // Each slot's leaf route and the gallery routes above it: where its options may show.
+  const scope = new Map();
+  const mapFile = join(repo, 'packages/producer/studio/generated/studio-map.json');
+  if (existsSync(mapFile)) for (const leaf of JSON.parse(readFileSync(mapFile, 'utf8')).leaves ?? []) {
+    const slot = leaf.path.split('/').at(-1);
+    const words = options.get(slot);
+    if (!words) continue;
+    const parts = leaf.path.split('/');
+    for (let end = 2; end <= parts.length; end++) {
+      const route = parts.slice(0, end).join('/');
+      if (!scope.has(route)) scope.set(route, []);
+      scope.get(route).push(words);
+    }
+  }
+  return { copy, templates, data, ids, locale, scope };
 }
 
-/** Where a rendered string comes from, or undefined when it has no registry entry. */
-export function provenance(universe, raw) {
+/** Where a rendered string comes from on `route`, or undefined when it has no registry entry. */
+export function provenance(universe, raw, route) {
   const text = normal(raw);
   if (!/\p{L}/u.test(text)) return 'none';
   if (universe.copy.has(text)) return 'copy';
   if (universe.templates.some(row => row.matcher.test(text))) return 'copy';
   if (universe.data.has(text)) return 'data';
   if (universe.ids.has(text) || /^v[1-9][0-9]*$/.test(text)) return 'data';
+  if (route !== undefined && universe.scope?.get(route)?.some(words => words.has(text))) return 'data';
+  // Registry parts joined by a glyph that holds no letter: every part must resolve on its own.
+  if (text.includes(' · ')) {
+    const parts = text.split(' · ').map(part => part.trim()).filter(Boolean);
+    const sources = parts.map(part => provenance(universe, part, route));
+    if (parts.length > 1 && sources.every(Boolean)) return sources.includes('copy') ? 'copy' : 'data';
+  }
   return undefined;
 }
 
@@ -239,7 +294,9 @@ export function installedRoutes(repo) {
 
 async function main() {
   const repo = resolve(flag('--root') ?? join(here, '../../../..'));
-  const origin = new URL(positional[0] ?? process.env.STUDIO_ORIGIN ?? 'http://127.0.0.1:4617').origin;
+  const pages = flag('--pages') ? resolve(flag('--pages')) : undefined;
+  const origin = pages ? pathToFileURL(pages).href : new URL(positional[0] ?? process.env.STUDIO_ORIGIN ?? 'http://127.0.0.1:4617').origin;
+  const address = route => pages ? pathToFileURL(join(pages, route, 'index.html')).href : origin + route;
   const limit = flag('--routes') ? Number(flag('--routes')) : undefined;
   const universe = await registryUniverse(repo);
   const routes = installedRoutes(repo).slice(0, limit);
@@ -256,9 +313,14 @@ async function main() {
       const page = await context.newPage();
       for (let route = queue.shift(); route !== undefined; route = queue.shift()) {
         let response;
-        try { response = await page.goto(origin + route, { waitUntil: 'load', timeout: 60_000 }); }
-        catch (error) { failures.push({ route, reason: String(error?.message ?? error).split('\n')[0] }); continue; }
-        if (!response || response.status() !== 200) { failures.push({ route, reason: `HTTP ${response?.status()}` }); continue; }
+        // A route that does not load within a minute gets one more, longer try; a second miss is a failure.
+        try { response = await page.goto(address(route), { waitUntil: 'load', timeout: 60_000 }); }
+        catch {
+          try { response = await page.goto(address(route), { waitUntil: 'load', timeout: 120_000 }); }
+          catch (error) { failures.push({ route, reason: String(error?.message ?? error).split('\n')[0] }); continue; }
+        }
+        // A file page has no HTTP status; a served one must answer 200.
+        if (!pages && (!response || response.status() !== 200)) { failures.push({ route, reason: `HTTP ${response?.status()}` }); continue; }
         await page.getByRole('heading', { level: 1 }).first().waitFor({ timeout: 30_000 }).catch(() => failures.push({ route, reason: 'no h1 rendered' }));
         await page.waitForLoadState('networkidle', { timeout: 3_000 }).catch(() => {});
         const rendered = await page.evaluate(collectRendered, ATTRIBUTES);
@@ -268,7 +330,7 @@ async function main() {
           findings.get(key).routes.push(route);
         }
         for (const row of rendered.strings) {
-          const source = provenance(universe, row.text);
+          const source = provenance(universe, row.text, route);
           if (source) { counts[source]++; continue; }
           const key = `${row.kind} ${normal(row.text)}`;
           if (!findings.has(key)) findings.set(key, { kind: row.kind, text: normal(row.text), where: row.where, routes: [] });

@@ -170,8 +170,13 @@
         "quote": "visual to Designer, copy to Writer, assembly only to Publisher",
         "date": "2026-10-31"
       },
-      "status": "unenforced",
+      "status": "enforced",
+      "checks": [
+        "packages/producer#check:copy-source",
+        "check:studio#producer check-copy-rendered (live)"
+      ],
       "related": [
+        "check:studio#producer scripts/check-copy-rendered.test.mjs",
         "check:studio#producer scripts/studio-copy.test.mjs",
         "check:studio#producer scripts/studio-checks-copy.test.mjs",
         "check:studio#producer scripts/studio-contract-copy.test.mjs",
@@ -179,7 +184,58 @@
         "check:studio#producer scripts/studio-references-copy.test.mjs",
         "check:studio#designer generate-copy-ports --check"
       ],
-      "note": "No check fails on a literal string in a Studio frame, section or renderer; the copy tests prove resolution only (W2 all copy through Writer)."
+      "fixture": "scripts/rules/fixtures/R-WRITER-COPY",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^jsx\\s+packages/producer/studio/components/Probe\\.tsx:9: JSX text \"Hand written\""
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^record\\s+page\\.probe/page-v1\\.json \\$\\.title: literal title \"Probe page\""
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^names\\s+writer slot strings\\.unnamed: no Writer name for writer\\.item\\.strings\\.unnamed"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^keys\\s+packages/producer/studio/components/Probe\\.tsx:8: studio\\.probe\\.missing is no record"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^message\\s+packages/producer/studio/components/Probe\\.tsx:6: error\\.message"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^lang\\s+packages/producer/studio/components/Probe\\.tsx:9: a literal <html lang>"
+        },
+        {
+          "check": "check:studio#producer check-copy-rendered (live)",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-copy-rendered.mjs --root {fixture} --pages {fixture}/pages",
+          "expect": "^text\\s+\"Hand written\" \\(p\\)"
+        },
+        {
+          "check": "check:studio#producer check-copy-rendered (live)",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-copy-rendered.mjs --root {fixture} --pages {fixture}/pages",
+          "expect": "^lang\\s+\"de\" \\(html\\[lang\\]\\)"
+        }
+      ],
+      "note": "Every string a person sees in Studio is Writer copy or registry data. check:copy-source fails on JSX text or a literal copy attribute (aria-*, title, placeholder, alt, label) or copy property in Studio, Designer Studio frames and the server rows; a literal label, prompt, title, message or tree name in a pinned Publisher record; an id turned into a label outside src/records/slot-labels.ts; a slot or IA node, group or layer with no pinned strings.names record; a Writer key no pinned record holds; Studio reading a thrown or served .message/.error (so Producer JSON errors never render); and a literal <html lang>. check-copy-rendered opens every route Publisher installed in one built Studio and fails on any rendered text, copy attribute, title or meta description that is neither pinned Writer text (ICU templates matched) nor pinned registry data, and on an <html lang> that is not the Writer source locale. The fixture breaks each rule once."
     },
     {
       "id": "R-CONTENT-MAP",

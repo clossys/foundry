@@ -10,73 +10,73 @@
     {
       "id": "studio.action.request-change",
       "text": "Request change",
-      "context": "",
+      "context": "studio.action.request-change",
       "status": "draft"
     },
     {
       "id": "studio.action.copy-prompt",
       "text": "Copy prompt",
-      "context": "",
+      "context": "studio.action.copy-prompt",
       "status": "draft"
     },
     {
       "id": "studio.action.open-detail",
       "text": "Open detail",
-      "context": "",
+      "context": "studio.action.open-detail",
       "status": "draft"
     },
     {
       "id": "studio.action.compare",
       "text": "Compare options",
-      "context": "",
+      "context": "studio.action.compare",
       "status": "draft"
     },
     {
       "id": "studio.action.toggle-theme",
       "text": "Toggle theme",
-      "context": "",
+      "context": "studio.action.toggle-theme",
       "status": "draft"
     },
     {
       "id": "studio.action.copy-link",
       "text": "Copy link",
-      "context": "",
+      "context": "studio.action.copy-link",
       "status": "draft"
     },
     {
       "id": "studio.nav.home",
       "text": "Home",
-      "context": "",
+      "context": "studio.nav.home",
       "status": "draft"
     },
     {
       "id": "studio.nav.director",
       "text": "Director",
-      "context": "",
+      "context": "studio.nav.director",
       "status": "draft"
     },
     {
       "id": "studio.nav.designer",
       "text": "Designer",
-      "context": "",
+      "context": "studio.nav.designer",
       "status": "draft"
     },
     {
       "id": "studio.nav.writer",
       "text": "Writer",
-      "context": "",
+      "context": "studio.nav.writer",
       "status": "draft"
     },
     {
       "id": "studio.nav.publisher",
       "text": "Publisher",
-      "context": "",
+      "context": "studio.nav.publisher",
       "status": "draft"
     },
     {
       "id": "studio.nav.back-to-agent",
       "text": "Back to {agent}",
-      "context": "",
+      "context": "studio.nav.back-to-agent",
       "status": "draft"
     },
     {
@@ -3076,43 +3076,43 @@
     {
       "id": "studio.count.candidates",
       "text": "{count, plural, one {# candidate} other {# candidates}}",
-      "context": "",
+      "context": "studio.count.candidates",
       "status": "draft"
     },
     {
       "id": "studio.count.slots-filled",
       "text": "{filled} of {total} slots filled",
-      "context": "",
+      "context": "studio.count.slots-filled",
       "status": "draft"
     },
     {
       "id": "studio.count.needs",
       "text": "{count, plural, one {# need} other {# needs}}",
-      "context": "",
+      "context": "studio.count.needs",
       "status": "draft"
     },
     {
       "id": "studio.count.findings",
       "text": "{count, plural, one {# finding} other {# findings}}",
-      "context": "",
+      "context": "studio.count.findings",
       "status": "draft"
     },
     {
       "id": "studio.error.slot-unreadable",
       "text": "This slot could not be read. Run clossys check --slots to see why.",
-      "context": "",
+      "context": "studio.error.slot-unreadable",
       "status": "draft"
     },
     {
       "id": "studio.error.candidate-invalid",
       "text": "This candidate does not match its slot contract. Ask the owning agent for a new version.",
-      "context": "",
+      "context": "studio.error.candidate-invalid",
       "status": "draft"
     },
     {
       "id": "studio.error.producer-offline",
       "text": "Studio cannot reach Producer. Restart clossys produce and reload.",
-      "context": "",
+      "context": "studio.error.producer-offline",
       "status": "draft"
     },
     {
@@ -3172,331 +3172,331 @@
     {
       "id": "studio.warning.unpinned",
       "text": "This candidate is unpinned. Treat it as a draft, not approved direction.",
-      "context": "",
+      "context": "studio.warning.unpinned",
       "status": "draft"
     },
     {
       "id": "studio.warning.need",
       "text": "This candidate has open needs. They wait for evidence.",
-      "context": "",
+      "context": "studio.warning.need",
       "status": "draft"
     },
     {
       "id": "studio.warning.stale",
       "text": "An upstream slot changed since this candidate was written.",
-      "context": "",
+      "context": "studio.warning.stale",
       "status": "draft"
     },
     {
       "id": "studio.confirm.prompt-copied",
       "text": "Prompt copied. Paste it into your coding agent.",
-      "context": "",
+      "context": "studio.confirm.prompt-copied",
       "status": "draft"
     },
     {
       "id": "studio.confirm.link-copied",
       "text": "Link copied.",
-      "context": "",
+      "context": "studio.confirm.link-copied",
       "status": "draft"
     },
     {
       "id": "studio.confirm.theme-changed",
       "text": "Theme changed for this browser.",
-      "context": "",
+      "context": "studio.confirm.theme-changed",
       "status": "draft"
     },
     {
       "id": "studio.empty.no-candidates",
       "text": "No candidate yet. Ask the owning agent to fill this slot.",
-      "context": "",
+      "context": "studio.empty.no-candidates",
       "status": "draft"
     },
     {
       "id": "studio.empty.no-pin",
       "text": "No pin yet. The owner pins one candidate after review.",
-      "context": "",
+      "context": "studio.empty.no-pin",
       "status": "draft"
     },
     {
       "id": "studio.empty.no-uses",
       "text": "Nothing uses this slot yet.",
-      "context": "",
+      "context": "studio.empty.no-uses",
       "status": "draft"
     },
     {
       "id": "studio.empty.no-history",
       "text": "No earlier versions.",
-      "context": "",
+      "context": "studio.empty.no-history",
       "status": "draft"
     },
     {
       "id": "studio.loading.slots",
       "text": "Loading slots",
-      "context": "",
+      "context": "studio.loading.slots",
       "status": "draft"
     },
     {
       "id": "studio.loading.preview",
       "text": "Loading preview",
-      "context": "",
+      "context": "studio.loading.preview",
       "status": "draft"
     },
     {
       "id": "studio.loading.checks",
       "text": "Running checks",
-      "context": "",
+      "context": "studio.loading.checks",
       "status": "draft"
     },
     {
       "id": "studio.tagline.primary",
       "text": "Pick, never invent.",
-      "context": "",
+      "context": "studio.tagline.primary",
       "status": "draft"
     },
     {
       "id": "studio.tagline.secondary",
       "text": "Every slot shows where it came from.",
-      "context": "",
+      "context": "studio.tagline.secondary",
       "status": "draft"
     },
     {
       "id": "studio.legal.license",
       "text": "Clossys Foundry is open source under the MIT license.",
-      "context": "",
+      "context": "studio.legal.license",
       "status": "draft"
     },
     {
       "id": "studio.legal.copyright",
       "text": "© 2026 Clossys",
-      "context": "",
+      "context": "studio.legal.copyright",
       "status": "draft"
     },
     {
       "id": "studio.alt.brandmark",
       "text": "Clossys Studio brandmark",
-      "context": "",
+      "context": "studio.alt.brandmark",
       "status": "draft"
     },
     {
       "id": "studio.alt.specimen",
       "text": "Live preview of the active candidate",
-      "context": "",
+      "context": "studio.alt.specimen",
       "status": "draft"
     },
     {
       "id": "studio.caption.specimen",
       "text": "The active candidate, rendered from the workspace.",
-      "context": "",
+      "context": "studio.caption.specimen",
       "status": "draft"
     },
     {
       "id": "studio.transcript.walkthrough",
       "text": "Clossys Studio in 60 seconds. You start with a brief. Director turns it into direction: brand, voice, audience and proposition, each as a slot. Designer picks visuals from trusted references, and Writer writes copy that cites the brief. Publisher assembles each page from a frame and sections. Then the page is published. In Studio, every slot shows its candidates, its pin and where it came from.",
-      "context": "",
+      "context": "studio.transcript.walkthrough",
       "status": "draft"
     },
     {
       "id": "studio.title.home",
       "text": "Clossys Studio",
-      "context": "",
+      "context": "studio.title.home",
       "status": "draft"
     },
     {
       "id": "studio.title.director",
       "text": "Director · Clossys Studio",
-      "context": "",
+      "context": "studio.title.director",
       "status": "draft"
     },
     {
       "id": "studio.title.designer",
       "text": "Designer · Clossys Studio",
-      "context": "",
+      "context": "studio.title.designer",
       "status": "draft"
     },
     {
       "id": "studio.title.writer",
       "text": "Writer · Clossys Studio",
-      "context": "",
+      "context": "studio.title.writer",
       "status": "draft"
     },
     {
       "id": "studio.title.publisher",
       "text": "Publisher · Clossys Studio",
-      "context": "",
+      "context": "studio.title.publisher",
       "status": "draft"
     },
     {
       "id": "studio.title.slot",
       "text": "{slot} · {agent} · Clossys Studio",
-      "context": "",
+      "context": "studio.title.slot",
       "status": "draft"
     },
     {
       "id": "studio.page.home",
       "text": "Home",
-      "context": "",
+      "context": "studio.page.home",
       "status": "draft"
     },
     {
       "id": "studio.page.director-context",
       "text": "Context",
-      "context": "",
+      "context": "studio.page.director-context",
       "status": "draft"
     },
     {
       "id": "studio.page.director-aspiration",
       "text": "Aspiration",
-      "context": "",
+      "context": "studio.page.director-aspiration",
       "status": "draft"
     },
     {
       "id": "studio.page.director-focus",
       "text": "Focus",
-      "context": "",
+      "context": "studio.page.director-focus",
       "status": "draft"
     },
     {
       "id": "studio.page.director-advantage",
       "text": "Advantage",
-      "context": "",
+      "context": "studio.page.director-advantage",
       "status": "draft"
     },
     {
       "id": "studio.page.director-identity",
       "text": "Identity",
-      "context": "",
+      "context": "studio.page.director-identity",
       "status": "draft"
     },
     {
       "id": "studio.page.director-capability",
       "text": "Capability",
-      "context": "",
+      "context": "studio.page.director-capability",
       "status": "draft"
     },
     {
       "id": "studio.page.director-execution",
       "text": "Execution",
-      "context": "",
+      "context": "studio.page.director-execution",
       "status": "draft"
     },
     {
       "id": "studio.page.designer-themes",
       "text": "Themes",
-      "context": "",
+      "context": "studio.page.designer-themes",
       "status": "draft"
     },
     {
       "id": "studio.page.designer-assets",
       "text": "Assets",
-      "context": "",
+      "context": "studio.page.designer-assets",
       "status": "draft"
     },
     {
       "id": "studio.page.designer-components",
       "text": "Components",
-      "context": "",
+      "context": "studio.page.designer-components",
       "status": "draft"
     },
     {
       "id": "studio.page.designer-sections",
       "text": "Sections",
-      "context": "",
+      "context": "studio.page.designer-sections",
       "status": "draft"
     },
     {
       "id": "studio.page.designer-frames",
       "text": "Frames",
-      "context": "",
+      "context": "studio.page.designer-frames",
       "status": "draft"
     },
     {
       "id": "studio.page.writer-lexicon",
       "text": "Lexicon",
-      "context": "",
+      "context": "studio.page.writer-lexicon",
       "status": "draft"
     },
     {
       "id": "studio.page.writer-strings",
       "text": "Strings",
-      "context": "",
+      "context": "studio.page.writer-strings",
       "status": "draft"
     },
     {
       "id": "studio.page.writer-patterns",
       "text": "Patterns",
-      "context": "",
+      "context": "studio.page.writer-patterns",
       "status": "draft"
     },
     {
       "id": "studio.page.writer-passages",
       "text": "Passages",
-      "context": "",
+      "context": "studio.page.writer-passages",
       "status": "draft"
     },
     {
       "id": "studio.page.writer-narratives",
       "text": "Narratives",
-      "context": "",
+      "context": "studio.page.writer-narratives",
       "status": "draft"
     },
     {
       "id": "studio.page.publisher-studio",
       "text": "Studio",
-      "context": "",
+      "context": "studio.page.publisher-studio",
       "status": "draft"
     },
     {
       "id": "studio.page.producer-pipeline",
       "text": "Overview",
-      "context": "",
+      "context": "studio.page.producer-pipeline",
       "status": "draft"
     },
     {
       "id": "studio.page.build-overview",
       "text": "Overview",
-      "context": "",
+      "context": "studio.page.build-overview",
       "status": "draft"
     },
     {
       "id": "studio.page.run-overview",
       "text": "Overview",
-      "context": "",
+      "context": "studio.page.run-overview",
       "status": "draft"
     },
     {
       "id": "studio.nav.studio",
       "text": "Studio",
-      "context": "",
+      "context": "studio.nav.studio",
       "status": "draft"
     },
     {
       "id": "studio.nav.studio.pages",
       "text": "Pages",
-      "context": "",
+      "context": "studio.nav.studio.pages",
       "status": "draft"
     },
     {
       "id": "studio.nav.content",
       "text": "Content",
-      "context": "",
+      "context": "studio.nav.content",
       "status": "draft"
     },
     {
       "id": "studio.nav.content.pages",
       "text": "Pages",
-      "context": "",
+      "context": "studio.nav.content.pages",
       "status": "draft"
     },
     {
       "id": "studio.nav.build",
       "text": "Build",
-      "context": "",
+      "context": "studio.nav.build",
       "status": "draft"
     },
     {
       "id": "studio.nav.run",
       "text": "Run",
-      "context": "",
+      "context": "studio.nav.run",
       "status": "draft"
     },
     {
@@ -3652,19 +3652,19 @@
     {
       "id": "studio.share.slot",
       "text": "See where this {agent} slot came from in Clossys Studio.",
-      "context": "",
+      "context": "studio.share.slot",
       "status": "draft"
     },
     {
       "id": "studio.email.subject.fill-ready",
       "text": "Your workspace is filled and ready to review",
-      "context": "",
+      "context": "studio.email.subject.fill-ready",
       "status": "draft"
     },
     {
       "id": "studio.email.preheader.fill-ready",
       "text": "Every slot now holds a candidate for your review.",
-      "context": "",
+      "context": "studio.email.preheader.fill-ready",
       "status": "draft"
     }
   ]

@@ -16,6 +16,7 @@ import { renderNativePreview } from "./publisher-preview-render.js";
 import { readPinnedPublication as readPinned } from "../publish/pinned-publication.js";
 const readPinnedPublication = (publisher: string, id: string) => readPinned(dirname(dirname(publisher)), id);
 import { slotGallery } from "./slot-gallery.js";
+import { writerCopy } from "../records/writer-copy.js";
 
 let root: string;
 let server: ProducerServer | undefined;
@@ -160,10 +161,13 @@ it("reads installs written with --out from the folder produce --out names, under
   expect((await get("/preview/example-site/pages/contact.html")).text).toContain("<h1>Installed contact</h1>");
 });
 
-// Copy actual native records; edits and rehashed pins exist only in this test's scratch root.
+// Copy actual native records; edits and rehashed pins exist only in this test's scratch root. The
+// Writer records come too: a publication's titles are Writer keys, resolved from the pinned copy.
 async function nativePublisherFixture() {
   const publisher = agentRoot(root, "publisher");
   await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
+  const writer = fileURLToPath(new URL("../../../../clossys/agents/writer", import.meta.url));
+  await cp(writer, agentRoot(root, "writer"), { recursive: true, filter: source => source === writer || source === join(writer, "ia.json") || source.startsWith(join(writer, "strings.")) });
   return publisher;
 }
 async function nativeRecord(publisher: string, id: string) {
@@ -184,8 +188,9 @@ async function editNative(publisher: string, id: string, change: (value: any) =>
 
 it("uses pinned native publication identity, configured paths, titles and order without legacy stores", async () => {
   const publisher = await nativePublisherFixture(), outs = join(root, "outs");
-  await editNative(publisher, "page.designer-themes", value => { value.title = "Visual design"; value.path = "/work/design"; });
-  await editNative(publisher, "page.home", value => { value.title = "Configured home"; value.path = "/start-here"; });
+  await editNative(publisher, "page.designer-themes", value => { value.title = "studio.page.designer-assets"; value.path = "/work/design"; });
+  await editNative(publisher, "page.home", value => { value.title = "studio.page.writer-strings"; value.path = "/start-here"; });
+  const copy = writerCopy(join(root, "clossys"));
   await editNative(publisher, "publication.studio", value => {
     value.entryOrder = ["designer-themes", ...value.entryOrder.filter((id: string) => id !== "designer-themes")];
     value.routePack.app = "apps/configured-studio";
@@ -196,8 +201,8 @@ it("uses pinned native publication identity, configured paths, titles and order 
   await launch(outs);
   const metadata = JSON.parse((await get("/api/publication?publication=studio")).text);
   expect(metadata).toMatchObject({ state: "ready", publication: "studio", manifest: { publication: "studio", sourceApp: "apps/configured-studio", format: "web.page.responsive" }, pages: [
-    { id: "designer-themes", cellId: "page.designer-themes", route: "/work/design", title: "Visual design", emitted: true, previewUrl: "/preview/studio/pages/designer-themes.html" },
-    { id: "home", cellId: "page.home", route: "/start-here", title: "Configured home", emitted: false },
+    { id: "designer-themes", cellId: "page.designer-themes", route: "/work/design", title: copy.text("studio.page.designer-assets"), emitted: true, previewUrl: "/preview/studio/pages/designer-themes.html" },
+    { id: "home", cellId: "page.home", route: "/start-here", title: copy.text("studio.page.writer-strings"), emitted: false },
   ] });
   expect(metadata.pages).toHaveLength(2);
   const card = slotGallery(join(root, "clossys"), "publisher").sections.flatMap(section => section.cards).find(card => card.id === "page.designer-themes")!;
@@ -219,6 +224,14 @@ it.each([
   await installFixture(join(outs, "home"), "home");
   await launch(outs);
   expect(JSON.parse((await get("/api/publication?publication=studio")).text).state).toBe(state);
+});
+
+it("refuses a publication whose page title is a literal, not a Writer key", async () => {
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
+  await editNative(publisher, "page.home", value => { value.title = "Configured home"; });
+  await installFixture(join(outs, "home"), "home");
+  await launch(outs);
+  expect(JSON.parse((await get("/api/publication?publication=studio")).text).state).toBe("error");
 });
 
 it.each(["page.home", "publication.studio"])("does not borrow legacy metadata when native %s has no pin", async id => {

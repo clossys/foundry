@@ -4,7 +4,21 @@ import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, unlinkSync,
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// These fixtures test gallery data, not names: a synthetic consumer's labels are its ids (the
+// pinned-names contract, with no fallback, is slot-labels.test.ts). The real repository keeps its
+// real Writer names.
+vi.mock('../records/slot-labels.js', async original => {
+  const real = await original<typeof import('../records/slot-labels.js')>();
+  const synthetic = (consumer: string) => !consumer.startsWith(resolve(dirname(fileURLToPath(import.meta.url)), '../../../..'));
+  return {
+    ...real,
+    slotLabel: (consumer: string, agent: string, id: string) => synthetic(consumer) ? id : real.slotLabel(consumer, agent, id),
+    slotLabels: (consumer: string) => synthetic(consumer) ? (_agent: string, id: string) => id : real.slotLabels(consumer),
+    iaLabel: (consumer: string, agent: string, id: string) => synthetic(consumer) ? id : real.iaLabel(consumer, agent, id),
+  };
+});
 import { recordLead, recordSpecimenInput, slotGallery } from './slot-gallery.js';
 import { slotDetail } from './slot-detail.js';
 import { serializeFrontmatter, slotPositions, validateCandidate, type IaDoc, type SlotDoc, type SlotAgent, type SlotKind } from '../records/slot-model/index.js';
@@ -15,7 +29,7 @@ import { SpecimenContent } from '../../studio/sections/studio-specimen';
 
 /** A server record as Studio draws it: its Writer keys resolved, through the detail page's specimen path. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const drawn = (record: any) => { const resolved = resolveCopy(record); return slotSpecimen({ name: resolved.name, description: '', record: resolved, fallback: resolved }); };
+const drawn = (record: any) => { const resolved = resolveCopy(record); return slotSpecimen({ name: resolved.name, description: '', state: { state: 'pinned' }, record: resolved, fallback: resolved }); };
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const consumer = join(repo, 'clossys');
@@ -135,10 +149,10 @@ describe('IA-first gallery data', () => {
     try {
       const input = recordSpecimenInput(f.root, 'writer', f.id, f.candidate)!;
       expect(input.rows).toEqual([
-        { key: '0', label: 'en: empty.context', text: '' },
-        { key: '1', label: `en: ${context}`, text: '\n  first  \n## literal locale\n### literal context\n<!-- literal comment -->\n\\one slash\n```json\n{"literal":true}\n```\n' },
-        { key: '2', label: 'en: payload.context', text: JSON.stringify({ id: 'payload', metadataOnly: true, context: 'payload.context', parts: payload.parts, state: false }) },
-        { key: '3', label: 'ar: arabic.context', text: 'لغة' },
+        { key: '0', label: 'en/empty.context', text: '' },
+        { key: '1', label: `en/${context}`, text: '\n  first  \n## literal locale\n### literal context\n<!-- literal comment -->\n\\one slash\n```json\n{"literal":true}\n```\n' },
+        { key: '2', label: 'en/payload.context', text: JSON.stringify({ id: 'payload', metadataOnly: true, context: 'payload.context', parts: payload.parts, state: false }) },
+        { key: '3', label: 'ar/arabic.context', text: 'لغة' },
       ]);
       expect(JSON.parse(input.rows[2]!.text)).not.toHaveProperty('text');
       expect(detailRecord(f.repo, 'writer', f.id)).toEqual(input);
@@ -291,7 +305,7 @@ describe('IA-first gallery data', () => {
       const content = serializeFrontmatter({ slot: 'strings.label', locales: ['en'], source: { kind: 'original', ref: [] } }, '## en\n### greeting\n<!-- {"id":"greeting","bindings":[]} -->\nHello <script> & welcome\n');
       writeFileSync(join(dir, 'candidates/label-v1.md'), content);
       expect(cards()).toMatchObject([{ emptyState: 'no-pin', candidate: 'label-v1.md', version: 1, records: 1 }]);
-      expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows).toEqual([{ key: '0', label: 'en: greeting', text: 'Hello <script> & welcome' }]);
+      expect(recordSpecimenInput(root, 'writer', 'strings.label')?.rows).toEqual([{ key: '0', label: 'en/greeting', text: 'Hello <script> & welcome' }]);
       writeFileSync(join(dir, 'candidates/label-v2.md'), content.replace('Hello <script> & welcome', 'Newer draft'));
       expect(cards()[0]).toMatchObject({ version: 2, candidate: 'label-v2.md', emptyState: 'no-pin' });
       noFrame();

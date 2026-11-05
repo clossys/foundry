@@ -3,7 +3,8 @@ import { mkdtempSync, mkdirSync, readFileSync, realpathSync, writeFileSync, rmSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { slotDetail } from './slot-detail.js';
+import { writeFixtureNames } from './__fixtures__/writer-names.js';
+import { slotDetail as readDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
 import { resolveCopy, studioCopy } from '../../studio/lib/studio-copy';
 import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
@@ -11,6 +12,7 @@ import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot
 import { parseWriterCell, serializeWriterCell } from '../../../writer/src/cells/parse.js';
 
 const roots: string[] = [];
+const slotDetail = (root: string, agent: Parameters<typeof readDetail>[1], id: string) => { writeFixtureNames(root); return readDetail(root, agent, id); };
 const id = 'passages.example';
 const links = { leaf: (agent: string, slot: string) => `/${agent}/${slot}`, label: () => undefined, back: { href: '/writer', label: 'Writer' } };
 function fixture() {
@@ -126,7 +128,9 @@ describe('slot details', () => {
       expect(detail.checks).toContainEqual({ label: upstream, ok: true, detail: { copy: 'studio.check-reference-resolves' } });
       const checks = slotDetailInputs(detail, links, 'light').checks.rows;
       expect(checks).toContainEqual(expect.objectContaining({ label: 'Inputs ready', ok: !reason }));
-      if (reason) expect(checks).toContainEqual(expect.objectContaining({ label: upstream, ok: false, detail: reason }));
+      // A reason the Writer has words for reads as them; one it has none for yet stays its code.
+      const words: Record<string, string> = { unpinned: 'studio.unpinned', 'hash-drift': 'studio.check-pin-hash-mismatch', 'invalid-candidate': 'studio.error.candidate-invalid' };
+      if (reason) expect(checks).toContainEqual(expect.objectContaining({ label: upstream, ok: false, detail: words[reason] ? studioCopy(words[reason]!) : reason }));
     };
     verify();
     unlinkSync(pinPath); verify('unpinned');
@@ -139,7 +143,7 @@ describe('slot details', () => {
     writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify({ ...upstreamDoc, id: 'brief.foreign' })); verify('invalid-slot');
     writeFileSync(docPath, JSON.stringify({ ...doc, inputs: ['brief.missing'], uses: [id] }));
     const missing = slotDetail(root, 'writer', id)!;
-    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: 'missing' });
+    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: { copy: 'studio.missing' } });
     expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: { copy: 'studio.check-reference-unknown' } });
     writeFileSync(docPath, JSON.stringify(doc));
     expect(slotDetail(root, 'writer', id)!.checks).toContainEqual({ label: id, ok: false, detail: 'inputs-undeclared' });
