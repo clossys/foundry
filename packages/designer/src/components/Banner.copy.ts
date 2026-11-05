@@ -14,9 +14,9 @@ export const SHELL_COPY_REFS = {
     panelOpen: ref("st.cc7evwgxmt"), panelClose: ref("st.dn12hzj7gn"), breadcrumb: ref("st.530zm3mffg"),
     collapsedBreadcrumb: ref("st.ymqz842p01"), pageInfo: ref("st.s7pfa71tzc"), pageActions: ref("st.y86a2b0gmd"),
   },
-  navigation: { label: ref("st.jecfnpr6a1"), empty: ref("st.sqsqn2s9v0"), expand: ref("st.e85mfcrpb6"), collapse: ref("st.g7hbg5n2bs") },
+  navigation: { label: ref("st.041fh8t2aw"), empty: ref("st.sqsqn2s9v0"), expand: ref("st.a7tkca4nej"), collapse: ref("st.g7hbg5n2bs") },
   commands: { results: ref("st.s079k1p1qj") },
-  theme: { system: ref("st.0mvj7s905h"), light: ref("st.3gsnmmts41"), dark: ref("st.mft1aas6kv"), toolbar: ref("st.zets8phbsa"), group: ref("st.vftkg73x02"), announcement: ref("st.ghrssyygxh") },
+  theme: { system: ref("st.0mvj7s905h"), light: ref("st.3gsnmmts41"), dark: ref("st.8z45ewb90z"), toolbar: ref("st.zets8phbsa"), group: ref("st.vftkg73x02"), announcement: ref("st.ghrssyygxh") },
   dock: { label: ref("st.2ghaq0d8rs"), handle: ref("st.m9qh4b8zhn"), collapse: ref("st.322g37gnhz"), expand: ref("st.a2bvn2ep38") },
   banner: { dismiss: ref("st.ev3xsrhrwe") },
 } as const;
