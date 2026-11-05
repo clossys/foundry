@@ -186,7 +186,12 @@ export function resolveRelative(file: string, specifier: string): string | undef
   }
   return realPathOf(base);
 }
-const within = (file: string, specifier: string, root: string) => specifier.startsWith('.') && resolve(dirname(file), specifier).startsWith(root + sep);
+/** A relative specifier whose real loaded file (symlinks followed) stays inside `root` (D10). */
+const within = (file: string, specifier: string, root: string) => {
+  if (!specifier.startsWith('.')) return false;
+  const target = resolveRelative(file, specifier);
+  return !!target && target.startsWith(realPathOf(root) + sep);
+};
 
 function importAllowed(kind: Kind, file: string, folder: string, specifier: string, typeOnly: boolean, composes: ReadonlySet<string>): boolean {
   if (specifier === COMPONENT_LAYER) return true;
@@ -208,6 +213,52 @@ function importAllowed(kind: Kind, file: string, folder: string, specifier: stri
   return UI_FRAME_RUNTIME.has(specifier) || within(file, specifier, UI_SRC);
 }
 
+const MARKER_TYPE = '{ [marker: `data-clossys-${string}`]: string }';
+const MARKER_FILTER = "Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-')))";
+const flat = (node: ts.Node, source: ts.SourceFile) => node.getText(source).replace(/\s+/g, ' ');
+
+/**
+ * Whether every binding named `provenance` in the file holds only the generated `data-clossys-*`
+ * markers, judged by its declaration, never by text elsewhere in the file. Two forms qualify:
+ * - the rest element of a parameter typed `{ ...named props } & <marker type>`, where every member of
+ *   the other type literals is bound by name, so nothing but markers reaches the rest; and
+ * - `const provenance = Object.fromEntries(Object.entries(given).filter(([key]) =>
+ *   key.startsWith('data-clossys-'))) as <marker type>`.
+ * Any other declaration (or none) leaves the spread unexempted.
+ */
+function provenanceMarkerTyped(source: ts.SourceFile): boolean {
+  let declared = 0;
+  let typed = 0;
+  const restOk = (element: ts.BindingElement): boolean => {
+    const pattern = element.parent;
+    const parameter = pattern.parent;
+    if (!element.dotDotDotToken || !ts.isObjectBindingPattern(pattern) || !ts.isParameter(parameter) || !parameter.type) return false;
+    const parts = ts.isIntersectionTypeNode(parameter.type) ? [...parameter.type.types] : [parameter.type];
+    const markers = parts.filter(part => flat(part, source) === MARKER_TYPE);
+    if (markers.length !== 1) return false;
+    const bound = new Set(pattern.elements.filter(other => !other.dotDotDotToken).map(other => (other.propertyName ?? other.name).getText(source)));
+    return parts.every(part => markers.includes(part) || (ts.isTypeLiteralNode(part) && part.members.every(member =>
+      ts.isPropertySignature(member) && bound.has(member.name.getText(source)))));
+  };
+  const constOk = (declaration: ts.VariableDeclaration): boolean => {
+    const value = declaration.initializer;
+    return !declaration.type && !!value && ts.isAsExpression(value) && flat(value.type, source) === MARKER_TYPE
+      && flat(value.expression, source) === MARKER_FILTER && ts.isVariableDeclarationList(declaration.parent)
+      && (declaration.parent.flags & ts.NodeFlags.Const) !== 0;
+  };
+  const visit = (node: ts.Node) => {
+    if ((ts.isBindingElement(node) || ts.isVariableDeclaration(node) || ts.isParameter(node)) && ts.isIdentifier(node.name) && node.name.text === 'provenance') {
+      declared += 1;
+      if ((ts.isBindingElement(node) && restOk(node)) || (ts.isVariableDeclaration(node) && constOk(node))) typed += 1;
+    }
+    // Reassigning the binding would replace the checked value.
+    if (ts.isBinaryExpression(node) && ts.isIdentifier(node.left) && node.left.text === 'provenance' && node.operatorToken.kind >= ts.SyntaxKind.FirstAssignment && node.operatorToken.kind <= ts.SyntaxKind.LastAssignment) declared += 1;
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return declared > 0 && typed === declared;
+}
+
 /** Violations in one source file; `folder` bounds a section or frame's own imports. */
 export function fileViolations(file: string, kind: Kind = 'section', composes: ReadonlySet<string> = new Set(), blockMarkup: ReadonlySet<string> = new Set(), folder = dirname(file), base = STUDIO): string[] {
   const violations: string[] = [];
@@ -221,7 +272,7 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
     if (event.type === 'dynamic' && !importAllowed(kind, file, folder, event.specifier, false, composes)) violations.push(`${label}: imports ${event.specifier}`);
   }
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, scriptKind(ts, file));
-  const markerTyped = source.text.includes('{ [marker: `data-clossys-${string}`]: string }');
+  const markerTyped = provenanceMarkerTyped(source);
   const visit = (node: ts.Node) => {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const tag = node.tagName.getText(source);
@@ -446,6 +497,30 @@ describe('Studio sections are ds-only', () => {
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 
+  it('resolves renderer and ui-frame relative imports by real path, not as written (D10)', () => {
+    const outside = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-out-')));
+    const inside = mkdtempSync(join(PRODUCER, '.ds-only-d10-'));
+    try {
+      writeFileSync(join(outside, 'Other.tsx'), 'export const X = 1;\n');
+      writeFileSync(join(inside, 'own.ts'), 'export const Own = 1;\n');
+      symlinkSync(join(outside, 'Other.tsx'), join(inside, 'escape.tsx'));
+      writeFileSync(join(inside, 'Emit.ts'), "export { X } from './escape';\nexport { Own } from './own';\n");
+      expect(fileViolations(join(inside, 'Emit.ts'), 'renderer', new Set(), new Set(), undefined, inside)).toEqual(['Emit.ts: imports ./escape']);
+    } finally { rmSync(inside, { recursive: true, force: true }); rmSync(outside, { recursive: true, force: true }); }
+  });
+
+  it('holds module.require, createRequire and require read as a value to the import rule (D11)', () => {
+    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-req-')));
+    try {
+      writeFileSync(join(probe, 'Module.tsx'), "export const A = () => module.require('other-ui');\n");
+      writeFileSync(join(probe, 'Create.tsx'), "import { createRequire } from 'node:module';\nconst load = createRequire(import.meta.url);\nexport const B = load('other-ui');\n");
+      writeFileSync(join(probe, 'Alias.tsx'), "const load = require;\nexport const C = load('other-ui');\n");
+      expect(dsOnlyViolations(probe).map(line => { const [path, ...rest] = line.split(': '); return `${basename(path!)}: ${rest.join(': ')}`; }).sort()).toEqual([
+        'Alias.tsx: imports require', 'Create.tsx: imports createRequire', 'Create.tsx: imports createRequire', 'Create.tsx: imports node:module', 'Module.tsx: imports other-ui',
+      ]);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
+
   it('resolves every relative import to its real path inside the folder and scans subfolders (gate R2)', () => {
     const root = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-contain-')));
     try {
@@ -486,6 +561,23 @@ describe('Studio sections are ds-only', () => {
       writeFileSync(join(probe, 'Probe.tsx'), typed.replace(/provenance/g, 'rest'));
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
       writeFileSync(join(probe, 'Probe.tsx'), "export default function A({ x, ...provenance }: { x: string; className?: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // The marker type named elsewhere in the file (a comment, another binding) does not type this spread.
+      writeFileSync(join(probe, 'Probe.tsx'), "// { [marker: `data-clossys-${string}`]: string }\nexport default function A({ x, ...provenance }: { x: string; className?: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // A props member left unbound by name falls into the rest, so the intersection does not type it.
+      writeFileSync(join(probe, 'Probe.tsx'), "export default function A({ x, ...provenance }: { x: string; className?: string } & { [marker: `data-clossys-${string}`]: string }) { return <section {...provenance} aria-label={x} />; }\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // A typed declaration shadowed by an untyped one, or reassigned, is not exempt.
+      writeFileSync(join(probe, 'Probe.tsx'), typed.replace('return', 'const provenance = { className: x }; return'));
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      writeFileSync(join(probe, 'Probe.tsx'), typed.replace('return', 'provenance = { className: x } as never; return'));
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
+      // The frame form: only markers filtered from the given props, cast to the marker type.
+      const frame = "export default function F({ ...given }: { x: string } & { [marker: `data-clossys-${string}`]: string }) { const provenance = Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-'))) as { [marker: `data-clossys-${string}`]: string }; return <section {...provenance} />; }\n";
+      writeFileSync(join(probe, 'Probe.tsx'), frame);
+      expect(dsOnlyViolations(probe)).toEqual([]);
+      writeFileSync(join(probe, 'Probe.tsx'), frame.replace("key.startsWith('data-clossys-')", 'true'));
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<section {...spread}>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });

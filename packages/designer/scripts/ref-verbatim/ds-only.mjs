@@ -35,7 +35,8 @@ export function scriptKind(ts, fileName) {
  *   declaration with a string module specifier (`names` are the imported
  *   binding names, `"*"` for a namespace or `export *`, `"default"` for a
  *   default import);
- * - `{ type: "dynamic", specifier }` per `import(...)` or `require(...)` call;
+ * - `{ type: "dynamic", specifier }` per `import(...)`, `require(...)` or `<object>.require(...)`
+ *   call, and per `require` read as a value or `createRequire` reference (specifier: that name);
  * - `{ type: "markup", tag, attr }` per styled raw element attribute.
  */
 export function dsOnlyEvents(text, fileName, { kind = "section", blockMarkup = new Set() } = {}) {
@@ -61,9 +62,21 @@ export function dsOnlyEvents(text, fileName, { kind = "section", blockMarkup = n
     if (specifier !== undefined) {
       events.push({ type: "import", specifier, typeOnly: ts.isImportDeclaration(node) && !!node.importClause?.isTypeOnly, names: importNames(node) });
     }
-    if (ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === "require"))) {
+    // `import(x)`, `require(x)` and any `<object>.require(x)` (`module.require`) load a module at run time.
+    const loader = ts.isCallExpression(node) && (node.expression.kind === ts.SyntaxKind.ImportKeyword
+      || (ts.isIdentifier(node.expression) && node.expression.text === "require")
+      || (ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "require"));
+    if (loader) {
       const [first] = node.arguments;
       events.push({ type: "dynamic", specifier: first && ts.isStringLiteralLike(first) ? first.text : first ? first.getText(source) : "" });
+    }
+    // A loader that escapes the call form cannot be followed: `require` read as a value (an alias,
+    // `const load = require`) and `createRequire` (a require for any path) are reported as loads of
+    // themselves, which no layer admits.
+    if (ts.isIdentifier(node) && (node.text === "require" || node.text === "createRequire") && !ts.isPropertyAccessExpression(node.parent)
+      && !(node.text === "require" && ts.isCallExpression(node.parent) && node.parent.expression === node)
+      && !(ts.isImportSpecifier(node.parent) && node.parent.propertyName !== undefined && node.parent.name === node)) {
+      events.push({ type: "dynamic", specifier: node.text });
     }
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const tag = node.tagName.getText(source);
