@@ -273,8 +273,8 @@ describe('Studio sections are ds-only', () => {
   });
   it('covers every Studio renderer and every Studio frame in the component layer', () => {
     expect(RENDERER_FILES).toEqual(['components/StudioInstalledPage.tsx', 'components/StudioPage.tsx', 'components/StudioProviders.tsx', 'components/StudioRouteMap.tsx',
-      'lib/agents.ts', 'lib/cell-events.ts', 'lib/cells-client.ts', 'lib/checks-copy.ts', 'lib/contract-copy.ts', 'lib/options-copy.ts', 'lib/producer-url.ts', 'lib/publisher-preview.ts',
-      'lib/references-copy.ts', 'lib/slot-census-load.ts', 'lib/slot-census.ts', 'lib/slot-detail.ts', 'lib/studio-copy.ts', 'lib/studio-icons.tsx', 'lib/studio-report.ts',
+      'lib/agents.ts', 'lib/cell-events.ts', 'lib/checks-copy.ts', 'lib/contract-copy.ts', 'lib/options-copy.ts', 'lib/pipeline-flow.ts', 'lib/producer-url.ts', 'lib/publisher-preview.ts',
+      'lib/references-copy.ts', 'lib/shell-copy.ts', 'lib/slot-census-load.ts', 'lib/slot-census.ts', 'lib/slot-detail.ts', 'lib/studio-copy.ts', 'lib/studio-icons.tsx', 'lib/studio-report.ts',
       'lib/studio-route-map.ts', 'lib/studio-seed.ts']);
     for (const file of UI_FRAMES) expect(existsSync(join(UI_SRC, file)), file).toBe(true);
   });

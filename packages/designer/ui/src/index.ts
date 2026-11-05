@@ -169,6 +169,10 @@ export * from "./foundry/sidebar-static"
 export * from "./foundry/block-viewer-iframe"
 export * from "./foundry/studio-frames"
 
+// The aria router bridge the stock aria components read their client-side links from: a renderer
+// sets it once here, so it shares the react-aria-components copy these components use.
+export { RouterProvider } from "react-aria-components"
+
 // Explicit stock Radix picks for the frame's shared asChild tooltip/popover composition.
 export { Button as RadixButton } from "./components/radix/button"
 export { Popover as RadixPopover, PopoverTrigger as RadixPopoverTrigger, PopoverContent as RadixPopoverContent } from "./components/radix/popover"

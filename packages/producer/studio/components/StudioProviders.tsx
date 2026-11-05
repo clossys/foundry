@@ -4,7 +4,7 @@ import { studioCopy } from '../lib/studio-copy';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { RouterProvider } from 'react-aria-components';
+import { RouterProvider } from '@clossys/designer-ui';
 import { studioCellChange } from '../lib/cell-events';
 import type { StudioReport } from '../lib/studio-report';
 import { loadBrand, loadReports, type Resource, type StudioBrandInfo, type StudioSeed } from '../lib/studio-seed';

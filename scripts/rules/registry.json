@@ -49,7 +49,7 @@
         "quote": "all views use Designer's shadcn components only",
         "date": "2026-10-31"
       },
-      "status": "enforced",
+      "status": "unenforced",
       "checks": [
         "packages/producer#test"
       ],
@@ -76,7 +76,7 @@
           "expect": "probe-section/index\\.tsx: imports other-ui"
         }
       ],
-      "note": "The ds-only vitest (producer test) covers sections, frames, renderers and component-layer frames."
+      "note": "The ds-only vitest (producer test) covers sections, frames, renderers and component-layer frames, and is red on this tree in 4 tests that need a Designer-skill change: studio-slot-groups imports ../studio-specimen, which its owner-picked pin (studio-slot-groups-v4) does not declare in meta.element.deps.elements (a re-pin); and raw styled markup in the component-layer frames foundry/layout.tsx, foundry/block-viewer-iframe.tsx and foundry/studio-frames.tsx."
     },
     {
       "id": "R-SHADCN-STOCK",
