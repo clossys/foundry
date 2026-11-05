@@ -53,7 +53,9 @@ export interface ComponentImportClosureInput {
 export function componentImportClosureFindings(input: ComponentImportClosureInput): ComponentFinding[] {
   const paths = new Set(input.files.map(file => file.path));
   // The glyph module is emitted, not materialized: a selection that reads an asset satisfies its import.
-  if (emitsGlyphModule([...input.fills.values()])) paths.add(COMPONENT_GLYPH_MODULE_PATH);
+  // A fill that declares no reads reads no asset.
+  const reads = [...input.fills.values()].map(fill => ({ slot: fill.slot, reads: { assets: fill.reads?.assets ?? [] } }));
+  if (emitsGlyphModule(reads)) paths.add(COMPONENT_GLYPH_MODULE_PATH);
   const findings: ComponentFinding[] = [];
   const add = (subject: string, message: string): void => { findings.push({ code: "K9", rule: "K9", subject, severity: "error", message }); };
   for (const [slot, fill] of [...input.fills].sort(([a], [b]) => compare(a, b))) {
