@@ -1,9 +1,12 @@
 #!/bin/sh
 # Pre-push ratchet (installed per clone by `npm run hooks:install`, which sets core.hooksPath=scripts/githooks).
-# Runs check:rules and the fast, server-free check:studio sub-checks on HEAD and on
-# `git merge-base HEAD origin/main`, the base measured with HEAD's check code, and blocks only what
-# HEAD adds: a new finding, a new failing rule or a newly red check. No baseline file; the delta is
-# printed. It is not the full `npm run check`; the Studio server and vitest suites stay there.
+# git passes one `<local ref> <local sha> <remote ref> <remote sha>` line per pushed ref on stdin;
+# for every pushed local sha (deletes skipped) this runs check:rules and the fast, server-free
+# check:studio sub-checks on that sha and on `git merge-base <sha> origin/main`, the base measured
+# with the pushed sha's check code, and blocks only what the pushed sha adds: a new finding, a new
+# failing rule or a newly red check. Pushing a branch other than HEAD measures that branch, never HEAD.
+# No baseline file; the delta is printed. It is not the full `npm run check`; the Studio server and
+# vitest suites stay there.
 set -e
 cd "$(git rev-parse --show-toplevel)"
-exec node scripts/pre-push-ratchet.mjs
+exec node scripts/pre-push-ratchet.mjs --pushed

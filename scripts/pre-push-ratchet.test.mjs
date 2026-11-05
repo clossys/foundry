@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { delta, normalize, ratchet, report } from "./pre-push-ratchet.mjs";
+import { HOOK_CHECKS, delta, normalize, pushedRefs, ratchet, report } from "./pre-push-ratchet.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const git = (cwd, ...args) => execFileSync("git", ["-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", ...args], { cwd, encoding: "utf8" }).trim();
@@ -109,6 +109,59 @@ test("a base without a rule registry fails closed", async () => {
   const { root, base } = repository();
   const bare = commit(root, { "scripts/rules/registry.json": null }, "drop the registry");
   await assert.rejects(run(root, bare, base), /check:rules could not run on the base/);
+});
+
+test("a sub-check that cannot load gitignored build output fails closed on the head (gate F4)", async () => {
+  const { root } = repository();
+  const distProbe = 'import { answer } from "../dist/lib.mjs";\nconsole.log(answer);\n';
+  const base = commit(root, {
+    "packages/producer/scripts/dist-probe.mjs": distProbe,
+    "packages/producer/scripts/check-studio.json": manifest([{ id: "fixture dist", kind: "static", cwd: "packages/producer", run: "node scripts/dist-probe.mjs" }]),
+    "scripts/rules/registry.json": registry([enforced], [{ check: "check:studio#fixture dist", reason: "a probe sub-check that reads dist/" }]),
+  }, "a sub-check that reads dist/");
+  const head = commit(root, { "packages/producer/README.md": "unrelated\n" }, "unrelated");
+  const result = await ratchet({ cwd: root, base, head, ids: ["fixture dist"] });
+  assert.equal(result.delta.checks[0].state, "setup-error", report(result));
+  assert.equal(result.delta.block, true, "red on both sides because dist/ is absent is not unchanged debt");
+  assert.match(report(result), /LOAD .*(?:ERR_MODULE_NOT_FOUND|Cannot find module)/);
+});
+
+test("the pre-push hook measures every pushed ref, not HEAD, and skips deletes (gate F3)", () => {
+  const { root } = repository();
+  write(root, {
+    "scripts/githooks/pre-push": readFileSync(join(here, "githooks/pre-push"), "utf8"),
+    "scripts/pre-push-ratchet.mjs": readFileSync(join(here, "pre-push-ratchet.mjs"), "utf8"),
+    "scripts/accept-unit.mjs": readFileSync(join(here, "accept-unit.mjs"), "utf8"),
+  });
+  chmodSync(join(root, "scripts/githooks/pre-push"), 0o755);
+  // The hook runs the default HOOK_CHECKS ids; each is the probe here.
+  commit(root, { "packages/producer/scripts/check-studio.json": manifest(HOOK_CHECKS.map(id => ({ id, kind: "static", cwd: "packages/producer", run: "node scripts/probe.mjs" }))) }, "the hook");
+  const main = git(root, "rev-parse", "--abbrev-ref", "HEAD");
+  const remote = mkdtempSync(join(tmpdir(), "pre-push-ratchet-remote-"));
+  git(remote, "init", "-q", "--bare");
+  git(root, "remote", "add", "origin", remote);
+  git(root, "push", "-q", "origin", `${main}:refs/heads/main`);
+  git(root, "fetch", "-q", "origin");
+  git(root, "config", "core.hooksPath", "scripts/githooks");
+  git(root, "checkout", "-q", "-b", "debt");
+  commit(root, { "packages/producer/data/violations.txt": "old one\nold two\nnew three\n" }, "add debt");
+  git(root, "checkout", "-q", main);
+  // HEAD is the clean main; the pushed branch carries the new violation and must be the one measured.
+  let refused;
+  try { git(root, "push", "-q", "origin", "debt"); } catch (error) { refused = `${error.stdout ?? ""}${error.stderr ?? ""}`; }
+  assert.ok(refused !== undefined, "pushing a branch other than HEAD that adds debt is refused");
+  assert.match(refused, /refs\/heads\/debt -> refs\/heads\/debt[\s\S]*NEW VIOLATION new three[\s\S]*BLOCKED/);
+  assert.equal(git(remote, "branch", "--list", "debt"), "");
+  git(root, "push", "-q", "origin", `${main}:refs/heads/gone`);
+  git(root, "push", "-q", "origin", ":refs/heads/gone");
+  assert.equal(git(remote, "branch", "--list", "gone"), "");
+});
+
+test("pushedRefs reads git's pre-push lines, drops deletes and refuses unreadable input", () => {
+  const a = "a".repeat(40), z = "0".repeat(40);
+  assert.deepEqual(pushedRefs(`refs/heads/x ${a} refs/heads/x ${z}\n(delete) ${z} refs/heads/y ${a}\n`), [{ localRef: "refs/heads/x", localSha: a, remoteRef: "refs/heads/x", remoteSha: z }]);
+  assert.deepEqual(pushedRefs(""), []);
+  assert.throws(() => pushedRefs("garbage line"), /unreadable pre-push line/);
 });
 
 test("delta counts findings per key and normalizes tree paths and timings", () => {

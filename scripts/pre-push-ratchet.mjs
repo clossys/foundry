@@ -19,19 +19,25 @@
  *     sides; these are never debt and block whenever the head has them;
  *   - a sub-check that is red where the base was green, or red on both with output lines the base did
  *     not print (tree paths and durations normalized, digits masked so changed counts compare equal):
- *     a new violation inside existing debt.
+ *     a new violation inside existing debt;
+ *   - a sub-check that is red on the head because it could not load a module (`loadError`: the
+ *     extracted trees hold no gitignored dist/ of their own): the check never measured the head, so it
+ *     fails closed as `setup-error` whatever the base did, never as unchanged debt.
  * Unchanged debt and fixed debt pass. Either revision failing to run check:rules is a setup error
  * (exit 2) and blocks too: the ratchet fails closed. The delta is printed either way.
  *
- * Usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV] [--id <sub-check id>]... [--json]
- * Without --id the hook sub-checks in HOOK_CHECKS run.
+ * Usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json]
+ * Without --id the hook sub-checks in HOOK_CHECKS run. --pushed is the pre-push hook's mode: it reads
+ * git's `<local ref> <local sha> <remote ref> <remote sha>` lines from stdin and ratchets every pushed
+ * local sha as a head (a delete, an all-zero local sha, pushes nothing and is skipped), so pushing a
+ * branch other than HEAD is measured as that branch. It blocks when any pushed ref blocks.
  */
 import { spawn } from "node:child_process";
 import { existsSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { commit, extract, gitTop, linkModules, overlayChecks } from "./accept-unit.mjs";
+import { commit, extract, gitTop, linkModules, loadError, overlayChecks } from "./accept-unit.mjs";
 
 export const STUDIO_MANIFEST = "packages/producer/scripts/check-studio.json";
 /** The fast, server-free check:studio sub-checks that enforce a registered rule on the real tree. */
@@ -79,7 +85,8 @@ export function normalize(output, tree) {
 
 async function subCheck(tree, check) {
   const out = await sh("/bin/sh", ["-c", check.run], join(tree, check.cwd ?? "."));
-  return { exit: out.code, lines: normalize(`${out.stdout}\n${out.stderr}`, tree) };
+  const text = `${out.stdout}\n${out.stderr}`;
+  return { exit: out.code, lines: normalize(text, tree), load: out.code === 0 ? undefined : loadError(normalize(text, tree).join("\n")) };
 }
 
 const key = finding => `${finding.rule} ${finding.id}`;
@@ -120,11 +127,12 @@ export function delta(base, head) {
   };
   const checks = head.checks.map(check => {
     const before = base.checks.find(other => other.id === check.id) ?? { exit: 0, lines: [] };
+    if (check.exit !== 0 && check.load) return { id: check.id, base: before.exit, head: check.exit, state: "setup-error", lines: [check.load] };
     const lines = check.exit !== 0 && before.exit !== 0 ? beyondMasked(check.lines, before.lines) : [];
     const state = check.exit === 0 ? (before.exit === 0 ? "green" : "fixed") : before.exit === 0 ? "new-red" : lines.length ? "new-lines" : "unchanged-red";
     return { id: check.id, base: before.exit, head: check.exit, state, lines };
   });
-  const block = rules.new.length > 0 || rules.integrity.length > 0 || checks.some(check => check.state === "new-red" || check.state === "new-lines");
+  const block = rules.new.length > 0 || rules.integrity.length > 0 || checks.some(check => check.state === "new-red" || check.state === "new-lines" || check.state === "setup-error");
   return { block, rules, checks };
 }
 
@@ -137,7 +145,7 @@ export function report(result) {
   for (const fixed of rules.fixed) out.push(`  fixed ${fixed}`);
   for (const check of checks) {
     out.push(`${check.state.padEnd(13)} ${check.id}: base exit ${check.base}, head exit ${check.head}`);
-    for (const line of check.lines.slice(0, 20)) out.push(`  NEW ${line}`);
+    for (const line of check.lines.slice(0, 20)) out.push(`  ${check.state === "setup-error" ? "LOAD" : "NEW"} ${line}`);
     if (check.lines.length > 20) out.push(`  ... ${check.lines.length - 20} more new line(s)`);
   }
   out.push(result.delta.block ? "BLOCKED: the head adds debt the base did not have" : "PASS: no new findings, failing rules or red checks");
@@ -153,10 +161,25 @@ function mergeBase(repo, head) {
   });
 }
 
+const OID = /^(?:[0-9a-f]{40}|[0-9a-f]{64})$/;
+/**
+ * The refs a pre-push hook receives on stdin, one `<local ref> <local sha> <remote ref> <remote sha>`
+ * line each. Deletes (an all-zero local sha) push no commit and are dropped; an unreadable line throws,
+ * so the hook fails closed rather than measuring nothing.
+ */
+export function pushedRefs(text) {
+  return String(text ?? "").split("\n").map(line => line.trim()).filter(Boolean).map(line => {
+    const [localRef, localSha, remoteRef, remoteSha, extra] = line.split(/\s+/);
+    if (extra !== undefined || !localRef || !remoteRef || !OID.test(localSha ?? "") || !OID.test(remoteSha ?? "")) throw new Error(`unreadable pre-push line: ${JSON.stringify(line)}`);
+    return { localRef, localSha, remoteRef, remoteSha };
+  }).filter(ref => !/^0+$/.test(ref.localSha));
+}
+
 export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = HOOK_CHECKS } = {}) {
   const repo = gitTop(cwd);
   const headSha = commit(repo, head), baseSha = commit(repo, base ?? await mergeBase(repo, headSha));
-  const work = mkdtempSync(join(tmpdir(), "pre-push-ratchet-"));
+  // The real path: the slot model refuses a tree reached through a symlinked temp root (/var -> /private/var).
+  const work = realpathSync(mkdtempSync(join(tmpdir(), "pre-push-ratchet-")));
   const baseTree = join(work, "base"), headTree = join(work, "head");
   extract(repo, baseSha, baseTree);
   extract(repo, headSha, headTree);
@@ -192,10 +215,24 @@ if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
     if (arg === "--base" || arg === "--head") options[arg.slice(2)] = args[++i];
     else if (arg === "--id") options.ids.push(args[++i]);
     else if (arg === "--json") options.json = true;
-    else { console.error(`usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV] [--id <sub-check id>]... [--json]\nunknown argument: ${arg}`); process.exit(2); }
+    else if (arg === "--pushed") options.pushed = true;
+    else { console.error(`usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json]\nunknown argument: ${arg}`); process.exit(2); }
   }
   if (!options.ids.length) options.ids = [...HOOK_CHECKS];
+  if (options.pushed && options.head) { console.error("pre-push ratchet: --pushed reads the heads from stdin; do not also pass --head"); process.exit(2); }
   try {
+    if (options.pushed) {
+      const refs = pushedRefs(readFileSync(0, "utf8"));
+      if (!refs.length) { console.log("pre-push ratchet: no pushed commits to measure (nothing pushed, or deletes only)"); process.exit(0); }
+      const results = [];
+      for (const ref of refs) {
+        const result = await ratchet({ ...options, head: ref.localSha });
+        results.push({ ...ref, ...result });
+        if (!options.json) console.log(`pre-push ratchet: ${ref.localRef} -> ${ref.remoteRef}\n${report(result)}`);
+      }
+      if (options.json) console.log(JSON.stringify(results, null, 2));
+      process.exit(results.some(result => result.delta.block) ? 1 : 0);
+    }
     const result = await ratchet(options);
     console.log(options.json ? JSON.stringify(result, null, 2) : report(result));
     process.exit(result.delta.block ? 1 : 0);
