@@ -1,7 +1,7 @@
 {
-  "candidate": "lockup-v2.json",
-  "sha256": "faf73ffd979087a4ec33bb4f14bb5843659ef9af55b7a4bdb7f79656ef0e513a",
-  "decidedBy": "owner:2026-11-03 one-brand clossys asterisk",
-  "basis": "picked",
-  "at": "2026-11-03T16:31:15.144Z"
+  "candidate": "lockup-v3.json",
+  "sha256": "cc39cf23fc015c3b6f8e87bb99225b64fb339072dc5f062b4321f7d2e57a3cb9",
+  "decidedBy": "planner:FLAT-SLOTS",
+  "basis": "planner",
+  "at": "2026-11-05T12:55:19.857Z"
 }

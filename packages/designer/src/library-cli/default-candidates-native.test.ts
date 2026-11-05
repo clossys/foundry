@@ -120,12 +120,18 @@ it("applies all eleven H3 asset policies (backdrop-graphic dropped by owner 2026
     expect(result.report.invalid.some(row => row.startsWith(`MISSING_POLICY ${slot}:`))).toBe(false);
     expect(result.report.checkedReads.some(row => row.slot === slot)).toBe(true);
   }
-  // These are constructor rules, not consumer-authored positive identity seeds.
+  // Constructor rules over Foundry's own root artwork (producer studio-mark.svg): every member is
+  // materialized, so the default adopts and checks clean while consumers still derive from their own positive.
   for (const slot of ["assets.mark", "assets.lockup"]) {
     const fill = input.catalog.values.fills.find(doc => doc.$extensions["com.clossys.fill"].id === `foundry/${slot}`)!;
     expect(fill.$extensions["com.clossys.fill"].mode).toBe("derived");
-    expect(result.report.missing.find(row => row.slot === slot)?.source).toBe("foundry");
+    expect(fill.$extensions["com.clossys.fill"].pin).toMatchObject({ file: "../producer/studio/public/studio-mark.svg" });
+    expect(result.report.missing.find(row => row.slot === slot)).toBeUndefined();
   }
+  const studioMark = readFileSync(resolve(root, "packages/producer/studio/public/studio-mark.svg"), "utf8");
+  const mark = input.catalog.values.fills.find(doc => doc.$extensions["com.clossys.fill"].id === "foundry/assets.mark")!;
+  expect(createHash("sha256").update(studioMark).digest("hex")).toBe(mark.$extensions["com.clossys.fill"].pin.sha256);
+  expect((mark as unknown as { assets: { mark: { positive: { $value: string } } } }).assets.mark.positive.$value).toBe(studioMark);
   expect(result.report.missing.find(row => row.slot === "assets.video")).toBeUndefined();
   expect(JSON.stringify(input.catalog.values.fills)).toBe(before);
 });
