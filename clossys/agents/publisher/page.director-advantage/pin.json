@@ -1,7 +1,7 @@
 {
-  "candidate": "page-v3.json",
-  "sha256": "970fb7c153c8a9b6010140770111d9b185a89905d91070d162d487244e3e2617",
-  "decidedBy": "owner:2026-11-03 W2-COPY-THROUGH-WRITER go",
-  "basis": "bulk",
-  "at": "2026-11-03T13:45:00Z"
+  "candidate": "page-v4.json",
+  "sha256": "22bb85be8ccc9cc5ad0b147519f370540c362ce90d224c98e7deb282e7a19781",
+  "decidedBy": "planner:SEEN-COPY",
+  "basis": "planner",
+  "at": "2026-11-05T05:31:22.348Z"
 }

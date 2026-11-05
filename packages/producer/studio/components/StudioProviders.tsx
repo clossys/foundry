@@ -1,5 +1,5 @@
 'use client';
-import { studioCopy } from '../lib/studio-copy';
+import { studioCopy, errorText } from '../lib/studio-copy';
 
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -87,7 +87,7 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
     if (seeded.current === revision) return;
     seeded.current = undefined;
     const controller = new AbortController();
-    loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: error instanceof Error ? error.message : studioCopy("studio.producer-is-unavailable") }); });
+    loadReports(controller.signal).then(value => setReports({ state: 'ready', value }), error => { if (!controller.signal.aborted) setReports({ state: 'error', message: errorText(error, studioCopy("studio.producer-is-unavailable")) }); });
     loadBrand(controller.signal).then(value => setBrand({ state: 'ready', value }), () => { if (!controller.signal.aborted) setBrand({ state: 'ready', value: {} }); });
     return () => controller.abort();
   }, [revision]);

@@ -3,7 +3,8 @@ import { mkdtempSync, mkdirSync, readFileSync, realpathSync, writeFileSync, rmSy
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { slotDetail } from './slot-detail.js';
+import { writeFixtureNames } from './__fixtures__/writer-names.js';
+import { CANDIDATE_ISSUE_COPY, slotDetail as readDetail } from './slot-detail.js';
 import { detailStrings, loadSlotDetail, slotDetailInputs } from '../../studio/lib/slot-detail';
 import { resolveCopy, studioCopy } from '../../studio/lib/studio-copy';
 import { parsePublicationResponse } from '../../studio/lib/publisher-preview';
@@ -11,6 +12,7 @@ import { serializeFrontmatter, slotPositions, type IaDoc } from '../records/slot
 import { parseWriterCell, serializeWriterCell } from '../../../writer/src/cells/parse.js';
 
 const roots: string[] = [];
+const slotDetail = (root: string, agent: Parameters<typeof readDetail>[1], id: string) => { writeFixtureNames(root); return readDetail(root, agent, id); };
 const id = 'passages.example';
 const links = { leaf: (agent: string, slot: string) => `/${agent}/${slot}`, label: () => undefined, back: { href: '/writer', label: 'Writer' } };
 function fixture() {
@@ -58,7 +60,7 @@ describe('slot details', () => {
     writeFileSync(join(dir, 'pin.json'), JSON.stringify({ candidate: first.name, sha256, decidedBy: 'owner:synthetic-test-only:B4-slot-detail-pin', basis: 'bulk', at: '2026-01-01T00:00:00Z' }));
     const detail = slotDetail(root, 'writer', id)!;
     expect(detail.shown).toBe(first.name);
-    expect(detail.checks.filter(check => JSON.stringify(check.label) !== JSON.stringify({ copy: 'studio.check-inputs-ready' }) && check.detail !== 'inputs-undeclared').every(check => check.ok)).toBe(true);
+    expect(detail.checks.filter(check => JSON.stringify(check.label) !== JSON.stringify({ copy: 'studio.check-inputs-ready' }) && JSON.stringify(check.detail) !== JSON.stringify({ copy: 'studio.check-block-inputs-undeclared' })).every(check => check.ok)).toBe(true);
     expect(detail.history).toEqual([expect.objectContaining({ candidate: first.name, commit: 'working-tree' })]);
     const inputs = slotDetailInputs(detail, links, 'dark');
     // A bulk-approved pin is still to confirm: the status and the header label say so, via Writer copy.
@@ -126,7 +128,10 @@ describe('slot details', () => {
       expect(detail.checks).toContainEqual({ label: upstream, ok: true, detail: { copy: 'studio.check-reference-resolves' } });
       const checks = slotDetailInputs(detail, links, 'light').checks.rows;
       expect(checks).toContainEqual(expect.objectContaining({ label: 'Inputs ready', ok: !reason }));
-      if (reason) expect(checks).toContainEqual(expect.objectContaining({ label: upstream, ok: false, detail: reason }));
+      // Every block reason reads as its pinned Writer words; none stays a bare code.
+      const words: Record<string, string> = { unpinned: 'studio.unpinned', 'hash-drift': 'studio.check-pin-hash-mismatch', 'invalid-candidate': 'studio.error.candidate-invalid',
+        'invalid-pin': 'studio.check-block-invalid-pin', 'missing-candidate': 'studio.check-block-missing-candidate', 'invalid-slot': 'studio.check-block-invalid-slot' };
+      if (reason) expect(checks).toContainEqual(expect.objectContaining({ label: upstream, ok: false, detail: studioCopy(words[reason]!) }));
     };
     verify();
     unlinkSync(pinPath); verify('unpinned');
@@ -135,16 +140,31 @@ describe('slot details', () => {
     writeFileSync(pinPath, JSON.stringify(pin)); unlinkSync(candidatePath); verify('missing-candidate');
     const invalid = bytes.replace('---\n', '---\nstatus: active\n');
     writeFileSync(candidatePath, invalid); writeFileSync(pinPath, JSON.stringify({ ...pin, sha256: createHash('sha256').update(invalid).digest('hex') })); verify('invalid-candidate');
+    // A validator finding is one Writer key per code; the validator's message is its {message} value.
+    const issue = slotDetail(root, 'director', upstream)!.checks.find(check => check.label === 'brief-v1.md' && (check.detail as { copy?: string }).copy === 'studio.candidate-issue.candidate-invalid')!;
+    expect(issue).toMatchObject({ ok: false, detail: { copy: 'studio.candidate-issue.candidate-invalid', values: { message: expect.any(String) } } });
+    const message = (issue.detail as { values: { message: string } }).values.message;
+    expect(slotDetailInputs(slotDetail(root, 'director', upstream)!, links, 'light').checks.rows).toContainEqual(expect.objectContaining({ label: 'brief-v1.md', ok: false,
+      detail: studioCopy('studio.candidate-issue.candidate-invalid', { message }) }));
+    expect(message).not.toBe('');
     writeFileSync(candidatePath, bytes); writeFileSync(pinPath, JSON.stringify(pin));
     writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify({ ...upstreamDoc, id: 'brief.foreign' })); verify('invalid-slot');
     writeFileSync(docPath, JSON.stringify({ ...doc, inputs: ['brief.missing'], uses: [id] }));
     const missing = slotDetail(root, 'writer', id)!;
-    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: 'missing' });
+    expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: { copy: 'studio.missing' } });
     expect(missing.checks).toContainEqual({ label: 'brief.missing', ok: false, detail: { copy: 'studio.check-reference-unknown' } });
     writeFileSync(docPath, JSON.stringify(doc));
-    expect(slotDetail(root, 'writer', id)!.checks).toContainEqual({ label: id, ok: false, detail: 'inputs-undeclared' });
+    expect(slotDetail(root, 'writer', id)!.checks).toContainEqual({ label: id, ok: false, detail: { copy: 'studio.check-block-inputs-undeclared' } });
     writeFileSync(join(upstreamDir, 'slot.json'), JSON.stringify(upstreamDoc));
     expect(slotDetail(root, 'director', upstream)!.checks).toContainEqual({ label: { copy: 'studio.check-inputs-ready' }, ok: true, detail: { copy: 'studio.check-inputs-ready' } });
+  });
+
+  it('gives every candidate validator code a pinned Writer key', () => {
+    const validator = readFileSync(new URL('../records/slot-model/validate.ts', import.meta.url), 'utf8');
+    const codes = [...new Set([...validator.matchAll(/code: "(candidate-[a-z-]+)"/g)].map(match => match[1]!))].sort();
+    expect(codes.length).toBeGreaterThan(0);
+    expect(Object.keys(CANDIDATE_ISSUE_COPY).sort()).toEqual(codes);
+    for (const key of Object.values(CANDIDATE_ISSUE_COPY)) expect(studioCopy(key, { message: 'm' })).toContain('m');
   });
 
   it('keeps locale identities distinct and does not emit metadata as Writer copy', () => {
@@ -328,7 +348,7 @@ describe('slot details', () => {
     const misplaced = slotDetail(root, 'director', id)!;
     expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: { copy: 'studio.check-slot-placed' }, ok: false }));
     expect(misplaced.checks).toContainEqual(expect.objectContaining({ label: { copy: 'studio.check-inputs-ready' }, ok: false }));
-    expect(misplaced.checks).toContainEqual({ label: id, ok: false, detail: 'invalid-slot' });
+    expect(misplaced.checks).toContainEqual({ label: id, ok: false, detail: { copy: 'studio.check-block-invalid-slot' } });
     expect(slotDetail(root, 'director', 'context.unknown')).toBeUndefined();
   });
 
@@ -367,6 +387,6 @@ describe('slot details', () => {
     writeFileSync(file, wrong);
     writeFileSync(join(dir, 'pin.json'), JSON.stringify({ ...pin, sha256: createHash('sha256').update(wrong).digest('hex') }));
     expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.specimen).toBeUndefined();
-    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.issues).toContain('candidate-identity: element identity differs from the candidate name or slot');
+    expect(slotDetail(root, 'designer', 'sections.example')!.candidates[0]!.issues).toContainEqual({ copy: 'studio.check-candidate-identity' });
   });
 });

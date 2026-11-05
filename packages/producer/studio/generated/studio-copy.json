@@ -1,12 +1,84 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "03af60d2de97926f16f3f4955ac64773b49e48ec8660b7505603e04365e06f28",
+  "revision": "b234b3b87be168fa5088646ba2085d0474b95586e2d172a780b77505ee710304",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
   },
   "entries": [
+    {
+      "id": "studio.action.request-change",
+      "text": "Request change",
+      "context": "studio.action.request-change",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.copy-prompt",
+      "text": "Copy prompt",
+      "context": "studio.action.copy-prompt",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.open-detail",
+      "text": "Open detail",
+      "context": "studio.action.open-detail",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.compare",
+      "text": "Compare options",
+      "context": "studio.action.compare",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.toggle-theme",
+      "text": "Toggle theme",
+      "context": "studio.action.toggle-theme",
+      "status": "draft"
+    },
+    {
+      "id": "studio.action.copy-link",
+      "text": "Copy link",
+      "context": "studio.action.copy-link",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.home",
+      "text": "Home",
+      "context": "studio.nav.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.director",
+      "text": "Director",
+      "context": "studio.nav.director",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.designer",
+      "text": "Designer",
+      "context": "studio.nav.designer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.writer",
+      "text": "Writer",
+      "context": "studio.nav.writer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.publisher",
+      "text": "Publisher",
+      "context": "studio.nav.publisher",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.back-to-agent",
+      "text": "Back to {agent}",
+      "context": "studio.nav.back-to-agent",
+      "status": "draft"
+    },
     {
       "id": "studio.contract-title",
       "text": "Contract",
@@ -2612,6 +2684,234 @@
       "status": "draft"
     },
     {
+      "id": "studio.preview.frame-title",
+      "text": "{page} page preview",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.inputs-count",
+      "text": "Inputs {count}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.pipeline.step.outputs-count",
+      "text": "Outputs {count}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-description",
+      "text": "Press enter or space to select a node. Press delete to remove it and escape to cancel.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-description-keyboard",
+      "text": "Press enter or space to select a node. You can then use the arrow keys to move the node around. Press delete to remove it and escape to cancel.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-moved",
+      "text": "Moved selected node {direction}. New position, x: {x}, y: {y}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.edge-description",
+      "text": "Press enter or space to select an edge. You can then press delete to remove it or escape to cancel.",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.controls",
+      "text": "Control Panel",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.zoom-in",
+      "text": "Zoom In",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.zoom-out",
+      "text": "Zoom Out",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.fit-view",
+      "text": "Fit View",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.interactive",
+      "text": "Toggle Interactivity",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.minimap",
+      "text": "Mini Map",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.handle",
+      "text": "Handle",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.node-role",
+      "text": "node",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.edge-role",
+      "text": "edge",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.edge-label",
+      "text": "Edge from {source} to {target}",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.attribution",
+      "text": "React Flow",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.flow.attribution-label",
+      "text": "React Flow attribution",
+      "context": "sections/producer-pipeline-flow/index.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.director",
+      "text": "D",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.designer",
+      "text": "D",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.writer",
+      "text": "W",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.publisher",
+      "text": "P",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.producer",
+      "text": "P",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.owner",
+      "text": "O",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.code",
+      "text": "C",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.you",
+      "text": "Y",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.checks",
+      "text": "C",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.team.initials.unassigned",
+      "text": "U",
+      "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-inputs-undeclared",
+      "text": "This slot declares no inputs",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-invalid-pin",
+      "text": "Pin file is not a valid pin",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-missing-candidate",
+      "text": "Pinned candidate file is missing",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-invalid-slot",
+      "text": "Slot record is invalid or out of place",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-name",
+      "text": "File name is not valid: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-invalid",
+      "text": "Candidate does not match its slot contract: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-source",
+      "text": "Source record is missing or invalid: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-status",
+      "text": "Pin state belongs in the pin, not the candidate: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-identity",
+      "text": "Element identity differs from the candidate name or slot",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
       "id": "studio.compiled",
       "text": "Compiled",
       "context": "components/StudioPage.tsx",
@@ -2828,6 +3128,432 @@
       "status": "draft"
     },
     {
+      "id": "studio.count.candidates",
+      "text": "{count, plural, one {# candidate} other {# candidates}}",
+      "context": "studio.count.candidates",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.slots-filled",
+      "text": "{filled} of {total} slots filled",
+      "context": "studio.count.slots-filled",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.needs",
+      "text": "{count, plural, one {# need} other {# needs}}",
+      "context": "studio.count.needs",
+      "status": "draft"
+    },
+    {
+      "id": "studio.count.findings",
+      "text": "{count, plural, one {# finding} other {# findings}}",
+      "context": "studio.count.findings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.slot-unreadable",
+      "text": "This slot could not be read. Run clossys check --slots to see why.",
+      "context": "studio.error.slot-unreadable",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.candidate-invalid",
+      "text": "This candidate does not match its slot contract. Ask the owning agent for a new version.",
+      "context": "studio.error.candidate-invalid",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.producer-offline",
+      "text": "Studio cannot reach Producer. Restart clossys produce and reload.",
+      "context": "studio.error.producer-offline",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.request-failed",
+      "text": "Request could not be completed",
+      "context": "src/server/index.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.studio-not-ready",
+      "text": "Studio child is not ready",
+      "context": "src/server/index.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.studio-unavailable",
+      "text": "Studio child is unavailable",
+      "context": "src/server/index.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-read-only",
+      "text": "Publication preview is read-only",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-unavailable",
+      "text": "Publication preview is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-page-unavailable",
+      "text": "Publication page is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-content-type",
+      "text": "Unsupported preview content type",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-not-rendered",
+      "text": "Publication preview could not be rendered",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.error.preview-asset-unavailable",
+      "text": "Publication asset is unavailable",
+      "context": "src/server/publication.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.warning.unpinned",
+      "text": "This candidate is unpinned. Treat it as a draft, not approved direction.",
+      "context": "studio.warning.unpinned",
+      "status": "draft"
+    },
+    {
+      "id": "studio.warning.need",
+      "text": "This candidate has open needs. They wait for evidence.",
+      "context": "studio.warning.need",
+      "status": "draft"
+    },
+    {
+      "id": "studio.warning.stale",
+      "text": "An upstream slot changed since this candidate was written.",
+      "context": "studio.warning.stale",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm.prompt-copied",
+      "text": "Prompt copied. Paste it into your coding agent.",
+      "context": "studio.confirm.prompt-copied",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm.link-copied",
+      "text": "Link copied.",
+      "context": "studio.confirm.link-copied",
+      "status": "draft"
+    },
+    {
+      "id": "studio.confirm.theme-changed",
+      "text": "Theme changed for this browser.",
+      "context": "studio.confirm.theme-changed",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-candidates",
+      "text": "No candidate yet. Ask the owning agent to fill this slot.",
+      "context": "studio.empty.no-candidates",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-pin",
+      "text": "No pin yet. The owner pins one candidate after review.",
+      "context": "studio.empty.no-pin",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-uses",
+      "text": "Nothing uses this slot yet.",
+      "context": "studio.empty.no-uses",
+      "status": "draft"
+    },
+    {
+      "id": "studio.empty.no-history",
+      "text": "No earlier versions.",
+      "context": "studio.empty.no-history",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading.slots",
+      "text": "Loading slots",
+      "context": "studio.loading.slots",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading.preview",
+      "text": "Loading preview",
+      "context": "studio.loading.preview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.loading.checks",
+      "text": "Running checks",
+      "context": "studio.loading.checks",
+      "status": "draft"
+    },
+    {
+      "id": "studio.tagline.primary",
+      "text": "Pick, never invent.",
+      "context": "studio.tagline.primary",
+      "status": "draft"
+    },
+    {
+      "id": "studio.tagline.secondary",
+      "text": "Every slot shows where it came from.",
+      "context": "studio.tagline.secondary",
+      "status": "draft"
+    },
+    {
+      "id": "studio.legal.license",
+      "text": "Clossys Foundry is open source under the MIT license.",
+      "context": "studio.legal.license",
+      "status": "draft"
+    },
+    {
+      "id": "studio.legal.copyright",
+      "text": "© 2026 Clossys",
+      "context": "studio.legal.copyright",
+      "status": "draft"
+    },
+    {
+      "id": "studio.alt.brandmark",
+      "text": "Clossys Studio brandmark",
+      "context": "studio.alt.brandmark",
+      "status": "draft"
+    },
+    {
+      "id": "studio.alt.specimen",
+      "text": "Live preview of the active candidate",
+      "context": "studio.alt.specimen",
+      "status": "draft"
+    },
+    {
+      "id": "studio.caption.specimen",
+      "text": "The active candidate, rendered from the workspace.",
+      "context": "studio.caption.specimen",
+      "status": "draft"
+    },
+    {
+      "id": "studio.transcript.walkthrough",
+      "text": "Clossys Studio in 60 seconds. You start with a brief. Director turns it into direction: brand, voice, audience and proposition, each as a slot. Designer picks visuals from trusted references, and Writer writes copy that cites the brief. Publisher assembles each page from a frame and sections. Then the page is published. In Studio, every slot shows its candidates, its pin and where it came from.",
+      "context": "studio.transcript.walkthrough",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.home",
+      "text": "Clossys Studio",
+      "context": "studio.title.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.director",
+      "text": "Director · Clossys Studio",
+      "context": "studio.title.director",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.designer",
+      "text": "Designer · Clossys Studio",
+      "context": "studio.title.designer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.writer",
+      "text": "Writer · Clossys Studio",
+      "context": "studio.title.writer",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.publisher",
+      "text": "Publisher · Clossys Studio",
+      "context": "studio.title.publisher",
+      "status": "draft"
+    },
+    {
+      "id": "studio.title.slot",
+      "text": "{slot} · {agent} · Clossys Studio",
+      "context": "studio.title.slot",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.home",
+      "text": "Home",
+      "context": "studio.page.home",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-context",
+      "text": "Context",
+      "context": "studio.page.director-context",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-aspiration",
+      "text": "Aspiration",
+      "context": "studio.page.director-aspiration",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-focus",
+      "text": "Focus",
+      "context": "studio.page.director-focus",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-advantage",
+      "text": "Advantage",
+      "context": "studio.page.director-advantage",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-identity",
+      "text": "Identity",
+      "context": "studio.page.director-identity",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-capability",
+      "text": "Capability",
+      "context": "studio.page.director-capability",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.director-execution",
+      "text": "Execution",
+      "context": "studio.page.director-execution",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-themes",
+      "text": "Themes",
+      "context": "studio.page.designer-themes",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-assets",
+      "text": "Assets",
+      "context": "studio.page.designer-assets",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-components",
+      "text": "Components",
+      "context": "studio.page.designer-components",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-sections",
+      "text": "Sections",
+      "context": "studio.page.designer-sections",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.designer-frames",
+      "text": "Frames",
+      "context": "studio.page.designer-frames",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-lexicon",
+      "text": "Lexicon",
+      "context": "studio.page.writer-lexicon",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-strings",
+      "text": "Strings",
+      "context": "studio.page.writer-strings",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-patterns",
+      "text": "Patterns",
+      "context": "studio.page.writer-patterns",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-passages",
+      "text": "Passages",
+      "context": "studio.page.writer-passages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.writer-narratives",
+      "text": "Narratives",
+      "context": "studio.page.writer-narratives",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.publisher-studio",
+      "text": "Studio",
+      "context": "studio.page.publisher-studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.producer-pipeline",
+      "text": "Overview",
+      "context": "studio.page.producer-pipeline",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.build-overview",
+      "text": "Overview",
+      "context": "studio.page.build-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.page.run-overview",
+      "text": "Overview",
+      "context": "studio.page.run-overview",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.studio",
+      "text": "Studio",
+      "context": "studio.nav.studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.studio.pages",
+      "text": "Pages",
+      "context": "studio.nav.studio.pages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.content",
+      "text": "Content",
+      "context": "studio.nav.content",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.content.pages",
+      "text": "Pages",
+      "context": "studio.nav.content.pages",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.build",
+      "text": "Build",
+      "context": "studio.nav.build",
+      "status": "draft"
+    },
+    {
+      "id": "studio.nav.run",
+      "text": "Run",
+      "context": "studio.nav.run",
+      "status": "draft"
+    },
+    {
       "id": "studio.every-publication-with-the-root-its-config",
       "text": "Every publication with the root its config names and every route after it: the page that renders each path, its frame and sections, and the leaf that records it.",
       "context": "components/StudioPage.tsx",
@@ -2975,6 +3701,24 @@
       "id": "studio.group-publisher-studio",
       "text": "The pages Studio publishes, each a pinned frame and its sections, and the publication they make.",
       "context": "publisher:page.publisher-studio",
+      "status": "draft"
+    },
+    {
+      "id": "studio.share.slot",
+      "text": "See where this {agent} slot came from in Clossys Studio.",
+      "context": "studio.share.slot",
+      "status": "draft"
+    },
+    {
+      "id": "studio.email.subject.fill-ready",
+      "text": "Your workspace is filled and ready to review",
+      "context": "studio.email.subject.fill-ready",
+      "status": "draft"
+    },
+    {
+      "id": "studio.email.preheader.fill-ready",
+      "text": "Every slot now holds a candidate for your review.",
+      "context": "studio.email.preheader.fill-ready",
       "status": "draft"
     }
   ]

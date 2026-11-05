@@ -3,7 +3,8 @@ import type { ServerResponse } from "node:http";
 import { extname, join, relative } from "node:path";
 import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
-import { readPinnedPublication } from "../publish/pinned-publication.js";
+import { readPinnedPublication, resolvePublicationTitles } from "../publish/pinned-publication.js";
+import { sendWriterText, writerText } from "./writer-text.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { isInstalledRoute, NEXT_INSTALL_KIND, NEXT_INSTALL_REPORT } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
@@ -147,7 +148,7 @@ async function nativeInstallPublication(root: string, base: string, installs: In
   const consumer = join(root, "clossys"), installed = new Map(installs.map(page => [page.id, page]));
   const slots = listSlots(consumer, "publisher");
   const publications = await Promise.all(slots.filter(slot => slot.id.startsWith("publication.")).map(async slot => ({
-    ...await readPinnedPublication(consumer, slot.id.slice("publication.".length)), slot,
+    ...resolvePublicationTitles(consumer, await readPinnedPublication(consumer, slot.id.slice("publication.".length))), slot,
   })));
   const web = publications.filter(value => value.map.format === "web.page.responsive");
   const matches = web.filter(value => value.map.entries.some(entry => entry.kind === "page" && installed.has(entry.id)));
@@ -312,21 +313,22 @@ const FRAME_HEADERS = { "Cache-Control": "no-store", "X-Content-Type-Options": "
  * own (guarded) origin: with it, a served Studio page previews with its specimens (specimenHostCsp).
  */
 export async function servePreview(root: string, pathname: string, method: string, response: ServerResponse, installOut?: string, query: URLSearchParams = new URLSearchParams(), served?: ServedApp, origin?: string): Promise<void> {
-  const fail = (status: number, message: string) => { response.writeHead(status, { ...SECURITY, "Content-Type": "text/plain; charset=utf-8" }); response.end(message); };
-  if (method !== "GET" && method !== "HEAD") { fail(405, "Publication preview is read-only"); return; }
+  // A failure body is Writer copy (the key's text): a preview frame shows it to a person.
+  const fail = (status: number, key: string) => sendWriterText(response, status, join(root, "clossys"), key, SECURITY);
+  if (method !== "GET" && method !== "HEAD") { fail(405, "studio.error.preview-read-only"); return; }
   const match = /^\/preview\/([^/]+)\/(pages|assets|frame)\/(.+)$/.exec(pathname);
-  if (!match || !identity(match[1]!)) { fail(404, "Publication preview is unavailable"); return; }
+  if (!match || !identity(match[1]!)) { fail(404, "studio.error.preview-unavailable"); return; }
   const selected = match[1]!, kind = match[2]!, file = match[3]!;
   const theme = previewTheme(query.get("theme"));
   if (kind === "frame") {
     // The frame page loads the page itself (sandboxed, same origin) at the specimen width.
     const page = /^([a-z][a-z0-9.-]*)\.html$/.exec(file)?.[1];
-    if (!page || page.includes("..")) { fail(404, "Publication page is unavailable"); return; }
+    if (!page || page.includes("..")) { fail(404, "studio.error.preview-page-unavailable"); return; }
     const src = `${PREVIEW_PREFIX}${encodeURIComponent(selected)}/pages/${encodeURIComponent(page)}.html${theme === "dark" ? "?theme=dark" : ""}`;
     // A served page nests specimens, whose scripts need the flag here too (a frame cannot regain a
     // flag its parent lacks); the page's own CSP still blocks every script it carries.
     const sandbox = origin !== undefined && await servedPage(root, selected, page, installOut, served) ? "allow-same-origin allow-scripts" : "allow-same-origin";
-    const html = Buffer.from(specimenFramePage({ src, width: specimenWidth(query.get("width")), title: `${page} page preview`, sandbox }));
+    const html = Buffer.from(specimenFramePage({ src, width: specimenWidth(query.get("width")), title: writerText(join(root, "clossys"), "studio.preview.frame-title", { page }), sandbox }));
     response.writeHead(200, { ...FRAME_HEADERS, "Content-Type": TYPES[".html"]!, "Content-Length": html.length });
     response.end(method === "HEAD" ? undefined : html); return;
   }
@@ -337,20 +339,20 @@ export async function servePreview(root: string, pathname: string, method: strin
     if (kind === "pages") {
       const manifest = await descriptor(root, selected);
       const route = manifest.routes.find(route => `${route.id}.html` === file);
-      if (!route) { fail(404, "Publication page is unavailable"); return; }
+      if (!route) { fail(404, "studio.error.preview-page-unavailable"); return; }
       const entry = manifest.contentMap.entries.find(entry => entry.id === route.id);
       type = TYPES[".html"]!;
       const page = /\.html?$/.test(route.source.file) ? await previewSource(base, route.source.file) : await renderNativePreview({ root: base, entry: route.source.file, exportName: route.source.export, title: entry?.title, description: entry?.description });
       bytes = Buffer.from(themePage(page.toString("utf8"), theme));
     } else {
       type = TYPES[extname(file).toLowerCase()] ?? "";
-      if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "Unsupported preview content type"); return; }
+      if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "studio.error.preview-content-type"); return; }
       bytes = await previewSource(base, file);
       if (file.endsWith(".css")) bytes = Buffer.from(generatedBody(bytes.toString("utf8")));
     }
     response.writeHead(200, { ...SECURITY, "Content-Type": type, "Content-Length": bytes.length });
     response.end(method === "HEAD" ? undefined : bytes);
-  } catch (error) { fail((error as NodeJS.ErrnoException).code === "ENOENT" ? 404 : 403, "Publication preview could not be rendered"); }
+  } catch (error) { fail((error as NodeJS.ErrnoException).code === "ENOENT" ? 404 : 403, "studio.error.preview-not-rendered"); }
 }
 
 /** Install output: the page's static HTML with its own substrate build's stylesheets, and those build assets. */
@@ -360,28 +362,28 @@ async function servedPage(root: string, selected: string, page: string, installO
   const found = await readInstallPublication(root, installOut, selected, served).catch(() => undefined);
   return found?.manifest.publication === selected && !!found.installs.find(install => install.id === page)?.next;
 }
-async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, message: string) => void, installOut?: string, theme: PreviewTheme = "light", served?: ServedApp, origin?: string): Promise<void> {
+async function serveInstall(root: string, selected: string, kind: string, file: string, method: string, response: ServerResponse, fail: (status: number, key: string) => void, installOut?: string, theme: PreviewTheme = "light", served?: ServedApp, origin?: string): Promise<void> {
   const found = await readInstallPublication(root, installOut, selected, served);
-  if (!found || found.manifest.publication !== selected) { fail(404, "Publication preview is unavailable"); return; }
+  if (!found || found.manifest.publication !== selected) { fail(404, "studio.error.preview-unavailable"); return; }
   let type: string, bytes: Buffer, csp = PREVIEW_PAGE_CSP;
   const install = kind === "pages" ? found.installs.find(page => `${page.id}.html` === file) : undefined;
   if (install?.next) {
     // The installed route's own render, without its scripts; it runs none (its CSP has no script-src).
     const html = found.pages.find(page => page.id === install.id)?.emitted && served ? await served.render(install.next.route) : undefined;
-    if (html === undefined) { fail(404, "Publication page is unavailable"); return; }
+    if (html === undefined) { fail(404, "studio.error.preview-page-unavailable"); return; }
     type = TYPES[".html"]!;
     bytes = Buffer.from(themePage(sandboxSpecimenFrames(staticPage(html), selected), theme));
     if (origin !== undefined) csp = specimenHostCsp(origin, selected);
   } else if (kind === "pages") {
-    if (!install?.html) { fail(404, "Publication page is unavailable"); return; }
+    if (!install?.html) { fail(404, "studio.error.preview-page-unavailable"); return; }
     const links = install.css.map(css => `<link rel="stylesheet" href="${PREVIEW_PREFIX}${encodeURIComponent(selected)}/assets/${css.split("/").map(encodeURIComponent).join("/")}">`).join("");
     const html = (await previewSource(found.base, install.html)).toString("utf8");
     type = TYPES[".html"]!;
     bytes = Buffer.from(themePage(links && html.includes("</head>") ? html.replace("</head>", `${links}</head>`) : html, theme));
   } else {
     type = TYPES[extname(file).toLowerCase()] ?? "";
-    if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "Unsupported preview content type"); return; }
-    if (!/^[^/]+\/substrate\/dist\/assets\/[^/]+$/.test(file)) { fail(404, "Publication asset is unavailable"); return; }
+    if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "studio.error.preview-content-type"); return; }
+    if (!/^[^/]+\/substrate\/dist\/assets\/[^/]+$/.test(file)) { fail(404, "studio.error.preview-asset-unavailable"); return; }
     bytes = await previewSource(found.base, file);
   }
   response.writeHead(200, { ...SECURITY, "Content-Security-Policy": csp, "Content-Type": type, "Content-Length": bytes.length });

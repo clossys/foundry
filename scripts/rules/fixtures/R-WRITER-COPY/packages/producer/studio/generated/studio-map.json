@@ -1,0 +1,4 @@
+{
+  "routes": [{ "path": "/probe" }],
+  "leaves": []
+}

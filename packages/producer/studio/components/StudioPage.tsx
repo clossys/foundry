@@ -25,7 +25,7 @@ import type { SystemEmptyInput } from '../sections/producer-system-empty';
 import type { SlotGroupsInput, SlotTone } from '../sections/studio-slot-groups';
 import { slotCardSpecimen, slotDetailInputs, versionLabel } from '../lib/slot-detail';
 import { studioShellCopy } from '../lib/shell-copy';
-import { studioCopy } from '../lib/studio-copy';
+import { studioCopy, errorText } from '../lib/studio-copy';
 import { studioIcon } from '../lib/studio-icons';
 import type { StudioReport } from '../lib/studio-report';
 import { resolveStudioRoute, studioGroupOf, studioGroups, studioLanding, studioLeafHref, studioLeafTitle, studioAgentRecords, studioRecordTabs, studioShellProjection, type StudioRoute } from '../lib/studio-route-map';
@@ -48,7 +48,6 @@ const STATUS_TONE: Record<string, SlotTone> = { active: 'secondary', draft: 'out
 const SEVERITY_LABEL: Record<string, string> = { error: studioCopy('studio.severity-error'), warning: studioCopy('studio.severity-warning'), info: studioCopy('studio.severity-info') };
 /** A placed section's root, by the slot id the assembly's generated provenance marks it with. */
 const sectionTarget = (slot: string) => `[data-clossys-slot=${JSON.stringify(slot)}]`;
-const message = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 const pageById = new Map(studioPages.map(page => [page.id, page]));
 
 /* Module data: what the checks module shows, from the same records the sections read. */
@@ -113,7 +112,7 @@ function useResource<T>(key: string | undefined, seed: { key: string; record: Re
     seeded.current = undefined;
     const controller = new AbortController();
     setValue({ state: 'loading' });
-    load(controller.signal).then(result => setValue({ state: 'ready', value: result }), error => { if (!controller.signal.aborted) setValue({ state: 'error', message: message(error, fallback) }); });
+    load(controller.signal).then(result => setValue({ state: 'ready', value: result }), error => { if (!controller.signal.aborted) setValue({ state: 'error', message: errorText(error, fallback) }); });
     return () => controller.abort();
     // `load` is derived from `key`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -199,7 +198,9 @@ function useLeafInputs({ page, spec, slug }: LoaderProps): Loaded {
     if (!agent || !slug) return { state: 'notice', notice: { title: studioCopy("studio.this-page-cannot-load"), description: studioCopy("studio.studio-has-no-loader-named", { value0: String(spec.data.loader) }) } };
     if (record.state === 'loading') return { state: 'loading' };
     if (record.state === 'error') return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-could-not-load-61e548"), description: record.message } };
-    const label = studioGroupOf(page.id)?.title ?? agent;
+    // A leaf route always sits in its agent's group (check-studio-map); its title is the Writer name.
+    const label = studioGroupOf(page.id)?.title;
+    if (label === undefined) throw new Error(`Studio map has no group for ${page.id}`);
     if (!record.value) return { state: 'notice', notice: { title: studioCopy("studio.this-leaf-is-gone"), description: studioCopy("studio.no-longer-records", { value0: String(label), value1: String(slug) }) } };
     const inputs = slotDetailInputs(record.value.detail, { leaf: studioLeafHref, label: studioLeafTitle, back: { href: page.path, label: page.title } }, resolved, record.value.publication);
     const list: readonly StudioReport[] = reports.state === 'ready' ? reports.value : [];

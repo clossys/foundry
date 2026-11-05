@@ -1,7 +1,8 @@
 import { lstat } from "node:fs/promises";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { ContentMap, ContentMapBreadcrumb, ContentMapCommandGroup, ContentMapNavigation, ContentMapOutlineNode } from "@clossys/publisher/content-map";
-import { readPinnedPublication } from "../publish/pinned-publication.js";
+import { readPinnedPublication, resolvePublicationTitles } from "../publish/pinned-publication.js";
+import { writerCopy } from "../records/writer-copy.js";
 import { agentModule } from "./cells.js";
 import { hasSlotModel, listSlots, readCandidate, readIa } from "../records/slots.js";
 
@@ -77,11 +78,11 @@ export async function consumerApps(root: string): Promise<ConsumerAppsResponse> 
       for (const entry of listSlots(consumer, "publisher")) {
         if (!entry.pin || !entry.id.startsWith("publication.")) continue;
         const id = entry.id.slice("publication.".length);
-        const { map, routePack } = await readPinnedPublication(consumer, id);
+        const { map, routePack } = resolvePublicationTitles(consumer, await readPinnedPublication(consumer, id));
         const candidate = readCandidate(consumer, "publisher", entry.id, entry.pin.candidate);
         if (candidate.sha256 !== entry.pin.sha256) throw new TypeError("Publisher publication pin hash drift");
         const tree = (JSON.parse(candidate.bytes) as { meta?: { tree?: { name?: unknown } } }).meta?.tree;
-        const named = typeof tree?.name === "string" && tree.name.trim() ? tree.name : undefined;
+        const named = typeof tree?.name === "string" && tree.name.trim() ? writerCopy(consumer).text(tree.name) : undefined;
         sources.set(id, { map, ...(named ? { title: named } : {}), source: "slots", ...(routePack ? { metadata: routePack } : {}) });
       }
       return await projectPublications(root, sources, api);

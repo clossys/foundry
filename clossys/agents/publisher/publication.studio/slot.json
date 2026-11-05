@@ -63,6 +63,8 @@
     "page.writer-passages",
     "page.writer-patterns",
     "page.writer-strings",
-    "strings.common"
+    "strings.common",
+    "strings.navigation",
+    "strings.page-titles"
   ]
 }

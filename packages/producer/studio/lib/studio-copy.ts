@@ -4,11 +4,24 @@ import registry from '../generated/studio-copy.json';
 // Studio previews the migrated source; a slot pin does not create editorial approval.
 const resolve = createCopyResolver(registry, { target: 'preview' });
 
+/** The Writer's source locale for Studio copy (the pinned candidates' first locale): the document's `lang`. */
+export const studioLocale: string = registry.locale;
+
 /** Audience copy comes only from the pinned Writer slots projected with the assembly. */
 export function studioCopy(id: string, values?: Readonly<Record<string, string | number | boolean>>): string {
-  const result = resolve({ id, locale: 'en', ...(values ? { values } : {}) });
+  const result = resolve({ id, locale: studioLocale, ...(values ? { values } : {}) });
   if (!result) throw new Error(`Studio copy is unresolved: ${id}`);
   return result.text;
+}
+
+/** A failure whose message is Writer copy: the only error text Studio shows. */
+export class StudioCopyError extends Error {
+  constructor(id: string, values?: Readonly<Record<string, string | number | boolean>>) { super(studioCopy(id, values)); this.name = 'StudioCopyError'; }
+}
+
+/** The Writer text of a failure: a `StudioCopyError`'s message, any other failure's Writer fallback. Never a thrown message. */
+export function errorText(error: unknown, fallback: string): string {
+  return error instanceof StudioCopyError ? error.message : fallback;
 }
 
 /** A server row's text: plain data, or a Writer copy reference (`{ copy, values }`) Studio resolves. */

@@ -31,8 +31,8 @@
   },
   "sections.producer.pipeline-flow": {
     "data-clossys-slot": "sections.producer.pipeline-flow",
-    "data-clossys-candidate": "producer-pipeline-flow-v9.json",
-    "data-clossys-hash": "sha256:5304aea9ebb0d673de47724884ee4c7a42e0615bf34a1e9c83fbf564d9d1024c"
+    "data-clossys-candidate": "producer-pipeline-flow-v10.json",
+    "data-clossys-hash": "sha256:89e12f8865037a0206163ce260f2bf61d42512bdd3e4234fb2308f966bb5263e"
   },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",

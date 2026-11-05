@@ -1,5 +1,5 @@
 'use client';
-import { Background, Badge, BaseNode, BaseNodeContent, Card, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps } from '@clossys/designer-ui';
+import { Background, Badge, BaseNode, BaseNodeContent, Card, CardDescription, CardHeader, CardTitle, Controls, Field, FieldDescription, FieldGroup, FieldTitle, Item, ItemActions, ItemContent, ItemTitle, LabeledHandle, MiniMap, NodeStatusIndicator, Panel, Position, ReactFlow, Sheet, SheetDescription, SheetHeader, SheetTitle, SmoothStepEdge, useReactFlow, type Edge, type Node, type NodeProps, type ReactFlowProps } from '@clossys/designer-ui';
 
 /** The node kinds a pipeline step carries; graph.json names one per step. */
 export type StepKind = 'plumb' | 'decide:creative' | 'decide:judgment';
@@ -42,6 +42,9 @@ export interface StepData {
   kind: StepKind;
   lane: string;
   stage: string;
+  /** The step's port counts as its handles show them (Writer copy, the counts filled). */
+  inputsLabel: string;
+  outputsLabel: string;
   facts: StepFacts;
 }
 
@@ -78,12 +81,19 @@ export interface PipelineFlowCopy {
   none: string;
   openSeat: string;
   statuses: Readonly<Record<StepStatus, string>>;
+  /** What a node is called to assistive technology (`aria-roledescription`). */
+  nodeRole: string;
+  /** The React Flow attribution link's text and accessible name. */
+  attribution: string;
+  attributionLabel: string;
+  /** Every word React Flow renders itself: its keyboard help, Controls and MiniMap labels. */
+  aria: NonNullable<ReactFlowProps['ariaLabelConfig']>;
 }
 
 /** The `flow` input of `sections.producer.pipeline-flow`. `seat` is the highlighted lane (the page's `?seat=<id>`), or null. */
 export interface PipelineFlowInput { graph: PipelineGraph; copy: PipelineFlowCopy; seat: string | null }
 
-type StepNodeData = StepData & { kindLabel: string; inputsLabel: string; outputsLabel: string; copy: PipelineFlowCopy; active: boolean };
+type StepNodeData = StepData & { kindLabel: string; copy: PipelineFlowCopy; active: boolean };
 type LaneNodeData = { [key: string]: unknown; label: string; active: boolean };
 type StageNodeData = { [key: string]: unknown; label: string };
 type RoundNodeData = { [key: string]: unknown; label: string };
@@ -154,6 +164,8 @@ const MIN_ZOOM = 0.1;
 const INSET = 16;
 /** The stock Controls' fit-view button shows every step. */
 const FIT_ALL = { padding: 0.04 };
+/** The stock attribution renders as the Panel below, so its words are Writer copy. */
+const HIDE_ATTRIBUTION = { hideAttribution: true };
 
 const list = (values: readonly string[], none: string) => values.length ? values.join(', ') : none;
 
@@ -196,17 +208,17 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   </Card>;
   const steps: Node[] = graph.nodes.map(node => ({
     ...node, type: 'step',
-    data: { ...node.data, kindLabel: copy.kinds[node.data.kind], inputsLabel: `${copy.inputs} ${node.data.facts.inputs.length}`, outputsLabel: `${copy.outputs} ${node.data.facts.outputs.length}`, copy, active: node.data.lane === seat },
+    data: { ...node.data, kindLabel: copy.kinds[node.data.kind], copy, active: node.data.lane === seat },
   }));
-  const fixed = { selectable: false, focusable: false, draggable: false, connectable: false } as const;
+  const fixed = { selectable: false, focusable: false, draggable: false, connectable: false, domAttributes: { 'aria-roledescription': copy.nodeRole } } as const;
   const lanes: Node[] = graph.lanes.map(lane => ({
-    id: `lane:${lane.id}`, type: 'lane', position: lane.position, data: { label: copy.lanes[lane.id] ?? lane.id, active: lane.id === seat }, ...fixed,
+    id: `lane:${lane.id}`, type: 'lane', position: lane.position, data: { label: copy.lanes[lane.id], active: lane.id === seat }, ...fixed,
   }));
   const stages: Node[] = graph.stages.map(stage => ({
-    id: `stage:${stage.id}`, type: 'stage', position: stage.position, data: { label: copy.stages[stage.id] ?? stage.id }, ...fixed,
+    id: `stage:${stage.id}`, type: 'stage', position: stage.position, data: { label: copy.stages[stage.id] }, ...fixed,
   }));
   const rounds: Node[] = graph.rounds.map(round => ({
-    id: `round:${round.id}`, type: 'round', position: round.position, data: { label: copy.rounds[round.id] ?? round.id }, ...fixed,
+    id: `round:${round.id}`, type: 'round', position: round.position, data: { label: copy.rounds[round.id] }, ...fixed,
   }));
   // Open at the lane labels' and round headers' top left corner at the readable zoom.
   const left = Math.min(...graph.lanes.map(lane => lane.position.x), ...graph.nodes.map(node => node.position.x));
@@ -218,10 +230,13 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
   // A new highlighted lane (`?seat=`) remounts the uncontrolled flow with that lane's nodes marked.
   return <Card size="sm" className="flex-1" {...provenance}>
     <ReactFlow key={seat ?? ''} aria-label={copy.label} defaultNodes={[...rounds, ...stages, ...lanes, ...steps]} defaultEdges={[...graph.edges]} nodeTypes={NODE_TYPES} edgeTypes={EDGE_TYPES} defaultEdgeOptions={EDGE_OPTIONS}
+      ariaLabelConfig={copy.aria} proOptions={HIDE_ATTRIBUTION}
       nodesDraggable={false} nodesConnectable={false} selectionKeyCode={null} multiSelectionKeyCode={null} defaultViewport={viewport} minZoom={MIN_ZOOM}>
       <Background />
       <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_ALL} />
       <MiniMap position="bottom-right" pannable zoomable />
+      {/* React Flow's own attribution, kept as its stock panel and link, with Writer words. */}
+      <Panel position="bottom-right" className="react-flow__attribution"><a href="https://reactflow.dev" target="_blank" rel="noopener noreferrer" aria-label={copy.attributionLabel}>{copy.attribution}</a></Panel>
     </ReactFlow>
   </Card>;
 }

@@ -3,11 +3,13 @@ import { createHash } from 'node:crypto';
 import { dirname, resolve, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { projectRedirects } from '@clossys/publisher/content-map';
+import { validateCopyRegistryShape } from '@clossys/writer';
+import { resolveCopyRef } from '@clossys/writer/resolve';
 import { listSlots, readCandidate, readIa, readSlot } from '../dist/records/slots.js';
 import { slotPositions, validateSlotDoc } from '../dist/records/slot-model/index.js';
 import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
-import { readPinnedPublication } from '../dist/publish/pinned-publication.js';
+import { readPinnedPublication, resolvePublicationTitles } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
 import { checkPayload } from './studio-payload.mjs';
 import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
@@ -171,15 +173,11 @@ function pinnedItem(clossysRoot, entries, slot) {
   return { slot, element: item.name, version, candidate: pin.candidate, sha256: pin.sha256, files, payload: [...files.keys()], studioDir: join(studioRoot, folder, item.name), module: `../${folder}/${item.name}` };
 }
 
-// Studio copy slots, by slot id: folders are flat (agents/writer/<slot-id>), so a
-// regroup in ia.json never drops a slot from Studio copy. `placement` in the
+// Studio copy slots: every Writer `strings.*` slot (folders are flat, agents/writer/<slot-id>, so a
+// regroup in ia.json never drops a slot from Studio copy). A key Studio shows may live in any of
+// them (page titles, errors, names); only `studio.` ids are Studio copy. `placement` in the
 // recorded source is the slot's current IA position (provenance only).
-const STUDIO_COPY_SLOTS = new Set([
-  'strings.descriptions',
-  'strings.statuses',
-  'strings.common',
-  'strings.field-labels',
-]);
+const isStudioCopySlot = slot => /^strings\.[a-z0-9-]+$/.test(slot);
 const candidateVersion = name => /^[a-z0-9][a-z0-9.-]*-v([1-9][0-9]*)\.md$/.exec(name)?.[1];
 
 /** Pins remain authoritative. Only explicit preview may read an absent pin's newest draft. */
@@ -191,8 +189,9 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
   try { ia = JSON.parse(await readFile(join(root, 'ia.json'), 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; ia = { nodes: [] }; }
   const entries = [], revisions = [], sources = [];
+  let locale;
   for (const node of ia.nodes) for (const group of node.children) for (const slot of group.slots) {
-    if (!STUDIO_COPY_SLOTS.has(slot)) continue;
+    if (!isStudioCopySlot(slot)) continue;
     const placement = `${node.id}/${group.id}/${slot}`;
     const dir = join(root, slot);
     let pin, candidate, selectedBy;
@@ -222,8 +221,16 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
     if (pin !== undefined && sha256 !== pin.sha256) throw new Error(`Studio Writer pin hash mismatch: ${slot}`);
     revisions.push(sha256);
     sources.push({ placement, candidate, version: candidateVersion(candidate), sha256, selectedBy });
-    if (!bytes.startsWith('---\n') || !bytes.includes('\nlocales: ["en"]\n')) throw new Error(`Invalid Studio Writer locale: ${slot}`);
-    const records = bytes.split(/^### /m).slice(1);
+    // The source locale is the candidate's first recorded locale; every Studio copy slot shares it.
+    const locales = bytes.startsWith('---\n') ? /\nlocales: (\[[^\n]*\])\n/.exec(bytes)?.[1] : undefined;
+    const first = locales ? JSON.parse(locales)[0] : undefined;
+    if (typeof first !== 'string' || !/^[a-z]{2,3}(?:-[A-Za-z0-9]+)*$/.test(first)) throw new Error(`Invalid Studio Writer locale: ${slot}`);
+    if (locale !== undefined && first !== locale) throw new Error(`Studio Writer slots disagree on their source locale: ${slot} is ${first}, not ${locale}`);
+    locale = first;
+    // Only the source locale's records: its body runs from `## <locale>` to the next locale heading.
+    const body = bytes.split(/^## /m).find(part => part.startsWith(`${first}\n`));
+    if (body === undefined) throw new Error(`Invalid Studio Writer records: ${slot}`);
+    const records = body.split(/^### /m).slice(1);
     if (!records.length) throw new Error(`Invalid Studio Writer records: ${slot}`);
     for (const record of records) {
       const match = /^([^\n]+)\n<!-- (.+) -->\n([\s\S]*)$/.exec(record);
@@ -233,13 +240,20 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
       if (!meta.id.startsWith('studio.')) continue;
       if (!Array.isArray(meta.bindings) || !meta.bindings.every(binding => typeof binding === 'string')) throw new Error(`Invalid Studio Writer bindings: ${meta.id}`);
       if (entries.some(row => row.id === meta.id)) throw new Error(`Duplicate Studio Writer copy: ${meta.id}`);
-      entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', '), status: 'draft' });
+      // A record's context is where it is bound; an unbound record keeps its own Writer context (its `###` heading).
+      entries.push({ id: meta.id, text: match[3].replace(/\n\n?$/, ''), context: meta.bindings.join(', ') || match[1].trim(), status: 'draft' });
     }
   }
   const reference = previewDrafts ? `clossys/agents/writer#${JSON.stringify(sources)}` : 'clossys/agents/writer';
   const revision = previewDrafts ? JSON.stringify(sources) : revisions.join('');
-  return { id: 'studio-copy', locale: 'en', revision: createHash('sha256').update(revision).digest('hex'),
+  // No pinned strings slot: an empty registry whose locale is undetermined (BCP 47 `und`); no key resolves.
+  const registry = { id: 'studio-copy', locale: locale ?? 'und', revision: createHash('sha256').update(revision).digest('hex'),
     source: { kind: 'consumer', reference }, entries };
+  // A registry the Writer resolver refuses resolves no key at all: refuse it here, by finding, not at render.
+  const refused = entries.length > 0 && resolveCopyRef(registry, { id: entries[0].id }, { target: 'preview' }).issues?.some(issue => issue.reason === 'invalid-registry');
+  const findings = refused ? validateCopyRegistryShape(registry) : [];
+  if (refused) throw new Error(`Studio Writer copy is not a valid copy registry: ${findings.slice(0, 5).map(finding => finding.message).join('; ')}${findings.length > 5 ? ` (+${findings.length - 5} more)` : ''}`);
+  return registry;
 }
 
 /** Studio's assembly module, relative to its app directory: what every installed route mounts. */
@@ -273,7 +287,8 @@ export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, ap
 
 export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outputDir = resolve(studioRoot, 'generated'), appDir = join(outputDir, '..', 'app'), installOut, check = false, payloads = true, target, previewItems } = {}) {
   if ((target !== undefined && target !== 'preview') || (target !== 'preview' && previewItems !== undefined)) fail('Draft bindings require an explicit preview target');
-  const pinned = await readPinnedPublication(resolve(clossysRoot), 'studio');
+  // Every title a person reads (page, tab, leaf, trail, document title) is Writer text, resolved here.
+  const pinned = resolvePublicationTitles(resolve(clossysRoot), await readPinnedPublication(resolve(clossysRoot), 'studio'));
   const routePack = pinned.routePack;
   if (!routePack) fail('the studio publication has no route metadata');
   // Parameterized records expand through the content map: one tab page per IA group, one leaf template per tab.

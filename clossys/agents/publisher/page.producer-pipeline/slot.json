@@ -25,6 +25,7 @@
     "sections.producer.pipeline-legend",
     "sections.producer.team-strip",
     "sections.studio.page-header",
-    "strings.common"
+    "strings.common",
+    "strings.page-titles"
   ]
 }

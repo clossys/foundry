@@ -1,7 +1,7 @@
 {
-  "candidate": "admin-studio-draft-v1.md",
-  "sha256": "88c7bf0c4e130b43271b953c5ab6126d53dfdb564857ecefb79b48d144427a61",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:39Z"
+  "candidate": "admin-studio-draft-v2.md",
+  "sha256": "f222da636dc4eabd43e4c1f0894b385168b3940b05d239e5a1f534ec7fa7dda1",
+  "decidedBy": "planner:SEEN-COPY",
+  "basis": "planner",
+  "at": "2026-11-05T05:31:20.548Z"
 }

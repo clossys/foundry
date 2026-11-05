@@ -10,6 +10,7 @@ import { repoConsumer } from "../cli/__fixtures__/flat-consumer.js";
 import { readIa } from "../records/slots.js";
 import { agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
+import { writeFixtureNames } from "./__fixtures__/writer-names.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repo = resolve(here, "../../../..");
@@ -40,7 +41,8 @@ async function director(): Promise<string> {
 
 describe("loopback Producer", () => {
   it("serves health and the flat Director slot model over /api/slots", async () => {
-    const id = await director(); await launch();
+    // The gallery labels its slots by their Writer names, which have no fallback.
+    const id = await director(); writeFixtureNames(root); await launch();
     expect((await request("/api/health")).body).toEqual({ ok: true, studio: "ready" });
     const gallery = await request("/api/slots/director");
     expect(gallery.status).toBe(200); expect(gallery.body.state).toBe("ready");

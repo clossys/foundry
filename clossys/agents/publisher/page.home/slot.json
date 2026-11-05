@@ -23,6 +23,7 @@
     "sections.studio.home",
     "sections.studio.page-header",
     "sections.task-list",
-    "strings.common"
+    "strings.common",
+    "strings.page-titles"
   ]
 }

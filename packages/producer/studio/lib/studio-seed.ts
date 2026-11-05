@@ -1,4 +1,4 @@
-import { studioCopy } from './studio-copy';
+import { studioCopy, StudioCopyError, errorText } from './studio-copy';
 /**
  * The Producer data a Studio route renders, loaded where the route renders. The browser loads it
  * after hydration; a server render loads it first (`loadStudioSeed`, `loadPageSeed`) and hands it
@@ -24,12 +24,11 @@ export interface SlotGroupsRecord { sections: readonly SlotGallerySection[]; cou
 /** A leaf's record: the slot detail and, beside it, the publication that may have emitted it. */
 export interface LeafRecord { detail: SlotDetail; publication?: PublicationResponse }
 
-const message = (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback;
 const unavailable = () => studioCopy("studio.producer-is-unavailable");
 
 export async function loadReports(signal: AbortSignal): Promise<StudioReport[]> {
   const response = await fetch(producerUrl('/api/config'), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(studioCopy("studio.producer-could-not-load-its-configuration", { value0: String(response.status) }));
+  if (!response.ok) throw new StudioCopyError("studio.producer-could-not-load-its-configuration", { value0: String(response.status) });
   const config = await response.json() as Record<string, unknown>;
   // Only the report fields leave this function; the session token is never retained.
   return studioReports({ selection: config.selection, theme: config.theme, compilation: config.compilation });
@@ -45,9 +44,9 @@ export async function loadBrand(signal: AbortSignal): Promise<StudioBrandInfo> {
 /** One agent's slot gallery: the agent is record data (the page's loader input), never a branch. */
 export async function loadSlotGroups(agent: string, signal: AbortSignal): Promise<SlotGroupsRecord> {
   const response = await fetch(producerUrl(`/api/slots/${encodeURIComponent(agent)}`), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(studioCopy("studio.the-library-could-not-load"));
+  if (!response.ok) throw new StudioCopyError("studio.the-library-could-not-load");
   const value = await response.json() as { state?: unknown; sections?: unknown; count?: unknown };
-  if (value.state !== 'ready' || !Array.isArray(value.sections)) throw new Error(studioCopy("studio.the-library-could-not-load"));
+  if (value.state !== 'ready' || !Array.isArray(value.sections)) throw new StudioCopyError("studio.the-library-could-not-load");
   const sections = value.sections as SlotGallerySection[];
   // Only a gallery of page slots frames published pages; the others never ask for the publication.
   const pages = sections.some(section => section.cards.some(card => card.kind === 'page' && card.status === 'active'));
@@ -58,9 +57,9 @@ export async function loadSlotGroups(agent: string, signal: AbortSignal): Promis
 /** The pipeline graph as Producer serves it: `packages/producer/pipeline/graph.json`, read and nothing else. */
 export async function loadPipeline(signal: AbortSignal): Promise<PipelineGraphFile> {
   const response = await fetch(producerUrl('/api/pipeline'), { signal, cache: 'no-store', headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(studioCopy("studio.pipeline.empty.description"));
+  if (!response.ok) throw new StudioCopyError("studio.pipeline.empty.description");
   const value = await response.json() as { state?: unknown; graph?: PipelineGraphFile };
-  if (value.state !== 'ready' || !value.graph || !Array.isArray(value.graph.nodes) || !Array.isArray(value.graph.edges)) throw new Error(studioCopy("studio.pipeline.empty.description"));
+  if (value.state !== 'ready' || !value.graph || !Array.isArray(value.graph.nodes) || !Array.isArray(value.graph.edges)) throw new StudioCopyError("studio.pipeline.empty.description");
   return value.graph;
 }
 
@@ -75,7 +74,7 @@ export async function loadLeaf(agent: string, slug: string, signal: AbortSignal)
 /** Settles a load into the resource its consumer renders. */
 async function settle<T>(load: Promise<T>, fallback: string): Promise<Resource<T>> {
   try { return { state: 'ready', value: await load }; }
-  catch (error) { return { state: 'error', message: message(error, fallback) }; }
+  catch (error) { return { state: 'error', message: errorText(error, fallback) }; }
 }
 
 /** What every Studio route shares: the providers' resources. */

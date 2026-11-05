@@ -63,7 +63,8 @@ test('Studio copy refuses relevant corrupt pins and never selects an unpinned ca
 
 test('Foundry migrated copy resolves counts and current visible wording without approval claims', async () => {
   const root = new URL('../../../clossys/', import.meta.url).pathname;
-  const registry = await studioCopyRegistry(root, preview);
+  // The stored registry is what generate writes: the pinned copy, no draft preview.
+  const registry = await studioCopyRegistry(root);
   const stored = JSON.parse(await readFile(new URL('../studio/generated/studio-copy.json', import.meta.url), 'utf8'));
   assert.deepEqual(registry, stored);
   const resolve = createCopyResolver(registry, { target: 'preview' });
@@ -82,7 +83,7 @@ test('Every migrated Studio message uses Writer ICU and retains singular/plural 
   for (const entry of registry.entries) {
     const missing = resolveCopyRef(registry, { id: entry.id }, { target: 'preview' });
     const values = Object.fromEntries(missing.issues.filter(issue => issue.reason === 'missing-placeholder-value')
-      .map(issue => [issue.placeholder, issue.placeholder === 'count' ? 2 : 'sample']));
+      .map(issue => [issue.placeholder, new RegExp(`\\{${issue.placeholder}, *(?:plural|selectordinal|number)\\b`).test(entry.text) ? 2 : 'sample']));
     const result = resolveCopyRef(registry, { id: entry.id, values }, { target: 'preview' });
     assert.equal(result.complete, true, `${entry.id}: ${JSON.stringify(result.issues)}`);
   }
@@ -160,12 +161,15 @@ test('Preview refuses numeric-version ties and compares large versions without r
   await assert.rejects(studioCopyRegistry(f.root, preview), /Ambiguous Studio Writer draft version/);
 });
 
-test('Preview is limited to the four approved Studio copy slots, wherever the IA groups them', async t => {
+test('Studio copy reads every Writer strings slot, wherever the IA groups it, and no other Writer slot', async t => {
   for (const placement of [
     'strings.metadata/metadata-descriptions/strings.descriptions',
     'strings.interface/interface-statuses/strings.statuses',
     'strings.interface/interface-field-labels/strings.common',
     'strings.interface/interface-field-labels/strings.field-labels',
+    'strings.metadata/metadata-titles/strings.page-titles',
+    'strings.interface/interface-names/strings.names',
+    'strings.interface/interface-errors/strings.errors',
   ]) {
     const f = await fixture(t, placement);
     await f.candidate('Allowed draft', 'studio-v1.md', false);
@@ -180,4 +184,32 @@ test('Preview is limited to the four approved Studio copy slots, wherever the IA
     assert.equal(JSON.parse(registry.source.reference.slice('clossys/agents/writer#'.length))[0].placement, `regrouped/other-group/${slot}`);
     assert.deepEqual((await studioCopyRegistry(f.root)).entries, []);
   }
+});
+
+async function rawCandidate(f, records) {
+  const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n${records}`;
+  await writeFile(join(f.dir, 'candidates', 'studio-v1.md'), bytes);
+  await writeFile(join(f.dir, 'pin.json'), JSON.stringify({ candidate: 'studio-v1.md', sha256: createHash('sha256').update(bytes).digest('hex') }));
+}
+
+test('Studio copy keeps an unbound record resolvable: its context is its own Writer heading', async t => {
+  const f = await fixture(t);
+  await rawCandidate(f, '### studio.nav.home\n<!-- {"id":"studio.nav.home","bindings":[]} -->\nHome\n');
+  const registry = await studioCopyRegistry(f.root);
+  assert.equal(registry.entries[0].context, 'studio.nav.home');
+  assert.equal(createCopyResolver(registry, { target: 'preview' })({ id: 'studio.nav.home' })?.text, 'Home');
+});
+
+test('Studio copy refuses a registry the Writer resolver would refuse, instead of resolving nothing at render', async t => {
+  const f = await fixture(t);
+  await rawCandidate(f, '### studio.blank\n<!-- {"id":"studio.blank","bindings":["test"]} -->\n\n');
+  await assert.rejects(studioCopyRegistry(f.root), /not a valid copy registry/);
+});
+
+test('A Writer slot outside strings.* is never Studio copy', async t => {
+  const f = await fixture(t, 'lexicon.voice/voice-terms/lexicon.terms');
+  await f.candidate('Not Studio copy', 'studio-v1.md');
+  const registry = await studioCopyRegistry(f.root, preview);
+  assert.deepEqual(registry.entries, []);
+  assert.equal(registry.locale, 'und');
 });
