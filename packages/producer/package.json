@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./records/slots": {
+      "types": "./dist/records/slots.d.ts",
+      "import": "./dist/records/slots.js"
     }
   },
   "bin": {

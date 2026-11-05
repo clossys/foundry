@@ -354,6 +354,7 @@
     "scripts/check-section-tokens.mjs",
     "scripts/check-page-overflow.mjs",
     "scripts/check-provenance.mjs",
+    "scripts/slot-pins.mjs",
     "references",
     "scripts/check-ref-verbatim.mjs",
     "scripts/check-ref-verbatim.d.ts",

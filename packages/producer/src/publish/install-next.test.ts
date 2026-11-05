@@ -28,9 +28,10 @@ it("installs every page of the pinned publication, expanded into IA tabs, and a 
   expect(result.findings).toEqual([]);
   expect(result.files.every(row => row.state === "written")).toBe(true);
   const files = (kind: "page" | "leaf") => result.files.filter(row => row.kind === kind).map(row => row.file);
-  // Home, one page per parameterized record (agent top group), then the tabs each record expands to.
-  expect(files("page").slice(0, 2)).toEqual(["page.tsx", "director/context/page.tsx"]);
-  expect(files("page")).toEqual(expect.arrayContaining(["designer/themes/page.tsx", "writer/lexicon/page.tsx", "publisher/studio/page.tsx", "designer/themes/colors/page.tsx", "publisher/studio/pages/page.tsx"]));
+  // Home, then the Content overview (publication v5 lists it before the agents, cfa277893), then one
+  // page per parameterized record (agent top group) and the tabs each record expands to.
+  expect(files("page").slice(0, 2)).toEqual(["page.tsx", "content/page.tsx"]);
+  expect(files("page")).toEqual(expect.arrayContaining(["director/context/page.tsx", "designer/themes/page.tsx", "writer/lexicon/page.tsx", "publisher/studio/page.tsx", "designer/themes/colors/page.tsx", "publisher/studio/pages/page.tsx"]));
   // Leaf routes live under tabs only; no flat per-agent [slug] route survives.
   expect(files("leaf")).toContain("designer/themes/colors/[slug]/page.tsx");
   expect(files("leaf").every(file => file.split("/").length === 5 && file.endsWith("/[slug]/page.tsx"))).toBe(true);
@@ -47,7 +48,7 @@ it("installs every page of the pinned publication, expanded into IA tabs, and a 
   expect(await readFile(join(root, "app", "page.tsx"), "utf8")).toContain('from "../components/Page"');
   const report = JSON.parse(await readFile(join(root, "out", "install-report.json"), "utf8"));
   expect(report).toMatchObject({ kind: "next", publication: "studio", findings: [] });
-  expect(report.pages.slice(0, 2)).toEqual([{ page: "home", route: "/", file: "page.tsx" }, { page: "director-context", route: "/director/context", file: "director/context/page.tsx" }]);
+  expect(report.pages.slice(0, 2)).toEqual([{ page: "home", route: "/", file: "page.tsx" }, { page: "producer-pipeline", route: "/content", file: "content/page.tsx" }]);
   expect(report.pages).toHaveLength(files("page").length);
   expect(report.leaves.map((row: { route: string }) => row.route)).toContain("/designer/themes/colors/[slug]");
   expect((await install()).files.every(row => row.state === "unchanged")).toBe(true);

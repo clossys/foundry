@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 import { promisify } from "node:util";
 import { loadReleaseCatalog } from "./check-release-catalog.mjs";
+import { publishedDirectory, publishedName, samePackage, workspaceDirectory } from "./lib/package-renames.mjs";
 import { validateReleaseQualificationContract, validateReleaseQualificationPolicy, validateReleaseQualificationPortfolio } from "./lib/release-qualification-contract.mjs";
 
 const execFile = promisify(execFileCallback);
@@ -113,7 +114,8 @@ test("qualification covers every publishable package while release order covers 
   // OWN packageDir (below) resolves to the SAME manifest this independent
   // packages/ directory scan already found for that name — not that any
   // particular version string is currently in effect.
-  const expectedVersions = Object.fromEntries(manifests.filter((manifest) => manifest.private !== true).map((manifest) => [manifest.name, manifest.version]));
+  // Keyed by the published spelling the dated policy uses (scripts/lib/package-renames.mjs).
+  const expectedVersions = Object.fromEntries(manifests.filter((manifest) => manifest.private !== true).map((manifest) => [publishedName(manifest.name), manifest.version]));
   // The count this line asserted (issue #1504) tracked packages/ and had to
   // be bumped on every new package; the deepEqual right below already fails
   // if policy.packages names anything other than exactly this scan's
@@ -125,7 +127,7 @@ test("qualification covers every publishable package while release order covers 
   const releasePosition = new Map(target.packages.map((key, index) => [key, index]));
   const sourceNames = new Set(manifests.map((manifest) => manifest.name));
   for (const manifest of manifests) {
-    const key = manifest.name.split("/")[1];
+    const key = publishedDirectory(manifest.name.split("/")[1]);
     if (!releasePosition.has(key)) continue;
     const firstPartyDependencies = Object.keys({
       ...manifest.dependencies,
@@ -133,14 +135,14 @@ test("qualification covers every publishable package while release order covers 
       ...manifest.peerDependencies,
     }).filter((name) => sourceNames.has(name));
     for (const dependency of firstPartyDependencies) {
-      const dependencyKey = dependency.split("/")[1];
+      const dependencyKey = publishedDirectory(dependency.split("/")[1]);
       assert.ok(releasePosition.get(dependencyKey) < releasePosition.get(key), `${dependency} must precede ${manifest.name}`);
     }
   }
   for (const [name, entry] of Object.entries(policy.packages)) {
-    const manifest = await repositoryJson(`${entry.packageDir}/package.json`);
+    const manifest = await repositoryJson(`packages/${workspaceDirectory(entry.packageDir.replace(/^packages\//, ""))}/package.json`);
     assert.equal(entry.packageKey, name.split("/")[1]);
-    assert.equal(manifest.name, name);
+    assert.ok(samePackage(manifest.name, name), `${entry.packageDir} holds ${manifest.name}, not ${name}`);
     assert.equal(manifest.version, expectedVersions[name]);
     assert.equal(entry.archetypes["current-direct"].status, "required");
     const adapter = await repositoryJson(entry.adapterPath);

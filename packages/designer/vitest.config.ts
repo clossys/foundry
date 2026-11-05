@@ -12,7 +12,8 @@ export default defineConfig({
     // Builds dist/ once, before any test file runs; test files never rebuild it (#1385).
     globalSetup: ["../../scripts/lib/vitest-build-package.mjs"],
     include: ["src/**/*.test.{ts,tsx}"],
-    setupFiles: ["./vitest.setup.ts"],
+    // Temp roots resolve symlinks so the symlinked-ancestor refusal stays strict (macOS /var).
+    setupFiles: ["../../scripts/lib/vitest-realpath-tmpdir.mjs", "./vitest.setup.ts"],
     testTimeout: 5_000,
     globals: false,
   },

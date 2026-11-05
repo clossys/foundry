@@ -1,4 +1,5 @@
 import { ARCHETYPES, parseStrictJson } from "./candidate-qualification.mjs";
+import { publishedName } from "./package-renames.mjs";
 
 const DIMENSIONS = ["position", "completion", "rollback", "duplicate", "cadence", "closeWindow"];
 const object = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -97,7 +98,9 @@ export function selectPolicyPackage(policy, packageKey) {
 /** Prove qualification covers the source inventory and release members belong to it. */
 export function validateReleaseQualificationPortfolio({ policy, manifests, releasePackages }) {
   const findings = [];
-  const source = Array.isArray(manifests) ? manifests.filter((item) => item?.private !== true) : [];
+  // The policy and the release catalog are dated records keyed by each package's published
+  // spelling (scripts/lib/package-renames.mjs); a renamed workspace manifest joins them under it.
+  const source = Array.isArray(manifests) ? manifests.filter((item) => item?.private !== true).map((item) => (typeof item?.name === "string" ? { ...item, name: publishedName(item.name) } : item)) : [];
   const sourceNames = source.map((item) => item?.name).sort();
   const policyNames = Object.keys(policy?.packages ?? {}).sort();
   if (sourceNames.length === 0 || sourceNames.some((name) => !PACKAGE.test(name))) finding(findings, "portfolio-source", "publishable source manifests must have namespace-qualified package names.");

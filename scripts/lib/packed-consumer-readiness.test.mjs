@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, posix, relative } from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 
 import {
   BY_DESIGN_REFUSALS,
@@ -363,9 +364,12 @@ test("actual shipped ref-verbatim source imports without any optional UI peer", 
   const packageRoot = join(root, "node_modules", manifest.name);
   // Exact shipped source bytes, with no dist build or packed-artifact claim.
   // Importing this entry does not invoke the verifier's lazy TypeScript API.
-  const sources = ["scripts/check-ref-verbatim.mjs", ...[
-    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only",
-  ].map((name) => `scripts/ref-verbatim/${name}.mjs`)];
+  // The copied set is the entry's static relative-import graph, and every
+  // file in it must be shipped by `files`: a hand list once missed
+  // scripts/slot-pins.mjs, which the published tarball then lacked.
+  const sources = await relativeImportGraph(sourceRoot, exported.import.replace(/^\.\//, ""));
+  assert.ok(sources.includes("scripts/slot-pins.mjs"));
+  for (const source of sources) assert.ok(shippedByFiles(manifest.files, source), `${source} is imported by ${specifier} but not shipped by files`);
   for (const source of sources) {
     await mkdir(dirname(join(packageRoot, source)), { recursive: true });
     await writeFile(join(packageRoot, source), await readFile(join(sourceRoot, source)));
@@ -387,7 +391,47 @@ test("actual shipped ref-verbatim source imports without any optional UI peer", 
   assert.equal(result.timedOut, false);
   assert.equal(result.launchError, undefined);
   for (const peer of peers) assert.equal(OPTIONAL_PEER_POLICY[manifest.name][peer][specifier], "imports", peer);
+  // Pin reading needs the Producer slot reader; without it, it fails by name, not at import.
+  const pins = await runProcess(process.execPath, ["--input-type=module", "--eval", `
+    const { designerSlotRecords } = await import(${JSON.stringify(pathToFileURL(join(packageRoot, "scripts/slot-pins.mjs")).href)});
+    try { designerSlotRecords(process.cwd()); process.exit(1); }
+    catch (error) { if (!error.message.includes("install @clossys/producer")) throw error; }
+  `], { cwd: root, env });
+  assert.equal(pins.exitCode, 0, pins.stderr);
 });
+
+test("the ref-verbatim import graph check catches a file files does not ship", () => {
+  assert.equal(shippedByFiles(["scripts/ref-verbatim", "scripts/check-ref-verbatim.mjs"], "scripts/ref-verbatim/diff.mjs"), true);
+  assert.equal(shippedByFiles(["scripts/ref-verbatim", "scripts/check-ref-verbatim.mjs"], "scripts/slot-pins.mjs"), false);
+  assert.equal(shippedByFiles(["scripts/ref-verbatim", "!scripts/**/*.test.*"], "scripts/ref-verbatim/diff.test.mjs"), false);
+  assert.equal(shippedByFiles(["scripts"], "../producer/dist/records/slots.js"), false);
+});
+
+const RELATIVE_IMPORT = /(?:^|[\s;])(?:import|export)\s[^'"]*?from\s*["'](\.{1,2}\/[^"']+)["']|(?:^|[\s;])import\s*["'](\.{1,2}\/[^"']+)["']/g;
+async function relativeImportGraph(packageRoot, entry) {
+  const seen = new Set();
+  const queue = [entry];
+  while (queue.length) {
+    const file = queue.shift();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const text = await readFile(join(packageRoot, file), "utf8");
+    for (const match of text.matchAll(RELATIVE_IMPORT)) {
+      const target = posix.normalize(posix.join(posix.dirname(file), match[1] ?? match[2]));
+      // A specifier that leaves the package can never be shipped; record it so the files check refuses it.
+      queue.push(target);
+    }
+  }
+  return [...seen].sort();
+}
+
+function shippedByFiles(files, path) {
+  if (path.startsWith("../") || relative(".", path).startsWith("..")) return false;
+  const negated = files.filter((entry) => entry.startsWith("!")).map((entry) => entry.slice(1));
+  const testGlob = (glob) => new RegExp(`^${glob.split("**/").map((part) => part.split("*").map((piece) => piece.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join("[^/]*")).join("(?:.*/)?")}$`);
+  if (negated.some((glob) => testGlob(glob).test(path))) return false;
+  return files.filter((entry) => !entry.startsWith("!")).some((entry) => path === entry || path.startsWith(`${entry}/`));
+}
 
 test("registered-route-check requires distinct browser/default outcomes and a browser marker", async () => {
   const packages = await discoverPublishablePackages(process.cwd());

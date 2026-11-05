@@ -9,11 +9,15 @@
 //   3. assert-public --cohort fails closed on a private cohort package.
 //   4. --check reports a DRAFT Studio from producer.tgz, treats a Studio
 //      without `preview` as a release pack, and refuses a preview that is not
-//      DRAFT or claims release qualification. The committed Studio map's
-//      bindings reproduce its own bindingDigest.
+//      DRAFT or claims release qualification. A DRAFT Studio map's bindings
+//      reproduce its own bindingDigest; the committed map is the pinned
+//      build (generate-studio-map with no preview, since c29e70e05), so
+//      committedDraftBindings refuses it and a DRAFT pack must pass
+//      --preview-bindings.
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -107,6 +111,25 @@ test("rule 4: DRAFT Studio is reported, and a mislabelled preview is refused", (
   assert.match(cli.stdout, /DRAFT pack, approved false, release-qualified false/);
   assert.throws(() => checkCohort(cohort(t, { preview: { ...draft, releaseQualified: true } }).out), /must be DRAFT and not release-qualified/);
   assert.throws(() => checkCohort(cohort(t, { preview: { ...draft, status: "FINAL" } }).out), /must be DRAFT/);
-  const rows = committedDraftBindings();
-  assert.ok(rows.length > 0 && rows.every((row) => /^(frames|sections)\./.test(row.slot) && /^sha256:[a-f0-9]{64}$/.test(row.hash)));
+  // The committed map is the pinned (release) projection: no DRAFT assembly, so it is refused.
+  const committed = JSON.parse(readFileSync(join(here, "..", "packages/producer/studio/generated/studio-map.json"), "utf8"));
+  assert.notEqual(committed.assembly?.status, "DRAFT");
+  assert.throws(() => committedDraftBindings(), /not a DRAFT preview with items; pass --preview-bindings/);
+  // A DRAFT map's bindings are derived from its items and must reproduce its bindingDigest.
+  const root = scratch(t);
+  const items = [
+    { slot: "sections.hero", element: "Hero", version: 2, previewEvidence: { record: { sha256: "a".repeat(64) } } },
+    { slot: "frames.site-shell", element: "SiteShell", version: 1, previewEvidence: { record: { sha256: "b".repeat(64) } } },
+  ];
+  const expected = [
+    { slot: "frames.site-shell", element: "SiteShell", version: 1, hash: `sha256:${"b".repeat(64)}` },
+    { slot: "sections.hero", element: "Hero", version: 2, hash: `sha256:${"a".repeat(64)}` },
+  ];
+  const digest = createHash("sha256").update(JSON.stringify(expected)).digest("hex");
+  const write = (map) => { const path = join(root, `map-${Math.random().toString(36).slice(2)}.json`); writeFileSync(path, JSON.stringify(map)); return path; };
+  const draftMap = { assembly: { ...draft, bindingDigest: digest }, items };
+  assert.deepEqual(committedDraftBindings(write(draftMap)), expected);
+  assert.throws(() => committedDraftBindings(write({ ...draftMap, assembly: { ...draftMap.assembly, bindingDigest: "e".repeat(64) } })), /digest to [a-f0-9]{64}, not its bindingDigest/);
+  assert.throws(() => committedDraftBindings(write({ ...draftMap, items: [{ ...items[0], previewEvidence: undefined }] })), /records no candidate sha256/);
+  assert.throws(() => committedDraftBindings(write({ ...draftMap, assembly: { ...draftMap.assembly, status: "PINNED" } })), /not a DRAFT preview/);
 });
