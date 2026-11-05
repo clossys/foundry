@@ -722,10 +722,20 @@ export function surfaceDocument(library: CompositeLibraryData, fill: SurfaceCand
     const meta = { id: `${library.source.id}/${fill.slot}`, slot: fill.slot, source: library.source.id, mode: "implementation" as const, sourceAddress: `fills/${fill.slot}.json`, relation: "same-contract" as const, builtOn: [], conforms: [], evidence: [], author: "consumer" as const, trust: "consumer" as const, license: fill.license, status: "draft" as const, originKinds: [fill.origin.kind] };
     return fill.kind === "section" ? { $extensions: { "com.clossys.fill": meta }, sections: { [fill.slot.slice(9)]: fill } } : { $extensions: { "com.clossys.fill": meta }, frames: { [fill.slot.slice(7)]: fill } };
 }
+/** A measured scan: lower-bound status, hashed source files and sorted reads/composes; never an empty stand-in. */
+function packageConsumption(value: unknown): void {
+    object(value, ["scanStatus", "sourceFiles", "scannedReads", "scannedComposes"], ["rawScannedReads", "privateInternalReads", "unresolved"]);
+    choice(value.scanStatus, ["lower-bound"]);
+    list(value.sourceFiles, file => { object(file, ["path", "sha256"]); string(file.path); surfacePath(file.path); hash(file.sha256); }, true);
+    object(value.scannedReads, ["themes", "assets"], ["components"]);
+    strings(value.scannedReads.themes); strings(value.scannedReads.assets);
+    if (value.scannedReads.components !== undefined) strings(value.scannedReads.components);
+    strings(value.scannedComposes);
+}
 export function assertSurfaceResolutionOptions(options: SurfaceResolutionOptions): void {
     const value = runtimeSnapshot(options);
     object(value, ["packages", "measurements"]);
-    list(value.packages, row => { object(row, ["module", "version", "artifactSha256", "values", "types"]); string(row.module); string(row.version); hash(row.artifactSha256); strings(row.values); strings(row.types); });
+    list(value.packages, row => { object(row, ["module", "version", "artifactSha256", "values", "types"], ["consumption"]); string(row.module); string(row.version); hash(row.artifactSha256); strings(row.values); strings(row.types); if (row.consumption !== undefined) map(row.consumption, (measurement, name) => { if (!(row.values as string[]).includes(name)) surfaceFault("S8 consumption names an unexported value"); packageConsumption(measurement); }); });
     if (new Set(value.packages.map(row => row.module)).size !== value.packages.length)
         surfaceFault("S4 duplicate package evidence");
     const command = (row: unknown) => { object(row, ["argv", "exitCode", "stdoutSha256", "stderrSha256"]); list(row.argv, string, true); if (typeof row.exitCode !== "number" || !Number.isInteger(row.exitCode))

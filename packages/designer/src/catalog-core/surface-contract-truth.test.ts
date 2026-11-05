@@ -40,8 +40,13 @@ it("refuses actual package reads outside the contract even when declared fields 
   const slot = app(), fill = descriptor();
   slot.contract.allowedReads.themes = [];
   Object.assign(fill, { reads: { themes: [], assets: [] }, composes: [], consumption: measured(true) });
-  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported themes:") && row.includes("themes.spacing"))).toBe(true);
-  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported themes:") && row.includes("themes.spacing"))).toBe(true);
+  // Actual use is the independent measurement of the pinned package, never the descriptor's snapshot: the stock
+  // app shell reads semantic shadcn themes (it stopped reading themes.spacing in the shadcn reset).
+  const read = measuredSurfaceConsumption("frames.app-shell", importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell")!.$extensions["com.clossys.fill"].pin!).reads.themes[0]!;
+  expect(read).toMatch(/^themes\./);
+  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported themes:") && row.includes(read))).toBe(true);
+  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported themes:") && row.includes(read))).toBe(true);
+  expect(contractFindings(slot, fill).join(" ")).not.toContain("themes.spacing");
 });
 
 it("does not mistake an absent package consumption measurement for an empty successful scan", () => {

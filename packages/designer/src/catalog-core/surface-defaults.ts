@@ -107,18 +107,11 @@ export function surfaceConsumptionFindings(slot: SectionSlot | FrameSlot, fill: 
 }
 
 /**
- * reads, composes and consumption are derived from the measured package source, never authored. Registered
- * descriptors that predate measurement carry none of the three; their pinned bytes stay unchanged and this
- * read-time view takes all three from the canonical measurement of the same pin. A descriptor that carries
- * any of them is checked as written, so a stale or partial declaration still under-reports visibly.
+ * Shared mapping eligibility and package source-consumption truth. Actual use is an independent measurement:
+ * Foundry's generated measurement of the same pin, else the installed artifact's measured evidence. The
+ * descriptor's own snapshot must be present and equal it; it never supplies actual use itself.
  */
-function derivedPackageDescriptor(fill: SurfaceDefaultDescriptor, actual: NonNullable<SurfaceDefaultDescriptor["consumption"]>): SurfaceDefaultDescriptor {
-  if (fill.consumption !== undefined || fill.composes !== undefined || fill.reads !== undefined) return fill;
-  return { ...fill, reads: { themes: [...actual.scannedReads.themes], assets: [...actual.scannedReads.assets] }, composes: [...actual.scannedComposes], consumption: structuredClone(actual) };
-}
-
-/** Shared mapping eligibility and package source-consumption truth. */
-export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, packagePin?: unknown): string[] {
+export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, packagePin?: unknown, measuredEvidence?: SurfaceConsumptionMeasurement): string[] {
   const contract = slot.contract;
   const mapping: string[] = [], frame: string[] = [], other: string[] = [];
   if (fill.slot !== slot.id) other.push(`S1 descriptor slot ${fill.slot} differs`);
@@ -141,12 +134,11 @@ export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDef
   }
   for (const blocker of fill.blockers ?? []) other.push(`S5 ${blocker.code}: ${blocker.message}`);
   if (fill.impl?.kind === "package") {
-    const actual = canonicalSurfaceConsumption(fill.slot, fill.impl, packagePin);
-    if (!actual) other.push("S8 surface consumption measurement unavailable");
-    else {
-      const derived = derivedPackageDescriptor(fill, actual);
-      if (!derived.consumption || stableStringify(derived.consumption) !== stableStringify(actual)) other.push("S8 package consumption snapshot differs from canonical measurement");
-      other.push(...surfaceConsumptionFindings(slot, derived, actual));
+    const actual = canonicalSurfaceConsumption(fill.slot, fill.impl, packagePin) ?? (measuredEvidence && structuredClone(measuredEvidence));
+    if (!fill.consumption || !actual) other.push("S8 surface consumption measurement unavailable");
+    if (actual) {
+      if (fill.consumption && stableStringify(fill.consumption) !== stableStringify(actual)) other.push("S8 package consumption snapshot differs from canonical measurement");
+      other.push(...surfaceConsumptionFindings(slot, fill, actual));
     }
   }
   return [
