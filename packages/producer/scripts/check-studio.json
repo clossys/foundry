@@ -39,6 +39,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:slot-state",
+      "cwd": "packages/producer",
+      "run": "npm run check:slot-state",
+      "kind": "static"
+    },
+    {
       "id": "producer test:assemble-only",
       "cwd": "packages/producer",
       "run": "npm run test:assemble-only",

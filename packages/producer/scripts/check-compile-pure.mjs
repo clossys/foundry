@@ -20,8 +20,12 @@
  *                 file) leaves the output unchanged; re-pinning one pin.json to another candidate
  *                 changes the rendered output (not only the lock).
  *
- * Usage: node packages/producer/scripts/check-compile-pure.mjs
- * Needs `npm run build` first (it runs the built CLI). Exit 0 clean, 1 on any finding.
+                 The re-pinned slot is a Writer slot whose pinned candidate supplies a key the
+                 compiled Writer copy (generated/studio-copy.json) renders: a pin whose candidate
+                 no output reads (a narrative script) proves nothing about the wiring.
+ *
+ * Usage: node packages/producer/scripts/check-compile-pure.mjs [--root <checkout>]
+ * Needs `npm run build` first (it runs the built CLI). Exit 0 clean, 1 on any finding, 2 on a usage error.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -30,8 +34,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const producer = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const repo = resolve(producer, '../..');
+// --root <dir>: check another checkout laid out like this one (<dir>/packages/producer and <dir>/clossys).
+const rootAt = process.argv.indexOf('--root');
+if (rootAt >= 0 && !process.argv[rootAt + 1]) { console.error('check-compile-pure: --root needs a directory'); process.exit(2); }
+const repo = rootAt >= 0 ? realpathSync(resolve(process.argv[rootAt + 1])) : resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
+const producer = join(repo, 'packages', 'producer');
 const clossys = join(repo, 'clossys');
 const inputsFile = join(producer, 'decision-inputs.json');
 const cliEntry = join(producer, 'dist', 'cli', 'index.js');
@@ -260,11 +267,19 @@ try {
           if (!diff.length) console.log(`decisions: non-decision edits left output unchanged (${edits.length} files)`);
         }
 
-        // Re-pinning one slot changes the rendered output.
+        // Re-pinning one rendered slot changes the rendered output: the first Writer pin whose pinned
+        // candidate declares a key that the compiled copy renders, and that has another candidate.
+        const rendered = new Set();
+        try {
+          for (const entry of JSON.parse(readFileSync(join(scratch, 'out-a', 'generated', 'studio-copy.json'), 'utf8')).entries ?? []) if (typeof entry?.id === 'string') rendered.add(entry.id);
+        } catch { finding('decisions', 'compile wrote no readable generated/studio-copy.json'); }
+        const declaredKeys = text => [...text.matchAll(/<!--\s*(\{[^\n]*?\})\s*-->/g)].flatMap(([, meta]) => { try { const id = JSON.parse(meta).id; return typeof id === 'string' ? [id] : []; } catch { return []; } });
         const rootD = copyRoot('root-d');
         let repinned;
         for (const path of [...inputs.keys()].filter(path => path.startsWith('clossys/agents/writer/') && path.endsWith('/pin.json'))) {
           const pin = JSON.parse(readFileSync(join(rootD, path), 'utf8'));
+          const pinnedFile = join(rootD, dirname(path), 'candidates', pin.candidate);
+          if (!existsSync(pinnedFile) || !declaredKeys(readFileSync(pinnedFile, 'utf8')).some(id => rendered.has(id))) continue;
           const dir = join(rootD, dirname(path), 'candidates');
           const other = existsSync(dir) ? readdirSync(dir).filter(name => name !== pin.candidate && name.endsWith('.md')).sort().pop() : undefined;
           if (!other) continue;
@@ -273,7 +288,7 @@ try {
           repinned = `${path} -> ${other}`;
           break;
         }
-        if (!repinned) finding('decisions', 'no Writer pin with a second candidate to re-pin');
+        if (!repinned) finding('decisions', 'no Writer pin whose candidate feeds the compiled copy has a second candidate to re-pin');
         else {
           const d = compile(rootD, join(scratch, 'out-d'));
           if (d) {

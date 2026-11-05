@@ -150,7 +150,12 @@
         "check:studio#designer check-fill-source-imports",
         "check:studio#designer check-surface-source-identity",
         "check:studio#designer scripts/surface-source-identity.test.mjs",
-        "check:studio#designer scripts/surface-source-runtime.test.mjs"
+        "check:studio#designer scripts/surface-source-runtime.test.mjs",
+        "check:studio#designer check:surface-leaves",
+        "check:studio#designer test:surface-leaves",
+        "check:studio#designer check-one-leaf-source",
+        "check:studio#designer check-surface-history-continuity",
+        "check:studio#designer scripts/surface-history-continuity.test.mjs"
       ],
       "fixture": "scripts/rules/fixtures/R-VENDORED-SOURCES",
       "fixture_runs": [
@@ -285,7 +290,7 @@
         "quote": "Studio previews what cells produce, not file text",
         "date": "2026-10-29"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#producer publisher-preview (live)",
         "check:studio#designer check-specimen-token-host-parts",
@@ -295,7 +300,19 @@
         "check:studio#designer sections-frames-coverage --check",
         "check:studio#designer scripts/sections-frames-source.test.mjs"
       ],
-      "note": "No check fails when a slot detail falls back to a raw candidate-file-text table."
+      "note": "No Studio slot detail, specimen or slot-groups code path, nor the server slot detail, gallery and specimen builders, renders candidate file contents as text (check:slot-state raw-candidate-text). The fixture is a server slot detail whose row text is the candidate file content.",
+      "checks": [
+        "packages/producer#check:slot-state"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REAL-SPECIMENS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-state",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-state.mjs --repo {fixture}",
+          "expect": "^\\s+packages/producer/src/server/slot-detail\\.ts:\\d+ \\[raw-candidate-text\\]"
+        }
+      ]
     },
     {
       "id": "R-USAGE-GRAPH",
@@ -375,8 +392,20 @@
         "quote": "shadcn item, else a composition of pinned parts, else mark unneeded",
         "date": "2026-11-03"
       },
-      "status": "unenforced",
-      "note": "Every L3 slot is pinned or marked not-needed: check-slot-state lands with W4 and is not on this base."
+      "status": "enforced",
+      "note": "Every Director, Designer and Writer slot is pinned or marked not-needed (records/slots rejectedSlots), checked by check:slot-state from root check through check:studio. The fixture is a Director slot holding one candidate and no pin.",
+      "checks": [
+        "packages/producer#check:slot-state"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-STATE",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-state",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-state.mjs --repo {fixture}",
+          "expect": "^\\s+director/identity\\.brand\\.essence \\[no-pin\\]"
+        }
+      ]
     },
     {
       "id": "R-COMPILE-PURE",
@@ -384,12 +413,20 @@
         "quote": "the rendering itself is just the same deterministic plumbing that works everytime without llm token spend",
         "date": "2026-11-03"
       },
-      "status": "pending-wire",
-      "pending_wire": {
-        "check": "check:compile-pure",
-        "branch": "claude/compile-pure"
-      },
-      "note": "compile reads only ia.json, the content map, pins and pinned candidate files, offline, byte-identical across runs; the check is built on claude/compile-pure."
+      "status": "enforced",
+      "checks": [
+        ".#check:compile-pure"
+      ],
+      "note": "compile reads only the decision files packages/producer/decision-inputs.json lists, offline, with no model client or agent binary reachable from the built CLI, byte-identical across runs; a root of only the decision files compiles to the same bytes, non-decision edits change nothing, and re-pinning a Writer slot whose keys the compiled copy renders changes the output. The fixture is a built CLI whose compile verb imports a model client.",
+      "fixture": "scripts/rules/fixtures/R-COMPILE-PURE",
+      "fixture_runs": [
+        {
+          "check": ".#check:compile-pure",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && cp -R {fixture}/built {out}/repo/packages/producer/dist && node packages/producer/scripts/check-compile-pure.mjs --root {out}/repo",
+          "expect": "^\\s+purity: packages/producer/dist/cli/index\\.js imports the agent or model client openai"
+        }
+      ]
     },
     {
       "id": "R-DECISIONS-BY-CLI",
@@ -410,7 +447,10 @@
           "expect": "\\[pin-shape\\] missing decidedBy"
         }
       ],
-      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape)."
+      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape).",
+      "related": [
+        "check:studio#designer check:designer-receipt"
+      ]
     },
     {
       "id": "R-GIT-CMS",

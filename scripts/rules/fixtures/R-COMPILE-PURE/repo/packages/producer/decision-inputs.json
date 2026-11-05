@@ -1,0 +1,5 @@
+{
+  "schema": "clossys.decision-inputs/1",
+  "note": "R-COMPILE-PURE fixture: a built CLI whose compile verb reaches a model client.",
+  "inputs": [{ "id": "ia", "decision": "IA shape", "glob": "agents/*/ia.json" }]
+}
