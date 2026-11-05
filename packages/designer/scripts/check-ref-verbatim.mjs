@@ -22,7 +22,7 @@
  * Exit 1 on any finding, 2 on a usage error.
  */
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { configFromComponents, mapImport, normalizeReference } from "./ref-verbatim/normalize.mjs";
@@ -137,8 +137,27 @@ export function defaults(overrides = {}) {
   };
 }
 
+/**
+ * The consumer's component layer as Node resolves it from the consumer project (`<consumer>/clossys/..`):
+ * the nearest `node_modules/@clossys/designer-ui` on the way up. Its `components.json` is the consumer's
+ * shadcn config (style, iconLibrary, aliases) whichever folder installed it.
+ */
+function consumerComponentLayer(root) {
+  let dir = resolve(root, "..");
+  for (;;) {
+    const layer = join(dir, "node_modules", ...DS_COMPONENT_LAYER.split("/"));
+    if (existsSync(join(layer, "package.json"))) return realpathSync(layer);
+    const parent = dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+}
+
 function loadComponents(root, explicit) {
-  const candidates = explicit ? [explicit] : [join(root, "components.json"), join(root, "..", "components.json")];
+  const layer = explicit ? undefined : consumerComponentLayer(root);
+  const candidates = explicit
+    ? [explicit]
+    : [join(root, "components.json"), join(root, "..", "components.json"), ...(layer ? [join(layer, "components.json")] : [])];
   for (const path of candidates) if (existsSync(path)) return { path, value: json(path) };
   return undefined;
 }

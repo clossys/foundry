@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -502,6 +502,16 @@ describe("ref-verbatim pin gate (strict, one element version)", () => {
     expect(gate(radix, "components.button/button/v1")).toContain("REF-FLAVOR");
     const noComponents = consumer([button()], { components: false });
     expect(gate(noComponents, "components.button/button/v1", { components: join(tmpdir(), "missing-components.json") })).toEqual(["REF-FLAVOR"]);
+
+    // With no --components, the consumer's shadcn config is the one its installed component layer carries.
+    const project = realpathSync(mkdtempSync(join(tmpdir(), "ref-verbatim-project-")));
+    renameSync(consumer([button()], { components: false }), join(project, "clossys"));
+    expect(gate(join(project, "clossys"), "components.button/button/v1")).toEqual(["REF-FLAVOR"]);
+    const layer = join(project, "node_modules/@clossys/designer-ui");
+    mkdirSync(layer, { recursive: true });
+    writeFileSync(join(layer, "package.json"), JSON.stringify({ name: "@clossys/designer-ui", exports: { ".": "./src/index.ts" } }));
+    writeFileSync(join(layer, "components.json"), read("ui/components.json"));
+    expect(gate(join(project, "clossys"), "components.button/button/v1")).toEqual([]);
 
     const unmapped = consumer([button({ lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "button") } })]);
     expect(gate(unmapped, "components.button/button/v1")).toEqual(["REF-FILE-UNMAPPED"]);
