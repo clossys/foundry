@@ -4,7 +4,6 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 import { Icon, type IconNode } from "../components/Icon.js";
 import { cx } from "../components/internal/cx.js";
 import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
-import { UI_BORDER_HAIRLINE, UI_LAYOUT_TAP_TARGET, UI_Z_SHELL } from "./internal/shell-vars.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
@@ -55,7 +54,9 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   menuOpen?: boolean;
 }
 
-const INK_CLASSES: Record<SiteHeaderTone, string> = { base: "text-foreground", inverse: "text-ink-on-inverse" };
+const INK_CLASSES: Record<SiteHeaderTone, string> = { base: SHELL_GROUND_CLASSES.base.primary, inverse: SHELL_GROUND_CLASSES.inverse.primary };
+// The resolved header position as a class; sticky pins to the block start.
+const POSITION_CLASSES = { sticky: "sticky top-0", fixed: "fixed", static: "static", relative: "relative" } as const;
 const actionPriority = (action: ReactElement<SiteHeaderActionLinkProps>) =>
   action.props.variant === "primary" ? 2 : action.props.variant === "ghost" ? 0 : 1;
 const isAction = (node: ReactNode): node is ReactElement<SiteHeaderActionLinkProps> =>
@@ -81,7 +82,7 @@ function orderedActions(children: ReactNode): ReactNode[] {
 
 /** Persistent site banner with one responsive row and one surface/ink contract. Server-safe: no hooks. */
 function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surface = "solid", tone = "base", position,
-  menuOpen = false, className, style, ...rest }: SiteHeaderProps) {
+  menuOpen = false, className, ...rest }: SiteHeaderProps) {
   if (surface !== "solid" && surface !== "transparent" && surface !== "glass")
     throw new TypeError("SiteHeader: surface must be solid, transparent or glass.");
   const headerPosition = resolveFrameHeaderOptions("frames.site-header", { surface, position }).position;
@@ -100,14 +101,10 @@ function SiteHeaderRoot({ brand, nav, actions, navPlacement = "centered", surfac
   return (
     <header {...FRAME_STAMP} {...rest} data-header-root="" data-surface={surface} data-tone={tone}
       {...(glass ? { "data-placement": "overlay", "data-menu-open": menuOpen ? "" : undefined } : {})}
-      className={cx("site-header-contract site-header-ink py-sm", INK_CLASSES[tone],
-        glass ? "site-header-overlay" : solid ? cx(colors.surface, "border-b", colors.border) : undefined,
-        leading ? "site-header-leading" : undefined, className)}
-      style={{ position: headerPosition,
-        ...(headerPosition === "sticky" ? { zIndex: "var(--ui-z-sticky, 10)", insetBlockStart: 0 }
-          : position === "static" ? {} : { zIndex: UI_Z_SHELL }),
-        ...(glass ? { insetBlockStart: 0, insetInline: 0 } : {}),
-        ...(solid ? { borderBottomWidth: UI_BORDER_HAIRLINE } : {}), ...style }}>
+      className={cx("site-header-contract site-header-ink py-shell-chrome", INK_CLASSES[tone], POSITION_CLASSES[headerPosition],
+        headerPosition === "sticky" ? "layer-sticky" : position === "static" ? undefined : "layer-shell",
+        glass ? "site-header-overlay top-0 inset-x-0" : solid ? cx(colors.surface, "hairline-b", colors.border) : undefined,
+        leading ? "site-header-leading" : undefined, className)}>
       <div className="site-header-row">
         <div className="site-header-brand">{tonedBrand}</div>
         {nav}
@@ -172,7 +169,6 @@ function SiteHeaderActionLink({
   isCurrent = false,
   variant = "secondary",
   className,
-  style,
   ...rest
 }: SiteHeaderActionLinkProps) {
   return (
@@ -183,13 +179,7 @@ function SiteHeaderActionLink({
       size="sm"
       aria-current={isCurrent ? "page" : undefined}
       data-header-action-ghost={variant === "ghost" ? "" : undefined}
-      className={className}
-      style={{
-        minHeight: UI_LAYOUT_TAP_TARGET,
-        minWidth: UI_LAYOUT_TAP_TARGET,
-        ...(isCurrent ? { boxShadow: `inset 0 calc(-2 * ${UI_BORDER_HAIRLINE}) 0 currentColor` } : {}),
-        ...style,
-      }}
+      className={cx("min-size-tap", isCurrent ? "current-mark" : undefined, className)}
     >
       {icon ? <><Icon glyph={icon} decorative size="sm" /><span className="sr-only tablet:not-sr-only">{label}</span></> : label}
     </SelectedLinkButton>

@@ -17,10 +17,7 @@
  * `charts`.
  */
 
-import { version as reactVersion } from "react";
-import reactAriaComponentsPackageJson from "react-aria-components/package.json" with { type: "json" };
-import { assertPeerVersion } from "../internal/peer-version.js";
-import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
+import { assertEnginePeers } from "../components/internal/engine-peers.js";
 
 /**
  * `react` and `react-aria-components` are two of this package's optional
@@ -31,12 +28,7 @@ import { REACT_ARIA_COMPONENTS_DECLARED_RANGE, REACT_DECLARED_RANGE } from "../i
  * consumer who imports only `@clossys/designer/shell` (never
  * `@clossys/designer/components`) would otherwise get no signal at all.
  */
-assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
-assertPeerVersion({
-  peer: "react-aria-components",
-  declaredRange: REACT_ARIA_COMPONENTS_DECLARED_RANGE,
-  foundVersion: reactAriaComponentsPackageJson.version,
-});
+assertEnginePeers();
 
 export { Shell } from "./Shell.js";
 export type {

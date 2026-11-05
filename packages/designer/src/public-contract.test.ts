@@ -1221,10 +1221,10 @@ describe("compiled wiring public contract", () => {
         const rows = api.foundryWiringExceptions(), count = (Array.isArray(rows) ? rows : rows.exceptions).length;
         const unavailable = result.findings.filter(row => row.code === "WL9" && /file unavailable/.test(row.evidence)).length;
         process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), count, unavailable, reasons: api.WIRING_REASON_CODES }));`;
-      // The probe supplies one synthetic source, so every committed Foundry exception names a file the input lacks:
-      // each is a WL9 "file unavailable" row after the one WL3 headless import.
+      // The committed Foundry exception list is empty (no layout read above Components is excepted), so the
+      // probe reports exactly the one WL3 headless import and no WL9 row.
       const out = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
-      expect(out.count, entry).toBeGreaterThan(0);
+      expect(out.count, entry).toBe(0);
       expect(out, entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3", ...Array(out.count).fill("WL9")], count: out.count, unavailable: out.count, reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
     }
   }, 30_000);

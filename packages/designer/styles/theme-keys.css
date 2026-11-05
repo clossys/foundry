@@ -1446,6 +1446,75 @@
   &:is(:where(.group)[data-placement="right"] *) { rotate: 90deg; }
 }
 
+/* Frame layout geometry. The frame layer names a region, a measure, a stacking layer or an edge;
+   the theme layer owns the value, read from the --ui-* layout token with its tokens.css default,
+   so no frame source carries a length, a z-index or a token read of its own. */
+@utility shell-grid {
+  display: grid;
+  min-block-size: 100dvh;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "header header header" "sidenav main rail" "footer footer footer";
+}
+@utility shell-area-header { grid-area: header; }
+@utility shell-area-sidenav { grid-area: sidenav; }
+@utility shell-area-main { grid-area: main; }
+@utility shell-area-rail { grid-area: rail; }
+@utility shell-area-footer { grid-area: footer; }
+@utility shell-sidenav-width {
+  inline-size: var(--ui-layout-sidebar-rail-w, 64px);
+  @media (width >= 768px) { inline-size: var(--ui-layout-sidebar-w, 256px); }
+}
+@utility shell-rail-width { inline-size: var(--ui-layout-aside-w, 320px); }
+@utility measure-content { max-inline-size: var(--ui-width-content-max, 64rem); }
+@utility measure-form { max-inline-size: var(--ui-width-form-max, 38rem); }
+@utility page-inset-x { padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)); }
+@utility layer-sticky { z-index: var(--ui-z-sticky, 10); }
+@utility layer-shell { z-index: var(--ui-z-shell, 20); }
+@utility layer-aside { z-index: var(--ui-z-aside, 30); }
+@utility layer-progress { z-index: var(--ui-z-progress, 90); }
+@utility layer-skip-link { z-index: var(--ui-z-skip-link, 100); }
+@utility hairline-t { border-block-start-width: var(--ui-border-hairline, 1px); border-block-start-style: solid; }
+@utility hairline-b { border-block-end-width: var(--ui-border-hairline, 1px); border-block-end-style: solid; }
+@utility hairline-s { border-inline-start-width: var(--ui-border-hairline, 1px); border-inline-start-style: solid; }
+@utility hairline-e { border-inline-end-width: var(--ui-border-hairline, 1px); border-inline-end-style: solid; }
+@utility progress-hairline { block-size: var(--ui-border-hairline, 1px); }
+@utility min-size-tap { min-block-size: var(--ui-layout-tap-target, 44px); min-inline-size: var(--ui-layout-tap-target, 44px); }
+@utility min-h-tap { min-block-size: var(--ui-layout-tap-target, 44px); }
+@utility current-mark { box-shadow: inset 0 calc(-2 * var(--ui-border-hairline, 1px)) 0 currentColor; }
+@utility frame-brand-row { min-block-size: var(--ui-layout-tap-target, 44px); margin-block-end: var(--spacing-md, 12px); }
+@utility frame-brand-row-overlay { padding-inline-start: calc(var(--ui-layout-tap-target, 44px) + var(--spacing-sm, 8px)); }
+@utility scroll-anchor-auto { overflow-anchor: auto; }
+@utility auth-main { gap: var(--spacing-lg, 16px); padding-block: var(--spacing-lg, 16px); }
+@utility py-dock-compact { padding-block: var(--spacing-xs, 4px); }
+@utility dock-notice-row { gap: var(--spacing-sm, 8px); }
+@utility dock-strip-row { gap: var(--spacing-xs, 4px); padding-inline: var(--spacing-sm, 8px); }
+@utility dock-strip-slot { gap: var(--spacing-xs, 4px); }
+@utility frame-stage-flow { gap: var(--spacing-md, 12px); }
+@utility site-nav-gap { gap: var(--spacing-sm, 8px); }
+@utility site-nav-link-inset { padding-inline: var(--spacing-xs, 4px); }
+@utility px-hero-scene { padding-inline: var(--spacing-md, 12px); }
+@utility px-hero-scene-wide { padding-inline: var(--spacing-xl, 24px); }
+@utility py-hero-scene { padding-block: var(--spacing-3xl, 48px); }
+@utility skip-link-inset { inset-inline-start: var(--spacing-sm, 8px); top: var(--spacing-sm, 8px); padding-inline: var(--spacing-md, 12px); padding-block: var(--spacing-sm, 8px); }
+@utility py-shell-chrome { padding-block: var(--spacing-sm, 8px); }
+@utility py-shell-region { padding-block: var(--spacing-lg, 16px); }
+@utility nav-shell-row { gap: var(--spacing-md, 12px); }
+@utility nav-shell-list { gap: var(--spacing-sm, 8px); }
+@utility w-nav-drawer { width: var(--ui-layout-drawer-w, min(20rem, 85vw)); }
+@utility gap-nav-drawer { gap: var(--spacing-lg, 16px); }
+@utility footer-stack { gap: var(--spacing-lg, 16px); }
+@utility footer-secondary-gap { gap: var(--spacing-sm, 8px); }
+@utility footer-rule-gap { padding-block-start: var(--spacing-lg, 16px); }
+@utility footer-column { gap: var(--spacing-sm, 8px); }
+@utility footer-column-links { gap: var(--spacing-xs, 4px); }
+@utility footer-link-gap { gap: var(--spacing-sm, 8px); }
+@utility footer-row-gap { column-gap: var(--spacing-sm, 8px); }
+@utility frame-panel-stack { gap: var(--spacing-md, 12px); padding: var(--spacing-md, 12px); }
+@utility frame-page-stack { gap: var(--spacing-lg, 16px); padding: var(--spacing-lg, 16px); }
+@utility frame-heading-stack { gap: var(--spacing-sm, 8px); }
+@utility frame-sidebar-measure { inline-size: var(--ui-layout-sidebar-w, 256px); }
+
 /* Frames own region motion. Content stays mounted through open and closed states.
    Navigation never animates a layout property: it snaps between its media-ruled widths,
    so neither hydration nor a collapse reflows the stage over several frames. */

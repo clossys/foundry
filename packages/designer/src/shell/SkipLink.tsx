@@ -1,6 +1,6 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
-import { UI_Z_SKIP_LINK } from "./internal/shell-vars.js";
+import { SKIP_LINK_CLASSES } from "../components/Link.styles.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
@@ -89,13 +89,7 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
       href={`#${targetId}`}
       onClick={onClick}
       onKeyDown={onKeyDown}
-      className={cx(
-        "sr-only focus:not-sr-only",
-        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-primary focus:px-md focus:py-sm",
-        "focus:text-body focus:text-primary-foreground focus:outline-none",
-        className,
-      )}
-      style={{ zIndex: UI_Z_SKIP_LINK }}
+      className={cx(SKIP_LINK_CLASSES, className)}
     >
       {children}
     </Link>

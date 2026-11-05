@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_INVERSE } from "./internal/ui-vars.js";
 import type { ButtonSize, ButtonVariant } from "./Button.js";
+import { TOKENS } from "../tokens/tokens.js";
 
 /**
  * The grounds a control is drawn for: the page ground (`base`), a sunken
@@ -114,6 +115,33 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, gr
     .split(" ")
     .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed");
   return [...look, LINK_FOCUS_CLASSES].join(" ");
+}
+
+/**
+ * The inverse-plate ink for a native control drawn with a base look: the
+ * on-inverse ink at rest, on hover and on focus, the inverse tonal hover and
+ * an on-inverse focus outline.
+ */
+/** The width a collapsed disclosure needs to spare before it expands: one small spacing step, so a fit edge cannot flap. */
+export const DISCLOSURE_COLLAPSE_SLACK = parseFloat(TOKENS["--spacing-sm"]!.value);
+
+export const INVERSE_CONTROL_INK = "text-ink-on-inverse hover:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse";
+
+/**
+ * The navigation disclosure toggle look for a native button: the small ghost
+ * link look without its colour transition (only the panel and its bars move),
+ * a native pressed fill and the tap-target minimum. On the inverse plate it
+ * drops the ghost ink, keeps the inverse ink when expanded and takes
+ * `INVERSE_CONTROL_INK`. `pressFill: false` keeps the ghost look's own fill
+ * and drops the native pressed fill.
+ */
+export function disclosureToggleClassName(ground: "base" | "inverse" = "base", { pressFill = true }: { readonly pressFill?: boolean } = {}): string {
+  const ghost = buttonLinkClassName("ghost", "sm").split(" ");
+  const look = [...ghost.filter((token) => !token.includes("transition-")), ...(pressFill ? ["bg-transparent", "active:bg-muted", "transition-none"] : []), "min-size-tap"];
+  if (ground === "base") return look.join(" ");
+  const outline = buttonLinkClassName("outline", "sm").split(" ");
+  const ghostInk = ghost.filter((token) => token.startsWith("text-") && !outline.includes(token));
+  return [...look.filter((token) => !ghostInk.includes(token)), INVERSE_CONTROL_INK, "aria-expanded:text-ink-on-inverse"].join(" ");
 }
 
 /** The grounds a round icon link is drawn for. Kept as a name for `ControlGround`. */

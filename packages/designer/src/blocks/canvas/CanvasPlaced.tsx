@@ -49,3 +49,30 @@ export function CanvasChipGrid({ rect, chips, className, ...rest }: { rect: Canv
       className={CHIP_FILL[chip.tone ?? "neutral"]} style={chip.dimmed ? { opacity: UI_ALPHA_DISABLED } : undefined} />)}
   </svg>;
 }
+
+export interface CanvasAtProps extends Omit<HTMLAttributes<HTMLDivElement>, "style"> {
+  /** The content's world point, from the inline-start edge; unset leaves the box in flow. */
+  at?: { readonly x: number; readonly y: number };
+}
+
+/**
+ * Places content-sized world content at a world point. Unlike `CanvasPlaced`
+ * the box keeps its own measured size, so a host can measure what it placed.
+ */
+export function CanvasAt({ at, children, ...rest }: CanvasAtProps) {
+  return <div {...rest} data-canvas-at=""
+    /* Named inline-style exception: the point comes from the host's layout model, in world pixels. */
+    style={at ? { insetInlineStart: at.x, top: at.y } : undefined}>{children}</div>;
+}
+
+export interface CanvasWorldProps extends Omit<HTMLAttributes<HTMLDivElement>, "style"> {
+  /** The world's extent in world pixels; unset lets the content size the world. */
+  size?: { readonly width: number; readonly height: number };
+}
+
+/** The positioned world a host lays boards into, sized to the arrangement's bounds. */
+export function CanvasWorld({ size, children, ...rest }: CanvasWorldProps) {
+  return <div {...rest} data-canvas-world=""
+    /* Named inline-style exception: the extent comes from the host's arrangement bounds. */
+    style={size ? { width: size.width, height: size.height } : undefined}>{children}</div>;
+}

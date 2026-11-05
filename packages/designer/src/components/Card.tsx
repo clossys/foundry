@@ -51,6 +51,33 @@ const OUTLINE_CLASSES: Record<CardGround, string> = {
   inverse: "border border-line-on-inverse bg-surface-inverse-raised",
 };
 
+/** The paint of one ground: its fill, primary ink, secondary ink and edge colour classes. */
+export interface GroundPaint {
+  readonly surface: string;
+  readonly primary: string;
+  readonly secondary: string;
+  readonly border: string;
+}
+
+/**
+ * The grounds a surface composed above Components (a frame region, site chrome)
+ * sits on: `page` is the document ground, `raised` the card plate, `sidebar`
+ * the navigation column and `inverse` the opposite-polarity plate.
+ */
+export type PaintedGround = "page" | "raised" | "sidebar" | "inverse";
+
+/**
+ * The card's ground vocabulary, for surfaces above Components: a frame names
+ * the ground it paints and takes the classes here, so the colour roles stay
+ * owned by this component and no frame names a colour token itself.
+ */
+export const GROUND_PAINT: Readonly<Record<PaintedGround, GroundPaint>> = {
+  page: { surface: "bg-background", primary: "text-foreground", secondary: "text-muted-foreground", border: "border-border" },
+  raised: { surface: "bg-card", primary: "text-foreground", secondary: "text-muted-foreground", border: "border-border" },
+  sidebar: { surface: "bg-sidebar", primary: "text-foreground", secondary: "text-muted-foreground", border: "border-border" },
+  inverse: { surface: "bg-surface-inverse", primary: "text-ink-on-inverse", secondary: "text-ink-on-inverse-muted", border: "border-line-on-inverse" },
+};
+
 /**
  * A content surface. Not interactive and does not compose another component —
  * plain markup, no react-aria-components primitive needed, unlike

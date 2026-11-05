@@ -76,6 +76,9 @@ export const UI_Z_MODAL = "var(--ui-z-modal, 50)";
  */
 export const UI_Z_TOOLTIP = "var(--ui-z-tooltip, 80)";
 
+/** Stacking for the toast viewport — above modals, below the tooltip layer. */
+export const UI_Z_TOAST = "var(--ui-z-toast, 60)";
+
 /**
  * Hairline edge width for `Card`'s `outline` variant. Tailwind's `border`
  * utility only ever reaches its own hardcoded `1px`; this reads the token

@@ -1,6 +1,6 @@
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
 import { cloneElement, isValidElement, type ReactElement, type ReactNode } from "react";
-import { Icon, Logomark, SemanticContent } from "@clossys/designer/components/server";
+import { Icon, INVERSE_CONTROL_INK, Logomark, SemanticContent } from "@clossys/designer/components/server";
 import { Brandmark, SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { Hero, type HeroProps } from "../../blocks/Hero.js";
 import { RenderError } from "./landing/internal/errors.js";
@@ -15,7 +15,7 @@ import type { SiteFrameProps } from "./types.js";
 const FRAME_STAMP = { "data-ds-layer": "frames", "data-ds-leaf": "frames.site-shell", "data-ds-fill": "foundry/frames.site-shell" } as const;
 
 // The menu toggle's inverse ink, so the ghost mobile action beside it reads on the same plate.
-const MOBILE_ACTION_INVERSE = "text-ink-on-inverse hover:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse";
+const MOBILE_ACTION_INVERSE = INVERSE_CONTROL_INK;
 const ENVIRONMENT_GHOST_CLASS = "site-header-environment-ghost";
 
 /** Overlay is a frame composition of the registered sections.hero block, never a markup stamp. */
@@ -26,7 +26,7 @@ function overlayHero(children: ReactNode, headerSurface: "solid" | "transparent"
     if (Object.keys(props).every(key => allowed.includes(key)) && (props.size === undefined || props.size === "default" || props.size === "display")
       && (props.headingLevel === undefined || props.headingLevel === 1) && typeof props.heading === "string" && props.heading.trim()) {
       // The frame owns scene geometry. The block keeps its registered anatomy and ground.
-      return cloneElement(children, { className: "flex-1 justify-center px-md py-3xl tablet:px-xl" });
+      return cloneElement(children, { className: "flex-1 justify-center px-hero-scene py-hero-scene tablet:px-hero-scene-wide" });
     }
   }
   throw new RenderError("resolution-failed", "shell.footer.placement overlay requires one direct registered Hero with a display h1 and a glass header; children, wrappers and layout overrides are unsupported.");
@@ -76,7 +76,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
       columns={footer.columns.length || (footer.brandBand && footer.social?.links.length) ? <>
         {footer.columns.map((column, columnIndex) => (
           <SiteFooter.Column key={columnIndex} heading={column.heading}>
-            {column.links.map((link, linkIndex) => <SiteFooter.Link variant="link" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-[var(--ui-layout-tap-target)] items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{link.label}</SiteFooter.Link>)}
+            {column.links.map((link, linkIndex) => <SiteFooter.Link variant="link" key={linkIndex} href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} className="inline-flex min-h-tap items-center site-nav-link-inset text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">{link.label}</SiteFooter.Link>)}
           </SiteFooter.Column>
         ))}
         {footer.brandBand && footer.social?.links.length ? <SiteFooter.Column heading={footer.social.label!}>
@@ -116,7 +116,7 @@ export function SiteFrame({ shell, presentation, resolveCopy, resolveAsset, chil
         // No absolute viewport box can cover hero content when copy or links reflow.
         <SemanticContent as="div"
           data-frame-footer-overlay=""
-          className="flex flex-col shrink-0 min-w-0 pointer-events-none z-[var(--ui-z-sticky)]"
+          className="flex flex-col shrink-0 min-w-0 pointer-events-none layer-sticky"
         >
           {footerContent}
         </SemanticContent>

@@ -4,7 +4,7 @@ import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { checkWiring, foundryWiringExceptions, type WiringFinding, type WiringInput } from "../catalog-core/wiring.js";
-import { FRAMES_WIRING_RESIDUALS_SCHEMA, RESIDUAL_CODES, frameLayerComponentFiles, frameLayerSources, frameLayerWiringInput, framesWiringResiduals, residualGrowth, residualsOf, type FramesWiringResidualReport } from "../catalog-core/frames-wiring-residuals.js";
+import { frameLayerComponentFiles, frameLayerSources, frameLayerWiringInput, framesWiringResiduals, residualsOf } from "../catalog-core/frames-wiring-residuals.js";
 import { DS_ATTR } from "../catalog-core/provenance-attrs.js";
 import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
 import { InspectorFrame } from "./InspectorFrame.js";
@@ -18,15 +18,11 @@ const AppFrame = withShellCopy(ShellFixtureAppFrame, true);
 
 /**
  * WIRE-4: the frame layer composes components. `checkWiring` runs over every
- * source under `src/frames` and `src/shell` (registered component fills excluded).
- * Layout reads are proposed `layout-geometry` rows in
- * `catalog/rules/wiring-exceptions.json` (WL9 warnings). The WL2/WL3/WL4 findings
- * that remain are generated, never hand-pinned: `scripts/frames-wiring-residuals.mjs`
- * writes them to `src/catalog/reports/frames-wiring-residuals.json`, this test
- * requires the live scan to equal that report, and the generator refuses to write
- * a report that grows. They wait on NEED-c frame chrome text/surface, frame-geometry
- * utilities, layout grid, direction provider and surface-ground components, and on
- * the owner's shell-vars fallback and engine peer-version guard items.
+ * source under `src/frames` and `src/shell` (registered component fills excluded)
+ * and must report no WL2/WL3/WL4 error at all: there is no committed residual
+ * report and no budget that only shrinks. Colour comes from component-owned
+ * paint (`GROUND_PAINT`, button and link class exports), layout from named
+ * utilities in `styles/theme-keys.css`, and engine primitives from Components.
  */
 const pkg = new URL("../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, pkg), "utf8");
@@ -38,9 +34,6 @@ const componentFiles = frameLayerComponentFiles(reader);
 const sources = frameLayerSources(reader);
 const run = (input: Partial<WiringInput> = {}) => checkWiring({ ...frameLayerWiringInput(reader, foundryWiringExceptions()), ...input });
 const errors = (findings: readonly WiringFinding[], code: string) => findings.filter(row => row.code === code && row.severity === "error").map(row => `${row.file}:${row.line} ${row.evidence}`);
-const committed = JSON.parse(read("src/catalog/reports/frames-wiring-residuals.json")) as FramesWiringResidualReport;
-const LAYOUT_READ = /^themes\.spacing\./;
-const ofCode = (code: string) => committed.residuals.filter(row => row.code === code);
 
 describe("frames from components (WIRE-4)", () => {
   it("scans the frame layer and leaves only registered component fills to the component layer", () => {
@@ -49,36 +42,46 @@ describe("frames from components (WIRE-4)", () => {
     expect([...componentFiles].sort()).toEqual(["src/shell/Brandmark.tsx", "src/shell/Toaster.tsx", "src/shell/internal/toast-queue.ts"]);
   });
 
-  it("reports exactly the generated WL2/WL3/WL4 residuals, and the generated report is current", () => {
-    expect(committed.schema).toBe(FRAMES_WIRING_RESIDUALS_SCHEMA);
-    expect(residualsOf(run().findings)).toEqual(committed.residuals);
-    expect(framesWiringResiduals({ read, walk, checkWiring, exceptions: foundryWiringExceptions() })).toEqual(committed);
+  it("reports no WL2/WL3/WL4 finding anywhere in the frame layer", () => {
+    expect(residualsOf(run().findings)).toEqual([]);
+    expect(framesWiringResiduals({ read, walk, checkWiring, exceptions: foundryWiringExceptions() })).toEqual([]);
   });
 
-  it("reads no layout token directly: layout reads stay layout-geometry exception rows (WL2)", () => {
-    for (const row of ofCode("WL2")) expect(/reads (\S+) directly/.exec(row.evidence)?.[1], `${row.file} ${row.evidence}`).not.toMatch(LAYOUT_READ);
+  it("keeps no committed residual report to baseline against", () => {
+    expect(() => read("src/catalog/reports/frames-wiring-residuals.json")).toThrow();
+    expect(read("scripts/frames-wiring-residuals.mjs")).not.toMatch(/--write|writeFileSync/);
   });
 
-  it("keeps the right-panel config free of WL4 findings", () => {
-    expect(ofCode("WL4").map(row => row.file)).not.toContain("src/frames/right-panel-config.ts");
-  });
-
-  it("refuses to regenerate a residual report that grows (mutation)", () => {
+  it("fails on a reintroduced engine import, colour read or layout read (mutation)", () => {
     const mutated = sources.map(source => source.path !== "src/frames/AuthFrame.tsx" ? source
-      : { ...source, content: `${source.content}\nimport { Button as AriaButton } from "react-aria-components";\nexport const leak = AriaButton;\n` });
-    const next = residualsOf(run({ sources: mutated }).findings);
-    expect(residualGrowth(committed.residuals, next)).toEqual([expect.objectContaining({ code: "WL3", file: "src/frames/AuthFrame.tsx" })]);
-    expect(residualGrowth(committed.residuals, committed.residuals.slice(1))).toEqual([]);
+      : { ...source, content: `${source.content}\nimport { Button as AriaButton } from "react-aria-components";\nexport const leak = AriaButton;\nexport const ink = "text-muted-foreground gap-md";\n` });
+    const codes = residualsOf(run({ sources: mutated }).findings).map(row => `${row.code} ${row.file}`);
+    expect(codes).toEqual(expect.arrayContaining(["WL2 src/frames/AuthFrame.tsx", "WL3 src/frames/AuthFrame.tsx"]));
   });
 
-  it("keeps every wiring exception it relies on live, layout-geometry and proposed", () => {
+  it("relies on no wiring exception: the committed exception list is empty", () => {
+    expect((foundryWiringExceptions() as { exceptions: unknown[] }).exceptions).toEqual([]);
     const result = run();
-    expect(result.findings.filter(row => row.code === "WL9" && row.severity === "error")).toEqual([]);
-    const rows = (foundryWiringExceptions() as { exceptions: { file: string; reasonCode: string; status: string }[] }).exceptions.filter(row => /^src\/(?:frames|shell)\//.test(row.file));
-    expect(rows.length).toBeGreaterThan(0);
-    for (const row of rows) expect([row.reasonCode, row.status]).toEqual(["layout-geometry", "proposed"]);
-    // Every remaining error is a generated WL2/WL3/WL4 residual.
-    expect([...new Set(result.findings.filter(row => row.severity === "error").map(row => row.code))].sort()).toEqual([...RESIDUAL_CODES]);
+    expect(result.findings.filter(row => row.code === "WL9")).toEqual([]);
+    expect(result.findings.filter(row => row.severity === "error")).toEqual([]);
+  });
+
+  it("fails on a reintroduced spacing-token read in a frame (mutation)", () => {
+    const mutated = sources.map(source => source.path !== "src/shell/Shell.tsx" ? source
+      : { ...source, content: `${source.content}\nexport const pad = "calc(var(--spacing) * 2)";\n` });
+    expect(residualsOf(run({ sources: mutated }).findings).map(row => `${row.code} ${row.file} ${row.evidence}`))
+      .toEqual([expect.stringMatching(/^WL2 src\/shell\/Shell\.tsx frames reads themes\.spacing\.default directly/)]);
+  });
+
+  // checkWiring does not resolve t-shirt spacing utilities (`p-md`, `focus:start-sm`) to a themes read, so
+  // the frame layer is held to named layout utilities here: every t-shirt step lives in theme-keys.css.
+  const TSHIRT = /(?<![\w-])(?:[\w-]+:)*-?(?:p|px|py|pt|pb|ps|pe|pl|pr|m|mx|my|mt|mb|ms|me|ml|mr|gap|gap-x|gap-y|space-x|space-y|inset|inset-x|inset-y|top|bottom|start|end|left|right|scroll-m|scroll-p|w|h|size|min-w|min-h|max-w|max-h|translate-x|translate-y|indent)-(?:3xs|2xs|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|6xl)(?![\w-])|--spacing-(?:3xs|2xs|xs|sm|md|lg|xl|2xl|3xl|4xl|5xl|6xl)\b/g;
+  const tshirt = (list: typeof sources) => list.filter(source => !source.path.includes("/__fixtures__/")).flatMap(source => (source.content.match(TSHIRT) ?? []).map(hit => `${source.path} ${hit}`));
+
+  it("names no t-shirt spacing step in a frame-layer source", () => {
+    expect(tshirt(sources)).toEqual([]);
+    const mutated = sources.map(source => source.path !== "src/frames/FrameDock.tsx" ? source : { ...source, content: `${source.content}\nconst gap = "gap-md";\n` });
+    expect(tshirt(mutated)).toEqual(["src/frames/FrameDock.tsx gap-md"]);
   });
 
   it("flags a reintroduced right-panel 280 as a JS layout constant (mutation)", () => {

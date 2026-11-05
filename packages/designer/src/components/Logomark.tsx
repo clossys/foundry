@@ -5,7 +5,7 @@ import { cx } from "./internal/cx.js";
 
 export type LogomarkSize = "sm" | "md" | "lg";
 export type LogomarkTone = "auto" | "inverse";
-export type LogomarkPlate = "shared" | "self";
+export type LogomarkPlate = "shared" | "self" | "page";
 
 // The normalizer's MarkBox contract, defined once here until that unit merges.
 // Replace this declaration with its type-only import at that integration.
@@ -18,7 +18,11 @@ export interface LogomarkProps {
   size: LogomarkSize;
   /** Shared plate ink; supply artwork that contrasts with the selected plate. */
   tone?: LogomarkTone;
-  /** Whether the artwork supplies its own plate. @default "self" */
+  /**
+   * Whether the artwork supplies its own plate. `page` sets self-plated
+   * artwork on a page-ground plate, inset by the shared plate's shares, so a
+   * page-ground mark reads on an inverse ground. @default "self"
+   */
   plate?: LogomarkPlate;
   /** Optional native image title. The glyph remains decorative. */
   title?: string;
@@ -75,6 +79,15 @@ export function Logomark({ src, size, tone = "auto", plate = "self", title, pres
     return presentation === "responsive"
       ? <span className="inline-flex"><span className="hidden desktop:block">{artworkFor(false)}</span><span className="inline-flex desktop:hidden">{artworkFor(true)}</span></span>
       : artworkFor(presentation === "mobile");
+  }
+  if (plate === "page") {
+    const share = 1 - 2 * BADGE_INSET_SHARE;
+    return (
+      <span aria-hidden data-logomark-plate="page" className="inline-flex items-center justify-center bg-background"
+        style={{ padding: `calc(${height} * ${BADGE_INSET_SHARE / share})`, borderRadius: `calc(${height} * ${BADGE_RADIUS_SHARE / share})` }}>
+        <img src={src} alt="" style={{ height, width: "auto" }} title={title} />
+      </span>
+    );
   }
   if (plate !== "shared") return <img src={src} alt="" aria-hidden={title ? true : undefined} style={{ height, width: "auto" }} title={title} />;
   const imageSide = `calc(${height} * ${1 - 2 * BADGE_INSET_SHARE})`;

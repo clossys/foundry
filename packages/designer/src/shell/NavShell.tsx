@@ -4,7 +4,6 @@ import { Dialog, type DialogProps } from "../components/Dialog.js";
 import { Icon } from "../components/Icon.js";
 import { cx } from "../components/internal/cx.js";
 import { X } from "../icons/index.js";
-import { UI_LAYOUT_DRAWER_W } from "./internal/shell-vars.js";
 
 /** The drawer's open-state props: every `Dialog` trigger prop, none of its surface props (the drawer owns those). */
 type NavShellDialogProps = Omit<DialogProps, "trigger" | "children" | "size" | "role" | "isDismissable" | "className" | "style" | "overlayClassName" | "modalClassName" | "modalStyle">;
@@ -107,7 +106,7 @@ export function NavShell({
 }: NavShellProps) {
   return (
     <>
-      <nav aria-label={ariaLabel} className={cx("hidden items-center gap-md tablet:flex", className)}>
+      <nav aria-label={ariaLabel} className={cx("hidden items-center nav-shell-row tablet:flex", className)}>
         {children}
       </nav>
       <Dialog
@@ -119,9 +118,8 @@ export function NavShell({
           </Button>
         }
         overlayClassName="block p-0"
-        modalClassName="fixed inset-y-0 start-0 h-full max-w-none flex-col outline-none"
-        modalStyle={{ width: UI_LAYOUT_DRAWER_W }}
-        className="h-full max-h-none gap-lg rounded-none border-0 border-e"
+        modalClassName="fixed inset-y-0 start-0 h-full max-w-none flex-col outline-none w-nav-drawer"
+        className="h-full max-h-none gap-nav-drawer rounded-none border-0 border-e"
       >
         {({ close }) => (
           <>
@@ -131,7 +129,7 @@ export function NavShell({
                 <Icon glyph={X} decorative />
               </Button>
             </div>
-            <nav aria-label={ariaLabel} className="flex flex-col gap-sm">
+            <nav aria-label={ariaLabel} className="flex flex-col nav-shell-list">
               {children}
             </nav>
           </>

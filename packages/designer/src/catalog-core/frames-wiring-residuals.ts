@@ -1,17 +1,14 @@
 /**
- * The frame layer's wiring residuals, generated: every WL2/WL3/WL4 error `checkWiring` still reports
- * over `src/frames` and `src/shell` (registered component fills excluded, since a Component reads
- * themes freely). `scripts/frames-wiring-residuals.mjs` writes them to
- * `src/catalog/reports/frames-wiring-residuals.json`; `frames-wiring.test.ts` compares the live scan
- * with that report, and the generator refuses to write a report that grows (`residualGrowth`).
+ * The frame layer's wiring check: every WL2/WL3/WL4 error `checkWiring` reports over `src/frames`
+ * and `src/shell` (registered component fills excluded, since a Component reads themes freely).
+ * There is no committed report and no budget: `scripts/frames-wiring-residuals.mjs --check` and
+ * `frames-wiring.test.ts` both fail on any finding at all.
  */
 import type { WiringFinding, WiringInput, WiringResult } from "./wiring.js";
 
-export const FRAMES_WIRING_RESIDUALS_SCHEMA = "clossys.frames-wiring-residuals/1";
 export const RESIDUAL_CODES = ["WL2", "WL3", "WL4"] as const;
 
 export interface FramesWiringResidual { code: string; file: string; evidence: string }
-export interface FramesWiringResidualReport { schema: string; generatedBy: string; residuals: FramesWiringResidual[] }
 
 export interface FrameLayerReader {
   read(path: string): string;
@@ -56,23 +53,7 @@ export function residualsOf(findings: readonly WiringFinding[]): FramesWiringRes
     .sort(order);
 }
 
-export function framesWiringResiduals(input: FrameLayerReader & { checkWiring(input: WiringInput): WiringResult; exceptions: unknown }): FramesWiringResidualReport {
-  return {
-    schema: FRAMES_WIRING_RESIDUALS_SCHEMA,
-    generatedBy: "packages/designer/scripts/frames-wiring-residuals.mjs",
-    residuals: residualsOf(input.checkWiring(frameLayerWiringInput(input, input.exceptions)).findings),
-  };
-}
-
-/** Findings in `next` beyond those in `committed`, counted as a multiset: what a regeneration may never add. */
-export function residualGrowth(committed: readonly FramesWiringResidual[], next: readonly FramesWiringResidual[]): FramesWiringResidual[] {
-  const key = (row: FramesWiringResidual) => `${row.code}\u0000${row.file}\u0000${row.evidence}`;
-  const budget = new Map<string, number>();
-  for (const row of committed) budget.set(key(row), (budget.get(key(row)) ?? 0) + 1);
-  const added: FramesWiringResidual[] = [];
-  for (const row of next) {
-    const left = budget.get(key(row)) ?? 0;
-    if (left > 0) budget.set(key(row), left - 1); else added.push(row);
-  }
-  return added;
+/** The frame layer's WL2/WL3/WL4 errors; the layer is clean only when this is empty. */
+export function framesWiringResiduals(input: FrameLayerReader & { checkWiring(input: WiringInput): WiringResult; exceptions: unknown }): FramesWiringResidual[] {
+  return residualsOf(input.checkWiring(frameLayerWiringInput(input, input.exceptions)).findings);
 }
