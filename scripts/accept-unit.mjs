@@ -7,15 +7,20 @@
  * <check-script> is an npm script name found in exactly one package.json of the head tree, or
  * `<package dir>#<script>` (the root is "."). Each revision is extracted with `git archive` into a
  * fresh temporary directory beside the other, the current checkout's node_modules folders are linked
- * in, and the script runs there with `npm run`. When the base has no such script, the head's script
- * definition and the check code files it reaches (the check:orphan-checks graph) are overlaid onto
- * the base, so the base is measured by the head's check; the verdict says so.
+ * in, and the script runs there with `npm run`. The base is always measured with the head's check:
+ * the head's script definition and the check code files it reaches (the check:orphan-checks graph)
+ * are overlaid onto the base, as the pre-push ratchet does, so a head that weakens its own check
+ * cannot read as "fails on the base, passes on the head". The verdict says how many files were carried.
+ *
+ * The extracted trees hold no gitignored output (dist/) of their own, so a check can fail to load
+ * there. A side whose output shows a module-resolution error (`loadError`) did not measure anything:
+ * a base that cannot load the check is not a failing base, and the verdict is FAIL either way.
  *
  * Prints one line: PASS or FAIL, both exit codes, and where the trees and logs are kept (they are
  * left in place for inspection). Exits 0 on PASS, 1 on FAIL, 2 on a usage or setup error.
  */
 import { spawnSync } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -68,6 +73,13 @@ export function resolveCheck(tree, ref) {
   return { dir: owners[0], script: ref };
 }
 
+/** Module-resolution failures: the check never ran, so its exit code is not a verdict. */
+export const LOAD_ERROR = /\b(?:ERR_MODULE_NOT_FOUND|MODULE_NOT_FOUND|ERR_PACKAGE_PATH_NOT_EXPORTED)\b|\bCannot find (?:module|package)\b/;
+/** The first output line that shows the check could not load a module, or undefined. */
+export function loadError(output) {
+  return String(output ?? "").split("\n").find(line => LOAD_ERROR.test(line))?.trim();
+}
+
 /** Link the checkout's installed node_modules into an extracted tree (never copied, never installed). */
 export function linkModules(checkout, tree) {
   for (const dir of packageDirs(checkout)) {
@@ -103,28 +115,33 @@ export async function overlayChecks(headTree, baseTree, entries, { extra = [] } 
 
 function runCheck(tree, { dir, script }, log) {
   const out = run("npm", ["run", "--silent", script], { cwd: join(tree, dir), env: { ...process.env, FORCE_COLOR: "0" } });
-  writeFileSync(log, `$ npm run ${script}  (cwd ${dir})\n${out.stdout ?? ""}${out.stderr ?? ""}${out.error ? `\n${out.error.message}\n` : ""}`);
-  return out.status ?? 1;
+  const text = `${out.stdout ?? ""}${out.stderr ?? ""}${out.error ? `\n${out.error.message}\n` : ""}`;
+  writeFileSync(log, `$ npm run ${script}  (cwd ${dir})\n${text}`);
+  const exit = out.status ?? 1;
+  return { exit, load: exit === 0 ? undefined : loadError(text) };
 }
 
 export async function acceptUnit({ base, head, check, cwd = process.cwd() }) {
   const repo = gitTop(cwd);
   const baseSha = commit(repo, base), headSha = commit(repo, head);
-  const work = mkdtempSync(join(tmpdir(), "accept-unit-"));
+  const work = realpathSync(mkdtempSync(join(tmpdir(), "accept-unit-")));
   const baseTree = join(work, "base"), headTree = join(work, "head");
   extract(repo, baseSha, baseTree);
   extract(repo, headSha, headTree);
   const target = resolveCheck(headTree, check);
-  const overlaid = typeof scriptsOf(baseTree, target.dir)[target.script] === "string" ? undefined : await overlayChecks(headTree, baseTree, [target]);
+  // Always the head's check on both sides: a base's own (stricter) check would let a weakened head pass.
+  const overlaid = await overlayChecks(headTree, baseTree, [target]);
   linkModules(repo, baseTree);
   linkModules(repo, headTree);
-  const baseExit = runCheck(baseTree, target, join(work, "base.log"));
-  const headExit = runCheck(headTree, target, join(work, "head.log"));
-  const pass = baseExit !== 0 && headExit === 0;
+  const baseRun = runCheck(baseTree, target, join(work, "base.log"));
+  const headRun = runCheck(headTree, target, join(work, "head.log"));
+  const baseExit = baseRun.exit, headExit = headRun.exit;
+  const pass = baseExit !== 0 && !baseRun.load && headExit === 0;
   const name = target.dir === "." ? target.script : `${target.dir}#${target.script}`;
-  const carried = overlaid ? `; base measured with the head check (${overlaid.length} file(s) overlaid)` : "";
-  const line = `${pass ? "PASS" : "FAIL"} ${name}: base ${baseSha.slice(0, 9)} exit ${baseExit} (want non-zero), head ${headSha.slice(0, 9)} exit ${headExit} (want 0)${carried}; trees and logs in ${work}`;
-  return { pass, baseExit, headExit, overlaid, work, line };
+  const carried = `; base measured with the head check (${overlaid.length} file(s) overlaid)`;
+  const unloaded = [["base", baseRun], ["head", headRun]].filter(([, side]) => side.load).map(([side, { load }]) => `; the ${side} could not load the check (${load})`).join("");
+  const line = `${pass ? "PASS" : "FAIL"} ${name}: base ${baseSha.slice(0, 9)} exit ${baseExit} (want non-zero), head ${headSha.slice(0, 9)} exit ${headExit} (want 0)${carried}${unloaded}; trees and logs in ${work}`;
+  return { pass, baseExit, headExit, overlaid, work, line, load: { base: baseRun.load, head: headRun.load } };
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
