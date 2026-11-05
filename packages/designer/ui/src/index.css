@@ -49,7 +49,7 @@
 }
 
 :root {
-    /* Layout tokens for the Foundry layout primitives (foundry/layout.tsx); mode-independent. */
+    /* Layout tokens for the Studio layout components (components.studio.* slots in src/components); mode-independent. */
     /* Comfortable reading width for prose inside full-width layouts. */
     --measure: 65ch;
     --specimen-ratio-thumbnail: 16 / 10;

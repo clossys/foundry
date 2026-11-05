@@ -447,6 +447,22 @@ describe('Studio sections are ds-only', () => {
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['<ArrowIcon className>', '<Icon className>', '<CardIcon className>']);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
+
+  it('keeps the section rule strict beside the component-layer slots: their file is no import path, and raw styled markup still fails (DS-COMPLETE D1)', () => {
+    const probe = mkdtempSync(join(tmpdir(), 'ds-only-component-layer-'));
+    try {
+      // CardGrid and TextLink are pinned components.studio.* slots placed through the package entry; the
+      // section's own styled div is still refused, and so is reaching the installed file directly.
+      writeFileSync(join(probe, 'Probe.tsx'), "import { CardGrid, TextLink } from '@clossys/designer-ui';\nimport { SpecimenFrame } from '@clossys/designer-ui/src/components/specimen-frame';\nexport const A = () => <CardGrid density=\"specimens\"><div className=\"grid gap-4\"><TextLink href=\"#\">x</TextLink></div><SpecimenFrame /></CardGrid>;\n");
+      expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports @clossys/designer-ui/src/components/specimen-frame', '<div className>']);
+      // The installed component bodies hold their stock classes in src/components, outside every Studio scan root.
+      for (const file of ['card-grid.tsx', 'card-stack.tsx', 'specimen-frame.tsx', 'specimen-figure.tsx', 'text-link.tsx', 'sidebar-static-row.tsx', 'block-viewer-iframe.tsx', 'studio-home-stock.tsx'])
+        expect(readFileSync(join(UI_SRC, 'components', file), 'utf8'), file).toMatch(/className/);
+      // Each Foundry extension the slots replaced is now an import-only consumer.
+      for (const file of ['foundry/layout.tsx', 'foundry/sidebar-static.tsx', 'foundry/block-viewer-iframe.tsx', 'foundry/studio-home-stock.tsx'])
+        expect(readFileSync(join(UI_SRC, file), 'utf8').split('\n').filter(line => line.trim() && !line.startsWith('//')).every(line => /^export \* from "\.\.\/components\/[a-z-]+"$/.test(line)), file).toBe(true);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
   it('covers every Studio renderer and every Studio frame in the component layer', () => {
     expect(RENDERER_FILES).toEqual(['components/StudioInstalledPage.tsx', 'components/StudioPage.tsx', 'components/StudioProviders.tsx', 'components/StudioRouteMap.tsx',
       'lib/agents.ts', 'lib/cell-events.ts', 'lib/checks-copy.ts', 'lib/contract-copy.ts', 'lib/options-copy.ts', 'lib/pipeline-flow.ts', 'lib/producer-url.ts', 'lib/publisher-preview.ts',

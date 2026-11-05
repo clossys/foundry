@@ -321,8 +321,10 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
           <HeaderIconButton label={copy.toggleChat} aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
         </div>
       </header>
-      <div id="studio-main" data-body={body} className="flex flex-1 flex-col gap-4 p-4">
-        {head}{children}
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div id="studio-main" data-body={body} className="flex flex-1 flex-col gap-4 p-4">
+          {head}{children}
+        </div>
       </div>
     </SidebarInset>
     {!isMobile && chatOpen && <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l lg:flex" aria-label={copy.chat.title} data-panel="chat">
