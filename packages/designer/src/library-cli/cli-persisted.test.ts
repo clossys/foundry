@@ -66,17 +66,19 @@ describe("designer-library CLI on a persisted composite library", () => {
     await fs.rename(join(root, "component-observations.json"), supplied);
     expect(await run("emit", "--check", "--target", "component-index", "--observations", supplied)).toMatchObject({ code: 0 });
     const none = await run("emit", "--check", "--target", "component-index");
-    expect(none.code).toBe(2); expect(none.error).toMatch(/components: unavailable package export \w+/);
+    // Public diagnostics are closed strings (68cb2680d); the refusal stays fail-closed without leaking which export.
+    expect(none.code).toBe(2); expect(none.error).toContain("designer-library: "); expect(none.error).not.toMatch(/unavailable package export/);
   });
 
   it("refuses a missing or malformed observations file with a clear code and changes nothing", async () => {
     const before = await fs.readFile(join(root, "component-index.ts"), "utf8");
     const missing = await run("emit", "--target", "component-index", "--observations", join(temporary, "absent.json"));
-    expect(missing.code).toBe(2); expect(missing.error).toContain("observations unavailable");
+    const closed = "designer-library: invalid input or unavailable operation; check accepted inputs";
+    expect(missing.code).toBe(2); expect(missing.error).toContain(closed); expect(missing.error).not.toContain(temporary);
     const malformed = join(temporary, "malformed.json");
     await fs.writeFile(malformed, JSON.stringify({ packageExports: { "@clossys/designer/charts": "AreaChart" } }));
     const bad = await run("emit", "--target", "component-index", "--observations", malformed);
-    expect(bad.code).toBe(2); expect(bad.error).toContain("observations malformed");
+    expect(bad.code).toBe(2); expect(bad.error).toContain(closed); expect(bad.error).not.toContain(temporary);
     expect((await run("status", "--observations", malformed)).code).toBe(2);
     expect(await fs.readFile(join(root, "component-index.ts"), "utf8")).toBe(before);
   });

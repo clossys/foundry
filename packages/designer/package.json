@@ -407,9 +407,15 @@
   },
   "peerDependencies": {
     "@internationalized/date": "^3.12.2",
+    "@tiptap/extension-table": "^3.32.1",
+    "@tiptap/markdown": "^3.32.1",
+    "@tiptap/react": "^3.32.1",
+    "@tiptap/starter-kit": "^3.32.1",
+    "clsx": "2.1.1",
     "react": ">=18",
-    "react-dom": ">=18",
     "react-aria-components": "^1.19.0",
+    "react-dom": ">=18",
+    "recharts": "3.8.0",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.0.0"
   },
@@ -417,13 +423,31 @@
     "@internationalized/date": {
       "optional": true
     },
+    "@tiptap/extension-table": {
+      "optional": true
+    },
+    "@tiptap/markdown": {
+      "optional": true
+    },
+    "@tiptap/react": {
+      "optional": true
+    },
+    "@tiptap/starter-kit": {
+      "optional": true
+    },
+    "clsx": {
+      "optional": true
+    },
     "react": {
+      "optional": true
+    },
+    "react-aria-components": {
       "optional": true
     },
     "react-dom": {
       "optional": true
     },
-    "react-aria-components": {
+    "recharts": {
       "optional": true
     },
     "tailwind-merge": {
@@ -438,15 +462,21 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
+    "@tiptap/extension-table": "^3.32.1",
+    "@tiptap/markdown": "^3.32.1",
+    "@tiptap/react": "^3.32.1",
+    "@tiptap/starter-kit": "^3.32.1",
     "@types/css-tree": "3.2.0",
     "@types/node": "^26.6.3",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
+    "clsx": "2.1.1",
     "esbuild": "^0.28.2",
     "jsdom": "^26.1.0",
     "react": "^19.3.0",
     "react-aria-components": "^1.21.1",
     "react-dom": "^19.3.0",
+    "recharts": "3.8.0",
     "sharp": "0.35.5",
     "tailwind-merge": "^3.7.0",
     "tailwindcss": "^4.3.3",
@@ -458,15 +488,8 @@
     "access": "public"
   },
   "dependencies": {
-    "@internationalized/date": "^3.12.3",
-    "@tiptap/extension-table": "^3.32.1",
-    "@tiptap/markdown": "^3.32.1",
-    "@tiptap/react": "^3.32.1",
-    "@tiptap/starter-kit": "^3.32.1",
     "class-variance-authority": "0.7.1",
-    "clsx": "2.1.1",
     "css-tree": "3.2.1",
-    "recharts": "3.8.0",
     "@clossys/director": "0.6.0"
   },
   "imports": {

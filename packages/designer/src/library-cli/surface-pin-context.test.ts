@@ -59,10 +59,14 @@ it("native migration, active v2 compilation and real cell reader report the actu
   // CLI compilation uses the same public native profile and prints that same context.
   const errors: string[] = [];
   expect(await runCellsCli(["compile", "--root", cells, "--out", output], { out: () => {}, error: text => errors.push(text) })).toBe(2);
-  expect(errors.join("\n")).toContain(`${active}: slot ${slot}: surfaces: S2`);
+  // Public CLI diagnostics are closed strings (68cb2680d): the context above stays private to the API.
+  expect(errors.join("\n")).toContain("designer-library cells: ");
+  expect(errors.join("\n")).toContain("Remedy: ");
+  expect(errors.join("\n")).not.toContain(active);
   const installed = spawnSync(process.execPath, [fileURLToPath(new URL("../../dist/library-cli/cli.js", import.meta.url)), "cells", "compile", "--root", cells, "--out", output], { encoding: "utf8", timeout: 60_000 });
   expect(installed.error).toBeUndefined();
   expect(installed.status).toBe(2);
-  expect(installed.stderr).toContain(`${active}: slot ${slot}: surfaces: S2`);
+  expect(installed.stderr).toContain("designer-library cells: ");
+  expect(installed.stderr).not.toContain(active);
   expect(await fs.readFile(active, "utf8")).toBe(before);
 });

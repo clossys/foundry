@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -184,4 +184,18 @@ test("pins are read only through the slot-model reader: a legacy selection store
   const bare = realpathSync(mkdtempSync(join(tmpdir(), "section-tokens-")));
   writeFileSync(join(bare, "selection.json"), JSON.stringify({ pins: { "sections.band": { element: "section-shell", version: 1 } } }));
   assert.deepEqual(sectionShellFindings(bare, catalog), ["shell: sections.band has no pinned item; every section composes it"]);
+});
+
+test("every scripts/ bin answers --help when reached through an npm bin symlink", () => {
+  // npm links each bin as node_modules/.bin/<name> -> <package>/<target>, so argv[1] is the link path.
+  // A main guard that compares the unresolved argv[1] to import.meta.url silently does nothing there.
+  const bins = Object.entries(JSON.parse(readFileSync(join(pkg, "package.json"), "utf8")).bin).filter(([, target]) => target.startsWith("scripts/"));
+  assert.ok(bins.length > 0);
+  const dir = realpathSync(mkdtempSync(join(tmpdir(), "designer-bin-")));
+  for (const [name, target] of bins) {
+    const link = join(dir, name);
+    symlinkSync(join(pkg, target), link);
+    const run = spawnSync(process.execPath, [link, "--help"], { encoding: "utf8", timeout: 60_000 });
+    assert.notEqual(`${run.stdout}${run.stderr}`, "", `${name} (${target}) printed nothing through a symlink`);
+  }
 });

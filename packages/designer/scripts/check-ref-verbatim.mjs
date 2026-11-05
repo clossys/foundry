@@ -22,7 +22,7 @@
  * Exit 1 on any finding, 2 on a usage error.
  */
 import { createHash } from "node:crypto";
-import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, realpathSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { configFromComponents, mapImport, normalizeReference } from "./ref-verbatim/normalize.mjs";
@@ -1348,6 +1348,6 @@ function main(argv) {
   return 0;
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
   process.exitCode = main(process.argv.slice(2));
 }

@@ -31,6 +31,12 @@ describe("component consumption lower bounds", () => {
     expect(scan.properties).toEqual(["--color-foreground", "--radius", "--spacing-md"]);
   });
 
+  it("reads asset ids, never a module path that happens to end in assets.js", () => {
+    const fixture = input();
+    const scan = scanComponentReads('import { a } from "../internal/assets.js"; import b from "./assets.ts"; const icon = "assets.icon-home"; bind(assets.logo-mark)', fixture.themes, fixture.themeCss);
+    expect(scan.assets).toEqual(["assets.icon-home", "assets.logo-mark"]);
+  });
+
   it("keeps missing declarations visible even when effective reads include the scanned lower bound", () => {
     const report = buildComponentsConsumption(input());
     const row = report.fills[0]!;

@@ -109,55 +109,55 @@ async function installFixture(dir: string, page: string, findings: unknown[] = [
   await put(join(dir, "substrate", "dist", "assets", "index-abc.css"), "h1 { color: rebeccapurple; }");
 }
 
+// Installed previews publish only under the pinned flat Publisher slot model (bbdff79f0 deleted the
+// tree.json/cells fallback that once named a "site" publication), so these run on the native fixture.
 it("previews clossys publish --install output from its default out dir, with the substrate build's stylesheet", async () => {
+  await nativePublisherFixture();
   const installs = installOutRoot(root);
   try {
     await installFixture(join(installs, "install-home"), "home");
-    await installFixture(join(installs, "install-terms"), "terms", [{ code: "render-failed", detail: "terms: did not render" }]);
+    await installFixture(join(installs, "install-terms"), "designer-themes", [{ code: "render-failed", detail: "designer-themes: did not render" }]);
     await launch();
     const metadata = JSON.parse((await get("/api/publication")).text);
-    expect(metadata).toMatchObject({ state: "ready", publication: "site", publications: ["site"], pages: [
-      { id: "home", route: "/", emitted: true, previewUrl: "/preview/site/pages/home.html", frameUrl: "/preview/site/frame/home.html" },
-      { id: "terms", route: "/terms", emitted: false, previewUrl: "/preview/site/pages/terms.html" },
+    expect(metadata).toMatchObject({ state: "ready", publication: "studio", publications: ["studio"], pages: [
+      { id: "home", route: "/", emitted: true, previewUrl: "/preview/studio/pages/home.html", frameUrl: "/preview/studio/frame/home.html" },
+      { id: "designer-themes", route: "/designer/themes", emitted: false, previewUrl: "/preview/studio/pages/designer-themes.html" },
     ] });
-    const page = await get("/preview/site/pages/home.html");
+    const page = await get("/preview/studio/pages/home.html");
     expect(page.status).toBe(200); expect(page.text).toContain("<h1>Installed home</h1>");
-    expect(page.text).toContain('<link rel="stylesheet" href="/preview/site/assets/install-home/substrate/dist/assets/index-abc.css"></head>');
+    expect(page.text).toContain('<link rel="stylesheet" href="/preview/studio/assets/install-home/substrate/dist/assets/index-abc.css"></head>');
     expect(page.headers["content-security-policy"]).toContain("sandbox allow-same-origin;");
     expect(page.text).toContain('<html style="color-scheme:light"><head>');
-    expect((await get("/preview/site/pages/home.html?theme=dark")).text).toContain('<html class="dark" style="color-scheme:dark"><head>');
+    expect((await get("/preview/studio/pages/home.html?theme=dark")).text).toContain('<html class="dark" style="color-scheme:dark"><head>');
     // The frame page: the page at the specimen width, sandboxed same-origin without scripts, measured by a hashed script.
-    const frame = await get("/preview/site/frame/home.html?theme=dark&width=375");
+    const frame = await get("/preview/studio/frame/home.html?theme=dark&width=375");
     expect(frame.status).toBe(200);
-    expect(frame.text).toContain('data-width="375" sandbox="allow-same-origin" src="/preview/site/pages/home.html?theme=dark"');
+    expect(frame.text).toContain('data-width="375" sandbox="allow-same-origin" src="/preview/studio/pages/home.html?theme=dark"');
     expect(frame.headers["content-security-policy"]).toContain(`script-src '${SPECIMEN_FRAME_SCRIPT_HASH}'`);
     expect(frame.headers["content-security-policy"]).not.toContain("sandbox");
     const script = /<script>([\s\S]*)<\/script>/.exec(frame.text)![1]!;
     expect(`sha256-${createHash("sha256").update(script).digest("base64")}`).toBe(SPECIMEN_FRAME_SCRIPT_HASH);
-    expect((await get("/preview/site/frame/home.html?width=9999")).text).toContain('data-width="1280" sandbox="allow-same-origin" src="/preview/site/pages/home.html"');
-    expect((await get("/preview/site/frame/..%2fhome.html")).status).toBeOneOf([400, 404]);
-    const css = await get("/preview/site/assets/install-home/substrate/dist/assets/index-abc.css");
+    expect((await get("/preview/studio/frame/home.html?width=9999")).text).toContain('data-width="1280" sandbox="allow-same-origin" src="/preview/studio/pages/home.html"');
+    expect((await get("/preview/studio/frame/..%2fhome.html")).status).toBeOneOf([400, 404]);
+    const css = await get("/preview/studio/assets/install-home/substrate/dist/assets/index-abc.css");
     expect(css.status).toBe(200); expect(css.headers["content-type"]).toContain("text/css"); expect(css.text).toBe("h1 { color: rebeccapurple; }");
-    expect((await get("/preview/site/pages/terms.html")).status).toBe(404);
-    expect((await get("/preview/site/assets/install-home/site/home/index.html")).status).toBe(404);
-    expect((await get("/preview/site/assets/install-home/install-report.json")).status).toBe(415);
+    expect((await get("/preview/studio/pages/designer-themes.html")).status).toBe(404);
+    expect((await get("/preview/studio/assets/install-home/site/home/index.html")).status).toBe(404);
+    expect((await get("/preview/studio/assets/install-home/install-report.json")).status).toBe(415);
     expect(JSON.parse((await get("/api/publication?publication=other")).text).state).toBe("missing");
   } finally { await rm(installs, { recursive: true, force: true }); }
 });
 
 it("reads installs written with --out from the folder produce --out names, under the Publisher's declared publication", async () => {
-  const outs = join(root, "outs");
-  await installFixture(join(outs, "contact"), "contact");
+  const publisher = await nativePublisherFixture(), outs = join(root, "outs");
+  await editNative(publisher, "page.designer-themes", value => { value.path = "/contact-us"; });
+  await installFixture(join(outs, "contact"), "designer-themes");
   await put(join(outs, "notes", "install-report.json"), JSON.stringify({ page: "notes", findings: [] }));
-  const api = await agentModule("publisher", "content-map/cells.js");
-  await api.contentMapToCells({ version: 1, publicationId: "example-site", format: "web.page.responsive", entries: [
-    { id: "contact", kind: "page", title: "Contact", order: 0, path: "/contact-us", source: { planItemId: "site.contact" } },
-  ] }, agentRoot(root, "publisher"), { date: "2026-10-31" });
   await launch(outs);
   const metadata = JSON.parse((await get("/api/publication")).text);
-  expect(metadata).toMatchObject({ state: "ready", publication: "example-site", pages: [{ id: "contact", route: "/contact-us", cellId: "page.contact", emitted: true, previewUrl: "/preview/example-site/pages/contact.html" }] });
+  expect(metadata).toMatchObject({ state: "ready", publication: "studio", pages: [{ id: "designer-themes", route: "/contact-us", cellId: "page.designer-themes", emitted: true, previewUrl: "/preview/studio/pages/designer-themes.html" }] });
   expect(metadata.pages).toHaveLength(1);
-  expect((await get("/preview/example-site/pages/contact.html")).text).toContain("<h1>Installed contact</h1>");
+  expect((await get("/preview/studio/pages/designer-themes.html")).text).toContain("<h1>Installed designer-themes</h1>");
 });
 
 // Copy actual native records; edits and rehashed pins exist only in this test's scratch root.
@@ -231,7 +231,16 @@ it.each(["page.home", "publication.studio"])("does not borrow legacy metadata wh
 
 it("does not relabel an intact nonweb native publication as a web preview", async () => {
   const publisher = await nativePublisherFixture(), outs = join(root, "outs");
-  await editNative(publisher, "publication.studio", value => { value.format = "deck.16x9"; });
+  await editNative(publisher, "publication.studio", value => {
+    value.format = "deck.16x9";
+    // SYSTEMS-IA (5a50cab40) nests the agent groups under the Content system: three levels, past a deck's two.
+    // Drop each system that holds groups, with its entries, so the deck stays an intact two-level map.
+    const ids = (node: any): string[] => [...(node.entry ? [node.id] : []), ...(node.cells ?? []).map((cell: string) => cell.slice("page.".length)), ...(node.children ?? []).flatMap(ids)];
+    const deep = value.meta.tree.children.filter((node: any) => node.entry && node.children?.some((child: any) => child.entry));
+    const dropped = new Set(deep.flatMap(ids));
+    value.meta.tree.children = value.meta.tree.children.filter((node: any) => !deep.includes(node));
+    value.entryOrder = value.entryOrder.filter((id: string) => !dropped.has(id));
+  });
   expect((await readPinnedPublication(publisher, "studio")).map.format).toBe("deck.16x9");
   await installFixture(join(outs, "home"), "home");
   await launch(outs);
@@ -251,7 +260,8 @@ it("leaves ambiguous native ownership unavailable even when a publication is req
   const slotPath = join(dir, "slot.json"), slot = JSON.parse(await readFile(slotPath, "utf8"));
   slot.id = id; slot.ia.order = order; await writeFile(slotPath, JSON.stringify(slot));
   await editNative(publisher, id, value => { value.meta.tree.id = "secondary"; value.routePack.packId = "secondary"; });
-  for (const pageId of new Set<string>([...slot.inputs, ...slot.uses])) {
+  // The publication also uses its group icons (assets.*, Designer slots); only its pages carry an entry.
+  for (const pageId of new Set<string>([...slot.inputs, ...slot.uses].filter(id => id.startsWith("page.")))) {
     await editNative(publisher, pageId, value => { delete value.meta.entry.publication; });
   }
   expect((await readPinnedPublication(publisher, "studio")).map.publicationId).toBe("studio");
@@ -281,12 +291,13 @@ it("lists the Studio publication's installed pages as ready with frame previews 
   const FRAMES = '<iframe src="/__specimen?element=components.button%2Fbutton&amp;theme=light&amp;width=1280" sandbox="allow-same-origin allow-scripts" class="opacity-0"></iframe>'
     + '<iframe src="/preview/studio/frame/home.html?theme=dark&amp;width=1280" title="Home"></iframe><iframe src="/api/config"></iframe><iframe sandbox src="https://example.test/"></iframe><iframe srcdoc="x"></iframe>';
   const served: ServedApp = { app, render: async path => { rendered.push(path); return `<!doctype html><html><head><title>${path}</title></head><body><h1>Rendered ${path}</h1>${FRAMES}<script src="/_next/static/chunks/app.js" async=""></script></body></html>`; } };
-  // Home plus one parameterized record per agent top group; the tabs they expand to carry no page slot.
-  const ids = ["home",
+  // Home, the Content overview (cfa277893 lists it before the agents), one parameterized record per agent
+  // top group (the tabs they expand to carry no page slot), then the Build and Run overviews (SYSTEMS-IA 5a50cab40).
+  const ids = ["home", "producer-pipeline",
     ...["context", "aspiration", "focus", "advantage", "identity", "capability", "execution"].map(group => `director-${group}`),
     ...["themes", "assets", "components", "sections", "frames"].map(group => `designer-${group}`),
     ...["lexicon", "strings", "patterns", "passages", "narratives"].map(group => `writer-${group}`),
-    "publisher-studio"];
+    "publisher-studio", "build-overview", "run-overview"];
   for (const requested of ["studio", undefined]) {
     const metadata = await publication(root, requested, outs, served);
     expect(metadata).toMatchObject({ state: "ready", publication: "studio", pages: ids.map(id => ({ id, cellId: `page.${id}`, emitted: true, previewUrl: `/preview/studio/pages/${id}.html`, frameUrl: `/preview/studio/frame/${id}.html` })) });

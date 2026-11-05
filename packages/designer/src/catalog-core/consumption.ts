@@ -85,7 +85,8 @@ export function scanComponentReads(content: string, themes: readonly Consumption
   const tokenMembers = sorted([...properties].flatMap(property => memberByProperty.get(property) ?? []));
   return {
     themes: sorted(themes.filter(token => tokenMembers.some(member => member.startsWith(`${token.id}.`))).map(token => token.id)),
-    assets: sorted([...content.matchAll(/\bassets\.[a-z][a-z0-9-]*/g)].map(match => match[0])),
+    // An asset id is never a path segment: `./internal/assets.js` is a module specifier, not a read of `assets.js`.
+    assets: sorted([...content.matchAll(/(?<![/\\\w.-])assets\.[a-z][a-z0-9-]*/g)].map(match => match[0])),
     tokenMembers, properties: sorted([...properties]), utilities: sorted([...utilities]),
   };
 }

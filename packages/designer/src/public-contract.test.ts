@@ -415,6 +415,11 @@ const GATE_SCRIPT_SUBPATHS = ["./ref-verbatim"] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css"] as const;
 const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
 
+/** Source text with block and line comments blanked: comments render nothing, so they carry no utilities. */
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " ")).replace(/(^|[^:"'`\\])\/\/[^\n]*/g, "$1");
+}
+
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
@@ -459,24 +464,26 @@ describe("public UI contract", () => {
   });
 
   it("keeps token-only use free of component runtime installation", () => {
-    // Declared runtime dependencies of shipped previews and Studio surfaces (clsx 013ff0ed4, recharts 4910f6d3a,
-    // tiptap 6463e7e59, @internationalized/date 811bee603); token-only use still needs none of the optional peers.
+    // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), clsx and @internationalized/date
+    // are optional peers, so a token-only install pulls none of them; a consumer of RichText, the charts or the
+    // date components installs them. class-variance-authority still depends on clsx, so clsx can arrive transitively.
     expect(packageJson.dependencies).toEqual({
-      "@internationalized/date": "^3.12.3",
-      "@tiptap/extension-table": "^3.32.1",
-      "@tiptap/markdown": "^3.32.1",
-      "@tiptap/react": "^3.32.1",
-      "@tiptap/starter-kit": "^3.32.1",
       "class-variance-authority": "0.7.1",
-      clsx: "2.1.1",
       "css-tree": "3.2.1",
-      recharts: "3.8.0",
       "@clossys/director": "0.6.0",
     });
 
-    for (const dependency of ["@internationalized/date", "react", "react-dom", "react-aria-components", "tailwind-merge", "tailwindcss"]) {
-      expect(packageJson.peerDependencies[dependency]).toBeDefined();
-      expect(packageJson.peerDependenciesMeta[dependency]?.optional).toBe(true);
+    const optionalPeers = [
+      "@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit",
+      "clsx", "react", "react-dom", "react-aria-components", "recharts", "tailwind-merge", "tailwindcss",
+    ];
+    for (const dependency of optionalPeers) {
+      expect(packageJson.peerDependencies[dependency], dependency).toBeDefined();
+      expect(packageJson.peerDependenciesMeta[dependency]?.optional, dependency).toBe(true);
+      expect(packageJson.dependencies[dependency], `${dependency} must not be a runtime dependency`).toBeUndefined();
+    }
+    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "clsx", "recharts"]) {
+      expect(packageJson.devDependencies[dependency], `${dependency} stays installed for Designer's own build and tests`).toBe(packageJson.peerDependencies[dependency]);
     }
   });
 
@@ -559,7 +566,10 @@ describe("public UI contract", () => {
       "(?:^|[\\s\"'`:])(" +
         [
           "(?:scroll-)?[mp][lr]-[a-z0-9[\\]./%-]+", // ml-auto, pr-2xl, scroll-pl-md
-          "(?:left|right)-[a-z0-9[\\]./%-]+", // left-0, right-md
+          // left-0, right-md, left-1/2, left-[3px], right-(--x): Tailwind's inset value grammar
+          // (number, fraction, px/full/auto, arbitrary, or a rung of the fixed spacing scale),
+          // so prose such as "right-to-left" and ids such as "left-sidebar" are not utilities.
+          "(?:left|right)-(?:[0-9][0-9./]*|px|full|auto|\\[[^\\]\\s]+\\]|\\([^)\\s]+\\)|[0-9]*x?s|sm|md|lg|[0-9]*x?l)(?![a-z0-9-])",
           "border-[lr](?![a-z])(?:-[0-9[][a-z0-9[\\]./%-]*)?", // border-l, border-r-2 — never border-line-base
           "text-(?:left|right)(?![a-z-])",
           "float-(?:left|right)(?![a-z-])",
@@ -583,11 +593,18 @@ describe("public UI contract", () => {
      */
     const KNOWN_PHYSICAL_INLINE: string[] = [];
 
+    // The scanner itself: real physical utilities still match; comments and non-utility ids do not.
+    const hits = (text: string) => [...withoutComments(text).matchAll(PHYSICAL_INLINE_RE)].map((match) => match[1]);
+    expect(hits('className="left-0 focus:left-sm right-md left-1/2 left-[3px] right-(--x) ml-auto border-r rounded-l-md"')).toEqual(
+      ["left-0", "left-sm", "right-md", "left-1/2", "left-[3px]", "right-(--x)", "ml-auto", "border-r", "rounded-l-md"],
+    );
+    expect(hits('/** mirrored for right-to-left locales; ml-2 */\n// pr-4 in a comment\nconst ids = ["left-sidebar", "right-panel"];')).toEqual([]);
+
     const found = new Set<string>();
     for (const dir of COMPONENT_DIRS) {
       for (const file of sourceFiles(join(packageRoot, "src", dir))) {
         const relative = file.slice(packageRoot.length + 1);
-        for (const match of readFileSync(file, "utf8").matchAll(PHYSICAL_INLINE_RE)) {
+        for (const match of withoutComments(readFileSync(file, "utf8")).matchAll(PHYSICAL_INLINE_RE)) {
           found.add(`${relative} :: ${match[1]}`);
         }
       }
