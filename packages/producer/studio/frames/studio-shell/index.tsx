@@ -81,8 +81,9 @@ function writePopover(id: string | undefined) {
 }
 
 const mainColumn = () => document.getElementById('studio-main');
-// A popover's targets are authored selectors: an invalid one is a spec error and throws.
-const target = (selector: string) => mainColumn()?.querySelector<HTMLElement>(selector) ?? null;
+const target = (selector: string) => {
+  try { return mainColumn()?.querySelector<HTMLElement>(selector) ?? null; } catch { return null; }
+};
 async function copyText(text: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
