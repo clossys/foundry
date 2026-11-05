@@ -1,0 +1,154 @@
+{
+  "name": "section-header",
+  "type": "registry:block",
+  "dependencies": [],
+  "registryDependencies": [
+    "badge",
+    "button",
+    "card",
+    "empty"
+  ],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "section-header.tsx",
+      "type": "registry:component",
+      "content": "import { Badge } from '@/components/ui/badge';\nimport { LinkButton } from '@/components/ui/button';\nimport { CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';\nimport { EmptyContent, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';\n\n/** One section action: its Writer label and where it goes. */\nexport interface SectionAction { label: string; href: string }\n\n/** The inputs of `sections.section-header`: the contract's copy fields, display-ready. */\nexport interface SectionHeaderInput {\n  eyebrow?: string;\n  heading: string;\n  description?: string;\n  actions?: readonly SectionAction[];\n  /** `align.start` (the stock card header, actions at the end) or `align.center` (the stock empty header). */\n  align?: 'start' | 'center';\n}\n\n/** `sections.section-header`: a section's eyebrow, heading, description and at most two actions, composed of stock aria-nova parts only. */\nexport default function SectionHeaderSection({ eyebrow, heading, description, actions = [], align = 'start', ...provenance }: SectionHeaderInput & { [marker: `data-clossys-${string}`]: string }) {\n  const links = actions.slice(0, 2).map((action, index) => <LinkButton key={action.href} href={action.href} variant={index === 0 ? 'default' : 'outline'}>{action.label}</LinkButton>);\n  if (align === 'center') return <EmptyHeader data-align=\"center\" {...provenance}>\n    {eyebrow ? <Badge variant=\"secondary\">{eyebrow}</Badge> : null}\n    <EmptyTitle role=\"heading\" aria-level={2}>{heading}</EmptyTitle>\n    {description ? <EmptyDescription>{description}</EmptyDescription> : null}\n    {links.length ? <EmptyContent>{links}</EmptyContent> : null}\n  </EmptyHeader>;\n  return <CardHeader data-align=\"start\" {...provenance}>\n    {eyebrow ? <CardDescription><Badge variant=\"secondary\">{eyebrow}</Badge></CardDescription> : null}\n    <CardTitle role=\"heading\" aria-level={2}>{heading}</CardTitle>\n    {description ? <CardDescription>{description}</CardDescription> : null}\n    {links.length ? <CardAction>{links}</CardAction> : null}\n  </CardHeader>;\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.section-header",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.empty",
+          "files": [
+            "registry/aria-nova/ui/empty.tsx"
+          ]
+        }
+      ],
+      "license": "MIT",
+      "hash": "sha256:411bd48592a23e53468bc56e778956cc709e18ceb43dbcbe5103eca9e5e593d6"
+    },
+    "element": {
+      "id": "section-header",
+      "package": "designer",
+      "layer": "sections",
+      "slot": "sections.section-header",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D3, option a): eyebrow badge, heading, description and up to two actions over the stock card header (align.start) or the stock empty header (align.center). Composed through the Designer create path from pinned stock aria-nova parts only (components.badge, components.button, components.card, components.empty); no raw styled markup, no restyle of a part, every word a Writer copy prop. Replaces v1 (derived lineage, failing ref-verbatim). section-header-v2 follow-up: preview.copy carries the pinned Writer text of every key the fixtures name, so the Studio specimen renders Writer copy.",
+      "createdAt": "2026-11-05T10:52:23.681Z",
+      "deps": {
+        "npm": {},
+        "registry": [
+          "badge",
+          "button",
+          "card",
+          "empty"
+        ]
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing",
+          "--background",
+          "--card",
+          "--popover",
+          "--secondary",
+          "--accent",
+          "--muted",
+          "--sidebar",
+          "--sidebar-accent",
+          "--font-heading",
+          "--foreground",
+          "--card-foreground",
+          "--popover-foreground",
+          "--primary-foreground",
+          "--secondary-foreground",
+          "--accent-foreground",
+          "--muted-foreground",
+          "--sidebar-foreground",
+          "--sidebar-primary-foreground",
+          "--sidebar-accent-foreground",
+          "--primary",
+          "--animate-marquee",
+          "--animate-marquee-vertical",
+          "--animate-shiny-text",
+          "--border",
+          "--input",
+          "--sidebar-border",
+          "--tracking-tight",
+          "--destructive",
+          "--font-sans",
+          "--font-mono"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "section-header.tsx",
+        "export": "default",
+        "props": {
+          "eyebrow": {
+            "$copy": "studio.detail.section.eyebrow"
+          },
+          "heading": {
+            "$copy": "studio.detail.section.heading"
+          },
+          "description": {
+            "$copy": "studio.detail.section.description"
+          }
+        }
+      },
+      "copy": {
+        "studio.detail.section.description": {
+          "text": "Every candidate in this slot. The owner pins one."
+        },
+        "studio.detail.section.eyebrow": {
+          "text": "{agent}"
+        },
+        "studio.detail.section.heading": {
+          "text": "Options"
+        }
+      },
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

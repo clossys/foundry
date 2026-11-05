@@ -1,7 +1,7 @@
 {
-  "candidate": "page-header-v3.json",
-  "sha256": "7c16d67ed6ac88ddaa9378a500f4fd9b9f487c06c03dea0d645c9de9bcf96ba6",
+  "candidate": "page-header-v4.json",
+  "sha256": "76f04a416313b2bcf8a3d8883e471d46606c086368bf3755023b615a0232cf53",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T10:07:48.848Z"
+  "at": "2026-11-05T10:52:40.559Z"
 }
