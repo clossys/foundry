@@ -57,6 +57,20 @@ describe("default candidates gate", () => {
     const input = fixture(); mutableDescriptor(input).reads.themes = [read];
     expect(checkDefaultCandidates(input).exitCode).toBe(2);
   });
+  it("skips a host render part the registered contract declares, and still rejects an undeclared one", () => {
+    const declared = fixture();
+    (declared.buildCatalog.slots[1]!.contract as { parts?: string[] }).parts = ["renderSurface"];
+    (mutableDescriptor(declared) as { parts?: unknown }).parts = ["renderSurface"];
+    expect(checkDefaultCandidates(declared)).toMatchObject({ exitCode: 0, report: { invalid: [] } });
+    const undeclared = fixture();
+    (mutableDescriptor(undeclared) as { parts?: unknown }).parts = ["renderSurface"];
+    expect(checkDefaultCandidates(undeclared)).toMatchObject({ exitCode: 2, report: { invalid: ['foundry/components.button: malformed read "renderSurface"'] } });
+    // A layer-prefixed contract part is a library read, never skipped.
+    const layered = fixture();
+    (layered.buildCatalog.slots[1]!.contract as { parts?: string[] }).parts = ["themes.unknown"];
+    (mutableDescriptor(layered) as { parts?: unknown }).parts = ["themes.unknown"];
+    expect(checkDefaultCandidates(layered).exitCode).toBe(2);
+  });
   it("rejects absent source policy instead of choosing another source", () => {
     const input = fixture(); input.defaultSources = {};
     expect(checkDefaultCandidates(input)).toMatchObject({ exitCode: 2, report: { invalid: ["MISSING_POLICY themes.spacing: default source definition is missing"] } });
