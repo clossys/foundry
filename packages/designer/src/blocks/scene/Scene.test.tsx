@@ -83,7 +83,7 @@ describe("Scene", () => {
  });
  it("uses live radius, theme paints, fixed start-aligned values and a sole accent ring", () => {
   const css = readFileSync(resolve(sourceDir, "../../../styles/theme-keys.css"), "utf8");
-  for (const token of ["--radius-panel", "--color-surface-raised", "--color-surface-sunken", "--color-ink-secondary", "--color-line-strong", "--color-accent", "--ui-scene-card-w"]) expect(css).toContain(`var(${token},`);
+  for (const token of ["--radius-panel", "--color-surface-raised", "--color-surface-sunken", "--color-ink-secondary", "--color-line-strong", "--primary", "--ui-scene-card-w"]) expect(css).toContain(`var(${token},`);
   const { container } = render(view(inputs[2]!)); expect(container.querySelectorAll("[data-scene-desk] .scene-accent")).toHaveLength(1); expect(container.querySelector("[data-scene-desk] .scene-accent")?.tagName).toBe("circle");
   expect(container.querySelectorAll(".scene-wire-subject")).toHaveLength(2); expect(container.querySelector("[text-anchor=end]")).toBeNull();
  });

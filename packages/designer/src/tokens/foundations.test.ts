@@ -211,7 +211,7 @@ const expectedNew = {
   "--ui-control-switch-thumb": ["14px", "control"],
   "--ui-border-focus": ["2px", "border"],
   "--ui-focus-offset": ["2px", "ring"],
-  "--color-focus-ring": ["var(--primary, oklch(0.4748 0 0))", "ring"],
+  "--color-focus-ring": ["var(--color-accent, oklch(0.4748 0 0))", "ring"],
   "--color-focus-ring-on-inverse": ["var(--color-ink-on-inverse, oklch(0.9702 0 0))", "ring"],
   "--ui-z-skip-link": ["100", "z"],
   "--ui-motion-shift": ["4px", "spacing"],

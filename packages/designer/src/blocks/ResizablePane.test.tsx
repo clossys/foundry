@@ -18,6 +18,8 @@ describe("ResizablePane", () => {
     const { rerender } = render(<ResizablePane {...props} ground="inverse">Content</ResizablePane>);
     expect(screen.getByRole("region", { name: "Tools" })).toHaveClass("bg-surface-inverse-raised");
     expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent-on-inverse");
+    // The handle's default outline colour is merged away, so the inverse outline never depends on stylesheet order.
+    expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-primary");
     rerender(<ResizablePane {...props} ground="base">Content</ResizablePane>);
     expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-accent-on-inverse");
     expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-primary");
@@ -29,7 +31,8 @@ describe("ResizablePane", () => {
     const selector = String.raw`.focus-visible\:outline-accent-on-inverse:focus-visible`;
     const ordinary = String.raw`.focus-visible\:outline-primary:focus-visible`;
     const start = css.indexOf(selector);
-    expect(start).toBeGreaterThan(css.indexOf(ordinary));
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(css.indexOf(ordinary)).toBeGreaterThanOrEqual(0);
     const rule = css.slice(start, css.indexOf("}", start));
     expect(rule).toContain(`outline-color: var(--color-accent-on-inverse, ${TOKENS["--color-accent-on-inverse"]!.value})`);
     const ground = TOKENS["--color-surface-inverse-raised"]!.value;

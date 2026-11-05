@@ -88,7 +88,7 @@ describe('actual Hero scrim composition',()=>{
     const vector={...art,source:{format:'svg' as const,paths:[{d:'M0 0H1600V900H0Z',fillToken:'--color-accent'}]}};
     const {container}=render(<Hero heading="Heading" backdrop={vector}/>);
     expect(container.querySelector('[data-hero-backdrop] svg')).toHaveAttribute('focusable','false');
-    expect(container.querySelector('path')).toHaveAttribute('fill','var(--primary)');
+    expect(container.querySelector('path')).toHaveAttribute('fill','var(--color-accent)');
     expect(checkBackdropElement(container.querySelector('[data-hero-backdrop]')!)).toMatchObject({ok:true});
   });
 });

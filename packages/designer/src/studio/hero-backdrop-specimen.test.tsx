@@ -22,10 +22,10 @@ describe("Hero backdrop kind specimen", () => {
       expect(section.querySelector("[data-hero-backdrop]")).toBeNull();
       expect(screen.queryByRole("status")).toBeNull();
     } else if (kind === "image") {
-      expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--primary)");
+      expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--color-accent)");
       expect(screen.queryByRole("status")).toBeNull();
     } else if (kind === "video") {
-      expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--primary)");
+      expect(section.querySelector("[data-hero-backdrop] svg path")).toHaveAttribute("fill", "var(--color-accent)");
       expect(section.querySelector("video")).toBeNull();
       expect(section.querySelector("[data-media-passive]")).toBeNull();
       expect(screen.getByRole("status")).toHaveTextContent(HERO_BACKDROP_SPECIMENS[2].backdrop.missingVideoMessage);

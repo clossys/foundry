@@ -379,7 +379,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--blur-notice": { property: "--blur-notice", family: "blur", value: "12px", brandable: false, themeDependent: false },
 
   // ── UI · RING ───────────────────────────────────────────────────────
-  "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--primary, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
+  "--ui-ring-focus": { property: "--ui-ring-focus", family: "ring", value: "0 0 0 2px var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
   "--ui-ring-on-inverse": { property: "--ui-ring-on-inverse", family: "ring", value: "0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
 
   // ── UI · DURATION ───────────────────────────────────────────────────
@@ -433,7 +433,7 @@ export const TOKENS: Readonly<Record<string, TokenDefinition>> = {
   "--ui-control-switch-thumb": { property: "--ui-control-switch-thumb", family: "control", value: "14px", brandable: false, themeDependent: false },
   "--ui-border-focus": { property: "--ui-border-focus", family: "border", value: "2px", brandable: false, themeDependent: false },
   "--ui-focus-offset": { property: "--ui-focus-offset", family: "ring", value: "2px", brandable: false, themeDependent: false },
-  "--color-focus-ring": { property: "--color-focus-ring", family: "ring", value: "var(--primary, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
+  "--color-focus-ring": { property: "--color-focus-ring", family: "ring", value: "var(--color-accent, oklch(0.4748 0 0))", brandable: false, themeDependent: false },
   "--color-focus-ring-on-inverse": { property: "--color-focus-ring-on-inverse", family: "ring", value: "var(--color-ink-on-inverse, oklch(0.9702 0 0))", brandable: false, themeDependent: false },
   "--ui-z-skip-link": { property: "--ui-z-skip-link", family: "z", value: "100", brandable: false, themeDependent: false },
   "--ui-motion-shift": { property: "--ui-motion-shift", family: "spacing", value: "4px", brandable: false, themeDependent: false },

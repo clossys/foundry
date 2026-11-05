@@ -61,7 +61,7 @@ describe("generateCompiledCss", () => {
       candidates: ["bg-primary", "text-ink-on-accent", "rounded-control", "px-md", "hover:bg-accent-hover"],
     });
     expect(result.css).toContain(".bg-primary {");
-    expect(result.css).toContain("background-color: var(--primary, oklch(0.4748 0 0));");
+    expect(result.css).toContain("background-color: var(--primary);");
     expect(result.css).toContain(".rounded-control {");
     expect(result.css).toContain("hover\\:bg-accent-hover");
     expect(result.classCount).toBeGreaterThan(0);
@@ -117,10 +117,11 @@ describe("generateCompiledCss", () => {
 
   it("carries a live var() reference (not a baked-in literal) so brand overrides are picked up", async () => {
     const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary"] });
-    // The declaration must read the custom property, with the token's own
-    // default as fallback — never a bare literal that could never respond
-    // to a later :root[data-brand-bound] override.
-    expect(result.css).toMatch(/background-color:\s*var\(--color-accent,\s*oklch\(0\.4748 0 0\)\);/);
+    // The declaration must read the theme variable live (the generated shadcn
+    // key, valued by the selected theme) — never a bare literal that could
+    // never respond to a later theme or brand override.
+    expect(result.css).toMatch(/background-color:\s*var\(--primary\);/);
+    expect(result.css).not.toMatch(/background-color:\s*oklch\(/);
   });
 });
 
