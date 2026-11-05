@@ -70,9 +70,14 @@ it("turns the dock chevron on the named fast chrome motion, with no arbitrary du
 
 it("binds frame controls and main to the one focus-ring token, never the raw accent", () => {
   render(<AppFrame {...props}><p>Page</p></AppFrame>);
+  // GATES-RED G5: the control's ring is the Components-supplied (pinned shadcn Button) focus-ring read;
+  // main keeps the frame's named focus-ring-inset utility, which reads the same token.
+  expect(screen.getByRole("button", { name: "Find commands" })).toHaveClass("focus-visible:outline-(--color-focus-ring)");
+  expect(screen.getByRole("main")).toHaveClass("focus-ring-inset");
+  expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toMatch(/@utility focus-ring-inset \{[^}]*outline-color: var\(--color-focus-ring,/);
   for (const element of [screen.getByRole("button", { name: "Find commands" }), screen.getByRole("main")]) {
-    expect(element).toHaveClass("focus-visible:outline-focus-ring");
     expect(element).not.toHaveClass("focus-visible:outline-primary");
+    expect(element.getAttribute("class")).not.toMatch(/outline-\(--primary\)|outline-accent\b/);
   }
 });
 

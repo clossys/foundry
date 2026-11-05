@@ -28,7 +28,7 @@ interface CanvasStageProps<Section extends FrameStageSectionRef> extends FrameSt
   /** Resolved from body.collapseBelow in the consumer's existing token profile. */
   readonly collapseBelowPx: number;
   readonly camera: { readonly viewport: Viewport; readonly onViewportChange: (value: Viewport) => void; readonly minZoom: number; readonly maxZoom: number; readonly fitPadding: number; readonly actionsRef?: Ref<CanvasSurfaceActions> };
-  readonly modules?: { readonly map?: { readonly id: string; readonly label: string }; readonly zoom?: { readonly id: string; readonly labels: CanvasZoomProps['labels'] } };
+  readonly modules?: { readonly map?: { readonly id: string; readonly label: string }; readonly zoom?: { readonly id: string; readonly labels: CanvasZoomProps['labels']; /** Host-formatted percentage copy; CanvasZoom infers no locale, so the zoom module is omitted until the host supplies it. */ readonly formatValue?: CanvasZoomProps['formatValue'] } };
   readonly currentBoardId?: string;
   readonly onCurrentBoardChange?: (id: string) => void;
 }
@@ -165,6 +165,6 @@ export function FrameStage<Section extends FrameStageSectionRef>(props: FrameSta
       </CanvasWorld>
     </CanvasSurface>
     {!flowing && modules?.map ? <SlotModule id={modules.map.id} slot="dock-tab" label={modules.map.label}><CanvasMap label={modules.map.label} items={ready!.positions.map(item => ({ id: item.id, rect: item }))} bounds={bounds} viewport={camera.viewport} viewSize={canvasSize} onViewportChange={camera.onViewportChange} /></SlotModule> : null}
-    {!flowing && modules?.zoom ? <SlotModule id={modules.zoom.id} slot="dock-strip" label={modules.zoom.labels.group}><CanvasZoom value={camera.viewport.zoom} min={camera.minZoom} max={camera.maxZoom} labels={modules.zoom.labels} onChange={value => actions.current?.zoom(value / camera.viewport.zoom)} onFit={() => actions.current?.fit()} /></SlotModule> : null}
+    {!flowing && modules?.zoom?.formatValue ? <SlotModule id={modules.zoom.id} slot="dock-strip" label={modules.zoom.labels.group}><CanvasZoom value={camera.viewport.zoom} min={camera.minZoom} max={camera.maxZoom} labels={modules.zoom.labels} formatValue={modules.zoom.formatValue} onChange={value => actions.current?.zoom(value / camera.viewport.zoom)} onFit={() => actions.current?.fit()} /></SlotModule> : null}
   </SemanticContent>;
 }

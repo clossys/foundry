@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -24,7 +26,10 @@ describe("AuthFrame", () => {
     render(<AuthFrame skipLabel="Skip"><section>First</section><section>Second</section></AuthFrame>);
     const main = screen.getByRole("main");
     expect(main).toHaveClass("mx-auto", "flex", "flex-col", "justify-center", "min-h-dvh", "w-full");
-    expect(main.style.maxWidth).toBe("var(--ui-width-form-max, 38rem)");
+    // GATES-RED G5: the measure is the named measure-form utility, not an inline max-width (WL4).
+    expect(main).toHaveClass("measure-form");
+    expect(main.getAttribute("style")).toBeNull();
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toContain("@utility measure-form { max-inline-size: var(--ui-width-form-max, 38rem); }");
     expect(Array.from(main.children, child => child.textContent)).toEqual(["First", "Second"]);
   });
 

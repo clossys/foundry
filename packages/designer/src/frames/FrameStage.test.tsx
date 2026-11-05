@@ -123,7 +123,7 @@ it('registers real map and zoom in the AppFrame dock and hides both in container
   vi.stubGlobal('matchMedia', vi.fn((media: string) => ({ matches: media === '(prefers-reduced-motion: reduce)' || media.includes('min-width'), media, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })));
   const value = props();
   const view = render(<AppFrame brand={{ markSrc: '/mark.svg', wordmark: 'Example', label: 'Example' }} navigation={{ tree: [], label: 'Navigation' }} account={{ signedOutLabel: 'Account', sections: [] }} commands={{ heading: 'Commands', searchLabel: 'Search', closeLabel: 'Close', emptyMessage: 'Empty', triggerLabel: 'Commands', groups: [] }}>
-    <FrameStage {...value} modules={{ map: { id: 'stage-map', label: 'Stage map' }, zoom: { id: 'stage-zoom', labels: { group: 'Stage zoom', in: 'Zoom in', out: 'Zoom out', fit: 'Fit boards', percent: 'Zoom percent' } } }} />
+    <FrameStage {...value} modules={{ map: { id: 'stage-map', label: 'Stage map' }, zoom: { id: 'stage-zoom', labels: { group: 'Stage zoom', in: 'Zoom in', out: 'Zoom out', fit: 'Fit boards', percent: 'Zoom percent' }, formatValue: percent => `${Math.round(percent)} percent` } }} />
   </AppFrame>);
   const dock = view.container.querySelector('[data-application-frame-region="dock"]')!;
   expect(dock).toContainElement(screen.getByRole('toolbar', { name: 'Stage zoom' }));
