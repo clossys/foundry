@@ -72,8 +72,8 @@
   "inputs": [],
   "uses": [],
   "notNeeded": {
-    "reason": "no approved-registry source; W6 composition check (strict, rich-text-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 1 styled raw element attribute(s); imports outside the stock parts: react, cn, react-aria-components. No vendored item in the approved set maps to this slot (Plate is not vendored; manifest skipped @plate/editor-basic); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03",
-    "decidedBy": "migrated"
+    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, rich-text-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: 1 styled raw element attribute(s); imports outside the stock parts: react, cn, react-aria-components. No vendored item in the approved set maps to this slot (Plate is not vendored; manifest skipped @plate/editor-basic); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
   }
 }

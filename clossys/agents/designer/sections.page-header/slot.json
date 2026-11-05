@@ -194,8 +194,8 @@
   "inputs": [],
   "uses": [],
   "notNeeded": {
-    "reason": "no approved-registry source; W6 composition check (strict, page-header-v1.json unmodified) fails REF-COMP-MARKUP, REF-COMP-UNUSED: 8 styled raw element attribute(s). No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03",
-    "decidedBy": "migrated"
+    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, page-header-v1.json unmodified) fails REF-COMP-MARKUP, REF-COMP-UNUSED: 8 styled raw element attribute(s). No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
   }
 }

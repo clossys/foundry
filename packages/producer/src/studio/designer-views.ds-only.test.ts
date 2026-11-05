@@ -209,7 +209,8 @@ function importAllowed(kind: Kind, file: string, folder: string, specifier: stri
   }
   if (composes.has(specifier)) return true;
   if (typeOnly) return true;
-  if (kind === 'renderer') return RENDERER_RUNTIME.has(specifier) || isBuiltin(specifier) || (specifier.startsWith('@clossys/') && !specifier.startsWith(`${COMPONENT_LAYER}/`)) || within(file, specifier, PRODUCER);
+  // `node:module` is the one builtin that loads other modules (createRequire), so it is not a free builtin (D11).
+  if (kind === 'renderer') return RENDERER_RUNTIME.has(specifier) || (isBuiltin(specifier) && !/^(node:)?module$/.test(specifier)) || (specifier.startsWith('@clossys/') && !specifier.startsWith(`${COMPONENT_LAYER}/`)) || within(file, specifier, PRODUCER);
   return UI_FRAME_RUNTIME.has(specifier) || within(file, specifier, UI_SRC);
 }
 
@@ -518,6 +519,10 @@ describe('Studio sections are ds-only', () => {
       expect(dsOnlyViolations(probe).map(line => { const [path, ...rest] = line.split(': '); return `${basename(path!)}: ${rest.join(': ')}`; }).sort()).toEqual([
         'Alias.tsx: imports require', 'Create.tsx: imports createRequire', 'Create.tsx: imports createRequire', 'Create.tsx: imports node:module', 'Module.tsx: imports other-ui',
       ]);
+      // A renderer may import node builtins, but not the module loader itself.
+      expect(fileViolations(join(probe, 'Create.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Create.tsx: imports node:module', 'Create.tsx: imports createRequire', 'Create.tsx: imports createRequire']);
+      writeFileSync(join(probe, 'Path.tsx'), "import { join } from 'node:path';\nexport const P = join('a', 'b');\n");
+      expect(fileViolations(join(probe, 'Path.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual([]);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
 

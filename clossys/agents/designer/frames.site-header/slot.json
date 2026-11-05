@@ -119,8 +119,8 @@
   "inputs": [],
   "uses": [],
   "notNeeded": {
-    "reason": "no approved-registry source; W6 composition check (strict, site-header-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed), components.logo (pinned derived); 9 styled raw element attribute(s); imports outside the stock parts: react, lucide-react, cn, react-aria-components, @/components/ui/icon (absent from the component layer), @/components/ui/logo (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. The only direct item, tailark-oss/mist-hero-section-1-header@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",
-    "since": "2026-11-03",
-    "decidedBy": "migrated"
+    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, site-header-v1.json unmodified) fails REF-COMP-IMPORT, REF-COMP-MARKUP, REF-COMP-UNUSED: uses parts that are not pinned stock: components.icon (not-needed), components.logo (pinned derived); 9 styled raw element attribute(s); imports outside the stock parts: react, lucide-react, cn, react-aria-components, @/components/ui/icon (absent from the component layer), @/components/ui/logo (absent from the component layer); Button resolves to button.tsx, which both components.button and components.link ship. The only direct item, tailark-oss/mist-hero-section-1-header@8139698, is radix, not the consumer style aria-nova (verbatim adopt fails REF-FLAVOR); candidate v1 fails ref-verbatim.",
+    "since": "2026-11-05",
+    "decidedBy": "planner:DS-COMPLETE"
   }
 }
