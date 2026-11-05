@@ -21,6 +21,7 @@
     "sections.module.outline",
     "sections.producer.system-empty",
     "sections.studio.page-header",
-    "strings.common"
+    "strings.common",
+    "strings.page-titles"
   ]
 }

@@ -39,6 +39,7 @@
     "sections.studio.slot-groups",
     "sections.studio.specimen",
     "strings.common",
-    "strings.descriptions"
+    "strings.descriptions",
+    "strings.page-titles"
   ]
 }
