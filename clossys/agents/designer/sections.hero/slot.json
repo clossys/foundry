@@ -57,7 +57,8 @@
     "allowedComposes": [
       "components.button",
       "components.link",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.media-player"
     ],
     "parts": [
       "sections.band",

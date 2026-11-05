@@ -23,13 +23,37 @@
   },
   "frames": {
     "app-header": {
-      "composes": [],
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.link",
+        "components.menu",
+        "components.popover",
+        "components.semantic-content",
+        "components.toggle-button"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.link",
+          "components.menu",
+          "components.popover",
+          "components.semantic-content",
+          "components.toggle-button"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.link",
+            "components.menu",
+            "components.popover",
+            "components.semantic-content",
+            "components.toggle-button"
+          ],
           "themes": []
         },
         "sourceFiles": [
@@ -55,7 +79,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+            "sha256": "76e1a2297d55fcec857623b1e780cd3f438a252c3dbbf7013f944fbff4fad994"
           },
           {
             "path": "packages/designer/src/icons/Check.ts",

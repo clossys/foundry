@@ -63,6 +63,10 @@
             "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
           },
           {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "e0ac95371ab8fd8d381a4b0079f72236c95730044f0a7b305ad146926d6fe583"
+          },
+          {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
             "sha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624"
           },
@@ -76,11 +80,11 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/site-frame-contract.ts",
-            "sha256": "2ab7ee65d528d172ea5e96c96b37d492ec9bc2e08263c33d841baa736516367b"
+            "sha256": "fd321d28a676e7a2f7cf09c7e6b9ac97ad99f9a85c8580ecddc066fd80d5c0ae"
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "8bc08450feee0272b7dacecb75e075892084e9927c5708187366ca0752775b03"
+            "sha256": "7a2914c7113a3f20295f7adb727ba7778ef4b49c117c93e25854b4aed93b5199"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",

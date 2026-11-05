@@ -46,7 +46,8 @@
       "components.avatar",
       "components.spinner",
       "components.link",
-      "components.tooltip"
+      "components.tooltip",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

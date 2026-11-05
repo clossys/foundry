@@ -30,7 +30,8 @@
     "allowedComposes": [
       "components.meter",
       "components.progress-bar",
-      "components.status-mark"
+      "components.status-mark",
+      "components.semantic-content"
     ],
     "composes": [
       "sections.empty-state"

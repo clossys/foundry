@@ -27,13 +27,31 @@
   },
   "frames": {
     "command": {
-      "composes": [],
+      "composes": [
+        "components.button",
+        "components.command",
+        "components.dialog",
+        "components.icon",
+        "components.semantic-content"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.button",
+          "components.command",
+          "components.dialog",
+          "components.icon",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.command",
+            "components.dialog",
+            "components.icon",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

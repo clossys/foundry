@@ -245,7 +245,10 @@
     },
     "allowedComposes": [
       "components.text-field",
-      "components.button"
+      "components.button",
+      "components.form",
+      "components.link",
+      "components.semantic-content"
     ],
     "parts": [],
     "allowedReads": {

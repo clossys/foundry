@@ -74,7 +74,8 @@
       "assets": []
     },
     "composes": [
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.link"
     ],
     "skipTarget": "main-content"
   },

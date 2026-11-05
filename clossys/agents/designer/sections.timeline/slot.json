@@ -28,7 +28,9 @@
       "names": []
     },
     "allowedComposes": [
-      "components.separator"
+      "components.separator",
+      "components.card",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

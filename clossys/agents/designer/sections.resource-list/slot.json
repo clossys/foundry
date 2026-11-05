@@ -48,7 +48,8 @@
       "components.menu",
       "components.checkbox",
       "components.button",
-      "components.skeleton"
+      "components.skeleton",
+      "components.semantic-content"
     ],
     "composes": [
       "sections.empty-state"

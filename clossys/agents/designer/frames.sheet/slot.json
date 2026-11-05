@@ -76,7 +76,9 @@
       "components.dialog",
       "components.button",
       "components.card",
-      "components.icon"
+      "components.icon",
+      "components.semantic-content",
+      "components.sheet"
     ]
   },
   "inputs": [],

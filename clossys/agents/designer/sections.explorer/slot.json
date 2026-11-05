@@ -43,7 +43,9 @@
       "components.breadcrumbs",
       "components.resize-handle",
       "components.button",
-      "components.icon"
+      "components.icon",
+      "components.link",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

@@ -50,7 +50,8 @@
     "allowedComposes": [
       "components.form",
       "components.progress-bar",
-      "components.button"
+      "components.button",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

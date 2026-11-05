@@ -40,7 +40,8 @@
     "allowedComposes": [
       "components.table",
       "components.search-field",
-      "components.date-picker"
+      "components.date-picker",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

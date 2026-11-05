@@ -23,18 +23,31 @@
   },
   "frames": {
     "auth-shell": {
-      "composes": [],
+      "composes": [
+        "components.link",
+        "components.semantic-content"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.link",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": [
             "themes.background",
+            "themes.border",
+            "themes.card",
             "themes.foreground",
+            "themes.muted-foreground",
             "themes.primary",
-            "themes.primary-foreground"
+            "themes.primary-foreground",
+            "themes.sidebar"
           ]
         },
         "sourceFiles": [
@@ -43,12 +56,20 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
           },
           {
             "path": "packages/designer/src/frames/AuthFrame.tsx",
-            "sha256": "e52423313baada52ab4493a3785f3f11678c00d8fba24d96020acc3b50c9dd48"
+            "sha256": "29e156a6a1f5741aee0c23ea7d80c025534bb761bf87d91a2c18de8021bc4dde"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -56,7 +77,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "b52ac18ee8b09afbe0b5de181e85ffb2a06162efbfcbc3030b2587c0ac0694ee"
+            "sha256": "3f0a2f786c0c6fffc04c37711e69be5258954427e41544ccce532455ac812a87"
           }
         ],
         "unresolved": [
@@ -77,12 +98,6 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
             "line": 4
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
-            "file": "packages/designer/src/shell/SkipLink.tsx",
-            "line": 3
           }
         ]
       },
@@ -97,9 +112,13 @@
         "assets": [],
         "themes": [
           "themes.background",
+          "themes.border",
+          "themes.card",
           "themes.foreground",
+          "themes.muted-foreground",
           "themes.primary",
-          "themes.primary-foreground"
+          "themes.primary-foreground",
+          "themes.sidebar"
         ]
       },
       "slot": "frames.auth-shell",

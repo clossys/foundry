@@ -26,14 +26,29 @@
   },
   "sections": {
     "pricing": {
-      "composes": [],
+      "composes": [
+        "components.badge",
+        "components.card",
+        "components.semantic-content",
+        "components.table"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.badge",
+          "components.card",
+          "components.semantic-content",
+          "components.table"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.badge",
+            "components.card",
+            "components.semantic-content",
+            "components.table"
+          ],
           "themes": []
         },
         "sourceFiles": [
@@ -51,7 +66,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",

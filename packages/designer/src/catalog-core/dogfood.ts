@@ -41,6 +41,8 @@ export interface DogfoodInput {
   localModules?: Readonly<Record<string, string>>; now?: string;
   /** Exact source/export identities resolved by the source runner, never inferred from a local symbol's spelling. */
   resolvedImports?: Readonly<Record<string, string>>;
+  /** Local `const X = componentLeaf("components.x")` facades by `file#binding`, resolved by the source runner from the facade's own call. */
+  componentLeaves?: Readonly<Record<string, string>>;
   /** Consumer mode follows source modules; these identities never suppress their findings. */
   consumerBoundary?: { readonly pages: readonly string[]; readonly sourceImports: Readonly<Record<string, string>>; readonly pageChromeFiles?: readonly string[];
     /** Exact edges resolved from the runner's explicit project-source contract. */
@@ -286,7 +288,10 @@ function composeAt(file: string, node: Element, parsed: Parsed, input: DogfoodIn
   if (!/^[A-Z]/.test(node.tag)) return undefined;
   if (input.consumerBoundary) { const identity = importedIdentity(node, parsed, input, file); if (identity?.module === "next/link" && identity.symbol === "default") return { file, line: 0, tag: node.tag, slotId: "components.link", module: identity.module, symbol: identity.symbol }; }
   const [binding, ...parts] = node.tag.split("."), imported = parsed.imports.get(binding!);
-  if (!imported) return undefined;
+  if (!imported) {
+    const leaf = input.componentLeaves?.[`${file}#${binding}`];
+    return leaf ? { file, line: 0, tag: node.tag, slotId: leaf, module: file, symbol: binding! } : undefined;
+  }
   const module = input.localModules?.[`${file}:${imported.module}`] ?? imported.module;
   const symbol = imported.symbol === "*" ? parts.join(".") :
     serverExports.has(module) ? [imported.symbol, ...parts].join(".") : imported.symbol;

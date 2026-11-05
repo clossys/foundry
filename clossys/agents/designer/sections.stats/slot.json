@@ -32,7 +32,9 @@
     },
     "allowedComposes": [
       "components.chart-sparkline",
-      "components.meter"
+      "components.meter",
+      "components.card",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

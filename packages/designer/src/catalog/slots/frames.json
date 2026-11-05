@@ -411,7 +411,11 @@
         "components.logo",
         "components.resize-handle",
         "components.tabs",
-        "components.tooltip"
+        "components.tooltip",
+        "components.dialog",
+        "components.link",
+        "components.popover",
+        "components.semantic-content"
       ],
       "skipTarget": "main-content",
       "stage": {
@@ -493,7 +497,8 @@
         "assets": []
       },
       "composes": [
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.link"
       ],
       "skipTarget": "main-content"
     },
@@ -695,7 +700,8 @@
         "components.toggle-button",
         "components.status-mark",
         "components.icon",
-        "components.tooltip"
+        "components.tooltip",
+        "components.semantic-content"
       ]
     },
     "requires": [],
@@ -807,7 +813,8 @@
         "components.avatar",
         "frames.sheet",
         "components.card",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ]
     },
     "requires": [],
@@ -896,7 +903,8 @@
         "components.resize-handle",
         "components.button",
         "frames.sheet",
-        "components.card"
+        "components.card",
+        "components.semantic-content"
       ]
     },
     "requires": [],
@@ -1002,7 +1010,8 @@
         "components.icon",
         "components.logo",
         "components.separator",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.button"
       ]
     },
     "requires": [],
@@ -1078,7 +1087,9 @@
         "components.dialog",
         "components.button",
         "components.card",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content",
+        "components.sheet"
       ]
     },
     "requires": [],
@@ -1168,7 +1179,9 @@
         "components.keyboard",
         "components.tooltip",
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.command",
+        "components.semantic-content"
       ]
     },
     "requires": [],

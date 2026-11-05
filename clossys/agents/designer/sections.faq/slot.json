@@ -32,7 +32,8 @@
       ]
     },
     "allowedComposes": [
-      "components.disclosure"
+      "components.disclosure",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

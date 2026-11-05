@@ -35,7 +35,8 @@
       ]
     },
     "allowedComposes": [
-      "components.logo"
+      "components.logo",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band"

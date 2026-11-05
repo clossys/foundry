@@ -24,6 +24,20 @@
   "frames": {
     "app-shell": {
       "composes": [
+        "components.avatar",
+        "components.banner",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.link",
+        "components.logo",
+        "components.menu",
+        "components.popover",
+        "components.resize-handle",
+        "components.semantic-content",
+        "components.tabs",
+        "components.toggle-button",
         "frames.app-header",
         "frames.app-sidebar",
         "frames.command",
@@ -32,6 +46,20 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.avatar",
+          "components.banner",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.link",
+          "components.logo",
+          "components.menu",
+          "components.popover",
+          "components.resize-handle",
+          "components.semantic-content",
+          "components.tabs",
+          "components.toggle-button",
           "frames.app-header",
           "frames.app-sidebar",
           "frames.command",
@@ -39,14 +67,31 @@
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.avatar",
+            "components.banner",
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon",
+            "components.link",
+            "components.logo",
+            "components.menu",
+            "components.popover",
+            "components.resize-handle",
+            "components.semantic-content",
+            "components.tabs",
+            "components.toggle-button"
+          ],
           "themes": [
             "themes.background",
             "themes.border",
             "themes.card",
             "themes.foreground",
+            "themes.muted-foreground",
             "themes.primary",
-            "themes.primary-foreground"
+            "themes.primary-foreground",
+            "themes.sidebar"
           ]
         },
         "sourceFiles": [
@@ -91,12 +136,24 @@
             "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
           },
           {
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "c5e782f9921d7167b67fcb9dffb7d97eadf293631db2cc735eeeecf42b3e0f7e"
+          },
+          {
+            "path": "packages/designer/src/components/Dialog.tsx",
+            "sha256": "5c7fb1bf15e48b0061e6e603d2697fee58306b6d21685101677fe6a7d07f9de7"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
           },
           {
             "path": "packages/designer/src/frames/app-frame-layout.ts",
-            "sha256": "083142e71d6bc18bf52b30e61451c5f09e7e9f8be702ab995bbe99ad3884a0ad"
+            "sha256": "79cc6d9dbcfb09ce19f781d0bf7fe0495f13807c54e086ae1653e618993e03af"
           },
           {
             "path": "packages/designer/src/frames/app-frame-size-classes.ts",
@@ -104,7 +161,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "23716b03f8b08c3b1a225b9a58df983f74f1f967c312c8f6cbfd17bbe87a555d"
+            "sha256": "6f6bad23f63db6fac564ed57a7443139a5d3d20c8104630bf8de6900b1b0a869"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -128,7 +185,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "7e9e13f7a50e9aa2bd2f598dc24bded727efea049712ecc977b308c1d8027b7d"
+            "sha256": "4dfe06ab7839a40cad325303a15061c904c37719e663466bc69532d23158f5bf"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -168,11 +225,11 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "b52ac18ee8b09afbe0b5de181e85ffb2a06162efbfcbc3030b2587c0ac0694ee"
+            "sha256": "3f0a2f786c0c6fffc04c37711e69be5258954427e41544ccce532455ac812a87"
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
-            "sha256": "ec61ccf36fc75352f3668080b542344caf204a16bace2d49a2564949c0934f2d"
+            "sha256": "8e33cb3918934124ff1a12db003df30d0dbf1c7e086606d5333df0c77d0d83f7"
           },
           {
             "path": "packages/designer/src/theme/internal/theme-core.ts",
@@ -212,13 +269,13 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/index.js#List",
             "file": "packages/designer/src/frames/AppFrame.tsx",
-            "line": 7
+            "line": 8
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/index.js#Search",
             "file": "packages/designer/src/frames/AppFrame.tsx",
-            "line": 7
+            "line": 8
           },
           {
             "code": "DF5",
@@ -255,12 +312,6 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
             "line": 4
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
-            "file": "packages/designer/src/shell/SkipLink.tsx",
-            "line": 3
           }
         ]
       },
@@ -294,8 +345,10 @@
           "themes.border",
           "themes.card",
           "themes.foreground",
+          "themes.muted-foreground",
           "themes.primary",
-          "themes.primary-foreground"
+          "themes.primary-foreground",
+          "themes.sidebar"
         ]
       },
       "slot": "frames.app-shell",

@@ -112,7 +112,8 @@
       "components.avatar",
       "frames.sheet",
       "components.card",
-      "components.icon"
+      "components.icon",
+      "components.semantic-content"
     ]
   },
   "inputs": [],

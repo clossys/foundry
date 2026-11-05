@@ -61,6 +61,19 @@ export function createSurfaceSourceScanner({ read, packages }) {
     for (const star of info.stars) { const found = exportTarget(star, name, new Set(seen)); if (found) return found; }
     return undefined;
   }
+  // `const Button = componentLeaf<…>("components.button")`: a server-safe facade whose only
+  // runtime identity is the registered component leaf it names (src/runtime/component-leaf.tsx).
+  function componentLeafFacade(file, name) {
+    const info = moduleInfo(file), statement = info?.declarations.get(name);
+    if (!statement || !ts.isVariableStatement(statement)) return undefined;
+    let init = statement.declarationList.declarations[0]?.initializer;
+    while (init && (ts.isAsExpression(init) || ts.isSatisfiesExpression(init) || ts.isParenthesizedExpression(init))) init = init.expression;
+    if (!init || !ts.isCallExpression(init) || !ts.isIdentifier(init.expression)) return undefined;
+    const imported = info.imports.get(init.expression.text), callee = imported?.file && exportTarget(imported.file, imported.name);
+    if (!callee || callee.name !== "componentLeaf" || !/(?:^|\/)runtime\/component-leaf\.tsx?$/.test(callee.file)) return undefined;
+    const [leaf] = init.arguments;
+    return leaf && ts.isStringLiteralLike(leaf) && /^components\.[a-z][a-z0-9-]*$/.test(leaf.text) ? leaf.text : undefined;
+  }
   function pointer(packageName, address) {
     const match = /^\.\/([^#]+)#([A-Za-z_$][\w$]*)/.exec(address ?? "");
     if (!match) return undefined;
@@ -68,7 +81,7 @@ export function createSurfaceSourceScanner({ read, packages }) {
     return file ? exportTarget(file, match[2]) : undefined;
   }
   function scan({ fill, packageName, pointer: address }) {
-    const target = pointer(packageName, address), selected = new Map(), seen = new Set(), resolvedImports = {}, unresolved = [];
+    const target = pointer(packageName, address), selected = new Map(), seen = new Set(), resolvedImports = {}, componentLeaves = {}, unresolved = [];
     const issue = (file, node, evidence, code = "DF2") => unresolved.push({ file, line: node ? moduleInfo(file).ast.getLineAndCharacterOfPosition(node.getStart()).line + 1 : 0, code, evidence });
     const select = (file, name, node) => {
       if (!selected.has(file)) selected.set(file, new Map());
@@ -91,7 +104,12 @@ export function createSurfaceSourceScanner({ read, packages }) {
       walk(node);
       for (const symbol of [...references].sort()) {
         const imported = info.imports.get(symbol);
-        if (!imported) { if (info.declarations.has(symbol)) visit({ file: target.file, name: symbol }); continue; }
+        if (!imported) {
+          if (!info.declarations.has(symbol)) continue;
+          const leaf = componentLeafFacade(target.file, symbol);
+          if (leaf) componentLeaves[`${target.file}#${symbol}`] = leaf;
+          visit({ file: target.file, name: symbol }); continue;
+        }
         select(target.file, `import:${imported.specifier}`, imported.statement);
         if (!imported.file) continue; // Unknown JSX import provenance is DF5 in the shared parser.
         for (const name of imported.name === "*" ? members.get(symbol) ?? [] : [imported.name]) {
@@ -100,6 +118,8 @@ export function createSurfaceSourceScanner({ read, packages }) {
           const slots = [...(owners.get(key(resolved)) ?? [])].sort();
           if (slots.length === 1) { resolvedImports[`${target.file}:${imported.specifier}#${name}`] = slots[0]; continue; }
           if (slots.length > 1) { issue(target.file, imported.statement, `ambiguous slot ownership ${imported.specifier}#${name}: ${slots.join(", ")}`, "DF5"); continue; }
+          const facade = componentLeafFacade(resolved.file, resolved.name);
+          if (facade) { resolvedImports[`${target.file}:${imported.specifier}#${name}`] = facade; visit(resolved); continue; }
           // Literal glyph imports are not registered assets simply because the name looks familiar.
           if (/\/icons\//.test(resolved.file)) issue(target.file, imported.statement, `unregistered asset import ${imported.specifier}#${name}`, "DF5");
           if (/\/(?:tokens\/tokens|components\/glyph-context)\.ts$/.test(resolved.file)) { issue(target.file, imported.statement, `unresolved injected runtime inventory ${imported.specifier}#${name}`); continue; }
@@ -108,7 +128,7 @@ export function createSurfaceSourceScanner({ read, packages }) {
       }
     }
     if (target) visit(target); else issue("", undefined, `unresolved source ${packageName}${address ?? ""}`);
-    return { fill, files: [...selected].sort(([a], [b]) => a.localeCompare(b)).map(([file, nodes]) => ({ path: file, content: [...nodes].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join("\n") })), resolvedImports,
+    return { fill, files: [...selected].sort(([a], [b]) => a.localeCompare(b)).map(([file, nodes]) => ({ path: file, content: [...nodes].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join("\n") })), resolvedImports, componentLeaves,
       unresolved: [...new Map(unresolved.map(row => [JSON.stringify(row), row])).values()].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.evidence.localeCompare(b.evidence)) };
   }
   return { pointer, scan, addOwner(target, slot) { if (target) { const identity = key(target); if (!owners.has(identity)) owners.set(identity, new Set()); owners.get(identity).add(slot); } } };

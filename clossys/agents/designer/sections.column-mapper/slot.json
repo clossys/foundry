@@ -40,7 +40,9 @@
     "allowedComposes": [
       "components.select",
       "components.table",
-      "components.badge"
+      "components.badge",
+      "components.card",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

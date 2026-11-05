@@ -89,7 +89,8 @@
       "components.resize-handle",
       "components.button",
       "frames.sheet",
-      "components.card"
+      "components.card",
+      "components.semantic-content"
     ]
   },
   "inputs": [],
