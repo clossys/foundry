@@ -64,7 +64,6 @@
         "check:studio#designer check:studio-page-modules",
         "check:studio#designer test:studio-page-modules",
         "check:studio#designer-ui stock-frame-picks.b6a.test.mjs",
-        "check:studio#designer-ui studio-frames.test.cjs",
         "check:studio#designer-ui studio-home-stock-reference.test.mjs",
         "check:studio#designer-ui studio-home-stock.source.test.mjs",
         "check:studio#designer-ui vitest"

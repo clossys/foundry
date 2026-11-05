@@ -49,8 +49,7 @@
     "verbatimPorts": [
       "button",
       "popover",
-      "tooltip",
-      "resizable"
+      "tooltip"
     ],
     "sourceAdaptations": []
   },
@@ -59,15 +58,15 @@
     "Sidebar-15 left slots retain existing Publisher navigation, consumer brand endpoint and local workspace profile; workspace display name is Clossys Studio regardless of brand loading state.",
     "Sidebar-07 single-option workspace/profile rows omit only dropdown/action affordances and retain all native SidebarMenuButton base/default/lg classes. Static div adapter explicitly calls the native useSidebar context guard.",
     "Existing profile initials remain the fallback; no avatar image or account data is fabricated.",
-    "Sidebar-15 right calendar sample slots bind to the existing unconnected chat empty state. Stock resizable Panel/Separator handles right width; sidebar width binds to its panel at 100%, with native 16rem default/minimum and 50% maximum.",
-    "Chat mobile Sheet mirrors native Sidebar mobile attributes/classes and 18rem width, with existing chat open state and accessible title/description.",
+    "Sidebar-15 right calendar sample slots bind to the existing unconnected chat empty state. The chat is the block's own right Sidebar (collapsible none, sticky full height, shown from lg); the resizable chat panel is retired.",
+    "Below the stock md boundary the left navigation or the chat opens in the stock Sidebar's own mobile Sheet (one at a time, the side following the panel); no Foundry sheet wrapper.",
     "Stock asChild PopoverTrigger and TooltipTrigger share one stock icon button. Existing URL, keyboard, scroll-spy, prompt and command behavior is retained; legacy link clipboard fallback is excluded.",
-    "Designer HeaderEdgeToggle shares the sidebar-15 header trigger/Separator pair on both edges, mirrored by child order only. Separator data selectors adapt to the actual native Aria orientation attribute and self alignment; stock header gap-2 supplies equal spacing, replacing the left-only mr-2.",
-    "Theme button binds existing resolved/setMode provider API; body retains the required @container/main ancestor.",
+    "The header trigger/Separator pair is the aria-nova sidebar-15 page markup verbatim, repeated before the chat toggle; no Foundry HeaderEdgeToggle wrapper.",
+    "Theme button binds existing resolved/setMode provider API; the body is the block's own flex column and the page scrolls in the window, as in sidebar-15.",
     "The qualified header alignment patch binds the right chat header to the page header h-14; the exact stock h-16 source remains recorded above."
   ],
   "limitations": [
-    "Sidebar-15 is natively fixed geometry: the left Rail toggles; it does not drag-resize. Right resizing uses stock resizable rather than an invented sidebar drag API.",
+    "Sidebar-15 is natively fixed geometry: the left Rail toggles; it does not drag-resize. The right chat is fixed width, as in the block.",
     "Page and right chat headers now share h-14. Left native offcanvas transition and right panel conditional snap are not claimed matched. A shared resizing/motion decision is required before visual parity acceptance.",
     "Source preparation only; no new records, pins, approvals, versions, certification or served UI clearance."
   ]

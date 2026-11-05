@@ -164,10 +164,8 @@ export * from "./foundry/use-mobile"
 export * from "./foundry/layout"
 
 export * from "./foundry/studio-home-stock"
-export * from "./foundry/header-edge-toggle"
 export * from "./foundry/sidebar-static"
 export * from "./foundry/block-viewer-iframe"
-export * from "./foundry/studio-frames"
 
 // The aria router bridge the stock aria components read their client-side links from: a renderer
 // sets it once here, so it shares the react-aria-components copy these components use.

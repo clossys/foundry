@@ -28,9 +28,9 @@ const output = buildSync({
   stdin: { contents: `
     export {TeamSwitcher} from './team-switcher';
     export {NavUser} from './nav-user';
-    export {StockChatSidebar, StockSidebarSheet} from './stock-chat-sidebar';
+    export {ChatContent} from './stock-chat-sidebar';
     export {HeaderPopover} from './stock-header-controls';
-    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, HeaderEdgeToggle, useSidebar} from '@clossys/designer-ui';
+    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, useSidebar} from '@clossys/designer-ui';
   `, resolveDir: __dirname, loader: 'tsx' },
   tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
   external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent',
@@ -62,25 +62,6 @@ async function mounted(element, width = 1440) {
   return { container, async close() { await act(async () => root.unmount()); container.remove(); } };
 }
 async function click(element) { assert.ok(element); await act(async () => element.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 0 }))); }
-
-test('header edge toggles mirror the same native divider with equal spacing and preserve both controls', async () => {
-  const calls = [];
-  const view = await mounted(e('header', null,
-    e('div', { className: 'flex items-center gap-2' }, e(api.HeaderEdgeToggle, null, e('button', { onClick: () => calls.push('left') }, 'Left'))),
-    e('div', { className: 'flex items-center gap-2' }, e(api.HeaderEdgeToggle, { separatorFirst: true }, e('button', { onClick: () => calls.push('chat') }, 'Chat')))));
-  try {
-    const separators = [...view.container.querySelectorAll('[data-slot="separator"]')];
-    assert.equal(separators.length, 2);
-    assert.equal(separators[0].outerHTML, separators[1].outerHTML);
-    assert.equal(separators[0].getAttribute('aria-orientation'), 'vertical');
-    assert.ok(separators[0].classList.contains('aria-[orientation=vertical]:h-4'));
-    assert.ok(separators[0].classList.contains('aria-[orientation=vertical]:self-auto'));
-    assert.doesNotMatch(separators[0].className, /\b(?:mr|ml)-/);
-    await click(separators[0].previousElementSibling);
-    await click(separators[1].nextElementSibling);
-    assert.deepEqual(calls, ['left', 'chat']);
-  } finally { await view.close(); }
-});
 
 test('actual sidebar keeps static workspace and profile rows with Clossys Studio and the consumer mark', () => {
   const provider = JSON.stringify(`data:text/javascript,${encodeURIComponent('export const useStudioData=()=>globalThis.__staticNavData;export const useThemeMode=()=>globalThis.__staticNavTheme;')}`);
@@ -119,17 +100,18 @@ test('workspace and profile keep stock row presentation with no switch menu or i
     e(api.TeamSwitcher, { teams: [{ name: 'Workspace', logo: e('span', null, 'Mark'), itemLogo: null, plan: 'Studio' }] }),
     e(api.NavUser, { user: { name: 'Local workspace', email: 'Producer on this machine', initials: 'LW' } })));
   assert.match(html, /data-sidebar="menu-button"/);
-  const stock = renderToStaticMarkup(e(api.SidebarProvider, null, e(api.SidebarMenuButton, {size: 'lg', className: 'aria-expanded:bg-muted'}, 'Profile')));
-  const profile = html.match(/<div[^>]+class="([^"]*aria-expanded:bg-muted[^"]*)"/)[1];
+  const stock = renderToStaticMarkup(e(api.SidebarProvider, null, e(api.SidebarMenuButton, {size: 'lg'}, 'Profile')));
+  const rows = [...html.matchAll(/<div[^>]+data-sidebar="menu-button"[^>]+class="([^"]+)"|<div[^>]+class="([^"]+)"[^>]+data-sidebar="menu-button"/g)].map(m => m[1] || m[2]);
   const native = stock.match(/data-sidebar="menu-button"[^>]+class="([^"]+)"/)[1];
-  assert.equal(profile, native, 'static profile keeps every stock presentation class');
+  assert.equal(rows.length, 2);
+  for (const row of rows) assert.equal(row, native, 'static rows keep every stock presentation class and add none');
   assert.match(html, /Workspace/); assert.match(html, /Local workspace/);
   assert.doesNotMatch(html, /<button\b|role="button"|aria-haspopup|ChevronsUpDown|Add team|Upgrade|Billing/);
 });
 
 test('native context guard remains enforced for trigger and chat sidebar', () => {
   assert.throws(() => renderToStaticMarkup(e(api.SidebarTrigger)), /within a SidebarProvider/);
-  assert.throws(() => renderToStaticMarkup(e(api.StockChatSidebar, { copy: chatCopy })), /within a SidebarProvider/);
+  assert.throws(() => renderToStaticMarkup(e(api.Sidebar, { collapsible: 'none' }, e(api.ChatContent, { copy: chatCopy }))), /within a SidebarProvider/);
   assert.throws(() => renderToStaticMarkup(e(api.TeamSwitcher, { teams: [{ name: 'Workspace', logo: null, itemLogo: null, plan: 'Studio' }] })), /within a SidebarProvider/);
 });
 
@@ -145,38 +127,7 @@ test('native Trigger calls onPress then toggles only its nearest provider once; 
   } finally { await view.close(); }
 });
 
-test('shared mobile sheet preserves native Sidebar styling, geometry, close CTA and Escape dismissal for either side', async () => {
-  const native = await mounted(e(api.SidebarProvider, null, e(api.SidebarTrigger), e(api.Sidebar, null, 'Navigation')), 375);
-  let expected;
-  const presentation = sheet => ({
-    className: sheet.className,
-    width: sheet.style.getPropertyValue('--sidebar-width'),
-    contentClass: sheet.querySelector('[data-slot="sheet-content"]').className,
-    close: sheet.querySelector('[data-slot="sheet-close"]').outerHTML.replace(/ id="[^"]*"/, ''),
-  });
-  try {
-    await click(native.container.querySelector('[data-sidebar="trigger"]'));
-    expected = presentation(document.querySelector('[data-mobile="true"]'));
-    assert.equal(expected.width, '18rem');
-  } finally { await native.close(); }
-  for (const panel of ['left', 'chat']) {
-    function Harness() {
-      const [open, setOpen] = React.useState(true);
-      return e(api.StockSidebarSheet, { panel, isOpen: open, onOpenChange: setOpen, copy: chatCopy }, panel === 'left' ? 'Navigation' : 'Chat');
-    }
-    const view = await mounted(e(Harness), 375);
-    try {
-      const sheet = document.querySelector('[data-mobile="true"]'); assert.ok(sheet);
-      assert.deepEqual(presentation(sheet), expected);
-      assert.equal(sheet.querySelector('[data-slot="sheet-content"]').getAttribute('data-side'), panel === 'left' ? 'left' : 'right');
-      assert.equal(document.querySelectorAll('[role="dialog"]').length, 1);
-      await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
-      assert.equal(document.querySelector('[data-mobile="true"]'), null);
-    } finally { await view.close(); }
-  }
-});
-
-test('375px shell component unit with stubbed navigation shares one native sheet, stock geometry, close CTA and dismissal for navigation/chat', async () => {
+test('375px shell shares the stock Sidebar mobile sheet, stock geometry, close CTA and dismissal for navigation/chat', async () => {
   const Frame = shellComponent();
   globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
   const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
@@ -250,7 +201,7 @@ function shellComponent() {
   return load(bundled).default;
 }
 
-for (const width of [768, 1280]) test(`shell component unit with stubbed navigation at ${width}px binds native desktop sidebars, resizing, shared dividers, container ancestry and the existing theme setter`, async () => {
+for (const width of [768, 1280]) test(`shell at ${width}px is the sidebar-15 page: desktop sidebars, the block's trigger/Separator pair at both header edges, the right Sidebar chat and the existing theme setter`, async () => {
   const Frame = shellComponent();
   const themeCalls = [];
   globalThis.__stockFrameTheme = { resolved: 'light', setMode: value => themeCalls.push(value) };
@@ -259,29 +210,26 @@ for (const width of [768, 1280]) test(`shell component unit with stubbed navigat
   const view = await mounted(e(Frame, { copy: shellCopy, homeHref: '/', navigation, commands: [], breadcrumbs: [{ id: 'home', label: 'Home' }] }, e('section', { id: 'body' }, 'Body')), width);
   try {
     assert.equal(document.querySelector('[data-mobile="true"]'), null, 'both sidebars use desktop behavior at the native md boundary');
-    const header = view.container.querySelector('header'); assert.ok(header);
+    const header = view.container.querySelector('[data-slot="sidebar-inset"] > header'); assert.ok(header);
+    assert.ok(header.classList.contains('sticky') && header.classList.contains('h-14'));
     const separators = [...header.querySelectorAll('[data-slot="separator"]')]; assert.equal(separators.length, 2);
-    assert.equal(separators[0].className, separators[1].className, 'both header edges share separator height, alignment and spacing');
+    assert.equal(separators[0].className, separators[1].className, 'both header edges carry the same block divider');
     for (const separator of separators) {
       assert.equal(separator.getAttribute('aria-orientation'), 'vertical');
-      assert.ok(separator.classList.contains('aria-[orientation=vertical]:h-4'));
-      assert.ok(separator.classList.contains('aria-[orientation=vertical]:self-auto'));
-      assert.ok(separator.parentElement.classList.contains('gap-2'));
-      assert.doesNotMatch(separator.className, /\b(?:mr|ml)-/);
+      assert.ok(separator.classList.contains('mr-2') && separator.classList.contains('data-[orientation=vertical]:h-4'));
     }
     assert.equal(separators[0].previousElementSibling.getAttribute('data-panel-toggle'), 'left');
     assert.equal(separators[1].nextElementSibling.getAttribute('data-panel-toggle'), 'chat');
-    assert.ok(view.container.querySelector('#body').closest('[class*="@container/main"]'));
-    assert.ok(view.container.querySelector('[data-slot="resizable-panel-group"]'));
-    const handle = view.container.querySelector('[data-slot="resizable-handle"]'); assert.ok(handle);
-    assert.equal(handle.getAttribute('role'), 'separator'); assert.equal(handle.getAttribute('aria-label'), 'Resize chat');
-    assert.ok(view.container.querySelector('#studio-chat [data-panel="chat"]'));
-    assert.ok(header.classList.contains('h-14'));
-    assert.ok(view.container.querySelector('#studio-chat [data-sidebar="header"]').classList.contains('h-14'), 'page and chat header heights share the qualified native h-14 binding');
+    assert.equal(view.container.querySelector('#studio-main').className, 'flex flex-1 flex-col gap-4 p-4');
+    assert.ok(view.container.querySelector('#studio-main #body'));
+    assert.equal(view.container.querySelector('[data-slot="resizable-panel-group"]'), null, 'no resizable panel group: the chat is the block right Sidebar');
+    const chat = view.container.querySelector('[data-panel="chat"]'); assert.ok(chat);
+    assert.equal(chat.getAttribute('data-slot'), 'sidebar');
+    for (const name of ['sticky', 'top-0', 'hidden', 'h-svh', 'border-l', 'lg:flex']) assert.ok(chat.classList.contains(name), name);
+    assert.equal(chat.parentElement, view.container.querySelector('[data-slot="sidebar-wrapper"]'), 'the chat sits beside the inset in the one provider');
     await click(header.querySelector('[data-theme-toggle]')); assert.deepEqual(themeCalls, ['dark']);
     await click(header.querySelector('[data-panel-toggle="chat"]'));
-    assert.equal(view.container.querySelector('#studio-chat'), null);
-    assert.equal(view.container.querySelector('[data-slot="resizable-handle"]'), null);
+    assert.equal(view.container.querySelector('[data-panel="chat"]'), null);
   } finally { await view.close(); delete globalThis.__stockFrameTheme; document.cookie = 'chat_state=false'; }
 });
 

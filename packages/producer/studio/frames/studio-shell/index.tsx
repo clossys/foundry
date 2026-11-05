@@ -7,15 +7,15 @@ import type { ContentMapCommandGroup, ContentMapNavigation } from '@clossys/publ
 import {
   Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, Button,
   CommandDialog, Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandShortcut,
-  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, HeaderEdgeToggle,
-  StudioAppFrame, StudioPageFrame, SidebarTrigger,
+  PopoverDescription, PopoverHeader, PopoverTitle, ScrollArea, Separator,
+  Sidebar, SidebarInset, SidebarProvider, SidebarTrigger,
   useSidebar,
 } from '@clossys/designer-ui';
 import { studioIcon } from '../../lib/studio-icons';
 import { AppSidebar, type SidebarCopy } from './app-sidebar';
 import { useThemeMode } from '../../components/StudioProviders';
 import { HeaderIconButton, HeaderPopover, HeaderTooltip } from './stock-header-controls';
-import { ChatContent, StockSidebarSheet, StockChatSidebar, type ChatCopy } from './stock-chat-sidebar';
+import { ChatContent, type ChatCopy } from './stock-chat-sidebar';
 
 export { PageNotice, type PageNoticeData } from './PageNotice';
 export type { ChatCopy } from './stock-chat-sidebar';
@@ -81,6 +81,8 @@ function writePopover(id: string | undefined) {
 }
 
 const mainColumn = () => document.getElementById('studio-main');
+/** The page scrolls in the window (sidebar-15); the sticky header covers the top of the viewport. */
+const headerBottom = () => mainColumn()?.previousElementSibling?.getBoundingClientRect().bottom ?? 0;
 const target = (selector: string) => {
   try { return mainColumn()?.querySelector<HTMLElement>(selector) ?? null; } catch { return null; }
 };
@@ -140,8 +142,8 @@ function StudioNavigation({ navigation, copy }: { navigation: ContentMapNavigati
   const { isMobile, setOpenMobile } = useSidebar();
   useEffect(() => {
     setOpenMobile(false);
-    // The content column is the scroller, so a new page starts at its top.
-    document.getElementById('studio-main')?.scrollTo({ top: 0 });
+    // The window is the scroller, so a new page starts at its top.
+    window.scrollTo({ top: 0 });
   }, [pathname, setOpenMobile]);
   return !isMobile ? <AppSidebar navigation={navigation} copy={copy} /> : null;
 }
@@ -151,11 +153,10 @@ function useScrollSpy(targets: readonly string[]) {
   const [active, setActive] = useState<string | undefined>(undefined);
   const chosen = useRef<string | undefined>(undefined);
   const spy = useCallback(() => {
-    const main = mainColumn();
-    if (!main) return;
+    if (!mainColumn()) return;
     // A part chosen in a popover stays highlighted while it is in view (a short part, or one at
     // the end of the column, may never reach the top).
-    const bounds = main.getBoundingClientRect();
+    const bounds = { top: headerBottom(), bottom: window.innerHeight };
     const kept = chosen.current ? target(chosen.current)?.getBoundingClientRect() : undefined;
     if (kept && kept.top < bounds.bottom && kept.bottom > bounds.top) { setActive(chosen.current); return; }
     chosen.current = undefined;
@@ -165,22 +166,20 @@ function useScrollSpy(targets: readonly string[]) {
     setActive(current ?? targets.find(selector => target(selector)));
   }, [targets]);
   useEffect(() => {
-    const main = mainColumn();
-    if (!main || !targets.length) return;
+    if (!mainColumn() || !targets.length) return;
     let frame = 0;
     const onScroll = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(spy); };
     onScroll();
-    main.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
-    return () => { cancelAnimationFrame(frame); main.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
+    return () => { cancelAnimationFrame(frame); window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onScroll); };
   }, [targets, spy]);
   const select = useCallback((selector: string) => {
     const element = target(selector);
-    const main = mainColumn();
-    if (!element || !main) return;
+    if (!element) return;
     chosen.current = selector;
-    // Scroll the page column only: scrolling an ancestor of the header would close the popover.
-    main.scrollTo({ top: main.scrollTop + element.getBoundingClientRect().top - main.getBoundingClientRect().top });
+    // The header popover is anchored in the sticky header, so scrolling the window keeps it open.
+    window.scrollTo({ top: window.scrollY + element.getBoundingClientRect().top - headerBottom() });
     setActive(selector);
   }, []);
   return { active, select };
@@ -206,21 +205,21 @@ export interface StudioShellProps {
 }
 
 /**
- * `frames.studio-shell` composes Designer's app frame (left navigation only) and page frame
- * (header, body and right chat) from the adopted shadcn sidebar-15 block.
- * The header's far-left icon toggles the left sidebar, its far-right icon (after a divider) the
- * chat; every other header icon opens its module or action as a popover anchored to it. Open
- * states persist: the sidebars in cookies, the popover in the URL (`?p=`). Both sidebars
- * share one native sheet below the native `md` mobile boundary.
+ * `frames.studio-shell` is the shadcn sidebar-15 page (aria-nova): the provider, the left sidebar,
+ * the inset with its sticky header and body column, and the right sidebar (the chat), each with the
+ * block's own markup. The header's far-left icon toggles the left sidebar, its far-right icon (after
+ * a divider) the chat; every other header icon opens its module or action as a popover anchored to
+ * it. Open states persist: the sidebars in cookies, the popover in the URL (`?p=`). Below the stock
+ * `md` mobile boundary both sidebars open in the stock Sidebar's own mobile sheet, one at a time.
  */
 export default function StudioShellFrame({ ...given }: StudioShellProps & { [marker: `data-clossys-${string}`]: string }) {
   const provenance = Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-'))) as { [marker: `data-clossys-${string}`]: string };
   const props = Object.fromEntries(Object.entries(given).filter(([key]) => !key.startsWith('data-clossys-'))) as unknown as StudioShellProps;
   const [leftOpen, setLeftOpen] = useState(true);
   useEffect(() => { setLeftOpen(readCookie(LEFT_COOKIE) ?? true); }, []);
-  return <div {...provenance}><StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} copy={props.copy.sidebar} />}>
+  return <div {...provenance}><SidebarProvider open={leftOpen} onOpenChange={setLeftOpen}>
     <StudioShellContent {...props} />
-  </StudioAppFrame></div>;
+  </SidebarProvider></div>;
 }
 
 function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers = [], body = 'plain', head, children }: StudioShellProps) {
@@ -284,16 +283,15 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
 
   const context: PopoverContext = { ...(spy.active ? { active: spy.active } : {}), select: spy.select };
   return <>
-    <StudioPageFrame body={body} head={head} chatOpen={!isMobile && chatOpen} chatResizeLabel={copy.resizeChat}
-      chat={<StockChatSidebar copy={copy.chat} />}
-      header={<>
+    <StudioNavigation navigation={navigation} copy={copy.sidebar} />
+    <SidebarInset>
+      <header className="sticky top-0 flex h-14 shrink-0 items-center gap-2 bg-background">
         <div className="flex flex-1 items-center gap-2 px-3">
-          <HeaderEdgeToggle>
-            <HeaderTooltip label={copy.toggleSidebar}><SidebarTrigger data-panel-toggle="left" onPress={() => {
-              setMobilePanel('left');
-              if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
-            }} /></HeaderTooltip>
-          </HeaderEdgeToggle>
+          <HeaderTooltip label={copy.toggleSidebar}><SidebarTrigger data-panel-toggle="left" onPress={() => {
+            setMobilePanel('left');
+            if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
+          }} /></HeaderTooltip>
+          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
           <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
@@ -320,17 +318,21 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
             onClick={() => setMode(resolved === 'dark' ? 'light' : 'dark')}>
             {resolved === 'dark' ? <SunIcon /> : <MoonIcon />}
           </HeaderIconButton>
-          <HeaderEdgeToggle separatorFirst>
-            <HeaderIconButton label={copy.toggleChat} aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
-          </HeaderEdgeToggle>
+          <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
+          <HeaderIconButton label={copy.toggleChat} aria-pressed={isMobile ? openMobile && mobilePanel === 'chat' : chatOpen} data-panel-toggle="chat" onClick={toggleChat}><PanelRightIcon /></HeaderIconButton>
         </div>
-      </>}>
-      {children}
-    </StudioPageFrame>
+      </header>
+      <div id="studio-main" data-body={body} className="flex flex-1 flex-col gap-4 p-4">
+        {head}{children}
+      </div>
+    </SidebarInset>
+    {!isMobile && chatOpen && <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l lg:flex" aria-label={copy.chat.title} data-panel="chat">
+      <ChatContent copy={copy.chat} />
+    </Sidebar>}
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} copy={copy.search} />
-    {isMobile && <StockSidebarSheet panel={mobilePanel} copy={copy.chat} isOpen={openMobile} onOpenChange={setOpenMobile}>
+    {isMobile && <Sidebar side={mobilePanel === 'chat' ? 'right' : 'left'} data-panel={mobilePanel}>
       {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} copy={copy.sidebar} collapsible="none" />}
-    </StockSidebarSheet>}
+    </Sidebar>}
   </>;
 }
 

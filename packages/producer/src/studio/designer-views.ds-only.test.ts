@@ -21,7 +21,7 @@ import { CODE_FILE, DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, script
  * Every other element a frame renders is a Designer component, exactly as in a section, or the
  * block's own markup: a raw element whose tag and literal `className` appear verbatim in the
  * reference blocks its pinned record's `lineage.source` and `lineage.parts` name (the shadcn snapshots under
- * `packages/designer/references/shadcn/<item>@<version>/registry/`).
+ * `packages/designer/references/<shadcn|shadcn-aria>/<item>@<version>/registry/`).
  *
  * A section may also place another pinned Studio section's export (`../<folder>`) when, and only
  * when, its pinned canonical record declares that section in `meta.element.deps.elements`: composition the record
@@ -71,6 +71,13 @@ export function referenceMarkup(root: string): Set<string> {
 }
 
 type Ref = { registry: string; item: string; version: string; hash: string };
+/**
+ * The stock shadcn registries whose snapshots can authorize block markup: shadcn's radix-nova style
+ * (`shadcn`) and its aria-nova style (`shadcn-aria`), the style Designer's component layer installs.
+ * Each sits under `packages/designer/references/<registry>/` and is matched by exact manifest hash.
+ * Third-party and app-source snapshots (`shadcn-app`, `tailark-oss`, ...) never qualify.
+ */
+const STOCK_REGISTRIES = new Set(['shadcn', 'shadcn-aria']);
 
 /** Migrated lineage preserves structured objects and arrays as JSON strings. Decode deliberately. */
 export function lineageReferences(refs: unknown): Ref[] {
@@ -80,7 +87,7 @@ export function lineageReferences(refs: unknown): Ref[] {
     try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; }
   });
   return rows.filter((row): row is Ref => !!row && typeof row === 'object'
-    && (row as Ref).registry === 'shadcn' && /^[a-z0-9-]+$/.test((row as Ref).item ?? '')
+    && STOCK_REGISTRIES.has((row as Ref).registry) && /^[a-z0-9-]+$/.test((row as Ref).item ?? '')
     && /^\d+\.\d+\.\d+$/.test((row as Ref).version ?? '') && /^sha256:[a-f0-9]{64}$/.test((row as Ref).hash ?? ''));
 }
 
@@ -113,7 +120,7 @@ export function elementBlockMarkup(folder: string, prefix: 'frames.' | 'sections
   for (const ref of lineageReferences(pinned.item.meta.source.ref)) {
     const exact = manifest.items.find((item: any) => item.registry === ref.registry && item.name === ref.item && item.version === ref.version && item.hash === ref.hash);
     if (!exact) continue;
-    const root = join(references, `${ref.item}@${ref.version}`, 'registry');
+    const root = join(ref.registry === 'shadcn' ? references : join(references, '..', ref.registry), `${ref.item}@${ref.version}`, 'registry');
     if (existsSync(root)) for (const line of referenceMarkup(root)) markup.add(line);
   }
   return markup;
@@ -139,8 +146,8 @@ export function declaredSections(folder: string, clossys = CLOSSYS): Set<string>
  * (`studio/components`, `studio/lib`) runs the app and loads data, so it may import React, the Next
  * router, lucide icons, Node builtins, type-only modules, other `@clossys/*` engine packages as data and
  * anything inside the producer package; every component it renders comes from the Designer layer and
- * it renders no raw styled markup. A Studio frame inside `@clossys/designer-ui` (StudioAppFrame,
- * StudioPageFrame, the layout primitives, BlockViewerIframe) imports only React, lucide icons, type-only
+ * it renders no raw styled markup. A Studio frame inside `@clossys/designer-ui` (the layout
+ * primitives, BlockViewerIframe) imports only React, lucide icons, type-only
  * modules and its own package's source, and styles only its page landmarks.
  */
 type Kind = 'section' | 'frame' | 'renderer' | 'ui-frame';
@@ -342,6 +349,9 @@ describe('Studio sections are ds-only', () => {
   it('reads canonical pin lineage arrays and exact declared section dependencies without retired stores', () => {
     expect(lineageReferences(['[{"registry":"shadcn","item":"sidebar-07","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}]', 'not JSON', '{"version":5,"hash":"parent"}', '{"registry":"shadcn","item":"../escape","version":"4.23.0","hash":"sha256:' + 'a'.repeat(64) + '"}']))
       .toEqual([{ registry: 'shadcn', item: 'sidebar-07', version: '4.23.0', hash: `sha256:${'a'.repeat(64)}` }]);
+    // The aria-nova stock registry qualifies; an app-source or third-party snapshot never does.
+    expect(lineageReferences(['shadcn-aria', 'shadcn-app', 'tailark-oss', 'aria'].map(registry => JSON.stringify({ registry, item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'b'.repeat(64)}` })))
+      .map(ref => ref.registry)).toEqual(['shadcn-aria']);
     expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
     // studio-slot-groups places studio-specimen, declared by its engine-derived pin (derive-element-deps); the probe re-pin below is the positive case for another section.
     expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual(['studio-slot-groups -> ../studio-specimen']);
@@ -428,7 +438,7 @@ describe('Studio sections are ds-only', () => {
       'lib/references-copy.ts', 'lib/shell-copy.ts', 'lib/slot-census-load.ts', 'lib/slot-census.ts', 'lib/slot-detail.ts', 'lib/studio-copy.ts', 'lib/studio-icons.tsx', 'lib/studio-report.ts',
       'lib/studio-route-map.ts', 'lib/studio-seed.ts']);
     // Every Foundry component-layer extension is scanned, the named Studio frames among them.
-    for (const file of ['foundry/block-viewer-iframe.tsx', 'foundry/header-edge-toggle.tsx', 'foundry/layout.tsx', 'foundry/sidebar-static.tsx', 'foundry/studio-frames.tsx', 'foundry/studio-home-stock.tsx'])
+    for (const file of ['foundry/block-viewer-iframe.tsx', 'foundry/layout.tsx', 'foundry/sidebar-static.tsx', 'foundry/studio-home-stock.tsx'])
       expect(UI_FRAMES, file).toContain(file);
     // The App Router tree: the root layout and every installed route; nothing under app/ but its stylesheet escapes the scan.
     expect(APP_FILES).toContain('app/layout.tsx');

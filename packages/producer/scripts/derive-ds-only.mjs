@@ -61,13 +61,15 @@ const parseRefs = refs => (Array.isArray(refs) ? refs : []).flatMap(value => {
   try { return [JSON.parse(value)]; } catch { return []; }
 });
 
-/** The reference markup the ds-only rule admits for these lineage rows: exact shadcn manifest rows only. */
+/** The stock shadcn styles the ds-only rule reads block markup from: radix-nova (`shadcn`) and aria-nova (`shadcn-aria`). */
+const STOCK_REGISTRIES = new Set(['shadcn', 'shadcn-aria']);
+/** The reference markup the ds-only rule admits for these lineage rows: exact stock shadcn manifest rows only. */
 export function lineageMarkup(refs, references) {
   const manifest = JSON.parse(readFileSync(join(references, 'manifest.json'), 'utf8'));
   const pairs = new Set();
   for (const ref of parseRefs(refs)) {
-    if (ref.registry !== 'shadcn' || !manifest.items.some(row => row.registry === ref.registry && row.name === ref.item && row.version === ref.version && row.hash === ref.hash)) continue;
-    const root = join(references, 'shadcn', `${ref.item}@${ref.version}`, 'registry');
+    if (!STOCK_REGISTRIES.has(ref.registry) || !manifest.items.some(row => row.registry === ref.registry && row.name === ref.item && row.version === ref.version && row.hash === ref.hash)) continue;
+    const root = join(references, ref.registry, `${ref.item}@${ref.version}`, 'registry');
     if (existsSync(root)) referenceMarkup(root, pairs);
   }
   return pairs;

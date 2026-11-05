@@ -1,10 +1,9 @@
 "use client"
 
-import type { ComponentProps, CSSProperties, ReactNode } from "react"
 import { MessageSquareIcon, SparklesIcon } from "lucide-react"
 import {
   Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle,
-  Sidebar, SidebarSheet, SidebarContent, SidebarGroupLabel, SidebarHeader,
+  SidebarContent, SidebarGroupLabel, SidebarHeader,
 } from "@clossys/designer-ui"
 
 /** The chat panel's words (Writer copy): its title, the empty state, and each mobile sheet's title and description. */
@@ -31,22 +30,4 @@ export function ChatContent({ copy }: { copy: ChatCopy }) {
       </Empty>
     </SidebarContent>
   </>
-}
-
-export function StockChatSidebar({ copy }: { copy: ChatCopy }) {
-  return <Sidebar collapsible="none" aria-label={copy.title} data-panel="chat">
-    <ChatContent copy={copy} />
-  </Sidebar>
-}
-
-/** The Designer's stock Sidebar mobile Sheet, for the navigation or the chat. */
-export function StockSidebarSheet({ panel, copy, children, ...props }: Pick<ComponentProps<typeof SidebarSheet>, "isOpen" | "onOpenChange"> & {
-  panel: "left" | "chat";
-  copy: ChatCopy;
-  children: ReactNode;
-}) {
-  return <SidebarSheet {...props} side={panel === "left" ? "left" : "right"} data-panel={panel}
-    title={copy.sheets[panel].title} description={copy.sheets[panel].description}>
-    {children}
-  </SidebarSheet>
 }

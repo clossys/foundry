@@ -489,12 +489,6 @@
       "kind": "test"
     },
     {
-      "id": "designer-ui studio-frames.test.cjs",
-      "cwd": "packages/designer/ui",
-      "run": "node --test studio-frames.test.cjs",
-      "kind": "test"
-    },
-    {
       "id": "designer-ui studio-home-stock-reference.test.mjs",
       "cwd": "packages/designer/ui",
       "run": "node --test studio-home-stock-reference.test.mjs",
