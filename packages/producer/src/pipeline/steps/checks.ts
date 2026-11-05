@@ -11,6 +11,7 @@ export const CHECKS = [
   defineCheck({ id: "generated-derived", files: ["scripts/check-generated-derived.mjs"], npm: ["check:generated-derived"], rootNpm: ["check:generated-derived"] }),
   defineCheck({ id: "studio-template", files: ["scripts/check-studio-template.mjs"], npm: ["check:studio-template"] }),
   defineCheck({ id: "studio-map", files: ["studio/checks/check-studio-map.cjs"], npm: ["check:studio-map"] }),
+  defineCheck({ id: "specimen-evidence", npm: ["check:specimen-evidence"] }),
   defineCheck({ id: "studio-routes", files: ["studio/checks/check-studio-routes.cjs"], npm: ["check:studio-routes"] }),
   defineCheck({ id: "no-handrolling", files: ["studio/checks/check-no-handrolling.cjs"] }),
   defineCheck({ id: "no-page-jsx", files: ["studio/checks/check-no-page-jsx.cjs"] }),

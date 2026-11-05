@@ -1,5 +1,5 @@
 import { defineStep } from "../define.js";
-import { CANDIDATES, COMPILE_LOCK, IA, PINS, SLOTS, SOURCE_RECEIPT, STUDIO_MAP, candidatesOf, pinsOf } from "./ports.js";
+import { CANDIDATES, COMPILE_LOCK, IA, PINS, SLOTS, SOURCE_RECEIPT, SPECIMEN_EVIDENCE, STUDIO_MAP, candidatesOf, pinsOf } from "./ports.js";
 
 const STUDIO_GENERATED = ["studio-copy.json", "studio-map.ts", "assembly-bindings.ts", "studio-icons.ts", "studio-provenance.json", "studio-brand.json", "studio-flow-theme.css"];
 
@@ -19,6 +19,14 @@ export const SCRIPT_STEPS = [
     inputs: [IA, SLOTS, PINS, ...CANDIDATES],
     outputs: [STUDIO_MAP, ...STUDIO_GENERATED.map(name => `pkg:studio/generated/${name}`)],
     command: { script: "scripts/generate-studio-map.mjs", npm: "generate:studio-map" }, checks: ["studio-map", "studio-routes"],
+  }),
+  defineStep({
+    id: "specimen.evidence", kind: "plumb", actor: "code", stage: "publish.assemble",
+    summary: "Measure every native specimen section with the installed build and write its compiler evidence.",
+    // Runs after the Producer and Designer builds: the evidence certifies the installed Designer
+    // package it is written into, so a Designer-only rebuild leaves it stale and qualification fails closed.
+    inputs: [pinsOf("designer"), candidatesOf("designer")], outputs: [SPECIMEN_EVIDENCE],
+    command: { script: "../designer/scripts/generate-specimen-surface-evidence.mjs", npm: "generate:specimen-evidence" }, checks: ["specimen-evidence"],
   }),
   defineStep({
     id: "build.receipt", kind: "plumb", actor: "code", stage: "publish.check",

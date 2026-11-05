@@ -53,7 +53,7 @@
     "node": ">=20"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && node scripts/generate-studio-map.mjs && node dist/cli/index.js compile && node ../designer/scripts/generate-specimen-surface-evidence.mjs && node scripts/generate-page-check-receipt.mjs",
+    "build": "tsc -p tsconfig.json && node scripts/check-generated-derived.mjs --write && node scripts/generate-studio-map.mjs && node dist/cli/index.js compile && npm run -s generate:specimen-evidence && node scripts/generate-page-check-receipt.mjs",
     "compile": "node dist/cli/index.js compile",
     "generate:studio-map": "node scripts/generate-studio-map.mjs",
     "check:studio-map": "node studio/checks/check-studio-map.cjs",
@@ -72,6 +72,8 @@
     "check:generated-derived": "node scripts/check-generated-derived.mjs",
     "test:assemble-only": "node --test scripts/check-assemble-only.test.mjs",
     "check:pipeline": "node scripts/check-pipeline.mjs",
+    "generate:specimen-evidence": "node ../designer/scripts/generate-specimen-surface-evidence.mjs",
+    "check:specimen-evidence": "node ../designer/scripts/generate-specimen-surface-evidence.mjs --check",
     "test:pipeline": "node --test scripts/check-pipeline.test.mjs",
     "generate:pipeline-graph": "node dist/cli/index.js pipeline graph --root ../.. --out pipeline/graph.json",
     "capture:studio": "node scripts/capture-studio.mjs",

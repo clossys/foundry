@@ -1950,6 +1950,48 @@
       }
     },
     {
+      "id": "specimen.evidence",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "publish.assemble",
+      "summary": "Measure every native specimen section with the installed build and write its compiler evidence.",
+      "inputs": [
+        {
+          "glob": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "packages/designer/dist/catalog/native-specimen-evidence.json"
+        }
+      ],
+      "command": {
+        "script": "../designer/scripts/generate-specimen-surface-evidence.mjs",
+        "npm": "generate:specimen-evidence"
+      },
+      "checks": [
+        "specimen-evidence"
+      ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "publisher",
+        "stage": "publish.assemble",
+        "rank": 5,
+        "x": 4000,
+        "y": 1300
+      }
+    },
+    {
       "id": "build.receipt",
       "kind": "plumb",
       "actor": "code",
@@ -2051,7 +2093,7 @@
         "stage": "publish.assemble",
         "rank": 5,
         "x": 4000,
-        "y": 1300
+        "y": 1472
       }
     },
     {
@@ -2869,6 +2911,17 @@
     },
     {
       "from": "pin.designer",
+      "to": "specimen.evidence",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
       "to": "build.receipt",
       "via": [
         {
@@ -3518,6 +3571,17 @@
     },
     {
       "from": "designer.candidates",
+      "to": "specimen.evidence",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
       "to": "build.receipt",
       "via": [
         {
@@ -4070,6 +4134,11 @@
       "glob": "pkg:studio/generated/studio-flow-theme.css"
     },
     {
+      "step": "specimen.evidence",
+      "port": "output",
+      "glob": "packages/designer/dist/catalog/native-specimen-evidence.json"
+    },
+    {
       "step": "studio.checks",
       "port": "input",
       "glob": "pkg:studio/generated/assembly-bindings.ts"
@@ -4089,8 +4158,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 3120,
-      "after": 3036
+      "before": 3224,
+      "after": 3143
     },
     "lanes": [
       {
@@ -4511,7 +4580,7 @@
         "ai",
         "code"
       ],
-      "steps": 15,
+      "steps": 16,
       "sources": [
         "derived"
       ],
