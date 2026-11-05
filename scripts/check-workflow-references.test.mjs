@@ -7,6 +7,7 @@ import test from "node:test";
 import { discoverGateTestFiles, GATE_TEST_EXCLUSIONS } from "./lib/gate-test-set.mjs";
 import { classifyPath } from "./classify-change-tier.mjs";
 import { GATED_SCRIPT_PROSE_INPUTS, OPAQUE_NPM_SCRIPTS } from "./lib/gated-script-prose-inputs.mjs";
+import { parseSteps } from "./run-check-steps.mjs";
 
 // check-workflow-references — a future `check:*` script added only to the
 // local `npm run check` aggregate, and to no workflow, is exactly issue
@@ -480,7 +481,16 @@ test("real candidate framework acceptance runs only after install and build in r
   );
   assert.ok(!discoverGateTestFiles().includes("scripts/lib/candidate-runner-acceptance.test.mjs"));
   assert.match(manifest.scripts["check:candidate-runner-acceptance"], /candidate-runner-acceptance\.test\.mjs/);
-  assert.ok(manifest.scripts.check.indexOf("npm run build") < manifest.scripts.check.indexOf("npm run check:candidate-runner-acceptance"));
+  // The root `check` aggregate is scripts/run-check-steps.mjs, which runs its argument steps in order.
+  const runner = "node scripts/run-check-steps.mjs ";
+  assert.ok(manifest.scripts.check.startsWith(runner), `root check must run through ${runner.trim()}`);
+  const steps = parseSteps(manifest.scripts.check.slice(runner.length).trim().split(/\s+/));
+  const rootStep = script => steps.findIndex(step => step.script === script && !step.workspace);
+  const buildStep = rootStep("build");
+  const acceptanceStep = rootStep("check:candidate-runner-acceptance");
+  assert.ok(buildStep !== -1, "root check must run build");
+  assert.ok(acceptanceStep !== -1, "root check must run check:candidate-runner-acceptance");
+  assert.ok(buildStep < acceptanceStep, "root check must run build before check:candidate-runner-acceptance");
 
   const workflow = readFileSync(join(repoRoot, ".github/workflows/ci.yml"), "utf8");
   const build = workflowJob(workflow, "build");
