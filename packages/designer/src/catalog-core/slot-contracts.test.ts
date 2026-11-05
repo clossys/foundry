@@ -23,9 +23,9 @@ const committed = { themes, assets, components, sections, frames } as unknown as
 const LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 
 describe("Designer slot contracts", () => {
-  it("has one record for each of the 236 canonical Designer slots, hand records first", () => {
+  it("has one record for each of the 244 canonical Designer slots (236 re-signed + 8 owner-signed specimen leaves), hand records first", () => {
     for (const layer of LAYERS) expect(committed[layer].map(row => row.slot).sort(), layer).toEqual(catalog[layer].map(slot => slot.id).sort());
-    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 68, 66, 11]);
+    expect(LAYERS.map(layer => committed[layer].length)).toEqual([42, 49, 76, 66, 11]);
     expect(committed.sections.slice(0, 10).map(row => row.slot)).toEqual(["sections.band", "sections.section-header", "sections.hero", "sections.features", "sections.comparison", "sections.pricing", "sections.call-to-action", "sections.form", "sections.legal-prose", "sections.steps"]);
     expect(committed.frames.slice(0, 3).map(row => row.slot)).toEqual(["frames.site-header", "frames.site-footer", "frames.site-shell"]);
   });

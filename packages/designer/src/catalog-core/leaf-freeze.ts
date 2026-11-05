@@ -2,6 +2,7 @@ import themes from "../catalog/ia/themes.leaf-freeze.json" with { type: "json" }
 import assets from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import components from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
+import specimenAmendments from "../catalog/ia/components.specimen-leaf-amendments.json" with { type: "json" };
 import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import type { Placement, PlacementNode } from "./types.js";
@@ -27,6 +28,16 @@ if (componentAmendments.schemaVersion !== 1 || componentAmendments.layer !== "co
     componentAmendments.addedLeafIds.some(id => !id.startsWith("components.") || components.leafIds.includes(id))) {
   throw new Error("LEAF_FREEZE: invalid explicit component amendment");
 }
+// The owner-signed specimen amendment (2026-11-05) adds only components.specimen-* leaves, disjoint from
+// the signed baseline and the pending component amendment.
+if (specimenAmendments.schemaVersion !== 1 || specimenAmendments.layer !== "components" ||
+    specimenAmendments.baseSignedHead !== components.signedHead ||
+    specimenAmendments.status !== "owner-signed" || specimenAmendments.prefix !== "components.specimen-" ||
+    !specimenAmendments.addedLeafIds.length ||
+    new Set(specimenAmendments.addedLeafIds).size !== specimenAmendments.addedLeafIds.length ||
+    specimenAmendments.addedLeafIds.some(id => !/^components\.specimen-[a-z][a-z0-9-]*$/.test(id) || components.leafIds.includes(id) || componentAmendments.addedLeafIds.includes(id))) {
+  throw new Error("LEAF_FREEZE: invalid owner-signed specimen component amendment");
+}
 // The owner-signed Media amendment adds exactly its listed leaves on top of the signed asset baseline.
 if (assetAmendments.schemaVersion !== 1 || assetAmendments.layer !== "assets" ||
     assetAmendments.baseSignedHead !== assets.signedHead ||
@@ -50,7 +61,7 @@ if (themes.schemaVersion !== 1 || themes.layer !== "themes" || new Set(themes.le
 const baseline: Readonly<Record<FrozenLeafLayer, ReadonlySet<string>>> = {
   themes: new Set(themes.leafIds),
   assets: new Set([...assets.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds]),
-  components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds]),
+  components: new Set([...components.leafIds, ...componentAmendments.addedLeafIds, ...specimenAmendments.addedLeafIds]),
 };
 const leaves = (nodes: readonly PlacementNode[]): string[] => nodes.flatMap(node => "leaves" in node ? node.leaves : leaves(node.children));
 

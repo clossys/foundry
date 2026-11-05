@@ -3428,5 +3428,371 @@
     },
     "requires": [],
     "status": "draft"
+  },
+  {
+    "id": "components.specimen-swatch",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.swatch",
+          "variant.color-ramp"
+        ]
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels",
+        "variant"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.accent",
+          "themes.border",
+          "themes.card"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-ladder",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.type",
+          "variant.spacing",
+          "variant.radius"
+        ]
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels",
+        "variant"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.accent",
+          "themes.border",
+          "themes.card"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-player",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.accent",
+          "themes.border",
+          "themes.card"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure",
+          "components.button"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.button"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-grid",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.asset",
+          "variant.icon"
+        ]
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels",
+        "variant"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing",
+          "themes.accent",
+          "themes.border",
+          "themes.card"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure",
+          "components.logo",
+          "components.icon"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.logo",
+        "components.icon"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-matrix",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure",
+          "components.table",
+          "components.badge"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.table",
+        "components.badge"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-viewport",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": [
+          "variant.section",
+          "variant.frame",
+          "variant.page"
+        ]
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels",
+        "variant"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure",
+          "components.table",
+          "components.badge"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.table",
+        "components.badge"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-passage",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure",
+          "components.rich-text"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.rich-text"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
+  },
+  {
+    "id": "components.specimen-copy-in-context",
+    "layer": "components",
+    "contract": {
+      "kind": "component",
+      "root": "presentational",
+      "members": {
+        "mode": "closed",
+        "names": []
+      },
+      "props": [
+        "items",
+        "axes",
+        "context",
+        "need",
+        "renderParts",
+        "expanded",
+        "labels"
+      ],
+      "allowedReads": {
+        "themes": [
+          "themes.spacing"
+        ],
+        "assets": [],
+        "components": [
+          "components.semantic-content",
+          "components.grid-list",
+          "components.disclosure",
+          "components.table",
+          "components.rich-text",
+          "components.button",
+          "components.navigation-tree"
+        ]
+      },
+      "composes": [
+        "components.semantic-content",
+        "components.grid-list",
+        "components.disclosure",
+        "components.table",
+        "components.rich-text",
+        "components.button",
+        "components.navigation-tree"
+      ]
+    },
+    "requires": [],
+    "status": "draft"
   }
 ]

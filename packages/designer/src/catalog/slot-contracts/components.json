@@ -5979,5 +5979,549 @@
     ],
     "checkSuite": "designer.slot-contracts.components",
     "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-swatch",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen swatch component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure",
+      "members": "variant.swatch,variant.color-ramp",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-ladder",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen ladder component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure",
+      "members": "variant.type,variant.spacing,variant.radius",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-player",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen player component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.button",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-grid",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen grid component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.accent",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.border",
+        "kind": "theme",
+        "required": false
+      },
+      {
+        "name": "themes.card",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.logo,components.icon",
+      "members": "variant.asset,variant.icon",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-matrix",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen matrix component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.table,components.badge",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-viewport",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen viewport component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "variant",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.table,components.badge",
+      "members": "variant.section,variant.frame,variant.page",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-passage",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen passage component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.rich-text",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
+  },
+  {
+    "schema": "clossys.slot-contract/1",
+    "slot": "components.specimen-copy-in-context",
+    "package": "designer",
+    "layer": "components",
+    "purpose": "Specimen copy in context component (root presentational), under Display / Specimens.",
+    "inputs": [
+      {
+        "name": "items",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "axes",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "context",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "need",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "renderParts",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "expanded",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "labels",
+        "kind": "prop",
+        "required": false
+      },
+      {
+        "name": "themes.spacing",
+        "kind": "theme",
+        "required": false
+      }
+    ],
+    "limits": {
+      "compose.components": "components.semantic-content,components.grid-list,components.disclosure,components.table,components.rich-text,components.button,components.navigation-tree",
+      "members": "",
+      "members.mode": "closed",
+      "root": "presentational"
+    },
+    "references": [],
+    "checkSuite": "designer.slot-contracts.components",
+    "specimenKind": "visual"
   }
 ]

@@ -177,6 +177,20 @@
             "components.rich-text",
             "components.item"
           ]
+        },
+        {
+          "id": "display-specimens",
+          "label": "Specimens",
+          "leaves": [
+            "components.specimen-swatch",
+            "components.specimen-ladder",
+            "components.specimen-player",
+            "components.specimen-grid",
+            "components.specimen-matrix",
+            "components.specimen-viewport",
+            "components.specimen-passage",
+            "components.specimen-copy-in-context"
+          ]
         }
       ]
     },

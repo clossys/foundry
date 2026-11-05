@@ -8,6 +8,7 @@ import componentSlots from "../catalog/slots/components.json" with { type: "json
 import tokenFreeze from "../catalog/ia/themes.leaf-freeze.json" with { type: "json" };
 import assetFreeze from "../catalog/ia/assets.leaf-freeze.json" with { type: "json" };
 import componentAmendments from "../catalog/ia/components.leaf-amendments.json" with { type: "json" };
+import specimenAmendments from "../catalog/ia/components.specimen-leaf-amendments.json" with { type: "json" };
 import draftAssetAmendments from "../catalog/ia/assets.draft-leaf-amendments.json" with { type: "json" };
 import assetAmendments from "../catalog/ia/assets.leaf-amendments.json" with { type: "json" };
 import componentFreeze from "../catalog/ia/components.leaf-freeze.json" with { type: "json" };
@@ -20,6 +21,10 @@ import { loadBuildCatalog, loadCatalog, loadComponentRegistry, type Placement } 
 // Designer leaves. The owner dropped the draft assets.backdrop-graphic leaf the
 // same day, so the loaded asset view is the committed IA and slots alone.
 const OWNER_RESIGN = { signoff: "owner re-sign 2026-11-02", leaves: 236 } as const;
+// Owner 2026-11-05 (DESIGNER-READOPT): the specimen previews get new Foundry leaves, the only
+// components addition on top of the re-signed tree.
+const SPECIMEN_LEAVES = ["components.specimen-swatch", "components.specimen-ladder", "components.specimen-player", "components.specimen-grid", "components.specimen-matrix", "components.specimen-viewport", "components.specimen-passage", "components.specimen-copy-in-context"] as const;
+const LOADED_LEAVES = OWNER_RESIGN.leaves + SPECIMEN_LEAVES.length;
 const loadedAssets = () => ({ ia: structuredClone(assetIA) as Placement, slots: structuredClone(assetSlots) });
 const view = (layer: string, ia: unknown, slots: unknown) => layer === "assets" ? loadedAssets() : { ia: structuredClone(ia) as Placement, slots: structuredClone(slots) as typeof assetSlots };
 
@@ -70,7 +75,7 @@ describe("owner-signed leaf membership", () => {
     });
     it(`${layer}: allows regrouping, reordering, labels and metadata changes`, () => {
       const value = input();
-      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds];
+      const ids = fixture.layer === "components" ? [...fixture.freeze.leafIds, ...componentAmendments.addedLeafIds, ...specimenAmendments.addedLeafIds] : fixture.layer === "assets" ? [...fixture.freeze.leafIds, ...assetAmendments.addedLeafIds, ...draftAssetAmendments.addedLeafIds] : [...fixture.freeze.leafIds];
       value.ia.nodes = [{ id: "new-domain", label: "New domain", children: [{ id: "new-family", label: "New family", leaves: [...ids].reverse() }] }];
       value.slots.reverse();
       Object.assign(value.slots[0]!, { description: "Metadata remains separate" });
@@ -102,14 +107,14 @@ describe("owner-signed leaf membership", () => {
       }
       expect(fixture.slots).toEqual(beforeSlots);
       expect(fixture.ia).toEqual(beforeIA);
-      expect(loadBuildCatalog().slots).toHaveLength(OWNER_RESIGN.leaves);
+      expect(loadBuildCatalog().slots).toHaveLength(LOADED_LEAVES);
     });
   }
 
   it("requires explicitly offered layers even when both inputs omit one entirely", () => {
     expect(checkFrozenLeafSets([], [], ["components"])).toEqual([
-      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
-      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds].sort() }),
+      expect.objectContaining({ layer: "components", source: "slots", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds, ...specimenAmendments.addedLeafIds].sort() }),
+      expect.objectContaining({ layer: "components", source: "ia", missing: [...componentFreeze.leafIds, ...componentAmendments.addedLeafIds, ...specimenAmendments.addedLeafIds].sort() }),
     ]);
   });
   it("keeps Sections/Frames unsigned and build readiness unchanged", () => {
@@ -237,6 +242,23 @@ it("Studio may report a freeze mismatch while strict callers still reject the sa
   expect(() => assertFrozenLeafSets([], [], ["components"])).toThrow("LEAF_FREEZE");
 });
 
+describe("owner-signed specimen component amendment (2026-11-05)", () => {
+  it("adds exactly the specimen leaves on the unchanged signed baseline, disjoint from the pending amendment", () => {
+    expect(specimenAmendments).toMatchObject({ schemaVersion: 1, layer: "components", baseSignedHead: componentFreeze.signedHead, status: "owner-signed", prefix: "components.specimen-" });
+    expect(specimenAmendments.addedLeafIds).toEqual([...SPECIMEN_LEAVES]);
+    for (const id of SPECIMEN_LEAVES) {
+      expect(componentFreeze.leafIds).not.toContain(id);
+      expect(componentAmendments.addedLeafIds).not.toContain(id);
+    }
+    expect(loadBuildCatalog().slots.filter(slot => slot.id.startsWith("components.specimen-")).map(slot => slot.id).sort()).toEqual([...SPECIMEN_LEAVES].sort());
+  });
+  it("refuses an unlisted specimen leaf", () => {
+    const value = { ia: structuredClone(componentIA) as Placement, slots: structuredClone(componentSlots) };
+    value.slots.push({ ...value.slots[0]!, id: "components.specimen-unsigned" });
+    expect(checkFrozenLeafSets([value.ia], value.slots, ["components"]).map(finding => finding.source)).toEqual(["slots"]);
+  });
+});
+
 describe("owner drop of assets.backdrop-graphic (2026-11-02)", () => {
   it("records the rejection and keeps the leaf out of the loaded catalog", () => {
     expect(draftAssetAmendments.addedLeafIds).not.toContain("assets.backdrop-graphic");
@@ -244,6 +266,6 @@ describe("owner drop of assets.backdrop-graphic (2026-11-02)", () => {
     const build = loadBuildCatalog();
     expect(build.slots.map(slot => slot.id)).not.toContain("assets.backdrop-graphic");
     expect(JSON.stringify(build.placements)).not.toContain("assets.backdrop-graphic");
-    expect(build.slots).toHaveLength(OWNER_RESIGN.leaves);
+    expect(build.slots).toHaveLength(LOADED_LEAVES);
   });
 });

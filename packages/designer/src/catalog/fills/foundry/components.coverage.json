@@ -768,6 +768,92 @@
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
+      "slot": "components.specimen-copy-in-context",
+      "status": "candidate",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-grid",
+      "status": "candidate",
+      "supported": [
+        "variant.asset",
+        "variant.icon"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-ladder",
+      "status": "candidate",
+      "supported": [
+        "variant.radius",
+        "variant.spacing",
+        "variant.type"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-matrix",
+      "status": "candidate",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-passage",
+      "status": "candidate",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-player",
+      "status": "candidate",
+      "supported": []
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-swatch",
+      "status": "candidate",
+      "supported": [
+        "variant.color-ramp",
+        "variant.swatch"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
+      "slot": "components.specimen-viewport",
+      "status": "candidate",
+      "supported": [
+        "variant.frame",
+        "variant.page",
+        "variant.section"
+      ]
+    },
+    {
+      "missing": [],
+      "notes": [
+        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
+      ],
       "slot": "components.spinner",
       "status": "candidate",
       "supported": [

@@ -390,6 +390,35 @@
       ]
     },
     {
+      "l2": "display-specimens",
+      "leaves": [
+        "components.specimen-swatch",
+        "components.specimen-ladder",
+        "components.specimen-player",
+        "components.specimen-grid",
+        "components.specimen-matrix",
+        "components.specimen-viewport",
+        "components.specimen-passage",
+        "components.specimen-copy-in-context"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "components.specimen-swatch",
+            "components.specimen-ladder",
+            "components.specimen-player",
+            "components.specimen-grid",
+            "components.specimen-matrix",
+            "components.specimen-viewport",
+            "components.specimen-passage",
+            "components.specimen-copy-in-context"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
       "l2": "feedback-messages",
       "leaves": [
         "components.banner",

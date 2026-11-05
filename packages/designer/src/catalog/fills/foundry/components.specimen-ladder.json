@@ -1,0 +1,107 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.disclosure",
+        "components.grid-list",
+        "components.semantic-content"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.specimen-ladder",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#SpecimenLadder",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.specimen-ladder",
+      "source": "foundry",
+      "sourceAddress": "./components#SpecimenLadder",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "specimen-ladder": {
+      "composes": [
+        "components.disclosure",
+        "components.grid-list",
+        "components.semantic-content"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "SpecimenLadder",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "variant.radius",
+        "variant.spacing",
+        "variant.type"
+      ],
+      "pin": {
+        "export": "./components#SpecimenLadder",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "variant.radius": "./components#SpecimenLadder.variant=radius",
+        "variant.spacing": "./components#SpecimenLadder.variant=spacing",
+        "variant.type": "./components#SpecimenLadder.variant=type"
+      },
+      "props": [
+        "axes",
+        "context",
+        "expanded",
+        "items",
+        "labels",
+        "need",
+        "renderParts",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content"
+        ],
+        "themes": [
+          "themes.accent",
+          "themes.border",
+          "themes.card",
+          "themes.spacing"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.specimen-ladder",
+      "source": "foundry"
+    }
+  }
+}

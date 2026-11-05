@@ -41,6 +41,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-swatch",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
@@ -118,6 +119,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-swatch",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
@@ -190,6 +192,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-ladder",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
@@ -259,6 +262,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-ladder",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
@@ -328,6 +332,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-ladder",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure"
@@ -397,6 +402,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-player",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure",
@@ -467,6 +473,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-grid",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure",
@@ -537,6 +544,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-grid",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure",
@@ -612,6 +620,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-matrix",
         "components.semantic-content",
         "components.grid-list",
         "components.table",
@@ -690,6 +699,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-viewport",
         "components.semantic-content",
         "components.grid-list",
         "components.table",
@@ -768,6 +778,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-viewport",
         "components.semantic-content",
         "components.grid-list",
         "components.table",
@@ -841,6 +852,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-passage",
         "components.semantic-content",
         "components.grid-list",
         "components.disclosure",
@@ -916,6 +928,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-copy-in-context",
         "components.semantic-content",
         "components.grid-list",
         "components.table",
@@ -996,6 +1009,7 @@
         "names": []
       },
       "allowedComposes": [
+        "components.specimen-viewport",
         "components.semantic-content",
         "components.grid-list",
         "components.table",
