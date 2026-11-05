@@ -133,7 +133,7 @@ export function resolvePackReviewPage(input: PackReviewPageInput): PackReviewPag
 
 export interface PackReviewSectionsInput {
   env: PackReviewEnv;
-  /** Reads `clossys/agents/director/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
+  /** Reads `clossys/evidence/director/briefs/publisher.launch.json`. Called only when the gate is open; a throw means it is absent. */
   loadStrategyBrief: () => unknown;
   /** Explicit Director root; defaults to the repository root used by site-records. */
   strategyRoot?: string;

@@ -3,7 +3,7 @@ import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { Brief } from "../brief.js";
 import { discoverBriefContracts } from "../brief-contracts.js";
 import { DEFAULT_SKIP_DIRS, scanStrategyDirectory, type ScanOptions } from "../scan.js";
-import { readStrategyRoot } from "../store.js";
+import { directorOutput, readStrategyRoot, type DirectorOutput } from "../store.js";
 import type { DirectorStore } from "../store-io.js";
 import { buildCitationIndex } from "./index.js";
 import { resolveStrategyRoot } from "../strategy-dir-default.js";
@@ -11,7 +11,8 @@ import { resolveStrategyRoot } from "../strategy-dir-default.js";
 const USAGE = `Usage: clossys director check index [--root <dir>] [--check] [--scan <dir>…] [--json]
 
 Build citations.json, or check current sources without writing with --check.
-The root defaults to <repo root>/clossys/agents/director. Briefs are read from briefs/*.json.
+The root defaults to <repo root>/clossys/agents/director. Briefs are read from, and citations.json written to, the Director output folder:
+<consumer>/evidence/director/{briefs,reports}/ for the flat store, else <root>/briefs/ and <root>/citations.json.
 Scan sources include strategy:<cell>@<version> markers and JSON {cell, version} objects.
 --scan is repeatable. --extensions, --skip-dirs and --exclude are repeatable;
 skip directory names are added to node_modules, .git, dist, build and coverage.
@@ -48,12 +49,12 @@ function refuseScannedTarget(target: string, dirs: string[], skipDirs: string[])
 }
 
 /** Read files through the injected store reader; it refuses unsafe brief directories. */
-function readBriefs(root: string, store: DirectorStore): { path: string; brief: Brief }[] {
+function readBriefs(out: DirectorOutput, store: DirectorStore): { path: string; brief: Brief }[] {
   const result: { path: string; brief: Brief }[] = [];
-  for (const name of store.reader.list(root, "briefs") ?? []) {
+  for (const name of store.reader.list(out.base, out.briefs) ?? []) {
     if (!name.endsWith(".json")) continue;
-    const path = `briefs/${name}`;
-    const bytes = store.reader.read(root, path);
+    const path = `${out.briefs}/${name}`;
+    const bytes = store.reader.read(out.base, path);
     if (bytes === undefined) throw new Error(`Brief disappeared while reading: ${path}`);
     const value: unknown = JSON.parse(bytes);
     // The generated inventory is not itself a compiled brief. Its refs are still
@@ -95,15 +96,20 @@ export function runCitationIndex(argv: string[], store: DirectorStore): number {
     // store refuses a symlinked root for every read after this one.
     const strategyRoot = store.reader.stat(root, ".");
     if (strategyRoot?.type !== "directory" && strategyRoot?.type !== "symlink") throw new Error("Strategy root is unreadable or invalid: .");
-    refuseScannedTarget(join(strategyRoot.real, "citations.json"), dirs, [...DEFAULT_SKIP_DIRS, ...skipDirs]);
-    const generated = store.reader.stat(root, "citations.json");
+    // Generated files sit outside the slot tree for a flat-store root (directorOutput).
+    const out = directorOutput(root);
+    const outputBase = out.base === resolve(root) ? strategyRoot : store.reader.stat(out.base, ".");
+    if (outputBase !== strategyRoot && outputBase?.type !== "directory") throw new CitationIndexTargetError("The citation index output folder is unreadable or invalid");
+    if (!outputBase) throw new Error("Strategy root is unreadable or invalid: .");
+    refuseScannedTarget(join(outputBase.real, out.citations), dirs, [...DEFAULT_SKIP_DIRS, ...skipDirs]);
+    const generated = store.reader.stat(out.base, out.citations);
     if (generated?.type === "symlink") throw new CitationIndexTargetError("citations.json must not be a symlink");
     if (generated && (generated.type !== "file" || generated.links > 1)) throw new CitationIndexTargetError("citations.json must be a regular file without hardlink aliases");
     const model = readStrategyRoot(root, store.reader);
     if (!model.tree || model.issues.length) throw new Error(`Strategy root is unreadable or invalid: ${model.issues.map(issue => issue.path).join(", ")}`);
     const discovered = discoverBriefContracts(root, store.reader, model.catalog);
     if (discovered.issues.length) throw new Error(`Brief contracts are unreadable or invalid: ${discovered.issues.map(issue => issue.path).join(", ")}`);
-    const briefs = readBriefs(root, store);
+    const briefs = readBriefs(out, store);
     const options: ScanOptions = {
       extensions: extensions.length ? extensions : [".md", ".mdx", ".ts", ".tsx", ".js", ".jsx", ".json"],
       skipDirs: [...DEFAULT_SKIP_DIRS, ...skipDirs], excludeGlobs,
@@ -115,11 +121,11 @@ export function runCitationIndex(argv: string[], store: DirectorStore): number {
       }
       return { ...file, path: relative(root, join(dir, file.path)).split(sep).join("/") };
     }));
-    const inventory = store.reader.read(root, "briefs/index.json");
-    if (inventory !== undefined) files.push({ path: "briefs/index.json", content: inventory });
+    const inventory = store.reader.read(out.base, `${out.briefs}/index.json`);
+    if (inventory !== undefined) files.push({ path: relative(root, join(out.base, out.briefs, "index.json")).split(sep).join("/"), content: inventory });
     const result = buildCitationIndex(model, { files, briefs, contracts: discovered.contracts });
     // The writer refuses a symlinked or hardlinked destination; nothing here opens the store.
-    if (!check) store.writer.replace(root, "citations.json", `${JSON.stringify(result, null, 2)}\n`);
+    if (!check) store.writer.replace(out.base, out.citations, `${JSON.stringify(result, null, 2)}\n`);
     if (json) console.log(JSON.stringify(result));
     else {
       console.log(`Citation index: ${result.entries.length} entries; ${result.stale.length} stale; ${result.dangling.length} dangling; ${result.drift.length} brief fingerprint mismatches.`);

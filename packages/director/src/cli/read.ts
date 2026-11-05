@@ -26,9 +26,10 @@ Usage: clossys director check status [--scope core|full]
        clossys director check brief <contract> [--write]
        clossys director check handoff <contract>
 Aliases: cell-quality = check, coherence = cohere, completion = complete.
-Quality, coherence and completion commands save their returned report under <root>/reports/.
+Generated files go to the Director output folder: <consumer>/evidence/director/ for the flat-store root
+<consumer>/agents/director, else <root>/. Quality, coherence and completion commands save their returned report under its reports/.
 All read commands accept --root <dir> (default <repo root>/clossys/agents/director), --json and --help.
-brief --write saves the brief and briefs/index.json.
+brief --write saves the brief and briefs/index.json there.
 brief and handoff without --write do not write.`;
 const part = "[a-z]+(?:-[a-z]+)*";
 const leaf = new RegExp(`^${part}\\.${part}\\.${part}$`);

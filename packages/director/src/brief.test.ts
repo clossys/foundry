@@ -66,12 +66,16 @@ describe("brief compilation", () => {
     expect(brief(root, { ...contract, requires: [differentiator] }).state).toBe("stale");
   });
   it("compares a previous compiled fingerprint and never writes the root", () => {
-    const { root } = fixture(); const current = brief(root);
-    put(root, `briefs/${contract.id}.json`, JSON.stringify(current));
+    // Compiled briefs live with Director evidence, outside the flat slot tree.
+    const { root } = fixture(); const current = brief(root); const written = `../../evidence/director/briefs/${contract.id}.json`;
+    put(root, written, JSON.stringify(current));
     expect(brief(root).state).toBe("ready");
-    put(root, `briefs/${contract.id}.json`, JSON.stringify({ ...current, fingerprint: "0".repeat(64) }));
+    put(root, written, JSON.stringify({ ...current, fingerprint: "0".repeat(64) }));
     expect(brief(root).state).toBe("stale");
-    expect(JSON.parse(readFileSync(join(root, `briefs/${contract.id}.json`), "utf8")).fingerprint).toBe("0".repeat(64));
+    expect(JSON.parse(readFileSync(join(root, written), "utf8")).fingerprint).toBe("0".repeat(64));
+    // A brief left inside the slot tree is not read.
+    put(root, `briefs/${contract.id}.json`, JSON.stringify(current));
+    expect(brief(root).state).toBe("stale");
   });
   it("hashes sorted refs and exact cited file bytes, including evidence outside selected cells", () => {
     const { root } = fixture();
@@ -129,7 +133,7 @@ describe("brief contracts", () => {
     expect(discoverBriefContracts(root, reader).issues.length).toBeGreaterThan(0);
     rmSync(join(root, "contracts"));
     put(project, "outside/brief.json", JSON.stringify({ fingerprint: "0".repeat(64) }));
-    mkdirSync(join(root, "briefs")); symlinkSync(join(project, "outside/brief.json"), join(root, `briefs/${contract.id}.json`));
+    mkdirSync(join(root, "../../evidence/director/briefs"), { recursive: true }); symlinkSync(join(project, "outside/brief.json"), join(root, `../../evidence/director/briefs/${contract.id}.json`));
     expect(brief(root).state).toBe("stale");
   });
 });

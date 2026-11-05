@@ -162,7 +162,8 @@ describe("main — default ground root", () => {
     process.chdir(cwd);
     try {
       expect(main(["wont-claim", "."], store)).toBe(0);
-      expect(existsSync(join(root, "reports", "wont-claim.json"))).toBe(true);
+      expect(existsSync(join(repo, "clossys", "evidence", "director", "reports", "wont-claim.json"))).toBe(true);
+      expect(existsSync(join(root, "reports"))).toBe(false);
       expect(existsSync(join(cwd, "clossys"))).toBe(false);
     } finally { process.chdir(original); rmSync(repo, { recursive: true, force: true }); }
   });

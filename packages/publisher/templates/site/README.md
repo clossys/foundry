@@ -207,7 +207,7 @@ or refused by its owner's check is left out, and its section shows an empty
 label instead, so a repository with none of them still renders `/pack`.
 `resolvePackReviewSections` in `app/pack-review.ts` builds the three sections:
 
-- **Strategy brief** — `clossys/agents/director/briefs/publisher.launch.json`, checked by
+- **Strategy brief** — `clossys/evidence/director/briefs/publisher.launch.json`, checked by
   Director's `validateStrategyContract`: the first product record's
   summary, and each claim still marked `hypothesis` as an open question.
   `clossys/brief.json`, read through Director's

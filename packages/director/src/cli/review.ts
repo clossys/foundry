@@ -3,7 +3,7 @@ import { planReview } from '../loop.js';
 import type { DirectorStore } from '../store-io.js';
 import { persistReport } from './reports.js';
 
-export const REVIEW_USAGE = 'Usage: clossys director check review [--root <dir>] [--today <YYYY-MM-DD>] [--write] [--json]\n  --write saves the plan to <root>/reports/review.json; without it review writes nothing.';
+export const REVIEW_USAGE = 'Usage: clossys director check review [--root <dir>] [--today <YYYY-MM-DD>] [--write] [--json]\n  --write saves the plan to reports/review.json in the Director output folder (<consumer>/evidence/director/ for the flat store); without it review writes nothing.';
 /** Review plans requests and prints them. The slot model stores no requests; --write saves the plan as the review report only. */
 export function runReviewCli(argv: string[], store: DirectorStore): number {
   const json = argv.includes('--json');

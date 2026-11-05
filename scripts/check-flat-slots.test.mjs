@@ -65,3 +65,14 @@ test("shipped skills and manifests that teach the cells layout or a record folde
     ]);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("generated working files inside an agent tree fail; the evidence folder passes", () => {
+  const root = tree({
+    "clossys/agents/director/ia.json": "{}",
+    "packages/a/src/out.ts": 'const brief = "clossys/agents/director/briefs/index.json";\nconst ok = "clossys/evidence/director/briefs/index.json";\n',
+    "packages/a/package.json": '{ "foundry": { "outputs": [\n"clossys/agents/director/briefs/",\n"clossys/agents/director/citations.json",\n"clossys/agents/director/reports/review.json",\n"clossys/evidence/director/reports/review.json"\n] } }\n',
+  });
+  try {
+    assert.deepEqual(kinds(codeFindings(root)), ["reader packages/a/src/out.ts:1", "shipped packages/a/package.json:2", "shipped packages/a/package.json:3", "shipped packages/a/package.json:4"]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

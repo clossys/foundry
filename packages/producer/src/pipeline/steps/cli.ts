@@ -22,7 +22,7 @@ export const CLI_STEPS = [
     // the consumer's Director evidence. The commands write only generated files; pins are made by `clossys pin`.
     inputs: [...DIRECTOR_PINS, "clossys/agents/director/**", "clossys/evidence/director/*.md"],
     outputs: [
-      "clossys/agents/director/briefs/**", "clossys/agents/director/citations.json", "clossys/agents/director/reports/*.json",
+      "clossys/evidence/director/briefs/**", "clossys/evidence/director/reports/*.json",
     ],
     command: { cli: { verb: "director", parser: "src/cli/director.ts" }, entry: "src/cli/director.ts#runDirectorVerb" }, checks: ["workspace"],
   }),

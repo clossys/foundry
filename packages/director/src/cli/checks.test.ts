@@ -1,5 +1,5 @@
 import { store } from "../../test/store.js";
-import { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -70,8 +70,8 @@ describe("production check CLI adapters", () => {
       const after = snapshot(root);
       if (["check", "cohere", "complete"].includes(command)) {
         const capability = command === "check" ? "cell-quality" : command === "cohere" ? "coherence" : "completion";
-        expect(after[`reports/${capability}.json`]).toBe(`${JSON.stringify(result.value.result, null, 2)}\n`);
-        delete after[`reports/${capability}.json`];
+        // Reports live with Director evidence, outside the flat slot tree, which stays unchanged.
+        expect(readFileSync(join(root, `../../evidence/director/reports/${capability}.json`), "utf8")).toBe(`${JSON.stringify(result.value.result, null, 2)}\n`);
       }
       expect(after).toEqual(before);
     });
@@ -141,11 +141,13 @@ describe("production check CLI adapters", () => {
   });
   it("writes a new report on each run without changing other reports", () => {
     const root = fixture(); invoke(["check", id, "--root", root]);
-    const first = readFileSync(join(root, "reports/cell-quality.json"), "utf8");
-    put(root, "reports/coherence.json", "sentinel\n");
+    const reports = "../../evidence/director/reports";
+    const first = readFileSync(join(root, reports, "cell-quality.json"), "utf8");
+    put(root, `${reports}/coherence.json`, "sentinel\n");
     stage(root, cellsByRoot.get(root)!.find(cell => cell.id === id)!, { watch: ["Review later."] });
     expect(invoke(["check", id, "--root", root]).code).toBe(1);
-    expect(readFileSync(join(root, "reports/cell-quality.json"), "utf8")).not.toBe(first);
-    expect(readFileSync(join(root, "reports/coherence.json"), "utf8")).toBe("sentinel\n");
+    expect(readFileSync(join(root, reports, "cell-quality.json"), "utf8")).not.toBe(first);
+    expect(readFileSync(join(root, reports, "coherence.json"), "utf8")).toBe("sentinel\n");
+    expect(existsSync(join(root, "reports"))).toBe(false);
   });
 });

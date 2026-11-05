@@ -47,7 +47,7 @@ Options:
 Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. Quoted Never-claim: phrases from active Proof and Never: phrases from active Voice are checked; unquoted labels are listed as unchecked. A comment with wont-claim:ignore is recorded and not checked. --root overrides the strategy directory; --json prints the result as JSON.
 
 Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (pinned Proof or Voice candidates missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
-The returned report is saved to <root>/reports/wont-claim.json.
+The returned report is saved to reports/wont-claim.json in the Director output folder (<consumer>/evidence/director/ for the flat store, else <root>/).
 
 `;
 

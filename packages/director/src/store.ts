@@ -33,6 +33,21 @@ function evidenceBase(root: string): string | undefined {
   return basename(root) === "director" && basename(dirname(root)) === "agents" ? dirname(dirname(root)) : undefined;
 }
 
+/** Where the Director's generated files are written and read: store paths under `base`. */
+export interface DirectorOutput { readonly base: string; readonly briefs: string; readonly reports: string; readonly citations: string }
+
+/**
+ * The Director's generated files (compiled briefs, reports, the citation index). With the flat-store
+ * root `<consumer>/agents/director` they live with Director evidence, under
+ * `<consumer>/evidence/director/{briefs,reports}/`, never inside the slot tree (an agent folder holds
+ * only ia.json and slot folders). Any other root keeps them under itself.
+ */
+export function directorOutput(root: string): DirectorOutput {
+  const strategy = resolve(root), consumer = evidenceBase(strategy);
+  if (consumer === undefined) return { base: strategy, briefs: "briefs", reports: "reports", citations: "citations.json" };
+  return { base: consumer, briefs: "evidence/director/briefs", reports: "evidence/director/reports", citations: "evidence/director/reports/citations.json" };
+}
+
 /**
  * Re-reads one file the model recorded, by the same root-relative path the model reports:
  * a slot file under the root, or Director evidence under `EVIDENCE_PREFIX`.

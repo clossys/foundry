@@ -208,7 +208,8 @@ describe('production review read graph', () => {
     try {
       expect(runReviewCli(['--root',root,'--today','2026-10-29','--write'], store)).toBe(1);
     } finally { output.mockRestore(); }
-    const saved=JSON.parse(readFileSync(join(root,'reports','review.json'),'utf8'));
+    const saved=JSON.parse(readFileSync(join(root,'..','..','evidence','director','reports','review.json'),'utf8'));
+    expect(existsSync(join(root,'reports'))).toBe(false);
     expect(saved).toEqual(planReview(root, reader,{today:'2026-10-29'}));
     expect(saved.requests.length).toBeGreaterThan(0);
     expect(existsSync(join(root,'requests'))).toBe(false);
