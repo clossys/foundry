@@ -73,7 +73,8 @@ describe("AppFrame account avatar", () => {
     render(<AppFrame {...fixture()} />);
     const profile = screen.getByRole("button", { name: "Sam River" });
     expect(profile.querySelector("img")).toBeNull();
-    expect(profile.querySelector('[role="img"][aria-label="Sam River"]')).toHaveTextContent("SR");
+    // GATES-RED G5: the pinned shadcn@aria Avatar is decorative beside the visible name; its parts are data-slot named.
+    expect(profile.querySelector('[data-slot="avatar-fallback"]')).toHaveTextContent("SR");
   });
 
   it("keeps the host mark in the profile Avatar when avatar is mark", () => {
@@ -85,10 +86,11 @@ describe("AppFrame account avatar", () => {
     render(<AppFrame {...fixture({ avatar: "initials" })} />);
     const profile = screen.getByRole("button", { name: "Sam River" });
     expect(profile.querySelector("img")).toBeNull();
-    const avatar = profile.querySelector<HTMLElement>('[role="img"][aria-label="Sam River"]')!;
+    const avatar = profile.querySelector<HTMLElement>('[data-slot="avatar"]')!;
     expect(avatar).not.toBeNull();
-    expect(avatar).toHaveClass("rounded-pill");
-    expect(avatar).toHaveTextContent("SR");
+    expect(avatar).toHaveClass("rounded-full");
+    expect(avatar.closest('[aria-hidden="true"]')).not.toBeNull();
+    expect(avatar.querySelector('[data-slot="avatar-fallback"]')).toHaveTextContent("SR");
   });
 
   it("keeps the mark for a signed-out row, which has no person to take initials from", () => {

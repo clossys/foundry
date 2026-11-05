@@ -212,7 +212,7 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
     {context === undefined || context === null ? null : <SemanticContent as="div" data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</SemanticContent>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
     {information && <DialogTrigger isOpen={infoOpen} onOpenChange={setInfoOpen}><Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>
-    <Popover triggerRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0}
+    <Popover triggerRef={bar} className="text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0}
       style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
       <SemanticContent as="div" data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
         <SemanticContent as="div">{page?.status}</SemanticContent><SemanticContent as="div">{page?.description}</SemanticContent><SemanticContent as="div">{page?.updatedAt}</SemanticContent><SemanticContent as="div">{page?.meta}</SemanticContent><SemanticContent as="div">{page?.scope}</SemanticContent>

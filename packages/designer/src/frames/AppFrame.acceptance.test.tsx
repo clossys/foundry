@@ -124,7 +124,7 @@ describe("AppFrame acceptance", () => {
     const trigger = screen.getByRole("button", { name: "Find a command" }); trigger.focus();
     const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
     await user.keyboard(apple ? "{Meta>}k{/Meta}" : "{Control>}k{/Control}");
-    const search = await screen.findByRole("combobox", { name: "Search commands" });
+    const search = await screen.findByRole("searchbox", { name: "Search commands" });
     await user.type(search, "Open p");
     expect(screen.getAllByRole("option")).toHaveLength(1);
     expect(screen.getByRole("option", { name: "Open projects" })).toHaveAttribute("href", "#projects");
@@ -445,7 +445,8 @@ describe("AppFrame floating stage", () => {
   it("f: retains token typography and foreground outside the frame portal", async () => {
     const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
     await user.click(screen.getByRole("button", { name: "Page information" }));
-    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveClass("text-body", "text-ink-primary");
+    // GATES-RED G5: typography is the pinned Popover's own size key; the frame keeps only its foreground.
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveClass("text-(length:--text-sm)", "text-ink-primary");
   });
 
   it("g: presents only the first requested primary action as primary", () => {
