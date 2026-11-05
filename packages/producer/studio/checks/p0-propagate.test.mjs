@@ -168,3 +168,16 @@ test('CLI rejects ambiguous or shell-shaped build commands and invalid CSS prope
   const adapter = await validateAdapter(f.root, { ...f.adapter, buttonSelector: undefined });
   assert.equal(adapter.buttonSelector, '[data-slot="button"]');
 });
+
+test('the checked-in adapter resolves the real tree without discovery (F3)', async () => {
+  const repository = fileURLToPath(new URL('../../../../', import.meta.url));
+  const adapter = await discoverAdapter(repository);
+  assert.equal(adapter.primarySource, 'packages/designer/ui/src/index.css');
+  assert.equal(adapter.buttonSource, 'packages/designer/ui/src/components/ui/button.tsx');
+  assert.deepEqual(adapter.buildCommands, [['node', 'packages/producer/scripts/build-studio.mjs']]);
+  // The adapter's sources are the ones the real tree mutates: a literal --primary and the primary shadcn button.
+  const [primary, button] = await Promise.all([readFile(adapter.primaryPath, 'utf8'), readFile(adapter.buttonPath, 'utf8')]);
+  const mutation = createMutations(primary, button, 8, adapter.primaryOccurrence, adapter.cssVariable);
+  assert.notEqual(mutation.primary, primary);
+  assert.notEqual(mutation.button, button);
+});
