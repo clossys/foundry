@@ -7,6 +7,7 @@ import { readPinnedPublication } from "../publish/pinned-publication.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { isInstalledRoute, NEXT_INSTALL_KIND, NEXT_INSTALL_REPORT } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
+import { isAbsent } from "../errors.js";
 
 export const PREVIEW_PREFIX = "/preview/";
 export const PREVIEW_COMMAND = "clossys publish --install --page <page id>";
@@ -78,7 +79,8 @@ export async function publication(root: string, requested?: string, installOut?:
     const pages = await Promise.all(manifest.routes.map(async route => {
       const entry = manifest.contentMap.entries.find(entry => entry.id === route.id);
       let emitted = false;
-      try { await confinedPreviewFile(previewRoot(root, selected), route.source.file); emitted = true; } catch { /* Descriptor metadata does not prove source exists. */ }
+      // Descriptor metadata does not prove source exists: an absent source is not emitted, any other failure surfaces.
+      try { await confinedPreviewFile(previewRoot(root, selected), route.source.file); emitted = true; } catch (error) { if (!isAbsent(error)) throw error; }
       return { id: route.id, route: route.path, emitted, ...pageRoutes(selected, route.id),
         ...(entry?.title === undefined ? {} : { title: entry.title }), ...(typeof entry?.description === "string" ? { description: entry.description } : {}),
         ...(typeof entry?.ogImage === "string" ? { ogImage: entry.ogImage } : {}), ...(entry?.indexing === "index" || entry?.indexing === "noindex" ? { indexing: entry.indexing } : {}),
@@ -105,30 +107,31 @@ async function installPages(base: string): Promise<InstallPage[]> {
   for (const entry of await readdir(base, { withFileTypes: true })) {
     if (!entry.isDirectory() || entry.name.startsWith(".") || /[\\\x00-\x1f%?#]/.test(entry.name)) continue;
     const dir = entry.name;
-    try {
-      await confinedPreviewFile(base, `${dir}/${INSTALL_MARKER}`);
-      const reportFile = `${dir}/install-report.json`;
-      const report = JSON.parse((await previewSource(base, reportFile)).toString("utf8"));
-      const written = (await stat(await confinedPreviewFile(base, reportFile))).mtimeMs;
-      if (object(report) && report.kind === NEXT_INSTALL_KIND) {
-        if (typeof report.app !== "string" || !Array.isArray(report.pages) || (Array.isArray(report.findings) && report.findings.some(blockingFinding))) continue;
-        for (const row of report.pages) {
-          if (!object(row) || typeof row.page !== "string" || !identity(row.page) || typeof row.file !== "string" || typeof row.route !== "string" || !row.route.startsWith("/")) continue;
-          if ((found.get(row.page)?.written ?? -1) > written) continue;
-          found.set(row.page, { id: row.page, css: [], written, next: { app: report.app, file: row.file, route: row.route } });
-        }
-        continue;
+    // Only a folder carrying the install marker is an install out dir; a marked one must read.
+    try { await confinedPreviewFile(base, `${dir}/${INSTALL_MARKER}`); } catch (error) { if (isAbsent(error)) continue; throw error; }
+    const reportFile = `${dir}/install-report.json`;
+    const report = JSON.parse((await previewSource(base, reportFile)).toString("utf8"));
+    const written = (await stat(await confinedPreviewFile(base, reportFile))).mtimeMs;
+    if (object(report) && report.kind === NEXT_INSTALL_KIND) {
+      if (typeof report.app !== "string" || !Array.isArray(report.pages) || (Array.isArray(report.findings) && report.findings.some(blockingFinding))) continue;
+      for (const row of report.pages) {
+        if (!object(row) || typeof row.page !== "string" || !identity(row.page) || typeof row.file !== "string" || typeof row.route !== "string" || !row.route.startsWith("/")) continue;
+        if ((found.get(row.page)?.written ?? -1) > written) continue;
+        found.set(row.page, { id: row.page, css: [], written, next: { app: report.app, file: row.file, route: row.route } });
       }
-      if (!object(report) || typeof report.page !== "string" || !identity(report.page)) continue;
-      if ((found.get(report.page)?.written ?? -1) > written) continue;
-      let html: string | undefined = `${dir}/site/${report.page}/index.html`;
-      // A failed rerun leaves the last page on disk; its report decides whether it is current.
-      try { await confinedPreviewFile(base, html); } catch { html = undefined; }
-      if (Array.isArray(report.findings) && report.findings.some(blockingFinding)) html = undefined;
-      const css: string[] = [];
-      try { for (const file of (await readdir(join(base, dir, "substrate", "dist", "assets"))).sort()) if (file.endsWith(".css")) css.push(`${dir}/substrate/dist/assets/${file}`); } catch { /* Unbuilt substrate: the page is served unstyled. */ }
-      found.set(report.page, { id: report.page, ...(html ? { html } : {}), css, written });
-    } catch { /* Not a readable install out dir. */ }
+      continue;
+    }
+    if (!object(report) || typeof report.page !== "string" || !identity(report.page)) continue;
+    if ((found.get(report.page)?.written ?? -1) > written) continue;
+    let html: string | undefined = `${dir}/site/${report.page}/index.html`;
+    // A failed rerun leaves the last page on disk; its report decides whether it is current.
+    try { await confinedPreviewFile(base, html); } catch (error) { if (!isAbsent(error)) throw error; html = undefined; }
+    if (Array.isArray(report.findings) && report.findings.some(blockingFinding)) html = undefined;
+    const css: string[] = [];
+    // Unbuilt substrate: without its stylesheet the page is not the install's render, so it is not served.
+    try { for (const file of (await readdir(join(base, dir, "substrate", "dist", "assets"))).sort()) if (file.endsWith(".css")) css.push(`${dir}/substrate/dist/assets/${file}`); }
+    catch (error) { if (!isAbsent(error)) throw error; html = undefined; }
+    found.set(report.page, { id: report.page, ...(html ? { html } : {}), css, written });
   }
   return [...found.values()];
 }
@@ -195,7 +198,7 @@ async function nativeInstallPublication(root: string, base: string, installs: In
 }
 async function readInstallPublication(root: string, installOut?: string, requested?: string, served?: ServedApp): Promise<InstallPublication | undefined> {
   let base: string;
-  try { base = await realpath(installOut ?? installOutRoot(root)); } catch { return undefined; }
+  try { base = await realpath(installOut ?? installOutRoot(root)); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   const installs = await installPages(base);
   if (!installs.length) return undefined;
   // Installed pages publish under the pinned Publisher slot model; without one there is no publication.

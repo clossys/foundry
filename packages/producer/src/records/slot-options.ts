@@ -47,7 +47,7 @@ export function classify(agent: SlotAgent, slot: string, group: string, table: O
   return { classId: table.overrides[agent]?.[slot]?.class ?? groups[group] };
 }
 
-/** A candidate's `vary` tag, or null when it carries none (or the bytes cannot be parsed). */
+/** A candidate's `vary` tag, null when it carries none, `invalid` when the tag or the bytes are malformed. */
 export function candidateVary(name: string, bytes: string): Record<string, string> | null | "invalid" {
   let raw: unknown;
   if (name.endsWith(".md")) {
@@ -55,7 +55,8 @@ export function candidateVary(name: string, bytes: string): Record<string, strin
     if (!parsed.ok) return null;
     raw = parsed.value.fields.vary;
   } else {
-    try { raw = (JSON.parse(bytes) as { meta?: { vary?: unknown } }).meta?.vary; } catch { return null; }
+    // Unparseable bytes cannot prove the slot's options: the options check reports them.
+    try { raw = (JSON.parse(bytes) as { meta?: { vary?: unknown } }).meta?.vary; } catch { return "invalid"; }
   }
   if (raw === undefined) return null;
   return validVary(raw) ? raw : "invalid";

@@ -6,6 +6,7 @@ import { createServer } from "node:net";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { isAbsent } from "../errors.js";
 
 export interface StudioChild { port: number; process: ChildProcess; stop: () => Promise<void> }
 export async function studioEntry(explicit?: string): Promise<string> {
@@ -27,7 +28,8 @@ export async function studioEntry(explicit?: string): Promise<string> {
     }
   }
   for (const path of explicit ? [explicit] : [join(base, "server.js"), join(base, "packages/producer/studio/server.js")]) {
-    try { await access(path); return path; } catch { /* Try the other standalone layout. */ }
+    // An absent layout tries the other one; any other access failure surfaces.
+    try { await access(path); return path; } catch (error) { if (!isAbsent(error)) throw error; }
   }
   throw new Error("Studio build dependency is missing: build the Next standalone application into dist/studio before running produce");
 }
@@ -90,15 +92,16 @@ export const STUDIO_APP = fileURLToPath(new URL("../../studio/app/", import.meta
  */
 export const MAX_ROUTE_REDIRECTS = 3;
 export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000, redirects = MAX_ROUTE_REDIRECTS): Promise<string | undefined> {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const origin = `http://127.0.0.1:${port}`;
     const request = get({ hostname: "127.0.0.1", port, path, timeout: timeoutMs, headers: { Accept: "text/html", Host: `127.0.0.1:${port}` } }, response => {
       const status = response.statusCode ?? 0;
       if ([301, 302, 303, 307, 308].includes(status) && redirects > 0 && response.headers.location) {
         response.resume();
-        let next: URL | undefined;
-        try { next = new URL(response.headers.location, origin + path); } catch { next = undefined; }
-        resolve(next && next.origin === origin ? renderStudioRoute(port, next.pathname + next.search, timeoutMs, redirects - 1) : undefined);
+        let next: URL;
+        try { next = new URL(response.headers.location, origin + path); }
+        catch (error) { reject(new Error(`Studio route ${path} redirected to an unparsable location: ${error instanceof Error ? error.message : String(error)}`)); return; }
+        resolve(next.origin === origin ? renderStudioRoute(port, next.pathname + next.search, timeoutMs, redirects - 1) : undefined);
         return;
       }
       if (status !== 200 || !String(response.headers["content-type"] ?? "").startsWith("text/html")) { response.resume(); resolve(undefined); return; }

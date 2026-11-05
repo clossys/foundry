@@ -7,6 +7,7 @@ import { listSlots, readAgentFile, readCandidate } from "../records/slots.js";
 import { agentRoot } from "./cells.js";
 import { pinnedBrand, type ConsumerBrand } from "./consumer-brand.js";
 import { specimenSubstrate } from "./specimen-substrate.js";
+import { isAbsent, isModuleAbsent } from "../errors.js";
 
 /**
  * The consumer's Designer output (`clossys/agents/designer/globals.css`) is a stock
@@ -55,12 +56,10 @@ export function pinnedFonts(root: string): PinnedFont[] {
   const fonts: PinnedFont[] = [];
   for (const entry of listSlots(library, "designer").filter(row => row.id.startsWith("themes.font") && row.pin)) {
     const pin = entry.pin!;
-    let item: Record<string, any> | undefined;
-    try {
-      const candidate = readCandidate(library, "designer", entry.id, pin.candidate);
-      if (candidate.sha256 !== pin.sha256) continue;
-      item = JSON.parse(candidate.bytes);
-    } catch { continue; }
+    // A pinned candidate that cannot be read or parsed surfaces; a drifted one is not the pin.
+    const candidate = readCandidate(library, "designer", entry.id, pin.candidate);
+    if (candidate.sha256 !== pin.sha256) continue;
+    const item: Record<string, any> | undefined = JSON.parse(candidate.bytes);
     const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
     const { family, variable, dependency } = item?.font ?? {};
     if (typeof item?.name !== "string" || !version || typeof family !== "string" || !FONT_FAMILY.test(family) || typeof variable !== "string" || !CSS_VARIABLE.test(variable) || typeof dependency !== "string" || !PACKAGE.test(dependency)) continue;
@@ -90,7 +89,8 @@ export async function consumerGlobals(root: string): Promise<ConsumerGlobals | u
   const substrate = specimenSubstrate(root);
   const substrateRequire = createRequire(join(substrate, "package.json"));
   const resolvePackage = (id: string): string => {
-    try { return consumerRequire.resolve(id); } catch { return substrateRequire.resolve(id); }
+    // Not installed in the consumer: the substrate is the declared second root. A broken install surfaces.
+    try { return consumerRequire.resolve(id); } catch (error) { if (!isModuleAbsent(error)) throw error; return substrateRequire.resolve(id); }
   };
   // A pinned font only joins once its package resolves somewhere, so the cache key tracks that too.
   const available = pinned.filter(font => { try { resolvePackage(font.dependency); return true; } catch { return false; } });
@@ -143,7 +143,7 @@ export async function consumerFontFile(root: string, path: string): Promise<{ bo
   if (!FONT_FILE.test(file) || file.split("/").some(part => !part || part === "." || part === "..")) return undefined;
   const packageRoot = await realpath(globals.fonts.get(name)!);
   let target: string;
-  try { target = await realpath(join(packageRoot, ...file.split("/"))); } catch { return undefined; }
+  try { target = await realpath(join(packageRoot, ...file.split("/"))); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
   const inside = relative(packageRoot, target);
   if (isAbsolute(inside) || inside.startsWith("..")) return undefined;
   return { body: await readFile(target), type: FONT_TYPES[extname(target)] ?? "application/octet-stream" };

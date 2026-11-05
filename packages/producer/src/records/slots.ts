@@ -17,6 +17,7 @@ import {
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
+import { isAbsent, parseJson } from "../errors.js";
 
 export interface SlotEntry {
   readonly id: string;
@@ -235,13 +236,16 @@ export function readSlotEntry(consumer: string, agent: SlotAgent, id: string): S
   });
 }
 
-/** The `notNeeded` marker in a slot's slot.json; `invalid` when the marker is present but malformed. */
-function readNotNeeded(dir: string): NotNeeded | "invalid" | undefined {
+/**
+ * The `notNeeded` marker in a slot's slot.json; `invalid` when the marker is present but malformed,
+ * `{ unreadable }` when slot.json itself cannot be read or parsed (the slot is then rejected).
+ */
+function readNotNeeded(dir: string): NotNeeded | "invalid" | { readonly unreadable: string } | undefined {
   const path = slotFile(dir);
   assertModelPath(path);
   if (!existsSync(path)) return undefined;
   let value: unknown;
-  try { value = readJson(path); } catch { return undefined; /* the model check reports unreadable slot.json */ }
+  try { value = readJson(path); } catch (error) { return { unreadable: error instanceof Error ? error.message : String(error) }; }
   if (!value || typeof value !== "object" || !Object.hasOwn(value, "notNeeded")) return undefined;
   if (validateSlotDoc(value, path).some(issue => issue.message.startsWith("notNeeded"))) return "invalid";
   return (value as SlotDoc).notNeeded;
@@ -256,6 +260,7 @@ function decideSlotState(dir: string, pin: PinDoc | null): SlotStateResult {
   const pinPresent = existsSync(pinFile(dir));
   const notNeeded = readNotNeeded(dir);
   if (notNeeded === "invalid") return { state: "rejected", reason: "invalid-slot", message: "slot.json notNeeded must be {reason, since, decidedBy}." };
+  if (notNeeded && "unreadable" in notNeeded) return { state: "rejected", reason: "invalid-slot", message: `slot.json is not readable JSON: ${notNeeded.unreadable}` };
   if (pinPresent && notNeeded) return { state: "rejected", reason: "pinned-and-not-needed", message: "Slot is both pinned and marked not needed." };
   if (pinPresent && !pin) return { state: "rejected", reason: "invalid-pin", message: "pin.json is not a valid pin." };
   if (pin) return { state: "pinned", pin };
@@ -320,12 +325,12 @@ function readPinAt(dir: string): PinDoc | null {
   const path = pinFile(dir);
   assertModelPath(path);
   if (!existsSync(path)) return null;
-  const bytes = readBytes(path);
-  let value: unknown;
-  try { value = JSON.parse(bytes); } catch { return null; }
-  // The model check reports malformed pins; they never clear an input or act
-  // as an authoring fallback merely because their file is present.
-  return validatePin(value, path).length ? null : value as PinDoc;
+  const parsed = parseJson(readBytes(path));
+  // A present pin.json that does not parse or validate is no pin: decideSlotState rejects the
+  // slot as invalid-pin and the model check reports it; it never clears an input or acts as an
+  // authoring fallback merely because its file is present.
+  if (!parsed.ok) return null;
+  return validatePin(parsed.value, path).length ? null : parsed.value as PinDoc;
 }
 export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc | null {
   return withSlotReadScope(() => {
@@ -333,12 +338,21 @@ export function readPin(consumer: string, agent: SlotAgent, id: string): PinDoc 
   });
 }
 
+/** The git top level holding `cwd`, or undefined outside a git checkout (or without git); other git failures surface. */
+function gitTopLevel(cwd: string): string | undefined {
+  try { return execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }).trim(); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT" || /not a git repository/.test(String((error as { stderr?: unknown }).stderr ?? ""))) return undefined;
+    throw error;
+  }
+}
+
 /** Pin history from git (newest first); outside git, the current pin only. */
 export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinEvent[] {
   return withSlotReadScope(() => {
     const dir = locate(consumer, agent, id).dir, path = pinFile(dir);
-    try {
-      const top = execFileSync("git", ["rev-parse", "--show-toplevel"], { cwd: consumer, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+    const top = gitTopLevel(consumer);
+    if (top !== undefined) {
       const rel = relative(top, path).split(sep).join("/");
       // --follow keeps history across slot-folder moves (the flat layout, or any
       // future regroup); each commit is read at the path the file had then.
@@ -348,8 +362,12 @@ export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinE
         return { commit, path: paths[0] ?? rel };
       });
       const read = commits.map(({ commit, path: at }) => {
-        try { return { commit, at, bytes: execFileSync("git", ["show", `${commit}:${at}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }) }; }
-        catch { return { commit, at, bytes: undefined }; /* deleted in this commit: an unpin, not a pin event */ }
+        try { return { commit, at, bytes: execFileSync("git", ["show", `${commit}:${at}`], { cwd: top, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }) }; }
+        catch (error) {
+          // Deleted in this commit: an unpin, not a pin event. Any other git failure surfaces.
+          if (/does not exist in|exists on disk, but not in/.test(String((error as { stderr?: unknown }).stderr ?? ""))) return { commit, at, bytes: undefined };
+          throw error;
+        }
       });
       const events: PinEvent[] = [];
       for (const [index, entry] of read.entries()) {
@@ -357,14 +375,15 @@ export function pinHistory(consumer: string, agent: SlotAgent, id: string): PinE
         const older = read[index + 1];
         // A pure move (new path, same bytes) is not a pin event.
         if (older && older.at !== entry.at && older.bytes === entry.bytes) continue;
-        try {
-          // Pins written before `clossys pin` named the decider `pinnedBy`.
-          const { pinnedBy, ...pin } = JSON.parse(entry.bytes) as PinDoc & { pinnedBy?: string };
-          events.push({ ...pin, decidedBy: pin.decidedBy ?? pinnedBy ?? "", commit: entry.commit });
-        } catch { /* unreadable historical pin */ }
+        let doc: PinDoc & { pinnedBy?: string };
+        try { doc = JSON.parse(entry.bytes) as PinDoc & { pinnedBy?: string }; }
+        catch (error) { throw new Error(`${entry.at} at ${entry.commit}: committed pin.json is not JSON (${error instanceof Error ? error.message : String(error)})`); }
+        // Pins written before `clossys pin` named the decider `pinnedBy`.
+        const { pinnedBy, ...pin } = doc;
+        events.push({ ...pin, decidedBy: pin.decidedBy ?? pinnedBy ?? "", commit: entry.commit });
       }
       if (events.length) return events;
-    } catch { /* not a git checkout */ }
+    }
     const current = readPinAt(dir);
     return current ? [{ ...current, commit: "working-tree" }] : [];
   });
@@ -491,7 +510,7 @@ export function hasPinFile(dir: string): boolean {
 }
 /** `mtime:size` of a slot's pin.json, or `-` when there is none: a cache key, never a decision. */
 export function pinStamp(dir: string): string {
-  try { const stat = statSync(pinFile(dir)); return `${stat.mtimeMs}:${stat.size}`; } catch { return "-"; }
+  try { const stat = statSync(pinFile(dir)); return `${stat.mtimeMs}:${stat.size}`; } catch (error) { if (isAbsent(error)) return "-"; throw error; }
 }
 /** Whether a model path exists, without following its last component. */
 export function modelPresence(path: string): "present" | "missing" | "error" {

@@ -1,6 +1,7 @@
 import { listSlots, readCandidate, readSlot } from "./slots.js";
 import { validateCandidate } from "./slot-model/index.js";
 import type { Hash, PinState, ReferenceRef, ReferencesManifest } from "./types.js";
+import { parseJson } from "../errors.js";
 
 /**
  * Slot status for the Producer overview. One status per slot, by precedence:
@@ -37,16 +38,18 @@ export function manifestReferenceHash(manifests: readonly ReferencesManifest[]):
 
 const candidateVersion = (name: string) => Number(/-v([1-9][0-9]*)\.json$/.exec(name)?.[1] ?? 0);
 const object = (value: unknown): value is Record<string, any> => typeof value === "object" && value !== null && !Array.isArray(value);
-/** Registry references a candidate's `meta.source.ref` records as JSON identities. */
-function referencesOf(refs: unknown): ReferenceRef[] {
-  if (!Array.isArray(refs)) return [];
-  return refs.flatMap((ref) => {
-    if (typeof ref !== "string" || !ref.startsWith("{")) return [];
-    try {
-      const value = JSON.parse(ref);
-      return object(value) && typeof value.registry === "string" && typeof value.item === "string" && typeof value.version === "string" && typeof value.hash === "string" ? [value as ReferenceRef] : [];
-    } catch { return []; }
-  });
+/** Registry references a candidate's `meta.source.ref` records as JSON identities; a ref that opens a JSON identity but does not parse is malformed. */
+function referencesOf(refs: unknown): { refs: ReferenceRef[]; malformed: string[] } {
+  const out: ReferenceRef[] = [], malformed: string[] = [];
+  if (!Array.isArray(refs)) return { refs: out, malformed };
+  for (const ref of refs) {
+    if (typeof ref !== "string" || !ref.startsWith("{")) continue;
+    const parsed = parseJson(ref);
+    if (!parsed.ok) { malformed.push(`${ref} (${parsed.message})`); continue; }
+    const value = parsed.value;
+    if (object(value) && typeof value.registry === "string" && typeof value.item === "string" && typeof value.version === "string" && typeof value.hash === "string") out.push(value as ReferenceRef);
+  }
+  return { refs: out, malformed };
 }
 
 /**
@@ -74,8 +77,9 @@ export function workspaceSlotStatus(
       detail.push(`pinned candidate ${pin.candidate} is missing`);
     } else {
       const candidate = readCandidate(root, "designer", entry.id, pin.candidate);
-      let item: Record<string, any> | undefined;
-      try { item = JSON.parse(candidate.bytes); } catch { /* reported below */ }
+      const parsed = parseJson(candidate.bytes);
+      const item: Record<string, any> | undefined = parsed.ok && object(parsed.value) ? parsed.value : undefined;
+      if (!parsed.ok) detail.push(`pinned candidate ${pin.candidate} is not JSON: ${parsed.message}`);
       state = { element: typeof item?.name === "string" ? item.name : pin.candidate, version: candidateVersion(pin.candidate), hash: `sha256:${pin.sha256}`, event: pin.at };
       if (candidate.sha256 !== pin.sha256) {
         flags.add("failing");
@@ -95,7 +99,12 @@ export function workspaceSlotStatus(
           detail.push(`check ${check.id} failed`);
         }
       }
-      for (const source of referencesOf(item?.meta?.source?.ref)) {
+      const references = referencesOf(item?.meta?.source?.ref);
+      for (const ref of references.malformed) {
+        flags.add("failing");
+        detail.push(`meta.source.ref ${ref} is not a JSON identity`);
+      }
+      for (const source of references.refs) {
         const current = options.referenceHash(source);
         if (current !== source.hash) {
           flags.add("stale");

@@ -4,6 +4,7 @@ import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, valida
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
 import { slotIdLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
+import { parseJson } from '../errors.js';
 
 /** Why a slot card has nothing to show: an id Studio maps to Writer copy. */
 export type SlotEmptyState = 'no-candidate' | 'no-pin';
@@ -55,8 +56,8 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
   // A Director card shows its pin; a named Director candidate renders as a preview of its own bytes.
   const name = agent === 'director' ? candidate ?? entry.pin?.candidate : candidate ?? shownCandidate(entry);
   if (agent === 'director' && !name) return undefined;
-  let doc: ReturnType<typeof checkedSlot>;
-  try { doc = checkedSlot(consumer, agent, entry); } catch { return undefined; }
+  // An unreadable or invalid slot document is an error for the caller, not an absent record.
+  const doc = checkedSlot(consumer, agent, entry);
   const empty = copyRef(entry.candidates.length ? 'studio.no-pin' : 'studio.no-candidate');
   const out: RecordSpecimenInput = { kind: 'record', name: slotLabel(consumer, agent, id), title: copyRef(agent === 'director' ? 'studio.direction' : 'studio.strings'), description: '', empty, rows: [] };
   if (!name) return out;
@@ -66,10 +67,8 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
     if (agent === 'director') return undefined;
     throw error;
   }
-  try {
-    if (validateCandidate(doc.kind, id, name, source.bytes).length) return undefined;
-    if (agent === 'director' && entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) return undefined;
-  } catch { return undefined; }
+  if (validateCandidate(doc.kind, id, name, source.bytes).length) return undefined;
+  if (agent === 'director' && entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) return undefined;
   if (entry.pin?.candidate === name && source.sha256 !== entry.pin.sha256) throw new Error(`Candidate hash mismatch: ${id}`);
   const parsed = parseFrontmatter(source.bytes);
   if (!parsed.ok) throw new Error(`Invalid record candidate: ${id}`);
@@ -92,10 +91,10 @@ export function recordSpecimenInput(consumer: string, agent: 'director' | 'write
 /** A structured row (a JSON rule or entry) reads as its value, not as its serialization. */
 function readable(text: string): string {
   if (!/^\s*\{/.test(text)) return text;
-  try {
-    const value = JSON.parse(text) as Record<string, unknown>;
-    for (const key of ['value', 'text', 'description', 'rule']) if (typeof value[key] === 'string' && value[key]) return value[key] as string;
-  } catch { /* plain text that starts with a brace */ }
+  // Plain text that starts with a brace is not JSON and reads as itself.
+  const parsed = parseJson(text);
+  const value = parsed.ok && parsed.value && typeof parsed.value === 'object' ? parsed.value as Record<string, unknown> : undefined;
+  if (value) for (const key of ['value', 'text', 'description', 'rule']) if (typeof value[key] === 'string' && value[key]) return value[key] as string;
   return text;
 }
 
@@ -182,7 +181,8 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     let record: RecordSpecimenInput | undefined;
     // A card shows the pin only; previews of other candidates live on the slot's detail route.
     if (!failing && ((agent === 'director' && entry.pin && (candidate === undefined || candidate === entry.pin.candidate)) || (agent === 'writer' && candidate && entry.pin?.candidate === candidate))) {
-      try { record = recordSpecimenInput(consumer, agent, id, candidate); } catch { record = undefined; }
+      // A record that cannot be projected marks the card failing instead of showing an empty lead.
+      try { record = recordSpecimenInput(consumer, agent, id, candidate); } catch { failing = true; record = undefined; }
     }
     target.cards.push({ id, slug: id, name: label(agent, id), kind, version: candidate ? candidateVersion(candidate) : 0,
       status: failing ? 'failing' : missing ? 'missing' : entry.pin ? 'active' : 'draft', records: candidate && !failing ? 1 : 0,

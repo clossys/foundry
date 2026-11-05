@@ -6,33 +6,33 @@
  */
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
 import { parseFrontmatter, type SlotAgent } from "./slot-model/index.js";
-import { readCandidate, readPin } from "./slots.js";
+import { readCandidate, readSlotEntry } from "./slots.js";
 
 const NAMES = "strings.names";
 const cache = new Map<string, { key: string; names: ReadonlyMap<string, string> }>();
 
-/** The pinned Writer names, keyed by record context; empty without a valid pin. */
+/**
+ * The pinned Writer names, keyed by record context; empty while the Writer has no `strings.names`
+ * slot or no valid pin. A pinned candidate that cannot be read or parsed surfaces as an error.
+ */
 function pinnedNames(consumer: string): ReadonlyMap<string, string> {
-  let pin;
-  try { pin = readPin(consumer, "writer", NAMES); } catch { return new Map(); }
+  const pin = readSlotEntry(consumer, "writer", NAMES)?.pin;
   if (!pin) return new Map();
   const key = `${pin.candidate}#${pin.sha256}`;
   const hit = cache.get(consumer);
   if (hit?.key === key) return hit.names;
   const names = new Map<string, string>();
-  try {
-    const candidate = readCandidate(consumer, "writer", NAMES, pin.candidate);
-    // A drifted candidate is not the pinned one; its names are not read.
-    if (candidate.sha256 === pin.sha256) {
-      const parsed = parseFrontmatter(candidate.bytes);
-      if (parsed.ok) {
-        const locales = parsed.value.fields.locales as readonly string[];
-        for (const row of parseWriterSlotBody(parsed.value.body, locales)) {
-          if (row.locale === locales[0] && typeof row.record.text === "string" && row.record.text.trim()) names.set(row.record.context, row.record.text.trim());
-        }
+  const candidate = readCandidate(consumer, "writer", NAMES, pin.candidate);
+  // A drifted candidate is not the pinned one; its names are not read (the pin check reports drift).
+  if (candidate.sha256 === pin.sha256) {
+    const parsed = parseFrontmatter(candidate.bytes);
+    if (parsed.ok) {
+      const locales = parsed.value.fields.locales as readonly string[];
+      for (const row of parseWriterSlotBody(parsed.value.body, locales)) {
+        if (row.locale === locales[0] && typeof row.record.text === "string" && row.record.text.trim()) names.set(row.record.context, row.record.text.trim());
       }
     }
-  } catch { /* unreadable names: every slot falls back */ }
+  }
   cache.set(consumer, { key, names });
   return names;
 }

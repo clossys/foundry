@@ -39,17 +39,18 @@ export function slotInstallInputs(consumer: string): SlotInstallInputs | undefin
     }
     const valid = new Map<string, { element: string; version: number; sha256: string }>();
     for (const name of entry.candidates) {
-      try {
-        const match = CANDIDATE_NAME.exec(name)!;
-        const candidate = readCandidate(consumer, "designer", entry.id, name);
-        if (validateCandidate("element", entry.id, name, candidate.bytes).length) continue;
-        const item = JSON.parse(candidate.bytes);
-        const element = match[1]!, version = Number(match[2]);
-        if (!Number.isSafeInteger(version) || element.includes("..") || item.name !== element
-          || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
-          || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== entry.id)) continue;
-        valid.set(name, { element, version, sha256: candidate.sha256 });
-      } catch { /* Invalid drafts cannot join an option pass. A pin to one fails below. */ }
+      // Invalid drafts (validation issues, mismatched identity) cannot join an option pass; a pin to
+      // one fails below. A candidate that cannot be read is an error.
+      const match = CANDIDATE_NAME.exec(name);
+      if (!match) continue;
+      const candidate = readCandidate(consumer, "designer", entry.id, name);
+      if (validateCandidate("element", entry.id, name, candidate.bytes).length) continue;
+      const item = JSON.parse(candidate.bytes);
+      const element = match[1]!, version = Number(match[2]);
+      if (!Number.isSafeInteger(version) || element.includes("..") || item.name !== element
+        || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
+        || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== entry.id)) continue;
+      valid.set(name, { element, version, sha256: candidate.sha256 });
     }
     evidence.push([entry.id, doc, entry.pin, [...valid]]);
     if (entry.pin) {

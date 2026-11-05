@@ -8,7 +8,7 @@
  * pins no brand asset has none, and the routes answer 404. A candidate whose bytes drifted from
  * its pin is never served.
  */
-import { readCandidate, readPin } from "../records/slots.js";
+import { readCandidate, readSlotEntry } from "../records/slots.js";
 
 const object = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
 export const safeSvg = (value: unknown): string | undefined => {
@@ -18,25 +18,28 @@ export const safeSvg = (value: unknown): string | undefined => {
 const SVG_DATA_URI = /^data:image\/svg\+xml;base64,([A-Za-z0-9+/]+={0,2})$/;
 const ALIAS = /^\{\{assets\.([a-z0-9-]+)\.([a-z0-9-]+)\}\}$/;
 
-/** The pinned candidate's design tokens for `assets.<name>`, or undefined (no pin, drifted bytes, unreadable). */
+/**
+ * The pinned candidate's design tokens for `assets.<name>`, or undefined when the consumer has no
+ * such slot, no valid pin, drifted bytes, or no token group for it. A pinned candidate that cannot
+ * be read, or a token file in it that is not JSON, surfaces as an error.
+ */
 export function pinnedAssetTokens(library: string, name: string): Record<string, unknown> | undefined {
   const slot = `assets.${name}`;
-  try {
-    const pin = readPin(library, "designer", slot);
-    if (!pin) return undefined;
-    const candidate = readCandidate(library, "designer", slot, pin.candidate);
-    // A drifted candidate is not the pinned one; never serve it.
-    if (candidate.sha256 !== pin.sha256) return undefined;
-    const item: unknown = JSON.parse(candidate.bytes);
-    const files = object(item) && Array.isArray(item.files) ? item.files : [];
-    for (const file of files) {
-      if (!object(file) || typeof file.content !== "string" || !String(file.path).endsWith(".json")) continue;
-      let tokens: unknown;
-      try { tokens = JSON.parse(file.content); } catch { continue; }
-      const group = object(tokens) && object(tokens.assets) ? tokens.assets[name] : undefined;
-      if (object(group)) return group;
-    }
-  } catch { /* no slot model, or no readable pin: fall through */ }
+  const pin = readSlotEntry(library, "designer", slot)?.pin;
+  if (!pin) return undefined;
+  const candidate = readCandidate(library, "designer", slot, pin.candidate);
+  // A drifted candidate is not the pinned one; never serve it.
+  if (candidate.sha256 !== pin.sha256) return undefined;
+  const item: unknown = JSON.parse(candidate.bytes);
+  const files = object(item) && Array.isArray(item.files) ? item.files : [];
+  for (const file of files) {
+    if (!object(file) || typeof file.content !== "string" || !String(file.path).endsWith(".json")) continue;
+    let tokens: unknown;
+    try { tokens = JSON.parse(file.content); }
+    catch (error) { throw new Error(`designer/${slot}/${pin.candidate}: ${String(file.path)} is not JSON (${error instanceof Error ? error.message : String(error)})`); }
+    const group = object(tokens) && object(tokens.assets) ? tokens.assets[name] : undefined;
+    if (object(group)) return group;
+  }
   return undefined;
 }
 
