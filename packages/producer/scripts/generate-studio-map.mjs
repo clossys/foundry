@@ -9,7 +9,7 @@ import { validateSlotContract } from '../dist/records/validate.js';
 import { publishNext } from '../dist/publish/install-next.js';
 import { readPinnedPublication } from '../dist/publish/pinned-publication.js';
 import { expandPublication, landingOf, projectTrails } from '../dist/publish/expand-tabs.js';
-import { checkPayload } from './studio-payload.mjs';
+import { checkPayload, installPayload } from './studio-payload.mjs';
 import { brandJson, flowThemeCss, iconsModule, provenanceJson } from './check-generated-derived.mjs';
 import { draftStudioItems, previewArguments, previewDescriptor, previewOptionsFromEnvironment } from './studio-draft-items.mjs';
 
@@ -283,7 +283,8 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
     const entries = new Map(listSlots(clossysRoot, 'designer').map(entry => [entry.id, entry]));
     for (const slot of slots) items.push(pinnedItem(clossysRoot, entries, slot));
   }
-  if (payloads) for (const item of items) await checkPayload(item);
+  // The build installs each pinned frame and section payload into its Studio folder (Designer -> Studio); --check only compares.
+  if (payloads) for (const item of items) { if (!check && target !== 'preview') await installPayload(item); await checkPayload(item); }
   const installed = await installStudioRoutes({ clossysRoot, appDir, check, installOut });
   const routeOf = (page, kind) => {
     const row = installed.find(file => file.pageId === page.id && file.kind === kind);

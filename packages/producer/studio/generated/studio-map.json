@@ -45487,7 +45487,7 @@
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.producer.system-empty",

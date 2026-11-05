@@ -219,6 +219,12 @@
       "kind": "live"
     },
     {
+      "id": "producer check-rendered-provenance (live)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/check-rendered-provenance.mjs \"$STUDIO_ORIGIN\"",
+      "kind": "live"
+    },
+    {
       "id": "producer check-theme-parity (live)",
       "cwd": "packages/producer",
       "run": "node studio/checks/check-theme-parity.cjs \"$STUDIO_ORIGIN\" \"$STUDIO_ORIGIN\"",

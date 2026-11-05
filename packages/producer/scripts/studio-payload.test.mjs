@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { checkPayload } from './studio-payload.mjs';
+import { checkPayload, installPayload } from './studio-payload.mjs';
 
 async function fixture(t) {
   const dir = await mkdtemp(join(tmpdir(), 'studio-payload-'));
@@ -127,4 +127,18 @@ test('record-only names retain their existing library-only semantics', async t =
     await assert.rejects(checkPayload(item), /studio folder files .* differ/);
     await rm(join(item.studioDir, name));
   }
+});
+
+test('a re-pin installs the new pinned payload: changed code written, stale files removed, tests kept (SEEN-DS)', async t => {
+  const item = await fixture(t);
+  await writeFile(join(item.studioDir, 'old-helper.tsx'), 'export const old = 1;\n');
+  await writeFile(join(item.studioDir, 'index.test.tsx'), 'local test\n');
+  const next = { ...item, version: 2, files: new Map([['index.tsx', Buffer.from('export default () => "Home v2";\n')], ['part.tsx', Buffer.from('export const part = 2;\n')], ['registry-item.json', Buffer.from('{}')]]), payload: ['index.tsx', 'part.tsx', 'registry-item.json'] };
+  await assert.rejects(checkPayload(next), /differ/);
+  assert.deepEqual(await installPayload(next), ['index.tsx', 'part.tsx']);
+  assert.deepEqual((await readdir(item.studioDir)).sort(), ['index.test.tsx', 'index.tsx', 'part.tsx']);
+  assert.equal(await readFile(join(item.studioDir, 'index.tsx'), 'utf8'), 'export default () => "Home v2";\n');
+  await assert.doesNotReject(checkPayload(next));
+  assert.deepEqual(await installPayload(next), [], 'an installed payload is left untouched');
+  await assert.rejects(installPayload(item), /only an inline pinned payload installs/);
 });

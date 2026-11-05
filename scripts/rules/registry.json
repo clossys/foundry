@@ -51,7 +51,8 @@
       },
       "status": "unenforced",
       "checks": [
-        "packages/producer#test"
+        "packages/producer#test",
+        "check:studio#producer check-rendered-provenance (live)"
       ],
       "related": [
         "check:studio#producer studio vitest",
@@ -76,7 +77,7 @@
           "expect": "probe-section/index\\.tsx: imports other-ui"
         }
       ],
-      "note": "The ds-only vitest (producer test) covers sections, frames, renderers and component-layer frames, and is red on this tree in 4 tests that need a Designer-skill change: studio-slot-groups imports ../studio-specimen, which its owner-picked pin (studio-slot-groups-v4) does not declare in meta.element.deps.elements (a re-pin); and raw styled markup in the component-layer frames foundry/layout.tsx, foundry/block-viewer-iframe.tsx and foundry/studio-frames.tsx."
+      "note": "Unenforced: both gating checks are red on this tree. (1) The ds-only vitest (packages/producer#test) scans sections, frames, renderers, every app/ file, every Foundry component-layer file under designer-ui/src/foundry and every src/server emitter; it flags inline style and injected HTML on any element and any className on a Designer component other than a forwarded className prop or a pair the pinned lineage's reference block carries. 27 tests red: 14 pinned sections and frames.studio-shell restyle Designer components (need new Designer candidates), app/layout.tsx and components/StudioPage.tsx, the 6 Foundry component-layer files (no Designer slot or installer), and 4 server emitters that write hand markup (no pinned specimen sections). (2) check-rendered-provenance (live) fails any rendered element on any Studio map route outside a root carrying the current pin's generated provenance; frames, the Foundry chrome and server pages carry none."
     },
     {
       "id": "R-SHADCN-STOCK",
