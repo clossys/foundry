@@ -63,7 +63,8 @@ function persist(docs: readonly ComponentCandidateDocument[]): ComponentFile[] {
 /** The emitted Button entrypoint's dispatch table, read from the real persisted bytes. */
 function dispatchTable(files: readonly ComponentFile[]): Record<string, Record<string, unknown>> {
   const entry = files.find(file => file.path === "components/button/index.ts")!.content;
-  const table = /const mappings: [^=]+= (\{[\s\S]*?\});\nexport const Button\b/.exec(entry);
+  // The table is the pretty-printed object closed at column 0; the dispatcher and the stamped export follow it.
+  const table = /const mappings: [^=]+= (\{\n[\s\S]*?\n\});\n/.exec(entry);
   if (!table) throw new Error("Button entrypoint has no dispatch table");
   return JSON.parse(table[1]!) as Record<string, Record<string, unknown>>;
 }

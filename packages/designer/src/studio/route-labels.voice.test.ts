@@ -10,10 +10,21 @@ const packetPath = "packages/writer/src/catalog/records/admin-voice.r1.en.json";
 const root = [process.cwd(), resolve(process.cwd(), "../..")].find(path => existsSync(resolve(path, packetPath)))!;
 const bytes = readFileSync(resolve(root, packetPath), "utf8");
 const packet = JSON.parse(bytes) as {
-  state: string; activation: string;
+  state: string; activation: string; locale: string;
   records: { id: string; text: string; status: "draft"; args?: { name: string; type: string }[] }[];
   reviews: { recordId: string; source: { path: string; key?: string } }[];
+  externalRecords: { recordId: string; source: string }[];
 };
+// Shared labels moved to the common-labels packet; its usage rows map each admin-voice
+// review's legacy record id to the canonical record the runtime refs bind.
+const commonPath = "packages/writer/src/catalog/records/common-labels.r1.en.json";
+const common = JSON.parse(readFileSync(resolve(root, commonPath), "utf8")) as {
+  usages: { recordId: string; legacyRecordId: string; source: string }[];
+};
+const canonicalId = new Map(common.usages.filter(row => row.source === "records/admin-voice.r1.en.json").map(row => [row.legacyRecordId, row.recordId]));
+// Review rows pin the source key at their reviewed commit; the themes layer rename (736153e72)
+// renamed this usage key after its review, keeping the reviewed record.
+const renamedKey: Readonly<Record<string, string>> = { "usage.layer.tokens": "usage.layer.themes" };
 const terminology = JSON.parse(readFileSync(resolve(root, "packages/writer/src/catalog/admin-terminology.json"), "utf8")) as { terms: { avoid: string[] }[] };
 const expected = Object.fromEntries(packet.reviews.flatMap(row => {
   const { path, key } = row.source;
@@ -21,15 +32,24 @@ const expected = Object.fromEntries(packet.reviews.flatMap(row => {
   if (key?.startsWith("DEFAULT_USAGE_LABELS.")) return [[`usage.${key.slice("DEFAULT_USAGE_LABELS.".length)}`, row.recordId]];
   if (path.endsWith("/DesignerRoutePage.tsx")) return [[`route.${key}`, row.recordId]];
   return [];
-}));
-const records = new Map(packet.records.map(record => [record.id, record]));
+}).map(([key, id]) => [renamedKey[key!] ?? key, canonicalId.get(id!) ?? id]));
+type VoiceRecord = (typeof packet.records)[number];
+// The packet names each record it reuses from another Writer packet in externalRecords.
+const external = packet.externalRecords.map(row => {
+  const source = JSON.parse(readFileSync(resolve(root, "packages/writer/src/catalog/records", row.source), "utf8")) as { records?: VoiceRecord[]; locales?: Record<string, { records: VoiceRecord[] }> };
+  const record = (source.records ?? source.locales?.[packet.locale]?.records ?? []).find(candidate => candidate.id === row.recordId);
+  if (!record) throw new Error(`external record ${row.recordId} is missing from ${row.source}`);
+  return record;
+});
+const records = new Map([...external, ...packet.records].map(record => [record.id, record]));
 const valuesFor = (id: string) => Object.fromEntries((records.get(id)!.args ?? []).map(arg => [arg.name, ["number", "plural", "selectordinal"].includes(arg.type) ? 2 : "Example"]));
 const fixtureAt = "2026-10-01T00:00:00.000Z";
 // Test-only owner-approved snapshots exercise Writer's actual formatter. Authored drafts remain untouched.
 const registry = {
   id: "voice-binding-fixture", locale: "en", revision: "r1",
   source: { kind: "consumer" as const, reference: "voice binding fixture" },
-  entries: Object.values(expected).map(id => {
+  // Shared common labels bind several keys to one record; a registry lists each record once.
+  entries: [...new Set(Object.values(expected))].map(id => {
     const record = records.get(id)!;
     return { id, text: record.text, context: "Voice binding fixture", placeholders: (record.args ?? []).map(arg => arg.name), status: "approved" as const,
       approval: { approvedBy: "owner" as const, approvedAt: fixtureAt, textFingerprint: computeCopyFingerprint(record.text), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } };

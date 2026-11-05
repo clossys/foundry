@@ -144,13 +144,16 @@ export function generateRailAdapters() {
   const slots = new Set(JSON.parse(read("src/catalog/slots/components.json")).map(row => row.id));
   for (const leaf of leaves) if (!slots.has(`components.${leaf}`)) throw new Error(`Unregistered leaf: ${leaf}`);
   const writer = JSON.parse(read("../writer/src/catalog/records/admin-studio.r1.en.json"));
+  // Shared strings (Close, Search, Sidebar) live once in strings.common; the Studio cell binds to that record.
+  const common = JSON.parse(read("../writer/src/catalog/records/common-labels.r1.en.json"));
+  const records = new Map([...common.records, ...writer.records].map(record => [record.id, record]));
   const copy = copyKeys.map(key => {
     const context = `designer.component.${key}`;
-    const rows = writer.records.filter(record => record.context === context);
-    if (rows.length !== 1 || rows[0].status !== "draft" || rows[0].approval) throw new Error(`Expected real Writer draft: ${context}`);
-    const binding = writer.bindings.filter(binding => binding.cellId === context && binding.recordId === rows[0].id);
+    const binding = writer.bindings.filter(binding => binding.cellId === context);
     if (binding.length !== 1) throw new Error(`Writer binding missing: ${context}`);
-    return { key, ref: { id: rows[0].id } };
+    const record = records.get(binding[0].recordId);
+    if (!record || record.status !== "draft" || record.approval) throw new Error(`Expected real Writer draft: ${context}`);
+    return { key, ref: { id: record.id } };
   });
   const files = input.files.filter(file => !["style", "license", "use-mobile", "kbd"].includes(file.item)).map(adaptFile);
   const byItem = new Map(input.files.map(file => [file.item, file]));

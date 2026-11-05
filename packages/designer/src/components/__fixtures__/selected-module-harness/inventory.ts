@@ -1,9 +1,9 @@
 /** Node-only independent artifact inspection; descriptor export claims are never inputs. */
 import { createHash } from "node:crypto";
-import { readFileSync, realpathSync, existsSync } from "node:fs";
+import { readFileSync, realpathSync, existsSync, statSync } from "node:fs";
 import { dirname, resolve, relative, sep } from "node:path";
 import { spawnSync } from "node:child_process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { isBuiltin } from "node:module";
 import { gunzipSync } from "node:zlib";
 import ts from "typescript";
@@ -79,6 +79,17 @@ export function resolveRuntime(specifier: string, from: string): string {
   const key = `${dirname(from)}\0${specifier}`;
   const cached = runtimeResolutionCache.get(key);
   if (cached && existsSync(cached)) return realpathSync(cached);
+  // A relative or absolute specifier resolves by URL against the caller with no package lookup,
+  // exactly as Node's ESM resolver does: no extension search, no directory import. Resolving it
+  // in process keeps one Node spawn per bare specifier instead of one per closure edge.
+  if (/^(?:\.{1,2}\/|\/)/.test(specifier)) {
+    const target = fileURLToPath(new URL(specifier, pathToFileURL(from)));
+    if (!existsSync(target)) throw new Error(`missing runtime target ${specifier} from ${from}: not found`);
+    if (statSync(target).isDirectory()) throw new Error(`missing runtime target ${specifier} from ${from}: directory import`);
+    const resolved = realpathSync(target);
+    runtimeResolutionCache.set(key, resolved);
+    return resolved;
+  }
   const run = spawnSync(process.execPath, ["--input-type=module", "--eval", "console.log(import.meta.resolve(process.argv[1]))", specifier], { cwd: dirname(from), encoding: "utf8", timeout: 10_000 });
   if (run.status !== 0) throw new Error(`missing runtime target ${specifier} from ${from}: ${run.stderr}`);
   const url = new URL(run.stdout.trim());
