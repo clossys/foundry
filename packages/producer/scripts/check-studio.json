@@ -51,6 +51,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:cli-verbs",
+      "cwd": "packages/producer",
+      "run": "npm run check:cli-verbs",
+      "kind": "static"
+    },
+    {
       "id": "producer test:assemble-only",
       "cwd": "packages/producer",
       "run": "npm run test:assemble-only",

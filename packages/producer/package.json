@@ -64,6 +64,7 @@
     "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:slot-pins": "node scripts/check-slot-pins.mjs",
+    "check:cli-verbs": "node scripts/check-cli-verbs.mjs",
     "check:studio-template": "node scripts/check-studio-template.mjs",
     "check:studio": "node scripts/check-studio.mjs",
     "check:generated-derived": "node scripts/check-generated-derived.mjs",

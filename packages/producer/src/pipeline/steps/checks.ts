@@ -28,6 +28,7 @@ export const CHECKS = [
   defineCheck({ id: "slot-options", files: ["scripts/check-slot-options.mjs"], npm: ["check:slot-options"], rootNpm: ["check:slot-options"] }),
   defineCheck({ id: "slot-state", files: ["scripts/check-slot-state.mjs"], npm: ["check:slot-state"] }),
   defineCheck({ id: "slot-pins", files: ["scripts/check-slot-pins.mjs"], npm: ["check:slot-pins"] }),
+  defineCheck({ id: "cli-verbs", files: ["scripts/check-cli-verbs.mjs"], npm: ["check:cli-verbs"] }),
   defineCheck({ id: "pin-propagation", rootNpm: ["check:pin-propagation"] }),
   defineCheck({ id: "every-candidate-previewable", rootNpm: ["check:every-candidate-previewable"] }),
   defineCheck({ id: "studio", files: ["scripts/check-studio.mjs"], npm: ["check:studio"], rootNpm: ["check"] }),

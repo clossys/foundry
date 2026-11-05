@@ -348,8 +348,24 @@
         "quote": "clossys verbs = brief, check, compile only",
         "date": "2026-10-29"
       },
-      "status": "unenforced",
-      "note": "No check runs the CLI verbs against the real consumer store, where they exit 2 (W3)."
+      "status": "enforced",
+      "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check runs (0 or 1) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
+      "checks": [
+        "packages/producer#check:cli-verbs"
+      ],
+      "related": [
+        ".#check:compile-pure",
+        "packages/producer#check:slot-pins"
+      ],
+      "fixture": "scripts/rules/fixtures/R-CLI-DETERMINISTIC",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:cli-verbs",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-cli-verbs.mjs --root {fixture}",
+          "expect": "^\\s+clossys design --check \\[exit\\] exited 2"
+        }
+      ]
     },
     {
       "id": "R-CHECKS-WIRED",
