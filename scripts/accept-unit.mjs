@@ -3,7 +3,7 @@
  * Unit acceptance by check: a unit is accepted when its check fails on the base and passes on the head.
  *
  *   node scripts/accept-unit.mjs [--keep] <base> <head> <check-script>
- *   node scripts/accept-unit.mjs --clean-stale
+ *   node scripts/accept-unit.mjs --clean-stale [--adopt-legacy]
  *
  * <check-script> is an npm script name found in exactly one package.json of the head tree, or
  * `<package dir>#<script>` (the root is "."). Each revision is extracted with `git archive` into a
@@ -35,9 +35,11 @@
  *
  * Prints one line: PASS or FAIL and both exit codes; on FAIL the last lines of each log follow. The
  * work folder (both trees, their node_modules clones and built dist/, the logs) is removed when the
- * run ends, pass, fail or error, unless --keep is given; the line says which. `--clean-stale` removes
- * the folders that killed runs left behind (`cleanStale`): only marked accept-unit folders older than
- * two hours whose process is gone and that nothing holds open. Exits 0 on PASS, 1 on FAIL, 2 on a
+ * run ends, pass, fail or error, unless --keep is given; the line says which. Every run starts with
+ * that marker-mode clean. `--clean-stale` removes the folders that killed runs left behind
+ * (`cleanStale`): only marked accept-unit folders older than two hours whose process is gone and that
+ * nothing holds open; `--adopt-legacy` also removes unmarked accept-unit folders from before the
+ * marker, only by exact name, layout, age and an lsof that shows no holder (`legacyKind`). Exits 0 on PASS, 1 on FAIL, 2 on a
  * usage or setup error.
  */
 import { spawnSync } from "node:child_process";
@@ -167,43 +169,161 @@ function heldUnder(root) {
 }
 
 /**
+ * Folders this repository's tools and their tests made before work folders carried a marker
+ * ("legacy"). Each is named by `mkdtemp` (six letters or digits after the prefix) and has the layout
+ * the code that made it gives it:
+ *   - run: a work folder of acceptUnit or ratchet (`<tool>-XXXXXX`): `base/` and `head/`, each an
+ *     extracted tree (a package.json; a `.git/` only as `extract` makes it, borrowing objects through
+ *     `objects/info/alternates`), beside the run's own logs and nothing else;
+ *   - fixture: a test repository (`<tool>-test-XXXXXX`, history(), workspace(), repository()): a git
+ *     repository whose package.json is named "fixture", with only the files those fixtures write;
+ *   - remote: the hook test's bare remote (`pre-push-ratchet-remote-XXXXXX`): a bare git repository;
+ *   - cache: a test's dist cache (`<tool>-cache-XXXXXX`): only `<tree sha>-<lock hash>` folders;
+ *   - registry: the loosening test's tree (`accept-unit-registry-XXXXXX`): only scripts/rules/registry.json.
+ */
+const SUFFIX = "[A-Za-z0-9]{6}";
+const RUN_ENTRIES = {
+  "accept-unit": ["base", "head", "base-build.log", "head-build.log", "base.log", "head.log"],
+  "pre-push-ratchet": ["base", "head", "base-build.log", "head-build.log"],
+};
+export const LEGACY = {
+  "accept-unit": [["run", new RegExp(`^accept-unit-${SUFFIX}$`)], ["fixture", new RegExp(`^accept-unit-test-${SUFFIX}$`)], ["cache", new RegExp(`^accept-unit-cache-${SUFFIX}$`)], ["registry", new RegExp(`^accept-unit-registry-${SUFFIX}$`)]],
+  "pre-push-ratchet": [["run", new RegExp(`^pre-push-ratchet-${SUFFIX}$`)], ["fixture", new RegExp(`^pre-push-ratchet-test-${SUFFIX}$`)], ["remote", new RegExp(`^pre-push-ratchet-remote-${SUFFIX}$`)], ["cache", new RegExp(`^pre-push-ratchet-cache-${SUFFIX}$`)]],
+};
+
+const kindOf = (at, want) => { try { const st = lstatSync(at); return want === "dir" ? st.isDirectory() : st.isFile(); } catch { return false; } };
+const only = (dir, allowed) => { try { return readdirSync(dir).every(name => allowed.includes(name)); } catch { return false; } };
+
+function extractedTree(tree) {
+  if (!kindOf(tree, "dir") || !kindOf(join(tree, "package.json"), "file")) return false;
+  if (!existsSync(join(tree, ".git"))) return true;
+  return kindOf(join(tree, ".git"), "dir") && kindOf(join(tree, ".git", "objects", "info", "alternates"), "file");
+}
+
+const SHAPES = {
+  run: (dir, tool) => only(dir, RUN_ENTRIES[tool]) && extractedTree(join(dir, "base")) && extractedTree(join(dir, "head"))
+    && RUN_ENTRIES[tool].filter(name => name.endsWith(".log")).every(name => !existsSync(join(dir, name)) || kindOf(join(dir, name), "file")),
+  fixture: dir => {
+    if (!only(dir, [".git", ".gitignore", "node_modules", "package.json", "packages", "scripts"])) return false;
+    if (!kindOf(join(dir, ".git"), "dir") || !kindOf(join(dir, ".git", "HEAD"), "file") || existsSync(join(dir, ".git", "objects", "info", "alternates"))) return false;
+    try { return JSON.parse(readFileSync(join(dir, "package.json"), "utf8")).name === "fixture"; } catch { return false; }
+  },
+  remote: dir => {
+    if (!only(dir, ["HEAD", "config", "description", "hooks", "info", "objects", "refs", "packed-refs"])) return false;
+    if (!kindOf(join(dir, "HEAD"), "file") || !kindOf(join(dir, "objects"), "dir") || !kindOf(join(dir, "refs"), "dir")) return false;
+    try { return /^\s*bare\s*=\s*true\s*$/m.test(readFileSync(join(dir, "config"), "utf8")); } catch { return false; }
+  },
+  cache: dir => { try { return readdirSync(dir).every(name => /^[0-9a-f]{40}-[0-9a-f]{12}$/.test(name) && kindOf(join(dir, name), "dir")); } catch { return false; } },
+  registry: dir => only(dir, ["scripts"]) && only(join(dir, "scripts"), ["rules"]) && only(join(dir, "scripts", "rules"), ["registry.json"]) && kindOf(join(dir, "scripts", "rules", "registry.json"), "file"),
+};
+
+/** The legacy kind of `dir` for `tools`, or undefined: its name fully matches a pattern and its layout is that kind's. */
+export function legacyKind(dir, tools = WORK_TOOLS) {
+  const name = basename(dir);
+  for (const tool of tools) {
+    for (const [kind, pattern] of LEGACY[tool] ?? []) {
+      if (pattern.test(name)) return { tool, kind, shape: kindOf(dir, "dir") && SHAPES[kind](dir, tool) };
+    }
+  }
+  return undefined;
+}
+
+/** The newest mtime of a folder and its direct entries: a folder still being written is young. */
+function newestMtime(dir) {
+  let newest = lstatSync(dir).mtimeMs;
+  for (const name of readdirSync(dir)) { try { newest = Math.max(newest, lstatSync(join(dir, name)).mtimeMs); } catch {} }
+  return newest;
+}
+
+/** `lsof +D dir`: "held" when a process has a file or cwd under it, "free" when none, "failed" otherwise. */
+export function lsofDir(dir, { lsof = "lsof" } = {}) {
+  const out = run(lsof, ["-w", "-n", "-P", "+D", dir]);
+  if (out.error) return "failed";
+  // macOS lsof exits 1 with +D even when it lists a holder: any listed process is a holder.
+  if (out.stdout.trim()) return "held";
+  if (out.status === 1 && !out.stdout.trim() && !out.stderr.trim()) return "free";
+  return "failed";
+}
+
+/** Remove a legacy folder after rechecking it is a direct child of `root`, a real folder, and legacy-shaped. */
+export function removeLegacy(dir, { root = tmpdir(), tools = WORK_TOOLS } = {}) {
+  const kind = legacyKind(dir, tools);
+  if (!kind?.shape) throw new Error(`refusing to remove ${dir}: not a legacy folder of ${tools.join(", ")}`);
+  if (!kindOf(dir, "dir") || realpathSync(dirname(dir)) !== realpathSync(root)) throw new Error(`refusing to remove ${dir}: not a folder directly under ${root}`);
+  rmSync(dir, { recursive: true, force: true, maxRetries: 3 });
+}
+
+/**
  * Remove the work folders a killed run left behind: only folders directly under `root` whose name
  * starts with one of `tools` followed by "-" and that carry that tool's marker, started more than
  * `maxAgeMs` ago, made on this host by a process that is gone, and that no live process holds open.
- * Every other folder is left alone, the unmarked ones included. Returns what was removed and kept,
- * the bytes those folders held and the free space on the volume before and after.
+ * With `adoptLegacy`, an unmarked folder is removed too, but only when its name fully matches one of
+ * that tool's LEGACY patterns, its layout is that pattern's (`legacyKind`), its newest mtime is older
+ * than `maxAgeMs`, no process holds it in the system-wide open-file list and `lsof +D` on it reports
+ * no holder; an lsof that fails removes nothing. Every other folder is left alone. Returns what was
+ * removed and kept (with why), the bytes those folders held and the volume's free space before and after.
  */
-export function cleanStale({ root = tmpdir(), tools = WORK_TOOLS, maxAgeMs = STALE_AFTER_MS, now = Date.now(), held } = {}) {
+export function cleanStale({ root = tmpdir(), tools = WORK_TOOLS, maxAgeMs = STALE_AFTER_MS, now = Date.now(), held, adoptLegacy = false, lsof = "lsof" } = {}) {
   const free = () => { const fs = statfsSync(root); return fs.bavail * fs.bsize; };
   const freeBefore = free();
   const holders = held ?? heldUnder(root);
   const removed = [], kept = [];
   let bytes = 0;
   for (const name of readdirSync(root).sort()) {
-    if (!tools.some(tool => name.startsWith(`${tool}-`))) continue;
+    if (name === "foundry-dist-cache" || !tools.some(tool => name.startsWith(`${tool}-`))) continue;
     const work = join(root, name);
     try { if (!lstatSync(work).isDirectory()) continue; } catch { continue; }
     const marker = workMarker(work, tools);
-    const why = !marker ? "unmarked"
-      : now - Date.parse(marker.started) < maxAgeMs ? "young"
-      : marker.host !== hostname() ? "other-host"
-      : active.has(work) || alive(marker.pid) ? "live-process"
-      : holders.has(name) ? "held-open"
-      : undefined;
+    let why, legacy;
+    if (marker) {
+      why = now - Date.parse(marker.started) < maxAgeMs ? "young"
+        : marker.host !== hostname() ? "other-host"
+        : active.has(work) || alive(marker.pid) ? "live-process"
+        : holders.has(name) ? "held-open"
+        : undefined;
+    } else if (!adoptLegacy) {
+      why = "unmarked";
+    } else {
+      legacy = legacyKind(work, tools);
+      why = !legacy ? "legacy-name"
+        : !legacy.shape ? "legacy-shape"
+        : now - newestMtime(work) < maxAgeMs ? "legacy-young"
+        : holders.has(name) ? "held-open"
+        : undefined;
+      if (!why) {
+        const state = lsofDir(work, { lsof });
+        why = state === "held" ? "held-open" : state === "failed" ? "lsof-failed" : undefined;
+      }
+    }
     if (why) { kept.push({ name, why }); continue; }
     const size = diskUsage(work);
-    removeWork(work);
+    if (marker) removeWork(work); else removeLegacy(work, { root, tools });
     bytes += size;
-    removed.push({ name, bytes: size });
+    removed.push({ name, bytes: size, kind: legacy ? `legacy-${legacy.kind}` : "marked" });
   }
-  return { root, removed, kept, bytes, freeBefore, freeAfter: free() };
+  return { root, removed, kept, bytes, freeBefore, freeAfter: free(), adoptLegacy };
 }
 
 /** One line for a cleanStale result. */
 export function staleReport(result) {
-  const unmarked = result.kept.filter(entry => entry.why === "unmarked").length;
   const gib = n => `${(n / 2 ** 30).toFixed(2)} GiB`;
-  return `clean-stale ${result.root}: removed ${result.removed.length} folder(s), ${gib(result.bytes)} allocated; kept ${result.kept.length} (${unmarked} unmarked, never touched); free ${gib(result.freeBefore)} -> ${gib(result.freeAfter)}`;
+  const count = (list, key) => Object.entries(list.reduce((all, entry) => ({ ...all, [entry[key]]: (all[entry[key]] ?? 0) + 1 }), {})).sort().map(([k, n]) => `${n} ${k}`).join(", ");
+  const unmarked = result.kept.filter(entry => entry.why === "unmarked").length;
+  const keptWhy = result.adoptLegacy ? count(result.kept, "why") || "none" : `${unmarked} unmarked, never touched`;
+  const removedKinds = result.removed.length ? ` [${count(result.removed, "kind")}]` : "";
+  return `clean-stale${result.adoptLegacy ? " --adopt-legacy" : ""} ${result.root}: removed ${result.removed.length} folder(s)${removedKinds}, ${gib(result.bytes)} allocated; kept ${result.kept.length} (${keptWhy}); free ${gib(result.freeBefore)} -> ${gib(result.freeAfter)}`;
+}
+
+/** The marker-mode clean every run starts with; it never blocks the run, it warns instead. */
+export function startupClean(tool) {
+  try {
+    const result = cleanStale({ tools: [tool] });
+    if (result.removed.length) console.error(staleReport(result));
+    return result;
+  } catch (error) {
+    console.error(`${tool}: could not clean stale work folders (${error.message}); continuing`);
+    return undefined;
+  }
 }
 
 /**
@@ -765,11 +885,11 @@ export function removeWorkOnSignal({ keep = false } = {}) {
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
-  const usage = "usage: node scripts/accept-unit.mjs [--keep] <base> <head> <check-script | dir#script>\n       node scripts/accept-unit.mjs --clean-stale";
+  const usage = "usage: node scripts/accept-unit.mjs [--keep] <base> <head> <check-script | dir#script>\n       node scripts/accept-unit.mjs --clean-stale [--adopt-legacy]";
   const args = process.argv.slice(2);
-  if (args.length === 1 && args[0] === "--clean-stale") {
+  if (args[0] === "--clean-stale" && (args.length === 1 || (args.length === 2 && args[1] === "--adopt-legacy"))) {
     try {
-      console.log(staleReport(cleanStale({ tools: ["accept-unit"] })));
+      console.log(staleReport(cleanStale({ tools: ["accept-unit"], adoptLegacy: args[1] === "--adopt-legacy" })));
       process.exit(0);
     } catch (error) {
       console.error(`accept-unit --clean-stale: ${error.message}`);
@@ -783,6 +903,7 @@ if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
     process.exit(2);
   }
   removeWorkOnSignal({ keep });
+  startupClean("accept-unit");
   try {
     const [base, head, check] = positional;
     const result = await acceptUnit({ base, head, check, keep });

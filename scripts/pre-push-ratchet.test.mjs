@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test, { after } from "node:test";
@@ -342,8 +342,35 @@ test("the CLI removes its trees unless --keep, and --clean-stale removes only it
   writeFileSync(join(temp, "accept-unit-other", ".foundry-check-tree.json"), JSON.stringify({ kind: "foundry-check-tree", tool: "accept-unit", pid: gone, host: hostname(), started: new Date(Date.now() - 3 * 3600_000).toISOString() }));
   const clean = cli("--clean-stale");
   assert.equal(clean.status, 0, clean.stdout + clean.stderr);
-  assert.match(clean.stdout, /^clean-stale .*: removed 1 folder\(s\), .*; kept 1 \(1 unmarked, never touched\); free /);
+  assert.match(clean.stdout, /^clean-stale .*: removed 1 folder\(s\) \[1 marked\], .*; kept 1 \(1 unmarked, never touched\); free /);
   // check:rules' own temp folders (one per fixture run) went into the work folder's tmp/ and with it.
   assert.deepEqual(readdirSync(temp).sort(), ["accept-unit-other", "foundry-dist-cache", "pre-push-ratchet-unmarked"].filter(name => existsSync(join(temp, name))));
   assert.equal(cli("--clean-stale", "--keep").status, 2, "--clean-stale takes no other argument");
+});
+
+test("every hook run starts with the marker-mode clean; --adopt-legacy goes only with --clean-stale", () => {
+  const { root, base } = repository();
+  const head = commit(root, { "packages/producer/README.md": "unrelated\n" }, "unrelated");
+  const temp = scratch("pre-push-ratchet-startup-");
+  const cli = (args, input) => spawnSync(process.execPath, [join(here, "pre-push-ratchet.mjs"), ...args], { cwd: root, encoding: "utf8", input, env: { ...process.env, TMPDIR: temp } });
+  const gone = spawnSync(process.execPath, ["-e", ""]).pid;
+  const stale = () => {
+    mkdirSync(join(temp, "pre-push-ratchet-Old123"));
+    writeFileSync(join(temp, "pre-push-ratchet-Old123", ".foundry-check-tree.json"), JSON.stringify({ kind: "foundry-check-tree", tool: "pre-push-ratchet", pid: gone, host: hostname(), started: new Date(Date.now() - 3 * 3600_000).toISOString() }));
+  };
+  // An unmarked folder with a legacy name and layout: the startup clean never adopts it.
+  write(join(temp, "pre-push-ratchet-Leg123"), { "base/package.json": "{}\n", "head/package.json": "{}\n" });
+  const old = new Date(Date.now() - 3 * 3600_000);
+  for (const at of ["base", "head", ""]) utimesSync(join(temp, "pre-push-ratchet-Leg123", at), old, old);
+  stale();
+  const pushed = cli(["--pushed", "--base", base, "--id", "fixture probe"], `refs/heads/x ${head} refs/heads/x ${"0".repeat(40)}\n`);
+  assert.equal(pushed.status, 0, pushed.stdout + pushed.stderr);
+  assert.match(pushed.stderr, /^clean-stale .*: removed 1 folder\(s\) \[1 marked\]/m);
+  assert.deepEqual(readdirSync(temp).filter(name => name.startsWith("pre-push-ratchet-")), ["pre-push-ratchet-Leg123"]);
+  stale();
+  const nothing = cli(["--pushed"], "");
+  assert.equal(nothing.status, 0, nothing.stdout + nothing.stderr);
+  assert.deepEqual(readdirSync(temp).filter(name => name.startsWith("pre-push-ratchet-")), ["pre-push-ratchet-Leg123"], "even a push with nothing to measure cleans first");
+  assert.equal(cli(["--adopt-legacy"]).status, 2);
+  assert.equal(cli(["--clean-stale", "--adopt-legacy", "--keep"]).status, 2);
 });

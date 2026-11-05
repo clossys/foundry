@@ -2,10 +2,11 @@ import assert from "node:assert/strict";
 import { execFileSync, spawn, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
 import { hostname, tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import test, { after } from "node:test";
 
-import { STALE_AFTER_MS, WORK_MARKER, acceptUnit, cleanStale, diskUsage, distCommand, loosening, pruneCache, removeWork } from "./accept-unit.mjs";
+import { STALE_AFTER_MS, WORK_MARKER, acceptUnit, cleanStale, diskUsage, distCommand, legacyKind, loosening, pruneCache, removeLegacy, removeWork } from "./accept-unit.mjs";
 
 /** Every fixture folder a test makes is removed when the file's tests end. */
 const made = [];
@@ -310,4 +311,116 @@ test("the dist cache is held to a byte cap as well as a count, least recently us
   const tiny = pruneCache(cache, { keep: 8, maxBytes: 1, current: "a-current" });
   assert.deepEqual(tiny.removed, []);
   assert.equal(existsSync(join(cache, "a-current")), true, "the entry in use stays even when it alone is over the cap");
+});
+
+/** Legacy layouts, as the code that made them lays them out. */
+const legacyRun = (dir, extra = {}) => write(dir, {
+  "base/package.json": "{}\n", "base/.git/HEAD": "0\n", "base/.git/objects/info/alternates": "/repo/.git/objects\n",
+  "head/package.json": "{}\n", "head/.git/HEAD": "0\n", "head/.git/objects/info/alternates": "/repo/.git/objects\n",
+  "base.log": "$ npm run x\n", ...extra,
+});
+const legacyFixture = (dir, name = "fixture") => write(dir, { ".git/HEAD": "ref: refs/heads/main\n", "package.json": { name, private: true }, "packages/producer/package.json": {} });
+/** Age a folder and its direct entries past the stale age. */
+const age = dir => {
+  const at = new Date(Date.now() - STALE_AFTER_MS - 10 * 60_000);
+  for (const name of readdirSync(dir)) utimesSync(join(dir, name), at, at);
+  utimesSync(dir, at, at);
+};
+
+test("--adopt-legacy removes an unmarked folder only by exact name, the layout its code makes, age, and an lsof with no holder", async () => {
+  const root = scratch("accept-unit-legacy-");
+  const outside = scratch("accept-unit-outside-");
+  const make = (name, lay) => { const dir = join(root, name); mkdirSync(dir); lay(dir); age(dir); return dir; };
+  make("accept-unit-AbC123", dir => legacyRun(dir));
+  make("accept-unit-test-Xy12Z9", dir => legacyFixture(dir));
+  make("accept-unit-cache-Qw12Er", dir => mkdirSync(join(dir, `${"a".repeat(40)}-${"b".repeat(12)}`, "packages__lib"), { recursive: true }));
+  make("accept-unit-registry-Zx98Cv", dir => write(dir, { "scripts/rules/registry.json": { rules: [] } }));
+  make("pre-push-ratchet-remote-Rm12Rm", dir => { execFileSync("git", ["init", "-q", "--bare", dir]); });
+  make("pre-push-ratchet-Pr12Pr", dir => legacyRun(dir, { "base.log": null, "base-build.log": "# built\n" }));
+  // Near-miss names, each with a valid run layout.
+  for (const name of ["accept-unit-AbC1234", "accept-unit-Ab12", "accept-unit-tests-Ab12Cd", "accept-unit-Ab-12C", "accept-unitAbC123"]) make(name, dir => legacyRun(dir));
+  // The right name, the wrong contents.
+  make("accept-unit-Ext123", dir => legacyRun(dir, { "notes.txt": "mine\n" }));
+  make("accept-unit-Rep123", dir => legacyRun(dir, { "base/.git/objects/info/alternates": null }));
+  make("accept-unit-One123", dir => legacyRun(dir, { "head/package.json": null }));
+  make("accept-unit-test-Real123", dir => legacyFixture(dir));
+  make("accept-unit-test-Rl1234", dir => legacyFixture(dir, "my-project"));
+  make("accept-unit-cache-Bd12Bd", dir => write(dir, { "notes.txt": "x\n" }));
+  make("accept-unit-registry-Bd12Bd", dir => write(dir, { "scripts/rules/registry.json": {}, "scripts/other.mjs": "" }));
+  make("pre-push-ratchet-remote-Bd12Bd", dir => { execFileSync("git", ["init", "-q", dir]); });
+  // A recent one, and one a live process holds.
+  mkdirSync(join(root, "accept-unit-New123"));
+  legacyRun(join(root, "accept-unit-New123"));
+  // Old folder, but an entry was written just now: still young.
+  make("accept-unit-Wrt123", dir => legacyRun(dir));
+  utimesSync(join(root, "accept-unit-Wrt123", "head"), new Date(), new Date());
+  make("pre-push-ratchet-remote-Nb12Nb", dir => { execFileSync("git", ["init", "-q", "--bare", dir]); writeFileSync(join(dir, "config"), "[core]\n\tbare = false\n"); });
+  const held = make("accept-unit-Hld123", dir => legacyRun(dir));
+  // A symlink with a legacy name points outside the root; it is never followed.
+  legacyRun(outside);
+  symlinkSync(outside, join(root, "accept-unit-Lnk123"));
+  const holder = spawn("sleep", ["30"], { cwd: join(held, "head"), stdio: "ignore" });
+  try {
+    await new Promise(accept => setTimeout(accept, 200));
+    const unadopted = cleanStale({ root });
+    assert.deepEqual(unadopted.removed, [], "without --adopt-legacy an unmarked folder is never touched");
+    // The lsof +D guard alone: hide the system-wide list, so only lsof +D can see the holder.
+    const failing = cleanStale({ root, adoptLegacy: true, held: new Set(), lsof: join(root, "no-such-lsof") });
+    assert.deepEqual(failing.removed, [], "an lsof that fails removes nothing");
+    assert.ok(failing.kept.filter(entry => entry.why === "lsof-failed").length >= 6);
+    const result = cleanStale({ root, adoptLegacy: true, held: new Set() });
+    assert.deepEqual(result.removed.map(entry => `${entry.name} ${entry.kind}`).sort(), [
+      "accept-unit-AbC123 legacy-run",
+      "accept-unit-cache-Qw12Er legacy-cache",
+      "accept-unit-registry-Zx98Cv legacy-registry",
+      "accept-unit-test-Xy12Z9 legacy-fixture",
+      "pre-push-ratchet-Pr12Pr legacy-run",
+      "pre-push-ratchet-remote-Rm12Rm legacy-remote",
+    ]);
+    assert.ok(result.bytes > 0);
+    assert.deepEqual(Object.fromEntries(result.kept.map(entry => [entry.name, entry.why])), {
+      "accept-unit-Ab-12C": "legacy-name",
+      "accept-unit-Ab12": "legacy-name",
+      "accept-unit-AbC1234": "legacy-name",
+      "accept-unit-Ext123": "legacy-shape",
+      "accept-unit-Hld123": "held-open",
+      "accept-unit-New123": "legacy-young",
+      "accept-unit-Wrt123": "legacy-young",
+      "accept-unit-One123": "legacy-shape",
+      "accept-unit-Rep123": "legacy-shape",
+      "accept-unit-cache-Bd12Bd": "legacy-shape",
+      "accept-unit-registry-Bd12Bd": "legacy-shape",
+      "accept-unit-test-Real123": "legacy-name",
+      "accept-unit-test-Rl1234": "legacy-shape",
+      "accept-unit-tests-Ab12Cd": "legacy-name",
+      "pre-push-ratchet-remote-Bd12Bd": "legacy-shape",
+      "pre-push-ratchet-remote-Nb12Nb": "legacy-shape",
+    });
+    assert.equal(existsSync(join(outside, "base", "package.json")), true, "a symlinked folder is skipped and its target untouched");
+    assert.equal(existsSync(join(root, "accept-unitAbC123")), true, "a name without the tool's prefix is not even considered");
+    // The system-wide open-file list alone: lsof +D is made to fail, so only the list can name the holder.
+    const listOnly = cleanStale({ root, adoptLegacy: true, held: new Set(["accept-unit-Hld123"]), lsof: join(root, "no-such-lsof") });
+    assert.equal(listOnly.kept.find(entry => entry.name === "accept-unit-Hld123").why, "held-open");
+    const withList = cleanStale({ root, adoptLegacy: true });
+    assert.equal(withList.kept.find(entry => entry.name === "accept-unit-Hld123").why, "held-open", "the system-wide list sees the holder too");
+    assert.throws(() => removeLegacy(join(root, "accept-unit-Ext123"), { root }), /not a legacy folder/);
+    assert.throws(() => removeLegacy(join(root, "accept-unit-Hld123"), { root: outside }), /not a folder directly under/);
+    assert.equal(legacyKind(join(root, "accept-unit-Ext123")).shape, false);
+  } finally { holder.kill(); }
+});
+
+test("every accept-unit run starts with the marker-mode clean, which never adopts an unmarked folder", () => {
+  const { root: repo, broken, fixed } = history();
+  const temp = scratch("accept-unit-startup-");
+  const gone = spawnSync(process.execPath, ["-e", ""]).pid;
+  mkdirSync(join(temp, "accept-unit-Old123"));
+  writeFileSync(join(temp, "accept-unit-Old123", WORK_MARKER), JSON.stringify({ kind: "foundry-check-tree", tool: "accept-unit", pid: gone, host: hostname(), started: new Date(Date.now() - 3 * 3600_000).toISOString() }));
+  mkdirSync(join(temp, "accept-unit-Leg123"));
+  legacyRun(join(temp, "accept-unit-Leg123"));
+  age(join(temp, "accept-unit-Leg123"));
+  const cli = resolve(dirname(fileURLToPath(import.meta.url)), "accept-unit.mjs");
+  const out = spawnSync(process.execPath, [cli, broken, fixed, "check:fixed"], { cwd: repo, encoding: "utf8", env: { ...process.env, TMPDIR: temp } });
+  assert.equal(out.status, 0, out.stdout + out.stderr);
+  assert.match(out.stderr, /^clean-stale .*: removed 1 folder\(s\) \[1 marked\]/m);
+  assert.deepEqual(readdirSync(temp).filter(name => name.startsWith("accept-unit-")), ["accept-unit-Leg123"], "the stale marked folder went, the legacy one stayed, the run's own folder went");
 });

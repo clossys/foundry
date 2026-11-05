@@ -44,11 +44,13 @@
  * (exit 2) and blocks too: the ratchet fails closed. The delta is printed either way.
  *
  * Usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json] [--keep]
- *        node scripts/pre-push-ratchet.mjs --clean-stale
+ *        node scripts/pre-push-ratchet.mjs --clean-stale [--adopt-legacy]
  * The work folder (both trees, their node_modules clones and built dist/) is removed when the run
  * ends, pass, block or error, unless --keep is given. `--clean-stale` removes the folders killed runs
  * left behind: only marked pre-push-ratchet folders older than two hours whose process is gone and
- * that nothing holds open (accept-unit's cleanStale); every other folder is left alone.
+ * that nothing holds open (accept-unit's cleanStale); every other folder is left alone. Every run
+ * starts with that marker-mode clean. `--adopt-legacy` also removes unmarked pre-push-ratchet folders
+ * from before the marker, only by exact name, layout, age and an lsof that shows no holder.
  * Without --id the hook sub-checks in HOOK_CHECKS run. --pushed is the pre-push hook's mode: it reads
  * git's `<local ref> <local sha> <remote ref> <remote sha>` lines from stdin and ratchets every pushed
  * local sha as a head (a delete, an all-zero local sha, pushes nothing and is skipped), so pushing a
@@ -58,7 +60,7 @@ import { spawn } from "node:child_process";
 import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { FINDING_EXIT, buildFailure, cleanStale, commit, extract, gitTop, loadError, makeWork, prepareTrees, removeWork, removeWorkOnSignal, staleReport, treeEnv } from "./accept-unit.mjs";
+import { FINDING_EXIT, buildFailure, cleanStale, commit, extract, gitTop, loadError, makeWork, prepareTrees, removeWork, removeWorkOnSignal, staleReport, startupClean, treeEnv } from "./accept-unit.mjs";
 
 export const STUDIO_MANIFEST = "packages/producer/scripts/check-studio.json";
 /** The fast, server-free check:studio sub-checks that enforce a registered rule on the real tree. */
@@ -284,12 +286,14 @@ if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
     else if (arg === "--pushed") options.pushed = true;
     else if (arg === "--keep") options.keep = true;
     else if (arg === "--clean-stale") options.cleanStale = true;
-    else { console.error(`usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json] [--keep]\n       node scripts/pre-push-ratchet.mjs --clean-stale\nunknown argument: ${arg}`); process.exit(2); }
+    else if (arg === "--adopt-legacy") options.adoptLegacy = true;
+    else { console.error(`usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json] [--keep]\n       node scripts/pre-push-ratchet.mjs --clean-stale [--adopt-legacy]\nunknown argument: ${arg}`); process.exit(2); }
   }
+  if (options.adoptLegacy && !options.cleanStale) { console.error("pre-push ratchet: --adopt-legacy goes with --clean-stale"); process.exit(2); }
   if (options.cleanStale) {
-    if (args.length !== 1) { console.error("pre-push ratchet: --clean-stale takes no other argument"); process.exit(2); }
+    if (args.length !== (options.adoptLegacy ? 2 : 1)) { console.error("pre-push ratchet: --clean-stale takes no other argument but --adopt-legacy"); process.exit(2); }
     try {
-      console.log(staleReport(cleanStale({ tools: ["pre-push-ratchet"] })));
+      console.log(staleReport(cleanStale({ tools: ["pre-push-ratchet"], adoptLegacy: options.adoptLegacy })));
       process.exit(0);
     } catch (error) {
       console.error(`pre-push ratchet --clean-stale: ${error.message}`);
@@ -297,6 +301,7 @@ if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
     }
   }
   removeWorkOnSignal({ keep: options.keep });
+  startupClean("pre-push-ratchet");
   if (!options.ids.length) options.ids = [...HOOK_CHECKS];
   if (options.pushed && options.head) { console.error("pre-push ratchet: --pushed reads the heads from stdin; do not also pass --head"); process.exit(2); }
   try {
