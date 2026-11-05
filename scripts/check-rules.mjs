@@ -28,7 +28,7 @@
  * Exit 0 when every rule is enforced and every check is mapped, 1 on any finding, 2 on a read error.
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -154,9 +154,12 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
           const runFiles = (await trace(JSON.stringify(runEntry), runEntry)).reached;
           if (![...runFiles].some(file => CODE.test(file) && checkFiles.has(file))) { add("fixture-unrelated", row.id, `the fixture run for ${ref} executes none of the files ${ref} runs`); held = false; }
         }
+        // One temp folder per fixture run, removed after it: the run's --out never outlives the check.
         const out = mkdtempSync(join(tmpdir(), "check-rules-"));
         const started = Date.now();
-        const result = await runFixture(fill(run.run, fixture, out), join(root, run.cwd), timeoutMs);
+        let result;
+        try { result = await runFixture(fill(run.run, fixture, out), join(root, run.cwd), timeoutMs); }
+        finally { rmSync(out, { recursive: true, force: true }); }
         const expectExit = run.expect_exit ?? 1;
         log(`${result.code === expectExit && new RegExp(run.expect, "m").test(result.output) ? "FAILS AS REQUIRED" : "DOES NOT FAIL"}  ${row.id}  ${ref}  (exit ${result.code}, ${Math.round((Date.now() - started) / 100) / 10}s)`);
         if (result.code !== expectExit) { add("fixture-passed", row.id, `${ref} exited ${result.code} on its fixture, expected ${expectExit}`); held = false; }

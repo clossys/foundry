@@ -63,10 +63,22 @@
       "kind": "static"
     },
     {
+      "id": "producer check:no-hidden-fallbacks",
+      "cwd": "packages/producer",
+      "run": "npm run check:no-hidden-fallbacks",
+      "kind": "static"
+    },
+    {
       "id": "producer check:generated-derived",
       "cwd": "packages/producer",
       "run": "npm run check:generated-derived",
       "kind": "static"
+    },
+    {
+      "id": "producer test:studio-capture",
+      "cwd": "packages/producer",
+      "run": "npm run test:studio-capture",
+      "kind": "test"
     },
     {
       "id": "producer test:assemble-only",
@@ -343,6 +355,18 @@
       "cwd": "packages/designer",
       "run": "npm run check:slot-contracts",
       "kind": "static"
+    },
+    {
+      "id": "designer check:copy-port-ids",
+      "cwd": "packages/designer",
+      "run": "npm run check:copy-port-ids",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:copy-port-ids",
+      "cwd": "packages/designer",
+      "run": "npm run test:copy-port-ids",
+      "kind": "test"
     },
     {
       "id": "designer test:section-tokens",

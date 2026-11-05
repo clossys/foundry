@@ -2103,7 +2103,9 @@
         "studio-template",
         "assemble-only",
         "routes-published",
+        "route-parity",
         "copy-source",
+        "no-hidden-fallbacks",
         "studio"
       ],
       "holder": {

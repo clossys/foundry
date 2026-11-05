@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
@@ -91,4 +91,18 @@ test("a meta-check no rule lists is unmapped unless exempt with a reason; stale 
   assert.deepEqual(kinds(await ruleFindings(repository(held))), []);
   assert.deepEqual(kinds(await ruleFindings(repository(held, [{ check: ".#check:rules", reason: "" }, { check: ".#check:gone", reason: "a reason that names nothing governed" }]))),
     ["exemption-reason .#check:rules", "exemption-stale .#check:gone"]);
+});
+
+test("each fixture run's temp folder is removed after the run: check-rules-* folders do not grow", async () => {
+  const root = repository([
+    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs"), run(".#check:a", "check-a.mjs")] },
+    { id: "R-PASSES", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+  ]);
+  const folders = () => readdirSync(tmpdir()).filter(name => name.startsWith("check-rules-")).length;
+  try {
+    const before = folders();
+    const result = await ruleFindings(root);
+    assert.deepEqual(kinds(result), ["fixture-passed R-PASSES"]);
+    assert.equal(folders(), before, "a fixture run left its check-rules-* temp folder behind");
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

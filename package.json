@@ -19,7 +19,7 @@
     "//shell": "npm runs these with /bin/sh, which is dash on most Linux CI images and has no arrays and no shopt. They must be POSIX. An unmatched glob expands to the literal pattern, so `[ -d ]` on the first word is the portable way to ask whether packages/ has anything in it.",
     "//build-order": "npm --workspaces builds in filesystem-discovery order, not dependency order, and a hand-kept build-these-first list drifts the moment a new first-party edge appears (designer importing @clossys/director built before it on a fresh clone). scripts/build-workspaces.mjs derives a topological order from every workspace manifest's dependency fields and builds each workspace once, dependencies first; `node scripts/build-workspaces.mjs --print` shows the order.",
     "build": "node scripts/build-workspaces.mjs",
-    "check:pipeline": "node packages/producer/scripts/check-pipeline.mjs",
+    "check:pipeline": "node --test packages/producer/scripts/check-pipeline.test.mjs && node packages/producer/scripts/check-pipeline.mjs",
     "check:pipeline-canvas": "node scripts/check-pipeline-canvas.mjs",
     "check:pipeline-step-labels": "node --test scripts/check-pipeline-step-labels.test.mjs && node scripts/check-pipeline-step-labels.mjs",
     "test": "set -- packages/*/; [ -d \"$1\" ] || exit 0; npm run test --workspaces --if-present",

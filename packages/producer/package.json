@@ -66,6 +66,7 @@
     "check:slot-pins": "node scripts/check-slot-pins.mjs",
     "check:cli-verbs": "node scripts/check-cli-verbs.mjs",
     "check:one-brand": "node scripts/check-one-brand.mjs",
+    "check:no-hidden-fallbacks": "node --test scripts/check-no-hidden-fallbacks.test.mjs && node scripts/check-no-hidden-fallbacks.mjs",
     "check:studio-template": "node scripts/check-studio-template.mjs",
     "check:studio": "node scripts/check-studio.mjs",
     "check:generated-derived": "node scripts/check-generated-derived.mjs",

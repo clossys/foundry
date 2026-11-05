@@ -182,7 +182,9 @@
         "check:studio#producer scripts/studio-contract-copy.test.mjs",
         "check:studio#producer scripts/studio-options-copy.test.mjs",
         "check:studio#producer scripts/studio-references-copy.test.mjs",
-        "check:studio#designer generate-copy-ports --check"
+        "check:studio#designer generate-copy-ports --check",
+        "check:studio#designer check:copy-port-ids",
+        "check:studio#designer test:copy-port-ids"
       ],
       "note": "No check fails on a literal string in a Studio frame, section or renderer; the copy tests prove resolution only (W2 all copy through Writer)."
     },
@@ -352,7 +354,8 @@
         "check:studio#designer generate-default-component-preview --check",
         "check:studio#designer components-coverage --check",
         "check:studio#designer sections-frames-coverage --check",
-        "check:studio#designer scripts/sections-frames-source.test.mjs"
+        "check:studio#designer scripts/sections-frames-source.test.mjs",
+        "check:studio#producer test:studio-capture"
       ],
       "note": "No Studio slot detail, specimen or slot-groups code path, nor the server slot detail, gallery and specimen builders, renders candidate file contents as text (check:slot-state raw-candidate-text). The fixture is a server slot detail whose row text is the candidate file content.",
       "checks": [
@@ -465,14 +468,26 @@
         "quote": "no temp solutions; delete shims, never extend",
         "date": "2026-10-23"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#producer scripts/preview-studio-config.test.mjs",
         "check:studio#producer scripts/studio-draft-items.test.mjs",
         "check:studio#producer scripts/pack-five.test.mjs",
         "check:studio#producer scripts/build-studio.test.mjs"
       ],
-      "note": "No class check fails on a silent fallback (theme catch, unknown icon, newest-draft preview); only per-feature tests exist."
+      "note": "check:no-hidden-fallbacks parses shipped Producer code (src, bin, Studio app, lib, components, frames, sections) with TypeScript and fails on a catch that swallows its error: no throw, no use of the error, no report, no error record or error state handed on, and not the bare `return false` of a yes/no probe. The fixture is a theme loader that falls back to the Foundry theme in a catch. The real tree is red: 55 catch sites substitute a silent default (engine gap, each needs its failure surfaced at the catch).",
+      "checks": [
+        "packages/producer#check:no-hidden-fallbacks"
+      ],
+      "fixture": "scripts/rules/fixtures/R-NO-HIDDEN-FALLBACKS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:no-hidden-fallbacks",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-no-hidden-fallbacks.mjs --root {fixture}",
+          "expect": "^\\s+src/theme\\.ts:7 \\[silent-catch\\]"
+        }
+      ]
     },
     {
       "id": "R-SLOT-STATE",
