@@ -263,12 +263,30 @@
         "quote": "Studio previews the consumer workspace in the consumer brand; never greyscale",
         "date": "2026-10-29"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#producer check-theme-parity (live)",
         "check:studio#producer studio/checks/check-theme-parity.test.cjs"
       ],
-      "note": "No check fails when consumer brand assets point at Foundry files or a theme failure falls back to the Foundry theme."
+      "note": "check:one-brand runs the Studio theme and brand code over the consumer store from root check through check:studio: the theme compiles from the consumer's pinned themes.* (the Foundry theme or a theme error fails), the name, mark, favicon, app icon and lockup resolve from its pinned assets.*, and no asset token points at a file. The fixture drifts the themes.background pin and points assets.mark at a Foundry file.",
+      "checks": [
+        "packages/producer#check:one-brand"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ONE-BRAND",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:one-brand",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-one-brand.mjs --root {fixture}",
+          "expect": "^\\s+theme \\[error\\] Consumer theme could not be compiled: themes\\.background"
+        },
+        {
+          "check": "packages/producer#check:one-brand",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-one-brand.mjs --root {fixture}",
+          "expect": "^\\s+assets\\.mark \\[points-outside\\] positive\\.\\$value = \"packages/designer/assets/foundry-mark\\.svg\""
+        }
+      ]
     },
     {
       "id": "R-STUDIO-CARD-DETAIL",
