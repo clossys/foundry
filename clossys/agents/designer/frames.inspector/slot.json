@@ -79,7 +79,10 @@
         "themes.input",
         "themes.sidebar-border",
         "themes.primary",
-        "themes.spacing"
+        "themes.spacing",
+        "themes.foreground",
+        "themes.muted-foreground",
+        "themes.ring"
       ],
       "assets": [
         "assets.icon-layers"

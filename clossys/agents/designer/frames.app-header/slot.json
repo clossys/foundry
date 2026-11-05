@@ -89,7 +89,8 @@
       "components.status-mark",
       "components.icon",
       "components.tooltip",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.dialog"
     ]
   },
   "inputs": [],

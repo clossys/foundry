@@ -492,7 +492,9 @@
           "themes.sidebar-primary-foreground",
           "themes.sidebar-accent-foreground",
           "themes.primary",
-          "themes.radius"
+          "themes.radius",
+          "themes.border",
+          "themes.ring"
         ],
         "assets": []
       },
@@ -701,7 +703,8 @@
         "components.status-mark",
         "components.icon",
         "components.tooltip",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.dialog"
       ]
     },
     "requires": [],
@@ -893,7 +896,10 @@
           "themes.input",
           "themes.sidebar-border",
           "themes.primary",
-          "themes.spacing"
+          "themes.spacing",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring"
         ],
         "assets": [
           "assets.icon-layers"

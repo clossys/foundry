@@ -6,7 +6,7 @@ import { applyLibraryChange, libraryHash } from "../../catalog-core/api.js";
 import { componentOf } from "../../catalog-core/resolve-components.js";
 import { surfaceEntryOf } from "../../catalog-core/surface-library.js";
 import { completedCatalogLibrary } from "../../catalog-core/__fixtures__/completed-catalog-library.js";
-import { selectedPackageComponentOptions } from "../../catalog-core/__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedPackageComponentOptions, installedSourceImportExports } from "../../catalog-core/__fixtures__/surface-engine/selected-package-closure.js";
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, loadSectionRegistry } from "../../catalog-core/index.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument } from "../../catalog-core/surface-defaults.js";
 import type { SurfaceCandidateDocument, SurfacePackageEvidence, SurfaceResolutionOptions } from "../../catalog-core/surface-types.js";
@@ -67,6 +67,9 @@ export async function packageSurfaceLibrary(): Promise<PackageSurfaceLibrary> {
   for (const doc of fills) { const entry = surfaceEntryOf(doc); if (adopted.has(entry.slot)) for (const id of entry.composes ?? []) visit(id); }
   const componentOptions = selectedPackageComponentOptions();
   const withComponents = selected.length ? applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: selected.map(slot => ({ portion: "components" as const, change: { op: "adopt" as const, slot, source: candidates.get(slot)!.$extensions["com.clossys.fill"].source } })), bundles: bundles.sourceBundles }, { componentOptions, surfaceOptions: options }) : empty;
-  const library = applyLibraryChange(catalog, withComponents, { baseHash: libraryHash(withComponents), changes: decisions.map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot as `sections.${string}`, source: row.source } })) }, { componentOptions, surfaceOptions: options });
-  return { catalog, library, packages, options, componentOptions, decisions };
+  // Stock source files import their installed packages; observe those exports so emit closes over real modules.
+  const installed = await installedSourceImportExports(withComponents.components.files);
+  const emitOptions = { ...componentOptions, packageExports: { ...componentOptions.packageExports, ...installed } };
+  const library = applyLibraryChange(catalog, withComponents, { baseHash: libraryHash(withComponents), changes: decisions.map(row => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: row.slot as `sections.${string}`, source: row.source } })) }, { componentOptions: emitOptions, surfaceOptions: options });
+  return { catalog, library, packages, options, componentOptions: emitOptions, decisions };
 }

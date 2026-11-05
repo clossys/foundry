@@ -69,7 +69,9 @@
         "themes.sidebar-primary-foreground",
         "themes.sidebar-accent-foreground",
         "themes.primary",
-        "themes.radius"
+        "themes.radius",
+        "themes.border",
+        "themes.ring"
       ],
       "assets": []
     },

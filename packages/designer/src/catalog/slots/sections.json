@@ -2792,7 +2792,8 @@
         "components.spinner",
         "components.link",
         "components.tooltip",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.icon"
       ],
       "parts": [
         "sections.band",
@@ -7698,7 +7699,8 @@
         "components.checkbox",
         "components.button",
         "components.skeleton",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.icon"
       ],
       "composes": [
         "sections.empty-state"
@@ -8092,7 +8094,13 @@
       ],
       "parts": [],
       "allowedReads": {
-        "themes": [],
+        "themes": [
+          "themes.accent",
+          "themes.background",
+          "themes.font-mono",
+          "themes.primary",
+          "themes.primary-foreground"
+        ],
         "assets": []
       },
       "data": "host-injected",

@@ -6,10 +6,9 @@ import { expect, it } from "vitest";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
-import { importFoundryComponents } from "../importers/foundry-components.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 import { loadCatalog, loadComponentRegistry } from "./index.js";
-import { selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedComponentFills, selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import { contractFindings, type SurfaceDefaultDescriptor } from "./surface-defaults.js";
 import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { applyLibraryChange, libraryHash, resolve } from "./api.js";
@@ -129,7 +128,7 @@ it("source resolution refuses undeclared actual composition through the selected
 async function packageInput(underreport: boolean | "measurement" = false) {
   const slot = app();
   const doc = structuredClone(importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot.id)!);
-  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: { slots: [slot], fills: [doc], transforms: [], rules: [], materializations: [] } };
+  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: selectedComponentFills() }, surfaces: { slots: [slot], fills: [doc], transforms: [], rules: [], materializations: [] } };
   const { library, componentOptions } = selectedPackageClosure(catalog);
   const input = { catalog, library, componentOptions, surfaceOptions: { packages: await readSurfacePackageEvidence([doc]), measurements: [] } };
   const fill = doc.frames["app-shell"]!;

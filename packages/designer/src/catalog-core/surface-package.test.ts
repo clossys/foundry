@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
-import { importFoundryComponents } from "../importers/foundry-components.js";
 import { loadSectionRegistry } from "./sections-contract.js";
 import { loadCatalog } from "./index.js";
 import { loadComponentRegistry } from "./component-registry.js";
@@ -16,7 +15,7 @@ import { emitSurfaces } from "./surface-emit.js";
 import { sha256 } from "./digest.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument } from "./surface-defaults.js";
 import { surfaceEntryOf, surfaceSelection } from "./surface-library.js";
-import { selectedPackageClosure, selectedPackageComponentOptions } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedComponentFills, selectedPackageClosure, selectedPackageComponentOptions } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import type { SurfaceCandidateDocument, SurfacePackageEvidence } from "./surface-types.js";
 import { SURFACE_DEFAULTS } from "./__fixtures__/surface-engine/catalog-surface-counts.js";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "./types.js";
@@ -40,7 +39,7 @@ function setup(edit?: (doc: SurfaceDefaultCandidateDocument) => void) {
   const slots = [...loadSectionRegistry().slots, ...structuredClone(frameSlots) as unknown as FrameSlot[]];
   const fills = structuredClone([...importFoundrySections().fills, ...importFoundryFrames().fills]) as unknown as SurfaceDefaultCandidateDocument[];
   const registry = loadComponentRegistry();
-  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: registry.slots, fills: importFoundryComponents().fills }, surfaces: { slots, fills: fills as unknown as SurfaceCandidateDocument[], transforms: [], rules: [], materializations: [] } };
+  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: registry.slots, fills: selectedComponentFills() }, surfaces: { slots, fills: fills as unknown as SurfaceCandidateDocument[], transforms: [], rules: [], materializations: [] } };
   const { library: empty } = selectedPackageClosure(catalog);
   if (edit) fills.forEach(edit);
   const plan = planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] });
@@ -108,7 +107,7 @@ describe("package-pointer surface origin", () => {
   }, 20000);
 
   it("emits a satisfiable genuine package selection through the public composite engine", () => {
-    const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: {
+    const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: selectedComponentFills() }, surfaces: {
       slots: loadSectionRegistry().slots.filter(slot => slot.id === "sections.call-to-action"),
       fills: importFoundrySections().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "sections.call-to-action"),
       transforms: [], rules: [], materializations: [],

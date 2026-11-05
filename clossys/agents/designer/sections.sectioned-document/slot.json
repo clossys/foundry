@@ -41,7 +41,13 @@
     ],
     "parts": [],
     "allowedReads": {
-      "themes": [],
+      "themes": [
+        "themes.accent",
+        "themes.background",
+        "themes.font-mono",
+        "themes.primary",
+        "themes.primary-foreground"
+      ],
       "assets": []
     },
     "data": "host-injected",
