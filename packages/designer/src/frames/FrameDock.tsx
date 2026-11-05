@@ -17,7 +17,11 @@ const SemanticContent = componentLeaf<typeof import("../components/SemanticConte
 const Banner = componentLeaf<typeof import("../components/index.js").Banner>("components.banner");
 const Button = componentLeaf<typeof import("../components/index.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
-const Tabs = componentLeaf<typeof import("../components/index.js").Tabs>("components.tabs");
+type StockTabs = typeof import("../components/preview-runtime/components/tabs/tabs.js");
+const Tabs = componentLeaf<StockTabs["Tabs"]>("components.tabs");
+const TabsList = componentLeaf<StockTabs["TabsList"]>("components.tabs", "TabsList");
+const TabsTrigger = componentLeaf<StockTabs["TabsTrigger"]>("components.tabs", "TabsTrigger");
+const TabsContent = componentLeaf<StockTabs["TabsContent"]>("components.tabs", "TabsContent");
 
 export interface AppFrameDock extends FrameDockBounds {
   label: string;
@@ -79,7 +83,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
   // Mounted in every dock state so the frame gesture owner keeps one identity as the dock appears.
   const gestures = <FrameZoomGestures />;
   if (!modules.length && !strips.length && !visible.length) return <>{gestures}</>;
-  const panels = modules.map(module => <Tabs.Panel key={module.id} id={module.id} className="min-h-0 min-w-0 overflow-auto"><FrameModuleOutlet id={module.id} /></Tabs.Panel>);
+  const panels = modules.map(module => <TabsContent key={module.id} id={module.id} className="min-h-0 min-w-0 overflow-auto"><FrameModuleOutlet id={module.id} /></TabsContent>);
   const content = modules.length > 0 ? <ResizablePane orientation="horizontal" handleEdge="start" label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} handleLabel={dock?.handleLabel ?? copy(SHELL_COPY_REFS.dock.handle)}
     {...geometry} onChange={next => { setHeight(next); dock?.onChange?.(next); }} className="min-h-0 rounded-none border-0 p-0">{panels}</ResizablePane> : null;
   return <>{gestures}<SemanticContent as="section" ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-line-base bg-surface-raised">
@@ -93,18 +97,18 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
       <Drawer placement="bottom" wide="sheet" heading={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} closeLabel={copy(SHELL_COPY_REFS.dock.collapse)} isOpen={sheetOpen} onOpenChange={setSheetOpen}
         trigger={<Button variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} aria-expanded={sheetOpen}><Icon glyph={ChevronDown} decorative className={cx(FRAME_CHEVRON_MOTION, !sheetOpen && "rotate-180")} /></Button>}>
         <Tabs selectedKey={selected} onSelectionChange={key => setActive(String(key))} className="flex h-full min-h-0 flex-col gap-0">
-          <Tabs.List aria-label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} className="min-w-0 shrink-0 overflow-x-auto">
-            {modules.map(module => <Tabs.Tab key={module.id} id={module.id} className="control-h-sm">{module.label}</Tabs.Tab>)}
-          </Tabs.List>
-          {modules.map(module => <Tabs.Panel key={module.id} id={module.id} className="min-h-0 min-w-0 flex-1 overflow-auto"><FrameModuleOutlet id={module.id} /></Tabs.Panel>)}
+          <TabsList aria-label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} className="min-w-0 shrink-0 overflow-x-auto">
+            {modules.map(module => <TabsTrigger key={module.id} id={module.id} className="control-h-sm">{module.label}</TabsTrigger>)}
+          </TabsList>
+          {modules.map(module => <TabsContent key={module.id} id={module.id} className="min-h-0 min-w-0 flex-1 overflow-auto"><FrameModuleOutlet id={module.id} /></TabsContent>)}
         </Tabs>
       </Drawer>
       <SemanticContent as="div" className="ms-auto flex shrink-0 items-center gap-xs"><FrameSlotOutlet slot="dock-strip" /></SemanticContent>
     </SemanticContent> : modules.length > 0 ? <Tabs selectedKey={selected} onSelectionChange={key => { setActive(String(key)); setExpanded(true); }} className="gap-0">
       <SemanticContent as="div" ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between gap-xs px-sm">
-        {modules.length > 0 && <Tabs.List aria-label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} className="min-w-0 flex-1 overflow-x-auto border-0">
-          {modules.map(module => <Tabs.Tab key={module.id} id={module.id} onPress={() => setExpanded(true)} className="control-h-sm">{module.label}</Tabs.Tab>)}
-        </Tabs.List>}
+        {modules.length > 0 && <TabsList aria-label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} className="min-w-0 flex-1 overflow-x-auto border-0">
+          {modules.map(module => <TabsTrigger key={module.id} id={module.id} onPress={() => setExpanded(true)} className="control-h-sm">{module.label}</TabsTrigger>)}
+        </TabsList>}
         {modules.length > 0 && <Button size="sm" variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={copy(expanded ? SHELL_COPY_REFS.dock.collapse : SHELL_COPY_REFS.dock.expand)} aria-expanded={expanded} onPress={() => setExpanded(!expanded)}><Icon glyph={ChevronDown} decorative size="sm" className={cx(FRAME_CHEVRON_MOTION, !expanded && "rotate-180")} /></Button>}
         <SemanticContent as="div" className="ms-auto flex shrink-0 items-center gap-xs"><FrameSlotOutlet slot="dock-strip" /></SemanticContent>
       </SemanticContent>

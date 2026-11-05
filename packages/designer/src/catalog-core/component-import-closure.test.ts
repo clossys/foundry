@@ -12,7 +12,7 @@ import { loadComponentCompositionRules } from "./component-compositions.js";
 import { applyComponentLibraryChange, type ComponentOperation } from "./changeset-components.js";
 import { componentLibraryHash, componentOf, resolveComponents, type ComponentLibrary } from "./resolve-components.js";
 import { emitComponents } from "./emit-components.js";
-import { componentRelativeImports } from "./component-import-closure.js";
+import { componentImportClosureFindings, componentRelativeImports } from "./component-import-closure.js";
 import type { LibraryData } from "./types.js";
 
 /**
@@ -93,6 +93,17 @@ describe("component selection dependency closure", () => {
     const files = emitComponents(profile, ["component-index"], { glyphModule: glyphModule(profile.components["components.disclosure"]!.reads.assets) });
     expect(typecheck(files)).toEqual([]);
   }, 60_000);
+
+  it("counts the glyph module as emitted only when the selection emits one (DESIGNER-TESTS T4)", () => {
+    const source = (reads: readonly string[]) => ({ slot: "components.badge", source: "consumer", impl: { kind: "source", entry: "components/badge/badge.tsx", export: "Badge" },
+      reads: { assets: reads, components: [], themes: [] }, outputSha256: [{ path: "components/badge/badge.tsx", sha256: "x" }] }) as never;
+    const files = [{ path: "components/badge/badge.tsx", content: 'import { glyphs } from "../../adapters/glyphs";\nexport const Badge = () => glyphs;\n' }];
+    const run = (reads: readonly string[]) => componentImportClosureFindings({ catalog, files, fills: new Map([["components.badge", source(reads)]]) });
+    // A leaf that reads an asset makes emitComponents write adapters/glyphs.ts, so its import resolves.
+    expect(run(["assets.icon-date"])).toEqual([]);
+    // With no asset read nothing emits the module: the import still fails closed.
+    expect(run([])).toEqual([expect.objectContaining({ code: "K9", subject: "components.badge", message: "Source import ../../adapters/glyphs in components/badge/badge.tsx resolves to no selected file" })]);
+  });
 
   it("refuses a selection whose source imports an unselected leaf, naming the fills that satisfy it", async () => {
     const [doc] = catalog.fills.filter(candidate => candidate.$extensions["com.clossys.fill"].id === "shadcn@aria/components.badge");

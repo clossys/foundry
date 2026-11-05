@@ -178,7 +178,9 @@ describe("ResourceList", () => {
       onAction={rowAction} selectionMode="multiple" selectRowLabel={selectRowLabel} onSelectionChange={selection} />);
     await user.click(screen.getAllByRole("button", { name: "Options for Quarterly planning notes" })[0]!);
     const item = await screen.findByRole("menuitem", { name: "Delete note" });
-    expect(item).toHaveClass("text-status-danger-text");
+    // Stock shadcn@aria anatomy: the destructive variant is a data attribute its danger classes key on.
+    expect(item).toHaveAttribute("data-variant", "destructive");
+    expect(item.className).toContain("data-[variant=destructive]:text-(--color-status-danger)");
     await user.click(item);
     expect(action).toHaveBeenCalledExactlyOnceWith();
     expect(rowAction).not.toHaveBeenCalled();
