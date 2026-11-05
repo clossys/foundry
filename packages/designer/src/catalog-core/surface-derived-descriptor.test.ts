@@ -1,5 +1,5 @@
 // @vitest-environment node
-/** Package descriptor reads/composes/consumption are derived from the measured source, never trusted as authored. */
+/** Package descriptor reads/composes/consumption are derived from the measured source: a snapshot must exist and equal the independent measurement, which alone supplies actual use. */
 import { describe, expect, it } from "vitest";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { loadBuildCatalog, loadFoundrySurfaceHistory } from "./index.js";
@@ -19,18 +19,21 @@ describe("derived package descriptor metadata", () => {
     expect(current.composes).toEqual(expect.arrayContaining(["frames.app-header", "frames.app-sidebar", "frames.command", "frames.sheet"]));
     expect(consumptionFindings(current)).toEqual([]);
   });
-  it("a registered descriptor that predates measurement is read through the same-pin measurement, bytes unchanged [mutant: drop the derived view]", () => {
+  it("a registered descriptor that predates measurement reports the measurement unavailable, bytes unchanged; refresh is the remedy", () => {
     expect(["reads", "composes", "consumption"].filter(key => key in legacyEntry)).toEqual([]);
     const before = JSON.stringify(legacyEntry);
-    expect(consumptionFindings(legacyEntry)).toEqual([]);
+    expect(consumptionFindings(legacyEntry)).toContain("S8 surface consumption measurement unavailable");
     expect(JSON.stringify(legacyEntry)).toBe(before);
   });
   it("a descriptor that declares any derived field is checked as written, so under-reporting stays visible", () => {
-    expect(consumptionFindings({ ...current, composes: [] })).toContain("S5 underreported composes: frames.app-header, frames.app-sidebar, frames.command, frames.sheet");
+    const observed = [...new Set([...current.consumption!.scannedComposes, ...(current.consumption!.scannedReads.components ?? [])])].sort();
+    expect(observed).toEqual(expect.arrayContaining(["frames.app-header", "frames.app-sidebar", "frames.command", "frames.sheet"]));
+    expect(consumptionFindings({ ...current, composes: [] })).toContain(`S5 underreported composes: ${observed.join(", ")}`);
     const { consumption: _drop, ...partial } = current;
-    expect(consumptionFindings(partial)).toContain("S8 package consumption snapshot differs from canonical measurement");
+    expect(consumptionFindings(partial)).toContain("S8 surface consumption measurement unavailable");
+    expect(consumptionFindings({ ...current, consumption: { ...current.consumption!, scannedComposes: [] } })).toContain("S8 package consumption snapshot differs from canonical measurement");
   });
-  it("reports measurement unavailable only when the pinned package has no measurement", () => {
-    expect(consumptionFindings(legacyEntry, { ...(pin as object), version: "0.0.0-unmeasured" })).toEqual(["S8 surface consumption measurement unavailable"]);
+  it("reports measurement unavailable when the pinned package has no measurement, whatever the snapshot says", () => {
+    expect(consumptionFindings(current, { ...(pin as object), version: "0.0.0-unmeasured" })).toEqual(["S8 surface consumption measurement unavailable"]);
   });
 });
