@@ -59,6 +59,7 @@ describe("installed Designer skill contract", () => {
       "scripts/check-ref-verbatim.mjs", "scripts/check-ref-verbatim.d.ts",
       "scripts/ref-verbatim/adaptations.mjs", "scripts/ref-verbatim/data-fit.mjs",
       "scripts/ref-verbatim/diff.mjs", "scripts/ref-verbatim/normalize.mjs", "scripts/ref-verbatim/typescript.mjs",
+      "scripts/ref-verbatim/flavor.mjs", "scripts/ref-verbatim/flavor.d.ts",
       "scripts/ref-verbatim/baseline.json", "scripts/ref-verbatim/owner-needs.json",
       "references/manifest.json", "scripts/check-section-tokens.mjs",
       "src/catalog/slots/sections.json", "src/catalog/slots/frames.json",

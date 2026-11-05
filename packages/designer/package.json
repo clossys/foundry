@@ -150,6 +150,10 @@
       "types": "./dist/frames/site-frame/landing/internal/errors.d.ts",
       "import": "./dist/frames/site-frame/landing/internal/errors.js"
     },
+    "./shadcn-flavor": {
+      "types": "./scripts/ref-verbatim/flavor.d.ts",
+      "import": "./scripts/ref-verbatim/flavor.mjs"
+    },
     "./ref-verbatim": {
       "types": "./scripts/check-ref-verbatim.d.ts",
       "import": "./scripts/check-ref-verbatim.mjs"

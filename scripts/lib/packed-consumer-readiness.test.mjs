@@ -364,7 +364,7 @@ test("actual shipped ref-verbatim source imports without any optional UI peer", 
   // Exact shipped source bytes, with no dist build or packed-artifact claim.
   // Importing this entry does not invoke the verifier's lazy TypeScript API.
   const sources = ["scripts/check-ref-verbatim.mjs", ...[
-    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only",
+    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only", "flavor",
   ].map((name) => `scripts/ref-verbatim/${name}.mjs`)];
   for (const source of sources) {
     await mkdir(dirname(join(packageRoot, source)), { recursive: true });

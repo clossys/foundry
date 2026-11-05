@@ -143,3 +143,5 @@ export type RecordedDataFit = {
   readonly operation: DataFitOperation; readonly sourceHash: string;
   readonly bindings: Readonly<Record<string, unknown>>;
 };
+
+export { DESIGNER_SHADCN_FLAVOR, shadcnComponentsJson, shadcnComponentsJsonText, type ShadcnComponentsJson } from "./ref-verbatim/flavor.mjs";

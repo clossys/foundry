@@ -19,6 +19,7 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { createRequire, isBuiltin } from "node:module";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { pathToFileURL } from "node:url";
+import { shadcnComponentsJsonText } from "@clossys/designer/shadcn-flavor";
 import {
   installAndBind, isBlocking, needComponentSelection, PAGE_HOST_EXPORT, pageHostModule, relativeSpecifier, substrateDependencies,
   type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins, type InstallResult, type PageHostSelection, type ShadcnRunner,
@@ -89,7 +90,12 @@ export function npmRunner(env: NodeJS.ProcessEnv = process.env): ShadcnRunner {
  */
 export async function ensureSubstrate(dir: string): Promise<void> {
   await mkdir(dir, { recursive: true });
-  if (existsSync(join(dir, "components.json"))) return;
+  // components.json is the Designer's shadcn flavor, from its one writer; an older substrate is brought to it.
+  const flavor = shadcnComponentsJsonText({ css: "app.css" }), flavorPath = join(dir, "components.json");
+  if (existsSync(flavorPath)) {
+    if (await readFile(flavorPath, "utf8") !== flavor) await writeFile(flavorPath, flavor);
+    return;
+  }
   const write = (name: string, value: unknown) => writeFile(join(dir, name), typeof value === "string" ? value : `${JSON.stringify(value, null, 2)}\n`);
   await write("package.json", {
     name: "publishing-substrate", private: true, type: "module",
@@ -98,11 +104,6 @@ export async function ensureSubstrate(dir: string): Promise<void> {
     devDependencies: { vite: "^8.3.4", tailwindcss: "^4.3.3", "@tailwindcss/vite": "^4.3.3", "tw-animate-css": "^1.4.0" },
   });
   await write("tsconfig.json", { compilerOptions: { baseUrl: ".", paths: { "@/*": ["./*"] }, jsx: "react-jsx", module: "esnext", moduleResolution: "bundler", target: "es2022", skipLibCheck: true } });
-  await write("components.json", {
-    $schema: "https://ui.shadcn.com/schema.json", style: "new-york", rsc: false, tsx: true,
-    tailwind: { config: "", css: "app.css", baseColor: "neutral", cssVariables: true },
-    aliases: { components: "@/components", utils: "@/lib/utils", ui: "@/components/ui", lib: "@/lib", hooks: "@/hooks" },
-  });
   // The base layer shadcn init writes, in plain variables so it holds before any theme item is installed.
   await write("app.css", [
     '@import "tailwindcss";', '@import "tw-animate-css";', "", "@custom-variant dark (&:is(.dark *));", "",
@@ -137,6 +138,8 @@ export async function ensureSubstrate(dir: string): Promise<void> {
     'root.render(page ? createElement(page.default as any) : createElement("p", null, `No installed page ${id ?? ""}`));',
     "",
   ].join("\n"));
+  // Last, so a substrate interrupted mid-write is written again.
+  await writeFile(flavorPath, flavor);
 }
 
 /** The Publisher host module every installed page mounts inside (see `writeSubstrateHost`). */
