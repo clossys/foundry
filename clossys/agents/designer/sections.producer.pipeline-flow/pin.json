@@ -1,7 +1,7 @@
 {
-  "candidate": "producer-pipeline-flow-v9.json",
-  "sha256": "5304aea9ebb0d673de47724884ee4c7a42e0615bf34a1e9c83fbf564d9d1024c",
-  "decidedBy": "planner:SYSTEMS-IA",
+  "candidate": "producer-pipeline-flow-v10.json",
+  "sha256": "d4c5bfc7bfb5c569405b9ab65ce015d94e0385a4360522bebcad1d4796cb428d",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-04T09:30:59.371Z"
+  "at": "2026-11-05T06:09:14.631Z"
 }

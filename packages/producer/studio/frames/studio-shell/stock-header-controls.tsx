@@ -34,6 +34,6 @@ export function HeaderPopover({ label, open, onOpenChange, content, children, ..
       </RadixPopoverTrigger></RadixTooltipTrigger>
       <RadixTooltipContent>{label}{props["aria-keyshortcuts"] ? ` (${props["aria-keyshortcuts"].toUpperCase()})` : ""}</RadixTooltipContent>
     </RadixTooltip></RadixTooltipProvider>
-    <RadixPopoverContent align="end" aria-label={label} data-popover={props['data-popover-trigger']} className="w-80 max-w-[calc(100vw-2rem)]">{content}</RadixPopoverContent>
+    <RadixPopoverContent align="end" aria-label={label} data-popover={props['data-popover-trigger']}>{content}</RadixPopoverContent>
   </RadixPopover>
 }

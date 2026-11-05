@@ -1,33 +1,33 @@
 {
   "frames.studio-shell": {
     "data-clossys-slot": "frames.studio-shell",
-    "data-clossys-candidate": "studio-shell-v12.json",
-    "data-clossys-hash": "sha256:2d26ba356a0ff82169bb4c7c2ff35545e9d03841a6cd3bf68c444d8994521506"
+    "data-clossys-candidate": "studio-shell-v13.json",
+    "data-clossys-hash": "sha256:36bfbe19a371b7972f5c3e849fe4f7f3159555e257135d2ad843202f34e2efc3"
   },
   "sections.studio.page-header": {
     "data-clossys-slot": "sections.studio.page-header",
-    "data-clossys-candidate": "studio-page-header-v4.json",
-    "data-clossys-hash": "sha256:16170aecb8317c4bdaa476b014777afae9e42491b11a4dfef3c666958f108716"
+    "data-clossys-candidate": "studio-page-header-v5.json",
+    "data-clossys-hash": "sha256:f4aacf460c8a9c9a973c13a88b38df9e8b07ca050e7b9fe4bb6db599ed04b113"
   },
   "sections.studio.home": {
     "data-clossys-slot": "sections.studio.home",
-    "data-clossys-candidate": "studio-home-v7.json",
-    "data-clossys-hash": "sha256:38a3dd1243afcb069a4e48801cedf08751d955a6494acfe9db340b5ee770e981"
+    "data-clossys-candidate": "studio-home-v8.json",
+    "data-clossys-hash": "sha256:929527526ce2c6424c9d31efc9dfa20e0bf3a781a9273a9c0a97afa74facfa24"
   },
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
-    "data-clossys-candidate": "module-outline-v5.json",
-    "data-clossys-hash": "sha256:5d8224fdd4d04b6c6b284e2cbfbe22d0c669aa97eede7b380ec3423ba14f026d"
+    "data-clossys-candidate": "module-outline-v6.json",
+    "data-clossys-hash": "sha256:58b55a647ec63f3b4b90645ade6d662095e0c9c221f89e7f7125533315d076ad"
   },
   "sections.module.checks": {
     "data-clossys-slot": "sections.module.checks",
-    "data-clossys-candidate": "module-checks-v4.json",
-    "data-clossys-hash": "sha256:24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199"
+    "data-clossys-candidate": "module-checks-v5.json",
+    "data-clossys-hash": "sha256:809b74f3504ee23363b9532e850a29041ea92cb105117f8d053e98387ee6872a"
   },
   "sections.producer.team-strip": {
     "data-clossys-slot": "sections.producer.team-strip",
-    "data-clossys-candidate": "producer-team-strip-v1.json",
-    "data-clossys-hash": "sha256:f30b003e93a38409db438f9145df77b2475f7c635db69db2bfbfaea08cebded9"
+    "data-clossys-candidate": "producer-team-strip-v2.json",
+    "data-clossys-hash": "sha256:d1bcc39f3eea5370bea2b2b14875c00791b706c2b86382d4a07f291d32751085"
   },
   "sections.producer.pipeline-legend": {
     "data-clossys-slot": "sections.producer.pipeline-legend",
@@ -36,18 +36,18 @@
   },
   "sections.producer.pipeline-flow": {
     "data-clossys-slot": "sections.producer.pipeline-flow",
-    "data-clossys-candidate": "producer-pipeline-flow-v9.json",
-    "data-clossys-hash": "sha256:5304aea9ebb0d673de47724884ee4c7a42e0615bf34a1e9c83fbf564d9d1024c"
+    "data-clossys-candidate": "producer-pipeline-flow-v10.json",
+    "data-clossys-hash": "sha256:d4c5bfc7bfb5c569405b9ab65ce015d94e0385a4360522bebcad1d4796cb428d"
   },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",
-    "data-clossys-candidate": "studio-page-tabs-v5.json",
-    "data-clossys-hash": "sha256:3a11e9363ff01c75af9d72874a3ec4b300f9476d1c8c98aa49b33e97769d44dc"
+    "data-clossys-candidate": "studio-page-tabs-v6.json",
+    "data-clossys-hash": "sha256:053dba3a950d20ddc866afa06c490c32dee7d6b648fb837c29cb45da526e221d"
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
-    "data-clossys-candidate": "studio-slot-groups-v5.json",
-    "data-clossys-hash": "sha256:07b02d274e4dec7ecad409965666eed12bfd75eed4987ca5d532839b2f13d9f1"
+    "data-clossys-candidate": "studio-slot-groups-v6.json",
+    "data-clossys-hash": "sha256:e5743f7d3b86a1352e53681b090f7c14c2e1626566615c7e547163734442c90a"
   },
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",
@@ -56,37 +56,37 @@
   },
   "sections.studio.leaf-header": {
     "data-clossys-slot": "sections.studio.leaf-header",
-    "data-clossys-candidate": "studio-leaf-header-v6.json",
-    "data-clossys-hash": "sha256:3865f280bc35af5961d9bb560f38e185cb04f0d1e4e55e3f4fa5ca71f58cc0c9"
+    "data-clossys-candidate": "studio-leaf-header-v7.json",
+    "data-clossys-hash": "sha256:c3099262a9a50dba860a3e110248f3f0c58e9942e7426b1dbbc43e81413ed0d6"
   },
   "sections.studio.specimen": {
     "data-clossys-slot": "sections.studio.specimen",
-    "data-clossys-candidate": "studio-specimen-v9.json",
-    "data-clossys-hash": "sha256:217df6cf662c65331275b995a9b2e19c78a62af133f2f1f1209ce29cde35002a"
+    "data-clossys-candidate": "studio-specimen-v10.json",
+    "data-clossys-hash": "sha256:f9435c22a9cf44a4eee33f717c57e2911279131a2af219b9c75b069bb6e5b31d"
   },
   "sections.studio.options": {
     "data-clossys-slot": "sections.studio.options",
-    "data-clossys-candidate": "studio-options-v5.json",
-    "data-clossys-hash": "sha256:becceac17139b32556c6e9efcaa6ba69920ef54090cdd77707e8d85cc662cf10"
+    "data-clossys-candidate": "studio-options-v6.json",
+    "data-clossys-hash": "sha256:8595e608bdeda2d73f7dc96e8c3abcfdfd402b2429039bb0ffae79c53b15ee6a"
   },
   "sections.studio.checks": {
     "data-clossys-slot": "sections.studio.checks",
-    "data-clossys-candidate": "studio-checks-v5.json",
-    "data-clossys-hash": "sha256:7e92ce7441e9245dfdd3916ff248bdd18d2eda2e6bbd93b718cf459dbfc95b3b"
+    "data-clossys-candidate": "studio-checks-v6.json",
+    "data-clossys-hash": "sha256:692ed6bff4456257de03048b5e63ca03b0f85355bff400ce16a1be0386db4cd6"
   },
   "sections.studio.contract": {
     "data-clossys-slot": "sections.studio.contract",
-    "data-clossys-candidate": "studio-contract-v5.json",
-    "data-clossys-hash": "sha256:fc3c78ec26ae6aa9645a22a08c8c54cdfae371ffff394923572de1e1b75abe18"
+    "data-clossys-candidate": "studio-contract-v6.json",
+    "data-clossys-hash": "sha256:fd6365d9bd3549bba1d01705cc838d6c07cee3ee0b94dd36253f7e965c663bde"
   },
   "sections.studio.history": {
     "data-clossys-slot": "sections.studio.history",
-    "data-clossys-candidate": "studio-history-v5.json",
-    "data-clossys-hash": "sha256:cd1fe2f005074cad80baa0fa694f47ec3786069a0ad39a70b970df7c01ef4782"
+    "data-clossys-candidate": "studio-history-v6.json",
+    "data-clossys-hash": "sha256:36ad3a47d865f769d24417a9ee6658cc2abd45a20f5ec67468033e7392667852"
   },
   "sections.studio.references": {
     "data-clossys-slot": "sections.studio.references",
-    "data-clossys-candidate": "studio-references-v5.json",
-    "data-clossys-hash": "sha256:df033035bc0f288b298fb0eea9928fc621ef762c4b259a835775e53c6741a3ee"
+    "data-clossys-candidate": "studio-references-v6.json",
+    "data-clossys-hash": "sha256:09b9178c559d983a8c57c59f8975cd1b63456f8c1745f313705a4cc68d8b177f"
   }
 }

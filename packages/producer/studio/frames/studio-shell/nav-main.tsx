@@ -52,7 +52,7 @@ export function NavMain({
               <SidebarMenuButton slot="trigger" tooltip={item.title}>
                 {item.icon}
                 <span>{item.title}</span>
-                <ChevronRightIcon className="ml-auto transition-transform duration-200 group-data-expanded/collapsible:rotate-90" />
+                <ChevronRightIcon />
               </SidebarMenuButton>
               <CollapsibleContent>
                 <SidebarMenuSub>

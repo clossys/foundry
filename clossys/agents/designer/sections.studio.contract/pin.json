@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-contract-v5.json",
-  "sha256": "fc3c78ec26ae6aa9645a22a08c8c54cdfae371ffff394923572de1e1b75abe18",
-  "decidedBy": "planner:CONVERGE-R2",
+  "candidate": "studio-contract-v6.json",
+  "sha256": "fd6365d9bd3549bba1d01705cc838d6c07cee3ee0b94dd36253f7e965c663bde",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-04T00:50:33.695Z"
+  "at": "2026-11-05T06:09:17.908Z"
 }

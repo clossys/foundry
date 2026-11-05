@@ -18,7 +18,7 @@ export interface ChatCopy {
 /** sidebar-15 right-side slots, bound to Studio's existing unconnected chat state. */
 export function ChatContent({ copy }: { copy: ChatCopy }) {
   return <>
-    <SidebarHeader className="h-14 justify-center border-b border-sidebar-border">
+    <SidebarHeader>
       <SidebarGroupLabel><SparklesIcon />{copy.title}</SidebarGroupLabel>
     </SidebarHeader>
     <SidebarContent>
@@ -34,8 +34,7 @@ export function ChatContent({ copy }: { copy: ChatCopy }) {
 }
 
 export function StockChatSidebar({ copy }: { copy: ChatCopy }) {
-  return <Sidebar collapsible="none" className="sticky top-0 hidden h-svh border-l md:flex"
-    style={{ "--sidebar-width": "100%" } as CSSProperties} aria-label={copy.title} data-panel="chat">
+  return <Sidebar collapsible="none" aria-label={copy.title} data-panel="chat">
     <ChatContent copy={copy} />
   </Sidebar>
 }

@@ -29,10 +29,10 @@ function Preview({ name, row, copy }: { name: string; row: OptionRow & { copy: O
     </TableHeader>
     <TableBody>
       {row.preview.rows.map(line => <TableRow key={line.key} id={line.key}>
-        <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{line.key}</TableCell>
-        <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
+        <TableCell>{line.key}</TableCell>
+        <TableCell>
           {line.text}
-          {line.change !== 'same' && <Badge variant={CHANGE_TONE[line.change]} className="ml-2">{copy.changeLabels[line.change]}</Badge>}
+          {line.change !== 'same' && <Badge variant={CHANGE_TONE[line.change]}>{copy.changeLabels[line.change]}</Badge>}
         </TableCell>
       </TableRow>)}
     </TableBody>
@@ -46,7 +46,7 @@ export default function OptionsSection({ options, ...provenance }: { options: Op
       <CardTitle role="heading" aria-level={2}>{options.copy.title}</CardTitle>
       <CardDescription>{options.description}</CardDescription>
     </CardHeader>
-    <CardContent className="min-w-0">
+    <CardContent>
       <CardGrid density="specimens">
         {options.rows.map(row => <SpecimenFigure key={row.version} caption={<>
           <Badge variant={row.pinned ? 'secondary' : 'outline'}>{row.label}</Badge>

@@ -30,7 +30,7 @@ export default function ContractSection({ contract, ...provenance }: { contract:
       <CardTitle role="heading" aria-level={2}>{contract.copy.title}</CardTitle>
       <CardDescription>{contract.copy.description}</CardDescription>
     </CardHeader>
-    <CardContent className="flex flex-col gap-4">
+    <CardContent>
       {contract.facts.length > 0 && <Table aria-label={contract.copy.factsLabel}>
         <TableHeader>
           <TableHead isRowHeader>{contract.copy.fact}</TableHead>
@@ -39,7 +39,7 @@ export default function ContractSection({ contract, ...provenance }: { contract:
         <TableBody>
           {contract.facts.map(fact => <TableRow key={fact.label} id={fact.label}>
             <TableCell>{fact.label}</TableCell>
-            <TableCell className="whitespace-normal">{fact.value}</TableCell>
+            <TableCell>{fact.value}</TableCell>
           </TableRow>)}
         </TableBody>
       </Table>}
@@ -57,7 +57,7 @@ export default function ContractSection({ contract, ...provenance }: { contract:
           </TableRow>)}
         </TableBody>
       </Table>}
-      {contract.lists.map(list => <CardDescription key={list.label} className="flex flex-wrap items-center gap-1">
+      {contract.lists.map(list => <CardDescription key={list.label}>
         {list.label}
         {list.items.length ? list.items.map(item => <Badge key={item} variant="outline">{item}</Badge>) : <Badge variant="ghost">{contract.copy.none}</Badge>}
       </CardDescription>)}

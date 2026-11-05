@@ -45442,32 +45442,32 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 12
+      "version": 13
     },
     {
       "slot": "sections.studio.page-header",
       "element": "studio-page-header",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
-      "version": 7
+      "version": 8
     },
     {
       "slot": "sections.module.outline",
       "element": "module-outline",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.module.checks",
       "element": "module-checks",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.producer.team-strip",
       "element": "producer-team-strip",
-      "version": 1
+      "version": 2
     },
     {
       "slot": "sections.producer.pipeline-legend",
@@ -45477,17 +45477,17 @@
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 9
+      "version": 10
     },
     {
       "slot": "sections.studio.page-tabs",
       "element": "studio-page-tabs",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.producer.system-empty",
@@ -45497,37 +45497,37 @@
     {
       "slot": "sections.studio.leaf-header",
       "element": "studio-leaf-header",
-      "version": 6
+      "version": 7
     },
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 9
+      "version": 10
     },
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.checks",
       "element": "studio-checks",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.contract",
       "element": "studio-contract",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.history",
       "element": "studio-history",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.studio.references",
       "element": "studio-references",
-      "version": 5
+      "version": 6
     }
   ],
   "pageActions": {

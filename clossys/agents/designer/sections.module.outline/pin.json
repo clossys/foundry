@@ -1,7 +1,7 @@
 {
-  "candidate": "module-outline-v5.json",
-  "sha256": "5d8224fdd4d04b6c6b284e2cbfbe22d0c669aa97eede7b380ec3423ba14f026d",
-  "decidedBy": "planner:CONVERGE-R2",
+  "candidate": "module-outline-v6.json",
+  "sha256": "58b55a647ec63f3b4b90645ade6d662095e0c9c221f89e7f7125533315d076ad",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-04T00:50:32.982Z"
+  "at": "2026-11-05T06:09:13.492Z"
 }

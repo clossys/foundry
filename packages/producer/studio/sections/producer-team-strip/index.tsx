@@ -38,7 +38,7 @@ export default function TeamStripSection({ team, ...provenance }: { team: TeamSt
       <CardTitle role="heading" aria-level={2}>{team.label}</CardTitle>
     </CardHeader>
     <CardContent>
-      <ItemGroup className="grid sm:grid-cols-2 xl:grid-cols-3">
+      <ItemGroup>
         {team.cards.map(card => <Item key={card.id} href={card.href} variant={card.active ? 'muted' : 'outline'} size="sm" data-seat={card.id} aria-label={card.showLabel} {...(card.active ? { 'aria-current': 'true' as const } : {})}>
           <ItemMedia>
             <Avatar><AvatarFallback>{card.initials}</AvatarFallback></Avatar>

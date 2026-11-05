@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-history-v5.json",
-  "sha256": "cd1fe2f005074cad80baa0fa694f47ec3786069a0ad39a70b970df7c01ef4782",
-  "decidedBy": "planner:CONVERGE-R2",
+  "candidate": "studio-history-v6.json",
+  "sha256": "36ad3a47d865f769d24417a9ee6658cc2abd45a20f5ec67468033e7392667852",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-04T00:50:34.050Z"
+  "at": "2026-11-05T06:09:19.029Z"
 }

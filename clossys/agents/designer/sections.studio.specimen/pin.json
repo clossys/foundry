@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-specimen-v9.json",
-  "sha256": "217df6cf662c65331275b995a9b2e19c78a62af133f2f1f1209ce29cde35002a",
-  "decidedBy": "owner:2026-11-03 GEN-DERIVED go",
-  "basis": "bulk",
-  "at": "2026-11-03T18:00:00Z"
+  "candidate": "studio-specimen-v10.json",
+  "sha256": "f9435c22a9cf44a4eee33f717c57e2911279131a2af219b9c75b069bb6e5b31d",
+  "decidedBy": "planner:DS-COMPLETE",
+  "basis": "planner",
+  "at": "2026-11-05T06:09:26.983Z"
 }

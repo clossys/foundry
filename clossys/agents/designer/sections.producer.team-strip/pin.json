@@ -1,7 +1,7 @@
 {
-  "candidate": "producer-team-strip-v1.json",
-  "sha256": "f30b003e93a38409db438f9145df77b2475f7c635db69db2bfbfaea08cebded9",
-  "decidedBy": "planner:SYSTEMS-IA",
+  "candidate": "producer-team-strip-v2.json",
+  "sha256": "d1bcc39f3eea5370bea2b2b14875c00791b706c2b86382d4a07f291d32751085",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-04T07:58:28.405Z"
+  "at": "2026-11-05T06:09:15.726Z"
 }

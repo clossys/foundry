@@ -52,10 +52,10 @@ function Viewports({ name, specimens, empty, loading, unavailable }: { name: str
   const card = rows.length === 1 && rows[0]!.interactive === false && !rows[0]!.dark ? rows[0]! : undefined;
   if (card) return <BlockViewerCardIframe iframeKey={`${name}:${card.viewport}:card`} viewport={card.viewport} title={card.title} src={card.light}
     loadingLabel={loading ?? name} failedLabel={unavailable} wrap={frame => <CardContent data-specimen-viewport={card.viewport}>{frame}</CardContent>} />;
-  return <CardContent className="flex flex-col gap-4">
-    {rows.map(row => <CardContent key={row.viewport} className="flex flex-col gap-2 px-0" data-specimen-viewport={row.viewport}>
-      {rows.length > 1 && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{row.heading}</CardDescription>}
-      <CardGrid density={row.dark ? 'specimens' : undefined} className={row.dark ? undefined : 'grid-cols-1'}>
+  return <CardContent>
+    {rows.map(row => <CardContent key={row.viewport} data-specimen-viewport={row.viewport}>
+      {rows.length > 1 && <CardDescription role="heading" aria-level={3}>{row.heading}</CardDescription>}
+      <CardGrid density={row.dark ? 'specimens' : undefined}>
         <BlockViewerIframe iframeKey={`${name}:${row.viewport}:light`} viewport={row.viewport} interactive={row.interactive ?? true} title={row.title} src={row.light} />
         {row.dark && <BlockViewerIframe iframeKey={`${name}:${row.viewport}:dark`} viewport={row.viewport} interactive={row.interactive ?? true} title={row.darkTitle ?? row.title} src={row.dark} />}
       </CardGrid>
@@ -64,17 +64,17 @@ function Viewports({ name, specimens, empty, loading, unavailable }: { name: str
 }
 
 function RecordTable({ name, table, titled }: { name: string; table: SpecimenTable; titled: boolean }) {
-  return <CardContent className="flex min-w-0 flex-col gap-2">
-    {titled && <CardDescription role="heading" aria-level={3} className="font-medium text-foreground">{table.label}</CardDescription>}
+  return <CardContent>
+    {titled && <CardDescription role="heading" aria-level={3}>{table.label}</CardDescription>}
     <Table aria-label={`${name} ${table.label}`}>
       <TableHeader>
         {table.columns.map((column, index) => <TableHead key={column} isRowHeader={index === 0}>{column}</TableHead>)}
       </TableHeader>
       <TableBody>
         {table.rows.map(row => <TableRow key={row.key} id={row.key}>
-          {row.cells.map((cell, index) => <TableCell key={index} className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
-            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm" className="h-auto min-w-0 max-w-full px-0 text-left whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{cell.text}</LinkButton> : cell.text}
-            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'} className="ml-2">{cell.statusLabel}</Badge>}
+          {row.cells.map((cell, index) => <TableCell key={index}>
+            {cell.href ? <LinkButton href={cell.href} variant="link" size="sm">{cell.text}</LinkButton> : cell.text}
+            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'}>{cell.statusLabel}</Badge>}
           </TableCell>)}
         </TableRow>)}
       </TableBody>
@@ -85,11 +85,11 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
 /** The specimen body without its card: what the leaf produces. A gallery card places it under its own header. */
 export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
   if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} loading={specimen.loading} unavailable={specimen.unavailable} />;
-  if (specimen.lead?.length) return <CardContent className="flex min-w-0 flex-col gap-2" data-specimen-lead>
-    {specimen.lead.map((text, index) => <CardDescription key={index} className="line-clamp-3" style={{ overflowWrap: 'anywhere' }}>{text}</CardDescription>)}
+  if (specimen.lead?.length) return <CardContent data-specimen-lead>
+    {specimen.lead.map((text, index) => <CardDescription key={index}>{text}</CardDescription>)}
   </CardContent>;
   if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;
-  if (specimen.rows?.length) return <CardContent className="min-w-0">
+  if (specimen.rows?.length) return <CardContent>
     <Table aria-label={specimen.rowsCopy.label}>
       <TableHeader>
         <TableHead isRowHeader>{specimen.rowsCopy.key}</TableHead>
@@ -97,15 +97,15 @@ export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
       </TableHeader>
       <TableBody>
         {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>
-          <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{row.label}</TableCell>
-          <TableCell className="whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>
-            {row.href ? <LinkButton href={row.href} variant="link" size="sm" className="h-auto min-w-0 max-w-full px-0 text-left whitespace-pre-wrap" style={{ overflowWrap: 'anywhere' }}>{row.text}</LinkButton> : row.text}
+          <TableCell>{row.label}</TableCell>
+          <TableCell>
+            {row.href ? <LinkButton href={row.href} variant="link" size="sm">{row.text}</LinkButton> : row.text}
           </TableCell>
         </TableRow>)}
       </TableBody>
     </Table>
   </CardContent>;
-  if (specimen.status) return <CardContent className="flex flex-col items-start gap-2">
+  if (specimen.status) return <CardContent>
     <Badge variant={specimen.status.tone} data-preview-status="status">{specimen.status.label}</Badge>
     <CardDescription>{specimen.status.description}</CardDescription>
   </CardContent>;

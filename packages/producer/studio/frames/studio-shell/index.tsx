@@ -98,7 +98,7 @@ function CopyBody({ spec, prompt, copy }: { spec: PopoverSpec; prompt: string; c
   useEffect(() => () => clearTimeout(timer.current), []);
   const text = prompt.replaceAll('{url}', href);
   return <>
-    <PopoverDescription data-popover-text={spec.id} className="max-h-48 overflow-y-auto rounded-md bg-muted px-2 py-1.5 font-mono text-xs break-all whitespace-pre-wrap">{text}</PopoverDescription>
+    <PopoverDescription data-popover-text={spec.id}>{text}</PopoverDescription>
     <Button size="sm" data-popover-copy={spec.id} onPress={() => { void copyText(text).then(ok => { if (!ok) return; setCopied(true); clearTimeout(timer.current); timer.current = setTimeout(() => setCopied(false), 1600); }); }}>
       {copied ? copy.copied : copy.copyPrompt}
     </Button>
@@ -213,12 +213,14 @@ export interface StudioShellProps {
  * states persist: the sidebars in cookies, the popover in the URL (`?p=`). Both sidebars
  * share one native sheet below the native `md` mobile boundary.
  */
-export default function StudioShellFrame(props: StudioShellProps) {
+export default function StudioShellFrame({ ...given }: StudioShellProps & { [marker: `data-clossys-${string}`]: string }) {
+  const provenance = Object.fromEntries(Object.entries(given).filter(([key]) => key.startsWith('data-clossys-'))) as { [marker: `data-clossys-${string}`]: string };
+  const props = Object.fromEntries(Object.entries(given).filter(([key]) => !key.startsWith('data-clossys-'))) as unknown as StudioShellProps;
   const [leftOpen, setLeftOpen] = useState(true);
   useEffect(() => { setLeftOpen(readCookie(LEFT_COOKIE) ?? true); }, []);
-  return <StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} copy={props.copy.sidebar} />}>
+  return <div {...provenance}><StudioAppFrame open={leftOpen} onOpenChange={setLeftOpen} navigation={<StudioNavigation navigation={props.navigation} copy={props.copy.sidebar} />}>
     <StudioShellContent {...props} />
-  </StudioAppFrame>;
+  </StudioAppFrame></div>;
 }
 
 function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers = [], body = 'plain', head, children }: StudioShellProps) {
@@ -292,10 +294,10 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
               if (isMobile && mobilePanel === 'chat') setOpenMobile(false);
             }} /></HeaderTooltip>
           </HeaderEdgeToggle>
-          <Breadcrumb className="mr-auto">
+          <Breadcrumb>
             <BreadcrumbList>
               {breadcrumbs.map((crumb, index) => index < breadcrumbs.length - 1
-                ? <BreadcrumbItem key={crumb.id} id={crumb.id} className="hidden md:inline-flex">
+                ? <BreadcrumbItem key={crumb.id} id={crumb.id}>
                   {crumb.href ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage>{crumb.label}</BreadcrumbPage>}
                 </BreadcrumbItem>
                 : <BreadcrumbItem key={crumb.id} id={crumb.id}>
@@ -311,7 +313,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
                   <PopoverTitle>{spec.label}</PopoverTitle>
                   {spec.description && <PopoverDescription>{spec.description}</PopoverDescription>}
                 </PopoverHeader>
-                {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} copy={copy} /> : <ScrollArea data-popover-body={spec.id} className="max-h-[60svh]">{spec.render?.(context)}</ScrollArea>}
+                {spec.copy?.kind === 'prompt' ? <CopyBody spec={spec} prompt={spec.copy.prompt} copy={copy} /> : <ScrollArea data-popover-body={spec.id}>{spec.render?.(context)}</ScrollArea>}
               </>}><Icon /></HeaderPopover>;
           })}
           <HeaderIconButton label={copy.toggleTheme} aria-pressed={resolved === 'dark'} data-theme-toggle
@@ -327,7 +329,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
     </StudioPageFrame>
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} copy={copy.search} />
     {isMobile && <StockSidebarSheet panel={mobilePanel} copy={copy.chat} isOpen={openMobile} onOpenChange={setOpenMobile}>
-      {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} copy={copy.sidebar} collapsible="none" style={{ '--sidebar-width': '100%' } as CSSProperties} />}
+      {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} copy={copy.sidebar} collapsible="none" />}
     </StockSidebarSheet>}
   </>;
 }

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-options-v5.json",
-  "sha256": "becceac17139b32556c6e9efcaa6ba69920ef54090cdd77707e8d85cc662cf10",
-  "decidedBy": "owner:2026-11-03 GEN-DERIVED go",
-  "basis": "bulk",
-  "at": "2026-11-03T18:00:00Z"
+  "candidate": "studio-options-v6.json",
+  "sha256": "8595e608bdeda2d73f7dc96e8c3abcfdfd402b2429039bb0ffae79c53b15ee6a",
+  "decidedBy": "planner:DS-COMPLETE",
+  "basis": "planner",
+  "at": "2026-11-05T06:09:25.382Z"
 }

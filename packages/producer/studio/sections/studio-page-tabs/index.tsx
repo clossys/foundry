@@ -17,7 +17,7 @@ export interface PageTabsInput {
 
 /** `sections.studio.page-tabs`: stock shadcn Tabs in a ScrollArea; each tab is a link to its route. */
 export default function PageTabsSection({ tabs, ...provenance }: { tabs: PageTabsInput } & { [marker: `data-clossys-${string}`]: string }) {
-  return <ScrollArea {...provenance} className="w-full">
+  return <ScrollArea {...provenance}>
     <Tabs selectedKey={tabs.active}>
       <TabsList aria-label={tabs.label}>
         {tabs.tabs.map(tab => <TabsTrigger key={tab.id} id={tab.id} href={tab.href}>{tab.label}</TabsTrigger>)}

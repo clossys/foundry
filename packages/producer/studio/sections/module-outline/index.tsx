@@ -9,15 +9,14 @@ export interface OutlineInput { label: string; heading: string; items: readonly 
 /** `sections.module.outline`: the open page's own sections in page order; a click brings one into view. */
 export default function OutlineSection({ outline, ...provenance }: { outline: OutlineInput } & { [marker: `data-clossys-${string}`]: string }) {
   const selected = outline.items.find(item => item.target === outline.active);
-  return <Command {...provenance} className="rounded-none! bg-transparent p-0">
-    <CommandList aria-label={outline.label} className="max-h-none" selectionMode="single" selectedKeys={selected ? [selected.id] : []}>
+  return <Command {...provenance}>
+    <CommandList aria-label={outline.label} selectionMode="single" selectedKeys={selected ? [selected.id] : []}>
       <CommandGroup id="outline" heading={outline.heading}>
         {outline.items.map(item => <CommandItem
           key={item.id}
           id={item.id}
           textValue={item.label}
           data-outline-target={item.target}
-          className="[&>svg:last-child]:hidden"
           shouldCloseOnSelect={false}
           onAction={() => outline.onSelect(item.target)}
         >{item.label}</CommandItem>)}

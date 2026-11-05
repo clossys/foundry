@@ -17,7 +17,7 @@ export function NavUser({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <StaticSidebarRow className="aria-expanded:bg-muted">
+        <StaticSidebarRow>
           <Avatar>
             <AvatarImage src={user.avatar} alt={user.name} />
             <AvatarFallback>{user.initials}</AvatarFallback>

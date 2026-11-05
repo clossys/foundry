@@ -31,9 +31,9 @@ export default function ChecksSection({ checks, ...provenance }: { checks: Check
         </TableHeader>
         <TableBody>
           {rows.map(row => <TableRow key={row.key} id={row.key}>
-            <TableCell className="whitespace-normal">{row.label}</TableCell>
+            <TableCell>{row.label}</TableCell>
             <TableCell><Badge variant={row.ok ? 'secondary' : 'destructive'}>{row.ok ? copy.pass : copy.finding}</Badge></TableCell>
-            <TableCell className="whitespace-normal">{row.detail}</TableCell>
+            <TableCell>{row.detail}</TableCell>
           </TableRow>)}
         </TableBody>
       </Table>
