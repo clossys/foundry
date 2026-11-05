@@ -54,6 +54,15 @@ test("public reexports, direct aliases and forwarding shims retain one identity"
   write("packages/designer/src/shim.tsx", 'import { Control as Original } from "./components.js"; export function Control(props: any) { return <Original {...props} />; }\n');
   assert.equal(checkOneLeafSource(root).ok, true);
 });
+test("forwardRef(Impl) and memo(Impl) resolve to the named render function, and a copied body beside it is a duplicate", () => {
+  const { root, write } = fixture();
+  write("packages/designer/src/components.tsx", 'import { forwardRef, memo } from "react";\nfunction ControlImpl(props: any, ref: any) { return <div ref={ref} className="example">{props.children}</div>; }\nexport const Control = memo(forwardRef(ControlImpl));\n');
+  const report = checkOneLeafSource(root, ["components"]);
+  assert.equal(report.ok, true, JSON.stringify(report.violations));
+  assert.deepEqual(report.inventory[0].implementations.map(row => row.name), ["ControlImpl"]);
+  write("packages/designer/src/copied-control.tsx", 'export function Control() { return <button className="copy" />; }\n');
+  assert.deepEqual(checkOneLeafSource(root, ["components"]).violations.map(row => [row.rule, row.leaf]), [["duplicate-leaf-source", "components.example"]]);
+});
 test("mutation: a separately registered runtime body is an additional implementation", () => {
   const { root, write } = fixture();
   write("packages/designer/src/runtime/registry.tsx", 'export const sections = { "sections.example": { render: () => <section className="duplicate" /> } };\n');
