@@ -543,7 +543,7 @@
         "check:studio#producer scripts/pack-five.test.mjs",
         "check:studio#producer scripts/build-studio.test.mjs"
       ],
-      "note": "check:no-hidden-fallbacks parses shipped Producer code (src, bin, Studio app, lib, components, frames, sections) with TypeScript and fails on a catch that swallows its error: no throw, no use of the error, no report, no error record or error state handed on, and not the bare `return false` of a yes/no probe. The fixture is a theme loader that falls back to the Foundry theme in a catch. The real tree is red: 55 catch sites substitute a silent default (engine gap, each needs its failure surfaced at the catch).",
+      "note": "check:no-hidden-fallbacks parses shipped Producer code (src, bin, Studio app, lib, components, frames, sections) with TypeScript and fails on a catch that swallows its error: no throw, no use of the error, no report, no error record or error state handed on, and not the bare `return false` of a yes/no probe. The fixture is a theme loader that falls back to the Foundry theme in a catch. The real tree is red on 1 of the original 55 catch sites: studio/frames/studio-shell/index.tsx:85 (the popover target selector catch), which is the pinned Designer frame payload studio-shell v12 and changes only through a new Designer candidate and pin; the other 54 surface their failure (NO-FALLBACKS).",
       "checks": [
         "packages/producer#check:no-hidden-fallbacks"
       ],

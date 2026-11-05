@@ -8,6 +8,7 @@ import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
 import { FOLDER_KIND } from "../records/slot-model/types.js";
+import { errorMessage, isAbsent } from "../errors.js";
 import type { SeatReport } from "./seats.js";
 
 /**
@@ -77,7 +78,12 @@ function portStatus(files: Files, ports: readonly Port[]): PortStatus & { paths:
   return { files: matched.size, sha256: matched.size ? hash.digest("hex") : null, paths: [...matched.values()] };
 }
 
-const readJson = (file: string): unknown => { try { return JSON.parse(readModelText(file)); } catch { return undefined; } };
+/** A model JSON record, or undefined when the file is absent; an unreadable or malformed one surfaces. */
+const readJson = (file: string): unknown => {
+  let text: string;
+  try { text = readModelText(file); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
+  try { return JSON.parse(text); } catch (error) { throw new Error(`${file}: not JSON (${errorMessage(error)})`); }
+};
 
 /** Per agent, per slot: candidate files, pin, not-needed (slot.json notNeeded), open (neither). */
 export function slotCounts(root: string): PipelineStatus["agents"] {
@@ -119,7 +125,8 @@ function writerKeysUnapproved(root: string): number {
     for (const name of listModelDir(candidates).filter(name => name.endsWith(".md"))) {
       for (const match of readModelText(join(candidates, name)).matchAll(/^<!-- (\{.*\}) -->$/gm)) {
         let meta: { record?: { status?: unknown }; status?: unknown } | undefined;
-        try { meta = JSON.parse(match[1]!); } catch { meta = undefined; }
+        try { meta = JSON.parse(match[1]!); }
+        catch (error) { throw new Error(`${join(candidates, name)}: malformed record line ${match[0]} (${errorMessage(error)})`); }
         const status = meta?.record?.status ?? meta?.status;
         if (status !== "approved") count++;
       }

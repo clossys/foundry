@@ -7,6 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadBuildCatalog, type PlacementNode } from "@clossys/designer/catalog";
 import { resolveAgent } from "../../agents.js";
+import { isAbsent } from "../../errors.js";
 import { IA_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
 export interface FoundrySlot {
@@ -23,8 +24,23 @@ export interface FoundrySlot {
 export interface FoundryIa { readonly agent: SlotAgent; readonly ia: IaDoc; readonly slots: ReadonlyMap<string, FoundrySlot> }
 
 const readJson = (root: string, path: string): any => JSON.parse(readFileSync(join(root, path), "utf8"));
+/** A Foundry data file older agent builds may not ship: undefined when absent; a malformed one surfaces. */
+const readOptionalJson = (root: string, path: string): any => {
+  let text: string;
+  try { text = readFileSync(join(root, path), "utf8"); } catch (error) { if (isAbsent(error)) return undefined; throw error; }
+  return JSON.parse(text);
+};
 const strings = (value: unknown): string[] => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 const stripAgent = (ref: string) => ref.replace(/^[a-z]+:/, "").replace(/@\d+$/, "");
+
+/** `leaf-freeze:<signed head>`, or `build-unfrozen` when the layer ships no freeze record. */
+function leafFreezeRef(root: string, path: string): string {
+  const freeze = readOptionalJson(root, path) as { signedHead?: unknown } | undefined;
+  if (freeze === undefined) return "build-unfrozen";
+  // Unchanged from the prior reader: an unsigned record (no signedHead) yields `leaf-freeze:undefined`,
+  // which consumer ia.json files already carry as their source; renaming it is not this unit's scope.
+  return `leaf-freeze:${freeze.signedHead}`;
+}
 
 export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "narratives"] as const;
@@ -35,11 +51,9 @@ export function directorIa(): FoundryIa {
   const ia = readJson(root, "src/catalog/ia/strategy.json") as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[] };
   const cells = new Map((readJson(root, join("src", "catalog", "cells", "strategy.json")) as { id: string; question: string; mustContain: unknown }[]).map(cell => [cell.id, cell]));
   const freeze = readJson(root, "src/catalog/ia/strategy.leaf-freeze.json") as { frozenAt: string };
-  let contracts = new Map<string, { inputs: string[]; feeds: string[] }>();
-  try {
-    const raw = readJson(root, "src/slot-contracts/contracts.json") as { slots: { id: string; inputs: string[]; feeds: string[] }[] };
-    contracts = new Map(raw.slots.map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
-  } catch { /* Older director builds carry no slot contracts: inputs stay undeclared. */ }
+  // Older director builds carry no slot contracts: inputs stay undeclared.
+  const raw = readOptionalJson(root, "src/slot-contracts/contracts.json") as { slots: { id: string; inputs: string[]; feeds: string[] }[] } | undefined;
+  const contracts = new Map<string, { inputs: string[]; feeds: string[] }>((raw?.slots ?? []).map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
   const slots = new Map<string, FoundrySlot>();
   const nodes: IaNode[] = ia.nodes.map(node => ({
     id: node.id, label: node.name,
@@ -64,8 +78,7 @@ function leavesOf(node: PlacementNode): string[] {
 export function designerIa(): FoundryIa {
   const catalog = loadBuildCatalog();
   const root = resolveAgent("designer").packageRoot;
-  let ref = "build-unfrozen";
-  try { ref = `leaf-freeze:${(readJson(root, "src/catalog/ia/themes.leaf-freeze.json") as { signedHead: string }).signedHead}`; } catch { /* keep build-unfrozen */ }
+  const ref = leafFreezeRef(root, "src/catalog/ia/themes.leaf-freeze.json");
   const contracts = new Map(catalog.slots.map(slot => [slot.id, slot]));
   const nodes: IaNode[] = [];
   const order = [...catalog.placements].sort((a, b) => DESIGNER_LAYERS.indexOf(a.layer as typeof DESIGNER_LAYERS[number]) - DESIGNER_LAYERS.indexOf(b.layer as typeof DESIGNER_LAYERS[number]));
@@ -88,8 +101,7 @@ export function designerIa(): FoundryIa {
 /** Writer: the five Writer IA layers (136 leaves); a slot is one Writer leaf (D5). */
 export function writerIa(): FoundryIa {
   const root = resolveAgent("writer").packageRoot;
-  let ref = "build-unfrozen";
-  try { ref = `leaf-freeze:${(readJson(root, "src/catalog/ia/strings.leaf-freeze.json") as { signedHead: string }).signedHead}`; } catch { /* keep build-unfrozen */ }
+  const ref = leafFreezeRef(root, "src/catalog/ia/strings.leaf-freeze.json");
   type WriterNode = { id: string; label: string; children?: WriterNode[]; leaves?: string[] };
   const flat = (node: WriterNode): string[] => node.leaves ? [...node.leaves] : (node.children ?? []).flatMap(flat);
   const nodes: IaNode[] = [];

@@ -1,6 +1,7 @@
 import { readFileSync, realpathSync } from "node:fs";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { errorMessage, isAbsent } from "./errors.js";
 
 export const AGENT_PACKAGES = {
   director: ["@clossys/director"],
@@ -20,11 +21,13 @@ export interface ResolvedAgent {
 export class AgentResolutionError extends Error {
   readonly exitCode = 2;
   readonly tried: readonly string[];
+  readonly failures: readonly string[];
 
-  constructor(kind: AgentKind, tried: readonly string[]) {
-    super(`Cannot resolve ${kind} agent. Tried: ${tried.join(", ")}`);
+  constructor(kind: AgentKind, tried: readonly string[], failures: readonly string[] = []) {
+    super(`Cannot resolve ${kind} agent. Tried: ${tried.join(", ")}${failures.length ? ` (${failures.join("; ")})` : ""}`);
     this.name = "AgentResolutionError";
     this.tried = [...tried];
+    this.failures = [...failures];
   }
 }
 
@@ -38,8 +41,10 @@ function resolveInstalledPackage(packageName: string): string {
     try {
       const manifest = JSON.parse(readFileSync(join(packageRoot, "package.json"), "utf8"));
       if (manifest.name === packageName) return realpathSync(packageRoot);
-    } catch {
-      // Continue to the next Node package lookup location.
+    } catch (error) {
+      // An absent manifest sends the lookup to the next Node location; an unreadable or
+      // malformed one is a broken install and surfaces as itself.
+      if (!isAbsent(error)) throw error;
     }
   }
   throw new Error(`Package unavailable: ${packageName}`);
@@ -47,12 +52,14 @@ function resolveInstalledPackage(packageName: string): string {
 
 export function resolveAgent(kind: AgentKind, resolver: AgentResolver = resolveInstalledPackage): ResolvedAgent {
   const tried = AGENT_PACKAGES[kind];
+  const failures: string[] = [];
   for (const packageName of tried) {
     try {
       return { kind, packageName, packageRoot: resolver(packageName) };
-    } catch {
-      // The first available candidate wins; no agent code is imported here.
+    } catch (error) {
+      // The first available candidate wins; every refusal is kept for the resolution error.
+      failures.push(`${packageName}: ${errorMessage(error)}`);
     }
   }
-  throw new AgentResolutionError(kind, tried);
+  throw new AgentResolutionError(kind, tried, failures);
 }

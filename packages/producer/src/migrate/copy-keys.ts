@@ -18,6 +18,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, relative, sep } from "node:path";
+import { errorMessage } from "../errors.js";
 import { sha256Hex } from "../records/hash.js";
 import { listSlots, readCandidate, readSlotRecordText } from "../records/slots.js";
 import { designerIa, writerIa, type FoundrySlot } from "../records/slot-model/foundry-ia.js";
@@ -88,7 +89,8 @@ export function planCopyKeyMigration(consumer: string, catalog: CopyKeyCatalog =
       const before = readSlotRecordText(entry.dir, "slot.json");
       if (before === undefined) continue;
       let doc: unknown;
-      try { doc = JSON.parse(before); } catch { continue; }
+      try { doc = JSON.parse(before); }
+      catch (error) { findings.push({ agent, slot: entry.id, key: "", message: `${agent}/${entry.id}: slot.json is not JSON (${errorMessage(error)}); its copy keys cannot be migrated` }); continue; }
       const declared = catalog[agent].get(entry.id) ?? new Set<string>();
       const segments = new Map<string, string>();
       let after = before;

@@ -84,7 +84,9 @@ function installIndex(roots: readonly string[]): InstallIndex {
       const match = entry.pin && CANDIDATE_NAME.exec(entry.pin.candidate);
       if (!match || match[3] !== "json") continue;
       let item: { files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[] };
-      try { item = JSON.parse(readCandidate(root, "designer", entry.id, entry.pin!.candidate).bytes); } catch { continue; }
+      // A pinned Designer candidate that cannot be read or parsed is an error, not a missing provider.
+      try { item = JSON.parse(readCandidate(root, "designer", entry.id, entry.pin!.candidate).bytes); }
+      catch (error) { throw new Error(`Designer slot ${entry.id}: pinned candidate ${entry.pin!.candidate} is not readable JSON: ${error instanceof Error ? error.message : String(error)}`); }
       const id = `${entry.id}/${match[1]}`;
       for (const file of item.files ?? []) {
         if (typeof file.path !== "string" || typeof file.content !== "string") continue;
@@ -318,13 +320,14 @@ export function pinnedLibraryTheme(rootsIn: readonly string[]): SpecimenTheme | 
     const own: typeof merged = { theme: {}, light: {}, dark: {} };
     for (const entry of listSlots(root, "designer")) {
       if (!entry.pin || !entry.id.startsWith("themes.")) continue;
+      // A drifted pin contributes nothing (the pin check flags it); an unreadable or malformed
+      // pinned theme is an error, never a silently dropped theme.
+      const read = readCandidate(root, "designer", entry.id, entry.pin.candidate);
+      if (read.sha256 !== entry.pin.sha256) continue;
       let item: { cssVars?: Record<string, unknown> } | undefined;
-      try {
-        const read = readCandidate(root, "designer", entry.id, entry.pin.candidate);
-        if (read.sha256 !== entry.pin.sha256) continue;
-        item = JSON.parse(read.bytes);
-        hashes.push(`${entry.id}:${read.sha256}`);
-      } catch { continue; }
+      try { item = JSON.parse(read.bytes); }
+      catch (error) { throw new Error(`Designer theme ${entry.id}: pinned candidate ${entry.pin.candidate} is not JSON: ${error instanceof Error ? error.message : String(error)}`); }
+      hashes.push(`${entry.id}:${read.sha256}`);
       for (const mode of ["theme", "light", "dark"] as const) {
         const vars = item?.cssVars?.[mode];
         if (vars && typeof vars === "object" && !Array.isArray(vars)) Object.assign(own[mode], vars);

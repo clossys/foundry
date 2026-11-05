@@ -39,7 +39,10 @@ export function StudioDocument({ head, children }: { head?: ReactNode; children:
 }
 
 function storedMode(): ThemeMode {
-  try { const value = localStorage.getItem('theme'); return value === 'light' || value === 'dark' ? value : 'system'; } catch { return 'system'; }
+  // No stored choice means the system mode; storage the browser denies is reported, then treated as no choice.
+  let value: string | null = null;
+  try { value = localStorage.getItem('theme'); } catch (error) { console.warn('Theme preference storage is unavailable', error); }
+  return value === 'light' || value === 'dark' ? value : 'system';
 }
 function applyMode(mode: ThemeMode): 'light' | 'dark' {
   const dark = mode === 'dark' || mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -70,7 +73,8 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
     return () => media.removeEventListener('change', follow);
   }, []);
   const setMode = useCallback((next: ThemeMode) => {
-    try { if (next === 'system') localStorage.removeItem('theme'); else localStorage.setItem('theme', next); } catch { /* Storage can be unavailable; the mode still applies. */ }
+    // The mode still applies when the browser denies storage; the failure to remember it is reported.
+    try { if (next === 'system') localStorage.removeItem('theme'); else localStorage.setItem('theme', next); } catch (error) { console.warn('Theme preference was not saved', error); }
     setModeState(next);
     setResolved(applyMode(next));
   }, []);
@@ -79,7 +83,7 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
     const events = new EventSource('/api/events');
     events.addEventListener('change', event => {
       try { if (studioCellChange(JSON.parse((event as MessageEvent<string>).data))) setRevision(value => value + 1); }
-      catch { /* A malformed event never becomes a revision. */ }
+      catch (error) { console.error('Malformed Studio change event', error); }
     });
     return () => events.close();
   }, []);

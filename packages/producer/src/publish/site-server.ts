@@ -5,6 +5,7 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
+import { isModuleAbsent } from "../errors.js";
 
 export interface SiteServerOptions {
   /** Canonical consumer roots; when present /__specimen is mounted. */
@@ -20,7 +21,8 @@ type Mount = (request: IncomingMessage, response: ServerResponse) => Promise<boo
 /** The stock shadcn@aria base (`@clossys/designer-ui/src`), laid out as installed, when present. */
 function shadcnRegistryBase(workspace: string): string | undefined {
   for (const from of [join(workspace, "package.json"), import.meta.url]) {
-    try { return dirname(createRequire(from).resolve("@clossys/designer-ui")); } catch { /* not installed here */ }
+    // Not installed from this base: try the next. Any other resolution failure is a broken install.
+    try { return dirname(createRequire(from).resolve("@clossys/designer-ui")); } catch (error) { if (!isModuleAbsent(error)) throw error; }
   }
   return undefined;
 }

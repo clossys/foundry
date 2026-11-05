@@ -5,6 +5,7 @@ import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
+import { parseJson } from "../errors.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
@@ -83,7 +84,9 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       const parsed = parseFrontmatter(candidate.bytes);
       if (parsed.ok) { content = parsed.value.body; source = parsed.value.fields.source; }
     } else {
-      try { source = JSON.parse(candidate.bytes).meta?.source; } catch { /* validation records malformed JSON */ }
+      // Malformed JSON has no source; validateCandidate below records it as an issue.
+      const parsed = parseJson(candidate.bytes);
+      if (parsed.ok) source = (parsed.value as { meta?: { source?: unknown } } | null)?.meta?.source;
     }
     const version = Number(CANDIDATE_NAME.exec(name)![2]);
     const issues = validateCandidate(doc.kind, id, name, candidate.bytes).map(issueCopy);

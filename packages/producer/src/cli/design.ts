@@ -86,8 +86,8 @@ function designerProjection(designer: PinnedSet) {
   return {
     schemaVersion: 1 as const, agent: "designer" as const,
     slots: designer.pinned.map(candidate => {
-      let item: { name?: unknown; type?: unknown } = {};
-      try { item = JSON.parse(candidate.bytes); } catch { /* validated by readPinned; kept total */ }
+      // readPinned admits only candidates validateCandidate accepted, so a Designer (.json) pin parses.
+      const item = JSON.parse(candidate.bytes) as { name?: unknown; type?: unknown };
       return { id: candidate.id, kind: candidate.doc.kind, candidate: candidate.name, version: candidate.version, sha256: candidate.sha256,
         ...(typeof item.name === "string" ? { name: item.name } : {}), ...(typeof item.type === "string" ? { type: item.type } : {}) };
     }),

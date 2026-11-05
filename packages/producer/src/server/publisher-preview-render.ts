@@ -9,6 +9,7 @@ import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { resolveAgent } from "../agents.js";
+import { isAbsent } from "../errors.js";
 
 const execute = promisify(execFile);
 const producerRequire = createRequire(import.meta.url);
@@ -86,8 +87,11 @@ export async function renderNativePreview(page: NativePreviewPage): Promise<Buff
     const styles: string[] = [];
     // These are the installed Designer runtime's shipped utility rules, followed
     // by the exact emitted consumer theme. Selection stays in generated modules.
-    try { styles.push(await readFile(join(resolveAgent("designer").packageRoot, "styles", "compiled.css"), "utf8")); } catch { /* Optional runtime stylesheet. */ }
-    try { styles.push(generatedBody((await previewSource(page.root, "theme.css")).toString("utf8"))); } catch { /* Missing emitted theme is not invented. */ }
+    // The runtime stylesheet is optional (a Designer build may ship none); an unreadable one surfaces.
+    try { styles.push(await readFile(join(resolveAgent("designer").packageRoot, "styles", "compiled.css"), "utf8")); } catch (error) { if (!isAbsent(error)) throw error; }
+    // The emitted consumer theme is required: a publication without it is not rendered unstyled.
+    try { styles.push(generatedBody((await previewSource(page.root, "theme.css")).toString("utf8"))); }
+    catch (error) { throw new Error(`Native publication has no readable emitted theme.css: ${error instanceof Error ? error.message : String(error)}`); }
     for (const file of result.outputFiles ?? []) if (file.path.endsWith(".css")) styles.push(file.text);
     const css = styles.join("\n").replace(/<\/style/gi, "<\\/style");
     const metadata = `${page.title === undefined ? "" : `<title>${escape(page.title)}</title>`}${page.description === undefined ? "" : `<meta name="description" content="${escape(page.description)}">`}${page.ogImage === undefined ? "" : `<meta property="og:image" content="${escape(page.ogImage)}">`}`;

@@ -1,0 +1,10 @@
+{
+  "//": "Explicit P0 propagation adapter for the real tree (F3): discovery is ambiguous (2 --primary CSS sources, 7 shadcn button sources). Studio imports @clossys/designer-ui/styles.css (designer/ui/src/index.css, light :root is occurrence 0) and renders Button from designer/ui/src/components/ui/button.tsx. The route opens a leaf page's request-change action popover, whose copy button is a default-variant Button. The build seam rebuilds dist/studio; the process serving the base URL must load that build.",
+  "primarySource": "packages/designer/ui/src/index.css",
+  "primaryOccurrence": 0,
+  "cssVariable": "--primary",
+  "buttonSource": "packages/designer/ui/src/components/ui/button.tsx",
+  "buttonSelector": "[data-popover-copy=\"request-change\"][data-slot=\"button\"][data-variant=\"default\"]",
+  "route": "/director/context/market/context.market.size?p=request-change",
+  "buildCommands": [["node", "packages/producer/scripts/build-studio.mjs"]]
+}

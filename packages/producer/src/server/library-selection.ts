@@ -25,12 +25,12 @@ function pinnedItems(library: string): Map<string, { item: Record<string, any>; 
   const items = new Map<string, { item: Record<string, any>; version: number; sha256: string }>();
   for (const entry of listSlots(library, "designer")) {
     if (!entry.pin || !entry.candidates.includes(entry.pin.candidate)) continue;
-    try {
-      const candidate = readCandidate(library, "designer", entry.id, entry.pin.candidate);
-      const item = JSON.parse(candidate.bytes);
-      const version = Number(/-v([1-9][0-9]*)\.json$/.exec(entry.pin.candidate)?.[1] ?? 0);
-      if (candidate.sha256 === entry.pin.sha256 && typeof item?.name === "string" && version) items.set(entry.id, { item, version, sha256: candidate.sha256 });
-    } catch { /* an unreadable pin is not part of the selection */ }
+    // A drifted candidate is not the pin; a pinned candidate that cannot be read or parsed surfaces.
+    const candidate = readCandidate(library, "designer", entry.id, entry.pin.candidate);
+    if (candidate.sha256 !== entry.pin.sha256) continue;
+    const item = JSON.parse(candidate.bytes);
+    const version = Number(/-v([1-9][0-9]*)\.json$/.exec(entry.pin.candidate)?.[1] ?? 0);
+    if (typeof item?.name === "string" && version) items.set(entry.id, { item, version, sha256: candidate.sha256 });
   }
   return items;
 }

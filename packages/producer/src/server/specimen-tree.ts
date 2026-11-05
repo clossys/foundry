@@ -142,15 +142,15 @@ export function pinnedWriterCopy(consumer: string, locale = "en"): Record<string
   const copy: Record<string, string> = {};
   for (const entry of listSlots(consumer, "writer")) {
     if (!entry.pin) continue;
-    try {
-      const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
-      if (candidate.sha256 !== entry.pin.sha256) continue;
-      const parsed = parseFrontmatter(candidate.bytes);
-      if (!parsed.ok) continue;
-      for (const row of parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[])) {
-        if (row.locale === locale && typeof row.record.text === "string") copy[row.record.id] = row.record.text;
-      }
-    } catch { /* an unreadable Writer slot binds nothing */ }
+    // A drifted pin binds nothing (the pin check flags it); an unreadable or malformed pinned
+    // candidate is an error, never a silently missing string.
+    const candidate = readCandidate(consumer, "writer", entry.id, entry.pin.candidate);
+    if (candidate.sha256 !== entry.pin.sha256) continue;
+    const parsed = parseFrontmatter(candidate.bytes);
+    if (!parsed.ok) throw new Error(`Writer slot ${entry.id}: pinned candidate ${entry.pin.candidate} has invalid frontmatter`);
+    for (const row of parseWriterSlotBody(parsed.value.body, parsed.value.fields.locales as readonly string[])) {
+      if (row.locale === locale && typeof row.record.text === "string") copy[row.record.id] = row.record.text;
+    }
   }
   return copy;
 }

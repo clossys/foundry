@@ -17,6 +17,7 @@ import { checkSlotOptions, classCounts, classify, slotOptions, type SlotOptions 
 import { inspectSlot, listSlots, readCandidate, readSlotEntry } from "../records/slots.js";
 import { writePin, writeSlotOptions } from "../records/slot-write.js";
 import { CliUsageError } from "./args.js";
+import { errorMessage } from "../errors.js";
 import type { CliResult } from "./main.js";
 import { resolveCandidate } from "./pin.js";
 import { discoverRoot } from "./root.js";
@@ -78,7 +79,10 @@ export function optionsBrief(consumer: string, view: SlotOptions): Record<string
   const values = fill.slice(0, count);
   const reference = view.candidates.find(c => c.pinned) ?? view.candidates[0];
   const referenceBytes = reference ? readCandidate(consumer, view.agent, view.slot, reference.name).bytes : "";
-  const recordIds = [...referenceBytes.matchAll(/^<!-- (\{.*\}) -->$/gm)].map(match => { try { return (JSON.parse(match[1]!) as { id?: string }).id; } catch { return undefined; } }).filter(Boolean);
+  const recordIds = [...referenceBytes.matchAll(/^<!-- (\{.*\}) -->$/gm)].map(match => {
+    try { return (JSON.parse(match[1]!) as { id?: string }).id; }
+    catch (error) { throw new Error(`${view.agent}/${view.slot}/${reference!.name}: malformed record line ${match[0]}: ${errorMessage(error)}`); }
+  }).filter(Boolean);
   return {
     slot: `${view.agent}/${view.slot}`, group: view.group, class: view.classId, varyOn: view.varyOn,
     write: values.map(value => ({ name: nextName(view, value), vary: view.varyOn ? { [view.varyOn]: value } : undefined })),

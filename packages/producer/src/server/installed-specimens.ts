@@ -33,6 +33,7 @@ import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
 import { ensureSubstrate, ensureSubstrateDependencies, npmRunner, pageModule, pageRecordFromCell, shadcnRunner, writerCopy } from "../publish/install.js";
+import { isAbsent } from "../errors.js";
 
 /** Bumped when the generated specimen pages change shape. */
 const SPECIMEN_FORMAT = "studio-specimens/7";
@@ -69,12 +70,15 @@ const specimenPageId = (slot: string, element: string, version: number) => `spec
 const pageKey = (slot: string, element: string, version: number) => `${slot}/${element}@v${version}`;
 const hash = (...parts: string[]) => { const h = createHash("sha256"); for (const part of parts) h.update(part).update("\0"); return h.digest("hex"); };
 
-/** Pinned Publisher page slots (legacy active cells without IA), home first. */
-async function pageRecords(root: string, pins: InstallPins): Promise<InstallPageRecord[]> {
+/** Pinned Publisher page slots, home first; a page slot whose record cannot be read is a finding on that slot. */
+async function pageRecords(root: string, pins: InstallPins): Promise<{ records: InstallPageRecord[]; findings: InstallFinding[] }> {
   const ids = await specimenPageSlotIds(root);
-  const records: InstallPageRecord[] = [];
-  for (const id of ids) { try { records.push(await pageRecordFromCell(root, id, pins)); } catch { /* a page cell without frame/sections binds nothing */ } }
-  return records;
+  const records: InstallPageRecord[] = [], findings: InstallFinding[] = [];
+  for (const id of ids) {
+    try { records.push(await pageRecordFromCell(root, id, pins)); }
+    catch (error) { findings.push({ code: "invalid-page", slot: id, detail: error instanceof Error ? error.message : String(error) }); }
+  }
+  return { records, findings };
 }
 
 /** The copy map of the first page record that places `slot`, else of the first page (frames and parts bind shared copy keys). */
@@ -180,7 +184,8 @@ async function buildPass(options: { library: string; substrate: string; pins: In
       // The pinned candidate itself, through the same slot reader every other page installs from.
       const record = await source.read(`${slot}/${pin.element}`, pin.version).catch(() => undefined);
       let item: any;
-      try { item = record ? JSON.parse(record.payload.raw) : undefined; } catch { item = undefined; }
+      try { item = record ? JSON.parse(record.payload.raw) : undefined; }
+      catch (error) { findings.push({ code: "not-a-registry-item", slot, detail: `${slot}: ${pin.element}@v${pin.version} is not JSON (${error instanceof Error ? error.message : String(error)})` }); continue; }
       if (!item) { findings.push({ code: "missing-record", slot, detail: `${slot}: no registry item for ${pin.element}@v${pin.version}` }); continue; }
       // The item itself installs through the `include` of every other page in the pass; this page only reads its variables.
       if (item.type === "registry:font" && item.font?.variable) await writeFile(join(pagesDir, `${page}.tsx`), fontPage(item.font.variable, String(item.title ?? item.font.family ?? pin.element)));
@@ -204,7 +209,8 @@ async function buildPass(options: { library: string; substrate: string; pins: In
         const text = { ...copy, ...result.page.frame.text };
         const source = await readFile(join(substrate, result.page.frame.entry.file), "utf8").catch(() => "");
         let item: unknown;
-        try { item = JSON.parse(mounted?.payload.raw ?? ""); } catch { item = undefined; }
+        try { item = mounted ? JSON.parse(mounted.payload.raw) : undefined; }
+        catch (error) { findings.push({ code: "not-a-registry-item", slot, detail: `${slot}/${pin.element}@v${pin.version}: mounted record is not JSON (${error instanceof Error ? error.message : String(error)})` }); continue; }
         const issues = specimenTreeIssues(sample, moduleExports(source), text, itemDependencies(item));
         if (issues.length) { findings.push({ code: "invalid-page", slot, detail: `${slot}/${pin.element}@v${pin.version} preview children: ${issues.join("; ")}` }); continue; }
         props.children = resolveSampleCopy(sample, text);
@@ -230,7 +236,7 @@ async function buildPass(options: { library: string; substrate: string; pins: In
 interface SiteInputs {
   readonly root: string; readonly library: string; readonly key: string; readonly substrate: string; readonly base: string;
   readonly pins: InstallPins; readonly unpinned: InstallPins; readonly options: ReadonlyMap<string, readonly { element: string; version: number }[]>;
-  readonly records: readonly InstallPageRecord[]; readonly copy: Record<string, string>;
+  readonly records: readonly InstallPageRecord[]; readonly recordFindings: readonly InstallFinding[]; readonly copy: Record<string, string>;
 }
 
 async function siteInputs(root: string, library: string): Promise<SiteInputs | undefined> {
@@ -238,10 +244,10 @@ async function siteInputs(root: string, library: string): Promise<SiteInputs | u
   if (!inputs) return undefined;
   // Compiled Writer copy wins; the pinned Writer slots fill a consumer that has not compiled yet.
   const copy = { ...pinnedWriterCopy(library), ...await writerCopy(root).catch(() => ({} as Record<string, string>)) };
-  const records = await pageRecords(root, inputs.pins);
-  const key = hash(SPECIMEN_FORMAT, root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records)).slice(0, 16);
+  const { records, findings: recordFindings } = await pageRecords(root, inputs.pins);
+  const key = hash(SPECIMEN_FORMAT, root, inputs.fingerprint, JSON.stringify(copy), JSON.stringify(records), JSON.stringify(recordFindings)).slice(0, 16);
   const substrate = specimenSubstrate(root);
-  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, records, copy };
+  return { root, library, key, substrate, base: dirname(substrate), pins: inputs.pins, unpinned: inputs.unpinned, options: inputs.options, records, recordFindings, copy };
 }
 
 /** A saved build is reused while every dist it names is still on disk. */
@@ -254,7 +260,7 @@ async function savedSite(manifest: string): Promise<{ builds: SpecimenBuild[]; p
 
 /** The pinned selection: one pass, every pinned slot, exactly the pins pages install. */
 async function buildSite(inputs: SiteInputs): Promise<InstalledSpecimenSite> {
-  const { key, base, substrate, pins, library, records, copy } = inputs;
+  const { key, base, substrate, pins, library, records, recordFindings, copy } = inputs;
   const manifest = join(base, `site-${key}.json`);
   const saved = await savedSite(manifest);
   if (saved) return { key, ...saved };
@@ -263,8 +269,9 @@ async function buildSite(inputs: SiteInputs): Promise<InstalledSpecimenSite> {
   const result = await buildPass({ library, substrate, pins, slots: Object.keys(pins), records, copy, build });
   const builds = result.built ? [build] : [];
   const pages = result.built ? result.pages : new Map<string, SpecimenPage>();
-  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(pages), findings: result.findings }, null, 2)}\n`);
-  return { key, builds, pages, findings: result.findings };
+  const findings = [...recordFindings, ...result.findings];
+  await writeFile(manifest, `${JSON.stringify({ schema: SPECIMEN_FORMAT, key, builds, pages: Object.fromEntries(pages), findings }, null, 2)}\n`);
+  return { key, builds, pages, findings };
 }
 
 /**
@@ -379,7 +386,7 @@ export function installedSpecimenRoutes(ready: Promise<InstalledSpecimenSite | u
       const inside = relative(build.dist, file);
       let target: string | undefined;
       if (inside && !inside.startsWith("..") && !isAbsolute(inside) && !inside.split(sep).some(part => part.startsWith("."))) {
-        try { target = await realpath(file); if (!(await stat(target)).isFile() || relative(await realpath(build.dist), target).startsWith("..")) target = undefined; } catch { target = undefined; }
+        try { target = await realpath(file); if (!(await stat(target)).isFile() || relative(await realpath(build.dist), target).startsWith("..")) target = undefined; } catch (error) { if (!isAbsent(error)) throw error; target = undefined; }
       }
       if (!target) { response.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" }); response.end("Not found\n"); return true; }
       response.writeHead(200, { "Content-Type": TYPES[extname(target)] ?? "application/octet-stream", "Cache-Control": "no-cache", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": specimenSiteCsp(`http://${request.headers.host ?? ""}`, build.key) });
