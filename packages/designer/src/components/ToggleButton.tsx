@@ -4,7 +4,7 @@ import {
   type ToggleButtonProps as AriaToggleButtonProps,
 } from "react-aria-components";
 import type { ButtonSize, ButtonVariant } from "./Button.js";
-import { buttonClassName, iconButtonClassName, controlSizeStyle, controlStateStyle, type ControlGround } from "./button-classes.js";
+import { buttonClassName, iconButtonClassName, controlHeight, controlSizeStyle, controlStateStyle, type ControlGround } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 
 export type ToggleButtonShape = "text" | "icon-only";
@@ -104,7 +104,7 @@ export function ToggleButton({
       }
       style={(renderProps) => ({
         ...controlSizeStyle(size),
-        ...(shape === "icon-only" ? { inlineSize: `var(--ui-control-h-${size})` } : {}),
+        ...(shape === "icon-only" ? { inlineSize: controlHeight(size) } : {}),
         ...controlStateStyle(renderProps, { ground }),
         ...(typeof style === "function" ? style(renderProps) : style),
       })}

@@ -69,7 +69,7 @@ describe('actual Hero scrim composition',()=>{
       expect(screen.getByRole('heading').style.color).toBe('var(--color-neutral-50)');
       expect(screen.getByText('Support').style.color).toBe('var(--color-neutral-50)');
       const gradient=container.querySelector('[data-hero-gradient]') as HTMLElement;
-      expect(gradient.style.backgroundImage).toBe('var(--gradient-media-scrim)');
+      expect(gradient.style.backgroundImage).toBe('linear-gradient(transparent, var(--color-overlay-scrim))');
       const layers=[...container.querySelectorAll<HTMLElement>('[data-hero-scrim]')];
       expect(layers).toHaveLength(scrim==='light'?4:5);
       for(const layer of layers) expect(layer.style.backgroundColor).toBe('var(--color-overlay-scrim)');

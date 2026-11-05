@@ -1,12 +1,13 @@
 "use client";
 import { createContext, forwardRef, useContext, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ColorPicker as AriaColorPicker, ColorArea, ColorWheel, ColorWheelTrack, ColorSlider, SliderTrack, ColorThumb, ColorField, Input, Label, ColorSwatchPicker, ColorSwatchPickerItem, ColorSwatch, type ColorPickerProps as AriaColorPickerProps, type ColorAreaProps, type ColorWheelProps, type ColorSliderProps, type ColorFieldProps, type ColorSwatchPickerProps, type ColorSwatchPickerItemProps } from "react-aria-components";
+import { controlHeight } from "./button-classes.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 type ControlSize = "sm" | "md" | "lg";
 export interface ColorPickerProps extends AriaColorPickerProps { size?: ControlSize }
 const SizeContext = createContext<ControlSize>("md");
-const height = (size: ControlSize) => `var(--ui-control-h-${size})`;
+const height = (size: ControlSize) => controlHeight(size);
 /** Root is a context provider, matching RAC; it does not invent a DOM ref. */
 function Root({ size = "md", ...props }: ColorPickerProps) { return <SizeContext.Provider value={size}><AriaColorPicker {...props} /></SizeContext.Provider>; }
 function Thumb() { return <ColorThumb className="border border-line-base rounded-full forced-colors:outline" style={state => ({ width: "var(--ui-control-mark)", height: "var(--ui-control-mark)", boxShadow: state.isFocusVisible ? UI_RING_FOCUS : undefined })} />; }

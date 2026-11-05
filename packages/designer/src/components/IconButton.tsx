@@ -6,6 +6,7 @@ import {
 import type { IconNode } from "../icons/types.js";
 import {
   iconButtonClassName,
+  controlHeight,
   controlSizeStyle,
   controlStateStyle,
   type ControlGround,
@@ -73,7 +74,7 @@ export function IconButton({
       }
       style={(renderProps) => ({
         ...controlSizeStyle(size),
-        inlineSize: `var(--ui-control-h-${size ?? "md"})`,
+        inlineSize: controlHeight(size ?? "md"),
         ...controlStateStyle({ ...renderProps, isPressed: pressed }, { ground }),
         ...(typeof style === "function" ? style(renderProps) : style),
       })}

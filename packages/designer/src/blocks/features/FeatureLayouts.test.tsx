@@ -114,8 +114,8 @@ describe("features members", () => {
     const view = render(<FeatureLayouts ground="base" items={items} layout="scroll" />);
     const sticky = view.container.querySelector("[data-feature-sticky]") as HTMLElement;
     expect(sticky).toHaveClass("tablet:sticky");
-    expect(sticky.style.animation).toBe("var(--animate-scroll-sticky)");
-    expect((view.container.querySelector("[data-feature-motion]") as HTMLElement).style.animation).toBe("var(--animate-scroll-reveal)");
+    expect(sticky.style.animation).toBe("features-sticky var(--ui-duration-flash) linear both");
+    expect((view.container.querySelector("[data-feature-motion]") as HTMLElement).style.animation).toBe("reveal var(--ui-duration-deliberate) var(--ease-decelerate) both");
     expect(view.container.querySelector("[data-feature-motion]")).toHaveAttribute("data-designer-reveal", "");
     expect(view.container.textContent).not.toContain("@keyframes features-reveal");
     expect(view.container.textContent).toContain("@keyframes reveal");
