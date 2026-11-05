@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ContentMap } from "../content-map/contract.js";
-import { NEXT_ROUTE_MARKER, planNextRoutes } from "./next-routes.js";
+import { NEXT_ROUTE_MARKER, NEXT_SHELL_FILES, planNextRoutes } from "./next-routes.js";
 
 const source = { frameId: "frames.shell", sectionIds: ["sections.body"] };
 const map = {
@@ -53,5 +53,25 @@ describe("planNextRoutes", () => {
     const plan = planNextRoutes({ map: bad, assembly: "../a.tsx" });
     expect(plan.findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "site-contract", slot: "odd" })]));
     expect(plan.files.some(row => row.pageId === "odd")).toBe(false);
+  });
+
+  it("without a states module installs no shell; with one installs the root layout and every state, each marked", () => {
+    expect(planNextRoutes({ map, assembly: "../a.tsx" }).files.some(row => row.kind === "shell")).toBe(false);
+    const plan = planNextRoutes({ map, assembly: "../components/Assembly.tsx", states: "../components/Renderer.tsx", live: true });
+    const shell = plan.files.filter(row => row.kind === "shell");
+    expect(shell.map(row => [row.file, row.state, row.pageId])).toEqual(NEXT_SHELL_FILES.map(row => [row.file, row.state, "app"]));
+    for (const row of shell) expect(row.content.split("\n")[0]).toBe(NEXT_ROUTE_MARKER);
+    const file = (name: string) => shell.find(row => row.file === name)!.content;
+    expect(file("layout.tsx")).toContain('import { PublishedDocument, publishedMetadata } from "../components/Assembly";');
+    expect(file("layout.tsx")).toContain("export const metadata = publishedMetadata;\nexport const dynamic = \"force-dynamic\";");
+    expect(file("layout.tsx")).toContain("return createElement(PublishedDocument, { children });");
+    expect(file("not-found.tsx")).toContain('createElement(PublishedState, { state: "not-found" })');
+    expect(file("not-found.tsx")).not.toContain('"use client"');
+    // Error states are client modules: the directive follows the marker, before any import.
+    for (const name of ["error.tsx", "global-error.tsx"]) expect(file(name).split("\n").slice(0, 3)).toEqual([NEXT_ROUTE_MARKER, '"use client";', 'import { createElement } from "react";']);
+    expect(file("loading.tsx")).toContain('from "../components/Renderer"');
+    // A static install keeps the layout static.
+    const fixed = planNextRoutes({ map, assembly: "../a.tsx", states: "../b.tsx" }).files.find(row => row.file === "layout.tsx")!.content;
+    expect(fixed).not.toContain("dynamic");
   });
 });

@@ -35,6 +35,8 @@ export interface CliArgs {
   next?: string;
   /** publish --install --next: the consumer's assembly module, relative to the app directory. */
   assembly?: string;
+  /** publish --install --next: the consumer's states module (client), relative to the app directory; installs the publication's layout and state files. */
+  states?: string;
   /** publish --install --next: resolve leaves at request time through the assembly. */
   live: boolean;
   /** publish --install: the consumer's component selection module, `<module>[#export]`. */
@@ -60,7 +62,7 @@ export const USAGE = "Usage: clossys <direct|design|write|publish|produce|check>
   + "Record suites: clossys check --suites [--strict] [--root <dir>] (also run with --pages/--report when --root is a consumer root)\n"
   + "Install: clossys publish --install --page <page id | page record.json> --selection <component selection module>[#export] [--out <dir>] [--records <consumer dir>]...\n"
   + "Site: clossys publish --install --site <route pack id> [--origin <deployment origin>] [--build] [--out <dir>] [--records <consumer dir>]... (one routed app: content-map paths, route-pack slots, one frame)\n"
-  + "Next app: clossys publish --install --site <publication> --next <app dir> --assembly <module> [--live] [--check] (one route file per page, one [slug] route per leaf template)";
+  + "Next app: clossys publish --install --site <publication> --next <app dir> --assembly <module> [--states <module>] [--live] [--check] (one route file per page, one [slug] route per leaf template; --states also installs the root layout and the loading, not-found, error and global-error files)";
 
 export function parseArgs(argv: readonly string[]): CliArgs {
   const args: CliArgs = { help: false, check: false, brief: false, json: false, once: false, noOpen: false, suites: false, strict: false, records: [], install: false, build: false, live: false, slots: false, readiness: false };
@@ -93,6 +95,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
       case "--origin": args.origin = value(); break;
       case "--next": args.next = value(); break;
       case "--assembly": args.assembly = value(); break;
+      case "--states": args.states = value(); break;
       case "--live": args.live = true; break;
       case "--slots": args.slots = true; break;
       case "--readiness": args.readiness = true; break;
@@ -123,6 +126,7 @@ export function parseArgs(argv: readonly string[]): CliArgs {
   if ((args.page !== undefined || args.site !== undefined) && !args.install) throw new CliUsageError("--page and --site require --install");
   if ((args.build || args.origin !== undefined) && args.site === undefined) throw new CliUsageError("--build and --origin require --site");
   if ((args.next !== undefined || args.assembly !== undefined || args.live) && (args.site === undefined || !args.install)) throw new CliUsageError("--next, --assembly and --live require publish --install --site");
+  if (args.states !== undefined && args.next === undefined) throw new CliUsageError("--states requires publish --install --next");
   if ((args.next === undefined) !== (args.assembly === undefined)) throw new CliUsageError("publish --install --next requires --assembly <module>, and --assembly requires --next");
   if (args.next !== undefined && (args.build || args.origin !== undefined || args.selection !== undefined || args.records.length)) throw new CliUsageError("--next installs routes only; it takes no --build, --origin, --selection or --records");
   if (args.brief && args.verb !== "write" && args.verb !== "design" && args.verb !== "direct") throw new CliUsageError("--brief requires direct, design or write");

@@ -92,3 +92,24 @@ test('without a pinned Studio publication the check fails closed', async t => {
   const { options } = await fixture(t);
   await assert.rejects(checkStudioRoutes({ studioRoot: options.studioRoot, repositoryRoot: options.repositoryRoot }));
 });
+
+test('mutation: a missing state file fails: Next would render its built-in page', async t => {
+  const { root, options } = await fixture(t);
+  fs.rmSync(path.join(root, 'studio/app/not-found.tsx'));
+  assert.deepEqual(await checkStudioRoutes(options), [{ rule: 'map-page-not-installed', page: 'studio', kind: 'not-found', file: 'app/not-found.tsx' }]);
+});
+
+test('mutation: a hand-written root layout fails, and so does a nested layout or state no publication installs', async t => {
+  const { root, options } = await fixture(t);
+  fs.writeFileSync(path.join(root, 'studio/app/layout.tsx'), 'export default function RootLayout({ children }) { return children; }\n');
+  fs.writeFileSync(path.join(root, 'studio/app/designer/error.tsx'), '"use client";\nexport default function E() { return null; }\n');
+  assert.deepEqual(await checkStudioRoutes(options), [
+    { rule: 'map-page-not-installed-by-publisher', page: 'studio', kind: 'document', file: 'app/layout.tsx' },
+    { rule: 'route-not-installed', file: 'app/designer/error.tsx' },
+  ]);
+});
+
+test('the shell the check requires is the one Publisher installs', async () => {
+  const { NEXT_SHELL_FILES } = await import('@clossys/publisher/install');
+  assert.deepEqual(NEXT_SHELL_FILES.map(row => row.file), ['layout.tsx', 'loading.tsx', 'not-found.tsx', 'error.tsx', 'global-error.tsx']);
+});

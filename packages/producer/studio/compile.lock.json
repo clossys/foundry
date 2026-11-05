@@ -6040,6 +6040,26 @@
       "sha256": "a674e9a9fedfcc2e25bf7dea6b877277ff7aaf7fcacd8709c955185c7f3c10c7"
     },
     {
+      "path": "app/error.tsx",
+      "sha256": "f6ae9fee6f85459c79480c1ab6331153da9ed518cb0acd79f616f5f72d9f2764"
+    },
+    {
+      "path": "app/global-error.tsx",
+      "sha256": "dc5001d76e38ec4559fa9eb42f45330625877b7bd8d3d5606a2c95ef7fc22bd8"
+    },
+    {
+      "path": "app/layout.tsx",
+      "sha256": "66a0a1a6cab24f6ca5f99cb869ee3c273062c3ecde7cf5d8f675e4d361933f6c"
+    },
+    {
+      "path": "app/loading.tsx",
+      "sha256": "431ad089b4646c80d4018fa898ef212c758d44b2a792c60ee3c321b985074e74"
+    },
+    {
+      "path": "app/not-found.tsx",
+      "sha256": "ae2457d62fa61fae0cd7fe668448e63d78d9bfe0a0cfe98a6ca3512addc19cd9"
+    },
+    {
       "path": "app/page.tsx",
       "sha256": "ac0a764d8b875b0a6d0bf367391ca3ef9215bd8375edb03fcf505024ffcc987a"
     },
@@ -6349,11 +6369,11 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "6223912ca62ffc32985ee5d58a05c7ab48286a12d15584d0238722c56c3cf0e6"
+      "sha256": "6bc813de0cd34ec26a684d38c84ef689fc66701fdd7a6e299b530e8c18e0ecaa"
     },
     {
       "path": "generated/studio-map.ts",
-      "sha256": "7217ca54a1118b9f754d77943898cc29d73a129eb7a756a511bc309f1090ada3"
+      "sha256": "81e31dece745d5dfde68ae90736045f9bc0f331bafecb021b278c46caa51fbe4"
     },
     {
       "path": "generated/studio-provenance.json",

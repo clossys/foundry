@@ -46,11 +46,23 @@ export const HOOK_CHECKS = Object.freeze([
   "producer check-no-page-jsx",
   "producer check:studio-map",
   "producer check:studio-template",
+  "producer check:routes-published",
+  "producer check:studio-routes",
+  "producer check:route-parity",
+  "producer src/studio/designer-views.ds-only.test.ts",
+  "producer check:copy-source",
   "designer check:provenance",
   "designer check:ref-verbatim",
   "designer check:references",
   "designer check:slot-contracts",
 ]);
+/**
+ * Hook ids that may be absent from the head's check:studio manifest: they are skipped, and reported
+ * as skipped, only when the head does not list them. `producer check:copy-source` is wired by its own
+ * unit (R-WRITER-COPY); once a head lists it, it runs like every other hook check. Any other absent
+ * id still refuses to run.
+ */
+export const PENDING_HOOK_CHECKS = Object.freeze(["producer check:copy-source"]);
 /** check:rules finding kinds about the checks themselves, not about debt in the tree. */
 export const INTEGRITY = /^(?:shape|unknown-check|unreachable|fixture-.+|exemption-.+)$/;
 const RULES_ENTRY = { dir: ".", script: "check:rules" };
@@ -143,6 +155,7 @@ export function report(result) {
   for (const finding of rules.new) out.push(`  NEW ${finding.rule}\t${finding.id}\t${finding.message}`);
   for (const finding of rules.integrity) out.push(`  INTEGRITY ${finding.rule}\t${finding.id}\t${finding.message}`);
   for (const fixed of rules.fixed) out.push(`  fixed ${fixed}`);
+  for (const id of result.skipped ?? []) out.push(`${"skipped".padEnd(13)} ${id}: not in the head's check:studio manifest yet`);
   for (const check of checks) {
     out.push(`${check.state.padEnd(13)} ${check.id}: base exit ${check.base}, head exit ${check.head}`);
     for (const line of check.lines.slice(0, 20)) out.push(`  ${check.state === "setup-error" ? "LOAD" : "NEW"} ${line}`);
@@ -185,10 +198,12 @@ export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = 
   extract(repo, headSha, headTree);
   const manifest = join(headTree, STUDIO_MANIFEST);
   const known = existsSync(manifest) ? JSON.parse(readFileSync(manifest, "utf8")).checks ?? [] : [];
-  const checks = ids.map(id => {
+  const skipped = [];
+  const checks = ids.flatMap(id => {
     const check = known.find(entry => entry.id === id);
-    if (!check) throw new Error(`no check:studio sub-check ${JSON.stringify(id)} at head`);
-    return check;
+    if (check) return [check];
+    if (PENDING_HOOK_CHECKS.includes(id)) { skipped.push(id); return []; }
+    throw new Error(`no check:studio sub-check ${JSON.stringify(id)} at head`);
   });
   const overlaid = await overlayChecks(headTree, baseTree, [RULES_ENTRY, ...checks.map(check => ({ cwd: check.cwd ?? ".", run: check.run }))]);
   linkModules(repo, baseTree);
@@ -204,7 +219,7 @@ export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = 
     measured.head.push({ id: check.id, ...h });
   }
   const result = delta({ rules: baseRules.findings, checks: measured.base }, { rules: headRules.findings, checks: measured.head });
-  return { base: baseSha, head: headSha, work, overlaid, baseRules: baseRules.findings.length, headRules: headRules.findings.length, delta: result };
+  return { base: baseSha, head: headSha, work, overlaid, skipped, baseRules: baseRules.findings.length, headRules: headRules.findings.length, delta: result };
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {

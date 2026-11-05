@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { test } = require('node:test');
-const { checkNoPageJsx, inspectAppSource, APP_FILES } = require('./check-no-page-jsx.cjs');
+const { checkNoPageJsx, inspectAppSource } = require('./check-no-page-jsx.cjs');
 
 const studioRoot = path.resolve(__dirname, '..');
 
@@ -14,7 +14,7 @@ function fixture(t) {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'no-page-jsx-')));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.cpSync(path.join(studioRoot, 'app'), path.join(root, 'app'), { recursive: true });
-  for (const file of [...APP_FILES, 'components/StudioPage.tsx', 'components/StudioInstalledPage.tsx']) {
+  for (const file of ['components/StudioPage.tsx', 'components/StudioInstalledPage.tsx']) {
     fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
     fs.copyFileSync(path.join(studioRoot, file), path.join(root, file));
   }
@@ -74,7 +74,20 @@ test('mutation: a parked views/ folder fails', t => {
   assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })), ['page-views-folder']);
 });
 
-test('the document shell, providers and renderer pass; fragments and other components do not', () => {
-  assert.deepEqual(inspectAppSource('const x = <html><head><link /><script /></head><body><StudioProviders><StudioPage /></StudioProviders></body></html>;', 'app/layout.tsx'), []);
+test('app/ renders no JSX of its own: not the document shell, not providers, not fragments', () => {
+  assert.deepEqual(rules(inspectAppSource('const x = <html><body><StudioProviders><StudioPage /></StudioProviders></body></html>;', 'app/layout.tsx')), ['page-jsx', 'page-jsx', 'page-jsx', 'page-jsx']);
   assert.deepEqual(rules(inspectAppSource('const x = <><Card /></>;', 'app/layout.tsx')), ['page-jsx', 'page-jsx']);
+});
+
+test('mutation: a hand-written root layout or stylesheet in app/ fails: nothing in app/ is exempt', t => {
+  const root = fixture(t);
+  fs.writeFileSync(path.join(root, 'app/layout.tsx'), "export default function RootLayout({ children }) { return children; }\n");
+  fs.writeFileSync(path.join(root, 'app/globals.css'), '@import "tailwindcss";\n');
+  assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })).sort(), ['extra-app-route-file', 'extra-app-route-file']);
+});
+
+test('mutation: an installed state file that stops mounting the renderer fails', t => {
+  const root = fixture(t), state = path.join(root, 'app/not-found.tsx');
+  fs.writeFileSync(state, fs.readFileSync(state, 'utf8').replace('"../components/StudioPage"', '"../components/OtherState"'));
+  assert.deepEqual(rules(checkNoPageJsx({ studioRoot: root })), ['installed-route-not-generic-renderer']);
 });

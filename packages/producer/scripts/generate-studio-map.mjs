@@ -244,14 +244,26 @@ export async function studioCopyRegistry(clossysRoot, { target, absentPin } = {}
 
 /** Studio's assembly module, relative to its app directory: what every installed route mounts. */
 export const STUDIO_ASSEMBLY = '../components/StudioInstalledPage.tsx';
+/** Studio's states module, relative to its app directory: the generic renderer, whose `PublishedState` every state file mounts. */
+export const STUDIO_STATES = '../components/StudioPage.tsx';
+/**
+ * The publication document's Producer-served assets, projected as `studioDocument` so the assembly
+ * names no API route itself: the consumer's Designer globals (loaded after Studio's stock component
+ * layer, so the consumer's brand is what renders) and the brand icons.
+ */
+export const STUDIO_DOCUMENT = Object.freeze({
+  stylesheets: Object.freeze([Object.freeze({ href: '/api/designer/globals.css', precedence: 'consumer' })]),
+  icons: Object.freeze({ icon: '/api/brand/favicon.svg', apple: '/api/brand/app-icon.svg' }),
+});
 
 /**
  * Install Studio's own routes: Publisher installs `publication.studio` into the app directory
- * (`publish --install --next`), one route per page and one live `[slug]` route per leaf template.
+ * (`publish --install --next`), one route per page, one live `[slug]` route per leaf template and
+ * the publication's shell (root layout, loading, not-found, error and global-error).
  * Returns the installed route per page id; check mode refuses drift instead of writing.
  */
 export async function installStudioRoutes({ clossysRoot = defaultClossysRoot, appDir = resolve(studioRoot, 'app'), check = false, installOut } = {}) {
-  const result = await publishNext({ root: dirname(resolve(clossysRoot)), publication: 'studio', app: appDir, assembly: STUDIO_ASSEMBLY, live: true, check, ...(installOut ? { out: installOut } : {}) });
+  const result = await publishNext({ root: dirname(resolve(clossysRoot)), publication: 'studio', app: appDir, assembly: STUDIO_ASSEMBLY, states: STUDIO_STATES, live: true, check, ...(installOut ? { out: installOut } : {}) });
   const blocking = result.findings.filter(finding => finding.severity !== 'info');
   if (blocking.length) fail(`Publisher could not install the studio routes: ${blocking.map(finding => finding.detail).join('; ')}`);
   const drift = result.files.filter(file => file.state === 'drift');
@@ -319,6 +331,9 @@ export async function generateStudioMap({ clossysRoot = defaultClossysRoot, outp
       if (!own || (page.leaf && !leaf)) fail(`${page.id} has no route installed by Publisher`);
       return { instanceId: page.id, path: page.path, label: page.title, entry: own.entry, ...(leaf ? { leaf } : {}) };
     }),
+    // The publication's shell Publisher installed at the app root: its document and its states.
+    document: STUDIO_DOCUMENT,
+    shell: installed.filter(file => file.kind === 'shell').map(file => ({ state: file.shell, entry: { file: `studio/app/${file.file}`, export: 'default' } })),
   };
   const assemblyBanner = target === 'preview' ? '// Generated Studio DRAFT preview from explicit native bindings; unapproved and not release qualified.\n' : banner;
   const module = `${assemblyBanner}import type { ContentMap, ContentMapPageAction } from '@clossys/publisher/content-map';
@@ -346,6 +361,9 @@ export const studioPageActions = projection.pageActions as unknown as Readonly<R
 /** The route files Publisher installed under app/ (\`publish --install --next\`): each page, and each gallery's leaf template. */
 export interface StudioInstalledRoute { instanceId: string; path: string; label: string; entry: { file: string; export: string }; leaf?: { path: string; entry: { file: string; export: string } } }
 export const studioRoutes = projection.routes as readonly StudioInstalledRoute[];
+/** The publication's shell files Publisher installed at the app root: the document (root layout) and each state. */
+export const studioDocument = projection.document as { stylesheets: readonly { href: string; precedence: string }[]; icons: { icon: string; apple: string } };
+export const studioShell = projection.shell as readonly { state: 'document' | 'loading' | 'not-found' | 'error' | 'global-error'; entry: { file: string; export: string } }[];
 /** One leaf a tab page serves: the tab's page id, the slot slug, its label and its served path. */
 export interface StudioLeaf { page: string; slug: string; title: string; path: string }
 export const studioLeaves = projection.leaves as readonly StudioLeaf[];

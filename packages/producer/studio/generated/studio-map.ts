@@ -24,6 +24,9 @@ export const studioPageActions = projection.pageActions as unknown as Readonly<R
 /** The route files Publisher installed under app/ (`publish --install --next`): each page, and each gallery's leaf template. */
 export interface StudioInstalledRoute { instanceId: string; path: string; label: string; entry: { file: string; export: string }; leaf?: { path: string; entry: { file: string; export: string } } }
 export const studioRoutes = projection.routes as readonly StudioInstalledRoute[];
+/** The publication's shell files Publisher installed at the app root: the document (root layout) and each state. */
+export const studioDocument = projection.document as { stylesheets: readonly { href: string; precedence: string }[]; icons: { icon: string; apple: string } };
+export const studioShell = projection.shell as readonly { state: 'document' | 'loading' | 'not-found' | 'error' | 'global-error'; entry: { file: string; export: string } }[];
 /** One leaf a tab page serves: the tab's page id, the slot slug, its label and its served path. */
 export interface StudioLeaf { page: string; slug: string; title: string; path: string }
 export const studioLeaves = projection.leaves as readonly StudioLeaf[];

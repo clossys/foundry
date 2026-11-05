@@ -60,6 +60,7 @@
     "check:studio-routes": "node studio/checks/check-studio-routes.cjs",
     "check:assemble-only": "node scripts/check-assemble-only.mjs",
     "check:routes-published": "node scripts/check-routes-published.mjs",
+    "check:route-parity": "node scripts/check-route-parity.mjs",
     "check:slot-options": "node scripts/check-slot-options.mjs",
     "check:slot-state": "node scripts/check-slot-state.mjs",
     "check:studio-template": "node scripts/check-studio-template.mjs",

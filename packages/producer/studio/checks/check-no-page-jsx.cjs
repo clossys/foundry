@@ -4,22 +4,22 @@
 /**
  * no-page-jsx: Studio has one generic renderer and no page JSX. Every page is a Publisher
  * assembly (frame + ordered sections + bindings) that `components/StudioPage.tsx` renders from
- * the Studio map. The App Router tree holds the root layout, the route files Publisher installs
- * (`clossys publish --install --next`, which mount `components/StudioInstalledPage.tsx` and so the
- * renderer); `check-studio-routes.cjs` owns which routes exist. The record-specimen frame is
- * `/__specimen`, served by the Producer server, so app/ holds no specimen page. Those files render only the document shell, the providers and the renderer.
+ * the Studio map. The App Router tree holds only files Publisher installs (`clossys publish --install
+ * --next`): the routes and the root layout mount `components/StudioInstalledPage.tsx` (which hands
+ * the page to the renderer), and the state files mount the renderer's `PublishedState`. No file in
+ * app/ is exempt, stylesheet and root layout included, and none renders JSX of its own;
+ * `check-studio-routes.cjs` owns which routes exist. The record-specimen frame is `/__specimen`,
+ * served by the Producer server, so app/ holds no specimen page.
  */
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 
 const STUDIO_ROOT = path.resolve(__dirname, '..');
-/** The App Router files Publisher does not install: the root layout and the stylesheet. */
-const APP_FILES = ['app/globals.css', 'app/layout.tsx'];
 /** The first line of every route file Publisher installs. */
 const { ROUTE_MARKER } = require('./check-studio-routes.cjs');
-/** JSX the App Router files may render: the HTML document shell, the providers and the one renderer. */
-const ALLOWED_TAGS = new Set(['html', 'head', 'body', 'script', 'link', 'StudioProviders', 'StudioPage']);
+/** JSX the App Router files may render: none. Installed files mount the assembly or the renderer with `createElement`. */
+const ALLOWED_TAGS = new Set();
 /** Imports that would put page composition back in app/: sections, frames, old views and route lists. */
 const FORBIDDEN_IMPORT = /(?:^|\/)(?:views|sections|frames)(?:\/|$)|(?:^|\/)(?:CellsWorkspace|AgentDetails|StandaloneCellContent|StudioFrame|proof-routes|view-bindings|assembly-bindings)(?:\.[jt]sx?)?$/;
 /** The generic renderer, and the assembly module every installed route mounts (which hands it the page). */
@@ -61,13 +61,13 @@ function checkNoPageJsx({ studioRoot = STUDIO_ROOT } = {}) {
   const files = fs.existsSync(app) ? walk(app, studioRoot).sort() : [];
   const source = file => fs.readFileSync(path.join(studioRoot, file), 'utf8');
   const installed = files.filter(file => /\.[jt]sx?$/.test(file) && source(file).split('\n', 1)[0] === ROUTE_MARKER);
-  for (const file of files) if (!APP_FILES.includes(file) && !installed.includes(file)) findings.push({ rule: 'extra-app-route-file', file });
-  for (const file of APP_FILES) if (!files.includes(file)) findings.push({ rule: 'missing-app-file', file });
+  for (const file of files) if (!installed.includes(file)) findings.push({ rule: 'extra-app-route-file', file });
   for (const file of files.filter(name => /\.[jt]sx?$/.test(name))) findings.push(...inspectAppSource(source(file), file));
-  const assembly = path.relative(studioRoot, path.join(studioRoot, ASSEMBLY)).replace(/\.tsx$/, '');
+  // Each installed file mounts the assembly (routes, root layout) or the renderer itself (state files).
+  const mounts = [ASSEMBLY, RENDERER].map(module => path.join(studioRoot, module.replace(/\.tsx$/, '')));
   for (const file of installed) {
-    const specifier = path.relative(path.dirname(path.join(studioRoot, file)), path.join(studioRoot, assembly)).split(path.sep).join('/');
-    if (!source(file).includes(`from "${specifier}"`)) findings.push({ rule: 'installed-route-not-generic-renderer', file });
+    const specifiers = mounts.map(module => path.relative(path.dirname(path.join(studioRoot, file)), module).split(path.sep).join('/'));
+    if (!specifiers.some(specifier => source(file).includes(`from "${specifier}"`))) findings.push({ rule: 'installed-route-not-generic-renderer', file });
   }
   if (!fs.existsSync(path.join(studioRoot, RENDERER))) findings.push({ rule: 'missing-generic-renderer', file: RENDERER });
   if (!fs.existsSync(path.join(studioRoot, ASSEMBLY)) || !/from ['"]\.\/StudioPage['"]/.test(fs.readFileSync(path.join(studioRoot, ASSEMBLY), 'utf8'))) findings.push({ rule: 'assembly-not-generic-renderer', file: ASSEMBLY });
@@ -76,7 +76,7 @@ function checkNoPageJsx({ studioRoot = STUDIO_ROOT } = {}) {
   return findings;
 }
 
-module.exports = { checkNoPageJsx, inspectAppSource, APP_FILES, ALLOWED_TAGS };
+module.exports = { checkNoPageJsx, inspectAppSource, ALLOWED_TAGS };
 if (require.main === module) {
   // `--root <repository>` checks another repository tree (a rule fixture): its packages/producer/studio.
   const at = process.argv.indexOf('--root');
@@ -84,5 +84,5 @@ if (require.main === module) {
   if (findings.length) {
     console.error(JSON.stringify({ check: 'Studio no-page-jsx', findings }, null, 2));
     process.exitCode = 1;
-  } else console.log('Studio no-page-jsx: app/ holds the root layout and Publisher-installed routes; every page renders through components/StudioPage.tsx.');
+  } else console.log('Studio no-page-jsx: app/ holds only Publisher-installed files; every page and state renders through components/StudioPage.tsx.');
 }

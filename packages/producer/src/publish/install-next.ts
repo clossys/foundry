@@ -9,11 +9,15 @@
  * overwritten, and a marked file no page installs any more is removed. The install is recorded in
  * the install out root like every other `publish --install`, so `/api/publication` lists the
  * publication's pages as installed.
+ *
+ * With a `states` module the publication's shell installs too: the root `layout.tsx` (the
+ * assembly's document and metadata) and the `loading`, `not-found`, `error` and `global-error`
+ * states (the states module's state export). Every App Router file is then Publisher's.
  */
 import { existsSync } from "node:fs";
 import { mkdir, readFile, readdir, rmdir, unlink, writeFile } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
-import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding } from "@clossys/publisher/install";
+import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding, type NextShellState } from "@clossys/publisher/install";
 import { readPinnedPublication } from "./pinned-publication.js";
 import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "./install-out.js";
@@ -31,22 +35,27 @@ export interface PublishNextOptions {
   readonly assembly: string;
   /** Resolve leaves at request time through the assembly's leaf export. */
   readonly live?: boolean;
+  /** The consumer's states module (client, exports `PublishedState`), relative to the app directory: installs the publication's shell. */
+  readonly states?: string;
   /** Report drift instead of writing. */
   readonly check?: boolean;
   /** The install record dir; defaults to `next-<publication>` in the install out root. */
   readonly out?: string;
 }
-export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift" }
+export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf" | "shell"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift"; readonly shell?: NextShellState }
 export interface PublishNextResult { readonly app: string; readonly out?: string; readonly files: readonly PublishNextFile[]; readonly findings: readonly InstallFinding[] }
 /** The install record `/api/publication` reads: one row per installed page route. */
 export interface NextInstallReport {
   readonly kind: typeof NEXT_INSTALL_KIND; readonly publication: string; readonly app: string;
   readonly pages: readonly { page: string; route: string; file: string }[];
   readonly leaves: readonly { page: string; route: string; file: string }[];
+  /** The publication's shell files: its document and its states. Empty when no states module was named. */
+  readonly shell: readonly { state: NextShellState; file: string }[];
   readonly findings: readonly InstallFinding[];
 }
 
-const ROUTE_FILE = /^(?:page|layout|template|route|default|loading|error|not-found)\.[cm]?[jt]sx?$/;
+/** Every App Router file name that serves a route, a layout or a state. */
+const ROUTE_FILE = /^(?:page|layout|template|route|default|loading|error|global-error|not-found)\.[cm]?[jt]sx?$/;
 const marked = (content: string) => content.split("\n", 1)[0] === NEXT_ROUTE_MARKER;
 
 /** Every route file under an app directory, relative and `/`-separated. */
@@ -81,7 +90,7 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const pinned = await readPinnedPublication(join(root, "clossys"), options.publication);
   if (!pinned.routePack) throw new Error(`publish --install --next: publication ${options.publication} has no route pack`);
   const { map, leafTemplates } = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
-  const plan = planNextRoutes({ map, leafTemplates, assembly: options.assembly, live: options.live === true });
+  const plan = planNextRoutes({ map, leafTemplates, assembly: options.assembly, live: options.live === true, ...(options.states !== undefined ? { states: options.states } : {}) });
   const findings: InstallFinding[] = [...plan.findings];
   const files: PublishNextFile[] = [];
   if (findings.some(isBlocking)) return { app, files, findings };
@@ -95,7 +104,7 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
     }
     const state = stored === row.content ? "unchanged" : options.check ? "drift" : "written";
     if (state === "written") { await mkdir(dirname(path), { recursive: true }); await writeFile(path, row.content); }
-    files.push({ file: row.file, pageId: row.pageId, kind: row.kind, route: row.route, state });
+    files.push({ file: row.file, pageId: row.pageId, kind: row.kind, route: row.route, state, ...(row.state ? { shell: row.state } : {}) });
   }
   for (const file of await routeFiles(app)) {
     if (planned.has(file) || !await isInstalledRoute(join(app, file))) continue;
@@ -110,7 +119,8 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const row = (file: (typeof plan.files)[number]) => ({ page: file.pageId, route: file.route, file: file.file });
   const report: NextInstallReport = {
     kind: NEXT_INSTALL_KIND, publication: map.publicationId, app,
-    pages: plan.files.filter(file => file.kind === "page").map(row), leaves: plan.files.filter(file => file.kind === "leaf").map(row), findings,
+    pages: plan.files.filter(file => file.kind === "page").map(row), leaves: plan.files.filter(file => file.kind === "leaf").map(row),
+    shell: plan.files.flatMap(file => file.kind === "shell" && file.state ? [{ state: file.state, file: file.file }] : []), findings,
   };
   await writeFile(join(out, NEXT_INSTALL_REPORT), `${JSON.stringify(report, null, 2)}\n`);
   return { app, out, files, findings };
