@@ -12,7 +12,7 @@ import type { ContentMapEntry } from '@clossys/publisher/content-map';
 import { studioFrames, studioSections } from '../generated/assembly-bindings';
 import { studioHomeId, studioPages, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
 import '../styles/studio.css';
-import { StudioDocument } from './StudioDocument';
+import { StudioDocument } from './StudioProviders';
 import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
 import type { ChecksInput } from '../sections/studio-checks';
 import type { HistoryInput } from '../sections/studio-history';
