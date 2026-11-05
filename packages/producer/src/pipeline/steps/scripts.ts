@@ -7,8 +7,8 @@ const STUDIO_GENERATED = ["studio-copy.json", "studio-map.ts", "assembly-binding
 export const SCRIPT_STEPS = [
   defineStep({
     id: "derive.uses", kind: "plumb", actor: "code", stage: "publish.assemble",
-    summary: "Derive each slot's uses list from pinned candidates.",
-    inputs: [PINS, ...CANDIDATES], outputs: ["clossys/agents/*/*/slot.json#uses"],
+    summary: "Derive each slot's uses list from pinned candidates, and the consumer's shadcn flavor from the Designer config.",
+    inputs: [PINS, ...CANDIDATES], outputs: ["clossys/agents/*/*/slot.json#uses", "clossys/components.json"],
     command: { script: "scripts/check-generated-derived.mjs", npm: "build" }, checks: ["generated-derived"],
   }),
   defineStep({

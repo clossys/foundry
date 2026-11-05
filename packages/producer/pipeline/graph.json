@@ -1815,7 +1815,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.assemble",
-      "summary": "Derive each slot's uses list from pinned candidates.",
+      "summary": "Derive each slot's uses list from pinned candidates, and the consumer's shadcn flavor from the Designer config.",
       "inputs": [
         {
           "glob": "clossys/agents/*/*/pin.json",
@@ -1841,6 +1841,9 @@
       "outputs": [
         {
           "glob": "clossys/agents/*/*/slot.json#uses"
+        },
+        {
+          "glob": "clossys/components.json"
         }
       ],
       "command": {
@@ -4097,6 +4100,11 @@
       "step": "derive.uses",
       "port": "output",
       "glob": "clossys/agents/*/*/slot.json#uses"
+    },
+    {
+      "step": "derive.uses",
+      "port": "output",
+      "glob": "clossys/components.json"
     },
     {
       "step": "studio.map",
