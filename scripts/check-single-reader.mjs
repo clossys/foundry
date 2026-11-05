@@ -7,8 +7,9 @@
  * and the specimen source import the reader; nothing else touches those paths.
  *
  * Scope: shipped code, that is packages/<pkg>/{src,bin} and packages/producer/studio (its app,
- * lib and components; studio/checks are verification harnesses), outside tests, fixtures,
- * dependency and build folders. Each file is parsed with the TypeScript compiler, and a finding is
+ * lib and components; studio/checks are verification harnesses), outside tests, test fixture
+ * (`__fixtures__`, `__tests__`, `__golden__`), dependency and build folders. A `checks` or `fixtures`
+ * folder inside shipped code (packages/<pkg>/src/checks) is shipped code and is scanned. Each file is parsed with the TypeScript compiler, and a finding is
  * a file-system call whose path argument is derived from slot-model vocabulary:
  *   - a string naming the model: an "agents" path segment, a non-route string holding
  *     agents/<slot agent or producer>, ia.json, slot.json, pin.json, seat.json, a candidates folder;
@@ -46,7 +47,7 @@ const PATH_CALLS = new Set(["join", "resolve", "dirname", "normalize", "relative
 const FS_MODULES = new Set(["fs", "node:fs", "fs/promises", "node:fs/promises"]);
 const CHILD_MODULES = new Set(["child_process", "node:child_process"]);
 const CHILD_CALLS = new Set(["execFileSync", "execFile", "spawnSync", "spawn", "execSync", "exec"]);
-const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".next", ".turbo", "coverage", "__fixtures__", "__tests__", "fixtures", "__golden__", "checks"]);
+const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".next", ".turbo", "coverage", "__fixtures__", "__tests__", "__golden__"]);
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const TEST = /\.(?:test|spec)\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const AGENT_PATH = new RegExp(`(?:^|/)agents/(?:${MODEL_TREES.join("|")})(?:/|$)`);
@@ -54,14 +55,20 @@ const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin|seat)\.json$|(?:^|\/)candidates(?:\/|
 
 const toPosix = path => path.split(sep).join("/");
 
-/** Whether a string literal names a slot-model path (routes and URLs are not paths). */
+/**
+ * Whether a string literal names a slot-model path (routes and URLs are not paths). A URL is a
+ * `scheme://` string other than file://; a `?` or `#` only ends the path part, it does not make the
+ * string a URL ("agents/designer/hero/pin.json?raw" is still the model).
+ */
 export function isModelString(text) {
   if (text === "agents") return true;
-  if (text.includes("://") || text.includes("?")) return false;
+  const file = /^file:\/\//i.test(text);
+  if (text.includes("://") && !file) return false;
+  const path = (file ? text.slice(7) : text).split(/[?#]/)[0];
   // A leading slash is a route (/agents/designer/hero) unless it names a model file: a suffix
   // concatenated onto a root ("/agents/publisher/page.home/pin.json") is still a path.
-  if (text.startsWith("/")) return MODEL_FILE.test(text);
-  return AGENT_PATH.test(text) || MODEL_FILE.test(text);
+  if (path.startsWith("/") && !file) return MODEL_FILE.test(path);
+  return AGENT_PATH.test(path) || MODEL_FILE.test(path);
 }
 
 /**

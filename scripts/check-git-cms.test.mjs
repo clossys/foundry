@@ -1,12 +1,12 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { SEAT_TREES, checkGitCms, iaSlots } from "./check-git-cms.mjs";
+import { AGENTS, SEAT_TREES, checkGitCms, iaSlots } from "./check-git-cms.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "check-git-cms.mjs");
 const CANDIDATE = '{\n  "name": "example"\n}\n';
@@ -59,11 +59,29 @@ test("a tree in the flat layout is green and the CLI exits 0", () => withRepo(({
 test("an agent folder without ia.json fails, and nothing is exempt", () => withRepo(({ repo }) => {
   mkdirSync(join(repo, "clossys", "agents", "controller", "pin"), { recursive: true });
   writeFileSync(join(repo, "clossys", "agents", "controller", "pin", "seat.json"), "{}\n");
-  assert.deepEqual(rules(repo), ["missing-ia controller/ia.json", "stray-entry controller/pin"]);
+  assert.deepEqual(rules(repo).filter((row) => !row.startsWith("unknown-agent ")), ["missing-ia controller/ia.json", "stray-entry controller/pin"]);
   const run = spawnSync(process.execPath, [scriptPath, "--repo", repo], { encoding: "utf8" });
   assert.equal(run.status, 1);
   assert.match(run.stdout, /^red {3}controller: /m);
   assert.match(run.stdout, /^green designer: /m);
+}));
+
+test("G23: the agent allowlist is the slot model's FOLDER_KIND keys", () => {
+  const types = readFileSync(resolve(dirname(scriptPath), "..", "packages", "producer", "src", "records", "slot-model", "types.ts"), "utf8");
+  const table = /FOLDER_KIND[^=]*=\s*\{([^}]*)\}/.exec(types)?.[1] ?? "";
+  assert.deepEqual([...AGENTS].sort(), [...table.matchAll(/(\w+):\s*"(?:slot|seat)"/g)].map((match) => match[1]).sort());
+});
+
+test("G23: a well-formed tree under an agent name outside the model fails unknown-agent", () => withRepo(({ repo, agent }) => {
+  const rogue = join(repo, "clossys", "agents", "controller");
+  mkdirSync(rogue, { recursive: true });
+  writeFileSync(join(rogue, "ia.json"), readFileSync(join(agent, "ia.json")));
+  for (const id of IDS) cpSync(join(agent, id), join(rogue, id), { recursive: true });
+  // The copied tree is clean, so unknown-agent is the one finding.
+  assert.deepEqual(rules(repo), ["unknown-agent controller"]);
+  const run = spawnSync(process.execPath, [scriptPath, "--repo", repo], { encoding: "utf8" });
+  assert.equal(run.status, 1, run.stdout + run.stderr);
+  assert.match(run.stdout, /FAIL unknown-agent controller/);
 }));
 
 const SEAT = { by: "owner", llm: null, human: { procedure: "Pin one candidate.", command: "clossys pin" } };

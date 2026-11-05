@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { READER, WRITER, check } from "./check-single-reader.mjs";
+import { READER, WRITER, check, isModelString } from "./check-single-reader.mjs";
 
 const script = fileURLToPath(new URL("./check-single-reader.mjs", import.meta.url));
 const roots = [];
@@ -86,4 +86,24 @@ export const loop = (root: string) => readFileSync(join(root, "agents", "produce
 test("usage errors exit 2", () => {
   const result = spawnSync(process.execPath, [script, "--bogus"], { encoding: "utf8" });
   assert.equal(result.status, 2);
+});
+
+test("G21: a checks or fixtures folder inside shipped src is scanned", () => {
+  const root = fixture({
+    "packages/demo/src/checks/read.ts": direct,
+    "packages/demo/src/fixtures/read.ts": direct,
+    "packages/demo/src/__fixtures__/read.ts": direct,
+  });
+  assert.deepEqual(check(root).map(finding => finding.file).sort(), ["packages/demo/src/checks/read.ts", "packages/demo/src/fixtures/read.ts"]);
+  assert.equal(run(root).status, 1);
+});
+
+test("G22: a ? or # does not make a path a URL; only scheme:// strings other than file:// are URLs", () => {
+  for (const text of ["agents/designer/hero/pin.json?raw", "clossys/agents/writer?x", "./ia.json#top", "file:///repo/clossys/agents/designer/hero/pin.json", "file:///repo/agents/publisher?x"]) assert.equal(isModelString(text), true, text);
+  for (const text of ["https://example.com/agents/designer/pin.json", "/agents/designer/hero?tab=pin", "/agents/writer#slot", "?agent=designer"]) assert.equal(isModelString(text), false, text);
+  const root = fixture({ "packages/demo/src/query.ts": `import { readFileSync } from "node:fs";
+export const pin = (root: string) => readFileSync(root + "/clossys/agents/designer/hero/pin.json?raw");
+export const ia = (root: string) => readFileSync(\`\${root}/agents/writer/ia.json?v=1\`);
+` });
+  assert.deepEqual(check(root).map(finding => finding.line), [2, 3]);
 });

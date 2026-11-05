@@ -6,6 +6,13 @@
  * H-PROPS, H-LINK) or fails with a code (REF-HUNK-CLASS, REF-HUNK-STRUCTURE,
  * REF-HUNK-LOGIC, REF-HUNK-TEXT). The comparison is on syntax trees, so
  * formatting (quotes, wrapping, trailing commas, semicolons) never makes a hunk.
+ *
+ * The class helper `cn` is trusted only as the registry's own: a payload that
+ * calls `cn` must bind it by one unaliased `import { cn }` from a CN_MODULES
+ * module (the reference's own cn module, the registry alias "cn", or the
+ * consumer's utils alias), and never redeclare it. Any other binding is
+ * REF-HUNK-LOGIC: an allowed H-IMPORT must not turn `cn(...)` (and so the
+ * className passthrough) into a call of arbitrary code.
  */
 import { loadTypeScript } from "./typescript.mjs";
 import { NormalizeError } from "./normalize.mjs";
@@ -86,11 +93,15 @@ export function isEngineNeutral(text, fileName = "file.tsx") {
   return neutral;
 }
 
+/** The modules a payload's `cn` may come from, beside the reference's own cn module: the shadcn registry alias, the default utils path. */
+export const CN_MODULES = Object.freeze(["cn", "@/lib/utils"]);
+
 /**
  * Diff a normalized reference against a payload file.
+ * `utils` is the consumer's components.json utils alias, a further module the payload's `cn` may come from.
  * @returns {{ hunks: Array<{ rule: string, ok: boolean, ref: object|null, file: object|null, detail: string }> }}
  */
-export function diffSources(refText, refName, fileText, fileName, { themeVars = [], linkComponents = [] } = {}) {
+export function diffSources(refText, refName, fileText, fileName, { themeVars = [], linkComponents = [], utils } = {}) {
   const ts = loadTypeScript();
   const A = parse(ts, refText, refName);
   const B = parse(ts, fileText, fileName);
@@ -155,6 +166,39 @@ export function diffSources(refText, refName, fileText, fileName, { themeVars = 
     [...(importsA.get("next/link")?.names ?? [])].map((n) => n.split(":")[1]).filter(Boolean),
   );
   const linkTargets = new Set(["a", ...linkComponents]);
+
+  // ---- cn binding ----------------------------------------------------------
+  {
+    const cnModules = new Set([...CN_MODULES, ...(typeof utils === "string" ? [utils] : []), ...[...importsA].filter(([, e]) => e.names.has("cn:cn")).map(([key]) => key)]);
+    const calls = [];
+    const bindings = [];
+    const visit = (node) => {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "cn") calls.push(node);
+      if (ts.isImportDeclaration(node)) {
+        const clause = node.importClause;
+        const from = ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : "";
+        if (clause?.name?.text === "cn") bindings.push({ node, ok: false, how: `the default import of ${JSON.stringify(from)}` });
+        const nb = clause?.namedBindings;
+        if (nb && ts.isNamespaceImport(nb) && nb.name.text === "cn") bindings.push({ node, ok: false, how: `a namespace import of ${JSON.stringify(from)}` });
+        if (nb && ts.isNamedImports(nb)) for (const el of nb.elements) {
+          if (el.name.text !== "cn") continue;
+          const imported = (el.propertyName ?? el.name).text;
+          const ok = imported === "cn" && !el.isTypeOnly && !clause.isTypeOnly && cnModules.has(from);
+          bindings.push({ node, ok, how: imported === "cn" ? `cn from ${JSON.stringify(from)}` : `${imported} from ${JSON.stringify(from)} renamed cn` });
+        }
+        return;
+      }
+      const named = (ts.isVariableDeclaration(node) || ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node) || ts.isFunctionExpression(node) || ts.isEnumDeclaration(node)) && node.name && ts.isIdentifier(node.name) && node.name.text === "cn";
+      if (named) bindings.push({ node, ok: false, how: "a local declaration" });
+      ts.forEachChild(node, visit);
+    };
+    visit(B);
+    if (calls.length) {
+      const bad = bindings.find((b) => !b.ok);
+      if (bad) hunk("REF-HUNK-LOGIC", null, bad.node, `cn is bound to ${bad.how}; a payload's cn is the registry's own (${[...cnModules].join(", ")})`);
+      else if (!bindings.length) hunk("REF-HUNK-LOGIC", null, calls[0], "cn is called but never imported; a payload's cn is the registry's own");
+    }
+  }
 
   // ---- top level -----------------------------------------------------------
   const isDirective = (st) => ts.isExpressionStatement(st) && ts.isStringLiteral(st.expression);

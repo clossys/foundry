@@ -5,8 +5,9 @@
  * resolves record -> frame -> sections. This check fails when that claim is false in code:
  *
  *   app-route        an `app/**\/page.tsx` does anything but mount `PublishedPage` for a record id
- *   agent-branch     the renderer, its loaders or sections branch on an agent name or slot kind,
- *                    or key copy/loaders by agent, instead of reading record data
+ *   agent-branch     the renderer, its loaders or sections branch on an agent name (the model agents,
+ *                    Producer included) or slot kind, or key copy/loaders by agent, instead of
+ *                    reading record data; every source file counts, `*.provenance.*` ones too
  *   provenance       a section's top-level DOM block does not spread the generated `{...provenance}`
  *                    markers (or hand-types a marker), or the renderer
  *                    draws its own DOM blocks between the frame and the sections
@@ -14,7 +15,8 @@
  *   hard-coded-route nav, tab or API routes are string literals instead of content-map projections
  *   tabs-projected   a record page has no group-tab page routes projected from the agent's ia.json (an
  *                    agent group is a content-map group whose id has clossys/agents/<id>/ia.json, at any
- *                    depth: under a system group such as Content, or at the nav root)
+ *                    depth: under a system group such as Content, or at the nav root); a group named
+ *                    after a model agent with no ia.json to project from fails too
  *   page-header      a pinned page record does not declare the page-header section first
  *
  * Usage: node scripts/check-assemble-only.mjs [--root <repository>] [--json]. `--root` checks another
@@ -36,7 +38,9 @@ export const ROUTE_MARKER = '// Installed by Publisher (clossys publish --instal
 export const PAGE_HEADER = 'sections.studio.page-header';
 /** The page-tabs section a record with group tabs places. */
 export const PAGE_TABS = 'sections.studio.page-tabs';
-const AGENT_WORDS = ['designer', 'writer', 'director', 'publisher', 'slot'];
+/** The model agents (slot-model types.ts FOLDER_KIND keys), and with them the slot-kind word. */
+export const AGENTS = Object.freeze(['designer', 'writer', 'director', 'publisher', 'producer']);
+const AGENT_WORDS = [...AGENTS, 'slot'];
 const AGENT_LITERAL = `['"\`](?:${AGENT_WORDS.join('|')})['"\`]`;
 const AGENT_BRANCH = [
   new RegExp(`[!=]==?\\s*${AGENT_LITERAL}`),
@@ -45,9 +49,9 @@ const AGENT_BRANCH = [
   /\bRecord<\s*Agent\b/,
 ];
 /** Object keys named after agents: an agent-keyed copy or loader map. */
-const AGENT_KEY = new RegExp(`^\\s*['"]?(?:${AGENT_WORDS.slice(0, 4).join('|')})['"]?\\s*:`);
+const AGENT_KEY = new RegExp(`^\\s*['"]?(?:${AGENTS.join('|')})['"]?\\s*:`);
 /** Route literals that name an agent surface (`'/designer'`, `` `/writer/${x}` ``, legacy library APIs). */
-const ROUTE_LITERAL = new RegExp(`['"\`]/(?:api/(?:designer|agents)/|(?:${AGENT_WORDS.slice(0, 4).join('|')})(?:[/'"\`?$]))`);
+const ROUTE_LITERAL = new RegExp(`['"\`]/(?:api/(?:designer|agents)/|(?:${AGENTS.join('|')})(?:[/'"\`?$]))`);
 const EXPLORER = /module-explorer|sections\.module\.explorer|page\.explorer|navigator['"]?\s*:\s*['"]explorer['"]/;
 
 const posix = file => file.split(path.sep).join('/');
@@ -61,7 +65,7 @@ function walk(directory) {
   }
   return files.sort();
 }
-const isSource = file => /\.(?:[cm]?[jt]sx?)$/.test(file) && !/\.test\.|\.provenance\./.test(file);
+const isSource = file => /\.(?:[cm]?[jt]sx?)$/.test(file) && !/\.test\./.test(file);
 const lineOf = (text, index) => text.slice(0, index).split('\n').length;
 
 /** (a) every App Router page mounts PublishedPage for one record and does nothing else. */
@@ -215,7 +219,11 @@ function checkTabs(studioRoot, repositoryRoot) {
   // The Publisher's projected tabs name their record: a web content map holds three levels, so under a
   // system group (Content > Designer > record) a record's tabs sit beside it with `record` naming it.
   const tabOf = new Map(projected.map(tab => [tab.id, tab.record]));
-  const groups = map.entries.filter(entry => entry.kind === 'group' && entry.id !== 'home' && fs.existsSync(path.join(repositoryRoot, 'clossys', 'agents', entry.id, 'ia.json')));
+  const hasIa = id => fs.existsSync(path.join(repositoryRoot, 'clossys', 'agents', id, 'ia.json'));
+  for (const entry of map.entries.filter(entry => entry.kind === 'group' && AGENTS.includes(entry.id) && !hasIa(entry.id))) {
+    findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: `${entry.id}: an agent group with no clossys/agents/${entry.id}/ia.json to project its tabs from` });
+  }
+  const groups = map.entries.filter(entry => entry.kind === 'group' && entry.id !== 'home' && hasIa(entry.id));
   if (!groups.length) findings.push({ rule: 'tabs-projected', file: 'generated/studio-map.json', detail: 'no agent groups (a group whose id has clossys/agents/<id>/ia.json) in the nav' });
   for (const group of groups) {
     const records = map.entries.filter(entry => entry.parentId === group.id && entry.kind === 'page' && !tabOf.has(entry.id));

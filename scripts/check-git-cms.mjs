@@ -19,6 +19,8 @@
  * Evidence, findings and other working files live outside the agent trees (clossys/evidence/).
  * The check reads the files directly (no build needed) and fails on:
  *
+ *   unknown-agent       a folder under clossys/agents that is not one of the model agents (AGENTS,
+ *                       slot-model types.ts FOLDER_KIND); its contents are still checked as below
  *   missing-ia          an agent folder has no ia.json, or ia.json lists no slots
  *   stray-entry         an entry that is neither ia.json nor a slot folder in an agent folder, an entry
  *                       other than slot.json, candidates/ and pin.json in a slot folder, or a
@@ -50,6 +52,8 @@ export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner', 'agent']);
 const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 /** Agent trees of the seat kind (slot-model types.ts FOLDER_KIND: producer is "seat"); every other tree holds slots. */
 export const SEAT_TREES = Object.freeze(['producer']);
+/** The only agent folders clossys/agents may hold (slot-model types.ts FOLDER_KIND keys). */
+export const AGENTS = Object.freeze(['director', 'designer', 'writer', 'publisher', 'producer']);
 const SEAT_FILE = 'seat.json';
 
 const stat = path => { try { return lstatSync(path); } catch { return undefined; } };
@@ -162,6 +166,8 @@ export function checkGitCms(consumer) {
     const agentDir = join(agents, agent);
     const before = findings.length;
     const add = (rule, path, message) => findings.push({ rule, agent, path, message });
+    // An agent folder outside the model fails on its own; its contents are still walked, so every other finding stays visible.
+    if (!AGENTS.includes(agent) && isDir(agentDir)) add('unknown-agent', agent, `not a model agent (${AGENTS.join(' | ')})`);
     if (SEAT_TREES.includes(agent) && isDir(agentDir)) {
       const row = summary[agent] = checkSeatTree(agentDir, agent, add);
       row.findings = findings.length - before;
