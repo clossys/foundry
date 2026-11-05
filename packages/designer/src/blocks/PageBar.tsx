@@ -13,14 +13,14 @@ import { CONTROL, TAP, PAGE_BAR_LAYOUT } from "./page-bar-layout.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";
 
 import { componentLeaf } from "../runtime/component-leaf.js";
+// GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
+import { DialogTrigger, MenuGroup, MenuItem, MenuLabel, MenuTrigger, Popover, PopupMenu } from "./shell-menu.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Popover = componentLeaf<typeof import("../components/Popover.js").Popover>("components.popover");
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const ToggleButton = componentLeaf<typeof import("../components/ToggleButton.js").ToggleButton>("components.toggle-button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
-const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
 
 const EMBEDDED_HEADER = "frame-header-row";
 const GLASS_SURFACE = "bg-surface-glass";
@@ -100,10 +100,12 @@ function PageAction({ label, href, onAction, isDisabled, primary, icon, isSelect
 }
 
 function CrumbMenu({ label, href, id, siblings }: PageBarCrumb) {
-  return <Menu trigger={<Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><SemanticContent as="span" className="truncate">{label}</SemanticContent><Icon glyph={ChevronDown} decorative size="sm" /></Button>}>
-    {href && <Menu.Item id={id} href={href}>{label}</Menu.Item>}
-    {siblings?.map(item => <Menu.Item key={item.id} id={item.id} href={item.href}>{item.label}</Menu.Item>)}
-  </Menu>;
+  return <MenuTrigger><Button variant="ghost" className={CONTROL + " min-w-0 gap-xs"} style={TAP}><SemanticContent as="span" className="truncate">{label}</SemanticContent><Icon glyph={ChevronDown} decorative size="sm" /></Button>
+    <PopupMenu>
+      {href ? <MenuItem id={id} href={href}>{label}</MenuItem> : null}
+      {siblings?.map(item => <MenuItem key={item.id} id={item.id} href={item.href}>{item.label}</MenuItem>)}
+    </PopupMenu>
+  </MenuTrigger>;
 }
 
 function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
@@ -118,12 +120,13 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
           <Link href={root.href} variant="standalone" className={CONTROL} style={TAP}>{root.label}</Link>}
       </SemanticContent>}
       {narrow && ancestors.length > 0
-        ? <SemanticContent as="li" className="shrink-0"><Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><SemanticContent as="span" aria-hidden="true">...</SemanticContent></Button>}>
-            {ancestors.map(item => <Menu.Section key={item.id} heading={item.label}>
-              <Menu.Item id={JSON.stringify([item.id])} href={item.href}>{item.label}</Menu.Item>
-              {item.siblings?.map(sibling => <Menu.Item key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</Menu.Item>)}
-            </Menu.Section>)}
-          </Menu></SemanticContent>
+        ? <SemanticContent as="li" className="shrink-0"><MenuTrigger><Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><SemanticContent as="span" aria-hidden="true">...</SemanticContent></Button>
+            <PopupMenu>{ancestors.map(item => <MenuGroup key={item.id} id={item.id} aria-label={item.label}>
+              <MenuLabel>{item.label}</MenuLabel>
+              <MenuItem id={JSON.stringify([item.id])} href={item.href}>{item.label}</MenuItem>
+              {item.siblings?.map(sibling => <MenuItem key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</MenuItem>)}
+            </MenuGroup>)}</PopupMenu>
+          </MenuTrigger></SemanticContent>
         : ancestors.map(item => <SemanticContent as="li" key={item.id} className="min-w-0 shrink-0">
             {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="standalone" className={CONTROL} style={TAP}>{item.label}</Link>}
           </SemanticContent>)}
@@ -208,18 +211,18 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
   const content = header ? <HeaderSlots header={header} onNavigate={onNavigate} embedded={embedded} /> : <>
     {context === undefined || context === null ? null : <SemanticContent as="div" data-application-frame-slot="context" className="min-w-0 max-w-full">{context}</SemanticContent>}
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
-    {information && <Popover anchorRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0} isOpen={infoOpen} onOpenChange={setInfoOpen}
-      trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>}
+    {information && <DialogTrigger isOpen={infoOpen} onOpenChange={setInfoOpen}><Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel} aria-expanded={infoOpen}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>
+    <Popover triggerRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0}
       style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
       <SemanticContent as="div" data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
         <SemanticContent as="div">{page?.status}</SemanticContent><SemanticContent as="div">{page?.description}</SemanticContent><SemanticContent as="div">{page?.updatedAt}</SemanticContent><SemanticContent as="div">{page?.meta}</SemanticContent><SemanticContent as="div">{page?.scope}</SemanticContent>
       </SemanticContent>
-    </Popover>}
+    </Popover></DialogTrigger>}
     <SemanticContent as="div" ref={legacyActions} data-application-frame-region="bar-actions" className={"ms-auto flex min-w-0 items-center justify-end gap-xs" + (embedded ? " shrink-0" : "")} style={{ flexBasis: narrow && !embedded ? "100%" : undefined }}>
       {page?.actions?.map(action => (!narrow || action === primary) && <PageAction key={action.id} {...action} primary={action === primary} />)}
-      {narrow && page?.actions?.some(action => action !== primary) && <Menu trigger={<Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>}>
-        {page.actions.filter(action => action !== primary).map(action => <Menu.Item key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</Menu.Item>)}
-      </Menu>}
+      {narrow && page?.actions?.some(action => action !== primary) && <MenuTrigger><Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageActionsLabel}><Icon glyph={ChevronDown} decorative /></Button>
+        <PopupMenu>{page.actions.filter(action => action !== primary).map(action => <MenuItem key={action.id} id={action.id} href={action.href} isDisabled={action.isDisabled} onAction={action.onAction}>{action.label}</MenuItem>)}</PopupMenu>
+      </MenuTrigger>}
     </SemanticContent>
     </>;
   return <header onClick={event => frameLinkNavigation(event, onNavigate)} ref={bar} data-application-frame-region="bar" className={legacy
@@ -274,12 +277,12 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
   return <SemanticContent as="div" ref={root} data-frame-header-overflow={overflow.compactNav ? "navigation" : overflow.compactActions ? "actions" : "none"}
     className="frame-header-grid relative grid w-full min-w-0 items-center gap-xs" style={embedded ? { rowGap: 0 } : undefined}>
     <SemanticContent as="div" className="w-full min-w-0 justify-self-start" style={embedded ? { gridColumn: 1, gridRow: 1 } : undefined}>
-      {overflow.compactNav && header.nav ? <Menu trigger={<Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><SemanticContent as="h1" className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</SemanticContent><Icon glyph={ChevronDown} decorative /></Button>}>
-        {header.nav.items.map(item => <Menu.Item key={item.id} id={item.id} href={item.href} textValue={item.label}
+      {overflow.compactNav && header.nav ? <MenuTrigger><Button variant="ghost" className="min-w-0 max-w-full gap-xs" style={TAP}><SemanticContent as="h1" className="m-0 truncate text-body font-semibold">{header.title}{active ? ` / ${active.label}` : ""}</SemanticContent><Icon glyph={ChevronDown} decorative /></Button>
+        <PopupMenu>{header.nav.items.map(item => <MenuItem key={item.id} id={item.id} href={item.href} textValue={item.label}
           aria-current={item.id === header.nav?.activeId ? "page" : undefined}>
           {item.id === header.nav?.activeId && <Icon glyph={Check} decorative />}{item.label}
-        </Menu.Item>)}
-      </Menu> : <SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}
+        </MenuItem>)}</PopupMenu>
+      </MenuTrigger> : <SemanticContent as="h1" ref={title} tabIndex={0} className="m-0 max-w-full truncate text-body font-semibold">{header.title}</SemanticContent>}
     </SemanticContent>
     <nav ref={nav} aria-label={header.nav?.label} aria-hidden={overflow.compactNav || undefined} inert={overflow.compactNav}
       className={(overflow.compactNav ? (embedded ? "invisible pointer-events-none " : "invisible pointer-events-none absolute ") : "") + "flex w-max min-w-0 items-center justify-center gap-xs"}

@@ -27,8 +27,9 @@ export const MenuSeparator = componentLeaf<StockMenu["DropdownMenuSeparator"]>("
 export const Avatar = componentLeaf<StockAvatar["Avatar"]>("components.avatar");
 export const AvatarImage = componentLeaf<StockAvatar["AvatarImage"]>("components.avatar", "AvatarImage");
 export const AvatarFallback = componentLeaf<StockAvatar["AvatarFallback"]>("components.avatar", "AvatarFallback");
-const DialogTrigger = componentLeaf<StockDialog["DialogTrigger"]>("components.dialog", "DialogTrigger");
-const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
+/** The selected dialog trigger and popover: a stock Popover has no trigger prop, DialogTrigger wires it. */
+export const DialogTrigger = componentLeaf<StockDialog["DialogTrigger"]>("components.dialog", "DialogTrigger");
+export const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
 
 export interface ShellMenuProps {
   /** One pressable element; the stock trigger wires its press, expansion and focus return. */

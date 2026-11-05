@@ -12,7 +12,8 @@ import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const IconButton = componentLeaf<typeof import("../../components/IconButton.js").IconButton>("components.button", "IconButton");
+// GATES-RED G5: the pinned components.button declares no IconButton part; an icon-only control is the selected Button named by aria-label.
+const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
 const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -22,7 +23,7 @@ const SECTION_STAMP = dsAttrs("sections", "sections.chat", "foundry/sections.cha
 const PROGRESS_ROW_CLASSES = "flex flex-wrap items-center gap-sm text-body-s text-ink-secondary";
 
 function MessageAction({ label, icon, onPress }: { label: string; icon: IconNode; onPress: () => void }) {
-  return <IconButton label={label} icon={icon} size="sm" onPress={onPress} />;
+  return <Button variant="ghost" size="sm" className="icon-control-sm rounded-control p-0" aria-label={label} onPress={onPress}><Icon glyph={icon} decorative /></Button>;
 }
 
 interface MessageActionsProps extends ChatLabels { message: ChatMessage; actions: ChatActions }

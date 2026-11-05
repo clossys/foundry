@@ -9,11 +9,13 @@ import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+// GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
+import { MenuItem, MenuTrigger, PopupMenu } from "./shell-menu.js";
 
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const GridList = componentLeaf<typeof import("../components/GridList.js").GridList>("components.grid-list");
-const IconButton = componentLeaf<typeof import("../components/IconButton.js").IconButton>("components.button", "IconButton");
-const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
+// GATES-RED G5: the pinned components.button declares no IconButton part; an icon-only control is the selected Button named by aria-label.
+const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const Skeleton = componentLeaf<typeof import("../components/Skeleton.js").Skeleton>("components.skeleton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -68,12 +70,12 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   const reasonId = (action: ResourceListAction, index: number, slot: string) =>
     disabled(action) && action.disabledReason ? `${prefix}-${slot}-${index}` : undefined;
   const menuItems = (entries: readonly ResourceListAction[], slot: string) => entries.map((action, index) => (
-    <Menu.Item key={action.id} id={action.id} textValue={action.label} aria-label={action.label}
-      isDisabled={disabled(action)} isDestructive={action.isDestructive} onAction={action.onAction}
+    <MenuItem key={action.id} id={action.id} textValue={action.label} aria-label={action.label}
+      isDisabled={disabled(action)} variant={action.isDestructive ? "destructive" : "default"} onAction={action.onAction}
       aria-describedby={reasonId(action, index, slot)}>
       {action.label}
       {reasonId(action, index, slot) && <SemanticContent as="span" id={reasonId(action, index, slot)} className="sr-only">{action.disabledReason}</SemanticContent>}
-    </Menu.Item>
+    </MenuItem>
   ));
   return <SemanticContent as="div" className="flex shrink-0 items-center gap-sm">
     <SemanticContent as="div" className="flex flex-wrap items-center gap-sm">
@@ -83,9 +85,9 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
         {reasonId(action, index, "inline") && <SemanticContent as="span" id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</SemanticContent>}
       </SemanticContent>)}
     </SemanticContent>
-    {actions.length > 2 && <Menu trigger={<IconButton icon={ChevronDown} label={label} />}>
-      {menuItems(actions.slice(2), "wide")}
-    </Menu>}
+    {actions.length > 2 && <MenuTrigger><Button variant="ghost" size="sm" className="icon-control-sm rounded-control p-0" aria-label={label}><Icon glyph={ChevronDown} decorative /></Button>
+      <PopupMenu>{menuItems(actions.slice(2), "wide")}</PopupMenu>
+    </MenuTrigger>}
   </SemanticContent>;
 }
 

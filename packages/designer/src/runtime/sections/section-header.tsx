@@ -7,7 +7,11 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
-const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
+// GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
+type StockMenu = typeof import("../../components/preview-runtime/components/menu/dropdown-menu.js");
+const MenuTrigger = componentLeaf<StockMenu["DropdownMenuTrigger"]>("components.menu", "DropdownMenuTrigger");
+const PopupMenu = componentLeaf<StockMenu["DropdownMenu"]>("components.menu");
+const MenuItem = componentLeaf<StockMenu["DropdownMenuItem"]>("components.menu", "MenuItem");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 
@@ -44,7 +48,7 @@ export const renderSectionHeader: SectionRenderer = input => {
   const actions = actionsOf(LEAF, "actions", actionValue, 2).map((action, index) => {
     const raw = rawActions[index];
     const items = isObject(raw) ? raw.items : undefined;
-    if (items !== undefined) return <Menu key={action.id} trigger={<Button variant="secondary">{action.label}</Button>}>{actionsOf(LEAF, "actions.items", items).map(item => <Menu.Item key={item.id} id={item.id} href={item.href} onAction={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(item.id); }}>{item.label}</Menu.Item>)}</Menu>;
+    if (items !== undefined) return <MenuTrigger key={action.id}><Button variant="secondary">{action.label}</Button><PopupMenu>{actionsOf(LEAF, "actions.items", items).map(item => <MenuItem key={item.id} id={item.id} href={item.href} onAction={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(item.id); }}>{item.label}</MenuItem>)}</PopupMenu></MenuTrigger>;
     return action.href
       ? <Link key={action.id} href={action.href} variant="standalone">{action.label}</Link>
       : <Button key={action.id} variant={index === 0 ? "primary" : "secondary"} onPress={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(action.id); else noop(); }}>{action.label}</Button>;

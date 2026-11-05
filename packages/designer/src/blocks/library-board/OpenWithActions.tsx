@@ -7,7 +7,8 @@ import { type StudioOpenContext } from "./open-context.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
+// GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
+import { MenuItem, MenuSeparator, MenuTrigger, PopupMenu } from "../shell-menu.js";
 const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -58,12 +59,12 @@ export function OpenWithActions({ promptContext, projectPath, taskPrompt, viewHr
     } catch { result = "failed"; }
     if (result !== "dispatched") await copy(current.prompt, { kind: "copied", target: target.label });
   };
-  const menu = <Menu trigger={<Button variant="ghost" aria-label={compact ? labels.openIn : labels.chooseTarget}>{compact ? <Icon glyph={ExternalLink} decorative /> : <Icon glyph={ChevronDown} decorative />}</Button>}>
-    {openWithTargets.map(target => <Menu.Item key={target.id} id={target.id} onAction={() => { void open(target); }}>{target.icon}{target.label}</Menu.Item>)}
-    {openWithTargets.length ? <Menu.Separator /> : null}
-    <Menu.Item id="copy-prompt" onAction={() => { void copy(context().prompt, { kind: "copied" }); }}>{labels.copyPrompt}</Menu.Item>
-    <Menu.Item id="copy-link" onAction={() => { void copy(viewHref, { kind: "link-copied" }); }}>{labels.copyLink}</Menu.Item>
-  </Menu>;
+  const menu = <MenuTrigger><Button variant="ghost" aria-label={compact ? labels.openIn : labels.chooseTarget}>{compact ? <Icon glyph={ExternalLink} decorative /> : <Icon glyph={ChevronDown} decorative />}</Button><PopupMenu>
+    {openWithTargets.map(target => <MenuItem key={target.id} id={target.id} textValue={target.label} onAction={() => { void open(target); }}>{target.icon}{target.label}</MenuItem>)}
+    {openWithTargets.length ? <MenuSeparator /> : null}
+    <MenuItem id="copy-prompt" onAction={() => { void copy(context().prompt, { kind: "copied" }); }}>{labels.copyPrompt}</MenuItem>
+    <MenuItem id="copy-link" onAction={() => { void copy(viewHref, { kind: "link-copied" }); }}>{labels.copyLink}</MenuItem>
+  </PopupMenu></MenuTrigger>;
   return <SemanticContent as="div" className="flex shrink-0 items-center gap-xs" data-studio-actions="">
     {!compact ? <Button variant="secondary" onPress={() => { if (selected) void open(selected); else void copy(context().prompt, { kind: "copied" }); }}>{selected?.icon}{labels.openIn}{selected ? ` ${selected.label}` : ""}</Button> : null}
     {menu}

@@ -31,4 +31,16 @@ describe("selected Button variants", () => {
     expect(contracted.size).toBeGreaterThan(0);
     expect(offenders).toEqual([]);
   });
+  it("every components.button part leaf is a part the pinned shadcn@aria button declares", () => {
+    const fill = JSON.parse(readFileSync(resolve(packageRoot, "src/catalog/fills/shadcn@aria/components.button.json"), "utf8")) as { components: Record<string, { secondaryExports?: { name: string }[] }> };
+    const declared = new Set(Object.values(fill.components).flatMap(component => component.secondaryExports ?? []).map(part => part.name));
+    const offenders: string[] = [];
+    for (const file of ["src/frames", "src/shell", "src/blocks", "src/runtime"].flatMap(dir => sources(resolve(packageRoot, dir)))) {
+      for (const use of readFileSync(file, "utf8").matchAll(/componentLeaf<[^;]*?>\("components\.button", "(\w+)"\)/g)) {
+        if (!declared.has(use[1]!)) offenders.push(`${relative(packageRoot, file)} ${use[1]}`);
+      }
+    }
+    expect(declared.size).toBeGreaterThan(0);
+    expect(offenders).toEqual([]);
+  });
 });

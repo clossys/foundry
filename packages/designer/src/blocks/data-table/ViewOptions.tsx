@@ -9,7 +9,9 @@ import { componentLeaf } from "../../runtime/component-leaf.js";
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
 const Dialog = componentLeaf<typeof import("../../components/Dialog.js").Dialog>("components.dialog");
-const Popover = componentLeaf<typeof import("../../components/Popover.js").Popover>("components.popover");
+// GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
+import { DialogTrigger, Popover } from "../shell-menu.js";
+const DialogTitle = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogTitle>("components.dialog", "DialogTitle");
 const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
 const TagGroup = componentLeaf<typeof import("../../components/TagGroup.js").TagGroup>("components.tag-group");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
@@ -189,7 +191,7 @@ export function ViewOptions({
         </SemanticContent>
         {controls}
       </>}</Dialog>
-        : <Popover trigger={trigger} isOpen={isOpen} onOpenChange={setIsOpen} className="max-w-full overflow-auto"><Dialog.Heading>{viewOptionsLabel}</Dialog.Heading>{controls}</Popover>}
+        : <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>{trigger}<Popover aria-label={viewOptionsLabel} className="max-w-full overflow-auto"><DialogTitle>{viewOptionsLabel}</DialogTitle>{controls}</Popover></DialogTrigger>}
     </SemanticContent>
     {groups.length || model.sort.length || filters.length ? <TagGroup label={activeRulesLabel} selectionMode="none" onRemove={keys => change(editView(model, {
       table: { ...model.table,

@@ -430,7 +430,7 @@ describe("AppFrame floating stage", () => {
   it.each(["ltr", "rtl"] as const)("f: preserves the explicit %s direction in the portaled information surface", async dir => {
     const user = userEvent.setup(); render(<AppFrame {...stageFixture()} dir={dir} />);
     await user.click(screen.getByRole("button", { name: "Page information" }));
-    expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: dir });
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveStyle({ direction: dir });
   });
 
   it("f: resolves page locale direction for the portaled information despite opposite document direction", async () => {
@@ -438,14 +438,14 @@ describe("AppFrame floating stage", () => {
     try {
       const user = userEvent.setup(); render(<AppFrame {...stageFixture()} locale="ar" />);
       await user.click(screen.getByRole("button", { name: "Page information" }));
-      expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: "rtl" });
+      expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveStyle({ direction: "rtl" });
     } finally { document.documentElement.dir = previous; }
   });
 
   it("f: retains token typography and foreground outside the frame portal", async () => {
     const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
     await user.click(screen.getByRole("button", { name: "Page information" }));
-    expect(region("page-info").parentElement?.parentElement).toHaveClass("text-body", "text-ink-primary");
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveClass("text-body", "text-ink-primary");
   });
 
   it("g: presents only the first requested primary action as primary", () => {
@@ -462,7 +462,7 @@ describe("AppFrame floating stage", () => {
     const trigger = screen.getByRole("button", { name: "Page information" });
     expect(trigger).toHaveAttribute("aria-expanded", "false"); await user.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true"); expect(screen.getByText("Current project details")).toBeInTheDocument();
-    expect(region("page-info").parentElement?.parentElement).toHaveStyle({ position: "absolute" });
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveStyle({ position: "absolute" });
     await user.keyboard("{Escape}"); await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false")); await waitFor(() => expect(trigger).toHaveFocus());
     await user.click(trigger); await user.click(screen.getByText("Route action"));
     await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));
