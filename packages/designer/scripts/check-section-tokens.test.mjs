@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, realpathSync, renameSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
@@ -68,6 +69,21 @@ test("byte-identical stock passes the strict ref-verbatim check and is exempt fr
   assert.ok(tokenFindings("hero", [["hero.tsx", STOCK_CODE]]).length > 0);
   const stock = consumer({ heroDeps: ["example"], heroFiles: { "hero.tsx": STOCK_CODE }, heroMeta: lineage({ "hero.tsx": STOCK_PATH }) });
   assert.deepEqual(sectionShellFindings(stock, catalog), []);
+});
+
+test("the CLI takes the consumer components.json by --components, so stock outside the root is still exempt", () => {
+  const root = consumer({ heroDeps: ["example"], heroFiles: { "hero.tsx": STOCK_CODE }, heroMeta: lineage({ "hero.tsx": STOCK_PATH }) });
+  // The consumer keeps its components.json in the component package, not at the store root (as clossys does).
+  mkdirSync(join(root, "ui"));
+  renameSync(join(root, "components.json"), join(root, "ui/components.json"));
+  const run = (...args) => spawnSync(process.execPath, [join(pkg, "scripts/check-section-tokens.mjs"), "--root", root, ...args], { encoding: "utf8" });
+  const without = run();
+  assert.equal(without.status, 1, "without the components.json the stock comparison cannot run and the stock hero is linted");
+  assert.match(without.stderr, /does not depend on the band section-shell/);
+  const withComponents = run("--components", join(root, "ui/components.json"));
+  assert.equal(withComponents.status, 0, withComponents.stderr);
+  assert.equal(run("--components", join(root, "missing.json")).status, 2);
+  assert.equal(run("--components").status, 2);
 });
 
 const NOT_STOCK = "py-40 max-w-7xl text-9xl w-[200vw] -mx-24";

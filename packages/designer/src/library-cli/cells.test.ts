@@ -16,7 +16,9 @@ const fixture = fileURLToPath(new URL("./__fixtures__/agent-receipted/", import.
 const catalog = loadCatalog();
 let temporary: string, input: string, cells: string, output: string;
 beforeEach(async () => {
-  temporary = await fs.mkdtemp(join(tmpdir(), "designer-cells-"));
+  // macOS tmpdir() is /var/folders/..., a symlink to /private/var: the library refuses symlinked
+  // roots, so the fixture lives under the realpath of its temporary directory.
+  temporary = await fs.realpath(await fs.mkdtemp(join(tmpdir(), "designer-cells-")));
   input = join(temporary, "input"); cells = join(temporary, "cells"); output = join(temporary, "output");
   await fs.cp(fixture, input, { recursive: true });
 });
@@ -55,11 +57,11 @@ async function firstCell(): Promise<{ id: string; path: string; text: string }> 
 }
 
 describe("Designer cell migration and compile", () => {
-  it("round trips all 103 slot documents, selection, source, metadata and the library hash", async () => {
+  it("round trips all 91 slot documents, selection, source, metadata and the library hash", async () => {
     await migrate();
-    expect((await fs.readdir(join(cells, "cells"))).length).toBe(103);
+    expect((await fs.readdir(join(cells, "cells"))).length).toBe(91);
     const tree = await json(cells, "tree.json");
-    expect(Object.values(tree.active)).toEqual(Array(103).fill(1));
+    expect(Object.values(tree.active)).toEqual(Array(91).fill(1));
     for (const id of Object.keys(tree.active)) {
       expect(id).toMatch(/^(themes|assets|components|sections|frames)\.[a-z][a-z0-9-]*$/);
       expect(await fs.readdir(join(cells, "cells", id))).toEqual(["v1.md"]);
@@ -139,7 +141,7 @@ describe("Designer cell migration and compile", () => {
     expect(result.ok).toBe(false); expect(result.drift).toContain(`fills/${cell.id}.json`);
     await compileLibraryCells(cells, output, { catalog });
     await expect(fs.access(join(output, "fills", `${cell.id}.json`))).rejects.toMatchObject({ code: "ENOENT" });
-    expect((await readLibrary(output, catalog)).fills).toHaveLength(102);
+    expect((await readLibrary(output, catalog)).fills).toHaveLength(90);
   });
 
   it("runs migration, compile and the failure-producing check through the CLI dispatcher", async () => {

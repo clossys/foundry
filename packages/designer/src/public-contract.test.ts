@@ -408,7 +408,10 @@ const JS_SUBPATHS = [
   "./frames",
   "./studio/route",
   "./studio/route/server",
+  "./frames/error",
 ] as const;
+/** Gate scripts shipped as plain ESM with hand-written types (the pinned-candidate ref-verbatim gate). */
+const GATE_SCRIPT_SUBPATHS = ["./ref-verbatim"] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css"] as const;
 const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
 
@@ -427,6 +430,7 @@ describe("public UI contract", () => {
       ...JS_SUBPATHS.slice(0, 3),
       ...CSS_SUBPATHS,
       ...JS_SUBPATHS.slice(3),
+      ...GATE_SCRIPT_SUBPATHS,
     ]);
     expect(packageJson.exports["./studio/state"]).toEqual({ types: "./dist/studio/WholeStudioProvider.d.ts", import: "./dist/studio/WholeStudioProvider.js" });
     expect(packageJson.exports["."]).toBeUndefined();
@@ -440,6 +444,13 @@ describe("public UI contract", () => {
       expect(entry.import, `${subpath} needs an ESM entry`).toMatch(/^\.\/dist\/.+\.js$/);
     }
 
+    for (const subpath of GATE_SCRIPT_SUBPATHS) {
+      const entry = packageJson.exports[subpath] as { types?: string; import?: string };
+      expect(entry.types, `${subpath} needs public types`).toMatch(/^\.\/scripts\/.+\.d\.ts$/);
+      expect(entry.import, `${subpath} needs an ESM entry`).toMatch(/^\.\/scripts\/.+\.mjs$/);
+      expect(existsSync(join(packageRoot, entry.types as string)) && existsSync(join(packageRoot, entry.import as string))).toBe(true);
+    }
+
     for (const subpath of CSS_SUBPATHS) {
       const entry = packageJson.exports[subpath];
       expect(entry, `${subpath} needs a CSS entry`).toMatch(/^\.\/styles\/.+\.css$/);
@@ -448,7 +459,20 @@ describe("public UI contract", () => {
   });
 
   it("keeps token-only use free of component runtime installation", () => {
-    expect(packageJson.dependencies).toEqual({ "class-variance-authority": "0.7.1", "css-tree": "3.2.1", "@clossys/director": "0.6.0" });
+    // Declared runtime dependencies of shipped previews and Studio surfaces (clsx 013ff0ed4, recharts 4910f6d3a,
+    // tiptap 6463e7e59, @internationalized/date 811bee603); token-only use still needs none of the optional peers.
+    expect(packageJson.dependencies).toEqual({
+      "@internationalized/date": "^3.12.3",
+      "@tiptap/extension-table": "^3.32.1",
+      "@tiptap/markdown": "^3.32.1",
+      "@tiptap/react": "^3.32.1",
+      "@tiptap/starter-kit": "^3.32.1",
+      "class-variance-authority": "0.7.1",
+      clsx: "2.1.1",
+      "css-tree": "3.2.1",
+      recharts: "3.8.0",
+      "@clossys/director": "0.6.0",
+    });
 
     for (const dependency of ["@internationalized/date", "react", "react-dom", "react-aria-components", "tailwind-merge", "tailwindcss"]) {
       expect(packageJson.peerDependencies[dependency]).toBeDefined();
@@ -1187,8 +1211,14 @@ describe("compiled wiring public contract", () => {
       expect(ts.getPreEmitDiagnostics(ts.createProgram([filename], options, host)).map(d => ts.flattenDiagnosticMessageText(d.messageText, "\n")), entry).toEqual([]);
       const script = `import * as api from ${JSON.stringify(join(packageRoot, "dist", entry))};
         const result = api.checkWiring({ sources: [{ path: "frames/a.tsx", content: "import { Button } from \\"react-aria-components\\";", layer: "frames" }], themes: [], exceptions: api.foundryWiringExceptions(), now: "2026-10-26" });
-        process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), reasons: api.WIRING_REASON_CODES }));`;
-      expect(JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot })), entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3"], reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
+        const rows = api.foundryWiringExceptions(), count = (Array.isArray(rows) ? rows : rows.exceptions).length;
+        const unavailable = result.findings.filter(row => row.code === "WL9" && /file unavailable/.test(row.evidence)).length;
+        process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), count, unavailable, reasons: api.WIRING_REASON_CODES }));`;
+      // The probe supplies one synthetic source, so every committed Foundry exception names a file the input lacks:
+      // each is a WL9 "file unavailable" row after the one WL3 headless import.
+      const out = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
+      expect(out.count, entry).toBeGreaterThan(0);
+      expect(out, entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3", ...Array(out.count).fill("WL9")], count: out.count, unavailable: out.count, reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
     }
   }, 30_000);
 });

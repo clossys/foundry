@@ -2,7 +2,11 @@
 /**
  * Section shell lint over a consumer's pinned Designer slots (read-only).
  *
- *   node check-section-tokens.mjs --root <consumer>/clossys
+ *   node check-section-tokens.mjs --root <consumer>/clossys [--components <components.json>]
+ *
+ * `--components` names the consumer components.json the stock comparison replays the CLI add-time
+ * rewrites with (as check-ref-verbatim --components); without it the root and its parent are read.
+ * A consumer whose components.json lives elsewhere gets no stock exemption without it.
  *
  * For every pinned item whose slot composes `sections.band` (catalog anatomy) or
  * whose frame contract names `compose.measure`, the item must:
@@ -28,7 +32,7 @@
  * `meta.refVerbatim.files` maps it to. The shell rule is skipped only when every code file is such stock.
  * Exit 1 on any finding.
  */
-import { readFileSync, realpathSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { CODE_FILE, checkRegistryItem } from "./check-ref-verbatim.mjs";
@@ -168,11 +172,18 @@ export function loadCatalog() {
 
 // Resolve argv[1] so a node_modules/.bin symlink launch still runs the CLI.
 if (process.argv[1] && realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const usage = "usage: check-section-tokens.mjs --root <consumer>/clossys";
-  if (process.argv.includes("--help")) { console.log(usage); process.exit(0); }
-  const at = process.argv.indexOf("--root");
-  if (at < 0 || !process.argv[at + 1]) { console.error(usage); process.exit(2); }
-  const findings = sectionShellFindings(resolve(process.argv[at + 1]));
+  const usage = "usage: check-section-tokens.mjs --root <consumer>/clossys [--components <components.json>]";
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help")) { console.log(usage); process.exit(0); }
+  const flags = new Map();
+  for (let i = 0; i < argv.length; i += 2) {
+    if (!["--root", "--components"].includes(argv[i]) || !argv[i + 1] || argv[i + 1].startsWith("--") || flags.has(argv[i])) { console.error(usage); process.exit(2); }
+    flags.set(argv[i], argv[i + 1]);
+  }
+  if (!flags.has("--root")) { console.error(usage); process.exit(2); }
+  const components = flags.has("--components") ? resolve(flags.get("--components")) : undefined;
+  if (components && !existsSync(components)) { console.error(`check-section-tokens: --components ${components} does not exist`); process.exit(2); }
+  const findings = sectionShellFindings(resolve(flags.get("--root")), loadCatalog(), { components });
   if (findings.length) { console.error(`check-section-tokens: FAIL (${findings.length})\n- ${findings.join("\n- ")}`); process.exit(1); }
   console.log("check-section-tokens: ok; shell, spacing, type, size, bleed");
 }

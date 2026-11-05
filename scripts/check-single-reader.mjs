@@ -64,11 +64,14 @@ export function isModelString(text) {
   return AGENT_PATH.test(text) || MODEL_FILE.test(text);
 }
 
-/** An "agents" argument followed by a literal folder that is not a slot agent (agents/producer) is not the slot model. */
+/**
+ * An "agents" argument followed by a literal folder that is not a model tree (agents/codex) is not
+ * the slot model. The Producer seat tree (agents/producer) is a model tree, so it is a finding.
+ */
 function otherAgentsFolder(node) {
   if (node.text !== "agents" || !node.parent || !ts.isCallExpression(node.parent)) return false;
   const args = node.parent.arguments, next = args[args.indexOf(node) + 1];
-  return Boolean(next && ts.isStringLiteralLike(next) && !SLOT_AGENTS.includes(next.text));
+  return Boolean(next && ts.isStringLiteralLike(next) && !MODEL_TREES.includes(next.text));
 }
 
 /** Repository-relative files in scope. */

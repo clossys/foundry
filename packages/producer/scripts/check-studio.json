@@ -353,7 +353,7 @@
     {
       "id": "designer check-section-tokens",
       "cwd": "packages/designer",
-      "run": "node scripts/check-section-tokens.mjs --root ../../clossys",
+      "run": "node scripts/check-section-tokens.mjs --root ../../clossys --components ui/components.json",
       "kind": "static"
     },
     {

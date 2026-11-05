@@ -63,12 +63,24 @@ test("the reader and the writer may open the model; tests, routes and other agen
     "packages/demo/src/route.ts": `import { readFileSync } from "node:fs";
 import { join } from "node:path";
 export const route = "/agents/designer/hero";
-export const producer = (root: string) => readFileSync(join(root, "agents", "producer", "loop.json"));
+export const other = (root: string) => readFileSync(join(root, "agents", "codex", "loop.json"));
 export const own = (root: string) => readFileSync(root + "/package.json");
 `,
   });
   assert.deepEqual(check(root), []);
   assert.equal(run(root).status, 0);
+});
+
+test("the Producer seat tree is the slot model: literal agents/producer path arguments are findings", () => {
+  const root = fixture({
+    "packages/demo/src/seats.ts": `import { readdirSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+export const seats = (root: string) => readdirSync(join(root, "clossys", "agents", "producer"));
+export const loop = (root: string) => readFileSync(join(root, "agents", "producer", "loop.json"));
+`,
+  });
+  assert.deepEqual(check(root).map(finding => [finding.file, finding.line]), [["packages/demo/src/seats.ts", 3], ["packages/demo/src/seats.ts", 4]]);
+  assert.equal(run(root).status, 1);
 });
 
 test("usage errors exit 2", () => {
