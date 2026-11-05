@@ -2,7 +2,8 @@
 /**
  * Unit acceptance by check: a unit is accepted when its check fails on the base and passes on the head.
  *
- *   node scripts/accept-unit.mjs <base> <head> <check-script>
+ *   node scripts/accept-unit.mjs [--keep] <base> <head> <check-script>
+ *   node scripts/accept-unit.mjs --clean-stale
  *
  * <check-script> is an npm script name found in exactly one package.json of the head tree, or
  * `<package dir>#<script>` (the root is "."). Each revision is extracted with `git archive` into a
@@ -32,14 +33,18 @@
  * run dropped, an exemption added), is FAIL as `loosened` (`loosening`). The registry itself is never
  * carried: it is what check:rules measures.
  *
- * Prints one line: PASS or FAIL, both exit codes, and where the trees and logs are kept (they are
- * left in place for inspection). Exits 0 on PASS, 1 on FAIL, 2 on a usage or setup error.
+ * Prints one line: PASS or FAIL and both exit codes; on FAIL the last lines of each log follow. The
+ * work folder (both trees, their node_modules clones and built dist/, the logs) is removed when the
+ * run ends, pass, fail or error, unless --keep is given; the line says which. `--clean-stale` removes
+ * the folders that killed runs left behind (`cleanStale`): only marked accept-unit folders older than
+ * two hours whose process is gone and that nothing holds open. Exits 0 on PASS, 1 on FAIL, 2 on a
+ * usage or setup error.
  */
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
-import { constants, tmpdir } from "node:os";
-import { delimiter, dirname, join, posix, relative, resolve } from "node:path";
+import { copyFileSync, cpSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, statfsSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { constants, hostname, tmpdir } from "node:os";
+import { basename, delimiter, dirname, join, posix, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { buildOrder, listWorkspaces } from "./build-workspaces.mjs";
 import { commandList, reachable, workspaces } from "./check-orphan-checks.mjs";
@@ -61,11 +66,144 @@ export function commit(repo, rev) {
 
 /** Variables that point git at one repository; a process inside an extracted tree must find the tree's own. */
 const GIT_LOCATION = ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_NAMESPACE", "GIT_PREFIX"];
-/** The environment a check or build runs with inside an extracted tree. */
-export function treeEnv(extra = {}) {
+/**
+ * The environment a check or build runs with inside an extracted tree. Given the tree, and when the tree
+ * sits in a marked work folder, the temp directory is that folder's own `tmp/` (TMPDIR, TMP, TEMP): what a
+ * check or build leaves in its temp directory (check:rules makes one per fixture run) goes with the folder.
+ */
+export function treeEnv(extra = {}, tree) {
   const env = { ...process.env, ...extra };
   for (const name of GIT_LOCATION) delete env[name];
+  const work = tree && dirname(tree);
+  if (work && workMarker(work)) {
+    const tmp = join(work, "tmp");
+    mkdirSync(tmp, { recursive: true });
+    env.TMPDIR = env.TMP = env.TEMP = tmp;
+  }
   return env;
+}
+
+/**
+ * Work folders. Each run extracts its trees (each with a node_modules clone and its built dist/) into
+ * one folder `<tmpdir>/<tool>-XXXXXX` that carries a marker file naming the tool, the process and the
+ * host. The run removes that folder when it ends, pass or fail, unless the caller asks to keep it. The
+ * trees are standalone repositories (`git init`, objects borrowed through an alternates file), not
+ * `git worktree add` trees, so nothing is registered in the checkout and removal is `fs.rm` of the
+ * folder: a symlink inside it is unlinked, never followed, and the borrowed objects are untouched.
+ * A run that was killed leaves its folder behind; `cleanStale` removes those.
+ */
+export const WORK_MARKER = ".foundry-check-tree.json";
+export const WORK_KIND = "foundry-check-tree";
+export const WORK_TOOLS = ["accept-unit", "pre-push-ratchet"];
+export const STALE_AFTER_MS = 2 * 60 * 60 * 1000;
+const active = new Set();
+
+export function makeWork(tool, { root = tmpdir() } = {}) {
+  if (!WORK_TOOLS.includes(tool)) throw new Error(`unknown work tool: ${tool}`);
+  // The real path: the slot model refuses a tree reached through a symlinked temp root (/var -> /private/var).
+  const work = realpathSync(mkdtempSync(join(root, `${tool}-`)));
+  writeFileSync(join(work, WORK_MARKER), JSON.stringify({ kind: WORK_KIND, tool, pid: process.pid, host: hostname(), started: new Date().toISOString() }) + "\n");
+  active.add(work);
+  return work;
+}
+
+/** The marker of a work folder, or undefined when the folder is not one this code made for `tool`. */
+export function workMarker(work, tools = WORK_TOOLS) {
+  const name = basename(work);
+  const tool = tools.find(candidate => name.startsWith(`${candidate}-`));
+  if (!tool) return undefined;
+  try {
+    const marker = JSON.parse(readFileSync(join(work, WORK_MARKER), "utf8"));
+    if (marker?.kind !== WORK_KIND || marker.tool !== tool || !Number.isInteger(marker.pid) || Number.isNaN(Date.parse(marker.started))) return undefined;
+    return marker;
+  } catch { return undefined; }
+}
+
+/** Remove a work folder this code made; anything without the tool's name prefix and marker is refused. */
+export function removeWork(work) {
+  if (!workMarker(work)) throw new Error(`refusing to remove ${work}: not a marked work folder`);
+  rmSync(work, { recursive: true, force: true, maxRetries: 3 });
+  active.delete(work);
+}
+
+/** Remove every folder this process made and still holds (a signal ended the run). */
+export function removeActiveWork() {
+  for (const work of [...active]) { try { removeWork(work); } catch { active.delete(work); } }
+}
+
+/** Allocated bytes under `path`, symlinks counted as themselves and never followed. */
+export function diskUsage(path) {
+  let total = 0;
+  const walk = at => {
+    let st;
+    try { st = lstatSync(at); } catch { return; }
+    total += st.blocks !== undefined ? st.blocks * 512 : st.size;
+    if (!st.isDirectory()) return;
+    let names = [];
+    try { names = readdirSync(at); } catch { return; }
+    for (const name of names) walk(join(at, name));
+  };
+  walk(path);
+  return total;
+}
+
+function alive(pid) {
+  try { process.kill(pid, 0); return true; } catch (error) { return error.code === "EPERM"; }
+}
+
+/** Top-level folder names under `root` that some process has open (a cwd, an open file), by lsof. */
+function heldUnder(root) {
+  const out = run("lsof", ["-n", "-P", "-w", "-F", "n"]);
+  if (out.error || !out.stdout) throw new Error(`lsof could not list open files${out.error ? `: ${out.error.message}` : ""}; nothing removed`);
+  const held = new Set();
+  const prefixes = [...new Set([root, realpathSync(root)])].map(at => at.endsWith(sep) ? at : at + sep);
+  for (const line of out.stdout.split("\n")) {
+    if (!line.startsWith("n")) continue;
+    const path = line.slice(1);
+    const prefix = prefixes.find(candidate => path.startsWith(candidate));
+    if (prefix) held.add(path.slice(prefix.length).split(sep)[0]);
+  }
+  return held;
+}
+
+/**
+ * Remove the work folders a killed run left behind: only folders directly under `root` whose name
+ * starts with one of `tools` followed by "-" and that carry that tool's marker, started more than
+ * `maxAgeMs` ago, made on this host by a process that is gone, and that no live process holds open.
+ * Every other folder is left alone, the unmarked ones included. Returns what was removed and kept,
+ * the bytes those folders held and the free space on the volume before and after.
+ */
+export function cleanStale({ root = tmpdir(), tools = WORK_TOOLS, maxAgeMs = STALE_AFTER_MS, now = Date.now(), held } = {}) {
+  const free = () => { const fs = statfsSync(root); return fs.bavail * fs.bsize; };
+  const freeBefore = free();
+  const holders = held ?? heldUnder(root);
+  const removed = [], kept = [];
+  let bytes = 0;
+  for (const name of readdirSync(root).sort()) {
+    if (!tools.some(tool => name.startsWith(`${tool}-`))) continue;
+    const work = join(root, name);
+    try { if (!lstatSync(work).isDirectory()) continue; } catch { continue; }
+    const marker = workMarker(work, tools);
+    const why = !marker ? "unmarked"
+      : now - Date.parse(marker.started) < maxAgeMs ? "young"
+      : marker.host !== hostname() ? "other-host"
+      : active.has(work) || alive(marker.pid) ? "live-process"
+      : holders.has(name) ? "held-open"
+      : undefined;
+    if (why) { kept.push({ name, why }); continue; }
+    const size = diskUsage(work);
+    removeWork(work);
+    bytes += size;
+    removed.push({ name, bytes: size });
+  }
+  return { root, removed, kept, bytes, freeBefore, freeAfter: free() };
+}
+
+/** One line for a cleanStale result. */
+export function staleReport(result) {
+  const unmarked = result.kept.filter(entry => entry.why === "unmarked").length;
+  const gib = n => `${(n / 2 ** 30).toFixed(2)} GiB`;
+  return `clean-stale ${result.root}: removed ${result.removed.length} folder(s), ${gib(result.bytes)} allocated; kept ${result.kept.length} (${unmarked} unmarked, never touched); free ${gib(result.freeBefore)} -> ${gib(result.freeAfter)}`;
 }
 
 /**
@@ -294,12 +432,37 @@ export function trackedChanges(repo, sha, tree) {
 
 /** The default build cache: one folder per commit tree sha and installed lockfile. */
 export const DIST_CACHE = join(tmpdir(), "foundry-dist-cache");
-const DIST_CACHE_KEEP = 8;
+/** The cache keeps at most this many tree entries and this many allocated bytes, newest first. */
+export const DIST_CACHE_KEEP = 8;
+export const DIST_CACHE_MAX_BYTES = 1024 * 1024 * 1024;
 
-function pruneCache(cache, keep) {
-  if (!existsSync(cache)) return;
-  const entries = readdirSync(cache).filter(name => !name.includes(".tmp-")).map(name => ({ name, at: statSync(join(cache, name)).mtimeMs })).sort((a, b) => b.at - a.at);
-  for (const { name } of entries.slice(keep)) rmSync(join(cache, name), { recursive: true, force: true });
+/**
+ * Prune the cache to `keep` entries and `maxBytes`, dropping the least recently used first. `current`
+ * (the entry this run is using) is always kept and counts toward both caps. A scratch folder
+ * (`.tmp-<pid>-<ms>`) is an unfinished store: left alone while its process lives, removed once that
+ * process is gone and it is older than STALE_AFTER_MS.
+ */
+export function pruneCache(cache, { keep = DIST_CACHE_KEEP, maxBytes = DIST_CACHE_MAX_BYTES, current, now = Date.now() } = {}) {
+  if (!existsSync(cache)) return { removed: [], bytes: 0 };
+  const removed = [];
+  const drop = name => { rmSync(join(cache, name), { recursive: true, force: true, maxRetries: 3 }); removed.push(name); };
+  const entries = [];
+  for (const name of readdirSync(cache)) {
+    let at;
+    try { at = statSync(join(cache, name)).mtimeMs; } catch { continue; }
+    const scratch = /\.tmp-(\d+)-(\d+)$/.exec(name);
+    if (scratch) { if (!alive(Number(scratch[1])) && now - Number(scratch[2]) > STALE_AFTER_MS) drop(name); continue; }
+    if (name.includes(".tmp-")) continue;
+    entries.push({ name, at, bytes: diskUsage(join(cache, name)) });
+  }
+  entries.sort((a, b) => (b.name === current) - (a.name === current) || b.at - a.at);
+  let count = 0, bytes = 0;
+  for (const entry of entries) {
+    if (entry.name !== current && (count + 1 > keep || bytes + entry.bytes > maxBytes)) { drop(entry.name); continue; }
+    count += 1;
+    bytes += entry.bytes;
+  }
+  return { removed, bytes };
 }
 
 const tail = (out, n = 20) => `${out.stdout ?? ""}\n${out.stderr ?? ""}${out.error ? `\n${out.error.message}` : ""}`.split("\n").map(line => line.trimEnd()).filter(Boolean).slice(-n);
@@ -310,7 +473,7 @@ const tail = (out, n = 20) => `${out.stdout ?? ""}\n${out.stderr ?? ""}${out.err
  * `<cache>/<tree sha>-<installed lockfile hash>/<dir>`, so the same tree is built once and restored after
  * that. A build that fails, or that rewrites a tracked file, is returned as `failure` and stops the rest.
  */
-export function buildDist(repo, sha, tree, dirs, { cache = DIST_CACHE, log } = {}) {
+export function buildDist(repo, sha, tree, dirs, { cache = DIST_CACHE, log, cacheKeep = DIST_CACHE_KEEP, cacheMaxBytes = DIST_CACHE_MAX_BYTES } = {}) {
   const result = { built: [], cached: [] };
   if (!dirs.length) return result;
   const treeSha = run("git", ["rev-parse", "--verify", `${sha}^{tree}`], { cwd: repo }).stdout.trim();
@@ -320,7 +483,8 @@ export function buildDist(repo, sha, tree, dirs, { cache = DIST_CACHE, log } = {
   mkdirSync(home, { recursive: true });
   const now = new Date();
   utimesSync(home, now, now);
-  pruneCache(cache, DIST_CACHE_KEEP);
+  const prune = () => pruneCache(cache, { keep: cacheKeep, maxBytes: cacheMaxBytes, current: basename(home) });
+  prune();
   const lines = [];
   for (const dir of dirs) {
     const saved = join(home, dir.replaceAll("/", "__"));
@@ -333,7 +497,7 @@ export function buildDist(repo, sha, tree, dirs, { cache = DIST_CACHE, log } = {
     const command = distCommand(JSON.parse(readFileSync(join(tree, dir, "package.json"), "utf8")).scripts.build);
     const before = new Set(filesUnder(tree, dir));
     const PATH = [join(tree, dir, "node_modules", ".bin"), join(tree, "node_modules", ".bin"), process.env.PATH].filter(Boolean).join(delimiter);
-    const out = run("/bin/sh", ["-c", command], { cwd: join(tree, dir), env: treeEnv({ FORCE_COLOR: "0", NO_COLOR: "1", PATH }) });
+    const out = run("/bin/sh", ["-c", command], { cwd: join(tree, dir), env: treeEnv({ FORCE_COLOR: "0", NO_COLOR: "1", PATH }, tree) });
     lines.push(`# ${dir}: ${command} (exit ${out.status ?? 1})`, ...tail(out, 200));
     if (out.status !== 0) {
       if (log) writeFileSync(log, lines.join("\n") + "\n");
@@ -354,6 +518,8 @@ export function buildDist(repo, sha, tree, dirs, { cache = DIST_CACHE, log } = {
     try { renameSync(scratch, saved); } catch { rmSync(scratch, { recursive: true, force: true }); }
     result.built.push(dir);
   }
+  // What this run stored counts too: the cache is held to its caps after the store, not only before.
+  if (result.built.length) prune();
   if (log) writeFileSync(log, lines.join("\n") + "\n");
   return result;
 }
@@ -489,7 +655,7 @@ export function applyOverlay(headTree, baseTree, { files, removed = [], scripts 
 }
 
 function runCheck(tree, { dir, script }, log) {
-  const out = run("npm", ["run", "--silent", script], { cwd: join(tree, dir), env: treeEnv({ FORCE_COLOR: "0" }) });
+  const out = run("npm", ["run", "--silent", script], { cwd: join(tree, dir), env: treeEnv({ FORCE_COLOR: "0" }, tree) });
   const text = `${out.stdout ?? ""}${out.stderr ?? ""}${out.error ? `\n${out.error.message}\n` : ""}`;
   writeFileSync(log, `$ npm run ${script}  (cwd ${dir})\n${text}`);
   // A signal is reported as a shell does (128 + its number), never as an ordinary finding.
@@ -527,10 +693,39 @@ export async function prepareTrees({ repo, baseSha, headSha, baseTree, headTree,
   return { overlaid, removed: plan.removed, seeds, builds, loosened };
 }
 
-export async function acceptUnit({ base, head, check, cwd = process.cwd(), cache }) {
+const LOGS = ["base-build.log", "head-build.log", "base.log", "head.log"];
+
+/** The last `n` lines of each log a run wrote, read before its folder is removed. */
+function logTails(work, n = 20) {
+  return Object.fromEntries(LOGS.filter(name => existsSync(join(work, name))).map(name => [name, readFileSync(join(work, name), "utf8").split("\n").map(line => line.trimEnd()).filter(Boolean).slice(-n)]));
+}
+
+/**
+ * Measure `check` on `base` and `head`. The work folder (both trees, their node_modules clones and
+ * built dist/, and the logs) is removed when the run ends, pass, fail or error, unless `keep`; the
+ * result then carries the last lines of each log (`logs`) and `kept: false`.
+ */
+export async function acceptUnit({ base, head, check, cwd = process.cwd(), cache, keep = false, root }) {
   const repo = gitTop(cwd);
   const baseSha = commit(repo, base), headSha = commit(repo, head);
-  const work = realpathSync(mkdtempSync(join(tmpdir(), "accept-unit-")));
+  const work = makeWork("accept-unit", { root });
+  const where = keep ? `; trees and logs kept in ${work}` : "; trees removed (--keep keeps them)";
+  let result;
+  try {
+    result = await measureUnit({ repo, baseSha, headSha, check, work, cache });
+  } catch (error) {
+    if (keep) error.work = work;
+    throw error;
+  } finally {
+    if (!keep) {
+      if (result) result.logs = logTails(work);
+      removeWork(work);
+    }
+  }
+  return { ...result, work, kept: keep, line: result.line + where };
+}
+
+async function measureUnit({ repo, baseSha, headSha, check, work, cache }) {
   const baseTree = join(work, "base"), headTree = join(work, "head");
   extract(repo, baseSha, baseTree);
   extract(repo, headSha, headTree);
@@ -540,14 +735,14 @@ export async function acceptUnit({ base, head, check, cwd = process.cwd(), cache
   const { overlaid, builds, loosened } = await prepareTrees({ repo, baseSha, headSha, baseTree, headTree, entries: [target], work, cache });
   const carried = `; base measured with the head check (${overlaid.length} file(s) overlaid)`;
   if (loosened.length) {
-    const line = `FAIL ${name}: loosened, the head relaxes policy data the check reads (${loosened.slice(0, 5).join("; ")}${loosened.length > 5 ? `; ${loosened.length - 5} more` : ""})${carried}; trees and logs in ${work}`;
-    return { pass: false, baseExit: undefined, headExit: undefined, overlaid, builds, loosened, work, line, load: {} };
+    const line = `FAIL ${name}: loosened, the head relaxes policy data the check reads (${loosened.slice(0, 5).join("; ")}${loosened.length > 5 ? `; ${loosened.length - 5} more` : ""})${carried}`;
+    return { pass: false, baseExit: undefined, headExit: undefined, overlaid, builds, loosened, line, load: {} };
   }
   const broken = ["base", "head"].filter(side => builds[side].failure);
   if (broken.length) {
     const why = broken.map(side => `; ${buildFailure(side, builds[side].failure)}`).join("");
-    const line = `FAIL ${name}: not measured, base ${baseSha.slice(0, 9)} and head ${headSha.slice(0, 9)} must both build what the check loads${why}${carried}; trees and logs in ${work}`;
-    return { pass: false, baseExit: undefined, headExit: undefined, overlaid, builds, loosened, work, line, load: {} };
+    const line = `FAIL ${name}: not measured, base ${baseSha.slice(0, 9)} and head ${headSha.slice(0, 9)} must both build what the check loads${why}${carried}`;
+    return { pass: false, baseExit: undefined, headExit: undefined, overlaid, builds, loosened, line, load: {} };
   }
   const baseRun = runCheck(baseTree, target, join(work, "base.log"));
   const headRun = runCheck(headTree, target, join(work, "head.log"));
@@ -555,23 +750,49 @@ export async function acceptUnit({ base, head, check, cwd = process.cwd(), cache
   const pass = baseExit === FINDING_EXIT && !baseRun.load && headExit === 0;
   const unloaded = [["base", baseRun], ["head", headRun]].filter(([, side]) => side.load).map(([side, { load }]) => `; the ${side} could not load the check (${load})`).join("");
   const noVerdict = baseExit !== 0 && baseExit !== FINDING_EXIT ? `; the base exit ${baseExit} is a usage, read or run error, not a finding` : "";
-  const line = `${pass ? "PASS" : "FAIL"} ${name}: base ${baseSha.slice(0, 9)} exit ${baseExit} (want ${FINDING_EXIT}), head ${headSha.slice(0, 9)} exit ${headExit} (want 0)${carried}${unloaded}${noVerdict}; trees and logs in ${work}`;
-  return { pass, baseExit, headExit, overlaid, builds, loosened, work, line, load: { base: baseRun.load, head: headRun.load } };
+  const line = `${pass ? "PASS" : "FAIL"} ${name}: base ${baseSha.slice(0, 9)} exit ${baseExit} (want ${FINDING_EXIT}), head ${headSha.slice(0, 9)} exit ${headExit} (want 0)${carried}${unloaded}${noVerdict}`;
+  return { pass, baseExit, headExit, overlaid, builds, loosened, line, load: { base: baseRun.load, head: headRun.load } };
+}
+
+/** On SIGINT, SIGTERM or SIGHUP remove this process's work folders (unless kept), then exit 128 + n. */
+export function removeWorkOnSignal({ keep = false } = {}) {
+  for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
+    process.on(signal, () => {
+      if (!keep) removeActiveWork();
+      process.exit(128 + (constants.signals[signal] ?? 0));
+    });
+  }
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
+  const usage = "usage: node scripts/accept-unit.mjs [--keep] <base> <head> <check-script | dir#script>\n       node scripts/accept-unit.mjs --clean-stale";
   const args = process.argv.slice(2);
-  if (args.length !== 3 || args.some(arg => arg.startsWith("-"))) {
-    console.error("usage: node scripts/accept-unit.mjs <base> <head> <check-script | dir#script>");
+  if (args.length === 1 && args[0] === "--clean-stale") {
+    try {
+      console.log(staleReport(cleanStale({ tools: ["accept-unit"] })));
+      process.exit(0);
+    } catch (error) {
+      console.error(`accept-unit --clean-stale: ${error.message}`);
+      process.exit(2);
+    }
+  }
+  const keep = args.includes("--keep");
+  const positional = args.filter(arg => arg !== "--keep");
+  if (positional.length !== 3 || positional.some(arg => arg.startsWith("-")) || args.filter(arg => arg === "--keep").length > 1) {
+    console.error(usage);
     process.exit(2);
   }
+  removeWorkOnSignal({ keep });
   try {
-    const [base, head, check] = args;
-    const result = await acceptUnit({ base, head, check });
+    const [base, head, check] = positional;
+    const result = await acceptUnit({ base, head, check, keep });
     console.log(result.line);
+    if (!result.pass && result.logs) {
+      for (const [name, lines] of Object.entries(result.logs)) if (lines.length) console.log(`--- ${name} (last ${lines.length} line(s))\n${lines.join("\n")}`);
+    }
     process.exit(result.pass ? 0 : 1);
   } catch (error) {
-    console.error(`accept-unit: ${error.message}`);
+    console.error(`accept-unit: ${error.message}${error.work ? ` (trees and logs kept in ${error.work})` : ""}`);
     process.exit(2);
   }
 }

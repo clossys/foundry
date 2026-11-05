@@ -1,14 +1,19 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { HOOK_CHECKS, PENDING_HOOK_CHECKS, delta, mask, normalize, pushedRefs, ratchet, report } from "./pre-push-ratchet.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
+/** Every fixture folder a test makes is removed when the file's tests end. */
+const made = [];
+const scratch = prefix => { const dir = mkdtempSync(join(tmpdir(), prefix)); made.push(dir); return dir; };
+after(() => { for (const dir of made) rmSync(dir, { recursive: true, force: true }); });
+
 const git = (cwd, ...args) => execFileSync("git", ["-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", ...args], { cwd, encoding: "utf8" }).trim();
 const write = (root, files) => {
   for (const [path, contents] of Object.entries(files)) {
@@ -37,7 +42,7 @@ const manifest = checks => ({ checks: [{ id: "fixture probe", kind: "static", cw
 
 /** A repository with the real check:rules and orphan graph, one probe sub-check and two lines of existing debt. */
 function repository() {
-  const root = mkdtempSync(join(tmpdir(), "pre-push-ratchet-test-"));
+  const root = scratch("pre-push-ratchet-test-");
   git(root, "init", "-q");
   const base = commit(root, {
     "package.json": { name: "fixture", private: true, workspaces: ["packages/*"], scripts: { check: "node scripts/run-check-steps.mjs check:rules check:studio --workspace=packages/producer", "check:rules": "node scripts/check-rules.mjs" } },
@@ -139,7 +144,7 @@ test("the pre-push hook measures every pushed ref, not HEAD, and skips deletes (
   // The hook runs the default HOOK_CHECKS ids; each is the probe here.
   commit(root, { "packages/producer/scripts/check-studio.json": manifest(HOOK_CHECKS.map(id => ({ id, kind: "static", cwd: "packages/producer", run: "node scripts/probe.mjs" }))) }, "the hook");
   const main = git(root, "rev-parse", "--abbrev-ref", "HEAD");
-  const remote = mkdtempSync(join(tmpdir(), "pre-push-ratchet-remote-"));
+  const remote = scratch("pre-push-ratchet-remote-");
   git(remote, "init", "-q", "--bare");
   git(root, "remote", "add", "origin", remote);
   git(root, "push", "-q", "origin", `${main}:refs/heads/main`);
@@ -284,7 +289,7 @@ test("a failing build blocks as build-failed and nothing is measured", async () 
     "packages/producer/scripts/build.mjs": 'import { mkdirSync, writeFileSync } from "node:fs";\nmkdirSync("dist", { recursive: true });\nwriteFileSync("dist/lib.mjs", "export const answer = 42;\\n");\n',
     "packages/producer/scripts/dist-probe.mjs": 'import { answer } from "../dist/lib.mjs";\nconsole.log(answer);\n',
   });
-  const cache = mkdtempSync(join(tmpdir(), "pre-push-ratchet-cache-"));
+  const cache = scratch("pre-push-ratchet-cache-");
   const same = await ratchet({ cwd: root, base, head: base, ids: ["fixture extra"], cache });
   assert.equal(same.delta.block, false, report(same));
   assert.deepEqual(same.delta.checks.map(check => check.state), ["green"]);
@@ -294,4 +299,51 @@ test("a failing build blocks as build-failed and nothing is measured", async () 
   assert.deepEqual(result.delta.checks, []);
   assert.match(report(result), /^build-failed\s+the head build of packages\/producer failed \(exit 2: node scripts\/build\.mjs\): error TS1005 planted$[\s\S]*BLOCKED: nothing was measured/m);
   assert.equal(result.builds.base.cached.length, 1, "the unchanged base is restored from the cache");
+});
+
+test("the ratchet removes its work folder when it ends, pass, block or error, unless kept", async () => {
+  const { root, base } = repository();
+  const work = scratch("pre-push-ratchet-work-");
+  const same = commit(root, { "packages/producer/README.md": "unrelated\n" }, "unrelated");
+  const passed = await ratchet({ cwd: root, base, head: same, ids: ["fixture probe"], root: work });
+  assert.equal(passed.delta.block, false, report(passed));
+  assert.equal(passed.kept, false);
+  assert.match(report(passed), /^pre-push ratchet: .* \(trees removed; --keep keeps them\)$/m);
+  const more = commit(root, { "packages/producer/data/violations.txt": "old one\nold two\nnew three\n" }, "add debt");
+  const blocked = await ratchet({ cwd: root, base, head: more, ids: ["fixture probe"], root: work });
+  assert.equal(blocked.delta.block, true);
+  await assert.rejects(ratchet({ cwd: root, base, head: more, ids: ["no such check"], root: work }), /no check:studio sub-check/);
+  assert.deepEqual(readdirSync(work), [], "nothing is left after a pass, a block or an error");
+  const kept = await ratchet({ cwd: root, base, head: same, ids: ["fixture probe"], root: work, keep: true });
+  assert.equal(kept.kept, true);
+  assert.equal(existsSync(join(kept.work, "head", ".git")), true);
+  assert.equal(JSON.parse(readFileSync(join(kept.work, ".foundry-check-tree.json"), "utf8")).tool, "pre-push-ratchet");
+  assert.match(report(kept), /\(trees kept in /);
+});
+
+test("the CLI removes its trees unless --keep, and --clean-stale removes only its own marked stale folders", () => {
+  const { root, base } = repository();
+  const head = commit(root, { "packages/producer/README.md": "unrelated\n" }, "unrelated");
+  const temp = scratch("pre-push-ratchet-cli-");
+  const cli = (...args) => spawnSync(process.execPath, [join(here, "pre-push-ratchet.mjs"), ...args], { cwd: root, encoding: "utf8", env: { ...process.env, TMPDIR: temp } });
+  const ours = () => readdirSync(temp).filter(name => name.startsWith("pre-push-ratchet-")).sort();
+  const plain = cli("--base", base, "--head", head, "--id", "fixture probe");
+  assert.equal(plain.status, 0, plain.stdout + plain.stderr);
+  assert.deepEqual(ours(), [], "the hook's trees are gone after the run");
+  const keptRun = cli("--base", base, "--head", head, "--id", "fixture probe", "--keep");
+  assert.equal(keptRun.status, 0, keptRun.stdout + keptRun.stderr);
+  const [kept] = ours();
+  assert.ok(kept, "--keep keeps the trees");
+  // Age the kept folder and hand it a gone process: --clean-stale then removes it, and only it.
+  const gone = spawnSync(process.execPath, ["-e", ""]).pid;
+  writeFileSync(join(temp, kept, ".foundry-check-tree.json"), JSON.stringify({ kind: "foundry-check-tree", tool: "pre-push-ratchet", pid: gone, host: hostname(), started: new Date(Date.now() - 3 * 3600_000).toISOString() }));
+  mkdirSync(join(temp, "pre-push-ratchet-unmarked"));
+  mkdirSync(join(temp, "accept-unit-other"));
+  writeFileSync(join(temp, "accept-unit-other", ".foundry-check-tree.json"), JSON.stringify({ kind: "foundry-check-tree", tool: "accept-unit", pid: gone, host: hostname(), started: new Date(Date.now() - 3 * 3600_000).toISOString() }));
+  const clean = cli("--clean-stale");
+  assert.equal(clean.status, 0, clean.stdout + clean.stderr);
+  assert.match(clean.stdout, /^clean-stale .*: removed 1 folder\(s\), .*; kept 1 \(1 unmarked, never touched\); free /);
+  // check:rules' own temp folders (one per fixture run) went into the work folder's tmp/ and with it.
+  assert.deepEqual(readdirSync(temp).sort(), ["accept-unit-other", "foundry-dist-cache", "pre-push-ratchet-unmarked"].filter(name => existsSync(join(temp, name))));
+  assert.equal(cli("--clean-stale", "--keep").status, 2, "--clean-stale takes no other argument");
 });

@@ -43,18 +43,22 @@
  * Unchanged debt and fixed debt pass. Either revision failing to run check:rules is a setup error
  * (exit 2) and blocks too: the ratchet fails closed. The delta is printed either way.
  *
- * Usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json]
+ * Usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json] [--keep]
+ *        node scripts/pre-push-ratchet.mjs --clean-stale
+ * The work folder (both trees, their node_modules clones and built dist/) is removed when the run
+ * ends, pass, block or error, unless --keep is given. `--clean-stale` removes the folders killed runs
+ * left behind: only marked pre-push-ratchet folders older than two hours whose process is gone and
+ * that nothing holds open (accept-unit's cleanStale); every other folder is left alone.
  * Without --id the hook sub-checks in HOOK_CHECKS run. --pushed is the pre-push hook's mode: it reads
  * git's `<local ref> <local sha> <remote ref> <remote sha>` lines from stdin and ratchets every pushed
  * local sha as a head (a delete, an all-zero local sha, pushes nothing and is skipped), so pushing a
  * branch other than HEAD is measured as that branch. It blocks when any pushed ref blocks.
  */
 import { spawn } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, realpathSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { FINDING_EXIT, buildFailure, commit, extract, gitTop, loadError, prepareTrees, treeEnv } from "./accept-unit.mjs";
+import { FINDING_EXIT, buildFailure, cleanStale, commit, extract, gitTop, loadError, makeWork, prepareTrees, removeWork, removeWorkOnSignal, staleReport, treeEnv } from "./accept-unit.mjs";
 
 export const STUDIO_MANIFEST = "packages/producer/scripts/check-studio.json";
 /** The fast, server-free check:studio sub-checks that enforce a registered rule on the real tree. */
@@ -84,9 +88,9 @@ export const PENDING_HOOK_CHECKS = Object.freeze(["producer check:copy-source"])
 export const INTEGRITY = /^(?:shape|unknown-check|unreachable|fixture-.+|exemption-.+)$/;
 const RULES_ENTRY = { dir: ".", script: "check:rules" };
 
-function sh(command, args, cwd) {
+function sh(command, args, cwd, tree) {
   return new Promise(accept => {
-    const child = spawn(command, args, { cwd, env: treeEnv({ FORCE_COLOR: "0", NO_COLOR: "1" }), stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn(command, args, { cwd, env: treeEnv({ FORCE_COLOR: "0", NO_COLOR: "1" }, tree), stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "", stderr = "";
     child.stdout.on("data", chunk => { stdout += chunk; });
     child.stderr.on("data", chunk => { stderr += chunk; });
@@ -96,7 +100,7 @@ function sh(command, args, cwd) {
 }
 
 async function rulesOf(tree) {
-  const out = await sh(process.execPath, ["scripts/check-rules.mjs", "--root", tree, "--json"], tree);
+  const out = await sh(process.execPath, ["scripts/check-rules.mjs", "--root", tree, "--json"], tree, tree);
   if (out.code === 0 || out.code === 1) {
     try { return { exit: out.code, findings: JSON.parse(out.stdout).findings }; } catch {}
   }
@@ -113,7 +117,7 @@ export function normalize(output, tree) {
 }
 
 async function subCheck(tree, check) {
-  const out = await sh("/bin/sh", ["-c", check.run], join(tree, check.cwd ?? "."));
+  const out = await sh("/bin/sh", ["-c", check.run], join(tree, check.cwd ?? "."), tree);
   const text = `${out.stdout}\n${out.stderr}`;
   return { exit: out.code, lines: normalize(text, tree), load: out.code === 0 ? undefined : loadError(normalize(text, tree).join("\n")) };
 }
@@ -172,7 +176,7 @@ export function delta(base, head) {
 }
 
 export function report(result) {
-  const out = [`pre-push ratchet: base ${result.base.slice(0, 9)} -> head ${result.head.slice(0, 9)}`];
+  const out = [`pre-push ratchet: base ${result.base.slice(0, 9)} -> head ${result.head.slice(0, 9)}${result.work ? (result.kept ? ` (trees kept in ${result.work})` : " (trees removed; --keep keeps them)") : ""}`];
   const { rules, checks, build = [], loosened = [] } = result.delta;
   for (const [side, made] of Object.entries(result.builds ?? {})) if (made.dirs?.length) out.push(`build ${side}: ${made.built.length} built, ${made.cached.length} restored from cache (${made.dirs.join(", ")})`);
   for (const entry of loosened) out.push(`${"loosened".padEnd(13)} ${entry}`);
@@ -218,11 +222,25 @@ export function pushedRefs(text) {
   }).filter(ref => !/^0+$/.test(ref.localSha));
 }
 
-export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = HOOK_CHECKS, cache } = {}) {
+/**
+ * Ratchet `head` against `base`. The work folder (both trees, their node_modules clones and built
+ * dist/) is removed when the run ends, pass, block or error, unless `keep`; `kept` says which.
+ */
+export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = HOOK_CHECKS, cache, keep = false, root } = {}) {
   const repo = gitTop(cwd);
   const headSha = commit(repo, head), baseSha = commit(repo, base ?? await mergeBase(repo, headSha));
-  // The real path: the slot model refuses a tree reached through a symlinked temp root (/var -> /private/var).
-  const work = realpathSync(mkdtempSync(join(tmpdir(), "pre-push-ratchet-")));
+  const work = makeWork("pre-push-ratchet", { root });
+  try {
+    return { ...await measure({ repo, baseSha, headSha, ids, cache, work }), work, kept: keep };
+  } catch (error) {
+    if (keep) error.work = work;
+    throw error;
+  } finally {
+    if (!keep) removeWork(work);
+  }
+}
+
+async function measure({ repo, baseSha, headSha, ids, cache, work }) {
   const baseTree = join(work, "base"), headTree = join(work, "head");
   extract(repo, baseSha, baseTree);
   extract(repo, headSha, headTree);
@@ -239,11 +257,11 @@ export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = 
   const { overlaid, builds, loosened } = await prepareTrees({ repo, baseSha, headSha, baseTree, headTree, entries, work, cache });
   if (builds.base.failure || builds.head.failure) {
     const result = delta({ rules: [], checks: [], build: builds.base.failure }, { rules: [], checks: [], build: builds.head.failure, loosened });
-    return { base: baseSha, head: headSha, work, overlaid, builds, skipped, baseRules: 0, headRules: 0, delta: result };
+    return { base: baseSha, head: headSha, overlaid, builds, skipped, baseRules: 0, headRules: 0, delta: result };
   }
   const [baseRules, headRules] = await Promise.all([rulesOf(baseTree), rulesOf(headTree)]);
   for (const [name, side] of [["base", baseRules], ["head", headRules]]) {
-    if (side.error) throw Object.assign(new Error(`check:rules could not run on the ${name} (${name === "base" ? baseSha : headSha}): ${side.error}`), { work });
+    if (side.error) throw new Error(`check:rules could not run on the ${name} (${name === "base" ? baseSha : headSha}): ${side.error}`);
   }
   const measured = { base: [], head: [] };
   for (const check of checks) {
@@ -252,7 +270,7 @@ export async function ratchet({ cwd = process.cwd(), base, head = "HEAD", ids = 
     measured.head.push({ id: check.id, ...h });
   }
   const result = delta({ rules: baseRules.findings, checks: measured.base }, { rules: headRules.findings, checks: measured.head, loosened });
-  return { base: baseSha, head: headSha, work, overlaid, builds, skipped, baseRules: baseRules.findings.length, headRules: headRules.findings.length, delta: result };
+  return { base: baseSha, head: headSha, overlaid, builds, skipped, baseRules: baseRules.findings.length, headRules: headRules.findings.length, delta: result };
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
@@ -264,8 +282,21 @@ if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
     else if (arg === "--id") options.ids.push(args[++i]);
     else if (arg === "--json") options.json = true;
     else if (arg === "--pushed") options.pushed = true;
-    else { console.error(`usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json]\nunknown argument: ${arg}`); process.exit(2); }
+    else if (arg === "--keep") options.keep = true;
+    else if (arg === "--clean-stale") options.cleanStale = true;
+    else { console.error(`usage: node scripts/pre-push-ratchet.mjs [--base REV] [--head REV | --pushed] [--id <sub-check id>]... [--json] [--keep]\n       node scripts/pre-push-ratchet.mjs --clean-stale\nunknown argument: ${arg}`); process.exit(2); }
   }
+  if (options.cleanStale) {
+    if (args.length !== 1) { console.error("pre-push ratchet: --clean-stale takes no other argument"); process.exit(2); }
+    try {
+      console.log(staleReport(cleanStale({ tools: ["pre-push-ratchet"] })));
+      process.exit(0);
+    } catch (error) {
+      console.error(`pre-push ratchet --clean-stale: ${error.message}`);
+      process.exit(2);
+    }
+  }
+  removeWorkOnSignal({ keep: options.keep });
   if (!options.ids.length) options.ids = [...HOOK_CHECKS];
   if (options.pushed && options.head) { console.error("pre-push ratchet: --pushed reads the heads from stdin; do not also pass --head"); process.exit(2); }
   try {
@@ -285,7 +316,7 @@ if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
     console.log(options.json ? JSON.stringify(result, null, 2) : report(result));
     process.exit(result.delta.block ? 1 : 0);
   } catch (error) {
-    console.error(`pre-push ratchet could not run, so the push is blocked: ${error.message}${error.work ? ` (trees in ${error.work})` : ""}`);
+    console.error(`pre-push ratchet could not run, so the push is blocked: ${error.message}${error.work ? ` (trees kept in ${error.work})` : ""}`);
     process.exit(2);
   }
 }

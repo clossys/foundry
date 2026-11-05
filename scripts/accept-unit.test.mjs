@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { execFileSync, spawn, spawnSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from "node:fs";
+import { hostname, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import test from "node:test";
+import test, { after } from "node:test";
 
-import { acceptUnit, distCommand, loosening } from "./accept-unit.mjs";
+import { STALE_AFTER_MS, WORK_MARKER, acceptUnit, cleanStale, diskUsage, distCommand, loosening, pruneCache, removeWork } from "./accept-unit.mjs";
+
+/** Every fixture folder a test makes is removed when the file's tests end. */
+const made = [];
+const scratch = prefix => { const dir = mkdtempSync(join(tmpdir(), prefix)); made.push(dir); return dir; };
+after(() => { for (const dir of made) rmSync(dir, { recursive: true, force: true }); });
 
 const git = (cwd, ...args) => execFileSync("git", ["-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", ...args], { cwd, encoding: "utf8" }).trim();
 const write = (root, files) => {
@@ -19,7 +24,7 @@ const commit = (root, files, message) => { write(root, files); git(root, "add", 
 
 /** before: no check; broken: the check exists and fails; fixed: the unit makes it pass. */
 function history() {
-  const root = mkdtempSync(join(tmpdir(), "accept-unit-test-"));
+  const root = scratch("accept-unit-test-");
   git(root, "init", "-q");
   const pkg = scripts => ({ name: "@fixture/producer", private: true, scripts });
   const before = commit(root, { "package.json": { name: "fixture", private: true, workspaces: ["packages/*"] }, "packages/producer/package.json": pkg({}) }, "before");
@@ -33,7 +38,7 @@ test("PASS when the check fails on the base and passes on the head; FAIL the oth
   const { root, broken, fixed } = history();
   const pass = await acceptUnit({ base: broken, head: fixed, check: "check:fixed", cwd: root });
   assert.equal(pass.pass, true, pass.line);
-  assert.match(pass.line, /^PASS packages\/producer#check:fixed: base \w{9} exit 1 \(want 1\), head \w{9} exit 0 \(want 0\); base measured with the head check \(1 file\(s\) overlaid\); trees and logs in /);
+  assert.match(pass.line, /^PASS packages\/producer#check:fixed: base \w{9} exit 1 \(want 1\), head \w{9} exit 0 \(want 0\); base measured with the head check \(1 file\(s\) overlaid\); trees removed \(--keep keeps them\)$/);
   assert.deepEqual(pass.overlaid, ["packages/producer/scripts/check-fixed.mjs"], "the base is always measured with the head's check");
   const fail = await acceptUnit({ base: fixed, head: broken, check: "packages/producer#check:fixed", cwd: root });
   assert.equal(fail.pass, false);
@@ -79,7 +84,7 @@ test("unknown revisions and scripts are setup errors, not verdicts", async () =>
 
 /** A two-workspace repository: @fixture/lib (linked into node_modules as an install would) and a producer check that imports it. */
 function workspace(lib, { build } = {}) {
-  const root = mkdtempSync(join(tmpdir(), "accept-unit-test-"));
+  const root = scratch("accept-unit-test-");
   git(root, "init", "-q");
   const check = 'import { state } from "@fixture/lib";\nconsole.log("lib says " + state);\nprocess.exit(state === "fixed" ? 0 : 1);\n';
   const libManifest = build
@@ -122,11 +127,12 @@ test("B2: each tree is a git work tree of its commit, so a check that asks git s
 test("each tree builds the dist/ its check loads from its own sources; the same tree is restored from the cache", async () => {
   const { root, base } = workspace("broken", { build: copyBuild });
   const head = commit(root, { "packages/lib/src/index.mjs": 'export const state = "fixed";\n' }, "fix the lib");
-  const cache = mkdtempSync(join(tmpdir(), "accept-unit-cache-"));
-  const first = await acceptUnit({ base, head, check: "check:lib", cwd: root, cache });
+  const cache = scratch("accept-unit-cache-");
+  const first = await acceptUnit({ base, head, check: "check:lib", cwd: root, cache, keep: true });
   assert.equal(first.pass, true, first.line);
   assert.deepEqual([first.builds.base.built, first.builds.head.built], [["packages/lib"], ["packages/lib"]]);
   assert.equal(existsSync(join(first.work, "base/packages/lib/dist/index.mjs")), true);
+  removeWork(first.work);
   const again = await acceptUnit({ base, head, check: "check:lib", cwd: root, cache });
   assert.equal(again.pass, true, again.line);
   assert.deepEqual([again.builds.base.cached, again.builds.head.cached, again.builds.base.built], [["packages/lib"], ["packages/lib"], []]);
@@ -134,7 +140,7 @@ test("each tree builds the dist/ its check loads from its own sources; the same 
 
 test("a build that fails, or that rewrites a tracked file, is FAIL: nothing was measured", async () => {
   const { root, base } = workspace("broken", { build: copyBuild });
-  const cache = mkdtempSync(join(tmpdir(), "accept-unit-cache-"));
+  const cache = scratch("accept-unit-cache-");
   const failing = commit(root, { "packages/lib/src/index.mjs": 'export const state = "fixed";\n', "packages/lib/build.mjs": 'console.error("tsc: error TS2322 planted");\nprocess.exit(3);\n' }, "break the build");
   const failed = await acceptUnit({ base, head: failing, check: "check:lib", cwd: root, cache });
   assert.equal(failed.pass, false);
@@ -177,7 +183,7 @@ test("G4: a head that adds an entry to the check's allowlist is FAIL as loosened
 });
 
 test("G4: loosening reads a removed, unenforced or thinned registry rule and an added exemption", () => {
-  const tree = rules => { const root = mkdtempSync(join(tmpdir(), "accept-unit-registry-")); write(root, { "scripts/rules/registry.json": rules }); return root; };
+  const tree = rules => { const root = scratch("accept-unit-registry-"); write(root, { "scripts/rules/registry.json": rules }); return root; };
   const row = (id, status, checks, runs = checks) => ({ id, status, checks, fixture_runs: runs.map(check => ({ check, run: "x" })), note: "prose" });
   const base = tree({ rules: [row("R-A", "enforced", ["a#x", "a#y"]), row("R-B", "unenforced", []), row("R-C", "enforced", ["c#x"])], exemptions: [{ check: ".#check:rules", reason: "meta" }] });
   const head = tree({ rules: [row("R-A", "enforced", ["a#x"], ["a#x"]), row("R-C", "pending-wire", ["c#x"])], exemptions: [{ check: ".#check:rules", reason: "reworded" }, { check: "p#z", reason: "new" }] });
@@ -189,4 +195,119 @@ test("G4: loosening reads a removed, unenforced or thinned registry rule and an 
     'scripts/rules/registry.json: adds exemption {"check":"p#z"}',
   ]);
   assert.deepEqual(loosening(head, base, ["scripts/rules/registry.json"]), [], "tightening loosens nothing; a reworded reason is prose");
+});
+
+test("the work folder (trees, node_modules clones, dist/, logs) is removed after a PASS, a FAIL and an error; keep keeps it", async () => {
+  const { root: repo, broken, fixed } = history();
+  const root = scratch("accept-unit-work-");
+  const passed = await acceptUnit({ base: broken, head: fixed, check: "check:fixed", cwd: repo, root });
+  assert.equal(passed.pass, true, passed.line);
+  assert.equal(passed.kept, false);
+  assert.match(passed.line, /; trees removed \(--keep keeps them\)$/);
+  assert.deepEqual(readdirSync(root), [], "nothing is left after a PASS");
+  const failed = await acceptUnit({ base: fixed, head: broken, check: "check:fixed", cwd: repo, root });
+  assert.equal(failed.pass, false, failed.line);
+  assert.deepEqual(readdirSync(root), [], "nothing is left after a FAIL");
+  assert.ok(failed.logs["head.log"].some(line => line.includes("FAIL not fixed")), "the failing log's tail is carried in the result");
+  await assert.rejects(acceptUnit({ base: broken, head: fixed, check: "check:none", cwd: repo, root }));
+  assert.deepEqual(readdirSync(root), [], "nothing is left after an error");
+  const kept = await acceptUnit({ base: broken, head: fixed, check: "check:fixed", cwd: repo, root, keep: true });
+  assert.equal(kept.kept, true);
+  assert.match(kept.line, /; trees and logs kept in /);
+  assert.deepEqual(readdirSync(root), [kept.work.split("/").at(-1)]);
+  assert.equal(existsSync(join(kept.work, "head", ".git")), true, "the kept folder holds the trees");
+  assert.deepEqual(JSON.parse(readFileSync(join(kept.work, WORK_MARKER), "utf8")).tool, "accept-unit");
+  removeWork(kept.work);
+  assert.deepEqual(readdirSync(root), []);
+});
+
+test("removeWork refuses a folder without the marker and never follows a symlink out of the folder", () => {
+  const root = scratch("accept-unit-remove-");
+  const outside = scratch("accept-unit-outside-");
+  writeFileSync(join(outside, "keep.txt"), "mine\n");
+  const unmarked = join(root, "accept-unit-abc123");
+  mkdirSync(unmarked);
+  assert.throws(() => removeWork(unmarked), /not a marked work folder/);
+  assert.equal(existsSync(unmarked), true);
+  const named = join(root, "elsewhere-abc123");
+  mkdirSync(named);
+  writeFileSync(join(named, WORK_MARKER), JSON.stringify({ kind: "foundry-check-tree", tool: "accept-unit", pid: 1, host: hostname(), started: new Date().toISOString() }));
+  assert.throws(() => removeWork(named), /not a marked work folder/, "the marker without the tool's name prefix is refused");
+  const marked = join(root, "accept-unit-def456");
+  mkdirSync(join(marked, "head"), { recursive: true });
+  writeFileSync(join(marked, WORK_MARKER), JSON.stringify({ kind: "foundry-check-tree", tool: "accept-unit", pid: 1, host: hostname(), started: new Date().toISOString() }));
+  symlinkSync(outside, join(marked, "head", "node_modules"));
+  removeWork(marked);
+  assert.equal(existsSync(marked), false);
+  assert.equal(readFileSync(join(outside, "keep.txt"), "utf8"), "mine\n", "the link was removed, not its target");
+});
+
+test("cleanStale removes only marked, old folders of a gone process that nothing holds open", async () => {
+  const root = scratch("accept-unit-stale-");
+  const now = Date.now();
+  const old = new Date(now - STALE_AFTER_MS - 60_000).toISOString();
+  const gone = spawnSync(process.execPath, ["-e", ""]).pid;
+  const folder = (name, marker) => {
+    mkdirSync(join(root, name, "head"), { recursive: true });
+    writeFileSync(join(root, name, "head", "file.txt"), "x".repeat(8192));
+    if (marker) writeFileSync(join(root, name, WORK_MARKER), JSON.stringify({ kind: "foundry-check-tree", host: hostname(), ...marker }));
+    return join(root, name);
+  };
+  folder("accept-unit-stale1", { tool: "accept-unit", pid: gone, started: old });
+  folder("pre-push-ratchet-stale2", { tool: "pre-push-ratchet", pid: gone, started: old });
+  folder("accept-unit-unmarked", undefined);
+  folder("accept-unit-young", { tool: "accept-unit", pid: gone, started: new Date(now - 60_000).toISOString() });
+  folder("accept-unit-live", { tool: "accept-unit", pid: process.pid, started: old });
+  folder("accept-unit-elsewhere", { tool: "accept-unit", pid: gone, started: old, host: `${hostname()}-other` });
+  folder("accept-unit-wrongtool", { tool: "pre-push-ratchet", pid: gone, started: old });
+  folder("unrelated-stale", { tool: "accept-unit", pid: gone, started: old });
+  const opened = folder("accept-unit-opened", { tool: "accept-unit", pid: gone, started: old });
+  // A live process whose cwd is inside the folder holds it, whatever the marker's pid says.
+  const holder = spawn("sleep", ["30"], { cwd: join(opened, "head"), stdio: "ignore" });
+  try {
+    await new Promise(accept => setTimeout(accept, 200));
+    const only = cleanStale({ root, tools: ["accept-unit"], now });
+    assert.deepEqual(only.removed.map(entry => entry.name), ["accept-unit-stale1"], "this tool's prefix only");
+    assert.ok(only.bytes >= 8192);
+    assert.deepEqual(Object.fromEntries(only.kept.map(entry => [entry.name, entry.why])), {
+      "accept-unit-elsewhere": "other-host",
+      "accept-unit-live": "live-process",
+      "accept-unit-opened": "held-open",
+      "accept-unit-unmarked": "unmarked",
+      "accept-unit-wrongtool": "unmarked",
+      "accept-unit-young": "young",
+    });
+    const both = cleanStale({ root, now });
+    assert.deepEqual(both.removed.map(entry => entry.name), ["pre-push-ratchet-stale2"]);
+    assert.deepEqual(readdirSync(root).sort(), ["accept-unit-elsewhere", "accept-unit-live", "accept-unit-opened", "accept-unit-unmarked", "accept-unit-wrongtool", "accept-unit-young", "unrelated-stale"]);
+  } finally { holder.kill(); }
+});
+
+test("the dist cache is held to a byte cap as well as a count, least recently used first, never the entry in use", () => {
+  const cache = scratch("accept-unit-cachecap-");
+  const entry = (name, ageMs, bytes = 64 * 1024) => {
+    mkdirSync(join(cache, name, "pkg"), { recursive: true });
+    writeFileSync(join(cache, name, "pkg", "index.mjs"), "x".repeat(bytes));
+    const at = new Date(Date.now() - ageMs);
+    utimesSync(join(cache, name), at, at);
+  };
+  entry("a-current", 5_000);
+  entry("b-new", 1_000);
+  entry("c-mid", 2_000);
+  entry("d-old", 3_000);
+  const size = diskUsage(join(cache, "b-new"));
+  const gone = spawnSync(process.execPath, ["-e", ""]).pid;
+  const stamp = Date.now() - STALE_AFTER_MS - 60_000;
+  const abandoned = `d-old__pkg.tmp-${gone}-${stamp}`;
+  mkdirSync(join(cache, abandoned));
+  mkdirSync(join(cache, `d-old__pkg.tmp-${process.pid}-${stamp}`));
+  const pruned = pruneCache(cache, { keep: 8, maxBytes: size * 2 + 1, current: "a-current" });
+  assert.deepEqual(pruned.removed.sort(), [abandoned, "c-mid", "d-old"].sort(), "over the byte cap the least recently used go; an abandoned store goes");
+  assert.deepEqual(readdirSync(cache).filter(name => !name.includes(".tmp-")).sort(), ["a-current", "b-new"], "the entry in use is kept even though it is the oldest");
+  assert.equal(readdirSync(cache).filter(name => name.includes(`.tmp-${process.pid}-`)).length, 1, "a live process's unfinished store is left alone");
+  const counted = pruneCache(cache, { keep: 1, maxBytes: Infinity, current: "a-current" });
+  assert.deepEqual(counted.removed, ["b-new"], "the count cap still applies");
+  const tiny = pruneCache(cache, { keep: 8, maxBytes: 1, current: "a-current" });
+  assert.deepEqual(tiny.removed, []);
+  assert.equal(existsSync(join(cache, "a-current")), true, "the entry in use stays even when it alone is over the cap");
 });
