@@ -48,6 +48,8 @@ const COMPONENT_MODULE: Record<string, string> = {
   "combo-box": "ComboBox", disclosure: "Disclosure", field: "Field", "file-trigger": "FileTrigger", form: "Form", icon: "Icon", link: "Link",
   "progress-bar": "ProgressBar", select: "Select", spinner: "Spinner", "status-mark": "StatusMark", switch: "Switch", tabs: "Tabs",
   "text-field": "TextField", menu: "Menu", toast: "Toast", tooltip: "Tooltip",
+  // GATES-RED G3: slot records now declare the measured semantic-content compose.
+  "semantic-content": "SemanticContent",
 };
 const VISUAL_MODULE = /(?:^|\/)(?:components|blocks|sections|frames|shell|icons|charts)(?:\/|\.|$)/;
 
