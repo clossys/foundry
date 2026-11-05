@@ -51,7 +51,10 @@ const SCRIPT = [
 export const SPECIMEN_FRAME_SCRIPT_HASH = `sha256-${createHash("sha256").update(SCRIPT).digest("base64")}`;
 
 /** Script runs only by hash; the inner page loads from this origin only. */
-export const SPECIMEN_FRAME_CSP = `default-src 'none'; script-src '${SPECIMEN_FRAME_SCRIPT_HASH}'; style-src 'unsafe-inline'; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'`;
+export const SPECIMEN_FRAME_CSP = `default-src 'none'; script-src '${SPECIMEN_FRAME_SCRIPT_HASH}'; style-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'none'; form-action 'none'`;
+
+/** The frame document's stylesheet: Designer's shipped specimen-frame asset (`@clossys/designer/specimen-frame.css`), linked, never inlined. */
+export const SPECIMEN_FRAME_STYLESHEET = "/__designer/specimen-frame.css";
 
 const escapeHtml = (value: string) => value.replace(/[&<>"']/g, char => `&#${char.charCodeAt(0)};`);
 
@@ -68,7 +71,7 @@ export function specimenWidth(value: unknown): number {
 export function specimenFramePage(options: { src: string; width: number; title: string; sandbox?: string }): string {
   const sandbox = options.sandbox === undefined ? "" : ` sandbox="${escapeHtml(options.sandbox)}"`;
   return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(options.title)}</title>`
-    + "<style>html,body{margin:0;height:100%;overflow:hidden;background:transparent}iframe{display:block;border:0;transform-origin:0 0}</style></head>"
+    + `<link rel="stylesheet" href="${SPECIMEN_FRAME_STYLESHEET}"></head>`
     + `<body><iframe id="page" title="${escapeHtml(options.title)}" data-width="${specimenWidth(options.width)}"${sandbox} src="${escapeHtml(options.src)}"></iframe>`
     + `<script>${SCRIPT}</script></body></html>\n`;
 }

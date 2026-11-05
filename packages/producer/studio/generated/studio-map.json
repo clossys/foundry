@@ -3214,6 +3214,11 @@
         "permanent": false
       },
       {
+        "from": "/designer/components.studio.specimen-document",
+        "to": "/designer/components/studio/components.studio.specimen-document",
+        "permanent": false
+      },
+      {
         "from": "/designer/sections.specimen-swatch",
         "to": "/designer/sections/specimens/sections.specimen-swatch",
         "permanent": false
@@ -25666,6 +25671,12 @@
       "path": "/designer/components/studio/components.studio.block-viewer-iframe"
     },
     {
+      "page": "designer-components.studio",
+      "slug": "components.studio.specimen-document",
+      "title": "Studio specimen document",
+      "path": "/designer/components/studio/components.studio.specimen-document"
+    },
+    {
       "page": "designer-sections.specimens",
       "slug": "sections.specimen-swatch",
       "title": "Color swatch",
@@ -36576,6 +36587,33 @@
         "href": "/designer/components/studio/components.studio.block-viewer-iframe"
       }
     ],
+    "designer-components.studio:components.studio.specimen-document": [
+      {
+        "id": "content",
+        "label": "Content",
+        "href": "/content"
+      },
+      {
+        "id": "designer",
+        "label": "Designer",
+        "href": "/designer/themes/colors"
+      },
+      {
+        "id": "designer-components",
+        "label": "Components",
+        "href": "/designer/components/actions"
+      },
+      {
+        "id": "designer-components.studio",
+        "label": "Studio",
+        "href": "/designer/components/studio"
+      },
+      {
+        "id": "designer-components.studio:components.studio.specimen-document",
+        "label": "Studio specimen document",
+        "href": "/designer/components/studio/components.studio.specimen-document"
+      }
+    ],
     "designer-sections.specimens:sections.specimen-swatch": [
       {
         "id": "content",
@@ -44137,6 +44175,11 @@
     {
       "source": "/designer/components.studio.sidebar-static-row",
       "destination": "/designer/components/studio/components.studio.sidebar-static-row",
+      "permanent": false
+    },
+    {
+      "source": "/designer/components.studio.specimen-document",
+      "destination": "/designer/components/studio/components.studio.specimen-document",
       "permanent": false
     },
     {

@@ -1,12 +1,13 @@
 import { readdir, realpath, stat } from "node:fs/promises";
 import type { ServerResponse } from "node:http";
 import { extname, join, relative } from "node:path";
-import { confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
+import { BUNDLE_STYLES, bundledPreviewStylesheet, confinedPreviewFile, generatedBody, previewSource, renderNativePreview } from "./publisher-preview-render.js";
 import { readIa, listSlots, readCandidate, type SlotEntry } from "../records/slots.js";
 import { readPinnedPublication } from "../publish/pinned-publication.js";
 import { INSTALL_MARKER, installOutRoot } from "../publish/install-out.js";
 import { isInstalledRoute, NEXT_INSTALL_KIND, NEXT_INSTALL_REPORT } from "../publish/install-next.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
+import { applyThemeAttributes } from "@clossys/designer/theme/server";
 
 export const PREVIEW_PREFIX = "/preview/";
 export const PREVIEW_COMMAND = "clossys publish --install --page <page id>";
@@ -281,19 +282,11 @@ export type PreviewTheme = "light" | "dark";
 export const previewTheme = (value: string | null | undefined): PreviewTheme => value === "dark" ? "dark" : "light";
 /**
  * Apply the theme the way the substrate does (`.dark` on <html>), server side, since the page runs
- * no script. Existing classes on <html> are kept; a stale `dark`/`light` class is replaced.
+ * no script. The attributes come from Designer's theme API (`applyThemeAttributes`), not from
+ * literals here: existing classes on <html> are kept; a stale `dark`/`light` class is replaced.
  */
 export function themePage(html: string, theme: PreviewTheme): string {
-  const tag = /<html\b[^>]*>/i.exec(html);
-  if (!tag) return `<html${theme === "dark" ? ' class="dark"' : ""} style="color-scheme:${theme}">${html}</html>`;
-  let open = tag[0];
-  const classes = /\sclass\s*=\s*("([^"]*)"|'([^']*)')/i.exec(open);
-  const kept = (classes ? (classes[2] ?? classes[3] ?? "") : "").split(/\s+/).filter(name => /^[^"'<>&]+$/.test(name) && name !== "dark" && name !== "light");
-  const value = [...kept, ...(theme === "dark" ? ["dark"] : [])].join(" ");
-  const attribute = value ? ` class="${value}"` : "";
-  open = classes ? open.replace(classes[0], attribute) : open.replace(/^<html\b/i, `<html${attribute}`);
-  open = /\sstyle\s*=/i.test(open) ? open.replace(/\sstyle\s*=\s*("([^"]*)"|'([^']*)')/i, (_all, _q, a, b) => ` style="color-scheme:${theme};${a ?? b ?? ""}"`) : open.replace(/>$/, ` style="color-scheme:${theme}">`);
-  return html.slice(0, tag.index) + open + html.slice(tag.index + tag[0].length);
+  return applyThemeAttributes(html, theme);
 }
 /**
  * A served route's render as the static page a preview publishes: the app's client runtime (its
@@ -345,8 +338,15 @@ export async function servePreview(root: string, pathname: string, method: strin
     } else {
       type = TYPES[extname(file).toLowerCase()] ?? "";
       if (!type || file.split("/").some(part => part.startsWith("."))) { fail(415, "Unsupported preview content type"); return; }
-      bytes = await previewSource(base, file);
-      if (file.endsWith(".css")) bytes = Buffer.from(generatedBody(bytes.toString("utf8")));
+      if (file.startsWith(BUNDLE_STYLES)) {
+        // A native page's bundled CSS, linked by its render (never inlined).
+        const css = bundledPreviewStylesheet(file.slice(BUNDLE_STYLES.length));
+        if (css === undefined) { fail(404, "Publication stylesheet is unavailable"); return; }
+        bytes = Buffer.from(css);
+      } else {
+        bytes = await previewSource(base, file);
+        if (file.endsWith(".css")) bytes = Buffer.from(generatedBody(bytes.toString("utf8")));
+      }
     }
     response.writeHead(200, { ...SECURITY, "Content-Type": type, "Content-Length": bytes.length });
     response.end(method === "HEAD" ? undefined : bytes);

@@ -412,7 +412,7 @@ const JS_SUBPATHS = [
 ] as const;
 /** Gate scripts shipped as plain ESM with hand-written types (the pinned-candidate ref-verbatim gate). */
 const GATE_SCRIPT_SUBPATHS = ["./ref-verbatim"] as const;
-const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css"] as const;
+const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css", "./specimen-frame.css"] as const;
 const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
 
 function sourceFiles(dir: string, out: string[] = []): string[] {

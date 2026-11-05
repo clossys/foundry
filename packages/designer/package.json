@@ -49,6 +49,7 @@
     "./utilities.css": "./styles/utilities.css",
     "./compiled.css": "./styles/compiled.css",
     "./brand-template.css": "./styles/brand-template.css",
+    "./specimen-frame.css": "./styles/specimen-frame.css",
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js"

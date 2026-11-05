@@ -1028,7 +1028,8 @@
           "slots": [
             "components.studio.specimen-frame",
             "components.studio.specimen-figure",
-            "components.studio.block-viewer-iframe"
+            "components.studio.block-viewer-iframe",
+            "components.studio.specimen-document"
           ]
         }
       ]

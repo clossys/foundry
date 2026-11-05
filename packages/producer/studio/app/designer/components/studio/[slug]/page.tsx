@@ -13,6 +13,7 @@ const leaves: { slug: string }[] = [
   { slug: "components.studio.specimen-frame" },
   { slug: "components.studio.specimen-figure" },
   { slug: "components.studio.block-viewer-iframe" },
+  { slug: "components.studio.specimen-document" },
 ];
 export const dynamicParams = true;
 export function generateStaticParams() {

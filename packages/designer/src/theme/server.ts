@@ -28,3 +28,4 @@
  */
 
 export { getThemeInitScript, type ThemeInitScriptOptions } from "./initScript.js";
+export { applyThemeAttributes, themeAttributes, type ThemeMode } from "./attributes.js";

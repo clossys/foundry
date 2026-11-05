@@ -56,3 +56,4 @@ export {
   type ThemeProviderProps,
 } from "./ThemeProvider.js";
 export { ThemeToggle, type ThemeToggleProps } from "./ThemeToggle.js";
+export { applyThemeAttributes, themeAttributes, type ThemeMode } from "./attributes.js";

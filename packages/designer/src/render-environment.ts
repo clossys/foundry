@@ -60,6 +60,7 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./utilities.css": "server-safe",
   "./compiled.css": "server-safe",
   "./brand-template.css": "server-safe",
+  "./specimen-frame.css": "server-safe",
   "./components": "client-only",
   "./components/server": "server-safe",
   "./icons": "server-safe",

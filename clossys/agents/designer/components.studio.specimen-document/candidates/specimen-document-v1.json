@@ -1,0 +1,62 @@
+{
+  "name": "specimen-document",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "specimen-document.tsx",
+      "type": "registry:component",
+      "content": "import type { ReactNode } from \"react\"\n\n/*\n * Studio specimen documents: one pinned theme, font or component shown alone on the page ground,\n * the way the shadcn BlockViewer (apps/v4 block-viewer) shows a block in its iframe. Producer's\n * specimen pages only place these; every class and style below is this Designer file's.\n */\n\n/** A pinned theme: its colour swatches (each pair over its foreground) and a type sample. */\nexport function ThemeSpecimen({ names }: { names: readonly string[] }) {\n  const pairs = names.filter((name) => !name.endsWith(\"-foreground\"))\n  return (\n    <main className=\"min-h-screen bg-background p-8 text-foreground\">\n      <h1 className=\"font-heading text-5xl font-semibold tracking-tight\">Aa Theme</h1>\n      <p className=\"mt-3 max-w-2xl text-lg text-muted-foreground\">The quick brown fox jumps over the lazy dog. 0123456789</p>\n      <div className=\"mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6\">\n        {pairs.map((name) => (\n          <div key={name} className=\"overflow-hidden rounded-lg border\">\n            <div\n              className=\"flex h-20 items-end p-2 text-sm font-medium\"\n              style={{ background: `var(--${name})`, color: names.includes(`${name}-foreground`) ? `var(--${name}-foreground)` : undefined }}\n            >\n              Aa\n            </div>\n            <div className=\"bg-card px-2 py-1.5 text-xs text-card-foreground\">{name}</div>\n          </div>\n        ))}\n      </div>\n    </main>\n  )\n}\n\nconst RAMP = [\n  [\"text-6xl\", \"Display\"],\n  [\"text-5xl\", \"Heading 1\"],\n  [\"text-4xl\", \"Heading 2\"],\n  [\"text-3xl\", \"Heading 3\"],\n  [\"text-2xl\", \"Heading 4\"],\n  [\"text-xl\", \"Heading 5\"],\n  [\"text-base\", \"Body\"],\n  [\"text-sm\", \"Small\"],\n] as const\n\n/** A pinned font: its type ramp, set in the font's installed CSS variable. */\nexport function FontSpecimen({ variable, family }: { variable: string; family: string }) {\n  return (\n    <main className=\"min-h-screen bg-background p-8 text-foreground\" style={{ fontFamily: `var(${variable})` }}>\n      <p className=\"text-sm text-muted-foreground\">{family}</p>\n      <div className=\"mt-6 flex flex-col gap-4\">\n        {RAMP.map(([size, label]) => (\n          <div key={label} className=\"flex items-baseline gap-6 border-b pb-3\">\n            <span className=\"w-24 shrink-0 font-sans text-xs text-muted-foreground\">{label}</span>\n            <span className={`${size} font-semibold tracking-tight`}>The quick brown fox</span>\n          </div>\n        ))}\n      </div>\n    </main>\n  )\n}\n\n/**\n * One component centred on the page ground, in its slot's declared specimen state. In the\n * `visible` state its screen-reader-only text shows (Tailwind's stock `not-sr-only`).\n */\nexport function ComponentSpecimen({ state = \"rest\", children }: { state?: string; children?: ReactNode }) {\n  return (\n    <main\n      data-specimen-state={state}\n      className=\"flex min-h-screen items-center justify-center bg-background p-8 text-foreground data-[specimen-state=visible]:[&_.sr-only]:not-sr-only\"\n    >\n      {children}\n    </main>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.specimen-document",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "{\"registry\":\"shadcn-app\",\"item\":\"block-viewer\",\"version\":\"b8d7baa15b1dca5716f13153e63795fc3d741f6b\",\"hash\":\"sha256:ec4ab90e87520a0bd228193842558167c44e27ef48d359a20a86ad8fa94a66ba\",\"url\":\"https://raw.githubusercontent.com/shadcn-ui/ui/b8d7baa15b1dca5716f13153e63795fc3d741f6b/apps/v4/components/block-viewer.tsx\"}"
+      ],
+      "license": "MIT",
+      "hash": "sha256:4941658d0fd914f33f4f1d717f793ffb25397f2e1cbcb7af1a3fd5fa4f9e1b7e"
+    },
+    "element": {
+      "id": "specimen-document",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.specimen-document",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D2): the shadcn BlockViewer iframe document reduced to one specimen on the page ground: the pinned theme swatches, the pinned font ramp and one component in its specimen state, which Producer specimen pages place and never style. Created through the Designer create path as a component-layer slot that installs into @clossys/designer-ui (src/components/specimen-document.tsx); the Foundry extension under src/foundry re-exports it only.",
+      "createdAt": "2026-11-05T09:45:49.773Z",
+      "deps": {
+        "npm": {
+          "react": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--background",
+          "--foreground",
+          "--muted-foreground",
+          "--card",
+          "--card-foreground",
+          "--border",
+          "--radius"
+        ]
+      }
+    }
+  }
+}
