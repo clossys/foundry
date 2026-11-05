@@ -99,10 +99,13 @@ it("exposes only an explicitly declared local app server URL", async () => {
 it("projects the repository's own pinned Studio publication from its slots", async () => {
   const publisher = agentRoot(root, "publisher");
   await cp(fileURLToPath(new URL("../../../../clossys/agents/publisher/", import.meta.url)), publisher, { recursive: true });
+  // The publication's titles are Writer keys: the pinned Writer strings come too.
+  const writer = fileURLToPath(new URL("../../../../clossys/agents/writer", import.meta.url));
+  await cp(writer, agentRoot(root, "writer"), { recursive: true, filter: source => source === writer || source === join(writer, "ia.json") || source.startsWith(join(writer, "strings.")) });
   const before = await snapshot(root);
   const apps = await consumerApps(root);
   expect(apps).toMatchObject({ state: "ready", publications: [{ id: "studio", source: "slots", format: "web.page.responsive" }] });
-  const { readPinnedPublication } = await import("../publish/pinned-publication.js");
-  expect(apps.publications[0]!.map).toEqual((await readPinnedPublication(join(root, "clossys"), "studio")).map);
+  const { readPinnedPublication, resolvePublicationTitles } = await import("../publish/pinned-publication.js");
+  expect(apps.publications[0]!.map).toEqual(resolvePublicationTitles(join(root, "clossys"), await readPinnedPublication(join(root, "clossys"), "studio")).map);
   expect(await snapshot(root)).toEqual(before);
 });
