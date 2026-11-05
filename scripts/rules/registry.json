@@ -49,7 +49,7 @@
         "quote": "all views use Designer's shadcn components only",
         "date": "2026-10-31"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "checks": [
         "packages/producer#test",
         "check:studio#producer check-rendered-provenance (live)"
@@ -75,9 +75,15 @@
           "cwd": "packages/producer",
           "run": "DS_ONLY_SECTIONS_ROOT={fixture}/sections npx vitest run src/studio/designer-views.ds-only.test.ts",
           "expect": "probe-section/index\\.tsx: imports other-ui"
+        },
+        {
+          "check": "check:studio#producer check-rendered-provenance (live)",
+          "cwd": "packages/producer",
+          "run": "node {fixture}/rendered/serve.mjs {out} & server=$!; i=0; while [ ! -s {out}/port ] && [ $i -lt 100 ]; do sleep 0.1; i=$((i+1)); done; node studio/checks/check-rendered-provenance.mjs \"http://127.0.0.1:$(cat {out}/port)\" --only /; code=$?; kill $server; exit $code",
+          "expect": "\"rule\":\"element-without-provenance\""
         }
       ],
-      "note": "Unenforced: both gating checks are red on this tree. (1) The ds-only vitest (packages/producer#test) scans sections, frames, renderers, every app/ file, every Foundry component-layer file under designer-ui/src/foundry and every src/server emitter; it flags inline style and injected HTML on any element and any className on a Designer component other than a forwarded className prop, a stock size-N class on an icon glyph, or a pair the pinned lineage's reference block carries. 26 tests red: 14 pinned sections and frames.studio-shell restyle Designer components (need new Designer candidates), app/layout.tsx (theme script and body classes; installed layouts), the 6 Foundry component-layer files (no Designer slot or installer), and 4 server emitters that write hand markup (no pinned specimen frame). (2) check-rendered-provenance (live) fails any rendered element on any Studio map route outside a root carrying the current pin's generated provenance; the assembly now binds markers to frames too, but the pinned frames.studio-shell candidate does not place them on its root, so every route is red until a Designer frame candidate does."
+      "note": "Two gates: (1) the ds-only vitest (packages/producer#test) scans sections, frames, renderers, every app/ file, every Foundry component-layer file under designer-ui/src/foundry and every src/server emitter, and flags inline style and injected HTML on any element and any className on a Designer component other than a forwarded className prop, a stock size-N icon class or a pair the pinned lineage's reference block carries; (2) check-rendered-provenance (live) fails any rendered element on any Studio map route outside a root carrying the current pin's generated provenance. Its fixture is a stand-in Studio (rendered/serve.mjs) whose one route renders an unmarked hand-rolled view; it needs the installed Chrome, like R-PIPELINE-CANVAS."
     },
     {
       "id": "R-SHADCN-STOCK",
