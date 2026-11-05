@@ -3590,6 +3590,70 @@
       "sha256": "e2716cccb07cb2c8467fec2a1b242c6fc972d82591d30a65f3576d53a74f4771"
     },
     {
+      "path": "clossys/agents/producer/pick.designer/candidates/pick.designer-v1.json",
+      "sha256": "1b550c7d077a5dfb8c4b72934c0d543c4db641758e4a69a4bf5bd289454c64dc"
+    },
+    {
+      "path": "clossys/agents/producer/pick.designer/pin.json",
+      "sha256": "f3248c4354c4efda5cc212ba4b8bedd3bffdf3aa2c02e5a3d0cf368879e2441e"
+    },
+    {
+      "path": "clossys/agents/producer/pick.director/candidates/pick.director-v1.json",
+      "sha256": "534c851313366b626de153e093e92ac60ccdd5e308406cd7034f7b8c5097785d"
+    },
+    {
+      "path": "clossys/agents/producer/pick.director/pin.json",
+      "sha256": "7baca32f194705f06eea8fa66316031a6312470ac6198ca21792516fd2c746c7"
+    },
+    {
+      "path": "clossys/agents/producer/pick.publisher/candidates/pick.publisher-v1.json",
+      "sha256": "daf874d42f8286e24902822252113e1b9db9f725ffbf1bd1b1d80d7a9b80c604"
+    },
+    {
+      "path": "clossys/agents/producer/pick.publisher/pin.json",
+      "sha256": "14d00e30de13490bb209ee35a1f04e74120513d90ecc95201dac6eb4416ec57f"
+    },
+    {
+      "path": "clossys/agents/producer/pick.writer/candidates/pick.writer-v1.json",
+      "sha256": "dce3725c3f42bd29735c5b8cd091c6fe73ea5025f01e04d6d9c6ab4a237192f1"
+    },
+    {
+      "path": "clossys/agents/producer/pick.writer/pin.json",
+      "sha256": "94da9052487861eadda6a5f0b6fedd82f62156068d0988bee891ca39a1595f40"
+    },
+    {
+      "path": "clossys/agents/producer/pin.designer/candidates/pin.designer-v1.json",
+      "sha256": "3437d5878154159d9e1e1963948cd326db5ac718ed27db128ddb5293760613bc"
+    },
+    {
+      "path": "clossys/agents/producer/pin.designer/pin.json",
+      "sha256": "069b49b87b8617419374fa15de3272a719b93aaa4875c1b46760ea8fe71c77c2"
+    },
+    {
+      "path": "clossys/agents/producer/pin.director/candidates/pin.director-v1.json",
+      "sha256": "3437d5878154159d9e1e1963948cd326db5ac718ed27db128ddb5293760613bc"
+    },
+    {
+      "path": "clossys/agents/producer/pin.director/pin.json",
+      "sha256": "3bd8a6546bcd91fce9b3edd2d2dbdbb0be4d5ddfc32ac0dafda0065854eb02f5"
+    },
+    {
+      "path": "clossys/agents/producer/pin.publisher/candidates/pin.publisher-v1.json",
+      "sha256": "3437d5878154159d9e1e1963948cd326db5ac718ed27db128ddb5293760613bc"
+    },
+    {
+      "path": "clossys/agents/producer/pin.publisher/pin.json",
+      "sha256": "03c9cd4b78e1452f8ff00cb8415c6eb98f823e4d245a45e52ee5703e158936b9"
+    },
+    {
+      "path": "clossys/agents/producer/pin.writer/candidates/pin.writer-v1.json",
+      "sha256": "3437d5878154159d9e1e1963948cd326db5ac718ed27db128ddb5293760613bc"
+    },
+    {
+      "path": "clossys/agents/producer/pin.writer/pin.json",
+      "sha256": "ddff618bf77732981206f2cd7f8247dbc0e6a303e940009e63ac886dd46dc6d0"
+    },
+    {
       "path": "clossys/agents/publisher/ia.json",
       "sha256": "7f55136bc8185021ad0cd83e8cc04c830856017bb0a3d200232ee752308007a9"
     },

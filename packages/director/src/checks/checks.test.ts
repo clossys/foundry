@@ -6,10 +6,10 @@ import { checkCell, checkCoherence, completion, strategyStatus } from './index.j
 import type { Cell, Ref } from '../format/types.js';
 import type { StrategyModel } from '../format/types.js';
 import { readStrategyRoot } from '../store.js';
-import { serializeCell } from '../format/cell.js';
+import { stageFinding, stageSlot, strategyRoot } from '../ground/fixtures.js';
 import { formatRef } from '../format/ref.js';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 const catalog = loadCatalog();
 const ref = (cell: string, version = 1): Ref => ({ kind: 'cell', ref: { cell, version } });
@@ -371,24 +371,22 @@ it('public strategyStatus delegates scope without requiring the read API', () =>
 });
 
 
-it('actual root reader feeds completion and catches an unlisted confirm', () => {
-  const root = mkdtempSync(join(tmpdir(), 'strategy-checks-'));
+it('actual flat root reader feeds completion, and a pin-backed cell needs no session confirm', () => {
+  const base = mkdtempSync(join(tmpdir(), 'strategy-checks-'));
   try {
+    const root = strategyRoot(base);
     const model = fixture();
-    const write = (path: string, text: string) => {
-      mkdirSync(dirname(join(root, path)), { recursive:true });
-      writeFileSync(join(root, path), text);
-    };
-    write('tree.json', JSON.stringify(model.tree));
     for (const cell of model.cells) {
-      const serializable = { ...cell, because: cell.because.map(b => ({ ...b, text: `${b.text} (${b.refs.map(formatRef).join(', ')}).` })) };
-      write(cell.path, serializeCell(serializable));
+      stageSlot(root, cell.id, cell.version, cell.direction.map(b => `${b.key}: ${b.text}`), {
+        refs: cell.cites.map(formatRef), functions: cell.functions,
+        because: cell.because.map(b => `${b.text} (${b.refs.map(formatRef).join(', ')}).`), watch: cell.watch.map(b => b.text),
+      });
     }
-    const playback = model.sessions[0]!.lines[0]!.text;
-    write('sessions/2026-10-29-1.md', `- S1: ${playback}\n- U2: Yes, all listed.\n`);
-    write('findings/sample.md', '---\nid: sample\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Sample observations for 20 teams.\n');
+    stageFinding(root, 'sample', '---\nid: sample\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Sample observations for 20 teams.\n');
     const read = readStrategyRoot(root, reader);
     expect(read.issues).toEqual([]);
+    expect(read.sessions).toEqual([]);
+    expect(checkCell(get(read), { model:read }).some(f => f.rule === 'Q7' && f.severity === 'hard')).toBe(false);
     expect(completion(read, judgePass).complete).toBe(true);
     const strategy = openStrategy(root, reader);
     for (const scope of ['core', 'full'] as const) {
@@ -401,14 +399,7 @@ it('actual root reader feeds completion and catches an unlisted confirm', () => 
       expect(status.l0Clean).toBe(true);
     }
     expect(strategy.status()).toEqual(strategyStatus(read, { scope: 'core' }));
-    write('sessions/2026-10-29-1.md', '- S1: Playback for confirm: advantage.proposition.promise@1\n- U2: Yes.\n');
-    const unlisted = readStrategyRoot(root, reader);
-    expect(unlisted.issues).toEqual([]);
-    expect(checkCell(get(unlisted), { model:unlisted }).some(f => f.rule === 'Q7' && f.severity === 'hard')).toBe(true);
-    expect(completion(unlisted, judgePass).mvs).toBe(false);
-    expect(openStrategy(root, reader).status({ scope: 'core' }, judgePass).l0Clean).toBe(false);
-    expect(strategy.status({ scope: 'core' }, judgePass).l0Clean).toBe(true);
   } finally {
-    rmSync(root, { recursive:true, force:true });
+    rmSync(base, { recursive:true, force:true });
   }
 });

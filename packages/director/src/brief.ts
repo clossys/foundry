@@ -53,11 +53,12 @@ export function compileBrief(model: StrategyModel, contract: BriefContract, stor
         if (checkFreshness && model.tree?.active[ref.ref.cell] !== ref.ref.version) addStale(ref.ref);
         if (cited) visit(cited, checkFreshness);
         else {
-          paths.add(`cells/${ref.ref.cell}/v${ref.ref.version}.md`);
+          // A cited version with no readable record is framed by a token, never a store path.
+          paths.add(`cell:${ref.ref.cell}@${ref.ref.version}`);
           if (checkFreshness) addStale(ref.ref);
         }
-      } else if (ref.kind === "msg") paths.add(`sessions/${ref.session}.md`);
-      else paths.add(`findings/${ref.id}.md`);
+      } else if (ref.kind === "msg") paths.add(`msg:${ref.session}`);
+      else paths.add(model.findings.find(finding => finding.id === ref.id)?.path || `finding:${ref.id}`);
     }
     for (const link of model.catalog.coherence.links.filter(link => link.downstream === cell.id)) {
       const upstream = active(model, link.upstream);

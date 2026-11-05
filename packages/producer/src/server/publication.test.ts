@@ -145,14 +145,30 @@ it("previews clossys publish --install output from its default out dir, with the
   } finally { await rm(installs, { recursive: true, force: true }); }
 });
 
+// Writes a pinned publication slot plus one pinned page slot per entry: the flat slot model, no legacy store.
+async function nativePublication(publisher: string, publicationId: string, pages: { id: string; title: string; path: string; planItemId: string }[]) {
+  const pubId = `publication.${publicationId}`, pageIds = pages.map(page => `page.${page.id}`), ids = [...pageIds, pubId];
+  const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
+  await put(join(publisher, "ia.json"), json({ schema: "clossys.ia/1", source: "consumer#publisher", extensions: [], nodes: [{ id: "catalog", label: "Catalog", children: [{ id: "bindings", label: "Bindings", slots: ids }] }] }));
+  for (const [order, id] of ids.entries()) {
+    const publication = id === pubId, page = pages[order];
+    await put(join(publisher, id, "slot.json"), json({ schema: "clossys.slot/1", id, agent: "publisher", ia: { l1: "catalog", l2: "bindings", order }, kind: publication ? "publication" : "page", contract: {},
+      inputs: publication ? pageIds : [], uses: publication ? pageIds : [] }));
+    const bytes = json(publication
+      ? { schema: "clossys.publication/1", format: "web.page.responsive", entryOrder: pages.map(entry => entry.id), meta: { source: { kind: "derived", ref: ["publisher:fixture"] },
+        tree: { id: publicationId, name: publicationId, children: [{ id: `${publicationId}.pages`, name: "Pages", cells: pageIds }] } } }
+      : { schema: "clossys.page/1", title: page!.title, path: page!.path, frame: null, sections: [], copy: {}, meta: { source: { kind: "original", ref: [] },
+        entry: { publication: publicationId, entryId: page!.id, fields: { kind: "page", planItemId: page!.planItemId }, entryMeta: {}, blocks: {} } } });
+    await put(join(publisher, id, "candidates", "record-v1.json"), bytes);
+    await put(join(publisher, id, "pin.json"), json({ candidate: "record-v1.json", sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "bulk", at: "2026-10-31T00:00:00Z" }));
+  }
+}
+
 it("reads installs written with --out from the folder produce --out names, under the Publisher's declared publication", async () => {
   const outs = join(root, "outs");
   await installFixture(join(outs, "contact"), "contact");
   await put(join(outs, "notes", "install-report.json"), JSON.stringify({ page: "notes", findings: [] }));
-  const api = await agentModule("publisher", "content-map/cells.js");
-  await api.contentMapToCells({ version: 1, publicationId: "example-site", format: "web.page.responsive", entries: [
-    { id: "contact", kind: "page", title: "Contact", order: 0, path: "/contact-us", source: { planItemId: "site.contact" } },
-  ] }, agentRoot(root, "publisher"), { date: "2026-10-31" });
+  await nativePublication(agentRoot(root, "publisher"), "example-site", [{ id: "contact", title: "Contact", path: "/contact-us", planItemId: "site.contact" }]);
   await launch(outs);
   const metadata = JSON.parse((await get("/api/publication")).text);
   expect(metadata).toMatchObject({ state: "ready", publication: "example-site", pages: [{ id: "contact", route: "/contact-us", cellId: "page.contact", emitted: true, previewUrl: "/preview/example-site/pages/contact.html" }] });

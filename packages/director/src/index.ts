@@ -29,7 +29,9 @@ export { parseSession } from "./format/session.js";
 export { parseFinding, validateFinding } from "./format/finding.js";
 export { validateRequest } from "./format/request.js";
 export { validateTree } from "./format/tree.js";
-export { readStrategyRoot } from "./store.js";
+export { EVIDENCE_PREFIX, readStrategyFile, readStrategyRoot } from "./store.js";
+export { isSlotCandidatePath, parseSlotCandidateDocument, parseSlotPin, slotCandidateCell, slotCandidateVersion, SLOT_CANDIDATE_NAME } from "./format/slot.js";
+export type { SlotCandidateInput, SlotPin } from "./format/slot.js";
 export { storeFault } from "./store-io.js";
 export type { DirectorStore, DirectorStoreChange, DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader, DirectorStoreWriter } from "./store-io.js";
 export { runDirectorCli } from "./cli.js";
@@ -44,7 +46,5 @@ export type { Scope, JudgeVerdict, CheckOptions, CheckContext, CheckFinding, Cel
 
 export { buildCitationIndex } from "./citations/index.js";
 export type { CitationEntry, CitationIndex, ScanInput } from "./citations/index.js";
-export { propose, activate, createRequest, listRequests, resolveRequest } from "./write/index.js";
-export type { ProposeOptions, ActivateOptions, NewRequest } from "./write/index.js";
-export { review } from "./loop.js";
+export { planReview } from "./loop.js";
 export type { ReviewReport, ReviewRequest } from "./loop.js";

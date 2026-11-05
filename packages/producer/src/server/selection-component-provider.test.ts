@@ -14,7 +14,7 @@ import { renderToReadableStream, renderToStaticMarkup } from 'react-dom/server';
 import * as components from '@clossys/designer/components';
 import { applyLibraryChange, importFoundryComponents, libraryHash, loadCatalog, loadComponentRegistry, resolve, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData } from '@clossys/designer/catalog';
 import { beforeAll, expect, it, vi } from 'vitest';
-import { agentModule, agentRoot } from './cells.js';
+import { agentModule } from './cells.js';
 import { studioComponentProviderSource } from './selection-component-provider.js';
 import { compileSelection, selectionRuntime } from './selection.js';
 import { componentSpecimenPreview, emittedDesignerSpecimenContext, renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, STUDIO_SPECIMEN_HOST_PARTS, type EmittedDesignerSpecimenRuntime } from '@clossys/designer/studio';
@@ -41,17 +41,14 @@ beforeAll(async () => {
     { portion: 'components', change: { op: 'adopt', slot: 'components.semantic-content', source: 'foundry' } },
     { portion: 'surfaces', change: { op: 'adopt', slot: 'sections.content', source: 'foundry' } },
   ] }, { componentOptions, surfaceOptions });
-  // Use the same native engine -> library files -> active cells lineage as the
+  // Use the same native engine -> library files -> drift-checked reader lineage as the
   // public historical Studio fixture. No reader, compiler or provider is mocked.
   const reader = await agentModule('designer', 'library-cli/fs-library.js');
   const source = join(directory, 'library');
   for (const [name, contents] of reader.libraryFiles(catalog, library, [], componentOptions, surfaceOptions)) {
     const path = join(source, name); await mkdir(dirname(path), { recursive: true }); await writeFile(path, contents);
   }
-  const cells = await agentModule('designer', 'library-cli/cells.js');
-  const root = agentRoot(join(directory, 'consumer'), 'designer');
-  await cells.libraryToCells(source, root, { catalog, date: '2026-10-30', surfaceOptions });
-  input = { catalog, library: await reader.readLibraryFromCells(root, catalog), componentOptions, surfaceOptions };
+  input = { catalog, library: await reader.readLibrary(source, catalog), componentOptions, surfaceOptions };
   const profile = resolve(input);
   const provider = await studioComponentProviderSource(profile, new Map());
   const compiled = await build({ stdin: { contents: provider + '\nexport { ContentSection as Content } from "@clossys/designer/blocks";\n', resolveDir: fileURLToPath(new URL('../../', import.meta.url)), loader: 'ts' }, bundle: true, write: false, format: 'esm', platform: 'browser', target: 'es2022', metafile: true, external: ['react', 'react-dom', 'react/jsx-runtime', 'react/jsx-dev-runtime'], logLevel: 'silent' });

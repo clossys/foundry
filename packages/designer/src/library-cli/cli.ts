@@ -28,9 +28,6 @@ import { selectStarter } from "./select.js";
 const USAGE = `Usage: designer-library <command> --root <consumer-library>
 
 Commands:
-  cells migrate --from <library> --to <cell-root>  Migrate a library into an explicit cell root.
-  cells compile|check --root <cell-root> --out <library> [--check]  Compile active cells or check generated drift.
-  cells propose <slot> | activate <slot@version...> --confirm <ref> --root <cell-root>
   surfaces --refresh <surfaceId> [--observations <file>] [--json]  Refresh one held package surface from its same upstream.
   status [--json]                         Describe consumer-owned fills and baseHash.
   check [--layer themes|assets|components|sections|frames] [--observations <file>] [--json]
@@ -239,7 +236,6 @@ async function libraryUsageGraphInputs(root: string, catalog: ReturnType<typeof 
 export async function main(argv: string[], io: LibraryCliIO = defaultIO): Promise<number> {
   if (argv.length === 1 && ["--help", "-h"].includes(argv[0]!)) { io.out(USAGE); return 0; }
   try {
-    if (argv[0] === "cells") return await (await import("./cells.js")).runCellsCli(argv.slice(1), io);
     if (argv[0] === "ia-coverage") return await (await import("../catalog/ia/check-coverage/cli.js")).main(argv.slice(1), io);
     const args = parseArgs(argv);
     if (args.command === "recommend") { io.error("recommend unavailable: the chooser has not shipped; no library was changed"); return 2; }

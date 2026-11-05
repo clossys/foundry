@@ -6,20 +6,23 @@ import { compileBrief } from "./brief.js";
 import { discoverBriefContracts, validateBriefContract } from "./brief-contracts.js";
 import { openStrategy } from "./api.js";
 import { readStrategyRoot } from "./store.js";
+import { stageFinding, stageSlot, strategyRoot } from "./ground/fixtures.js";
 import { reader } from "../test/store.js";
 
 const roots: string[] = [];
 const need = "context.customer.need", promise = "advantage.proposition.promise", differentiator = "advantage.defensibility.differentiator";
 const contract = { id: "fixture.brief", schemaVersion: 1 as const, owner: "fixture", requires: [need], optional: ["context.customer.buying"] };
 function put(root: string, path: string, bytes: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); }
-function cell(id: string, version = 1, refs: string[] = [], status = "active") {
-  return `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: [${refs.join(", ")}]\nfeeds: []\nfunctions: []\n${status === "active" ? "confirmed: msg:2026-10-29-1#U2\n" : ""}---\n\n## Direction\n- Need: A fictional studio needs scheduling.\n- Not: Large factories.\n\n## Because\n- Measured interviews${refs.length ? ` (${refs.join(", ")})` : "."}\n\n## Watch\n- If requests > 5 each month, then review.\n`;
+/** Stages one candidate of a slot; an "active" one is pinned, any other status is left unpinned. */
+function stage(root: string, id: string, version = 1, refs: string[] = [], status = "active") {
+  stageSlot(root, id, version, ["Need: A fictional studio needs scheduling.", "Not: Large factories."], {
+    refs, because: [`Measured interviews${refs.length ? ` (${refs.join(", ")})` : "."}`], watch: ["If requests > 5 each month, then review."], unpinned: status !== "active",
+  });
 }
 function fixture(active: Record<string, number | null> = { [need]: 1 }) {
   const project = mkdtempSync(join(tmpdir(), "strategy-brief-")); roots.push(project);
-  const root = join(project, "strategy");
-  put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active }));
-  for (const [id, version] of Object.entries(active)) if (version) put(root, `cells/${id}/v${version}.md`, cell(id, version));
+  const root = strategyRoot(project);
+  for (const [id, version] of Object.entries(active)) if (version) stage(root, id, version);
   return { root, project };
 }
 function brief(root: string, selected = contract) { return openStrategy(root, reader, { contracts: [selected] }).getBrief(selected.id); }
@@ -35,32 +38,31 @@ describe("brief compilation", () => {
     expect(filtered.cells[0]?.direction.map(b => b.key)).toEqual(["Not"]);
     expect(filtered.cells[0]?.watch).toEqual(result.cells[0]?.watch);
   });
-  it("lists missing required cells, ignores absent optional cells, and requires an active file", () => {
+  it("lists missing required cells, ignores absent optional cells, and requires a pinned candidate", () => {
     const { root } = fixture({ [need]: null });
     expect(brief(root)).toMatchObject({ state: "missing", missing: [need], cells: [] });
-    put(root, `cells/${need}/v1.md`, cell(need, 1, [], "draft"));
+    stage(root, need, 1, [], "draft");
     expect(brief(root).state).toBe("missing");
-    const tree = JSON.parse(readFileSync(join(root, "tree.json"), "utf8")); tree.active[need] = 1; put(root, "tree.json", JSON.stringify(tree));
+    stage(root, need, 1); rmSync(join(root, need, "candidates", "fixture-v1.md"));
     expect(brief(root).state).toBe("missing");
   });
-  it("detects stale direct cell citations while a newer draft has no effect", () => {
+  it("detects stale direct cell citations while a newer unpinned candidate has no effect", () => {
     const { root } = fixture({ [need]: 1, [promise]: 1 });
-    put(root, `cells/${promise}/v1.md`, cell(promise, 1, ["context.customer.need@1"]));
+    stage(root, promise, 1, ["context.customer.need@1"]);
     const selected = { ...contract, requires: [promise] };
     expect(brief(root, selected).state).toBe("ready");
-    put(root, `cells/${need}/v2.md`, cell(need, 2, [], "draft"));
+    stage(root, need, 2, [], "draft");
     expect(brief(root, selected).state).toBe("ready");
-    const tree = JSON.parse(readFileSync(join(root, "tree.json"), "utf8")); tree.active[need] = 2; put(root, "tree.json", JSON.stringify(tree));
-    put(root, `cells/${need}/v2.md`, cell(need, 2));
+    stage(root, need, 2);
     expect(brief(root, selected)).toMatchObject({ state: "stale", stale: [{ cell: need, version: 1 }] });
   });
   it("checks transitive C1 dependencies even beyond the contract cell list", () => {
     const { root } = fixture({ [need]: 2, [promise]: 1, [differentiator]: 1 });
-    put(root, `cells/${need}/v1.md`, cell(need, 1, [], "retired"));
-    put(root, `cells/${promise}/v1.md`, cell(promise, 1, ["context.customer.need@1"]));
-    put(root, `cells/${differentiator}/v1.md`, cell(differentiator, 1, ["advantage.proposition.promise@1"]));
+    stage(root, need, 1, [], "retired");
+    stage(root, promise, 1, ["context.customer.need@1"]);
+    stage(root, differentiator, 1, ["advantage.proposition.promise@1"]);
     expect(brief(root, { ...contract, requires: [differentiator] })).toMatchObject({ state: "stale", stale: [{ cell: need, version: 1 }] });
-    put(root, `cells/${promise}/v1.md`, cell(promise));
+    stage(root, promise);
     expect(brief(root, { ...contract, requires: [differentiator] }).state).toBe("stale");
   });
   it("compares a previous compiled fingerprint and never writes the root", () => {
@@ -74,24 +76,22 @@ describe("brief compilation", () => {
   it("hashes sorted refs and exact cited file bytes, including evidence outside selected cells", () => {
     const { root } = fixture();
     const evidence = "---\nid: fixture-survey\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Five fictional studio interviews.\n";
-    put(root, "findings/fixture-survey.md", evidence);
-    put(root, "sessions/2026-10-29-1.md", "- S1: Playback.\n- U2: Yes.\n");
-    put(root, `cells/${need}/v1.md`, cell(need, 1, ["finding:fixture-survey", "msg:2026-10-29-1#U2"]));
+    stageFinding(root, "fixture-survey", evidence);
+    stage(root, need, 1, ["finding:fixture-survey"]);
     const model = readStrategyRoot(root, reader); const first = compileBrief(model, contract);
     const reordered = { ...model, cells: [...model.cells].reverse(), files: Object.fromEntries(Object.entries(model.files).reverse()) };
     expect(compileBrief(reordered, contract).fingerprint).toBe(first.fingerprint);
-    put(root, "findings/fixture-survey.md", evidence.replace("Five", "Six"));
+    stageFinding(root, "fixture-survey", evidence.replace("Five", "Six"));
     expect(brief(root).fingerprint).not.toBe(first.fingerprint);
-    put(root, "findings/fixture-survey.md", evidence.replace(/\n/g, "\r\n"));
+    stageFinding(root, "fixture-survey", evidence.replace(/\n/g, "\r\n"));
     expect(brief(root).fingerprint).not.toBe(first.fingerprint);
-    put(root, "findings/fixture-survey.md", evidence);
-    put(root, "sessions/2026-10-29-1.md", "- S1: Playback changed.\n- U2: Yes.\n");
-    expect(brief(root).fingerprint).not.toBe(first.fingerprint);
+    stageFinding(root, "fixture-survey", evidence);
+    expect(brief(root).fingerprint).toBe(first.fingerprint);
   });
-  it("does not hash unrelated drafts or depend on contract list order", () => {
+  it("does not hash unpinned candidates or depend on contract list order", () => {
     const { root } = fixture({ [need]: 1, ["context.customer.buying"]: 1 });
     const first = brief(root);
-    put(root, `cells/${need}/v2.md`, cell(need, 2, [], "draft"));
+    stage(root, need, 2, [], "draft");
     expect(brief(root).fingerprint).toBe(first.fingerprint);
     expect(brief(root, { ...contract, requires: ["context.customer.buying", need], optional: [] }).fingerprint).toBe(first.fingerprint);
   });

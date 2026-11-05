@@ -15,8 +15,9 @@ describe("publisher.launch contract", () => {
   });
   it("blocks launch when required cells have no active version", () => {
     const root = mkdtempSync(join(tmpdir(), "publisher-launch-")); roots.push(root);
-    mkdirSync(join(root, "cells"));
-    writeFileSync(join(root, "tree.json"), JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: {} }));
+    // A required slot with a candidate but no pin has no active version.
+    mkdirSync(join(root, "focus.reach.channel", "candidates"), { recursive: true });
+    writeFileSync(join(root, "focus.reach.channel", "candidates", "fixture-v1.md"), "---\nslot: \"focus.reach.channel\"\n---\n\n## Direction\n- Channel: Fixture.\n");
     const brief = publisherLaunchBrief(root);
     expect(brief.state).toBe("missing");
     expect(brief.missing).toEqual(["focus.offer.included", "focus.reach.channel"]);

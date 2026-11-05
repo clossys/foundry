@@ -1,24 +1,28 @@
 #!/usr/bin/env node
 /**
- * Ref-verbatim check over a consumer library (read-only, offline).
+ * Ref-verbatim check over a consumer's Designer slots (read-only, offline).
  *
- *   node check-ref-verbatim.mjs --root <consumer>/clossys --element <slot>/<element>/v<N>   one version, strict (pin gate)
- *   node check-ref-verbatim.mjs --root <consumer>/clossys --pinned                          every pin, against the baseline
- *   node check-ref-verbatim.mjs --root <consumer>/clossys --all                             every version directory
+ *   node check-ref-verbatim.mjs --root <consumer>/clossys --element <slot>/<element>/v<N>   one candidate, strict (pin gate)
+ *   node check-ref-verbatim.mjs --root <consumer>/clossys --pinned                          every pin
+ *   node check-ref-verbatim.mjs --root <consumer>/clossys --all                             every candidate, against the baseline
  *     [--components <components.json>] [--report <file>] [--release] [--json]
  *
+ * Designer slots are flat slot folders, `agents/designer/<slot>/{slot.json,
+ * candidates/<element>-v<N>.json,pin.json}`, read only through scripts/slot-pins.mjs;
+ * `<slot>/<element>/v<N>` names the candidate `<element>-v<N>.json` of `<slot>`.
+ *
  * Rule: every code file an element ships is the vendored reference file it
- * names in `lineage.source.files`, after the shadcn CLI 4.23.0 add-time
+ * names in `meta.refVerbatim.files`, after the shadcn CLI 4.23.0 add-time
  * rewrites (ref-verbatim/normalize.mjs), plus only the allowed hunks
  * (ref-verbatim/diff.mjs): H-IMPORT, H-TOKEN, H-DATA, H-PROPS, H-LINK.
  * Anything else fails with one of the codes in CODES. check-provenance.mjs
  * stays the record-level gate; this check is the code-level one.
  *
- * `--pinned` and `--all` inventory, but never excuse, the pins listed in
+ * `--all` inventories, but never excuses, the candidates listed in
  * scripts/ref-verbatim/baseline.json, which may only shrink: a row that is
- * not in BASELINE_CEILING below fails the run (REF-BASELINE). For legacy
- * records without `lineage.source.files`, reporting and pinning fail closed;
- * only direct non-strict checkElement callers may request an inferred mapping.
+ * not in BASELINE_CEILING below fails the run (REF-BASELINE). For candidates
+ * without `meta.refVerbatim.files`, reporting and pinning fail closed; only
+ * direct non-strict checkElement callers may request an inferred mapping.
  * Exit 1 on any finding, 2 on a usage error.
  */
 import { createHash } from "node:crypto";
@@ -30,7 +34,7 @@ import { replayDataFit } from "./ref-verbatim/data-fit.mjs";
 import { ADAPTATION_KINDS, adaptationHash, recordedHunk, staticSingleOptionRow } from "./ref-verbatim/adaptations.mjs";
 export { ADAPTATION_KINDS, adaptationHash };
 import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
-import { designerSlotRecords } from "./slot-pins.mjs";
+import { designerPins, designerSlotRecords } from "./slot-pins.mjs";
 import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
 import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from "./ref-verbatim/ds-only.mjs";
 export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind };
@@ -149,6 +153,45 @@ const parseSpec = (spec) => {
   return { slot: m[1], element: m[2], version: Number(m[3]) };
 };
 
+/** A Designer candidate file `<element>-v<N>.json`: its name carries the element id and version. */
+const CANDIDATE_FILE = /^([a-z0-9][a-z0-9.-]*)-v([1-9][0-9]*)\.json$/;
+const candidateFile = (element, version) => `${element}-v${version}.json`;
+
+/** The Designer candidate `<element>-v<version>.json` of `<slot>`, through the one slot-model reader; undefined when the slot has none. */
+function designerCandidate(root, slot, element, version) {
+  const name = candidateFile(element, version);
+  return designerPins(root, { all: true }).find(entry => entry.slot === slot && entry.candidate.name === name);
+}
+
+/**
+ * A candidate registry item as checkVersion input: its payload is `files[].content`, its lineage
+ * record what meta.source (ref, against the vendored manifest), meta.refVerbatim (files,
+ * adaptations, parts, exactParts) and meta.element (deps, reads) state.
+ */
+function candidateInput(candidate, manifest) {
+  const refs = candidate.meta?.source?.ref ?? [];
+  const source = candidate.meta?.source;
+  const item = (manifest.items ?? []).find(row => refs.includes(`${row.registry}/${row.name}@${row.version}`));
+  const files = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
+  if (Object.values(files).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
+  const mapping = candidate.meta?.refVerbatim ?? {};
+  const record = { payload: Object.keys(files), hash: treeHash(Object.entries(files).map(([path, content]) => ({ path, sha256: sha256(content) }))), deps: candidate.meta?.element?.deps, reads: candidate.meta?.element?.reads, lineage: {
+    mode: source?.kind === "original" ? "original" : "customized",
+    ...(item ? { source: { registry: item.registry, item: item.name, version: item.version, hash: item.hash, files: mapping.files } } : {}),
+    adaptations: mapping.adaptations ?? [],
+    ...(mapping.parts ? { parts: mapping.parts } : {}),
+    ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
+  } };
+  return { record, files };
+}
+
+/** A check result labelled with its candidate identity `<slot>/<element>@v<N>`. */
+function asCandidate(checked, element, version) {
+  const key = `${checked.slot}/${element}@v${version}`;
+  const findings = checked.findings.map(finding => (finding.element === checked.key ? { ...finding, element: key } : finding));
+  return { ...checked, key, element, version, findings };
+}
+
 
 // Exact parts are a second, opt-in proof format. No legacy mapping/adaptation
 // fallback applies when this field exists, including when it is malformed.
@@ -254,7 +297,7 @@ function exactPartsCheck({ root, record, payload, codeFiles, readBytes, opts, sl
     partRequire(codeFiles.length > 0 && !(record.lineage.adaptations?.length), "exact parts require code and use only explicit byte edits");
     const bytes = new Map();
     for (const file of new Set([...payload, ...codeFiles])) {
-      partRequire(partPath(file) && !/^(node_modules|library)\//.test(file), "invalid or reserved exact payload path");
+      partRequire(partPath(file) && !/^(node_modules|library|elements)\//.test(file), "invalid or reserved exact payload path");
       const content = readBytes(file);
       partRequire(Buffer.isBuffer(content), `missing exact payload bytes: ${file}`);
       bytes.set(file, content);
@@ -434,17 +477,19 @@ function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts
     need(record.deps?.elements?.some(dep => ["slot", "element", "version", "hash"].every(key => dep[key] === target[key])), "undeclared canonical dependency");
     const identity = `${target.slot}/${target.element}/v${target.version}`;
     if (elementRoots.has(identity)) { const domain = elementRoots.get(identity); need(domain.hash === target.hash, "conflicting canonical dependency"); return domain; }
-    const base = join(root, "library", identity);
-    const dependency = JSON.parse(partDecode(partRead(root, `library/${identity}/element.json`)));
-    need(dependency.slot === target.slot && dependency.id === target.element && dependency.version === target.version
-      && dependency.hash === target.hash && Array.isArray(dependency.payload), "canonical dependency identity differs");
-    const bytes = new Map(dependency.payload.map(file => [file, partRead(base, file)]));
-    need(bytes.size === dependency.payload.length && treeHash([...bytes].map(([path, content]) => ({ path, sha256: sha256(content) }))) === target.hash, "canonical dependency payload changed");
+    // The dependency is the Designer candidate `<element>-v<version>.json` of its slot, read through the slot-model reader.
+    const entry = designerCandidate(root, target.slot, target.element, target.version);
+    need(entry?.item, "canonical dependency is not a readable Designer candidate");
+    const dependency = candidateInput(entry.item, opts.manifest);
+    need(entry.item.name === target.element && dependency.record.hash === target.hash, "canonical dependency identity differs");
+    const bytes = new Map(Object.entries(dependency.files).map(([path, content]) => [path, Buffer.from(content)]));
+    need([...bytes.keys()].every(partPath) && bytes.size === dependency.record.payload.length
+      && treeHash([...bytes].map(([path, content]) => ({ path, sha256: sha256(content) }))) === target.hash, "canonical dependency payload changed");
     const ancestors = options.exactAncestors ?? [];
     need(!ancestors.includes(identity), "cyclic canonical proof dependency");
-    const checked = checkVersion(root, { slot: target.slot, element: target.element, version: target.version }, { ...options, strict: true, exactAncestors: [...ancestors, identity] });
+    const checked = checkRegistryItem(root, target.slot, entry.item, { ...options, strict: true, slotDoc: entry.slotDoc, exactAncestors: [...ancestors, identity] });
     need(checked.findings.length === 0, "canonical dependency does not pass its actual strict source proof");
-    const domain = { kind: "element", label: `library/${identity}/`, bytes, record: dependency, hash: target.hash };
+    const domain = { kind: "element", label: `elements/${identity}/`, bytes, record: dependency.record, item: entry.item, hash: target.hash };
     elementRoots.set(identity, domain); return domain;
   };
   const publicNpm = (domain, specifier, typeOnly) => {
@@ -484,9 +529,9 @@ function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts
       if (request.startsWith(".") && domain === destination) {
         entries = [resolveRelative(domain, file, request)]; need(entries[0] === target.entry, "canonical local edge differs");
       } else {
-        // A canonical dependency exposes only the registry item's public entry,
+        // A canonical dependency exposes only its candidate registry item's public entry,
         // never an arbitrary neighboring helper or a section deep-import alias.
-        const registry = JSON.parse(partDecode(destination.bytes.get("registry-item.json")));
+        const registry = destination.item;
         need(request === `@elements/${target.slot}/${target.element}` && registry.files?.some(row => row.path === target.entry && /(?:^|\/)index\.[cm]?[jt]sx?$/.test(row.path)), "canonical import must name its verified public entry");
         entries = [target.entry];
       }
@@ -584,43 +629,34 @@ function exactPartClosure(ts, root, record, proof, payloadBytes, codeFiles, opts
 }
 
 /**
- * Check one element version. `strict` (the pin gate) requires
- * `lineage.source.files`; otherwise a unique basename match is accepted and
- * reported as inferred.
+ * Check one candidate's version input ({ record, files }, from candidateInput). `strict`
+ * (the pin gate) requires `lineage.source.files`; otherwise a unique basename match is
+ * accepted and reported as inferred. Payload bytes are the candidate's own, never a disk layout.
  * @returns {{ key, slot, element, version, hash, status, files, findings }}
  */
 function checkVersion(root, target, options = {}, versionInput) {
   const opts = defaults(options);
-  const { slot, element, version } = typeof target === "string" ? parseSpec(target) : target;
+  const { slot, element, version } = target;
   if (!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(slot) || !/^[a-z0-9][a-z0-9-]*$/.test(element) || !Number.isInteger(version) || version < 1) throw new Error("invalid reference target");
+  if (!versionInput?.record || !versionInput.files) throw new Error("checkVersion needs a candidate's { record, files }");
   const key = `${slot}/${element}@v${version}`;
-  const dir = join(root, "library", slot, element, `v${version}`);
   const findings = [];
   const files = [];
   const result = (status, extra = {}) => ({ key, slot, element, version, status, files, findings, ...extra });
   const fail = (code, detail, extra = {}) => findings.push({ element: key, code, detail, ...extra });
 
-  const recordPath = join(dir, "element.json");
-  if (!versionInput && !existsSync(dir)) {
-    fail("REF-NO-SOURCE", "no library directory for this version");
-    return result("fail");
-  }
-  const record = versionInput?.record ?? (existsSync(recordPath) ? json(recordPath) : undefined);
+  const { record } = versionInput;
   const embedded = new Map();
   const safePayload = (file) => typeof file === "string" && !!file && !file.startsWith("/") && !file.includes("\\") && !file.includes("\u0000") && !file.split("/").includes("..");
   const readPayload = (file, raw = false) => {
     if (!safePayload(file)) throw new Error("payload path must stay inside its version");
     if (embedded.has(file)) return raw ? Buffer.from(embedded.get(file)) : embedded.get(file);
-    if (versionInput) return raw ? Buffer.from(versionInput.files[file]) : versionInput.files[file];
-    let path = dir;
-    for (const part of file.split("/")) { path = join(path, part); if (lstatSync(path).isSymbolicLink()) throw new Error("symlink payload is not a reference source"); }
-    return raw ? readFileSync(path) : readFileSync(path, "utf8");
+    return raw ? Buffer.from(versionInput.files[file]) : versionInput.files[file];
   };
-  const meta = !record && existsSync(join(dir, "registry-item.json")) ? json(join(dir, "registry-item.json")).meta ?? {} : {};
-  const mode = record ? record.lineage?.mode : meta.lineage;
-  const source = record ? record.lineage?.source : meta.reference;
-  const hash = record?.hash;
-  const payload = record?.payload ?? readdirSync(dir).filter((f) => statSync(join(dir, f)).isFile());
+  const mode = record.lineage?.mode;
+  const source = record.lineage?.source;
+  const hash = record.hash;
+  const payload = record.payload;
   if (!Array.isArray(payload) || payload.some(file => !safePayload(file))) {
     fail("REF-FILE-UNMAPPED", "payload paths must stay inside the version");
     return result("fail", { hash });
@@ -788,9 +824,21 @@ function checkVersion(root, target, options = {}, versionInput) {
   return result(findings.length ? "fail" : "pass", { hash, ref });
 }
 
-/** Check the immutable legacy library version on disk. */
+/**
+ * Check one Designer candidate: `<slot>/<element>/v<N>` is the candidate `<element>-v<N>.json`
+ * of slot `<slot>`, read through the slot-model reader (pinned or not). A missing or unreadable
+ * candidate fails REF-NO-SOURCE.
+ */
 export function checkElement(root, target, options = {}) {
-  return checkVersion(root, target, options);
+  const { slot, element, version } = typeof target === "string" ? parseSpec(target) : target;
+  if (!/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(slot) || !/^[a-z0-9][a-z0-9-]*$/.test(element) || !Number.isInteger(version) || version < 1) throw new Error("invalid reference target");
+  const entry = designerCandidate(root, slot, element, version);
+  if (!entry?.item) {
+    const key = `${slot}/${element}@v${version}`;
+    const finding = { element: key, code: "REF-NO-SOURCE", detail: entry ? `Designer candidate ${entry.candidate.name} of ${slot} is unreadable: ${entry.error}` : `no Designer candidate ${candidateFile(element, version)} in slot ${slot}` };
+    return { key, slot, element, version, status: "fail", files: [], findings: [finding] };
+  }
+  return asCandidate(checkRegistryItem(root, slot, entry.item, { ...options, slotDoc: options.slotDoc ?? entry.slotDoc }), element, version);
 }
 
 /** Slot-model registry item: provenance stays in meta.source; exact file mappings
@@ -804,20 +852,7 @@ export function checkRegistryItem(root, slot, candidate, options = {}) {
 
 function checkLineageItem(root, slot, candidate, options = {}) {
   const opts = defaults(options);
-  const refs = candidate.meta?.source?.ref ?? [];
-  const source = candidate.meta?.source;
-  const item = (opts.manifest.items ?? []).find(row => refs.includes(`${row.registry}/${row.name}@${row.version}`));
-  const files = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
-  if (Object.values(files).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
-  const mapping = candidate.meta?.refVerbatim ?? {};
-  const record = { payload: Object.keys(files), hash: treeHash(Object.entries(files).map(([path, content]) => ({ path, sha256: sha256(content) }))), deps: candidate.meta?.element?.deps, reads: candidate.meta?.element?.reads, lineage: {
-    mode: source?.kind === "original" ? "original" : "customized",
-    ...(item ? { source: { registry: item.registry, item: item.name, version: item.version, hash: item.hash, files: mapping.files } } : {}),
-    adaptations: mapping.adaptations ?? [],
-    ...(mapping.parts ? { parts: mapping.parts } : {}),
-    ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
-  } };
-  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files });
+  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, candidateInput(candidate, opts.manifest));
 }
 
 // ---- npm package reference -------------------------------------------------
@@ -1207,24 +1242,6 @@ export function refVerbatimFindings(root, target, options = {}) {
   return checkElement(root, target, { ...options, strict: true }).findings;
 }
 
-function versionDirs(libraryRoot) {
-  const out = [];
-  if (!existsSync(libraryRoot)) return out;
-  for (const slot of readdirSync(libraryRoot).sort()) {
-    const slotDir = join(libraryRoot, slot);
-    if (!statSync(slotDir).isDirectory()) continue;
-    for (const element of readdirSync(slotDir).sort()) {
-      const elementDir = join(slotDir, element);
-      if (!statSync(elementDir).isDirectory()) continue;
-      for (const v of readdirSync(elementDir)) {
-        const m = /^v(\d+)$/.exec(v);
-        if (m) out.push({ slot, element, version: Number(m[1]) });
-      }
-    }
-  }
-  return out.sort((a, b) => a.slot.localeCompare(b.slot) || a.element.localeCompare(b.element) || a.version - b.version);
-}
-
 /** Baseline rows and the REF-BASELINE findings for rows outside the ceiling. */
 export function loadBaseline(options = {}) {
   const opts = defaults(options);
@@ -1242,12 +1259,12 @@ export function loadBaseline(options = {}) {
 }
 
 /**
- * `--pinned` (every pin) or `--all` (every version directory), with a shrink-only inventory. Baseline findings still fail; no release exemption.
+ * `--pinned` (every pin) or `--all` (every Designer candidate, pinned or not, with a shrink-only
+ * inventory). Baseline findings still fail; no release exemption.
  * @returns {{ mode, elements, findings, baselined, stale }}
  */
 export function refVerbatimReport(root, { all = false, ...options } = {}) {
-  // Pins come only from the one slot-model reader; `--all` also walks every legacy library version directory.
-  const targets = all ? versionDirs(join(root, "library")) : [];
+  // Pins and candidates come only from the one slot-model reader.
   const { rows, findings: baselineFindings } = loadBaseline(options);
   // A row outside the ceiling is itself a finding and excuses nothing.
   const ceiling = new Set(defaults(options).ceiling);
@@ -1256,9 +1273,20 @@ export function refVerbatimReport(root, { all = false, ...options } = {}) {
   const elements = [];
   const findings = [...baselineFindings];
   const baselined = [];
-  for (const target of targets) {
-    const checked = checkElement(root, target, { ...options, strict: true });
-    const key = baselineKey({ ...target, hash: checked.hash ?? target.pinHash });
+  const refuse = (key, slot, detail) => {
+    const finding = { element: key, code: "REF-NO-SOURCE", detail };
+    elements.push({ key, slot, status: "fail", files: [], findings: [finding] });
+    findings.push(finding);
+  };
+  if (all) for (const entry of designerPins(root, { all: true })) {
+    const id = CANDIDATE_FILE.exec(entry.candidate.name);
+    if (!entry.item || !id) {
+      refuse(`${entry.slot}/${entry.candidate.name}`, entry.slot, `Designer candidate ${entry.error ? `is unreadable: ${entry.error}` : "is not named <element>-v<N>.json"}`);
+      continue;
+    }
+    const checked = asCandidate(checkRegistryItem(root, entry.slot, entry.item, { ...options, strict: true, slotDoc: entry.slotDoc }), id[1], Number(id[2]));
+    if (checked.findings.length) checked.status = "fail";
+    const key = baselineKey({ slot: entry.slot, element: checked.element, version: checked.version, hash: checked.hash });
     if (checked.status === "fail" && baseline.has(key)) {
       used.add(key);
       baselined.push(checked.key);
@@ -1269,15 +1297,14 @@ export function refVerbatimReport(root, { all = false, ...options } = {}) {
     elements.push(checked);
     findings.push(...checked.findings);
   }
-  if (!all) for (const [slot, record] of designerSlotRecords(root)) {
+  // A rejected pin or a slot folder the IA does not place is a finding in both modes, never skipped.
+  for (const [slot, record] of designerSlotRecords(root)) {
     if (!record.pinned.item && record.pinned.error === "is not pinned") continue;
     if (!record.pinned.item) {
-      const key = `${slot}/${record.dir ? "pin" : "?"}`;
-      const finding = { element: key, code: "REF-NO-SOURCE", detail: `slot pin ${record.pinned.error}` };
-      elements.push({ key, slot, status: "fail", files: [], findings: [finding] });
-      findings.push(finding);
+      refuse(`${slot}/${record.dir ? "pin" : "?"}`, slot, `slot pin ${record.pinned.error}`);
       continue;
     }
+    if (all) continue; // `--all` checked the pinned candidate above, with every other candidate.
     const checked = checkRegistryItem(root, slot, record.pinned.item, { ...options, strict: true, slotDoc: record.slotDoc });
     if (checked.findings.length) checked.status = "fail";
     elements.push(checked);

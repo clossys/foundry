@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { createHash } from "node:crypto";
 import { formatRef, openStrategy } from "@clossys/director";
 import { directorStoreReader } from "../../../producer/src/records/slots.js";
 import { fileURLToPath } from "node:url";
@@ -107,31 +108,34 @@ it("returns nonzero and persists actionable repository-format reports for each b
 });
 
 
-it("checks claim refs against actual active pointers, preserving current refs when a newer draft exists", () => {
+it("checks claim refs against the pinned Director slot, preserving current refs when a newer unpinned candidate exists", () => {
   mkdirSync("work", { recursive: true });
   const root = mkdtempSync(join("work", "writer-strategy-drift-"));
   const id = "advantage.proposition.proof";
-  const cell = (version: number, status: string) => `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\n${status === "active" ? "confirmed: msg:2026-10-29-1#U2\n" : ""}---\n\n## Direction\n- Evidence: Fictional fixture evidence.\n- Never-claim: Unmeasured results.\n\n## Because\n- Interview evidence.\n\n## Watch\n- If requests > 5 each month, then review.\n`;
-  const tree = (version: number) => JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: { [id]: version } });
+  const candidate = (version: number) => `---\nslot: ${JSON.stringify(id)}\nsource: {"kind":"derived","ref":[]}\nfeeds: []\nfunctions: []\n---\n\n## Direction\n- Evidence: Fictional fixture evidence.\n- Never-claim: Unmeasured results.\n\n## Because\n- Interview evidence.\n\n## Watch\n- If requests > 5 each month, then review.\n`;
+  /** Writes candidate `fixture-v<n>.md` of the flat slot folder and, when `pin`, the pin naming it. */
+  const stage = (version: number, pin: boolean) => {
+    const name = `fixture-v${version}.md`; const bytes = candidate(version);
+    mkdirSync(join(root, id, "candidates"), { recursive: true });
+    writeFileSync(join(root, id, "candidates", name), bytes);
+    if (pin) writeFileSync(join(root, id, "pin.json"), JSON.stringify({ candidate: name, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "fixture", basis: "test", at: "2026-10-29T00:00:00Z" }));
+  };
   const claim = { id: "lx.0000000001", leaf: "lexicon.approved-claims", context: "Strategy drift fixture", kind: "claim", strategy: { cell: id, version: 1 }, phrasings: ["Fixture evidence"], requiresCitation: true, status: "draft", origin: "authored" };
   const input = source(envelope([claim]));
   const before = JSON.stringify(input);
   try {
-    mkdirSync(join(root, "cells", id), { recursive: true });
-    writeFileSync(join(root, "tree.json"), tree(1));
-    writeFileSync(join(root, "cells", id, "v1.md"), cell(1, "active"));
-    writeFileSync(join(root, "cells", id, "v2.md"), cell(2, "draft"));
+    stage(1, true); stage(2, false);
     const strategy = openStrategy(root, directorStoreReader);
-    expect(strategy.getCell(id)?.version).toBe(2);
+    expect(strategy.getCell(id)?.version).toBe(1);
     expect(checkWriterRecordDrift(input, { strategy }).ok).toBe(true);
-    writeFileSync(join(root, "tree.json"), tree(2));
-    writeFileSync(join(root, "cells", id, "v1.md"), cell(1, "retired"));
-    writeFileSync(join(root, "cells", id, "v2.md"), cell(2, "active"));
+    stage(2, true);
     const report = checkWriterRecordDrift(input, { strategy: openStrategy(root, directorStoreReader) });
     expect(report.ok).toBe(false);
+    // The superseded candidate still resolves (as a draft), so the claim is stale, not dangling.
     expect(report.findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_STALE", recordId: claim.id, field: "strategy", message: expect.stringContaining(formatRef({ kind: "cell", ref: claim.strategy })) }));
     expect(report.approvalEvaluated).toBe(false);
     expect(JSON.stringify(input)).toBe(before);
+    expect(checkWriterRecordDrift(source(envelope([{ ...claim, strategy: { cell: id, version: 2 } }])), { strategy: openStrategy(root, directorStoreReader) }).ok).toBe(true);
     expect(checkWriterRecordDrift(source(envelope([{ ...claim, strategy: { cell: id, version: 3 } }])), { strategy: openStrategy(root, directorStoreReader) }).findings).toContainEqual(expect.objectContaining({ code: "WR_STRATEGY_DANGLING" }));
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

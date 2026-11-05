@@ -1,3 +1,4 @@
+import { isSlotCandidatePath } from '../format/slot.js';
 import type { Cell } from '../format/types.js';
 import type { CellFinding, CheckContext } from './types.js';
 import { cellJudgeId } from './types.js';
@@ -65,7 +66,8 @@ export function checkCell(cell: Cell, ctx: CheckContext): CellFinding[] {
   }
   const hasTradeoff = cell.direction.some(bullet => ctx.model.catalog.lexicon.negativeKeys.includes(bullet.key ?? '') || ctx.model.catalog.lexicon.tradeOffMarkers.some(marker => containsPhrase(bullet.text, marker)));
   judge('Q6', hasTradeoff ? 'Judge whether a real alternative was given up' : 'No trade-off marker or negative key; judge whether a real alternative was given up', hasTradeoff ? 'tradeoff' : 'absent-tradeoff');
-  if (cell.status === 'active') {
+  // A pinned slot candidate is confirmed by its pin (pin.json decidedBy/basis), not by a session line.
+  if (cell.status === 'active' && !isSlotCandidatePath(cell.id, cell.path)) {
     const ref = cell.confirmed;
     const session = ref?.kind === 'msg' ? ctx.model.sessions.find(session => session.id === ref.session) : undefined;
     const index = session && ref?.kind === 'msg' ? session.lines.findIndex(line => line.id === ref.line) : -1;

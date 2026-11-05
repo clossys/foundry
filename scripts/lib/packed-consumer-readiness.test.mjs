@@ -464,7 +464,7 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
   // client peers, and content-route follows the web entry's two conditions.
   const landedSpecifiers = [
     "@clossys/publisher/archetypes", "@clossys/publisher/content", "@clossys/publisher/content-map",
-    "@clossys/publisher/content-map/cells", "@clossys/publisher/content/node", "@clossys/publisher/install",
+    "@clossys/publisher/content/node", "@clossys/publisher/install",
     "@clossys/publisher/specimen", "@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview",
     "@clossys/publisher/web/publisher-v2",
   ];

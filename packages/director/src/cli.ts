@@ -5,13 +5,12 @@
  */
 import { runReviewCli, REVIEW_USAGE } from "./cli/review.js";
 import { runCitationIndex } from "./citations/cli.js";
-import { runWriteCli } from "./write/cli.js";
 import { runSlotCheckCli } from "./slot-contracts/cli.js";
 import { existsSync, statSync } from "node:fs";
 import { relative, resolve, sep } from "node:path";
 import { checkGrounding, type FactsGateResult } from "./facts-gate.js";
 import { readGroundRoot } from "./ground/read.js";
-import { readStrategyRoot } from "./store.js";
+import { EVIDENCE_PREFIX, readStrategyRoot } from "./store.js";
 import { DEFAULT_SKIP_DIRS, scanStrategyDirectory } from "./scan.js";
 import { checkWontClaimDrift, type WontClaimResult } from "./wont-claim-drift.js";
 import { executeBriefCommand } from "./cli/brief.js";
@@ -28,7 +27,7 @@ const USAGE = `Usage: clossys director check ground [<strategy-dir>] <scan-dir> 
 The strategy root defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it.
 --json prints the result as JSON. --help prints usage.
 --extensions <ext>, --skip-dirs <name>, and --exclude <glob> are repeatable scan options.
-Grounding reads findings/*.md. Exit codes: 0 clean, 1 findings, 2 could not run.
+Grounding reads the consumer's evidence/director/*.md. Exit codes: 0 clean, 1 findings, 2 could not run.
 Run "clossys director check wont-claim --help" for active prohibitions.
 ${READ_USAGE}
 ${REVIEW_USAGE}
@@ -36,7 +35,7 @@ ${REVIEW_USAGE}
 
 const WONT_CLAIM_USAGE = `Usage: clossys director check wont-claim <strategy-dir> <scan-dir> [options]
 
-  strategy-dir   Directory containing tree.json and the active Proof and Voice cells. Defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it.
+  strategy-dir   Directory holding the slot folders whose pinned Proof and Voice candidates are checked. Defaults to <repo root>/clossys/agents/director (cwd outside a repository); --root overrides it.
   scan-dir       Directory to scan for surfaces that make a claim the record says must never be made.
 
 Options:
@@ -47,10 +46,13 @@ Options:
 
 Default extensions are .md, .mdx, .txt, .html, .htm, .json, .yml and .yaml; code files opt in through --extensions. Quoted Never-claim: phrases from active Proof and Never: phrases from active Voice are checked; unquoted labels are listed as unchecked. A comment with wont-claim:ignore is recorded and not checked. --root overrides the strategy directory; --json prints the result as JSON.
 
-Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (tree or active cells missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
+Exit codes: 0 = clean, 1 = hit (at least one scanned surface makes a recorded claim), 2 = could not run (pinned Proof or Voice candidates missing/unreadable/invalid, no files scanned, an over-long line, an unreadable directory, or bad arguments).
 The returned report is saved to <root>/reports/wont-claim.json.
 
 `;
+
+/** The legacy cell-store writers; the flat slot model is written only by `clossys pin`. */
+const RETIRED_WRITE_COMMANDS = new Set(["propose", "activate", "request"]);
 
 /** Exported for `cli.test.ts` — anything wrong with the arguments themselves always maps to exit code 2, never 1. */
 export class CliInputError extends Error {}
@@ -160,6 +162,11 @@ function isWithinRoot(file: string, root: string): boolean {
   return path === "" || (path !== ".." && !path.startsWith(`..${sep}`) && !path.startsWith(sep));
 }
 
+/** Strategy records are never surfaces: the strategy root and the consumer's Director evidence beside it. */
+function isStrategyRecord(file: string, strategyDir: string): boolean {
+  return isWithinRoot(file, strategyDir) || isWithinRoot(file, resolve(strategyDir, EVIDENCE_PREFIX));
+}
+
 function parseGroundArgs(argv: string[]): ParsedArgs & { json: boolean } {
   const rest: string[] = []; let root: string | undefined; let json = false;
   for (let i = 0; i < argv.length; i++) {
@@ -213,7 +220,7 @@ function resolveStrategyDirArgument(explicit: string | undefined): { dir: string
 
 function readStrategyFacts(store: DirectorStore, strategyDir: string) {
   const read = readGroundRoot(strategyDir, store.reader);
-  return { mode: "findings", facts: read.model.findings, issues: read.issues.map(detail => ({ file: "findings/", reason: "invalid-findings", detail })) };
+  return { mode: "findings", facts: read.model.findings, issues: read.issues.map(detail => ({ file: "evidence/director/", reason: "invalid-findings", detail })) };
 }
 
 function printReport(result: FactsGateResult): void {
@@ -292,7 +299,7 @@ function runWontClaim(argv: string[], store: DirectorStore): number {
   if (args.excludeGlobs.length > 0) scanOptions.excludeGlobs = args.excludeGlobs;
   const files = scanStrategyDirectory(scanDir, scanOptions); // throws (fail-closed) on an unreadable directory — caught by run()
 
-  const surfaces = files.filter(file => !isWithinRoot(resolve(scanDir, file.path), strategyDir));
+  const surfaces = files.filter(file => !isStrategyRecord(resolve(scanDir, file.path), strategyDir));
   const result = checkWontClaimDrift(surfaces, model);
   persistReport(strategyDir, store.writer, "wont-claim", result);
   const code = result.state === "indeterminate" ? 2 : result.state === "hit" ? 1 : 0;
@@ -317,8 +324,9 @@ function runWontClaim(argv: string[], store: DirectorStore): number {
 export function main(argv: string[], store: DirectorStore): number {
   if (argv[0] === "slots") return runSlotCheckCli(argv.slice(1));
   if (argv[0] === "review") return runReviewCli(argv.slice(1), store);
-  const writeResult = runWriteCli(argv, store);
-  if (writeResult !== undefined) return writeResult;
+  if (RETIRED_WRITE_COMMANDS.has(argv[0] ?? "")) {
+    throw new CliInputError(`${argv[0]} is retired: the strategy store is the flat slot model, and pins are made by \`clossys pin\``);
+  }
   if (argv[0] === "index") return runCitationIndex(argv.slice(1), store);
   if (isReadCommand(argv)) {
     return runReadCommand(argv, { execute: args => args.command === "brief" || args.command === "handoff" ? executeBriefCommand(args, store) : executeChecksCommand(args, store) });
@@ -393,7 +401,7 @@ export function main(argv: string[], store: DirectorStore): number {
     return 2;
   }
 
-  const surfaces = files.filter(file => !isWithinRoot(resolve(scanDir, file.path), strategyDir));
+  const surfaces = files.filter(file => !isStrategyRecord(resolve(scanDir, file.path), strategyDir));
   if (!surfaces.length) {
     if (args.json) return printGroundIndeterminate(["No surface files scanned outside the strategy root."]);
     console.error("No surface files scanned outside the strategy root."); return 2;

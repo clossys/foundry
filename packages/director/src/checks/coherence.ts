@@ -60,20 +60,20 @@ export function checkCoherence(model: StrategyModel, scope: Scope, options: Chec
     }
   }
   if (!model.tree)
-    add('C3', 'No readable tree.json', { path: 'tree.json', code: 'tree' });
+    add('C3', 'No readable active pointers', { path: '.', code: 'tree' });
   for (const issue of model.issues) {
-    const cellPath = /^cells\/([^/]+)\//.exec(issue.path);
+    const cellPath = /^([a-z-]+\.[a-z-]+\.[a-z-]+)\//.exec(issue.path);
     if (!cellPath || ids.has(cellPath[1]!))
       add('C3', `${issue.reason}: ${issue.message}`, { path: issue.path, line: issue.line, code: 'read-issue' });
   }
   for (const [id, version] of Object.entries(model.tree?.active ?? {})) {
     if (!ids.has(id)) {
       if (!model.catalog.cells.some(cell => cell.id === id))
-        add('C3', 'Active pointer names an unknown catalog cell', { cell: id, path: 'tree.json', code: 'pointer' });
+        add('C3', 'Active pointer names an unknown catalog cell', { cell: id, path: `${id}/pin.json`, code: 'pointer' });
       continue;
     }
     if (version !== null && !model.cells.some(cell => cell.id === id && cell.version === version))
-      add('C3', 'Active pointer does not resolve', { cell: id, path: 'tree.json', code: 'pointer' });
+      add('C3', 'Active pointer does not resolve', { cell: id, path: `${id}/pin.json`, code: 'pointer' });
   }
   for (const id of ids) {
     const versions = model.cells.filter(cell => cell.id === id);

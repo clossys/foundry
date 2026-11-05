@@ -909,24 +909,12 @@
         },
         {
           "glob": "clossys/agents/director/**"
+        },
+        {
+          "glob": "clossys/evidence/director/*.md"
         }
       ],
       "outputs": [
-        {
-          "glob": "clossys/agents/director/tree.json"
-        },
-        {
-          "glob": "clossys/agents/director/cells/**"
-        },
-        {
-          "glob": "clossys/agents/director/sessions/**"
-        },
-        {
-          "glob": "clossys/agents/director/findings/**"
-        },
-        {
-          "glob": "clossys/agents/director/requests/**"
-        },
         {
           "glob": "clossys/agents/director/briefs/**"
         },
@@ -4008,28 +3996,8 @@
     },
     {
       "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/tree.json"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/cells/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/sessions/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/findings/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/requests/**"
+      "port": "input",
+      "glob": "clossys/evidence/director/*.md"
     },
     {
       "step": "director.store",

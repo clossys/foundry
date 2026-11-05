@@ -13,7 +13,7 @@ import { applyLibraryChange, libraryHash, loadCatalog, loadComponentRegistry, re
 import { loadCatalogBundles } from '@clossys/designer/catalog-bundles';
 import { componentSpecimenPreview, emittedDesignerSpecimenContext, type EmittedDesignerSpecimenRuntime } from '@clossys/designer/studio';
 import { beforeAll, expect, it } from 'vitest';
-import { agentModule, agentRoot } from './cells.js';
+import { agentModule } from './cells.js';
 import { compileSelection, selectionRuntime } from './selection.js';
 
 let profile: ReturnType<typeof resolve>;
@@ -46,15 +46,13 @@ beforeAll(async () => {
     { portion: 'components', change: { op: 'adopt', slot: 'components.semantic-content', source: 'foundry' } },
     { portion: 'components', change: { op: 'author', slot: leaf, fill: candidate, files } },
   ] }, { componentOptions });
-  // An actual authored closure crosses the native public fixture's disk and cell boundaries.
+  // An actual authored closure crosses the native public fixture's disk boundary.
   const reader = await agentModule('designer', 'library-cli/fs-library.js');
   const source = join(directory, 'library');
   for (const [name, contents] of reader.libraryFiles(catalog, library, [], componentOptions)) {
     const path = join(source, name); await mkdir(dirname(path), { recursive: true }); await writeFile(path, contents);
   }
-  const cellRoot = agentRoot(join(directory, 'consumer'), 'designer');
-  await (await agentModule('designer', 'library-cli/cells.js')).libraryToCells(source, cellRoot, { catalog, date: '2026-10-30' });
-  const input: CompositeEngineInput = { catalog, library: await reader.readLibraryFromCells(cellRoot, catalog), componentOptions };
+  const input: CompositeEngineInput = { catalog, library: await reader.readLibrary(source, catalog), componentOptions };
   profile = resolve(input);
   const host = globalThis as typeof globalThis & { __studioDesignerRuntime?: Record<string, unknown> };
   const previous = host.__studioDesignerRuntime;

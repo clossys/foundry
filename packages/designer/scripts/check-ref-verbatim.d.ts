@@ -83,6 +83,8 @@ export type RefVerbatimOptions = {
   readonly ui?: string;
   /** The slot document whose `uses` a composition is checked against; default the slot's own slot.json. */
   readonly slotDoc?: { readonly uses?: readonly string[] };
+  /** Canonical element dependencies (`<slot>/<element>/v<N>`) whose strict proof is already in progress; a repeat is a cycle. */
+  readonly exactAncestors?: readonly string[];
 };
 
 /** One ds-only scan event of a source file, in source order. */
@@ -109,8 +111,12 @@ export declare const CODES: readonly RefVerbatimCode[];
 export declare const BASELINE_CEILING: readonly string[];
 export declare function baselineKey(row: BaselineRow): string;
 export declare function engineFamily(style: unknown): string | undefined;
+/**
+ * Check one Designer candidate: `<slot>/<element>/v<N>` names candidate `<element>-v<N>.json` of
+ * slot `<slot>`, read through the slot-model reader. A missing or unreadable candidate is REF-NO-SOURCE.
+ */
 export declare function checkElement(root: string, target: RefVerbatimTarget, options?: RefVerbatimOptions): RefVerbatimElement;
-/** The pin gate: strict findings for one element version; empty means it may be pinned. */
+/** The pin gate: strict findings for one Designer candidate (`<slot>/<element>/v<N>`); empty means it may be pinned. */
 export declare function refVerbatimFindings(root: string, target: RefVerbatimTarget, options?: RefVerbatimOptions): readonly RefVerbatimFinding[];
 export declare function loadBaseline(options?: RefVerbatimOptions): { rows: readonly BaselineRow[]; findings: readonly RefVerbatimFinding[] };
 export declare function refVerbatimReport(

@@ -53,11 +53,10 @@
       "invocation": "single-json-input"
     },
     "outputs": [
-      "clossys/agents/director/tree.json",
-      "clossys/agents/director/cells/",
-      "clossys/agents/director/sessions/",
+      "clossys/agents/director/ia.json",
+      "clossys/agents/director/*/candidates/",
+      "clossys/agents/director/*/pin.json",
       "clossys/agents/director/findings/",
-      "clossys/agents/director/requests/",
       "clossys/agents/director/briefs/",
       "clossys/agents/director/citations.json",
       "clossys/agents/director/reports/cell-quality.json",
@@ -69,7 +68,7 @@
     "feeds": [
       {
         "artifact": "strategy-map",
-        "path": "clossys/agents/director/tree.json"
+        "path": "clossys/agents/director/ia.json"
       },
       {
         "artifact": "strategy-brief",
@@ -94,9 +93,9 @@
         "worldClass": "One versioned cell tree records strategy choices, source citations and user confirmations; active pointers identify the current decisions.",
         "inputs": [],
         "outputs": [
-          "clossys/agents/director/tree.json",
-          "clossys/agents/director/cells/",
-          "clossys/agents/director/sessions/"
+          "clossys/agents/director/ia.json",
+          "clossys/agents/director/*/candidates/",
+          "clossys/agents/director/*/pin.json"
         ],
         "proofCase": null,
         "maturity": "planned",

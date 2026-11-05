@@ -1,88 +1,112 @@
-import { reader, store, writer } from "../../test/store.js";
+import { reader } from "../../test/store.js";
 import { afterEach, describe, expect, it } from "vitest";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { readStrategyRoot } from "../store.js";
-import { activate } from "../write/index.js";
+import type { DirectorStoreReader } from "../store-io.js";
+import { evidenceDir, stageFinding, stageSlot, strategyRoot } from "../ground/fixtures.js";
 
-const fixture = fileURLToPath(new URL("../../test-fixtures/strategy-v2/example/", import.meta.url));
 const temps: string[] = [];
 afterEach(() => { for (const path of temps.splice(0)) rmSync(path, { recursive: true, force: true }); });
-function copy() { const path = mkdtempSync(join(tmpdir(), "strategy-format-")); temps.push(path); cpSync(fixture, path, { recursive: true }); return path; }
+function base() { const path = mkdtempSync(join(tmpdir(), "strategy-flat-")); temps.push(path); return path; }
+const SEGMENT = "focus.segment.core";
 
-describe("root reader", () => {
-  it("reads shared optional fields while preserving the authored source bytes", () => {
-    const root = copy();
-    const path = "cells/focus.segment.core/v2.md";
-    const bytes = readFileSync(join(root, path), "utf8").replace("functions: [gtm, product]", "functions: [gtm, product]\nlinks: [designer:frames.app-shell@1, writer:admin.writer@3]");
-    writeFileSync(join(root, path), bytes);
-    const treePath = join(root, "tree.json");
-    writeFileSync(treePath, JSON.stringify({ ...JSON.parse(readFileSync(treePath, "utf8")), retired: [] }));
+/** Records every root-relative path the reader is asked for. */
+function recording(): { reader: DirectorStoreReader; paths: string[] } {
+  const paths: string[] = [];
+  return {
+    paths,
+    reader: {
+      stat: (root, path) => { paths.push(path); return reader.stat(root, path); },
+      list: (root, path) => { paths.push(path); return reader.list(root, path); },
+      read: (root, path) => { paths.push(path); return reader.read(root, path); },
+    },
+  };
+}
+
+describe("flat slot root reader", () => {
+  it("reads the pinned candidate of a flat slot folder as the active cell", () => {
+    const root = strategyRoot(base());
+    const { path, bytes } = stageSlot(root, SEGMENT, 2, "Who: owner-led studios.", { refs: ["finding:signups"] });
     const model = readStrategyRoot(root, reader);
     expect(model.issues).toEqual([]);
-    expect(model.cells[0]!.links).toEqual(["designer:frames.app-shell@1", "writer:admin.writer@3"]);
-    expect(model.tree!.retired).toEqual([]);
-    expect(model.files[path]).toBe(bytes);
-    expect(readFileSync(join(root, path), "utf8")).toBe(bytes);
-  });
-  it("continues refusing migration confirmation for Director activation without changing files", () => {
-    const root = copy();
-    const path = join(root, "cells/focus.segment.core/v2.md");
-    writeFileSync(path, readFileSync(path, "utf8").replace("status: active", "status: draft"));
-    const treeBefore = readFileSync(join(root, "tree.json"), "utf8");
-    const cellBefore = readFileSync(path, "utf8");
-    expect(() => activate(root, store, ["focus.segment.core@2"], { confirm: "migration:2026-10-29" })).toThrow(/user confirmation/);
-    expect(readFileSync(join(root, "tree.json"), "utf8")).toBe(treeBefore);
-    expect(readFileSync(path, "utf8")).toBe(cellBefore);
-  });
-  it("reads typed documents and exact bytes without treating missing referenced records as syntax errors", () => {
-    const model = readStrategyRoot(fixture, reader);
-    expect(model.issues).toEqual([]);
-    expect(model.tree!.active["focus.segment.core"]).toBe(2);
+    expect(model.tree!.active[SEGMENT]).toBe(2);
     expect(model.cells).toHaveLength(1);
-    expect(model.sessions[0]!.index.U9!.text).toBe("Yes, both.");
-    expect(model.findings[0]!.value).toBe(11);
-    expect(model.files["cells/focus.segment.core/v2.md"]).toBe(readFileSync(join(fixture, "cells/focus.segment.core/v2.md"), "utf8"));
+    expect(model.cells[0]).toMatchObject({ id: SEGMENT, version: 2, status: "active", path, updated: "2026-10-29", cites: [{ kind: "finding", id: "signups" }] });
+    expect(model.cells[0]!.direction).toEqual([expect.objectContaining({ key: "Who", text: "owner-led studios." })]);
+    expect(model.files[path]).toBe(bytes);
   });
-  it("reports invalid documents by root-relative path and physical line", () => {
-    const root = copy();
-    const path = "cells/focus.segment.core/v2.md";
-    writeFileSync(join(root, path), readFileSync(join(root, path), "utf8").replace("- Who:", "Who:"));
+  it("never reads a legacy tree.json, cells/, sessions/, requests/ or role findings/ path", () => {
+    const root = strategyRoot(base());
+    stageSlot(root, SEGMENT, 1, "Who: owner-led studios.");
+    stageFinding(root, "signups");
+    for (const legacy of ["cells", "sessions", "requests", "findings"]) mkdirSync(join(root, legacy));
+    writeFileSync(join(root, "tree.json"), "{}");
+    const { reader: spy, paths } = recording();
+    const model = readStrategyRoot(root, spy);
+    expect(model.cells.map(cell => cell.id)).toEqual([SEGMENT]);
+    expect(model.findings.map(finding => finding.id)).toEqual(["signups"]);
+    expect(paths.filter(path => /^(tree\.json|cells|sessions|requests|findings)(\/|$)/.test(path))).toEqual([]);
+  });
+  it("leaves an unpinned slot without an active cell", () => {
+    const root = strategyRoot(base());
+    stageSlot(root, SEGMENT, 1, "Who: owner-led studios.", { unpinned: true });
     const model = readStrategyRoot(root, reader);
-    expect(model.cells).toHaveLength(0);
-    expect(model.issues).toContainEqual(expect.objectContaining({ path, line: 14, reason: "invalid-format" }));
+    expect(model.issues).toEqual([]);
+    expect(model.cells).toEqual([]);
+    expect(model.tree!.active[SEGMENT]).toBeNull();
+    expect(model.candidateVersions).toEqual({ [SEGMENT]: [1] });
   });
-  it("reports malformed tree JSON and missing root without throwing", () => {
-    const root = copy(); writeFileSync(join(root, "tree.json"), "{\n broken\n");
-    expect(readStrategyRoot(root, reader).issues).toContainEqual(expect.objectContaining({ path: "tree.json", line: expect.any(Number), reason: "invalid-json" }));
+  it("refuses a pinned candidate whose bytes disagree with the pin sha256", () => {
+    const root = strategyRoot(base());
+    const { path } = stageSlot(root, SEGMENT, 1, "Who: owner-led studios.");
+    writeFileSync(join(root, path), readFileSync(join(root, path), "utf8").replace("owner-led", "agency"));
+    const model = readStrategyRoot(root, reader);
+    expect(model.cells).toEqual([]);
+    expect(model.tree!.active[SEGMENT]).toBeNull();
+    expect(model.issues).toContainEqual(expect.objectContaining({ path, reason: "invalid-format", message: expect.stringMatching(/sha256/) }));
+  });
+  it("reports malformed pin JSON and a missing root without throwing", () => {
+    const root = strategyRoot(base());
+    stageSlot(root, SEGMENT, 1, "Who: owner-led studios.");
+    writeFileSync(join(root, SEGMENT, "pin.json"), "{\n broken\n");
+    expect(readStrategyRoot(root, reader).issues).toContainEqual(expect.objectContaining({ path: `${SEGMENT}/pin.json`, reason: "invalid-json" }));
     expect(readStrategyRoot(join(root, "absent"), reader).issues).toContainEqual(expect.objectContaining({ path: ".", reason: "unreadable" }));
   });
-  it("rejects filename/id and filename/version mismatches, unknown cells and unsafe path versions", () => {
-    const root = copy();
-    cpSync(join(root, "cells/focus.segment.core/v2.md"), join(root, "cells/focus.segment.core/v3.md"));
-    cpSync(join(root, "cells/focus.segment.core/v2.md"), join(root, "cells/focus.segment.core/v9007199254740992.md"));
-    mkdirSync(join(root, "cells/focus.segment.unknown"));
-    cpSync(join(root, "cells/focus.segment.core/v2.md"), join(root, "cells/focus.segment.unknown/v2.md"));
+  it("reports a pinned candidate without Direction bullets by its path", () => {
+    const root = strategyRoot(base());
+    const { path } = stageSlot(root, SEGMENT, 1, []);
     const model = readStrategyRoot(root, reader);
-    expect(model.cells).toHaveLength(1);
-    expect(model.issues.length).toBeGreaterThanOrEqual(3);
+    expect(model.cells).toEqual([]);
+    expect(model.issues).toContainEqual(expect.objectContaining({ path, reason: "invalid-format", message: expect.stringMatching(/no Direction bullets/) }));
   });
-  it.each(["tree.json", "cells/focus.segment.core/v2.md", "sessions/2026-10-29-1.md", "findings/studio-interviews-2026-10.md"])("refuses a symlink file at %s", relative => {
-    const root = copy(); const outside = mkdtempSync(join(tmpdir(), "strategy-outside-")); temps.push(outside);
-    const target = join(outside, "secret.md"); writeFileSync(target, "PRIVATE SENTINEL");
-    rmSync(join(root, relative)); symlinkSync(target, join(root, relative));
+  it("reads only top-level evidence/director findings, and none for a root outside a consumer", () => {
+    const root = strategyRoot(base());
+    stageFinding(root, "signups");
+    mkdirSync(join(evidenceDir(root), "findings"));
+    writeFileSync(join(evidenceDir(root), "findings", "ignored.md"), "not a finding");
     const model = readStrategyRoot(root, reader);
-    expect(model.issues).toContainEqual(expect.objectContaining({ path: relative, reason: "outside-root" }));
-    expect(Object.values(model.files).join("")).not.toContain("PRIVATE SENTINEL");
+    expect(model.issues).toEqual([]);
+    expect(model.findings.map(finding => [finding.id, finding.path])).toEqual([["signups", "../../evidence/director/signups.md"]]);
+    const loose = base();
+    stageSlot(loose, SEGMENT, 1, "Who: owner-led studios.");
+    expect(readStrategyRoot(loose, reader).findings).toEqual([]);
   });
-  it.each(["cells", "cells/focus.segment.core", "sessions", "findings", "requests"])("refuses a symlink directory at %s", relative => {
-    const root = copy(); const outside = mkdtempSync(join(tmpdir(), "strategy-outside-")); temps.push(outside);
-    writeFileSync(join(outside, "unread.md"), "PRIVATE SENTINEL");
-    rmSync(join(root, relative), { recursive: true, force: true }); symlinkSync(outside, join(root, relative));
+  it("groups by ia.json and reports an ia.json that does not place every leaf", () => {
+    const root = strategyRoot(base());
+    writeFileSync(join(root, "ia.json"), JSON.stringify({ schema: "clossys.ia/1", nodes: [{ id: "focus", label: "Focus", children: [{ id: "focus.segment", label: "Segment", slots: [SEGMENT] }] }] }));
     const model = readStrategyRoot(root, reader);
-    expect(model.issues).toContainEqual(expect.objectContaining({ path: relative, reason: "outside-root" }));
+    expect(model.issues.some(issue => issue.path === "ia.json" && issue.reason === "invalid-format")).toBe(true);
+    expect(model.tree!.tree).toBeUndefined();
+  });
+  it("refuses a symlinked pinned candidate without reading its target", () => {
+    const root = strategyRoot(base());
+    const { path } = stageSlot(root, SEGMENT, 1, "Who: owner-led studios.");
+    const outside = base(); const target = join(outside, "secret.md"); writeFileSync(target, "PRIVATE SENTINEL");
+    rmSync(join(root, path)); symlinkSync(target, join(root, path));
+    const model = readStrategyRoot(root, reader);
+    expect(model.issues).toContainEqual(expect.objectContaining({ path, reason: "outside-root" }));
     expect(Object.values(model.files).join("")).not.toContain("PRIVATE SENTINEL");
   });
 });

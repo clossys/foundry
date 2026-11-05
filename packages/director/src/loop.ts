@@ -2,8 +2,7 @@ import { createHash } from 'node:crypto';
 import type { StrategyModel } from './format/types.js';
 import { buildCitationIndex, type CitationIndex, type ScanInput } from './citations/index.js';
 import { readStrategyRoot } from './store.js';
-import type { DirectorStore, DirectorStoreReader } from './store-io.js';
-import { createRequest, listRequests } from './write/index.js';
+import type { DirectorStoreReader } from './store-io.js';
 
 /** Review planning is pure. Production callers supply validated active pointers,
  * findings, citation drift and existing request keys from their owning services. */
@@ -193,23 +192,4 @@ export function planReview(root: string, store: DirectorStoreReader, options: {t
   const model = readStrategyRoot(root, store);
   const index = buildCitationIndex(model, reviewCitationScan(model));
   return evaluateModelReview(model,index,{today:options.today ?? new Date().toISOString().slice(0,10)});
-}
-
-/** Persist only requests through the owning write service. All prior statuses
- * retain their marker, so declining or resolving a request cannot reopen it. */
-export function review(root: string, store: DirectorStore, options: {today?: string} = {}) {
-  const today = options.today ?? new Date().toISOString().slice(0,10);
-  const report = planReview(root,store.reader,{today});
-  // Invalid rules or observation dates must be observable without partial writes.
-  if (report.issues.length) return {...report, created:[]};
-  const existing = new Set(listRequests(root,store).flatMap(request =>
-    [...request.detail.matchAll(/\[review:([a-f0-9]{64})\]/g)].map(match => match[1]!)));
-  const created = [];
-  for (const request of report.requests) {
-    if (existing.has(request.key)) continue;
-    created.push(createRequest(root,store,{raisedBy:'strategy-loop',kind:request.kind,cells:request.cells,
-      detail:reviewRequestDetail(request),today}));
-    existing.add(request.key);
-  }
-  return {...report,created};
 }

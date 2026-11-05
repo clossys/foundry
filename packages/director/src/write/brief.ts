@@ -1,7 +1,7 @@
-/** CLI-only generated artifacts. Cell, confirmation and activation writes stay separate. */
+/** CLI-only generated artifacts. Pins are made by `clossys pin`; this writes only briefs. */
 import { compileBrief, type Brief } from "../brief.js";
 import { discoverBriefContracts } from "../brief-contracts.js";
-import { readStrategyRoot } from "../store.js";
+import { readStrategyFile, readStrategyRoot } from "../store.js";
 import type { DirectorStore } from "../store-io.js";
 import type { Change } from "./transaction.js";
 
@@ -39,7 +39,7 @@ function inventory(root: string, store: DirectorStore, brief: Brief) {
 }
 
 /** Compile and stage the requested outputs under the existing strategy writer lock. */
-export function compileAndPersistBrief(root: string, store: DirectorStore, id: string, options: { write?: boolean; request?: boolean }): Brief {
+export function compileAndPersistBrief(root: string, store: DirectorStore, id: string, options: { write?: boolean }): Brief {
   return store.writer.locked(root, () => {
     const model = readStrategyRoot(root, store.reader);
     if (!model.tree || model.issues.length) throw new Error("Cannot compile an invalid strategy root");
@@ -57,24 +57,9 @@ export function compileAndPersistBrief(root: string, store: DirectorStore, id: s
       const index = inventory(root, store, brief);
       changes.push({ path, before, after: json(brief) }, { path: "briefs/index.json", before: indexBefore, after: json(index) });
     }
-    if (options.request && brief.state === "missing") {
-      const detail = `${id} brief requested; no active version for: ${brief.missing.join(", ")}.`;
-      const existing = model.requests.some(request => request.kind === "missing" && request.raisedBy === contract.owner
-        && ["open", "drafted"].includes(request.status) && request.detail === detail
-        && request.cells.length === brief.missing.length && request.cells.every(cell => brief.missing.includes(cell)));
-      if (!existing) {
-        const next = Math.max(0, ...model.requests.map(request => Number(request.id.slice(4)))) + 1;
-        if (next > 9999) throw new Error("Request id limit reached");
-        const requestId = `REQ-${String(next).padStart(4, "0")}`;
-        const path = `requests/${requestId}.json`;
-        if (outputBefore(root, store, path) !== undefined) throw new Error("Request destination already exists");
-        changes.push({ path, after: json({ id: requestId, raisedBy: contract.owner, kind: "missing", cells: brief.missing,
-          detail, status: "open", opened: new Date().toISOString().slice(0, 10), resolvedBy: null }) });
-      }
-    }
     // Recheck input bytes before the transaction, which also checks every output.
     for (const [path, bytes] of Object.entries(model.files)) {
-      if (store.reader.read(root, path) !== bytes) throw new Error(`Strategy source changed during validation: ${path}`);
+      if (readStrategyFile(root, store.reader, path) !== bytes) throw new Error(`Strategy source changed during validation: ${path}`);
     }
     if (changes.length) store.writer.commit(root, changes);
     return brief;

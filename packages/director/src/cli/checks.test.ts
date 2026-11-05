@@ -4,22 +4,29 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { loadCatalog } from "../catalog.js";
-import { serializeCell } from "../format/cell.js";
 import { formatRef } from "../format/ref.js";
 import type { Cell, Ref } from "../format/types.js";
 import { main } from "../cli.js";
 import { executeChecksCommand } from "./checks.js";
 import { runReadCommand } from "./read.js";
+import { stageFinding, stageSlot, strategyRoot, type SlotFixture } from "../ground/fixtures.js";
 
 const roots: string[] = [];
 const catalog = loadCatalog();
 const id = "context.customer.need";
 function put(root: string, path: string, text: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), text); }
+/** Pins a cell's bullets as its slot's candidate; `watch` overrides the Watch bullets. */
+function stage(root: string, cell: Cell, options: SlotFixture = {}) {
+  return stageSlot(root, cell.id, cell.version, cell.direction.map(bullet => `${bullet.key}: ${bullet.text}`), {
+    refs: cell.cites.map(formatRef), functions: cell.functions, because: cell.because.map(bullet => bullet.text), watch: cell.watch.map(bullet => bullet.text), ...options,
+  });
+}
+const cellsByRoot = new Map<string, Cell[]>();
 function fixture(all = false) {
-  const root = mkdtempSync(join(tmpdir(), "strategy-check-cli-")); roots.push(root);
+  const base = mkdtempSync(join(tmpdir(), "strategy-check-cli-")); roots.push(base);
+  const root = strategyRoot(base);
   const cells: Cell[] = (all ? catalog.cells : catalog.cells.filter(def => def.id === id)).map((def, i) => ({
-    id: def.id, version: 1, status: "active", updated: "2026-10-29", path: `cells/${def.id}/v1.md`,
-    confirmed: { kind: "msg", session: "2026-10-29-1", line: "U2" },
+    id: def.id, version: 1, status: "active", updated: "2026-10-29", path: `${def.id}/candidates/fixture-v1.md`,
     cites: [{ kind: "finding", id: "sample" }], feeds: [], functions: def.functions,
     direction: def.mustContain.map(({ key }, k) => ({ text: key === "Date" ? (def.id.endsWith("long-term") ? "2030-01-01" : "2027-01-01") : `Only Sample ${i} choice ${k} for 20 teams`, key, refs: [], line: 1 })),
     because: [{ text: "Sample observation (finding:sample)", refs: [{ kind: "finding", id: "sample" }], line: 1 }],
@@ -32,10 +39,9 @@ function fixture(all = false) {
       cell.cites.push(ref); cell.because.push({ text: `Sample dependency (${formatRef(ref)})`, refs: [ref], line: 1 });
     }
   }
-  for (const cell of cells) put(root, cell.path, serializeCell(cell));
-  put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: Object.fromEntries(cells.map(cell => [cell.id, 1])) }));
-  put(root, "findings/sample.md", "---\nid: sample\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Sample observation.\n");
-  put(root, "sessions/2026-10-29-1.md", `- S1: Playback: ${cells.map(cell => formatRef({ kind: "cell", ref: { cell: cell.id, version: 1 } })).join(", ")}\n- U2: Yes, all listed.\n`);
+  for (const cell of cells) stage(root, cell);
+  stageFinding(root, "sample", "---\nid: sample\nsource: user\nobserved: 2026-10-29\nby: researcher\n---\n- Sample observation.\n");
+  cellsByRoot.set(root, cells);
   return root;
 }
 function snapshot(root: string): Record<string, string> {
@@ -72,7 +78,7 @@ describe("production check CLI adapters", () => {
     it(`${command} returns JSON exit 2 for an absent or malformed root`, () => {
       const root = fixture();
       for (const selected of [join(root, "absent"), root]) {
-        if (selected === root) put(root, "tree.json", "{");
+        if (selected === root) put(root, `${id}/pin.json`, "{");
         expect(invoke([command, ...targets, "--root", selected])).toMatchObject({ code: 2, calls: 1, value: { command, code: 2, error: expect.any(String) } });
       }
     });
@@ -82,22 +88,24 @@ describe("production check CLI adapters", () => {
     for (const command of ["check", "cell"]) {
       const extra = command === "cell" ? ["--verb", "create"] : [];
       expect(invoke([command, id, ...extra, "--root", root]).code).toBe(0);
-      const path = join(root, `cells/${id}/v1.md`); const original = readFileSync(path, "utf8"); writeFileSync(path, original.replace("If trial count > 10 each month, then review this choice.", "Review later."));
+      const cell = cellsByRoot.get(root)!.find(cell => cell.id === id)!;
+      stage(root, cell, { watch: ["Review later."] });
       expect(invoke([command, id, ...extra, "--root", root])).toMatchObject({ code: 1, value: { result: { findings: expect.arrayContaining([expect.objectContaining({ rule: "Q4", severity: "hard" })]) } } });
-      writeFileSync(path, original);
+      stage(root, cell);
       expect(invoke([command, "focus.segment.core", ...extra, "--root", root]).code).toBe(2);
     }
     expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 2 } }), "--root", root]).code).toBe(2);
   });
-  it("checks latest, pinned and all stored versions without changing activation", () => {
-    const root = fixture(); const path = `cells/${id}/v1.md`;
-    const bytes = readFileSync(join(root, path), "utf8");
-    put(root, `cells/${id}/v2.md`, bytes.replace("version: 1", "version: 2").replace("status: active", "status: draft").replace("If trial count > 10 each month, then review this choice.", "Review later."));
-    const tree = readFileSync(join(root, "tree.json"), "utf8");
+  it("checks the pinned version only, and an unpinned candidate is not a checkable cell, without changing the pin", () => {
+    const root = fixture();
+    const cell = cellsByRoot.get(root)!.find(cell => cell.id === id)!;
+    stage(root, { ...cell, version: 2 }, { watch: ["Review later."], unpinned: true });
+    const pin = readFileSync(join(root, id, "pin.json"), "utf8");
     expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 1 } }), "--root", root]).code).toBe(0);
-    expect(invoke(["check", id, "--root", root]).code).toBe(1);
-    expect(invoke(["check", "--root", root]).value.result.cells).toEqual([{ cell: id, version: 1 }, { cell: id, version: 2 }]);
-    expect(readFileSync(join(root, "tree.json"), "utf8")).toBe(tree);
+    expect(invoke(["check", id, "--root", root]).code).toBe(0);
+    expect(invoke(["check", formatRef({ kind: "cell", ref: { cell: id, version: 2 } }), "--root", root]).code).toBe(2);
+    expect(invoke(["check", "--root", root]).value.result.cells).toEqual([{ cell: id, version: 1 }]);
+    expect(readFileSync(join(root, id, "pin.json"), "utf8")).toBe(pin);
   });
   it("cohere checks C1-C3 within the requested L2 group", () => {
     const root = fixture();
@@ -135,7 +143,7 @@ describe("production check CLI adapters", () => {
     const root = fixture(); invoke(["check", id, "--root", root]);
     const first = readFileSync(join(root, "reports/cell-quality.json"), "utf8");
     put(root, "reports/coherence.json", "sentinel\n");
-    const path = join(root, `cells/${id}/v1.md`); writeFileSync(path, readFileSync(path, "utf8").replace("If trial count > 10 each month, then review this choice.", "Review later."));
+    stage(root, cellsByRoot.get(root)!.find(cell => cell.id === id)!, { watch: ["Review later."] });
     expect(invoke(["check", id, "--root", root]).code).toBe(1);
     expect(readFileSync(join(root, "reports/cell-quality.json"), "utf8")).not.toBe(first);
     expect(readFileSync(join(root, "reports/coherence.json"), "utf8")).toBe("sentinel\n");

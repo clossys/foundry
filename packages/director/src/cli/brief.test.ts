@@ -6,15 +6,19 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { main } from "../cli.js";
 import { executeBriefCommand } from "./brief.js";
 import { runReadCommand } from "./read.js";
+import { stageSlot } from "../ground/fixtures.js";
 
 const roots: string[] = [];
 const id = "context.customer.need";
 function put(root: string, path: string, bytes: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); }
+/** Pins one candidate of the contract's slot. */
+function stage(root: string, version = 1, need = "Need: A fictional studio needs scheduling.", refs: string[] = []) {
+  stageSlot(root, id, version, [need, "Not: Large factories."], { refs, because: ["Measured interviews."], watch: ["If requests > 5 each month, then review."] });
+}
 function fixture(active: number | null = 1) {
   const root = mkdtempSync(join(tmpdir(), "strategy-cli-")); roots.push(root);
-  put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: { [id]: active } }));
   put(root, "contracts/fixture.json", JSON.stringify({ schemaVersion: 1, id: "fixture.brief", owner: "fixture", requires: [id], optional: [] }));
-  if (active) put(root, `cells/${id}/v${active}.md`, `---\nid: ${id}\nversion: ${active}\nstatus: active\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\nconfirmed: msg:2026-10-29-1#U2\n---\n\n## Direction\n- Need: A fictional studio needs scheduling.\n- Not: Large factories.\n\n## Because\n- Measured interviews.\n\n## Watch\n- If requests > 5 each month, then review.\n`);
+  if (active) stage(root, active);
   return root;
 }
 function snapshot(root: string): Record<string, string> {
@@ -40,7 +44,7 @@ describe("production brief CLI adapter", () => {
 
   it("persists a ready brief and inventory, then feeds the separate citation index command", () => {
     const root = fixture(); const before = snapshot(root);
-    const result = run(root, ["--write", "--request"]);
+    const result = run(root, ["--write"]);
     expect(result.code).toBe(0);
     const brief = read(root, "briefs/fixture.brief.json");
     expect(brief).toEqual(result.output.result);
@@ -58,28 +62,13 @@ describe("production brief CLI adapter", () => {
       expect(index.entries).toContainEqual(expect.objectContaining({ ref: { cell: id, version: 1 }, by: expect.objectContaining({ path: "briefs/index.json", kind: "json" }) }));
     } finally { print.mockRestore(); }
   });
-  it("writes missing briefs and one owner-attributed missing request, deduplicating repeated requests", () => {
+  it("refuses the retired --request flag without writing", () => {
     const root = fixture(null); const before = snapshot(root);
-    for (let i = 0; i < 2; i++) expect(run(root, ["--write", "--request"]).code).toBe(1);
-    expect(read(root, "briefs/fixture.brief.json")).toMatchObject({ state: "missing", missing: [id] });
-    expect(read(root, "briefs/index.json").briefs[0]).toMatchObject({ state: "missing", missing: [id] });
-    expect(readdirSync(join(root, "requests"))).toEqual(["REQ-0001.json"]);
-    expect(read(root, "requests/REQ-0001.json")).toMatchObject({ id: "REQ-0001", raisedBy: "fixture", kind: "missing", cells: [id], status: "open", resolvedBy: null });
-    for (const [path, bytes] of Object.entries(before)) expect(readFileSync(join(root, path), "utf8")).toBe(bytes);
+    expect(run(root, ["--write", "--request"]).code).toBe(2);
+    expect(run(root, ["--request"]).code).toBe(2);
+    expect(snapshot(root)).toEqual(before);
   });
-  it("keeps --request independent of --write and does not request ready or stale input", () => {
-    const missing = fixture(null);
-    expect(run(missing, ["--request"]).code).toBe(1);
-    expect(existsSync(join(missing, "briefs"))).toBe(false);
-    expect(read(missing, "requests/REQ-0001.json").cells).toEqual([id]);
-    const ready = fixture(); const before = snapshot(ready);
-    expect(run(ready, ["--request"]).code).toBe(0);
-    expect(snapshot(ready)).toEqual(before);
-    put(ready, "briefs/fixture.brief.json", JSON.stringify({ fingerprint: "old" }));
-    expect(run(ready, ["--request"]).code).toBe(1);
-    expect(existsSync(join(ready, "requests"))).toBe(false);
-  });
-  it("writes missing input without requesting unless --request is explicit", () => {
+  it("writes missing input without opening requests", () => {
     const root = fixture(null);
     expect(run(root, ["--write"]).code).toBe(1);
     expect(read(root, "briefs/fixture.brief.json").missing).toEqual([id]);
@@ -90,9 +79,8 @@ describe("production brief CLI adapter", () => {
     put(root, "contracts/second.json", JSON.stringify({ schemaVersion: 1, id: "second.brief", owner: "other", requires: [id], optional: [] }));
     expect(run(root, ["--write"]).code).toBe(0);
     expect(run(root, ["--write"], "second.brief").code).toBe(0);
-    const cellPath = `cells/${id}/v1.md`;
-    put(root, cellPath, readFileSync(join(root, cellPath), "utf8").replace("fictional studio", "fictional workshop"));
-    expect(run(root, ["--write", "--request"]).code).toBe(1);
+    stage(root, 1, "Need: A fictional workshop needs scheduling.");
+    expect(run(root, ["--write"]).code).toBe(1);
     expect(read(root, "briefs/fixture.brief.json").state).toBe("stale");
     expect(read(root, "briefs/index.json").briefs.map((brief: { contract: string }) => brief.contract)).toEqual(["fixture.brief", "second.brief"]);
     expect(run(root).output.result.state).toBe("ready");
@@ -100,18 +88,16 @@ describe("production brief CLI adapter", () => {
   });
   it("keeps unresolved cell dependencies visibly stale when persisting", () => {
     const root = fixture();
-    const path = `cells/${id}/v1.md`;
-    put(root, path, readFileSync(join(root, path), "utf8").replace("cites: []", "cites: [context.market.size@1]"));
-    expect(run(root, ["--write", "--request"]).code).toBe(1);
+    stage(root, 1, undefined, ["context.market.size@1"]);
+    expect(run(root, ["--write"]).code).toBe(1);
     expect(read(root, "briefs/fixture.brief.json")).toMatchObject({ state: "stale", stale: [{ cell: "context.market.size", version: 1 }] });
     expect(run(root).output.result.state).toBe("stale");
     expect(existsSync(join(root, "requests"))).toBe(false);
   });
-  it.each(["brief-directory", "brief-file", "inventory", "request-directory", "hardlink", "non-file"])("refuses unsafe %s targets before any content mutation", target => {
-    const root = fixture(target === "request-directory" ? null : 1); const outside = mkdtempSync(join(tmpdir(), "strategy-outside-")); roots.push(outside);
+  it.each(["brief-directory", "brief-file", "inventory", "hardlink", "non-file"])("refuses unsafe %s targets before any content mutation", target => {
+    const root = fixture(); const outside = mkdtempSync(join(tmpdir(), "strategy-outside-")); roots.push(outside);
     put(outside, "sentinel.json", "private sentinel");
     if (target === "brief-directory") symlinkSync(outside, join(root, "briefs"));
-    else if (target === "request-directory") symlinkSync(outside, join(root, "requests"));
     else {
       mkdirSync(join(root, "briefs"));
       const path = join(root, "briefs", target === "inventory" ? "index.json" : "fixture.brief.json");
@@ -119,25 +105,24 @@ describe("production brief CLI adapter", () => {
       else if (target === "non-file") mkdirSync(path);
       else symlinkSync(join(outside, "sentinel.json"), path);
     }
-    const before = readFileSync(join(root, "tree.json"), "utf8");
-    expect(run(root, ["--write", "--request"]).code).toBe(2);
+    const before = readFileSync(join(root, id, "pin.json"), "utf8");
+    expect(run(root, ["--write"]).code).toBe(2);
     expect(readFileSync(join(outside, "sentinel.json"), "utf8")).toBe("private sentinel");
     expect(readdirSync(outside)).toEqual(["sentinel.json"]);
-    expect(readFileSync(join(root, "tree.json"), "utf8")).toBe(before);
+    expect(readFileSync(join(root, id, "pin.json"), "utf8")).toBe(before);
     expect(readdirSync(root).some(path => path.startsWith(".director-write"))).toBe(false);
     if (target === "inventory") expect(existsSync(join(root, "briefs/fixture.brief.json"))).toBe(false);
-    if (target === "request-directory") expect(existsSync(join(root, "briefs"))).toBe(false);
   });
   it("returns 2 for unknown contracts, invalid roots and the reserved inventory name without writing", () => {
     const root = fixture(); const before = snapshot(root);
-    expect(run(root, ["--write", "--request"], "unknown.brief").code).toBe(2);
+    expect(run(root, ["--write"], "unknown.brief").code).toBe(2);
     expect(snapshot(root)).toEqual(before);
     put(root, "contracts/index.json", JSON.stringify({ schemaVersion: 1, id: "index", owner: "fixture", requires: [id], optional: [] }));
     const withContract = snapshot(root);
     expect(run(root, ["--write"], "index").code).toBe(2);
     expect(snapshot(root)).toEqual(withContract);
-    put(root, "tree.json", "{}"); const invalid = snapshot(root);
-    expect(run(root, ["--write", "--request"]).code).toBe(2);
+    put(root, `${id}/pin.json`, "{}"); const invalid = snapshot(root);
+    expect(run(root, ["--write"]).code).toBe(2);
     expect(snapshot(root)).toEqual(invalid);
   });
   for (const command of ["brief", "handoff"]) {

@@ -7,6 +7,7 @@ import { compileBrief } from "../brief.js";
 import { main } from "../cli.js";
 import { readStrategyRoot } from "../store.js";
 import { buildCitationIndex } from "./index.js";
+import { stageSlot } from "../ground/fixtures.js";
 
 const roots: string[] = [];
 const id = "context.customer.need";
@@ -14,14 +15,14 @@ const ref = { cell: id, version: 1 };
 const marker = (version: string | number = 1) => `strategy:${id}@${version}`;
 const contract = { id: "fixture.brief", schemaVersion: 1 as const, owner: "fixture", requires: [id], optional: [] };
 function put(root: string, path: string, text: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), text); }
-function cell(version = 1, status = "active") {
-  return `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\n${status === "active" ? "confirmed: msg:2026-10-29-1#U2\n" : ""}---\n\n## Direction\n- Need: Fictional studio scheduling.\n\n## Because\n- Fictional interviews.\n\n## Watch\n- Review monthly.\n`;
+/** Stages a candidate of the cited slot; an "active" one is pinned, any other is left unpinned. */
+function stage(root: string, version = 1, status = "active", need = "Need: Fictional studio scheduling.") {
+  stageSlot(root, id, version, need, { because: ["Fictional interviews."], watch: ["Review monthly."], unpinned: status !== "active" });
 }
 function fixture() {
   const project = mkdtempSync(join(tmpdir(), "strategy-citations-")); roots.push(project);
   const root = join(project, "strategy"); const surfaces = join(project, "surfaces"); mkdirSync(surfaces);
-  put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: { [id]: 1 } }));
-  put(root, `cells/${id}/v1.md`, cell()); put(root, "contracts/fixture.json", JSON.stringify(contract));
+  stage(root); put(root, "contracts/fixture.json", JSON.stringify(contract));
   return { root, surfaces, project };
 }
 function invoke(root: string, ...args: string[]) { return main(["index", "--root", root, "--json", ...args], store); }
@@ -52,7 +53,7 @@ it("indexes compact HTML comment markers while rejecting malformed token boundar
 
 it.each(["stale", "dangling"])("index --check detects %s compact HTML comment markers", kind => {
   const { root, surfaces } = fixture();
-  if (kind === "stale") put(root, `cells/${id}/v2.md`, cell(2, "draft"));
+  if (kind === "stale") stage(root, 2, "draft");
   const version = kind === "stale" ? 2 : 99;
   put(surfaces, "copy.md", `<!--${marker(version)}-->\n<!-- ${marker(version)}-->`);
   vi.spyOn(console, "log").mockImplementation(() => {});
@@ -62,7 +63,8 @@ it.each(["stale", "dangling"])("index --check detects %s compact HTML comment ma
 });
 
 it("separates unknown versions and cells from known non-active versions", () => {
-  const { root } = fixture(); put(root, `cells/${id}/v2.md`, cell(2, "draft"));
+  // An unpinned candidate is not a cell, but its version is known.
+  const { root } = fixture(); stage(root, 2, "draft");
   const result = buildCitationIndex(readStrategyRoot(root, reader), { files: [{ path: "refs.json", content: JSON.stringify([ref, { cell: id, version: 2 }, { cell: id, version: 3 }, { cell: "unknown.cell.id", version: 1 }]) }] });
   expect(result.stale.map(entry => entry.ref)).toEqual([{ cell: id, version: 2 }]);
   expect(result.dangling.map(entry => entry.ref)).toEqual([{ cell: id, version: 3 }, { cell: "unknown.cell.id", version: 1 }]);
@@ -73,21 +75,20 @@ it("indexes written brief cells and provenance and detects fresh fingerprint dri
   const result = buildCitationIndex(readStrategyRoot(root, reader), { briefs: [{ path: "briefs/fixture.brief.json", brief: written }], contracts: [contract] });
   expect(result.entries).toContainEqual({ ref, by: { kind: "brief", path: "briefs/fixture.brief.json", id: "/cells/0" } });
   expect(result.drift).toEqual([]);
-  put(root, `cells/${id}/v1.md`, cell().replace("scheduling", "planning"));
+  stage(root, 1, "active", "Need: Fictional studio planning.");
   expect(buildCitationIndex(readStrategyRoot(root, reader), { briefs: [{ path: "briefs/fixture.brief.json", brief: written }], contracts: [contract] }).drift).toEqual([{ path: "briefs/fixture.brief.json", contract: contract.id, written: written.fingerprint, fresh: compileBrief(readStrategyRoot(root, reader), contract).fingerprint }]);
 });
 
-it("keeps citations and fingerprints current when a newer draft exists, until activation", () => {
+it("keeps citations and fingerprints current when a newer unpinned candidate exists, until it is pinned", () => {
   const { root } = fixture(); const written = compileBrief(readStrategyRoot(root, reader), contract);
   const scan = { briefs: [{ path: "briefs/fixture.brief.json", brief: written }], contracts: [contract], files: [{ path: "copy.md", content: marker(1) }] };
   const before = buildCitationIndex(readStrategyRoot(root, reader), scan);
-  put(root, `cells/${id}/v2.md`, cell(2, "draft"));
+  stage(root, 2, "draft");
   const draft = buildCitationIndex(readStrategyRoot(root, reader), scan);
   put(root, "briefs/fixture.brief.json", JSON.stringify(written));
   vi.spyOn(console, "log").mockImplementation(() => {}); expect(invoke(root, "--check")).toBe(0);
   expect(draft.stale).toEqual([]); expect(draft.drift).toEqual([]); expect(draft.fingerprint).toBe(before.fingerprint);
-  put(root, "tree.json", readFileSync(join(root, "tree.json"), "utf8").replace(`"${id}":1`, `"${id}":2`));
-  put(root, `cells/${id}/v2.md`, cell(2));
+  stage(root, 2);
   const activated = buildCitationIndex(readStrategyRoot(root, reader), scan);
   expect(activated.stale).toHaveLength(2); expect(activated.drift).toHaveLength(1);
 });
@@ -114,7 +115,7 @@ it.each(["stale", "dangling", "drift"])("index --check exits 1 for %s", kind => 
     const written = compileBrief(readStrategyRoot(root, reader), contract); put(root, "briefs/fixture.brief.json", JSON.stringify({ ...written, fingerprint: "0".repeat(64) }));
   } else {
     put(surfaces, "copy.md", marker(kind === "stale" ? 2 : 3));
-    if (kind === "stale") put(root, `cells/${id}/v2.md`, cell(2, "draft"));
+    if (kind === "stale") stage(root, 2, "draft");
   }
   expect(invoke(root, "--check", "--scan", surfaces)).toBe(1);
   expect(existsSync(join(root, "citations.json"))).toBe(false);
@@ -141,7 +142,7 @@ it.each(["md", ".", ".md/path"])("rejects malformed extension %s instead of repo
 
 it.each(["root", "scan", "brief-json", "scan-json", "contract", "brief-link"])("exits 2 for unreadable or invalid %s inputs", kind => {
   const { root, surfaces, project } = fixture(); vi.spyOn(console, "error").mockImplementation(() => {}); vi.spyOn(console, "log").mockImplementation(() => {});
-  if (kind === "root") rmSync(join(root, "tree.json"));
+  if (kind === "root") rmSync(root, { recursive: true, force: true });
   if (kind === "brief-json") put(root, "briefs/fixture.brief.json", "{");
   if (kind === "scan-json") put(surfaces, "bad.json", "{");
   if (kind === "contract") { put(root, "briefs/fixture.brief.json", JSON.stringify({ ...compileBrief(readStrategyRoot(root, reader), contract), contract: "missing.contract" })); }

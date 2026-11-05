@@ -106,28 +106,40 @@ describe("ref-verbatim allowed-hunk grammar", () => {
   });
 });
 
-// ---- fixtures: a consumer library with element versions ----
+// ---- fixtures: a consumer with flat Designer slot folders and candidates ----
 
 const sha = (text: string) => createHash("sha256").update(text).digest("hex");
 const treeHash = (files: { path: string; sha256: string }[]) =>
   `sha256:${sha([...files].sort((a, b) => (a.path < b.path ? -1 : 1)).map((f) => `${f.sha256}  ${f.path}\n`).join(""))}`;
+const payloadHash = (files: Record<string, string>) => treeHash(Object.entries(files).map(([path, text]) => ({ path, sha256: sha(text) })));
 const itemOf = (registry: string, name: string) => manifest.items.find((row: { registry: string; name: string }) => row.registry === registry && row.name === name);
+const refOf = (registry: string, name: string) => `${registry}/${name}@${itemOf(registry, name).version}`;
 const sourceOf = (registry: string, name: string, files?: Record<string, string>) => {
   const row = itemOf(registry, name);
   return { registry, item: name, version: row.version, hash: row.hash, ...(files ? { files } : {}) };
 };
 
-type Version = { slot: string; element: string; version?: number; lineage: Record<string, unknown>; files: Record<string, string>; hash?: string };
+/** One Designer candidate `<element>-v<version>.json` of `slot`: a registry item whose meta carries its lineage. */
+type Version = {
+  slot: string; element: string; version?: number; kind?: "registry" | "original"; ref?: string[];
+  refVerbatim?: Record<string, unknown>; deps?: unknown; reads?: unknown; files: Record<string, string>;
+};
+const candidateOf = (v: Version) => ({
+  name: v.element, type: "registry:block",
+  files: Object.entries(v.files).map(([path, content]) => ({ path, content })),
+  meta: {
+    source: { kind: v.kind ?? "registry", ref: v.ref ?? [] },
+    ...(v.refVerbatim ? { refVerbatim: v.refVerbatim } : {}),
+    element: { deps: v.deps, reads: v.reads ?? { copyKeys: [], themeVars: [] } },
+  },
+});
+const candidateName = (v: Version) => `${v.element}-v${v.version ?? 1}.json`;
+/** Write (or rewrite) one candidate into its flat Designer slot folder; unpinned. */
+const saveCandidate = (root: string, v: Version) => writeDesignerSlot(root, { id: v.slot, candidates: { [candidateName(v)]: candidateOf(v) } });
+const readCandidateFile = (root: string, v: Version) => JSON.parse(readFileSync(join(root, "agents/designer", v.slot, "candidates", candidateName(v)), "utf8"));
 function consumer(versions: Version[], { components = true } = {}) {
   const root = realpathSync(mkdtempSync(join(tmpdir(), "ref-verbatim-")));
-  for (const v of versions) {
-    const version = v.version ?? 1;
-    const dir = join(root, "library", v.slot, v.element, `v${version}`);
-    mkdirSync(dir, { recursive: true });
-    for (const [file, text] of Object.entries(v.files)) writeFileSync(join(dir, file), text);
-    const hash = v.hash ?? `sha256:${sha(JSON.stringify(v))}`;
-    writeFileSync(join(dir, "element.json"), JSON.stringify({ schema: "clossys.element/1", id: v.element, slot: v.slot, version, hash, lineage: v.lineage, payload: Object.keys(v.files), reads: { copyKeys: [], themeVars: [] } }));
-  }
+  for (const v of versions) saveCandidate(root, v);
   if (components) writeFileSync(join(root, "components.json"), read("ui/components.json"));
   return root;
 }
@@ -135,24 +147,28 @@ function consumer(versions: Version[], { components = true } = {}) {
 const button = (patch: Partial<Version> = {}): Version => ({
   slot: "components.button",
   element: "button",
-  lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }) },
+  ref: [refOf("shadcn-aria", "button")],
+  refVerbatim: { files: { "button.tsx": BUTTON_REF } },
   files: { "button.tsx": BUTTON },
   ...patch,
 });
 const gate = (root: string, spec: string, options = {}) => codes(refVerbatimFindings(root, spec, options));
+
+const SPECIMEN = { slot: "sections.fixture-specimen", element: "fixture-specimen", version: 1 };
 
 // Synthetic byte-proof regression only: this does not qualify actual R6/R7 sources.
 // Reuses the real application:component manifest shape without calling it a block.
 function specimenExactPartFixture({
   missingExport = false, relocate = false, external = false, missingExternalExport = false, bindings = false, missingBinding = false,
   npmExports = { ".": "./index.js" } as Record<string, unknown> | string, npmEntry = "index.js", externalTypeOnly = false,
+  elementDep = undefined as undefined | { slot: string; element: string; version: number; hash: string },
 } = {}) {
   const referencesDir = mkdtempSync(join(tmpdir(), "ref-exact-specimen-"));
   const license = "Synthetic test-only license bytes\n";
   const licensePath = "fixture/LICENSE";
   const registry = "fixture-specimen";
   const upstream = `fixture:authored-specimen@${sha("authored specimen fixture revision").slice(0, 40)}`;
-  const files = {
+  const files: Record<string, string> = {
     "index.tsx": 'import { Figure } from "./Figure"\nimport { RecordTable } from "./RecordTable"\nexport function Specimen() { return <><Figure /><RecordTable /></> }\n',
     "RecordTable.tsx": 'export function RecordTable() { return <table><tbody><tr><td>Record</td></tr></tbody></table> }\n',
     "Figure.tsx": 'import { BlockViewerIframe } from "./BlockViewerIframe"\nexport function Figure() { return <figure><BlockViewerIframe /><figcaption>Preview</figcaption></figure> }\n',
@@ -162,9 +178,10 @@ function specimenExactPartFixture({
   if (missingBinding) files["BlockViewerIframe.tsx"] = "export function BlockViewerIframe() { return MissingHelper() }\n";
   if (bindings) files["RecordTable.tsx"] = 'export function RecordTable({ label = "Record" }: { label?: string } = {}) { return <table className="bg-surface"><tbody><tr><td>{label}</td></tr></tbody></table> }\n';
   if (external) files["BlockViewerIframe.tsx"] = `import ${externalTypeOnly ? "type " : ""}{ Marker } from "fixture-dependency"\n` + files["BlockViewerIframe.tsx"];
+  if (elementDep) files["BlockViewerIframe.tsx"] = `import type { Dep } from "@elements/${elementDep.slot}/${elementDep.element}"\n` + files["BlockViewerIframe.tsx"];
   if (missingExport) files["Figure.tsx"] = files["Figure.tsx"].replace("{ BlockViewerIframe }", "{ MissingIframe as BlockViewerIframe }");
   const itemFiles = [Object.entries(files).slice(0, 2), Object.entries(files).slice(2, 4)];
-  const proofs: Record<string, unknown> = {};
+  const proofs: Record<string, any> = {};
   const items = itemFiles.map((entries, reference) => {
     const name = reference === 0 ? "specimen-block" : "specimen-application";
     const dir = `${registry}/${name}@fixture-1`;
@@ -213,7 +230,7 @@ function specimenExactPartFixture({
     items,
   };
   const refs = items.map(item => ({ registry, item: item.name, version: item.version, hash: item.hash }));
-  const exactParts = {
+  const proof: any = {
     schema: "ref-exact-parts/1", files: proofs,
     payload: Object.fromEntries(Object.entries(files).map(([path, text]) => [path, sha(text)])),
     closure: {
@@ -225,21 +242,15 @@ function specimenExactPartFixture({
       ],
     },
   };
-  const root = consumer([{
-    slot: "sections.fixture-specimen", element: "fixture-specimen", files,
-    hash: treeHash(Object.entries(files).map(([path, text]) => ({ path, sha256: sha(text) }))),
-    lineage: { mode: "verbatim", source: refs[0], parts: [refs[1]], exactParts },
-  }]);
-  const dir = join(root, "library/sections.fixture-specimen/fixture-specimen/v1");
-  const recordPath = join(dir, "element.json");
-  const record = JSON.parse(readFileSync(recordPath, "utf8"));
+  const root = consumer([]);
   if (relocate) {
     const components = JSON.parse(readFileSync(join(root, "components.json"), "utf8"));
     components.aliases.components = ".";
     writeFileSync(join(root, "components.json"), JSON.stringify(components));
   }
-  record.deps = { npm: {}, elements: [] };
-  if (bindings) record.reads.themeVars = ["--color-surface"];
+  const deps: any = { npm: {}, elements: elementDep ? [elementDep] : [] };
+  if (elementDep) proof.closure.imports.push({ file: "BlockViewerIframe.tsx", specifier: `@elements/${elementDep.slot}/${elementDep.element}`, target: { kind: "element", ...elementDep, entry: "index.tsx" } });
+  const reads = { copyKeys: [], themeVars: bindings ? ["--color-surface"] : [] };
   const dependency = external ? {
     installed: join(root, "node_modules/fixture-dependency"),
     vendored: join(referencesDir, "fixture/dependency@1.0.0"),
@@ -260,24 +271,23 @@ function specimenExactPartFixture({
     const rows = Object.entries(packageFiles).map(([path, content]) => ({ path, sha256: sha(content), bytes: Buffer.byteLength(content), origin: "fixture" }));
     const hash = treeHash(rows);
     fixtureManifest.items.push({ registry, name: "fixture-dependency", version: "1.0.0", dir: "fixture/dependency@1.0.0", type: "application:component", sourceUrl: "https://example.invalid/authored-dependency", license: "LicenseRef-TestFixture", direct: true, slots: [], hash, files: rows });
-    record.deps.npm["fixture-dependency"] = "1.0.0";
-    record.lineage.exactParts.closure.imports.push({ file: "BlockViewerIframe.tsx", specifier: "fixture-dependency", target: { kind: "npm", package: "fixture-dependency", version: "1.0.0", entry: npmEntry, hash } });
+    deps.npm["fixture-dependency"] = "1.0.0";
+    proof.closure.imports.push({ file: "BlockViewerIframe.tsx", specifier: "fixture-dependency", target: { kind: "npm", package: "fixture-dependency", version: "1.0.0", entry: npmEntry, hash } });
   }
+  // The candidate's payload is `files`; its canonical hash is always the tree hash of those bytes.
+  // `rehash` recomputes the proof's emitted hashes too, as an attacker would.
   const save = (rehash = false) => {
-    if (rehash) {
-      record.hash = treeHash(record.payload.map((file: string) => ({ path: file, sha256: sha(readFileSync(join(dir, file), "utf8")) })));
-      for (const file of record.payload) {
-        record.lineage.exactParts.payload[file] = sha(readFileSync(join(dir, file), "utf8"));
-        if (record.lineage.exactParts.files[file]) record.lineage.exactParts.files[file].sha256 = record.lineage.exactParts.payload[file];
-      }
+    if (rehash) for (const [file, text] of Object.entries(files)) {
+      proof.payload[file] = sha(text);
+      if (proof.files[file]) proof.files[file].sha256 = proof.payload[file];
     }
-    writeFileSync(recordPath, JSON.stringify(record));
+    saveCandidate(root, { ...SPECIMEN, ref: [`${registry}/${refs[0].item}@${refs[0].version}`], refVerbatim: { parts: [refs[1]], exactParts: proof }, deps, reads, files });
   };
   save();
-  return { root, dir, record, save, dependency, options: { manifest: fixtureManifest, referencesDir } };
+  return { root, files, proof, deps, save, dependency, registry, upstream, license, licensePath, options: { manifest: fixtureManifest, referencesDir } };
 }
 
-const specimenGate = (fixture: ReturnType<typeof specimenExactPartFixture>) => gate(fixture.root, "sections.fixture-specimen/fixture-specimen/v1", fixture.options);
+const specimenGate = (fixture: ReturnType<typeof specimenExactPartFixture>) => gate(fixture.root, `${SPECIMEN.slot}/${SPECIMEN.element}/v1`, fixture.options);
 
 describe("specimen exact-part graph and bundled helper", () => {
   it("checks one real-shaped block/application graph with every emitted code byte and bundled license", () => {
@@ -334,7 +344,7 @@ describe("specimen exact-part graph and bundled helper", () => {
     changed.exports.import = "../index.js";
     writeFileSync(packagePath, JSON.stringify(changed));
     const anchor = fixture.options.manifest.items.find(item => item.name === "fixture-dependency")!;
-    fixture.record.lineage.exactParts.closure.imports.at(-1).target.hash = treeHash(anchor.files.map(({ path }) => ({ path, sha256: sha(readFileSync(join(packageDir, path), "utf8")) })));
+    fixture.proof.closure.imports.at(-1).target.hash = treeHash(anchor.files.map(({ path }) => ({ path, sha256: sha(readFileSync(join(packageDir, path), "utf8")) })));
     fixture.save();
     expect(specimenGate(fixture)).toContain("REF-PART-CLOSURE");
   });
@@ -342,7 +352,7 @@ describe("specimen exact-part graph and bundled helper", () => {
   it("rejects changed dependency/code/license bytes even when attacker recomputes the dependency proof digest", () => {
     for (const mutation of ["code", "license", "version", "vendored", "undeclared", "private-entry"]) {
       const fixture = specimenExactPartFixture({ external: true });
-      const target = fixture.record.lineage.exactParts.closure.imports.at(-1).target;
+      const target = fixture.proof.closure.imports.at(-1).target;
       const packageDir = fixture.dependency!.installed;
       if (mutation === "code" || mutation === "license") {
         const file = mutation === "code" ? "index.js" : "LICENSE";
@@ -352,7 +362,7 @@ describe("specimen exact-part graph and bundled helper", () => {
         const path = join(fixture.dependency!.vendored, "index.js");
         writeFileSync(path, readFileSync(path, "utf8") + "changed\n");
       } else if (mutation === "version") target.version = "1.0.1";
-      else if (mutation === "undeclared") delete fixture.record.deps.npm["fixture-dependency"];
+      else if (mutation === "undeclared") delete fixture.deps.npm["fixture-dependency"];
       else target.entry = "private.js";
       fixture.save(true);
       expect(specimenGate(fixture), mutation).toContain("REF-PART-CLOSURE");
@@ -370,7 +380,7 @@ describe("specimen exact-part graph and bundled helper", () => {
 
   it("rejects an invented module assembled from individually hashed upstream characters", () => {
     const fixture = specimenExactPartFixture();
-    const proof = fixture.record.lineage.exactParts.files["index.tsx"];
+    const proof = fixture.proof.files["index.tsx"];
     const bound = proof.segments[0].source;
     const whole = readFileSync(join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx"));
     const invented = Buffer.from("export function foo() { return null }\n");
@@ -379,7 +389,7 @@ describe("specimen exact-part graph and bundled helper", () => {
       expect(start).toBeGreaterThanOrEqual(0);
       return { start: index, endExclusive: index + 1, edits: [], source: { ...bound, start, endExclusive: start + 1, sha256: createHash("sha256").update(Buffer.from([byte])).digest("hex") } };
     });
-    writeFileSync(join(fixture.dir, "index.tsx"), invented);
+    fixture.files["index.tsx"] = invented.toString("utf8");
     fixture.save(true);
     expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
   });
@@ -387,17 +397,49 @@ describe("specimen exact-part graph and bundled helper", () => {
   it("rejects altered code even after attacker recomputes all emitted and payload hashes", () => {
     for (const file of ["index.tsx", "BlockViewerIframe.tsx"]) {
       const fixture = specimenExactPartFixture();
-      writeFileSync(join(fixture.dir, file), readFileSync(join(fixture.dir, file), "utf8") + "console.log(1)\n");
+      fixture.files[file] += "console.log(1)\n";
       fixture.save(true);
       expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
     }
   });
 
+  it("resolves a canonical element dependency from its flat Designer candidate", () => {
+    const depFiles = { "index.tsx": "export type Dep = string\n" };
+    const elementDep = { slot: "sections.dep", element: "dep", version: 1, hash: payloadHash(depFiles) };
+    const closure = (fixture: ReturnType<typeof specimenExactPartFixture>) =>
+      refVerbatimFindings(fixture.root, `${SPECIMEN.slot}/${SPECIMEN.element}/v1`, fixture.options)
+        .filter((f: Finding) => f.code === "REF-PART-CLOSURE").map((f: Finding) => f.detail).join("\n");
+    // No candidate dep-v1.json in slot sections.dep.
+    const missing = specimenExactPartFixture({ elementDep });
+    expect(specimenGate(missing)).toEqual(["REF-PART-CLOSURE"]);
+    expect(closure(missing)).toContain("canonical dependency is not a readable Designer candidate");
+    // A candidate whose payload hashes differently from the declared identity.
+    const changed = specimenExactPartFixture({ elementDep });
+    saveCandidate(changed.root, { ...elementDep, kind: "original", files: { "index.tsx": "export type Dep = number\n" } });
+    expect(closure(changed)).toContain("canonical dependency identity differs");
+    // The exact candidate, but it does not pass its own strict source proof.
+    const unproven = specimenExactPartFixture({ elementDep });
+    saveCandidate(unproven.root, { ...elementDep, kind: "original", files: depFiles });
+    expect(closure(unproven)).toContain("canonical dependency does not pass its actual strict source proof");
+    // A candidate depending on itself: the nested strict proof refuses the cycle, so it terminates and fails.
+    const cyclic = specimenExactPartFixture({ elementDep: { ...SPECIMEN, hash: `sha256:${"0".repeat(64)}` } });
+    const self = payloadHash(cyclic.files);
+    cyclic.deps.elements[0].hash = self;
+    cyclic.proof.closure.imports.at(-1).target.hash = self;
+    cyclic.save();
+    expect(specimenGate(cyclic)).toEqual(["REF-PART-CLOSURE"]);
+    expect(closure(cyclic)).toContain("canonical dependency does not pass its actual strict source proof");
+    const nested = refVerbatimFindings(cyclic.root, `${SPECIMEN.slot}/${SPECIMEN.element}/v1`, { ...cyclic.options, exactAncestors: [`${SPECIMEN.slot}/${SPECIMEN.element}/v1`] });
+    expect(nested.map((f: Finding) => f.detail).join("\n")).toContain("cyclic canonical proof dependency");
+  });
+
   it("rejects an omitted bundled iframe despite ambient presence and recomputed remaining hashes", () => {
     const fixture = specimenExactPartFixture();
-    fixture.record.payload = fixture.record.payload.filter((file: string) => file !== "BlockViewerIframe.tsx");
-    delete fixture.record.lineage.exactParts.payload["BlockViewerIframe.tsx"];
-    delete fixture.record.lineage.exactParts.files["BlockViewerIframe.tsx"];
+    // Ambient presence: another candidate of the same slot still ships the iframe file.
+    saveCandidate(fixture.root, { ...SPECIMEN, version: 2, files: { "BlockViewerIframe.tsx": fixture.files["BlockViewerIframe.tsx"] } });
+    delete fixture.files["BlockViewerIframe.tsx"];
+    delete fixture.proof.payload["BlockViewerIframe.tsx"];
+    delete fixture.proof.files["BlockViewerIframe.tsx"];
     fixture.save(true);
     expect(specimenGate(fixture)).toContain("REF-PART-CLOSURE");
   });
@@ -405,7 +447,7 @@ describe("specimen exact-part graph and bundled helper", () => {
   it("rejects byte gaps, range alteration and offsets inside a UTF-8 codepoint", () => {
     for (const mutation of ["gap", "range", "utf8"]) {
       const fixture = specimenExactPartFixture();
-      const segment = fixture.record.lineage.exactParts.files["index.tsx"].segments[0];
+      const segment = fixture.proof.files["index.tsx"].segments[0];
       const upstream = readFileSync(join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx"));
       if (mutation === "gap") segment.start = 1;
       else {
@@ -420,9 +462,11 @@ describe("specimen exact-part graph and bundled helper", () => {
   it("rejects whole-source changes outside the range and either source or bundled license mutation", () => {
     for (const mutation of ["outside", "upstream-license", "payload-license"]) {
       const fixture = specimenExactPartFixture();
-      const file = mutation === "outside" ? join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx")
-        : mutation === "upstream-license" ? join(fixture.options.referencesDir, "fixture/LICENSE") : join(fixture.dir, "LICENSE");
-      writeFileSync(file, readFileSync(file, "utf8") + "changed\n");
+      if (mutation === "payload-license") fixture.files["LICENSE"] += "changed\n";
+      else {
+        const file = mutation === "outside" ? join(fixture.options.referencesDir, fixture.options.manifest.items[0]!.dir, "index.tsx") : join(fixture.options.referencesDir, "fixture/LICENSE");
+        writeFileSync(file, readFileSync(file, "utf8") + "changed\n");
+      }
       fixture.save(true);
       expect(specimenGate(fixture)).toContain("REF-NOT-VENDORED");
     }
@@ -431,7 +475,7 @@ describe("specimen exact-part graph and bundled helper", () => {
   it("rejects unknown proof/adaptation fields and arbitrary code disguised as data", () => {
     for (const mutation of ["field", "unknown-edit", "data-logic"]) {
       const fixture = specimenExactPartFixture();
-      const proof = fixture.record.lineage.exactParts;
+      const proof = fixture.proof;
       if (mutation === "field") proof.allow = true;
       else proof.files["BlockViewerIframe.tsx"].segments[0].edits = [{ kind: mutation === "unknown-edit" ? "arbitrary" : "data", start: 0, endExclusive: 6, from: "export", to: "eval(1)" }];
       fixture.save(true);
@@ -442,13 +486,12 @@ describe("specimen exact-part graph and bundled helper", () => {
   it("rejects a nonsemantic token or executable data expression after exact output hashes are recomputed", () => {
     for (const mutation of ["token", "data"]) {
       const fixture = specimenExactPartFixture({ bindings: true });
-      const edits = fixture.record.lineage.exactParts.files["RecordTable.tsx"].segments[0].edits;
+      const edits = fixture.proof.files["RecordTable.tsx"].segments[0].edits;
       const changed = edits.find((edit: { kind: string }) => edit.kind === mutation);
       const before = changed.to;
       changed.to = mutation === "token" ? "bg-red-500" : "{label()}";
-      const path = join(fixture.dir, "RecordTable.tsx");
-      writeFileSync(path, readFileSync(path, "utf8").replace(before, changed.to));
-      fixture.record.lineage.exactParts.files["RecordTable.tsx"].segments[0].endExclusive = Buffer.byteLength(readFileSync(path, "utf8"));
+      fixture.files["RecordTable.tsx"] = fixture.files["RecordTable.tsx"].replace(before, changed.to);
+      fixture.proof.files["RecordTable.tsx"].segments[0].endExclusive = Buffer.byteLength(fixture.files["RecordTable.tsx"]);
       fixture.save(true);
       expect(specimenGate(fixture)).toContain("REF-PART-PROOF");
     }
@@ -458,7 +501,7 @@ describe("specimen exact-part graph and bundled helper", () => {
     expect(specimenGate(specimenExactPartFixture({ missingExport: true }))).toContain("REF-PART-CLOSURE");
     expect(specimenGate(specimenExactPartFixture({ missingBinding: true }))).toContain("REF-PART-CLOSURE");
     const absentEdge = specimenExactPartFixture();
-    absentEdge.record.lineage.exactParts.closure.imports.pop(); absentEdge.save(true);
+    absentEdge.proof.closure.imports.pop(); absentEdge.save(true);
     expect(specimenGate(absentEdge)).toContain("REF-PART-CLOSURE");
     const primitive = specimenExactPartFixture();
     primitive.options.manifest.items[1]!.type = "registry:ui";
@@ -484,46 +527,53 @@ describe("ref-verbatim pin gate (strict, one element version)", () => {
 
   it("mutation 2: a primitive cited as a section's reference fails REF-PRIMITIVE-AS-REF", () => {
     const card = read("ui/src/components/ui/card.tsx");
-    const root = consumer([{ slot: "sections.hero", element: "hero", lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "card", { "card.tsx": "registry/aria-nova/ui/card.tsx" }) }, files: { "card.tsx": card } }]);
+    const root = consumer([{ slot: "sections.hero", element: "hero", ref: [refOf("shadcn-aria", "card")], refVerbatim: { files: { "card.tsx": "registry/aria-nova/ui/card.tsx" } }, files: { "card.tsx": card } }]);
     expect(gate(root, "sections.hero/hero/v1")).toEqual(["REF-PRIMITIVE-AS-REF"]);
   });
 
   it("fails every other gate code", () => {
-    const original = consumer([{ slot: "sections.hero", element: "hero", lineage: { mode: "original" }, files: { "hero.tsx": "export const Hero = () => null\n" } }]);
+    const original = consumer([{ slot: "sections.hero", element: "hero", kind: "original", files: { "hero.tsx": "export const Hero = () => null\n" } }]);
     expect(gate(original, "sections.hero/hero/v1")).toEqual(["REF-NO-SOURCE"]);
+    // No candidate hero-v2.json in the slot.
     expect(gate(original, "sections.hero/hero/v2")).toEqual(["REF-NO-SOURCE"]);
 
-    const staleHash = consumer([button({ lineage: { mode: "verbatim", source: { ...sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }), hash: `sha256:${"1".repeat(64)}` } } })]);
-    expect(gate(staleHash, "components.button/button/v1")).toEqual(["REF-NOT-VENDORED"]);
-    const unknown = consumer([button({ lineage: { mode: "verbatim", source: { registry: "shadcn-aria", item: "no-such-item", version: "4.23.0" } } })]);
-    expect(gate(unknown, "components.button/button/v1")).toEqual(["REF-NOT-VENDORED"]);
+    // A candidate ref carries no hash of its own: a stale vendored identity is the manifest's hash
+    // differing from the vendored bytes, or a manifest row whose files are not vendored.
+    const staleHash = consumer([button()]);
+    const staleManifest = { ...manifest, items: manifest.items.map((row: { registry: string; name: string }) => (row.registry === "shadcn-aria" && row.name === "button" ? { ...row, hash: `sha256:${"1".repeat(64)}` } : row)) };
+    expect(gate(staleHash, "components.button/button/v1", { manifest: staleManifest })).toEqual(["REF-NOT-VENDORED"]);
+    const unvendored = consumer([button({ ref: ["shadcn-aria/no-such-item@4.23.0"] })]);
+    const unvendoredManifest = { ...manifest, items: [...manifest.items, { ...itemOf("shadcn-aria", "button"), name: "no-such-item", version: "4.23.0", dir: "shadcn-aria/no-such-item@4.23.0" }] };
+    expect(gate(unvendored, "components.button/button/v1", { manifest: unvendoredManifest })).toEqual(["REF-NOT-VENDORED"]);
+    // A ref the manifest does not list resolves no source at all.
+    expect(gate(unvendored, "components.button/button/v1")).toEqual(["REF-NO-SOURCE"]);
 
-    const radix = consumer([button({ lineage: { mode: "verbatim", source: sourceOf("shadcn", "button", { "button.tsx": "registry/radix-nova/ui/button.tsx" }) } })]);
+    const radix = consumer([button({ ref: [refOf("shadcn", "button")], refVerbatim: { files: { "button.tsx": "registry/radix-nova/ui/button.tsx" } } })]);
     expect(gate(radix, "components.button/button/v1")).toContain("REF-FLAVOR");
     const noComponents = consumer([button()], { components: false });
     expect(gate(noComponents, "components.button/button/v1", { components: join(tmpdir(), "missing-components.json") })).toEqual(["REF-FLAVOR"]);
 
-    const unmapped = consumer([button({ lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "button") } })]);
+    const unmapped = consumer([button({ refVerbatim: undefined })]);
     expect(gate(unmapped, "components.button/button/v1")).toEqual(["REF-FILE-UNMAPPED"]);
-    const wrongPath = consumer([button({ lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "button", { "button.tsx": "registry/aria-nova/ui/nope.tsx" }) } })]);
+    const wrongPath = consumer([button({ refVerbatim: { files: { "button.tsx": "registry/aria-nova/ui/nope.tsx" } } })]);
     expect(gate(wrongPath, "components.button/button/v1")).toEqual(["REF-FILE-UNMAPPED"]);
 
     const structure = consumer([button({ files: { "button.tsx": BUTTON.replace("(\n    <ButtonPrimitive\n", "(\n    <div\n") } })]);
-    expect(readFileSync(join(structure, "library/components.button/button/v1/button.tsx"), "utf8")).not.toBe(BUTTON);
+    expect(readCandidateFile(structure, button()).files[0].content).not.toBe(BUTTON);
     expect(gate(structure, "components.button/button/v1")).toContain("REF-HUNK-STRUCTURE");
     const logic = consumer([button({ files: { "button.tsx": `${BUTTON}\nconsole.log("x")\n` } })]);
     expect(gate(logic, "components.button/button/v1")).toEqual(["REF-HUNK-LOGIC"]);
   });
 
   it("a non-strict run infers a unique basename mapping and says so; the gate does not", () => {
-    const root = consumer([button({ lineage: { mode: "verbatim", source: sourceOf("shadcn-aria", "button") } })]);
+    const root = consumer([button({ refVerbatim: undefined })]);
     expect(checkElement(root, "components.button/button/v1").files).toMatchObject([{ file: "button.tsx", status: "pass", mapping: "inferred" }]);
   });
 
   it("exempts consumer-asset slots and skips versions without code", () => {
     const root = consumer([
-      { slot: "components.logo", element: "logo", lineage: { mode: "original" }, files: { "logo.tsx": "export const Logo = () => null\n" } },
-      { slot: "themes.theme", element: "theme", lineage: { mode: "customized", source: sourceOf("shadcn", "neutral") }, files: { "theme.css": ":root{}\n" } },
+      { slot: "components.logo", element: "logo", kind: "original", files: { "logo.tsx": "export const Logo = () => null\n" } },
+      { slot: "themes.theme", element: "theme", ref: [refOf("shadcn", "neutral")], files: { "theme.css": ":root{}\n" } },
     ]);
     expect(checkElement(root, "components.logo/logo/v1").status).toBe("exempt");
     expect(checkElement(root, "themes.theme/theme/v1").status).toBe("n/a");
@@ -543,14 +593,14 @@ describe("ref-verbatim flavor: engine-neutral references", () => {
     });
     const item = { registry: "fixture-ui", name: "widget", version: "1.0.0", dir, type: "registry:block", sourceUrl: "https://example.invalid/widget.json", license: "MIT", direct: true, slots: [], hash: treeHash(rows), files: rows };
     const fixture = { ...manifest, registries: { ...manifest.registries, "fixture-ui": { namespace: "@fixture-ui", source: "https://example.invalid/{name}.json", version: "1.0.0", license: "MIT", licenseFiles: [], ...(style ? { style } : {}) } }, items: [item] };
-    return { referencesDir, manifest: fixture, source: { registry: "fixture-ui", item: "widget", version: "1.0.0", hash: item.hash } };
+    return { referencesDir, manifest: fixture, ref: ["fixture-ui/widget@1.0.0"] };
   }
   const NEUTRAL = 'import { cn } from "@/lib/utils"\nexport function Widget({ className }: { className?: string }) {\n  return <div className={cn("flex gap-2", className)}>Widget</div>\n}\n';
 
   it("accepts engine-neutral code from a registry with no aria style for an aria consumer", () => {
     for (const style of [undefined, "radix-nova"]) {
       const reg = fixtureRegistry({ "widget.tsx": NEUTRAL }, style);
-      const root = consumer([{ slot: "sections.widget", element: "widget", lineage: { mode: "verbatim", source: { ...reg.source, files: { "widget.tsx": "widget.tsx" } } }, files: { "widget.tsx": NEUTRAL } }]);
+      const root = consumer([{ slot: "sections.widget", element: "widget", ref: reg.ref, refVerbatim: { files: { "widget.tsx": "widget.tsx" } }, files: { "widget.tsx": NEUTRAL } }]);
       expect(refVerbatimFindings(root, "sections.widget/widget/v1", reg), String(style)).toEqual([]);
     }
   });
@@ -558,14 +608,14 @@ describe("ref-verbatim flavor: engine-neutral references", () => {
   it("still fails REF-FLAVOR when that registry's code imports a headless engine", () => {
     const radixy = `import { Slot } from "radix-ui"\n${NEUTRAL}`;
     const reg = fixtureRegistry({ "widget.tsx": radixy });
-    const root = consumer([{ slot: "sections.widget", element: "widget", lineage: { mode: "verbatim", source: { ...reg.source, files: { "widget.tsx": "widget.tsx" } } }, files: { "widget.tsx": radixy } }]);
+    const root = consumer([{ slot: "sections.widget", element: "widget", ref: reg.ref, refVerbatim: { files: { "widget.tsx": "widget.tsx" } }, files: { "widget.tsx": radixy } }]);
     expect(gate(root, "sections.widget/widget/v1", reg)).toEqual(["REF-FLAVOR"]);
   });
 
   it("fails REF-NORMALIZE when the reference cannot be normalized", () => {
     const broken = 'import { IconPlaceholder } from "./icon-placeholder"\nexport const Widget = () => <IconPlaceholder tabler="IconX" />\n';
     const reg = fixtureRegistry({ "widget.tsx": broken });
-    const root = consumer([{ slot: "sections.widget", element: "widget", lineage: { mode: "verbatim", source: { ...reg.source, files: { "widget.tsx": "widget.tsx" } } }, files: { "widget.tsx": broken } }]);
+    const root = consumer([{ slot: "sections.widget", element: "widget", ref: reg.ref, refVerbatim: { files: { "widget.tsx": "widget.tsx" } }, files: { "widget.tsx": broken } }]);
     expect(gate(root, "sections.widget/widget/v1", reg)).toEqual(["REF-NORMALIZE"]);
   });
 });
@@ -618,17 +668,23 @@ describe("ref-verbatim baseline (shrink only)", () => {
     expect(codes(refVerbatimReport(root, { baselinePath: added }).findings)).toEqual(["REF-BASELINE"]);
   });
 
-  it("a baselined library version blocks the --all report and the pin gate", () => {
-    const failing = button({ hash: `sha256:${"3".repeat(64)}`, files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } });
+  it("a baselined Designer candidate blocks the --all report and the pin gate", () => {
+    const failing = button({ version: 3, files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } });
     const root = consumer([failing]);
     const dir = mkdtempSync(join(tmpdir(), "ref-verbatim-baseline-"));
     const path = join(dir, "baseline.json");
-    const row = { slot: "components.button", element: "button", version: 1, hash: failing.hash! };
+    // Candidate identity: button-v3.json is element button, version 3, hashed over its payload.
+    const row = { slot: "components.button", element: "button", version: 3, hash: payloadHash(failing.files) };
     writeFileSync(path, JSON.stringify({ rows: [row] }));
     const report = refVerbatimReport(root, { all: true, baselinePath: path, ceiling: [baselineKey(row)] });
     expect(codes(report.findings)).toEqual(["REF-HUNK-CLASS"]);
     expect(report.elements.map((e: { status: string }) => e.status)).toEqual(["baselined"]);
-    expect(gate(root, "components.button/button/v1")).toEqual(["REF-HUNK-CLASS"]);
+    expect(report.elements.map((e: { key: string }) => e.key)).toEqual(["components.button/button@v3"]);
+    expect(report.baselined).toEqual(["components.button/button@v3"]);
+    expect(report.stale).toEqual([]);
+    // The pinned report does not see an unpinned candidate; --all does, pinned or not.
+    expect(refVerbatimReport(root, { baselinePath: path, ceiling: [baselineKey(row)] }).elements).toEqual([]);
+    expect(gate(root, "components.button/button/v3")).toEqual(["REF-HUNK-CLASS"]);
     const unlisted = refVerbatimReport(root, { all: true, baselinePath: path });
     expect(codes(unlisted.findings)).toEqual(["REF-BASELINE", "REF-HUNK-CLASS"]);
   });
@@ -642,14 +698,14 @@ describe("recorded adaptations", () => {
     const hunks = diffSources(normalized, BUTTON_REF, file, "button.tsx", { themeVars: [] }).hunks;
     expect(hunks.length).toBeGreaterThan(0);
     const adaptations = hunks.map((h: Hunk) => ({ kind: "token-mapping", file: "button.tsx", reason: "Bind the consumer brand token", hash: adaptationHash(h, normalized, file) }));
-    const record = { mode: "customized", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }) };
-    const missing = consumer([button({ lineage: record, files: { "button.tsx": file } })]);
+    const record = { files: { "button.tsx": BUTTON_REF } };
+    const missing = consumer([button({ refVerbatim: record, files: { "button.tsx": file } })]);
     expect(gate(missing, "components.button/button/v1")).toEqual(["REF-ADAPTATION"]);
-    const recorded = consumer([button({ lineage: { ...record, adaptations }, files: { "button.tsx": file } })]);
+    const recorded = consumer([button({ refVerbatim: { ...record, adaptations }, files: { "button.tsx": file } })]);
     expect(gate(recorded, "components.button/button/v1")).toEqual([]);
-    const forged = consumer([button({ lineage: { ...record, adaptations: adaptations.map((a: object) => ({ ...a, reason: " " })) }, files: { "button.tsx": file } })]);
+    const forged = consumer([button({ refVerbatim: { ...record, adaptations: adaptations.map((a: object) => ({ ...a, reason: " " })) }, files: { "button.tsx": file } })]);
     expect(gate(forged, "components.button/button/v1")).toContain("REF-ADAPTATION");
-    const edited = consumer([button({ lineage: { ...record, adaptations }, files: { "button.tsx": file.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
+    const edited = consumer([button({ refVerbatim: { ...record, adaptations }, files: { "button.tsx": file.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
     expect(gate(edited, "components.button/button/v1")).toContain("REF-HUNK-CLASS");
     expect(ADAPTATION_KINDS).toEqual(["import-paths", "token-mapping", "data-binding", "data-fit", "slot-bound-copy", "slot-bound-identity"]);
   });
@@ -663,20 +719,19 @@ describe("import-path adaptations", () => {
     for (const [candidate, allowed] of [[BUTTON.replace("@/lib/utils", "./utils"), true], [`import "./side-effect";\n${BUTTON}`, false]] as const) {
       const hunks = diffSources(normalized, BUTTON_REF, candidate, "button.tsx").hunks;
       const adaptations = hunks.map((h: Hunk) => ({ kind: "import-paths", file: "button.tsx", reason: "Resolve the local import path", hash: adaptationHash(h, normalized, candidate) }));
-      const root = consumer([button({ lineage: { mode: "customized", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }), adaptations }, files: { "button.tsx": candidate } })]);
+      const root = consumer([button({ refVerbatim: { files: { "button.tsx": BUTTON_REF }, adaptations }, files: { "button.tsx": candidate } })]);
       expect(gate(root, "components.button/button/v1")).toEqual(allowed ? [] : ["REF-ADAPTATION"]);
     }
   });
 });
 
 describe("every pinned source representation", () => {
-  it("checks code embedded in a legacy registry JSON payload", () => {
+  it("checks code embedded in a registry JSON payload file", () => {
     const item = { name: "button", type: "registry:ui", files: [{ path: "button.tsx", content: BUTTON }] };
-    const lineage = { mode: "customized", source: sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF }) };
-    const root = consumer([button({ lineage, files: { "button.json": JSON.stringify(item) } })]);
+    const root = consumer([button({ files: { "button.json": JSON.stringify(item) } })]);
     expect(gate(root, "components.button/button/v1")).toEqual([]);
     item.files[0].content = BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
-    writeFileSync(join(root, "library/components.button/button/v1/button.json"), JSON.stringify(item));
+    saveCandidate(root, button({ files: { "button.json": JSON.stringify(item) } }));
     expect(gate(root, "components.button/button/v1")).toEqual(["REF-HUNK-CLASS"]);
   });
   it("checks modern Designer pins through the slot-model reader, never a legacy selection store", () => {
@@ -691,7 +746,7 @@ describe("every pinned source representation", () => {
     item.files[0].content = BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl");
     save();
     expect(codes(refVerbatimReport(root).findings)).toEqual(["REF-HUNK-CLASS"]);
-    // A legacy selection pin is not a pin: the failing library version is not reported in pinned mode.
+    // A legacy selection pin is not a pin: the failing unpinned candidate is not reported in pinned mode.
     const legacy = consumer([button({ files: { "button.tsx": BUTTON.replace("hover:bg-primary/80", "hover:bg-primary/80 shadow-xl") } })]);
     writeFileSync(join(legacy, "selection.json"), JSON.stringify({ schema: "clossys.selection/1", pins: { "components.button": { element: "button", version: 1, hash: "sha256:x", event: "e1" } }, history: [] }));
     expect(refVerbatimReport(legacy).elements).toEqual([]);
@@ -722,7 +777,7 @@ describe("finite data-fit and additional source parts", () => {
     const source = sourceOf("shadcn-aria", "sidebar-15", { [file]: path });
     const adaptation = { kind: "data-fit", file, reason: "Mirror the same stock edge control", operation: "sidebar-mirrored-edge", sourceHash: sourceHash(raw), bindings: { side: "right" } };
     const text = replayDataFit(normalized, path, adaptation, { raw, source, sources: [] });
-    const make = (candidate: string, proof = adaptation) => consumer([{ slot: "frames.edge", element: "edge", lineage: { mode: "customized", source, adaptations: [proof] }, files: { [file]: candidate } }]);
+    const make = (candidate: string, proof = adaptation) => consumer([{ slot: "frames.edge", element: "edge", ref: [refOf("shadcn-aria", "sidebar-15")], refVerbatim: { files: source.files, adaptations: [proof] }, files: { [file]: candidate } }]);
     expect(gate(make(text), "frames.edge/edge/v1")).toEqual([]);
     expect(gate(make(text.replace("data-[orientation=vertical]:h-4", "data-[orientation=vertical]:h-4 gap-8")), "frames.edge/edge/v1")).toContain("REF-HUNK-CLASS");
     expect(gate(make(text, { ...adaptation, sourceHash: `sha256:${"0".repeat(64)}` }), "frames.edge/edge/v1")).toContain("REF-NORMALIZE");
@@ -730,9 +785,8 @@ describe("finite data-fit and additional source parts", () => {
   it("verifies each additional source part independently and refuses overlapping mappings", () => {
     const path = "registry/aria-nova/blocks/sidebar-15/page.tsx";
     const text = normalizeReference(read(`references/shadcn-aria/sidebar-15@4.23.0/${path}`), path, config);
-    const primary = sourceOf("shadcn-aria", "sidebar-15", { "index.tsx": path });
     const part = sourceOf("shadcn-aria", "button", { "button.tsx": BUTTON_REF });
-    const make = (parts: any[]) => consumer([{ slot: "frames.example", element: "example", lineage: { mode: "verbatim", source: primary, parts }, files: { "index.tsx": text, "button.tsx": BUTTON } }]);
+    const make = (parts: any[]) => consumer([{ slot: "frames.example", element: "example", ref: [refOf("shadcn-aria", "sidebar-15")], refVerbatim: { files: { "index.tsx": path }, parts }, files: { "index.tsx": text, "button.tsx": BUTTON } }]);
     expect(gate(make([part]), "frames.example/example/v1")).toEqual([]);
     expect(gate(make([{ ...part, hash: `sha256:${"0".repeat(64)}` }]), "frames.example/example/v1")).toContain("REF-NOT-VENDORED");
     expect(gate(make([part, part]), "frames.example/example/v1")).toContain("REF-FILE-UNMAPPED");
