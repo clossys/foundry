@@ -609,7 +609,8 @@
         "packages/producer#check:route-parity"
       ],
       "related": [
-        "packages/producer#check:assemble-only"
+        "packages/producer#check:assemble-only",
+        "check:studio#producer scripts/check-route-parity.test.mjs"
       ],
       "fixture": "scripts/rules/fixtures/R-ROUTES-PUBLISHED",
       "fixture_runs": [
