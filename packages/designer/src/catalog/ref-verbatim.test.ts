@@ -779,6 +779,13 @@ describe("composition lineage (W6)", () => {
     expect(check(setup(), composed(SECTION.replace("<Card>", '<Card>\n      <div className="grid gap-4" />')))).toEqual(["REF-COMP-MARKUP"]);
     expect(check(setup(), composed(SECTION.replace("<Card>", "<Card>\n      <span style={{ color: \"red\" }} />")))).toEqual(["REF-COMP-MARKUP"]);
   });
+  it("fails styled raw markup in a .jsx or .js payload: JSX parses there too (gate F1)", () => {
+    const js = 'import { Card } from "@clossys/designer-ui"\n\nexport function Raw() {\n  return (\n    <Card>\n      <div className="grid gap-4" />\n    </Card>\n  )\n}\n';
+    for (const path of ["raw.jsx", "raw.js"]) {
+      const item = { name: "raw", type: "registry:block", files: [{ path, content: js }], meta: { source: { kind: "composition", ref: [], parts: [part("card")] } } };
+      expect(check(setup(), item, ["components.card"])).toEqual(["REF-COMP-MARKUP"]);
+    }
+  });
   it("fails self-citation of Foundry's own package folders, for every lineage kind", () => {
     expect(check(setup(), composed(SECTION, undefined, ['{"path":"packages/designer/ui/src/components/ui/card.tsx"}']))).toEqual(["REF-SELF-CITE"]);
     const root = setup();

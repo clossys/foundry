@@ -18,6 +18,18 @@ export const DS_COMPONENT_LAYER = "@clossys/designer-ui";
 export const DS_FRAME_LANDMARKS = new Set(["header", "main", "aside"]);
 
 /**
+ * The parse mode for a payload file. Only `.ts`/`.mts`/`.cts` parse without
+ * JSX; `.jsx` and every plain JavaScript extension parse with JSX enabled, so
+ * raw markup in a `.jsx`/`.js` payload is seen exactly as in a `.tsx` one.
+ */
+export function scriptKind(ts, fileName) {
+  if (/\.tsx$/.test(fileName)) return ts.ScriptKind.TSX;
+  if (/\.jsx$/.test(fileName)) return ts.ScriptKind.JSX;
+  if (/\.[cm]?js$/.test(fileName)) return ts.ScriptKind.JS;
+  return ts.ScriptKind.TS;
+}
+
+/**
  * Ordered ds-only events of one source file:
  * - `{ type: "import", specifier, typeOnly, names }` per import or re-export
  *   declaration with a string module specifier (`names` are the imported
@@ -28,7 +40,7 @@ export const DS_FRAME_LANDMARKS = new Set(["header", "main", "aside"]);
  */
 export function dsOnlyEvents(text, fileName, { kind = "section", blockMarkup = new Set() } = {}) {
   const ts = loadTypeScript();
-  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, fileName.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const source = ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true, scriptKind(ts, fileName));
   const events = [];
   const classAttribute = (node) => node.attributes.properties.find((attribute) => ts.isJsxAttribute(attribute) && attribute.name.getText() === "className");
   const importNames = (node) => {
