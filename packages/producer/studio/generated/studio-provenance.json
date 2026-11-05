@@ -16,13 +16,13 @@
   },
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
-    "data-clossys-candidate": "module-outline-v6.json",
-    "data-clossys-hash": "sha256:58b55a647ec63f3b4b90645ade6d662095e0c9c221f89e7f7125533315d076ad"
+    "data-clossys-candidate": "module-outline-v7.json",
+    "data-clossys-hash": "sha256:65620f94b37cb632c1aa87e9cf796ac150b3eec4b33c6fd884c6763f0de81348"
   },
   "sections.module.checks": {
     "data-clossys-slot": "sections.module.checks",
-    "data-clossys-candidate": "module-checks-v5.json",
-    "data-clossys-hash": "sha256:809b74f3504ee23363b9532e850a29041ea92cb105117f8d053e98387ee6872a"
+    "data-clossys-candidate": "module-checks-v6.json",
+    "data-clossys-hash": "sha256:ee046f560f04e715a37a636bf9586789431fda3503374d6f9eea277acd3e7171"
   },
   "sections.producer.team-strip": {
     "data-clossys-slot": "sections.producer.team-strip",

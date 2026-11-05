@@ -1,7 +1,7 @@
 {
-  "candidate": "module-checks-v5.json",
-  "sha256": "809b74f3504ee23363b9532e850a29041ea92cb105117f8d053e98387ee6872a",
+  "candidate": "module-checks-v6.json",
+  "sha256": "ee046f560f04e715a37a636bf9586789431fda3503374d6f9eea277acd3e7171",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T06:09:12.370Z"
+  "at": "2026-11-05T10:06:50.054Z"
 }

@@ -56,7 +56,9 @@
       "components.breadcrumbs",
       "components.button",
       "components.badge",
-      "components.tabs"
+      "components.tabs",
+      "components.card",
+      "components.empty"
     ],
     "parts": [
       "sections.band",
@@ -192,10 +194,11 @@
     }
   },
   "inputs": [],
-  "uses": [],
-  "notNeeded": {
-    "reason": "planner:DS-COMPLETE: no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted-registry lineage. Earlier migrated evidence: no approved-registry source; W6 composition check (strict, page-header-v1.json unmodified) fails REF-COMP-MARKUP, REF-COMP-UNUSED: 8 styled raw element attribute(s). No vendored item in the approved set maps to this slot (manifest gap row; candidate v1 is original code outside a consumer-asset slot); candidate v1 fails ref-verbatim. SITE-TEMPLATE (4a2c3700f) consumption is fixture-only (install-consumer and specimen fixtures, archetype site-publication.json, Writer passage and frames.site-shell composes metadata); no pinned frame, section or publication page composes it, so pinning v1 would only add ref-verbatim REF-COMP findings. Follow-up: adopt an aria-nova item (owner CREATIVE).",
-    "since": "2026-11-05",
-    "decidedBy": "planner:DS-COMPLETE"
-  }
+  "uses": [
+    "components.badge",
+    "components.breadcrumbs",
+    "components.button",
+    "components.card",
+    "components.empty"
+  ]
 }

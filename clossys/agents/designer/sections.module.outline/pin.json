@@ -1,7 +1,7 @@
 {
-  "candidate": "module-outline-v6.json",
-  "sha256": "58b55a647ec63f3b4b90645ade6d662095e0c9c221f89e7f7125533315d076ad",
+  "candidate": "module-outline-v7.json",
+  "sha256": "65620f94b37cb632c1aa87e9cf796ac150b3eec4b33c6fd884c6763f0de81348",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T06:09:13.492Z"
+  "at": "2026-11-05T10:06:49.677Z"
 }
