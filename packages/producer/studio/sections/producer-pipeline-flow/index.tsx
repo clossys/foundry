@@ -236,7 +236,7 @@ export default function PipelineFlowSection({ flow, ...provenance }: { flow: Pip
       <Controls position="bottom-left" showInteractive={false} fitViewOptions={FIT_ALL} />
       <MiniMap position="bottom-right" pannable zoomable />
       {/* React Flow's own attribution, kept as its stock panel and link, with Writer words. */}
-      <Panel position="bottom-right" className="react-flow__attribution"><a href="https://reactflow.dev" target="_blank" rel="noopener noreferrer" aria-label={copy.attributionLabel}>{copy.attribution}</a></Panel>
+      <Panel position="bottom-right"><a href="https://reactflow.dev" target="_blank" rel="noopener noreferrer" aria-label={copy.attributionLabel}>{copy.attribution}</a></Panel>
     </ReactFlow>
   </Card>;
 }

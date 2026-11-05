@@ -2014,12 +2014,12 @@
       "sha256": "e9e9d0bc9572c066a9cfd6db98af0539a88ac563a9dc224b3497fa7b85f699f4"
     },
     {
-      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v11.json",
-      "sha256": "fbfa07af87c87ee1af85599e78d9a8e3fb085438fbc47d90923cfc04ab965b56"
+      "path": "clossys/agents/designer/sections.producer.pipeline-flow/candidates/producer-pipeline-flow-v12.json",
+      "sha256": "715cb26b08fd895a918a0aab4a0f1d400fd249dde5ffab97cd455c662ecaf1fc"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/pin.json",
-      "sha256": "244067e8926442ddc827491dcdbb9d562f35eec372640ab0c107f2e19191258e"
+      "sha256": "1c34051716054260a5b3c6bd214f7d04e8df7fbd1805ce668593658d3be4d01a"
     },
     {
       "path": "clossys/agents/designer/sections.producer.pipeline-flow/slot.json",
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "f55e640341f0eca74448c1e1ce509d66e61f948fa79e6ed5413d165067a6062f"
+      "sha256": "333fd2f243e954066d9db0a8ce335dc85e39ec7813def06912bf257e58484745"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "d4fa114a280f614cf3b996219d4ab7cc072b2f73aba7fe70a16fc408387fb6a8"
+      "sha256": "e72d87545a918016428d5e1f6ecd684df92e1b303bf243169956eb5fcb4bee20"
     }
   ]
 }

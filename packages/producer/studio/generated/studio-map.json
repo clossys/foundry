@@ -46107,7 +46107,7 @@
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 11
+      "version": 12
     },
     {
       "slot": "sections.studio.page-tabs",
