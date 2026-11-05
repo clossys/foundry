@@ -16,6 +16,8 @@ beforeEach(async () => { root = await canonicalLibrary(mkdtempSync(join(tmpdir()
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 const card = () => listSlots(root, "designer").find(entry => entry.id === "components.card")!;
 const candidate = () => join(candidatesDir(card().dir), "sample-card-v1.json");
+// The fixture's pinned Writer candidate (canonical-writer/strings.sample): the card declares these keys and owns no text.
+const WRITER_COPY = { "card.action": "Open report", "card.body": "Review the numbers from the last seven days before they go out to the team.", "card.title": "Weekly report ready" };
 
 describe("canonical specimen records through the common slot reader", () => {
   it("lists and locates IA candidates by slot/element or a unique bare name", () => {
@@ -35,8 +37,10 @@ describe("canonical specimen records through the common slot reader", () => {
     expect(record!.payload.raw).toBe(readFileSync(candidate(), "utf8"));
     expect(JSON.parse(record!.payload.raw).meta.source).toEqual(expected.meta.source);
     expect(record!.payload.files).toEqual(expected.files.map((file: { path: string; content: string; type?: string }) => ({ path: file.path, content: file.content, ...(file.type ? { type: file.type } : {}) })));
-    expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toEqual(expected.meta.preview);
-    expect(record!.preview).toMatchObject({ width: 480, container: "canvas", copy: Object.fromEntries(Object.entries(expected.meta.preview.copy).map(([key, text]) => [key, { text }])) });
+    expect(expected.meta.preview.copy).toBeUndefined();
+    const { inputs: _inputs, ...declared } = expected.meta.preview;
+    expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toEqual({ ...declared, copy: WRITER_COPY });
+    expect(record!.preview).toMatchObject({ width: 480, container: "canvas", copy: Object.fromEntries(Object.entries(WRITER_COPY).map(([key, text]) => [key, { text }])) });
     expect(record!.preview.theme).toBeUndefined();
     expect(record!.contentHash).toBe(sha256Hex(readFileSync(candidate())));
     expect(await source.read("sample-card", 2)).toBeUndefined();
@@ -148,7 +152,7 @@ describe("canonical specimen records through the common slot reader", () => {
   });
 
   it("rejects pinned byte drift and malformed candidate content", async () => {
-    writeFileSync(candidate(), readFileSync(candidate(), "utf8").replace("Weekly report ready", "Changed report title"));
+    writeFileSync(candidate(), readFileSync(candidate(), "utf8").replace("Later", "Not now"));
     await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
     writeFileSync(candidate(), "{}\n");
     await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
@@ -165,17 +169,39 @@ describe("canonical specimen records through the common slot reader", () => {
     repin([{ $component: "SampleCard", props: { title: "Title", body: "Body", action: "Open" } }, "Plain text"]);
     const preview = (await libraryRecordStore([root]).load("sample-card"))!.preview as Record<string, any>;
     expect(preview.fixtures.props.children[0]).toMatchObject({ $component: "SampleCard" });
-    expect(preview.copy).toEqual(item.meta.preview.copy);
+    expect(preview.copy).toEqual(WRITER_COPY);
     repin([{ $component: "SampleCard", children: [{ $component: "SampleButton" }] }]);
     await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow("the candidate exports no component SampleButton");
     repin([{ $copy: "studio.missing" }]);
     await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow("Writer has no copy key studio.missing");
   });
 
+  it("reads declared copy from the pinned Writer candidate, so a Writer re-pin changes the specimen text", async () => {
+    const writer = listSlots(root, "writer").find(entry => entry.id === "strings.sample")!;
+    const bytes = readFileSync(join(candidatesDir(writer.dir), "sample-v1.md"), "utf8").replace("Weekly report ready", "Monthly report ready");
+    writeFileSync(join(candidatesDir(writer.dir), "sample-v2.md"), bytes);
+    writeFileSync(pinFile(writer.dir), jsonBytes({ ...writer.pin, candidate: "sample-v2.md", sha256: sha256Hex(bytes) }));
+    expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toMatchObject({ copy: { ...WRITER_COPY, "card.title": "Monthly report ready" } });
+  });
+
+  it("refuses a preview.copy snapshot and an undeclared copy key", async () => {
+    const slot = card(), item = JSON.parse(readFileSync(candidate(), "utf8"));
+    const repin = (preview: unknown) => {
+      const bytes = jsonBytes({ ...item, meta: { ...item.meta, preview } });
+      writeFileSync(candidate(), bytes);
+      writeFileSync(pinFile(slot.dir), jsonBytes({ ...slot.pin, sha256: sha256Hex(bytes) }));
+    };
+    repin({ ...item.meta.preview, copy: WRITER_COPY });
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow(/copy/);
+    repin({ ...item.meta.preview, inputs: { copy: ["card.action", "card.body"] } });
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow(/card\.title/);
+  });
+
   it("rejects slot identity drift even when the payload remains valid", async () => {
     const slot = card(), doc = JSON.parse(readFileSync(slotFile(slot.dir), "utf8"));
     writeFileSync(slotFile(slot.dir), jsonBytes({ ...doc, id: "components.button" }));
-    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toBeInstanceOf(RecordError);
+    // The common slot reader refuses a slot document whose id is not its IA position.
+    await expect(libraryRecordStore([root]).load("sample-card")).rejects.toThrow("Slot designer/components.card does not match its IA position");
   });
 
   it("ignores legacy library and selection stores when canonical pins are absent", async () => {

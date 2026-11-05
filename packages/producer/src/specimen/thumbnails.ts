@@ -83,7 +83,8 @@ export async function snapshotSpecimen(options: SnapshotOptions): Promise<Snapsh
   const theme = await source.theme(request.id ?? record.preview.theme);
   const builder = createSpecimenBuilder({ workspace: resolve(cwd, options.workspace ?? "."), ...(options.esbuild ? { esbuild: options.esbuild } : {}) });
   const build = await builder.build(record, source);
-  const key = thumbnailKey({ buildHash: build.hash, recordHash: record.contentHash, themeHash: theme?.contentHash ?? "none", mode: request.mode });
+  // The Writer copy reaches the page as props, not the build: a re-pinned string is a new thumbnail.
+  const key = thumbnailKey({ buildHash: build.hash, recordHash: sha256(record.contentHash, JSON.stringify(record.preview.copy ?? {})), themeHash: theme?.contentHash ?? "none", mode: request.mode });
   await mkdir(cache, { recursive: true });
 
   const thumbnails: SnapshotThumbnail[] = [];

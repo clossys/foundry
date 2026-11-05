@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join, posix, resolve } from "node:path";
-import { adaptTheme, installedPath, recordStoreSource, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
+import { adaptTheme, installedPath, recordStoreSource, SPECIMEN_SAMPLE_COPY_KEYS, type SpecimenAliasContext, type SpecimenElementVersion, type SpecimenRecordSource, type SpecimenRecordStore, type SpecimenTheme } from "@clossys/publisher/specimen";
 import { listSlots, pinStamp, readCandidate, readSlot, readSlotEntry, type SlotEntry } from "../records/slots.js";
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from "../records/slot-model/index.js";
 import { RecordError } from "../records/validate.js";
@@ -174,44 +174,160 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
+      const specimen = specimenInputs(root, `${slot}/${candidate.name}`, item);
       const row: SpecimenElementVersion = {
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
-        files: [{ path: `${element}.json`, content: read.bytes }], preview: previewWithTree(root, `${slot}/${candidate.name}`, item), contentHash: read.sha256,
+        files: [{ path: `${element}.json`, content: read.bytes }], preview: specimen.preview, contentHash: read.sha256,
       };
-      return withSlotState(slot, item, withDependencyParts(row));
+      return withSlotState(slot, item, withSlotInputs(`${slot}/${candidate.name}`, specimen, withDependencyParts(row)));
     },
   };
   return store;
 }
 
+type CandidateItem = { type?: unknown; files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[]; meta?: { preview?: unknown } };
+
+/** One slot a specimen mounts through `{ "$element": "<slot>" }`: its pinned item's entry, import and resolved props. */
+interface SlotInput { readonly slot: string; readonly sha256: string; readonly module: string; readonly export: string; readonly props: unknown }
+
+/** A candidate's specimen preview with every input resolved from the pins, and the slots it mounts. */
+interface SpecimenInputs { readonly preview: Record<string, unknown>; readonly slots: readonly SlotInput[] }
+
+const strings = (value: unknown): value is string[] => Array.isArray(value) && value.every(item => typeof item === "string" && !!item);
+
+/** Every `{ "$copy" }` key and `{ "$element" }` slot a fixture names, at any depth (props and element trees). */
+function fixtureRefs(value: unknown, found = { copy: new Set<string>(), slots: new Set<string>() }) {
+  if (Array.isArray(value)) value.forEach(item => fixtureRefs(item, found));
+  else if (value && typeof value === "object") {
+    const node = value as Record<string, unknown>;
+    if (typeof node.$copy === "string") found.copy.add(node.$copy);
+    if (typeof node.$element === "string") found.slots.add(node.$element);
+    Object.values(node).forEach(item => fixtureRefs(item, found));
+  }
+  return found;
+}
+
+/** `{ "$copy": key }` -> the key's text, everywhere in a value. */
+function withCopy(value: unknown, copy: Readonly<Record<string, string>>): unknown {
+  if (Array.isArray(value)) return value.map(item => withCopy(item, copy));
+  if (!value || typeof value !== "object") return value;
+  const node = value as Record<string, unknown>;
+  if (typeof node.$copy === "string") return copy[node.$copy];
+  return Object.fromEntries(Object.entries(node).map(([key, item]) => [key, withCopy(item, copy)]));
+}
+
 /**
- * A preview whose fixtures declare an element tree (see server/specimen-tree.ts): every
- * `$component` must be an export of the fixture's own file and every `$copy` a pinned Writer key;
- * the keys it names are added to the preview copy the renderer resolves them from.
+ * The inputs a candidate's specimen reads, each from its pin. A candidate declares them in
+ * `meta.preview.inputs`: `copy`, the Writer keys its fixtures name (`{ "$copy": key }`), and
+ * `slots`, the Designer slots its fixtures mount (`{ "$element": slot }`). The specimen copy is
+ * the pinned Writer text of exactly the declared keys, so a changed Writer pin changes the
+ * specimen; a candidate carries no copy snapshot of its own (`preview.copy` must be empty). A
+ * fixture reference that is not declared, a declared key no pinned Writer slot holds and a
+ * declared slot with no Designer pin are errors. Theme and font items also get the pinned text
+ * of the token specimens' sample keys (SPECIMEN_SAMPLE_COPY_KEYS), which the renderer sets.
+ *
+ * A fixture element tree (see server/specimen-tree.ts) is checked as before: every `$component`
+ * must be an export of the fixture's own file and every `$copy` a pinned Writer key.
  */
-function previewWithTree(root: string, where: string, item: { files?: { path?: unknown; content?: unknown }[]; meta?: { preview?: unknown } }): Record<string, unknown> {
-  const preview = (item.meta?.preview ?? {}) as Record<string, unknown>;
+function specimenInputs(root: string, where: string, item: CandidateItem, mounting = true): SpecimenInputs {
+  const preview = { ...(item.meta?.preview && typeof item.meta.preview === "object" ? item.meta.preview as Record<string, unknown> : {}) };
   const fixtures = preview.fixtures as Record<string, unknown> | undefined;
+  const raw = preview.inputs;
+  const issues: string[] = [];
+  if (raw !== undefined && (!raw || typeof raw !== "object" || Array.isArray(raw) || Object.keys(raw).some(key => key !== "copy" && key !== "slots"))) throw new Error(`candidate ${where}: meta.preview.inputs must be { copy?: [<writer key>], slots?: [<designer slot>] }`);
+  const declared = (raw ?? {}) as { copy?: unknown; slots?: unknown };
+  if (declared.copy !== undefined && !strings(declared.copy)) throw new Error(`candidate ${where}: meta.preview.inputs.copy must list Writer keys`);
+  if (declared.slots !== undefined && !strings(declared.slots)) throw new Error(`candidate ${where}: meta.preview.inputs.slots must list Designer slot ids`);
+  const copyKeys = (declared.copy ?? []) as string[], slotIds = (declared.slots ?? []) as string[];
+  const own = preview.copy;
+  if (own !== undefined && (!own || typeof own !== "object" || Object.keys(own).length)) issues.push("preview.copy is a copy snapshot; the specimen reads Writer copy from the pinned Writer slots through meta.preview.inputs.copy");
+  // Read lazily: most candidates declare no copy, and a Writer scan per load is the slow part.
+  let cached: Record<string, string> | undefined;
+  const writer = () => cached ??= pinnedWriterCopy(root);
   const tree = fixtureChildren(fixtures);
-  if (tree === undefined) return preview;
-  const file = typeof fixtures?.file === "string" ? fixtures.file : typeof preview.entry === "string" ? preview.entry : undefined;
-  const source = item.files?.find(row => row.path === file)?.content;
-  if (typeof source !== "string") throw new Error(`candidate ${where}: the preview tree names no file of the candidate`);
-  const writer = pinnedWriterCopy(root);
-  const issues = specimenTreeIssues(tree, moduleExports(source), writer, itemDependencies(item));
+  if (tree !== undefined) {
+    const file = typeof fixtures?.file === "string" ? fixtures.file : typeof preview.entry === "string" ? preview.entry : undefined;
+    const source = item.files?.find(row => row.path === file)?.content;
+    if (typeof source !== "string") throw new Error(`candidate ${where}: the preview tree names no file of the candidate`);
+    issues.push(...specimenTreeIssues(tree, moduleExports(source), writer(), itemDependencies(item)));
+  }
+  const used = fixtureRefs(fixtures);
+  for (const key of used.copy) if (!copyKeys.includes(key)) issues.push(`fixture $copy ${key} is not a declared input (meta.preview.inputs.copy)`);
+  for (const slot of used.slots) if (!slotIds.includes(slot)) issues.push(`fixture $element ${slot} is not a declared input (meta.preview.inputs.slots)`);
+  for (const key of copyKeys) if (typeof writer()[key] !== "string") issues.push(`input ${key} is not a key of a pinned Writer slot`);
+  if (slotIds.length && !mounting) issues.push(`a mounted input slot mounts no further slot (${slotIds.join(", ")})`);
+  const slots: SlotInput[] = [];
+  if (mounting) for (const slot of slotIds) {
+    const input = slotInput(root, slot);
+    if (typeof input === "string") issues.push(input);
+    else slots.push(input);
+  }
   if (issues.length) throw new Error(`candidate ${where}: ${issues.join("; ")}`);
-  const keys = new Set<string>();
-  const walk = (value: unknown): void => {
-    if (Array.isArray(value)) value.forEach(walk);
-    else if (value && typeof value === "object") {
-      const node = value as Record<string, unknown>;
-      if (typeof node.$copy === "string") keys.add(node.$copy);
-      else Object.values(node).forEach(walk);
-    }
+  const copy: Record<string, string> = Object.fromEntries(copyKeys.map(key => [key, writer()[key]!]));
+  if (item.type === "registry:theme" || item.type === "registry:font") {
+    for (const key of Object.values(SPECIMEN_SAMPLE_COPY_KEYS)) if (typeof writer()[key] === "string") copy[key] = writer()[key]!;
+  }
+  const { inputs: _inputs, ...rest } = preview;
+  return { preview: { ...rest, copy }, slots };
+}
+
+/** The pinned item a `$element` input mounts, or why it cannot be mounted. */
+function slotInput(root: string, slot: string): SlotInput | string {
+  const entry = readSlotEntry(root, "designer", slot);
+  if (!entry?.pin) return `input slot ${slot} has no Designer pin`;
+  let read: { bytes: string; sha256: string };
+  try { read = readCandidate(root, "designer", slot, entry.pin.candidate); } catch { return `input slot ${slot}: its pinned candidate cannot be read`; }
+  if (read.sha256 !== entry.pin.sha256) return `input slot ${slot}: the pinned candidate bytes do not match sha256`;
+  let item: CandidateItem;
+  try { item = JSON.parse(read.bytes); } catch { return `input slot ${slot}: the pinned candidate is not JSON`; }
+  let own: SpecimenInputs;
+  try { own = specimenInputs(root, `${slot}/${entry.pin.candidate}`, item, false); } catch (error) { return `input slot ${slot}: ${error instanceof Error ? error.message : String(error)}`; }
+  const fixtures = own.preview.fixtures as Record<string, unknown> | undefined;
+  if (!fixtures || typeof fixtures.file !== "string" || typeof fixtures.export !== "string" || !fixtures.props || typeof fixtures.props !== "object") return `input slot ${slot}: its pinned preview names no fixture file, export and props`;
+  const file = item.files?.find(row => row.path === fixtures.file);
+  const installed = file && typeof file.path === "string" ? installedPath({ path: file.path, ...(typeof file.type === "string" ? { type: file.type } : {}), ...(typeof file.target === "string" ? { target: file.target } : {}) }) : undefined;
+  if (!installed || !CODE_FILE.test(installed)) return `input slot ${slot}: its fixture file ${String(fixtures.file)} installs no code`;
+  return { slot, sha256: read.sha256, module: `@/${stripExt(installed)}`, export: fixtures.export, props: withCopy(fixtures.props, own.preview.copy as Record<string, string>) };
+}
+
+/** The module a specimen's `$element` inputs mount through. */
+export const SPECIMEN_INPUTS_FILE = "specimen/inputs.tsx";
+
+/**
+ * A specimen whose fixtures mount other slots (`{ "$element": "components.logo" }`, a header's brand)
+ * mounts through one generated module: it imports each input slot's pinned entry through its `@/`
+ * install path (the pinned install index resolves it, as an install does), renders it with that
+ * item's own resolved fixture props, and passes the element where the fixture names the slot. The
+ * candidate bytes are unchanged; the module joins the record's files as the fixture file.
+ */
+function withSlotInputs(where: string, specimen: SpecimenInputs, row: SpecimenElementVersion): SpecimenElementVersion {
+  if (!specimen.slots.length) return row;
+  const preview = (row.preview && typeof row.preview === "object" ? row.preview : {}) as Record<string, unknown>;
+  const fixtures = preview.fixtures && typeof preview.fixtures === "object" ? preview.fixtures as Record<string, unknown> : undefined;
+  if (!fixtures || typeof fixtures.file !== "string" || typeof fixtures.export !== "string") throw new Error(`candidate ${where}: a preview that mounts input slots names its fixture file and export`);
+  const target = posix.relative(posix.dirname(SPECIMEN_INPUTS_FILE), fixtures.file.replace(CODE_FILE, ""));
+  const relative = target.startsWith(".") ? target : `./${target}`;
+  const source = [
+    "// Generated by Producer: the item with the input slots its fixtures mount, each at its pin.",
+    'import { createElement } from "react";',
+    `import * as Item from ${JSON.stringify(relative)};`,
+    `export * from ${JSON.stringify(relative)};`,
+    ...specimen.slots.map((input, index) => `import { ${input.export === "default" ? "default" : input.export} as Input${index} } from ${JSON.stringify(input.module)};`),
+    `const INPUTS = { ${specimen.slots.map((input, index) => `${JSON.stringify(input.slot)}: () => createElement(Input${index}, ${JSON.stringify(input.props)})`).join(", ")} };`,
+    "const mount = (value) => Array.isArray(value) ? value.map(mount)",
+    "  : value && typeof value === \"object\" && !(\"$$typeof\" in value)",
+    "    ? (typeof value.$element === \"string\" && Object.hasOwn(INPUTS, value.$element) ? INPUTS[value.$element]() : Object.fromEntries(Object.entries(value).map(([key, item]) => [key, mount(item)])))",
+    "    : value;",
+    `export function SpecimenInputs(props) { return createElement(Item[${JSON.stringify(fixtures.export)}], mount(props)); }`,
+    "",
+  ].join("\n");
+  return {
+    ...row,
+    files: [...row.files, { path: SPECIMEN_INPUTS_FILE, content: source }],
+    preview: { ...preview, fixtures: { ...fixtures, file: SPECIMEN_INPUTS_FILE, export: "SpecimenInputs" } },
+    // The input pins join the hash: a re-pinned logo is a different build of this header.
+    contentHash: specimen.slots.reduce((hash, input) => hash.update("\0").update(input.slot).update("\0").update(input.sha256), createHash("sha256").update(row.contentHash).update("\0").update(source)).digest("hex"),
   };
-  walk(tree);
-  const own = preview.copy && typeof preview.copy === "object" ? preview.copy as Record<string, unknown> : {};
-  return { ...preview, copy: { ...Object.fromEntries([...keys].map(key => [key, writer[key]!])), ...own } };
 }
 
 /** The module a fixture tree's `<package>.<Export>` elements are mounted from. */

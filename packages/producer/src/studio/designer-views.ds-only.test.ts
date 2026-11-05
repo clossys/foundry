@@ -79,11 +79,21 @@ type Ref = { registry: string; item: string; version: string; hash: string };
  */
 const STOCK_REGISTRIES = new Set(['shadcn', 'shadcn-aria']);
 
-/** Migrated lineage preserves structured objects and arrays as JSON strings. Decode deliberately. */
-export function lineageReferences(refs: unknown): Ref[] {
+const ROW_ID = /^([a-z0-9-]+)\/([a-z0-9-]+)@(\d+\.\d+\.\d+)$/;
+/**
+ * A lineage citation is a reference-manifest row id (`<registry>/<item>@<version>`), resolved to that
+ * row and its hash; an id with no manifest row authorizes nothing. Migrated lineage may still hold
+ * structured objects and arrays as JSON strings; those are decoded deliberately.
+ */
+export function lineageReferences(refs: unknown, manifest: { items?: { registry: string; name: string; version: string; hash: string }[] } = referenceManifest()): Ref[] {
   if (!Array.isArray(refs)) return [];
   const rows: unknown[] = refs.flatMap(value => {
     if (typeof value !== 'string') return [];
+    const id = ROW_ID.exec(value);
+    if (id) {
+      const row = (manifest.items ?? []).find(item => item.registry === id[1] && item.name === id[2] && item.version === id[3]);
+      return row ? [{ registry: row.registry, item: row.name, version: row.version, hash: row.hash }] : [];
+    }
     try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : [parsed]; } catch { return []; }
   });
   return rows.filter((row): row is Ref => !!row && typeof row === 'object'
@@ -102,6 +112,10 @@ const vendored = new Map<string, unknown>();
 function onceFor<T>(key: string, read: () => T): T {
   if (!vendored.has(key)) vendored.set(key, read());
   return vendored.get(key) as T;
+}
+
+function referenceManifest(references = REFERENCES): { items?: { registry: string; name: string; version: string; hash: string }[] } {
+  return onceFor(`manifest:${references}`, () => JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'))) as any;
 }
 
 /** Read only the exact valid canonical pin; a stale legacy record cannot authorize markup. */
@@ -128,9 +142,9 @@ export function frameBlockMarkup(folder: string, clossys = CLOSSYS, references =
 export function elementBlockMarkup(folder: string, prefix: 'frames.' | 'sections.', clossys = CLOSSYS, references = REFERENCES): Set<string> {
   const pinned = pinnedElement(folder, prefix, clossys);
   if (!pinned) return new Set();
-  const manifest = onceFor(`manifest:${references}`, () => JSON.parse(readFileSync(join(references, '../manifest.json'), 'utf8'))) as any;
+  const manifest = referenceManifest(references) as any;
   const markup = new Set<string>();
-  for (const ref of lineageReferences(pinned.item.meta.source.ref)) {
+  for (const ref of lineageReferences(pinned.item.meta.source.ref, manifest)) {
     const exact = manifest.items.find((item: any) => item.registry === ref.registry && item.name === ref.item && item.version === ref.version && item.hash === ref.hash);
     if (!exact) continue;
     const root = join(ref.registry === 'shadcn' ? references : join(references, '..', ref.registry), `${ref.item}@${ref.version}`, 'registry');
@@ -365,6 +379,10 @@ describe('Studio sections are ds-only', () => {
     // The aria-nova stock registry qualifies; an app-source or third-party snapshot never does.
     expect(lineageReferences(['shadcn-aria', 'shadcn-app', 'tailark-oss', 'aria'].map(registry => JSON.stringify({ registry, item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'b'.repeat(64)}` })))
       .map(ref => ref.registry)).toEqual(['shadcn-aria']);
+    // A manifest row id resolves to its row; an id with no row authorizes nothing.
+    const manifest = { items: [{ registry: 'shadcn-aria', name: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }] };
+    expect(lineageReferences(['shadcn-aria/sidebar-15@4.23.0', 'shadcn-aria/no-such-item@9.9.9', 'shadcn-app/sidebar-15@4.23.0'], manifest))
+      .toEqual([{ registry: 'shadcn-aria', item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }]);
     expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
     // studio-slot-groups places studio-specimen, declared by its engine-derived pin (derive-element-deps); the probe re-pin below is the positive case for another section.
     expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual(['studio-slot-groups -> ../studio-specimen']);

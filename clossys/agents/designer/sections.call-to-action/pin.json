@@ -1,7 +1,7 @@
 {
-  "candidate": "call-to-action-v3.json",
-  "sha256": "922aedaca62acba4f6f9b36b80987ccfac5f7a7ea0412ea1c221173543caf2bf",
+  "candidate": "call-to-action-v4.json",
+  "sha256": "19aa8c4ef6094df91dac85f6a8b54559e2eb1e0be43bbed2de087296fa1ba3b7",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T10:52:40.978Z"
+  "at": "2026-11-05T11:46:41.065Z"
 }

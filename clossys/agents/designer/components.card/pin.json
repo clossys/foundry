@@ -1,7 +1,7 @@
 {
-  "candidate": "card-v2.json",
-  "sha256": "ee9da96eb4400214c589059e168b895fe11fd3567b6041f5b535cc94a8b3a951",
-  "decidedBy": "owner:2026-11-03 fix-all",
-  "basis": "bulk",
-  "at": "2026-11-03T09:30:00Z"
+  "candidate": "card-v3.json",
+  "sha256": "f60194f7c4a1c801963749222e806f21b35da1040b49552c31b314c1ef002fe9",
+  "decidedBy": "planner:DS-COMPLETE",
+  "basis": "planner",
+  "at": "2026-11-05T11:46:37.767Z"
 }

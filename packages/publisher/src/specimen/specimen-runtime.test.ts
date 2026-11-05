@@ -11,7 +11,7 @@ import type { SpecimenFile } from './types.js';
 const { JSDOM } = createRequire(import.meta.url)('jsdom');
 const workspace = fileURLToPath(new URL('../../../../', import.meta.url));
 const detail = slotDetail(workspace, 'designer', 'sections.studio.checks')!;
-const props = { checks: slotDetailInputs(detail, { gallery: agent => `/${agent}`, leaf: (agent, id) => `/${agent}/${id}` }, 'light').checks };
+const props = { checks: slotDetailInputs(detail, { gallery: agent => `/${agent}`, leaf: (agent, id) => `/${agent}/${id}`, label: () => undefined, back: { href: '/designer', label: 'Designer' } }, 'light').checks };
 const files: SpecimenFile[] = [
   // This helper precedes the entry and is executed by it. Props are the native detail projection.
   { path: 'helpers.tsx', content: 'export const finding = checks => checks.find(row => !row.ok)?.label ?? checks[0].label;' },

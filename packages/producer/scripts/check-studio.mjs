@@ -15,6 +15,12 @@
  * http://127.0.0.1:4617 and stops the server afterwards. A failed build or start is reported, and
  * the live sub-checks still run (and fail). With STUDIO_ORIGIN set, that Studio is used as is.
  *
+ * Each sub-check gets the --timeout bound (default 600 s). A sub-check whose manifest row names
+ * `"timeout": "studio-routes"` walks every Studio map entry, so its bound is sized from the route
+ * count instead: the check module's own `timeoutSeconds()` (Chrome start plus the worst case per
+ * route, shared across its bounded worker pool), never less than the --timeout bound. A sub-check
+ * that still runs past its bound is killed and reported red with its timeout; it never passes.
+ *
  * Usage: node scripts/check-studio.mjs [--only <id substring>]... [--id <exact id>]... [--json FILE] [--timeout SECONDS]
  * Exit 0 when every sub-check exits 0, otherwise 1.
  */
@@ -58,6 +64,19 @@ function run(check, env, timeoutMs) {
 
 const delay = ms => new Promise(accept => setTimeout(accept, ms));
 
+/** Sized bounds a manifest row may name in `timeout`: each resolves to seconds from the current tree. */
+export const SIZED_TIMEOUTS = {
+  "studio-routes": async () => (await import("../studio/checks/check-rendered-provenance.mjs")).timeoutSeconds(),
+};
+
+/** The bound for one sub-check: the runner's bound, or for a sized row the larger of that and its sized bound. */
+export async function checkTimeoutMs(check, timeoutMs) {
+  if (check.timeout === undefined) return timeoutMs;
+  const size = SIZED_TIMEOUTS[check.timeout];
+  if (!size) throw new Error(`sub-check ${check.id}: unknown timeout ${JSON.stringify(check.timeout)} (known: ${Object.keys(SIZED_TIMEOUTS).join(", ")})`);
+  return Math.max(timeoutMs, (await size()) * 1000);
+}
+
 /**
  * Build dist/studio from the current source and start `produce` on STUDIO_PORT. Resolves to
  * { origin, stop } once /api/health reports the Studio ready; rejects with the reason otherwise.
@@ -98,6 +117,8 @@ export async function checkStudio({ only = [], ids = [], timeoutMs = 600_000, lo
   const checks = manifest.checks.filter(check => (!only.length && !ids.length) || only.some(text => check.id.includes(text)) || ids.includes(check.id));
   const unknown = ids.filter(id => !manifest.checks.some(check => check.id === id));
   if (unknown.length) throw new Error(`no such sub-check id: ${unknown.join(", ")}`);
+  const bounds = new Map();
+  for (const check of checks) bounds.set(check, await checkTimeoutMs(check, timeoutMs));
   const out = mkdtempSync(join(tmpdir(), "check-studio-"));
   const external = process.env.STUDIO_ORIGIN;
   const env = { ...process.env, STUDIO_ORIGIN: external ?? `http://127.0.0.1:${STUDIO_PORT}`, STUDIO_CHECK_OUT: out, FORCE_COLOR: "0", NO_COLOR: "1" };
@@ -108,7 +129,7 @@ export async function checkStudio({ only = [], ids = [], timeoutMs = 600_000, lo
   const results = [];
   try {
     for (const check of checks) {
-      const result = await run(check, env, timeoutMs);
+      const result = await run(check, env, bounds.get(check));
       if (check.kind === "live" && studioError) result.tail = `check:studio: Studio not started: ${studioError}\n${result.tail}`;
       results.push(result);
       log(`${result.exitCode === 0 ? "PASS" : "FAIL"}  ${result.id}  (exit ${result.exitCode}${result.failures ? `, ${result.failures} failing` : ""}, ${result.seconds}s)`);

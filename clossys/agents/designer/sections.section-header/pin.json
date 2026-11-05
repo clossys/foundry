@@ -1,7 +1,7 @@
 {
-  "candidate": "section-header-v4.json",
-  "sha256": "769cf6ed74a2df67121b6a6367dd94beea28f0fdaf476f4dceff9b465473a44b",
+  "candidate": "section-header-v5.json",
+  "sha256": "fa061c9f6e778319dbf33cf9e16fd65e1d63a5f71a427d65ad4193dac96dc490",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T10:53:25.287Z"
+  "at": "2026-11-05T11:46:43.488Z"
 }

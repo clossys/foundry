@@ -12,6 +12,7 @@ export { createSpecimenBuilder, specimenEntry, specimenExport, SPECIMEN_RENDERER
 export { installedPath, REGISTRY_DEFAULT_DIRS } from "./installed-path.js";
 export type { SpecimenBuild, SpecimenBuilder, SpecimenBuilderOptions, SpecimenEsbuild } from "./build.js";
 export { renderSpecimenPage, resolveFixtures, textCopy } from "./render.js";
+export { SPECIMEN_SAMPLE_COPY_KEYS } from "./render-tokens.js";
 export type { SpecimenPageInput, SpecimenProblem } from "./render.js";
 export { SPECIMEN_HEALTH_MESSAGE_TYPE, SPECIMEN_HEALTH_REQUEST_TYPE, SPECIMEN_HEALTH_VERSION, specimenReporterScript } from "./health-reporter.js";
 export type { SpecimenReporterConfig } from "./health-reporter.js";

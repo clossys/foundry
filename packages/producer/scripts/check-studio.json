@@ -228,7 +228,8 @@
       "id": "producer check-rendered-provenance (live)",
       "cwd": "packages/producer",
       "run": "node studio/checks/check-rendered-provenance.mjs \"$STUDIO_ORIGIN\"",
-      "kind": "live"
+      "kind": "live",
+      "timeout": "studio-routes"
     },
     {
       "id": "producer check-theme-parity (live)",

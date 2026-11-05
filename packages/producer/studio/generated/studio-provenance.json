@@ -1,8 +1,8 @@
 {
   "frames.studio-shell": {
     "data-clossys-slot": "frames.studio-shell",
-    "data-clossys-candidate": "studio-shell-v17.json",
-    "data-clossys-hash": "sha256:9c5554223afd18e45710d5c3defd83809bd2907a8cae95c8303967332a949f89"
+    "data-clossys-candidate": "studio-shell-v18.json",
+    "data-clossys-hash": "sha256:00235cd5f35927858a4552918086af6de30749a4540965da5f3937fadcc9cce6"
   },
   "sections.studio.page-header": {
     "data-clossys-slot": "sections.studio.page-header",
@@ -11,8 +11,8 @@
   },
   "sections.studio.home": {
     "data-clossys-slot": "sections.studio.home",
-    "data-clossys-candidate": "studio-home-v8.json",
-    "data-clossys-hash": "sha256:929527526ce2c6424c9d31efc9dfa20e0bf3a781a9273a9c0a97afa74facfa24"
+    "data-clossys-candidate": "studio-home-v9.json",
+    "data-clossys-hash": "sha256:659f7d716f87d036bab7d1e6839e860a11bf3336be3dbdccb4ed2308c8acb343"
   },
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
@@ -46,8 +46,8 @@
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
-    "data-clossys-candidate": "studio-slot-groups-v6.json",
-    "data-clossys-hash": "sha256:e5743f7d3b86a1352e53681b090f7c14c2e1626566615c7e547163734442c90a"
+    "data-clossys-candidate": "studio-slot-groups-v8.json",
+    "data-clossys-hash": "sha256:0045920111b2ed2d6d4001c164e831cf283ac05211abee6daf70c38fcb825c06"
   },
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",
@@ -61,13 +61,13 @@
   },
   "sections.studio.specimen": {
     "data-clossys-slot": "sections.studio.specimen",
-    "data-clossys-candidate": "studio-specimen-v10.json",
-    "data-clossys-hash": "sha256:f9435c22a9cf44a4eee33f717c57e2911279131a2af219b9c75b069bb6e5b31d"
+    "data-clossys-candidate": "studio-specimen-v11.json",
+    "data-clossys-hash": "sha256:2691cce4dc70400c4331b768a6cd39c340a86b79f7d951fba0ef1cea1fabe610"
   },
   "sections.studio.options": {
     "data-clossys-slot": "sections.studio.options",
-    "data-clossys-candidate": "studio-options-v6.json",
-    "data-clossys-hash": "sha256:8595e608bdeda2d73f7dc96e8c3abcfdfd402b2429039bb0ffae79c53b15ee6a"
+    "data-clossys-candidate": "studio-options-v7.json",
+    "data-clossys-hash": "sha256:163a29a691789e235c478380785df11d818aac80c7f549cbcc97816174caae78"
   },
   "sections.studio.checks": {
     "data-clossys-slot": "sections.studio.checks",

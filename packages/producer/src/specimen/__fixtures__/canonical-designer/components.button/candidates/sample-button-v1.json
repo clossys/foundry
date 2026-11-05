@@ -50,6 +50,7 @@
     "preview": {
       "schema": "clossys.preview/1",
       "fixtures": {
+        "file": "registry/ui/sample-button.tsx",
         "children": "Continue"
       },
       "copy": {},

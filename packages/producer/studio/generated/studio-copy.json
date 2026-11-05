@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "03af60d2de97926f16f3f4955ac64773b49e48ec8660b7505603e04365e06f28",
+  "revision": "51b07a3148550dade293c21445dffef25f36d51986a53c074153d0c0079facd6",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2609,6 +2609,102 @@
       "id": "studio.run.empty.description",
       "text": "This system will show how the product is operated once its team and steps are declared.",
       "context": "components/StudioPage.tsx",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.theme-title",
+      "text": "Aa Theme",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.theme-text",
+      "text": "The quick brown fox jumps over the lazy dog. 0123456789",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.glyph",
+      "text": "Aa",
+      "context": "../src/server/installed-specimens.ts, ../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.font-text",
+      "text": "The quick brown fox",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.display",
+      "text": "Display",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-1",
+      "text": "Heading 1",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-2",
+      "text": "Heading 2",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-3",
+      "text": "Heading 3",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-4",
+      "text": "Heading 4",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.heading-5",
+      "text": "Heading 5",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.body",
+      "text": "Body",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.ramp.small",
+      "text": "Small",
+      "context": "../src/server/installed-specimens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.pangram",
+      "text": "The quick brown fox jumps over the lazy dog",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.pangram-alt",
+      "text": "Sphinx of black quartz, judge my vow",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.characters",
+      "text": "0123456789 ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.specimen-sample.motion",
+      "text": "Motion preview",
+      "context": "../../publisher/src/specimen/render-tokens.ts",
       "status": "draft"
     },
     {

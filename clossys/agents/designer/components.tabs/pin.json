@@ -1,7 +1,7 @@
 {
-  "candidate": "tabs-v2.json",
-  "sha256": "176df88c6eb505881d429534b06e165fc165b8df5a37095ea6671305cfb9fc85",
-  "decidedBy": "owner:2026-11-03 fix-all",
-  "basis": "bulk",
-  "at": "2026-11-03T09:30:00Z"
+  "candidate": "tabs-v3.json",
+  "sha256": "5fc5502fc84fa3811a4e5f769236aedd81dc5d9c3525b905dd3f9f033a9ee8f3",
+  "decidedBy": "planner:DS-COMPLETE",
+  "basis": "planner",
+  "at": "2026-11-05T11:46:38.863Z"
 }

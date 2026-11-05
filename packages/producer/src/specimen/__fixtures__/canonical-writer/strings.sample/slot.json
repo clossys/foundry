@@ -1,0 +1,15 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "strings.sample",
+  "agent": "writer",
+  "kind": "strings",
+  "ia": {
+    "l0": "strings",
+    "l1": "strings",
+    "l2": "sample",
+    "order": 0
+  },
+  "contract": {},
+  "inputs": [],
+  "uses": []
+}

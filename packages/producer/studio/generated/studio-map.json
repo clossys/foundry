@@ -46072,7 +46072,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 17
+      "version": 18
     },
     {
       "slot": "sections.studio.page-header",
@@ -46082,7 +46082,7 @@
     {
       "slot": "sections.studio.home",
       "element": "studio-home",
-      "version": 8
+      "version": 9
     },
     {
       "slot": "sections.module.outline",
@@ -46117,7 +46117,7 @@
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 6
+      "version": 8
     },
     {
       "slot": "sections.producer.system-empty",
@@ -46132,12 +46132,12 @@
     {
       "slot": "sections.studio.specimen",
       "element": "studio-specimen",
-      "version": 10
+      "version": 11
     },
     {
       "slot": "sections.studio.options",
       "element": "studio-options",
-      "version": 6
+      "version": 7
     },
     {
       "slot": "sections.studio.checks",
