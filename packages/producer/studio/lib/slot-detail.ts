@@ -3,7 +3,7 @@ import { optionCopy, optionsCopy } from './options-copy';
 import { checksCopy } from './checks-copy';
 import { referencesCopy } from './references-copy';
 import { contractCopy } from './contract-copy';
-import { copyText, resolveCopy, studioCopy } from './studio-copy';
+import { copyText, resolveCopy, studioCopy, StudioCopyError } from './studio-copy';
 /** Detail inputs only; gallery rendering has its own projection. */
 import type { SlotDetail, DetailCandidate } from '../../src/server/slot-detail';
 import type { SlotCardState, SlotGalleryCard } from '../../src/server/slot-gallery';
@@ -123,10 +123,10 @@ function historyInput(rows: HistoryRow[]): HistoryInput {
 export async function loadSlotDetail(agent: string, slug: string, signal: AbortSignal): Promise<SlotDetail | null> {
   const response = await fetch(producerUrl(`/api/slots/${encodeURIComponent(agent)}/${encodeURIComponent(slug)}`), { signal, cache: 'no-store' });
   if (response.status === 404) return null;
-  if (!response.ok) throw new Error(studioCopy("studio.slot-detail-could-not-load", { value0: String(response.status) }));
+  if (!response.ok) throw new StudioCopyError("studio.slot-detail-could-not-load", { value0: String(response.status) });
   const value = await response.json();
   if (value?.state !== 'ready' || !value.detail || !Array.isArray(value.detail.candidates) || typeof value.detail.id !== 'string') {
-    throw new Error(studioCopy("studio.slot-detail-response-is-invalid"));
+    throw new StudioCopyError("studio.slot-detail-response-is-invalid");
   }
   return value.detail;
 }

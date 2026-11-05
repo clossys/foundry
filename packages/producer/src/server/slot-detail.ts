@@ -1,7 +1,7 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
 import { copyRef, type CopyText } from "./copy-ref.js";
-import { slotLabel } from "../records/slot-labels.js";
+import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent } from "../records/slot-model/index.js";
@@ -82,7 +82,7 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   const refs = [...new Set([...doc.inputs, ...doc.uses])];
   const inputReadiness = placed ? readiness(consumer, agent, id, index) : { ready: false, blockedBy: [{ slot: id, reason: "invalid-slot" as const }] };
   return {
-    agent, id, name: slotLabel(consumer, agent, id), kind: doc.kind, trail: [node?.label, group?.label].filter((label): label is string => !!label),
+    agent, id, name: slotLabel(consumer, agent, id), kind: doc.kind, trail: [node, group].flatMap(row => row ? [iaLabel(consumer, agent, row.id)] : []),
     contract: doc.contract, inputs: doc.inputs, uses: doc.uses, usedBy: usedByPlaced(consumer, id),
     links: refs.flatMap(ref => { const target = index.get(ref); return target ? [{ agent: target.agent, id: ref }] : []; }),
     candidates, shown: (pinCandidate ?? candidates.at(-1))?.name, pin: entry.pin, ...(entry.pin ? { status: pinStatus(entry.pin.basis) } : {}), state: cardState(entry),

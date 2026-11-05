@@ -1,8 +1,13 @@
 /**
- * Slot display labels. A slot's label is the Writer's name for it: the pinned `strings.names`
- * record `<agent>.item.<slot id>`. A slot the Writer has not named yet shows its id without the
- * L0 prefix the IA already shows (`context.market.size` reads "Market size"); the id itself is
- * never the label.
+ * Display labels. A label is the Writer's name for a registry id, read from the pinned
+ * `strings.names` records:
+ *
+ *   `<agent>.item.<slot id>`   a slot (`director.item.context.market.size`);
+ *   `<agent>.ia.<IA id>`       an IA node, group or layer (`designer.ia.themes.colors`).
+ *
+ * There is no fallback: an id the Writer has not named throws, so a slot or IA group added without
+ * its name fails the projection that would show it (`check:copy-source` names every missing one
+ * before that). No other module turns an id into words.
  */
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
 import { parseFrontmatter, type SlotAgent } from "./slot-model/index.js";
@@ -12,7 +17,7 @@ const NAMES = "strings.names";
 const cache = new Map<string, { key: string; names: ReadonlyMap<string, string> }>();
 
 /** The pinned Writer names, keyed by record context; empty without a valid pin. */
-function pinnedNames(consumer: string): ReadonlyMap<string, string> {
+export function pinnedNames(consumer: string): ReadonlyMap<string, string> {
   let pin;
   try { pin = readPin(consumer, "writer", NAMES); } catch { return new Map(); }
   if (!pin) return new Map();
@@ -32,34 +37,34 @@ function pinnedNames(consumer: string): ReadonlyMap<string, string> {
         }
       }
     }
-  } catch { /* unreadable names: every slot falls back */ }
+  } catch { /* unreadable names: every label below throws */ }
   cache.set(consumer, { key, names });
   return names;
 }
 
-/** The id without its L0 prefix, humanised: the fallback when the Writer has no name. */
-export function slotIdLabel(id: string): string {
-  const rest = id.includes(".") ? id.slice(id.indexOf(".") + 1) : id;
-  const words = rest.replace(/[.-]+/g, " ").trim();
-  return words ? words.replace(/^\w/, c => c.toUpperCase()) : id;
-}
+/** The Writer name context of a slot. */
+export const slotNameKey = (agent: SlotAgent | string, id: string) => `${agent}.item.${id}`;
+/** The Writer name context of an IA node, group or layer. */
+export const iaNameKey = (agent: SlotAgent | string, id: string) => `${agent}.ia.${id}`;
 
-/**
- * A record key (a lexicon rule, a cell tail, a layer) as words: the fallback label for a key the
- * Writer has not named. The one id-to-words rule outside the Writer names, kept here with the slot
- * fallback so no other module derives a label from an id.
- */
-export function keyLabel(key: string): string {
-  return key.replace(/[-_.]+/g, " ").trim().replace(/^\w/, c => c.toUpperCase());
-}
+const named = (names: ReadonlyMap<string, string>, context: string): string => {
+  const name = names.get(context);
+  if (name === undefined) throw new Error(`No Writer name for ${context} (pinned writer/${NAMES})`);
+  return name;
+};
 
 /** The display label of one slot. `consumer` is the consumer root (`<root>/clossys`). */
 export function slotLabel(consumer: string, agent: SlotAgent | string, id: string): string {
-  return pinnedNames(consumer).get(`${agent}.item.${id}`) ?? slotIdLabel(id);
+  return named(pinnedNames(consumer), slotNameKey(agent, id));
 }
 
 /** `slotLabel` for many slots at once: the Writer names are read once, for a whole gallery. */
 export function slotLabels(consumer: string): (agent: SlotAgent | string, id: string) => string {
   const names = pinnedNames(consumer);
-  return (agent, id) => names.get(`${agent}.item.${id}`) ?? slotIdLabel(id);
+  return (agent, id) => named(names, slotNameKey(agent, id));
+}
+
+/** The display label of one IA node, group or layer. */
+export function iaLabel(consumer: string, agent: SlotAgent | string, id: string): string {
+  return named(pinnedNames(consumer), iaNameKey(agent, id));
 }

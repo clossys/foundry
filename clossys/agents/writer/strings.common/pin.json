@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v13.md",
-  "sha256": "9de0199593a09095aaed941d0800efd2ac605e0b148170ee3f5d00450da28c77",
-  "decidedBy": "planner:DIRECTOR-RENAME",
+  "candidate": "studio-v14.md",
+  "sha256": "3f9e57a2b41f1e119992150a612569d27d97fb66dbb1087022f05d8746e3e480",
+  "decidedBy": "planner:SEEN-COPY",
   "basis": "planner",
-  "at": "2026-11-04T14:57:23.545Z"
+  "at": "2026-11-05T05:31:30.039Z"
 }

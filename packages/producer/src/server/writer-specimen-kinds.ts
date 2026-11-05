@@ -4,7 +4,6 @@
  * no `text` and so need their own kind. Each kind reads only the cell's parsed records. Its words
  * (table labels, columns, summaries, empty cells) are Writer copy references; record values stay data.
  */
-import { keyLabel } from "../records/slot-labels.js";
 import { copyRef, type CopyText } from "./copy-ref.js";
 
 export type WriterSpecimenKind = "strings" | "voice" | "claims" | "naming";
@@ -61,7 +60,7 @@ function voice(cellId: string, records: readonly Fields[]): WriterKindSpecimen {
   const tables: SpecimenTable[] = [];
   if (rules.length) tables.push({
     id: "principles", label: copyRef("studio.principles"), columns: [copyRef("studio.rule"), copyRef("studio.do")], prose: 1,
-    rows: rules.map((record, index) => ({ key: rowKey(record, index), cells: [{ text: keyLabel(text(record.rule) || contextKey(record, cellId)) }, { text: text(record.value) }] })),
+    rows: rules.map((record, index) => ({ key: rowKey(record, index), cells: [{ text: text(record.rule) || contextKey(record, cellId) }, { text: text(record.value) }] })),
   });
   if (prefer.length) tables.push({ id: "do", label: copyRef("studio.do-preferred-words"), columns: [copyRef("studio.word"), copyRef("studio.forms"), copyRef("studio.why")], rows: prefer.map(termRow) });
   if (avoid.length) tables.push({ id: "dont", label: copyRef("studio.dont-avoided-words"), columns: [copyRef("studio.word"), copyRef("studio.also-avoid"), copyRef("studio.why")], rows: avoid.map(termRow) });
@@ -88,7 +87,7 @@ function claims(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
     return {
       key: rowKey(record, index),
       cells: [
-        { text: keyLabel(contextKey(record, cellId)), status: text(record.status) || "draft" },
+        { text: contextKey(record, cellId), status: text(record.status) || "draft" },
         { text: strings(record.phrasings).join("\n") || copyRef("studio.no-phrasing-recorded") },
         evidence,
       ],
@@ -116,7 +115,7 @@ function naming(cellId: string, records: readonly Fields[]): WriterKindSpecimen 
     return {
       key: rowKey(record, index),
       cells: [
-        { text: keyLabel(contextKey(record, cellId)) },
+        { text: contextKey(record, cellId) },
         { text: text(record.term) },
         { text: strings(record.forms).join(", ") || copyRef("studio.contract-none") },
         { text: usage(rule && rule !== text(record.term) ? rule : "", casing) },

@@ -1,5 +1,5 @@
 import { studioCopy } from './studio-copy';
-import { studioGroups, studioLeafTitle } from './studio-route-map';
+import { studioGroups } from './studio-route-map';
 /**
  * Studio reports: Producer facts that used to replace the page now render as
  * a non-blocking list. The session token in /api/config is never read here.
@@ -9,47 +9,27 @@ export interface StudioReport { id: string; area: 'selection' | 'theme' | 'compi
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
-/** Remove gate prefixes and local filesystem paths from a Producer message. */
-export function reportText(message: string): string {
-  return message
-    .replace(/\bNEED:\s*/g, '')
-    .replace(/(?:\/[^\s/:]+)+\/cells\/([^\s/:]+)\/v(\d+)\.md:?/g, (_, cell: string, version: string) => `${cell} v${version}:`)
-    .replace(/(?:\/[^\s/:]+){2,}/g, 'a local path')
-    .replace(/\s*\(sha256:[a-f0-9]{64}\)/g, '')
-    .replace(/\b(assets|components|frames|sections|tokens)\.([a-z][a-z0-9-]*)/g, (_, layer: string, name: string) => layerLabel(layer, name))
-    .replace(/\s{2,}/g, ' ')
-    .trim();
-}
-
-/** A Designer slot named in a message, by its projected label; a slot the map does not hold keeps its id. */
-function layerLabel(layer: string, name: string): string {
-  return studioLeafTitle('designer', `${layer}.${name}`) ?? `${layer}.${name}`;
-}
-
-/** An agent by its content-map group title; an agent the map does not hold keeps its id. */
+/** An agent by its content-map group title (Writer name); an agent the map does not hold keeps its id, which is data. */
 const agentTitle = (agent: string) => studioGroups().find(group => group.id === agent)?.label ?? agent;
 
-function slotLabel(message: string): string | undefined {
-  const slot = /slot ([a-z][a-z0-9-]*)\.([a-z][a-z0-9-]*)/.exec(message);
-  return slot ? layerLabel(slot[1]!, slot[2]!) : undefined;
-}
-
+/**
+ * Producer reports become Writer-worded rows. A Producer `message` is a diagnostic for the
+ * terminal (the server logs it); Studio never shows one, so no report reads it.
+ */
 export function studioReports(config: unknown): StudioReport[] {
   if (!object(config)) return [{ id: 'config', area: 'selection', severity: 'error', title: studioCopy("studio.producer-configuration-unavailable"), detail: studioCopy("studio.studio-could-not-read-the-producer-configuration") }];
   const reports: StudioReport[] = [];
   const selection = object(config.selection) ? config.selection : undefined;
   if (!selection) reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: studioCopy("studio.designer-selection-unavailable"), detail: studioCopy("studio.producer-supplied-no-designer-selection-studio-renders") });
   else if (typeof selection.runtimeUrl !== 'string') {
-    const message = typeof selection.message === 'string' ? selection.message : studioCopy("studio.the-designer-selection-is-not-compiled");
-    const slot = slotLabel(message);
-    const reason = reportText(message).split(': ').at(-1)!.replace(/\s+for slot .*$/, '').replace(/\.$/, '');
-    reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: slot ? studioCopy("studio.designer-selection-detail", { value0: String(slot) }) : studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason }) });
+    const reason = studioCopy("studio.the-designer-selection-is-not-compiled").replace(/\.$/, '');
+    reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason }) });
   }
   const theme = object(config.theme) ? config.theme : undefined;
-  if (theme?.source === 'foundry' || theme?.source === 'error') reports.push({ id: 'theme', area: 'theme', severity: theme.source === 'error' ? 'error' : 'info', title: studioCopy("studio.consumer-theme-not-compiled"), detail: typeof theme.message === 'string' ? reportText(theme.message) : studioCopy("studio.producer-is-using-the-foundry-theme") });
+  if (theme?.source === 'foundry' || theme?.source === 'error') reports.push({ id: 'theme', area: 'theme', severity: theme.source === 'error' ? 'error' : 'info', title: studioCopy("studio.consumer-theme-not-compiled"), detail: studioCopy("studio.producer-is-using-the-foundry-theme") });
   if (Array.isArray(config.compilation)) for (const row of config.compilation) {
     if (!object(row) || typeof row.agent !== 'string' || row.state !== 'error') continue;
-    reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: studioCopy("studio.agent-compile-failed", { agent: agentTitle(row.agent) }), detail: typeof row.message === 'string' ? reportText(row.message) : studioCopy("studio.producer-could-not-compile-these-cells") });
+    reports.push({ id: `compile:${row.agent}`, area: 'compile', severity: 'error', agent: row.agent, title: studioCopy("studio.agent-compile-failed", { agent: agentTitle(row.agent) }), detail: studioCopy("studio.producer-could-not-compile-these-cells") });
   }
   return reports;
 }

@@ -1,4 +1,5 @@
 import { attachStudioUpgrade } from "./studio-upgrade.js";
+import { sendWriterText } from "./writer-text.js";
 import { studioChecks } from './studio-checks.js';
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { once } from "node:events";
@@ -87,7 +88,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
   let resolveClosed!: () => void;
   const closed = new Promise<void>(resolve => { resolveClosed = resolve; });
   const server = createServer((request, response) => { void handle(request, response).catch(() => {
-    if (!response.headersSent) json(response, 500, { error: "Request could not be completed" }); else response.destroy();
+    if (!response.headersSent) sendWriterText(response, 500, library, "studio.error.request-failed"); else response.destroy();
   }); });
   const closeUpgrades = attachStudioUpgrade(server, { publicPort: () => port, childPort: () => child?.port, token });
   const close = (): Promise<void> => closing ??= (async () => {
@@ -236,14 +237,15 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       response.end(request.method === "HEAD" ? undefined : svg); return;
     }
     if (pathname === "/preview" || pathname.startsWith("/preview/")) { await servePreview(options.root, pathname, request.method ?? "", response, options.installOut, new URL(raw, origin).searchParams, served, origin); return; }
-    if (!child) { json(response, 503, { error: "Studio child is not ready" }); return; }
+    // A page request a person makes: the failure is Writer copy, never a JSON literal.
+    if (!child) { sendWriterText(response, 503, library, "studio.error.studio-not-ready"); return; }
     const headers = cleanHeaders(request.headers);
     headers.host = `127.0.0.1:${child.port}`;
     // A fresh loopback connection per request: the shared keep-alive agent can hand out a socket the child already closed (ECONNRESET, served as 502).
     const upstream = httpRequest({ hostname: "127.0.0.1", port: child.port, path: raw, method: request.method, headers, agent: false }, upstreamResponse => {
       response.writeHead(upstreamResponse.statusCode ?? 502, cleanHeaders(upstreamResponse.headers)); upstreamResponse.pipe(response);
     });
-    upstream.on("error", () => { if (!response.headersSent) json(response, 502, { error: "Studio child is unavailable" }); else response.destroy(); });
+    upstream.on("error", () => { if (!response.headersSent) sendWriterText(response, 502, library, "studio.error.studio-unavailable"); else response.destroy(); });
     request.once("aborted", () => upstream.destroy());
     response.once("close", () => upstream.destroy());
     request.pipe(upstream);

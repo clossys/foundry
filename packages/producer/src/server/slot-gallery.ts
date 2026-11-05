@@ -2,7 +2,7 @@
 import { hasAgentModel, hasPinFile as hasPinRecord, listSlots, readCandidate, readIa, readSlot, readSlotEntry, type SlotEntry } from '../records/slots.js';
 import { type IaDoc, type NotNeeded, parseFrontmatter, validateCandidate, validateSlotDoc, type SlotAgent, type SlotKind, type SlotStateRejection } from '../records/slot-model/index.js';
 import { parseWriterSlotBody } from '@clossys/writer/slot-body';
-import { slotIdLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
+import { iaLabel, slotLabel, slotLabels } from '../records/slot-labels.js';
 import { copyRef, type CopyText } from './copy-ref.js';
 
 /** Why a slot card has nothing to show: an id Studio maps to Writer copy. */
@@ -112,10 +112,10 @@ export function recordLead(input: RecordSpecimenInput | undefined, rows = 2, len
  * slot position; with `layers` each layer is a tab and an `<l1>/<l2>` ref
  * shows one L2 group as its own L1 (display only, folders never move).
  */
-function displayOrder(ia: IaDoc, agent: SlotAgent) {
+function displayOrder(consumer: string, ia: IaDoc, agent: SlotAgent) {
   const rows: { layer?: { id: string; label: string }; l1: { id: string; label: string }; group: IaDoc['nodes'][number]['children'][number] }[] = [];
   if (!ia.layers) {
-    for (const node of ia.nodes) for (const group of node.children) rows.push({ l1: node, group });
+    for (const node of ia.nodes) for (const group of node.children) rows.push({ l1: { id: node.id, label: iaLabel(consumer, agent, node.id) }, group });
     return rows;
   }
   const nodes = new Map(ia.nodes.map(node => [node.id, node]));
@@ -123,11 +123,12 @@ function displayOrder(ia: IaDoc, agent: SlotAgent) {
     const [l1 = '', l2] = ref.split('/');
     const node = nodes.get(l1);
     if (!node) throw new Error(`Invalid ${agent} IA layer: ${ref}`);
-    if (l2 === undefined) for (const group of node.children) rows.push({ layer, l1: node, group });
+    const named = { id: layer.id, label: iaLabel(consumer, agent, layer.id) };
+    if (l2 === undefined) for (const group of node.children) rows.push({ layer: named, l1: { id: node.id, label: iaLabel(consumer, agent, node.id) }, group });
     else {
       const group = node.children.find(child => child.id === l2);
       if (!group) throw new Error(`Invalid ${agent} IA layer: ${ref}`);
-      rows.push({ layer, l1: { id: ref, label: group.label }, group });
+      rows.push({ layer: named, l1: { id: ref, label: iaLabel(consumer, agent, group.id) }, group });
     }
   }
   return rows;
@@ -145,12 +146,12 @@ export function slotGallery(consumer: string, agent: SlotAgent): { sections: Slo
     if (!row) { row = { id, label: text, level, cards: [] }; sections.push(row); }
     return row;
   };
-  for (const { layer, l1, group } of displayOrder(ia, agent)) for (const id of group.slots) {
+  for (const { layer, l1, group } of displayOrder(consumer, ia, agent)) for (const id of group.slots) {
     const entry = entries.get(id)!;
-    const l0 = layer ?? { id: entry.position.l0 ?? agent, label: slotIdLabel(entry.position.l0 ?? agent) };
+    const l0 = layer ?? { id: entry.position.l0 ?? agent, label: iaLabel(consumer, agent, entry.position.l0 ?? agent) };
     section(l0.id, l0.label, 0);
     section(l1.id, l1.label, 1);
-    const target = section(`${l1.id}/${group.id}`, group.label, 2);
+    const target = section(`${l1.id}/${group.id}`, iaLabel(consumer, agent, group.id), 2);
     const candidate = shownCandidate(entry);
     const missing = !entry.candidates.length;
     let kind: SlotKind = agent === 'director' ? 'brief' : agent === 'writer' ? 'strings' : agent === 'designer' ? 'element' : 'page';

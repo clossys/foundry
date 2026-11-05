@@ -23,7 +23,7 @@
 import type { ContentMap, ContentMapEntry, ContentMapNode } from "@clossys/publisher/content-map";
 import type { NextRouteLeafTemplate } from "@clossys/publisher/install";
 import { readIa } from "../records/slots.js";
-import { slotLabel } from "../records/slot-labels.js";
+import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import type { SlotAgent } from "../records/slot-model/index.js";
 
 type Json = Record<string, unknown>;
@@ -66,9 +66,9 @@ export function namespaceTabs(consumer: string, spec: ExpandSpec): Omit<Expanded
   if (!ia) throw new Error(`content-map expansion: ${spec.agent} has no ia.json`);
   const own = ia.nodes.find(node => node.id === spec.namespace);
   const rows = own
-    ? own.children.map(child => ({ id: child.id, label: child.label, groups: [`${own.id}/${child.id}`], slots: [...child.slots] }))
+    ? own.children.map(child => ({ id: child.id, label: iaLabel(consumer, spec.agent, child.id), groups: [`${own.id}/${child.id}`], slots: [...child.slots] }))
     : ia.nodes.filter(node => node.id.startsWith(`${spec.namespace}.`)).map(node => ({
-      id: node.id, label: node.label, groups: node.children.map(child => `${node.id}/${child.id}`), slots: node.children.flatMap(child => [...child.slots]),
+      id: node.id, label: iaLabel(consumer, spec.agent, node.id), groups: node.children.map(child => `${node.id}/${child.id}`), slots: node.children.flatMap(child => [...child.slots]),
     }));
   if (!rows.length) throw new Error(`content-map expansion: ${spec.agent} IA has no groups under ${spec.namespace}`);
   return rows.map(row => {

@@ -101,7 +101,7 @@ export function teamInputs(graph: PipelineGraphFile, path: string, seat: string 
       const kinds = entry ? SEAT_KINDS.filter(kind => entry.kinds.includes(kind)) : [];
       const name = laneName(lane.id);
       return {
-        id: lane.id, name, initials: name.slice(0, 1).toUpperCase(),
+        id: lane.id, name, initials: studioCopy(`studio.team.initials.${laneKey(lane.id)}`),
         kinds: kinds.map(kind => studioCopy(`studio.team.kind.${kind}`)),
         ...(kinds.includes('ai') ? { tier: entry!.tiers.length ? entry!.tiers.map(tierLabel).join(', ') : studioCopy('studio.team.tier-open') } : {}),
         description: studioCopy(`studio.team.about.${laneKey(lane.id)}`),
@@ -118,14 +118,18 @@ export function teamInputs(graph: PipelineGraphFile, path: string, seat: string 
 export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, path: string, seat: string | null = null): PipelineInputs {
   const lit = seat && graph.layout.lanes.some(lane => lane.id === seat) ? seat : null;
   const open = graph.nodes.filter(step => step.open).length;
+  const nodeRole = studioCopy('studio.flow.node-role');
   const flow: PipelineFlowInput = {
     graph: {
       nodes: graph.nodes.map(step => ({
         id: step.id,
         position: { x: step.layout.x, y: step.layout.y },
         width: graph.layout.constants.nodeWidth,
+        domAttributes: { 'aria-roledescription': nodeRole },
         data: {
           label: stepLabel(step.id), kind: step.kind, lane: step.layout.lane, stage: step.layout.stage,
+          inputsLabel: studioCopy('studio.pipeline.step.inputs-count', { count: unique(step.inputs.map(port => port.glob)).length }),
+          outputsLabel: studioCopy('studio.pipeline.step.outputs-count', { count: unique(step.outputs.map(port => port.glob)).length }),
           facts: {
             command: commandLine(step.command),
             inputs: unique(step.inputs.map(port => port.glob)),
@@ -140,7 +144,9 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, 
         },
       })),
       // One handle per side: every edge leaves its writer's right handle and enters its reader's left handle.
-      edges: graph.edges.map(edge => ({ id: edgeId(edge), source: edge.from, target: edge.to, sourceHandle: 'out', targetHandle: 'in' })),
+      // React Flow names an edge by its endpoint ids; the words around them are Writer copy (studio.flow.*).
+      edges: graph.edges.map(edge => ({ id: edgeId(edge), source: edge.from, target: edge.to, sourceHandle: 'out', targetHandle: 'in',
+        ariaLabel: studioCopy('studio.flow.edge-label', { source: edge.from, target: edge.to }), domAttributes: { 'aria-roledescription': studioCopy('studio.flow.edge-role') } })),
       lanes: graph.layout.lanes.map(lane => ({ id: lane.id, position: { x: lane.x, y: lane.y } })),
       stages: graph.layout.stages.map(stage => ({ id: stage.id, position: { x: stage.x, y: stage.y } })),
       rounds: (graph.layout.rounds ?? []).map(round => ({ id: round.id, position: { x: round.x, y: round.y } })),
@@ -166,6 +172,23 @@ export function pipelineInputs(graph: PipelineGraphFile, head: PageHeaderInput, 
       none: studioCopy('studio.pipeline.step.none'),
       openSeat: studioCopy('studio.pipeline.seat.open'),
       statuses: Object.fromEntries(STATUSES.map(status => [status, studioCopy(`studio.pipeline.status.${status}`)])) as Record<StepStatus, string>,
+      nodeRole,
+      attribution: studioCopy('studio.flow.attribution'),
+      attributionLabel: studioCopy('studio.flow.attribution-label'),
+      // Every word React Flow itself renders (its keyboard help, control and minimap labels), as Writer copy.
+      aria: {
+        'node.a11yDescription.default': studioCopy('studio.flow.node-description'),
+        'node.a11yDescription.keyboardDisabled': studioCopy('studio.flow.node-description-keyboard'),
+        'node.a11yDescription.ariaLiveMessage': ({ direction, x, y }) => studioCopy('studio.flow.node-moved', { direction, x, y }),
+        'edge.a11yDescription.default': studioCopy('studio.flow.edge-description'),
+        'controls.ariaLabel': studioCopy('studio.flow.controls'),
+        'controls.zoomIn.ariaLabel': studioCopy('studio.flow.zoom-in'),
+        'controls.zoomOut.ariaLabel': studioCopy('studio.flow.zoom-out'),
+        'controls.fitView.ariaLabel': studioCopy('studio.flow.fit-view'),
+        'controls.interactive.ariaLabel': studioCopy('studio.flow.interactive'),
+        'minimap.ariaLabel': studioCopy('studio.flow.minimap'),
+        'handle.ariaLabel': studioCopy('studio.flow.handle'),
+      },
     },
   };
   const legend: PipelineLegendInput = {
