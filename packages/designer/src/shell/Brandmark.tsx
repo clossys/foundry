@@ -210,10 +210,10 @@ export function Brandmark(props: BrandmarkProps) {
 
   const linkClasses = cx(
     inverse
-      ? "inline-flex items-center no-underline text-ink-on-inverse"
+      ? "inline-flex items-center no-underline text-background"
       : "inline-flex items-center no-underline text-ink-primary",
     "focus-visible:outline-2 focus-visible:outline-offset-2",
-    inverse ? "focus-visible:outline-ink-on-inverse" : "focus-visible:outline-accent",
+    inverse ? "focus-visible:outline-background" : "focus-visible:outline-accent",
     className,
   );
 

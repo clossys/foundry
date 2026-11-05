@@ -31,7 +31,7 @@ const VARIANT_CLASSES: Record<Exclude<ButtonVariant, "tonal" | "quiet">, string>
 const TONAL_GROUND_CLASSES: Record<ControlGround, string> = {
   base: "bg-control-tonal text-ink-primary hover:bg-control-tonal-hover",
   sunken: "bg-control-tonal text-ink-primary hover:bg-control-tonal-hover",
-  inverse: "bg-control-tonal-inverse text-ink-on-inverse hover:bg-control-tonal-inverse-hover",
+  inverse: "bg-background/12 text-background hover:bg-background/16",
 };
 
 /*
@@ -54,7 +54,7 @@ const QUIET_SIZE_CLASSES: Record<ButtonSize, string> = {
 const QUIET_GROUND_CLASSES: Record<ControlGround, string> = {
   base: "text-control-quiet",
   sunken: "text-control-quiet",
-  inverse: "text-ink-on-inverse",
+  inverse: "text-background",
 };
 
 /*
@@ -92,7 +92,7 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
  * every other variant reads the same on every ground.
  */
 export function buttonClassName(variant: ButtonVariant, size: ButtonSize, ground: ControlGround = "base"): string {
-  if (variant === "primary" && ground === "inverse") return [BASE, SIZE_CLASSES[size], "bg-action-on-inverse text-ink-primary hover:bg-action-on-inverse-hover"].join(" ");
+  if (variant === "primary" && ground === "inverse") return [BASE, SIZE_CLASSES[size], "bg-primary-foreground text-ink-primary hover:bg-primary-foreground/90"].join(" ");
   if (variant === "quiet") return [QUIET_BASE, QUIET_SIZE_CLASSES[size], QUIET_GROUND_CLASSES[ground]].join(" ");
   if (variant === "tonal") return [BASE, SIZE_CLASSES[size], TONAL_GROUND_CLASSES[ground]].join(" ");
   return [BASE, SIZE_CLASSES[size], VARIANT_CLASSES[variant]].join(" ");
@@ -125,7 +125,7 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, gr
 /** The width a collapsed disclosure needs to spare before it expands: one small spacing step, so a fit edge cannot flap. */
 export const DISCLOSURE_COLLAPSE_SLACK = parseFloat(TOKENS["--spacing-sm"]!.value);
 
-export const INVERSE_CONTROL_INK = "text-ink-on-inverse hover:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse";
+export const INVERSE_CONTROL_INK = "text-background hover:text-background focus-visible:text-background hover:bg-background/16 focus-visible:outline-background";
 
 /**
  * The navigation disclosure toggle look for a native button: the small ghost
@@ -141,7 +141,7 @@ export function disclosureToggleClassName(ground: "base" | "inverse" = "base", {
   if (ground === "base") return look.join(" ");
   const outline = buttonLinkClassName("outline", "sm").split(" ");
   const ghostInk = ghost.filter((token) => token.startsWith("text-") && !outline.includes(token));
-  return [...look.filter((token) => !ghostInk.includes(token)), INVERSE_CONTROL_INK, "aria-expanded:text-ink-on-inverse"].join(" ");
+  return [...look.filter((token) => !ghostInk.includes(token)), INVERSE_CONTROL_INK, "aria-expanded:text-background"].join(" ");
 }
 
 /** The grounds a round icon link is drawn for. Kept as a name for `ControlGround`. */
@@ -193,11 +193,11 @@ const ICON_SHAPE_CLASSES: Record<IconButtonShape, string> = {
  * `controlStateStyle`; there is no second focus halo.
  */
 const ICON_GROUND_CLASSES: Record<ControlGround, string> = {
-  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-sunken active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse",
+  base: "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-sunken active:border-ink-primary aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:border-foreground aria-expanded:bg-foreground aria-expanded:text-background aria-expanded:border-foreground",
   sunken:
-    "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-base active:border-ink-primary aria-pressed:bg-surface-inverse aria-pressed:text-ink-on-inverse aria-pressed:border-surface-inverse aria-expanded:bg-surface-inverse aria-expanded:text-ink-on-inverse aria-expanded:border-surface-inverse",
+    "bg-surface-raised text-ink-primary border-line-base hover:bg-control-tonal-hover hover:border-line-strong active:bg-surface-base active:border-ink-primary aria-pressed:bg-foreground aria-pressed:text-background aria-pressed:border-foreground aria-expanded:bg-foreground aria-expanded:text-background aria-expanded:border-foreground",
   inverse:
-    "bg-surface-inverse-raised text-ink-on-inverse border-line-on-inverse hover:bg-surface-inverse hover:border-ink-on-inverse-muted active:bg-surface-inverse active:border-ink-on-inverse aria-pressed:bg-surface-raised aria-pressed:text-ink-primary aria-pressed:border-surface-raised aria-expanded:bg-surface-raised aria-expanded:text-ink-primary aria-expanded:border-surface-raised",
+    "bg-card-foreground text-background border-background/14 hover:bg-foreground hover:border-background/75 active:bg-foreground active:border-background aria-pressed:bg-surface-raised aria-pressed:text-ink-primary aria-pressed:border-surface-raised aria-expanded:bg-surface-raised aria-expanded:text-ink-primary aria-expanded:border-surface-raised",
 };
 
 const ICON_DISABLED_CLASSES = "disabled:pointer-events-none aria-disabled:pointer-events-none";
