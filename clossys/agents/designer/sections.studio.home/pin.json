@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-home-v8.json",
-  "sha256": "929527526ce2c6424c9d31efc9dfa20e0bf3a781a9273a9c0a97afa74facfa24",
+  "candidate": "studio-home-v9.json",
+  "sha256": "659f7d716f87d036bab7d1e6839e860a11bf3336be3dbdccb4ed2308c8acb343",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T06:09:28.395Z"
+  "at": "2026-11-05T11:33:33.439Z"
 }

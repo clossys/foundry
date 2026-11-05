@@ -115,8 +115,28 @@ describe("designer-provenance-check", () => {
     writeDesignerSlot(root, { id: "assets.lockup", candidates: { "lockup-v1.json": item("assets.lockup", outside) }, pin: "lockup-v1.json" });
     expect([...provenanceFindings(root, { rule, manifest }).violations].sort()).toEqual([
       expect.stringMatching(/^pin assets\.lockup\/lockup-v1\.json: customized item has no lineage\.source/),
+      expect.stringMatching(/^pin assets\.lockup\/lockup-v1\.json: lineage cites packages\/producer\/studio\/public\/studio-mark\.svg, which is not a reference-manifest row id/),
       expect.stringMatching(/^pin components\.badge\/badge-v1\.json: original item in components\.badge, which is not a consumer-asset slot/),
     ]);
+  });
+
+  it("derived lineage cites reference-manifest row ids only: a JSON object, a self-lineage version or an unknown row id fails", () => {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), "provenance-")));
+    const row = manifest.items.find((entry: { type: string }) => entry.type === "registry:ui")!;
+    const id = `${row.registry}/${row.name}@${row.version}`;
+    const item = (ref: string[]) => ({ name: "badge", type: "registry:ui", files: [], meta: { slot: "components.badge", source: { kind: "derived", ref, hash: row.hash } } });
+    const cases: [string[], RegExp | undefined][] = [
+      [[id], undefined],
+      [[id, JSON.stringify({ registry: row.registry, item: row.name, version: row.version, hash: row.hash })], /lineage cites \{"registry".*not a reference-manifest row id/],
+      [[id, JSON.stringify({ version: 1, hash: row.hash })], /lineage cites \{"version":1.*not a reference-manifest row id/],
+      [[id, `${row.registry}/no-such-item@9.9.9`], /no-such-item@9\.9\.9 is not in the references manifest/],
+    ];
+    for (const [index, [ref, expected]] of cases.entries()) {
+      writeDesignerSlot(root, { id: "components.badge", candidates: { [`badge-v${index + 1}.json`]: item(ref) }, pin: `badge-v${index + 1}.json` });
+      const violations = provenanceFindings(root, { rule, manifest }).violations;
+      if (expected) expect(violations, JSON.stringify(ref)).toEqual([expect.stringMatching(expected)]);
+      else expect(violations, JSON.stringify(ref)).toEqual([]);
+    }
   });
 
   it("reads pins only through the slot-model reader: a legacy selection store is ignored", () => {

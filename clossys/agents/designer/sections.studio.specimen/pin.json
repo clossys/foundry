@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-specimen-v10.json",
-  "sha256": "f9435c22a9cf44a4eee33f717c57e2911279131a2af219b9c75b069bb6e5b31d",
+  "candidate": "studio-specimen-v11.json",
+  "sha256": "2691cce4dc70400c4331b768a6cd39c340a86b79f7d951fba0ef1cea1fabe610",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T06:09:26.983Z"
+  "at": "2026-11-05T11:33:34.579Z"
 }

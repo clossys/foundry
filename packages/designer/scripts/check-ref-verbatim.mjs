@@ -666,6 +666,7 @@ function checkVersion(root, target, options = {}, versionInput) {
   }
 
   if (!Object.hasOwn(record?.lineage ?? {}, "exactParts") && (opts.rule.consumerAssets?.slots ?? []).some((pattern) => globMatch(pattern, slot))) return result("exempt", { hash, note: "consumer-asset slot" });
+  for (const ref of versionInput?.unresolved ?? []) fail("REF-NOT-VENDORED", `${typeof ref === "string" ? ref : JSON.stringify(ref)} is not a reference-manifest row id (<registry>/<item>@<version> in references/manifest.json)`);
   if (mode === "original" || !source?.registry || !source?.item) {
     fail("REF-NO-SOURCE", mode === "original" ? `original code in ${slot}, which is not a consumer-asset slot` : `${mode ?? "no"} lineage without lineage.source`);
     return result("fail", { hash });
@@ -826,6 +827,10 @@ function checkLineageItem(root, slot, candidate, options = {}) {
   const refs = candidate.meta?.source?.ref ?? [];
   const source = candidate.meta?.source;
   const item = (opts.manifest.items ?? []).find(row => refs.includes(`${row.registry}/${row.name}@${row.version}`));
+  // Derived lineage cites reference-manifest row ids (`<registry>/<item>@<version>`): every other
+  // citation is unresolved and fails, except a self-citation, which withSelfCitation reports.
+  const rows = new Set((opts.manifest.items ?? []).map(row => `${row.registry}/${row.name}@${row.version}`));
+  const unresolved = (Array.isArray(refs) ? refs : [refs]).filter(ref => !(typeof ref === "string" && rows.has(ref)) && !selfCitation(ref));
   const files = Object.fromEntries((candidate.files ?? []).map(file => [file.path, file.content]));
   if (Object.values(files).some(content => typeof content !== "string")) throw new Error("registry candidate must carry every payload file's content");
   const mapping = candidate.meta?.refVerbatim ?? {};
@@ -836,7 +841,7 @@ function checkLineageItem(root, slot, candidate, options = {}) {
     ...(mapping.parts ? { parts: mapping.parts } : {}),
     ...(Object.hasOwn(mapping, "exactParts") ? { exactParts: mapping.exactParts } : {}),
   } };
-  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files });
+  return checkVersion(root, { slot, element: candidate.name ?? "unknown", version: 1 }, options, { record, files, unresolved });
 }
 
 // ---- npm package reference -------------------------------------------------

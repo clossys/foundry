@@ -1,0 +1,56 @@
+{
+  "name": "card-stack",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "card-stack.tsx",
+      "type": "registry:component",
+      "content": "// Studio card stack: the vertical card flow of shadcn dashboard-01\n// (shadcn-aria dashboard-01@4.23.0, registry/aria-nova/blocks/dashboard-01/page.tsx:25).\nimport type { ComponentProps } from \"react\"\nimport { cn } from \"../lib/utils\"\n\n/** The stock vertical card flow of shadcn dashboard-01 (page.tsx): one full-width card per row. */\nfunction CardStack({ className, ...props }: ComponentProps<\"div\">) {\n  return <div className={cn(\"flex flex-col gap-4 py-4 md:gap-6 md:py-6\", className)} {...props} />\n}\n\nexport { CardStack }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.card-stack",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/dashboard-01@4.23.0"
+      ],
+      "license": "MIT",
+      "hash": "sha256:d9ae05741f3db5cabdd97ef60e39c8ef5cfb54b58d3bf34e361952826207cf3d"
+    },
+    "element": {
+      "id": "card-stack",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.card-stack",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D1): the dashboard-01 page vertical card flow. Created through the Designer create path as a component-layer slot that installs into @clossys/designer-ui (src/components/card-stack.tsx); the Foundry extension under src/foundry re-exports it only. DS-COMPLETE D5: source.ref cites reference-manifest row ids only (shadcn-aria/dashboard-01@4.23.0). Code unchanged from card-stack-v1.",
+      "createdAt": "2026-11-05T11:33:16.100Z",
+      "deps": {
+        "npm": {
+          "react": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--spacing"
+        ]
+      }
+    }
+  }
+}

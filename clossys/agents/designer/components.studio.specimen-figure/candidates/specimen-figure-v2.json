@@ -1,0 +1,57 @@
+{
+  "name": "specimen-figure",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "specimen-figure.tsx",
+      "type": "registry:component",
+      "content": "// Studio specimen figure: a specimen with the shadcn table caption beneath\n// (shadcn-aria table@4.23.0, TableCaption: `text-sm text-muted-foreground`).\nimport type { ComponentProps, ReactNode } from \"react\"\nimport { cn } from \"../lib/utils\"\n\n/** A specimen with its caption beneath (a version badge, a reason): one grid cell of a side-by-side comparison. */\nfunction SpecimenFigure({ caption, className, children, ...props }: ComponentProps<\"figure\"> & { caption: ReactNode }) {\n  return (\n    <figure data-slot=\"specimen-figure\" className={cn(\"flex min-w-0 flex-col gap-2\", className)} {...props}>\n      {children}\n      <figcaption className=\"flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground\">{caption}</figcaption>\n    </figure>\n  )\n}\n\nexport { SpecimenFigure }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.specimen-figure",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "shadcn-aria/table@4.23.0"
+      ],
+      "license": "MIT",
+      "hash": "sha256:8b6578dcaf946c6aa5aa9fb171567d0917d0322915ad79119d4141a5b3e78e1f"
+    },
+    "element": {
+      "id": "specimen-figure",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.specimen-figure",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "DS-COMPLETE"
+      },
+      "reason": "DS-COMPLETE round 3 (D1): a specimen with the table caption beneath it. Created through the Designer create path as a component-layer slot that installs into @clossys/designer-ui (src/components/specimen-figure.tsx); the Foundry extension under src/foundry re-exports it only. DS-COMPLETE D5: source.ref cites reference-manifest row ids only (shadcn-aria/table@4.23.0). Code unchanged from specimen-figure-v1.",
+      "createdAt": "2026-11-05T11:33:16.179Z",
+      "deps": {
+        "npm": {
+          "react": "*"
+        },
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--muted-foreground",
+          "--spacing"
+        ]
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-options-v6.json",
-  "sha256": "8595e608bdeda2d73f7dc96e8c3abcfdfd402b2429039bb0ffae79c53b15ee6a",
+  "candidate": "studio-options-v7.json",
+  "sha256": "163a29a691789e235c478380785df11d818aac80c7f549cbcc97816174caae78",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T06:09:25.382Z"
+  "at": "2026-11-05T11:33:33.818Z"
 }

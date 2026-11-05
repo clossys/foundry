@@ -1,7 +1,7 @@
 {
-  "candidate": "block-viewer-iframe-v1.json",
-  "sha256": "5993951ebec2e0bcfa1b02a8aac3ffdd8843cbeac18f88a8460c0c6199934692",
+  "candidate": "block-viewer-iframe-v2.json",
+  "sha256": "45ca0553642a375b64b9aea4ac6b40a408056cdc7c9fd0e311d22de84103a10f",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T09:30:35.993Z"
+  "at": "2026-11-05T11:33:29.301Z"
 }

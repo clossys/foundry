@@ -695,6 +695,13 @@ describe("every pinned source representation", () => {
       source: { kind: "registry", ref: ["shadcn-aria/button@4.23.0"] }, refVerbatim: { files: { "button.tsx": BUTTON_REF } },
     } };
     expect(checkRegistryItem(root, "components.button", item, { strict: true }).findings).toEqual([]);
+    // Every citation resolves to a reference-manifest row id: an unknown id, a JSON object or a
+    // self-lineage version beside a resolving row is a finding, never ignored.
+    for (const extra of ["shadcn-aria/no-such-item@9.9.9", JSON.stringify({ registry: "shadcn-aria", item: "button", version: "4.23.0" }), JSON.stringify({ version: 1 })]) {
+      const cited = { ...item, meta: { ...item.meta, source: { ...item.meta.source, ref: [...item.meta.source.ref, extra] } } };
+      expect(checkRegistryItem(root, "components.button", cited, { strict: true }).findings.map(row => [row.code, row.detail]), extra)
+        .toEqual([["REF-NOT-VENDORED", expect.stringContaining(`${extra} is not a reference-manifest row id`)]]);
+    }
     const save = () => writeDesignerSlot(root, { id: "components.button", candidates: { "button-v1.json": item }, pin: "button-v1.json" });
     save();
     expect(refVerbatimReport(root).findings).toEqual([]);

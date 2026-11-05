@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-frame-v1.json",
-  "sha256": "84f8f2df4f8e5f97e54fb6733a364ffb845f1c2ff78d533d45ce6d2cea429da3",
+  "candidate": "specimen-frame-v2.json",
+  "sha256": "0b30a258f459afbf8365c09faed7e388b1d5604e5bc85b0ff7ae41514b0a5b0b",
   "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T09:30:34.591Z"
+  "at": "2026-11-05T11:33:31.927Z"
 }

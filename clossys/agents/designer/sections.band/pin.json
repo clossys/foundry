@@ -1,7 +1,7 @@
 {
-  "candidate": "band-v2.json",
-  "sha256": "1a6505f4e8003b6d614a1324eefeb2e29554a518daaad61e6301c06fe0cf8480",
-  "decidedBy": "planner:DESIGNER-FINDINGS",
+  "candidate": "band-v3.json",
+  "sha256": "35cab413c44717a4ecf1a8767e7cbf3df4f02df5634159bbbbe561518d1f475c",
+  "decidedBy": "planner:DS-COMPLETE",
   "basis": "planner",
-  "at": "2026-11-05T02:52:39.890Z"
+  "at": "2026-11-05T11:33:33.053Z"
 }
