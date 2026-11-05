@@ -13,7 +13,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader } from "@clossys/director";
 import { sha256Hex } from "./hash.js";
 import {
-  CANDIDATE_NAME, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, seatDir, seatFile, slotDir, slotFile, slotPositions,
+  CANDIDATE_NAME, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, retiredSeatFile, seatDir, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
@@ -151,11 +151,11 @@ export interface SeatEntry {
   readonly position: SlotPosition;
   /** Absolute seat folder. */
   readonly dir: string;
-  /** seat.json text, or undefined when the placed seat has no file (an open seat). */
+  /** The pinned seat candidate's text, or undefined when the placed seat has no pin (an open seat). */
   readonly text: string | undefined;
 }
 
-/** Every seat producer ia.json places, in IA order; a seat without seat.json is listed with no text. */
+/** Every seat producer ia.json places, in IA order; a seat without a pin is listed with no text. */
 export function listSeats(consumer: string): SeatEntry[] {
   return withSlotReadScope(() => {
     const ia = loadIa(consumer, SEAT_AGENT);
@@ -165,18 +165,47 @@ export function listSeats(consumer: string): SeatEntry[] {
 }
 
 /**
- * The seat.json text of one decide step, read by step id whether or not producer ia.json places
- * it (check:git-cms fails an unplaced seat folder); undefined when the file is absent.
+ * The pinned seat candidate's text of one decide step, read by step id whether or not producer
+ * ia.json places it (check:git-cms fails an unplaced seat folder); undefined when the seat has no
+ * pin.json. A pin that is malformed, names a missing candidate or drifts from its bytes throws, and
+ * so does a retired seat.json: a seat is never read from anything but its pinned candidate.
  */
 export function readSeatText(consumer: string, step: string): string | undefined {
   return withSlotReadScope(() => seatTextAt(consumer, step));
 }
+
+/** The placed seats' pin state, in IA order: `pinned`, `open` (no pin.json) or `rejected` (why). */
+export function seatStates(consumer: string): { id: string; state: "pinned" | "open" | "rejected"; message?: string }[] {
+  return withSlotReadScope(() => {
+    const ia = loadIa(consumer, SEAT_AGENT);
+    if (!ia) return [];
+    return [...ia.positions.keys()].map(id => {
+      try { return { id, state: seatTextAt(consumer, id) === undefined ? "open" as const : "pinned" as const }; }
+      catch (error) { return { id, state: "rejected" as const, message: error instanceof Error ? error.message : String(error) }; }
+    });
+  });
+}
 const SEAT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
 function seatTextAt(consumer: string, step: string): string | undefined {
   if (!SEAT_ID.test(step)) throw new Error(`Invalid seat id ${JSON.stringify(step)}`);
-  const file = seatFile(seatDir(consumer, step));
+  const dir = seatDir(consumer, step);
+  const retired = retiredSeatFile(dir);
+  assertModelPath(retired);
+  if (existsSync(retired)) throw new Error(`Seat ${step}: seat.json is retired; a seat is a candidate file plus pin.json`);
+  const path = pinFile(dir);
+  assertModelPath(path);
+  if (!existsSync(path)) return undefined;
+  let value: unknown;
+  try { value = JSON.parse(readBytes(path)); } catch { throw new Error(`Seat ${step}: pin.json is not JSON`); }
+  const issues = validatePin(value, path);
+  if (issues.length) throw new Error(`Seat ${step}: pin.json is invalid (${issues.map(issue => issue.message).join("; ")})`);
+  const pin = value as PinDoc;
+  const file = join(candidatesDir(dir), pin.candidate);
   assertModelPath(file);
-  return existsSync(file) ? readBytes(file) : undefined;
+  if (!existsSync(file)) throw new Error(`Seat ${step}: pinned candidate ${pin.candidate} does not exist`);
+  const bytes = readBytes(file);
+  if (sha256Hex(bytes) !== pin.sha256) throw new Error(`Seat ${step}: pin sha256 differs from ${pin.candidate}`);
+  return bytes;
 }
 
 /** Every IA slot of one agent, in IA order; empty slots included. */

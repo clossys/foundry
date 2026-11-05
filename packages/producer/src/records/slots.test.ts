@@ -1,10 +1,11 @@
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { sha256Hex } from "./hash.js";
 import { jsonBytes, serializeFrontmatter, slotPositions, type IaDoc, type SlotAgent, type SlotDoc } from "./slot-model/index.js";
-import { listSeats, listSlots, readCandidate, readIa, readSeatText, readSlot, readSlotState, readiness, rejectedSlots, slotIndex, usedBy } from "./slots.js";
+import { listSeats, listSlots, readCandidate, readIa, readSeatText, readSlot, readSlotState, readiness, rejectedSlots, seatStates, slotIndex, usedBy } from "./slots.js";
 import { validateSlotDoc } from "./slot-model/index.js";
 
 let root: string;
@@ -229,19 +230,37 @@ describe("slot state (closed union: pinned or not-needed)", () => {
 });
 
 describe("the seat kind (Producer tree)", () => {
-  it("lists placed seats in IA order and reads seat.json by step id", () => {
+  it("lists placed seats in IA order and reads each seat's pinned candidate by step id", () => {
     const producer = join(root, "agents", "producer");
-    mkdirSync(join(producer, "pin.designer"), { recursive: true });
+    mkdirSync(producer, { recursive: true });
     save(join(producer, "ia.json"), { schema: "clossys.ia/1", source: "@clossys/producer#steps", extensions: [], nodes: [{ id: "design", label: "Design", children: [{ id: "design.pin", label: "Pin", slots: ["pin.designer", "pick.designer"] }] }] });
-    save(join(producer, "pin.designer", "seat.json"), { by: "owner", llm: null, human: null });
+    const seat = (step: string, value: unknown) => {
+      const bytes = jsonBytes(value), name = `${step}-v1.json`;
+      mkdirSync(join(producer, step, "candidates"), { recursive: true });
+      writeFileSync(join(producer, step, "candidates", name), bytes);
+      save(join(producer, step, "pin.json"), { candidate: name, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "planner", at: "2026-11-04T00:00:00.000Z" });
+    };
+    seat("pin.designer", { by: "owner", llm: null, human: null });
     const seats = listSeats(root);
-    expect(seats.map(seat => [seat.id, seat.position.l2, seat.position.order, seat.text === undefined])).toEqual([["pin.designer", "design.pin", 0, false], ["pick.designer", "design.pin", 1, true]]);
+    expect(seats.map(entry => [entry.id, entry.position.l2, entry.position.order, entry.text === undefined])).toEqual([["pin.designer", "design.pin", 0, false], ["pick.designer", "design.pin", 1, true]]);
     expect(JSON.parse(readSeatText(root, "pin.designer")!).by).toBe("owner");
     expect(readSeatText(root, "pick.designer")).toBeUndefined();
+    expect(seatStates(root)).toEqual([{ id: "pin.designer", state: "pinned" }, { id: "pick.designer", state: "open" }]);
     expect(() => readSeatText(root, "../designer")).toThrow(/Invalid seat id/);
-    symlinkSync(join(root, "elsewhere.json"), join(producer, "pin.designer", "alias.json"));
+    // A drifted candidate, a pin naming a missing candidate and a retired seat.json are refused.
+    writeFileSync(join(producer, "pin.designer", "candidates", "pin.designer-v1.json"), jsonBytes({ by: "planner", llm: null, human: null }));
+    expect(() => readSeatText(root, "pin.designer")).toThrow(/sha256 differs/);
+    seat("pin.designer", { by: "owner", llm: null, human: null });
+    rmSync(join(producer, "pin.designer", "candidates", "pin.designer-v1.json"));
+    expect(() => readSeatText(root, "pin.designer")).toThrow(/does not exist/);
+    seat("pin.designer", { by: "owner", llm: null, human: null });
+    save(join(producer, "pin.designer", "seat.json"), { by: "owner", llm: null, human: null });
+    expect(() => readSeatText(root, "pin.designer")).toThrow(/seat\.json is retired/);
+    expect(seatStates(root)[0]).toMatchObject({ id: "pin.designer", state: "rejected" });
     rmSync(join(producer, "pin.designer", "seat.json"));
-    symlinkSync(join(producer, "pin.designer", "alias.json"), join(producer, "pin.designer", "seat.json"));
+    symlinkSync(join(root, "elsewhere.json"), join(producer, "pin.designer", "alias.json"));
+    rmSync(join(producer, "pin.designer", "pin.json"));
+    symlinkSync(join(producer, "pin.designer", "alias.json"), join(producer, "pin.designer", "pin.json"));
     expect(() => readSeatText(root, "pin.designer")).toThrow();
   });
   it("lists no seats without a Producer ia.json, and seats never count as slots", () => {

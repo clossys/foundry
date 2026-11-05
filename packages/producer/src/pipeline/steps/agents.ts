@@ -1,6 +1,6 @@
 import { defineStep } from "../define.js";
 import type { Stage, Step } from "../define.js";
-import { LIBRARY_ELEMENTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
+import { candidatesOf, pinsOf, slotsOf } from "./ports.js";
 
 const SKILL = { director: "packages/director/skill/SKILL.md", designer: "packages/designer/skill/SKILL.md", writer: "packages/writer/skill/SKILL.md", publisher: "packages/publisher/skill/SKILL.md" } as const;
 const UPSTREAM = {
@@ -27,11 +27,4 @@ export const AGENT_STEPS = [
   candidates("designer", ["src/records/slot-write.ts#writeCandidate", "src/specimen/catalog-materialization.ts#materializeCatalogCandidate"]),
   candidates("writer", ["src/records/slot-write.ts#writeCandidate"]),
   candidates("publisher", ["src/records/slot-write.ts#writeCandidate"]),
-  defineStep({
-    id: "designer.library", kind: "decide:creative", actor: "agent:designer", stage: "design.select",
-    summary: "Adopt a Designer element version into the consumer library.",
-    inputs: [pinsOf("designer"), candidatesOf("designer")],
-    outputs: [LIBRARY_ELEMENTS, "clossys/library/**"],
-    command: { skill: SKILL.designer, module: "src/records/library.ts#writeElementVersion" }, checks: ["studio-template"],
-  }),
 ];

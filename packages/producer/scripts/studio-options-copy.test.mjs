@@ -8,16 +8,15 @@ import { build } from 'esbuild';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { studioCopyRegistry } from './generate-studio-map.mjs';
-import { checkPayload } from './studio-payload.mjs';
+import { candidateFiles, checkPayload, materializeCandidate } from './studio-payload.mjs';
 
 const root = new URL('../../../', import.meta.url).pathname;
-const library = join(root, 'clossys/library/sections.studio.options/studio-options');
 const source = join(root, 'packages/producer/studio/sections/studio-options');
 const expected = { title: 'Options (pending approval)', key: 'Key', text: 'Text', added: 'Added', changed: 'Changed', removed: 'Removed', same: 'Same',
   pinnedTitle: '{name} v{version}, pinned', optionTitle: '{name} v{version}, option', stringsLabel: '{name} v{version} strings' };
 
 test('Options copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
-  await checkPayload({ slot: 'sections.studio.options', element: 'studio-options', version: 2, versionDir: join(library, 'v2'), studioDir: source,
+  await checkPayload({ slot: 'sections.studio.options', element: 'studio-options', version: 2, files: await candidateFiles(join(root, 'clossys'), 'sections.studio.options', 'studio-options-v2.json'), studioDir: source,
     payload: ['LICENCE.md', 'index.tsx', 'registry-item.json'] });
   const registry = await studioCopyRegistry(join(root, 'clossys'));
   for (const [field, text] of Object.entries(expected)) {
@@ -46,7 +45,7 @@ test('Writer input preserves exact Options markup across all conditional branche
   assert.deepEqual(copy.changeLabels, { added: 'Added', changed: 'Changed', removed: 'Removed', same: 'Same' });
   const bundles = [];
   // Pinned v1 predates inherited viewport/class changes; compare exact pre-cut running source.
-  for (const [version, entry] of [['before', join(root, 'packages/producer/scripts/__fixtures__/studio-options-before-copy.tsx')], ['v2', join(library, 'v2/index.tsx')]]) {
+  for (const [version, entry] of [['before', join(root, 'packages/producer/scripts/__fixtures__/studio-options-before-copy.tsx')], ['v2', join(await materializeCandidate(join(root, 'clossys'), 'sections.studio.options', 'studio-options-v2.json', join(dir, 'candidate-v2')), 'index.tsx')]]) {
     const out = join(dir, `${version}.cjs`);
     await build({ entryPoints: [entry], outfile: out, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
       alias: { '@clossys/designer-ui': join(root, 'packages/designer/ui/src/index.ts'), '@': join(root, 'packages/designer/ui/src') },

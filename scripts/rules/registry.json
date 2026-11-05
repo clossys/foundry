@@ -225,10 +225,28 @@
         "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
         "date": "2026-11-02"
       },
-      "status": "unenforced",
-      "note": "No check fails when a legacy library/ or cells store is read or shipped (W3 CLI on flat slot folders); the selection.json store alone is refused by check:no-selection-store.",
+      "status": "enforced",
+      "note": "check:flat-slots runs from root check and fails when a legacy store is kept, read or shipped: clossys/{library,cells,tree.json} or an agent folder holding library, cells or tree.json; an agent folder entry other than ia.json and slot folders, or a slot folder nesting a directory other than candidates/; a code file naming a legacy store path or joining cells, tree.json or library onto a root; a package manifest or the pipeline graph declaring one. clossys/library was retired (git rm) after Designer ref-verbatim --pinned gave identical output with and without it. Red on the real tree until the Director, Designer library-cli, Publisher content-map and Writer cells stores move to flat slot folders (engine gap). The fixture keeps clossys/library, a grouping folder and a tree.json reader.",
       "related": [
         ".#check:no-selection-store"
+      ],
+      "checks": [
+        ".#check:flat-slots"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FLAT-SLOTS",
+      "fixture_runs": [
+        {
+          "check": ".#check:flat-slots",
+          "cwd": ".",
+          "run": "node scripts/check-flat-slots.mjs --root {fixture}",
+          "expect": "^\\s+clossys/library \\[store\\]"
+        },
+        {
+          "check": ".#check:flat-slots",
+          "cwd": ".",
+          "run": "node scripts/check-flat-slots.mjs --root {fixture}",
+          "expect": "^\\s+packages/probe/src/store\\.mjs:4 \\[reader\\]"
+        }
       ]
     },
     {
@@ -242,7 +260,7 @@
       "related": [
         "packages/designer#check:slot-contracts"
       ],
-      "note": "check:slot-pins runs the clossys check slot resolver from root check through check:studio and fails on a needed slot with no pin, more than one pin, a pin off its candidate bytes or an unvendored pinned source; a not-needed slot holds no pin. The fixture is a needed Director slot with one candidate and no pin.",
+      "note": "check:slot-pins runs the clossys check slot resolver from root check through check:studio and fails on a needed slot with no pin, more than one pin, a pin off its candidate bytes or an unvendored pinned source; a not-needed slot holds no pin. Producer seats ride the same contract (candidate file plus one pin.json, sha256 checked); an open seat, a drifted pin or a retired seat.json fails. The fixture is a needed Director slot with one candidate and no pin, and a Producer seat still holding a retired seat.json.",
       "checks": [
         "packages/producer#check:slot-pins"
       ],
@@ -253,6 +271,12 @@
           "cwd": "packages/producer",
           "run": "node scripts/check-slot-pins.mjs --root {fixture}",
           "expect": "^\\s+director:identity\\.brand\\.essence \\[no-pin\\]"
+        },
+        {
+          "check": "packages/producer#check:slot-pins",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-pins.mjs --root {fixture}",
+          "expect": "^\\s+agents/producer/pin\\.director \\[seat-rejected\\]"
         }
       ]
     },

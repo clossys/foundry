@@ -69,7 +69,7 @@ export const CLI_STEPS = [
     summary: "Slot model, page and record-suite checks over the workspace.",
     inputs: [IA, SLOTS, PINS, ...CANDIDATES, SOURCE_RECEIPT],
     outputs: [{ glob: "arg:--report", schema: "check-report" }],
-    command: { cli: { verb: "check" }, entry: "src/cli/check.ts#runCheck" }, checks: ["workspace"],
+    command: { cli: { verb: "check" }, entry: "src/cli/check.ts#runCheck" }, checks: ["workspace", "slot-pins", "cli-verbs"],
   }),
   defineStep({
     id: "compile", kind: "plumb", actor: "code", stage: "publish.assemble",
@@ -96,12 +96,12 @@ export const CLI_STEPS = [
     id: "studio.produce", kind: "plumb", actor: "code", stage: "publish.publish",
     summary: "Serve the local Studio over the live slot model (no compile step).",
     inputs: [IA, SLOTS, PINS, ...CANDIDATES, PIPELINE_GRAPH], outputs: [],
-    command: { cli: { verb: "produce" }, entry: "src/cli/produce.ts#runProduce" }, checks: ["studio-p0"],
+    command: { cli: { verb: "produce" }, entry: "src/cli/produce.ts#runProduce" }, checks: ["studio-p0", "one-brand"],
   }),
   defineStep({
     id: "publish.install", kind: "plumb", actor: "code", stage: "publish.publish",
     summary: "Install pinned pages, a routed site or Next routes into a consumer app.",
-    inputs: [pinsOf("publisher"), candidatesOf("publisher"), "clossys/library/**"],
+    inputs: [pinsOf("publisher"), candidatesOf("publisher")],
     outputs: ["arg:--out", "arg:--next"],
     command: { cli: { verb: "publish", flags: ["--install"] }, entry: "src/cli/publish.ts#runPublish" }, checks: ["workspace"],
   }),

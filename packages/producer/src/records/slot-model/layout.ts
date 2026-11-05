@@ -1,6 +1,6 @@
 /** On-disk paths and canonical bytes for the slot model. Pure; no clock, no I/O. */
 import { join } from "node:path";
-import { CANDIDATES_DIR, IA_FILE, PIN_FILE, SEAT_AGENT, SEAT_FILE, SLOT_FILE, type ModelAgent, type SlotAgent } from "./types.js";
+import { CANDIDATES_DIR, IA_FILE, PIN_FILE, RETIRED_SEAT_FILE, SEAT_AGENT, SLOT_FILE, type ModelAgent, type SlotAgent } from "./types.js";
 
 /** `<consumer>/agents` — the consumer root is the `clossys/` workspace folder. */
 export const agentsDir = (consumer: string) => join(consumer, "agents");
@@ -20,7 +20,7 @@ export const pinFile = (dir: string) => join(dir, PIN_FILE);
 export const candidatesDir = (dir: string) => join(dir, CANDIDATES_DIR);
 /** A seat folder in the Producer tree: the decide step id, flat (grouping lives in producer ia.json). */
 export const seatDir = (consumer: string, step: string) => join(agentDir(consumer, SEAT_AGENT), step);
-export const seatFile = (dir: string) => join(dir, SEAT_FILE);
+export const retiredSeatFile = (dir: string) => join(dir, RETIRED_SEAT_FILE);
 
 /** Agent-level files beside ia.json that a current reader owns (never slot folders, never orphans). */
 export const AGENT_FILES: Readonly<Record<SlotAgent, readonly string[]>> = {

@@ -10,6 +10,11 @@
  * slot.json holds no pin by design. It runs only the slot resolver, not the other `clossys check`
  * suites.
  *
+ * Producer seats (clossys/agents/producer/<step>/, one per IA leaf of the Producer ia.json) live
+ * under the same contract: each needs a candidate file and exactly one pin.json whose sha256
+ * matches it (records/slots.js `seatStates`). An unpinned seat, a pin that drifts or names no
+ * candidate, and a retired seat.json are findings.
+ *
  * Usage: node scripts/check-slot-pins.mjs [--root <foundry checkout>] [--json]
  * Needs `npm run build` (reads dist). Exit 0 clean, 1 findings, 2 usage or load error.
  */
@@ -25,14 +30,20 @@ const root = at >= 0 ? realpathSync(resolve(args[at + 1])) : resolve(here, '../.
 const consumer = join(root, 'clossys');
 if (!existsSync(join(consumer, 'agents'))) { console.error(`check-slot-pins: no clossys/agents under ${root}`); process.exit(2); }
 
-let runSlotResolve;
-try { ({ runSlotResolve } = await import('../dist/check/slot-resolve.js')); }
+let runSlotResolve, seatStates;
+try { ({ runSlotResolve } = await import('../dist/check/slot-resolve.js')); ({ seatStates } = await import('../dist/records/slots.js')); }
 catch { console.error('check-slot-pins: build @clossys/producer first (dist/check/slot-resolve.js)'); process.exit(2); }
 
 const report = await runSlotResolve(consumer);
-if (args.includes('--json')) console.log(JSON.stringify({ verdict: report.verdict, slots: report.rows.length, findings: report.findings }, null, 2));
-else {
-  console.log(`check-slot-pins: ${report.rows.length} slots, ${report.findings.length} finding(s) (${report.verdict})`);
-  for (const finding of report.findings) console.log(`  ${finding.path ?? 'model'} [${finding.rule}] ${finding.message}`);
+const seats = seatStates(consumer);
+const findings = [...report.findings];
+for (const seat of seats) {
+  if (seat.state === 'pinned') continue;
+  findings.push({ path: `agents/producer/${seat.id}`, rule: seat.state === 'open' ? 'seat-open' : 'seat-rejected', message: seat.message ?? 'the seat has no pin.json choosing a candidate file' });
 }
-process.exit(report.verdict === 'indeterminate' ? 2 : report.findings.length ? 1 : 0);
+if (args.includes('--json')) console.log(JSON.stringify({ verdict: report.verdict, slots: report.rows.length, seats: seats.length, findings }, null, 2));
+else {
+  console.log(`check-slot-pins: ${report.rows.length} slots, ${seats.length} seats, ${findings.length} finding(s) (${report.verdict})`);
+  for (const finding of findings) console.log(`  ${finding.path ?? 'model'} [${finding.rule}] ${finding.message}`);
+}
+process.exit(report.verdict === 'indeterminate' ? 2 : findings.length ? 1 : 0);

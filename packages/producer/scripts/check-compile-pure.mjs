@@ -16,7 +16,7 @@
  *   lock          compile.lock.json holds the sha256 of every resolved decision input and of every
  *                 other output file, and those hashes are true.
  *   decisions     a root holding only the resolved decision files compiles to the same bytes; an
- *                 edit to non-decision files (an unpinned candidate, the workspace config, a library
+ *                 edit to non-decision files (an unpinned candidate, the workspace config, an evidence
  *                 file) leaves the output unchanged; re-pinning one pin.json to another candidate
  *                 changes the rendered output (not only the lock).
  *
@@ -252,7 +252,8 @@ try {
         const pinnedCandidates = new Set([...inputs.keys()].filter(path => path.includes('/candidates/')));
         const unpinned = files(join(rootC, 'clossys', 'agents')).map(rel => `clossys/agents/${rel}`)
           .filter(path => path.includes('/candidates/') && !pinnedCandidates.has(path));
-        const edits = [unpinned[0], 'clossys/clossys.config.ts', files(join(rootC, 'clossys', 'library')).map(rel => `clossys/library/${rel}`)[0]].filter(Boolean);
+        const evidence = join(rootC, 'clossys', 'evidence');
+        const edits = [unpinned[0], 'clossys/clossys.config.ts', existsSync(evidence) ? files(evidence).map(rel => `clossys/evidence/${rel}`)[0] : undefined].filter(Boolean);
         for (const path of edits) {
           const file = join(rootC, path);
           if (!existsSync(file)) continue;
