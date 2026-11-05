@@ -1,14 +1,16 @@
 /** Detail-only projection. Slot metadata, candidates and pins have one reader. */
 import { join } from "node:path";
-import { copyRef, type CopyText } from "./copy-ref.js";
+import { copyRef, type CopyRef, type CopyText } from "./copy-ref.js";
 import { iaLabel, slotLabel } from "../records/slot-labels.js";
 import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCardState } from "./slot-gallery.js";
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
-import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent } from "../records/slot-model/index.js";
+import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
-  content: string; source: unknown; issues: string[];
+  content: string; source: unknown;
+  /** Each validator finding as a Writer copy reference; the validator's own message is data. */
+  issues: CopyRef[];
   specimen?: string;
   /** A Director brief or Writer strings candidate, as the specimen section's record rows (rendered inline, no frame). */
   record?: RecordSpecimenInput;
@@ -36,17 +38,33 @@ export interface SlotDetail {
   checks: { label: CopyText; ok: boolean; detail: CopyText }[];
 }
 
-/**
- * The Writer key that says why an input blocks a slot. A reason the pinned Writer copy has no
- * words for yet shows as its code, which check-copy-rendered reports until the Writer names it.
- */
-const BLOCK_COPY: Partial<Record<BlockReason, string>> = {
+/** The Writer key that says why an input blocks a slot: every reason has words (type-enforced). */
+const BLOCK_COPY: Record<BlockReason, string> = {
+  "inputs-undeclared": "studio.check-block-inputs-undeclared",
   missing: "studio.missing",
   unpinned: "studio.unpinned",
+  "invalid-pin": "studio.check-block-invalid-pin",
+  "missing-candidate": "studio.check-block-missing-candidate",
   "hash-drift": "studio.check-pin-hash-mismatch",
   "invalid-candidate": "studio.error.candidate-invalid",
+  "invalid-slot": "studio.check-block-invalid-slot",
 };
-const blockCopy = (reason: BlockReason) => BLOCK_COPY[reason] ? copyRef(BLOCK_COPY[reason]!) : reason;
+const blockCopy = (reason: BlockReason) => copyRef(BLOCK_COPY[reason]);
+
+/** The codes validateCandidate emits. */
+export type CandidateIssueCode = Extract<SlotModelIssue["code"], `candidate-${string}`>;
+/** One Writer key per candidate validator code; the validator's message is the `{message}` value. */
+export const CANDIDATE_ISSUE_COPY: Record<CandidateIssueCode, string> = {
+  "candidate-name": "studio.candidate-issue.candidate-name",
+  "candidate-invalid": "studio.candidate-issue.candidate-invalid",
+  "candidate-source": "studio.candidate-issue.candidate-source",
+  "candidate-status": "studio.candidate-issue.candidate-status",
+};
+const issueCopy = (issue: SlotModelIssue): CopyRef => {
+  const key = (CANDIDATE_ISSUE_COPY as Partial<Record<string, string>>)[issue.code];
+  if (!key) throw new Error(`candidate validator code ${issue.code} has no Writer key`);
+  return copyRef(key, { message: issue.message });
+};
 
 /** Undefined means no such IA slot; an empty IA slot still returns a full detail. */
 export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDetail | undefined {
@@ -68,12 +86,12 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       try { source = JSON.parse(candidate.bytes).meta?.source; } catch { /* validation records malformed JSON */ }
     }
     const version = Number(CANDIDATE_NAME.exec(name)![2]);
-    const issues = validateCandidate(doc.kind, id, name, candidate.bytes).map(issue => `${issue.code}: ${issue.message}`);
+    const issues = validateCandidate(doc.kind, id, name, candidate.bytes).map(issueCopy);
     const element = CANDIDATE_NAME.exec(name)![1]!;
     if (agent === "designer" && doc.kind === "element" && !issues.length) {
       const item = JSON.parse(candidate.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element)
-        || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) issues.push("candidate-identity: element identity differs from the candidate name or slot");
+        || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== id)) issues.push(copyRef("studio.check-candidate-identity"));
     }
     // Every placed, valid candidate renders from its own native bytes (the specimen route takes the
     // slot and the candidate). Only the exact valid pin is the pin; every other one is a preview.
@@ -103,7 +121,9 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
       { label: copyRef("studio.check-candidate-recorded"), ok: candidates.length > 0, detail: copyRef("studio.check-candidate-count", { count: candidates.length }) },
       { label: copyRef("studio.check-pin-names-candidate"), ok: !!pinCandidate, detail: entry.pin?.candidate ?? copyRef("studio.no-pin") },
       { label: copyRef("studio.check-pin-matches"), ok: !!pinCandidate && pinCandidate.sha256 === entry.pin?.sha256, detail: entry.pin ? (pinCandidate?.sha256 === entry.pin.sha256 ? entry.pin.sha256 : copyRef("studio.check-pin-hash-mismatch")) : copyRef("studio.no-pin") },
-      ...candidates.map(candidate => ({ label: candidate.name, ok: !candidate.issues.length, detail: candidate.issues.length ? candidate.issues.join("; ") : copyRef("studio.check-candidate-format-valid") })),
+      ...candidates.flatMap(candidate => candidate.issues.length
+        ? candidate.issues.map(issue => ({ label: candidate.name, ok: false, detail: issue }))
+        : [{ label: candidate.name, ok: true, detail: copyRef("studio.check-candidate-format-valid") }]),
       { label: copyRef("studio.check-slot-placed"), ok: placed, detail: placed ? copyRef("studio.check-slot-placed") : copyRef("studio.check-slot-misplaced") },
       { label: copyRef("studio.check-inputs-ready"), ok: inputReadiness.ready, detail: inputReadiness.ready ? copyRef("studio.check-inputs-ready") : copyRef("studio.check-inputs-blocked") },
       ...inputReadiness.blockedBy.map(({ slot, reason }) => ({ label: slot, ok: false, detail: blockCopy(reason) })),

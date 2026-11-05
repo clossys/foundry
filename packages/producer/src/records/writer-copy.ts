@@ -11,7 +11,7 @@ import { createHash } from "node:crypto";
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
 import { createCopyResolver } from "@clossys/writer/resolve";
 import { parseFrontmatter } from "./slot-model/index.js";
-import { listSlots, readCandidate } from "./slots.js";
+import { candidateStamp, listSlots, readCandidate } from "./slots.js";
 
 /** A Writer key: `<namespace>.<key>`, lower case, dot or dash joined. */
 export const WRITER_KEY = /^studio\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
@@ -28,14 +28,19 @@ export interface WriterCopy {
 }
 
 type Values = Readonly<Record<string, string | number | boolean>>;
-const cache = new Map<string, { key: string; copy: WriterCopy }>();
+/**
+ * Keyed on every pin and on every pinned candidate file's stamp (`stamp`), so bytes that change in
+ * place after a first read are re-read and re-hashed against their pin, never served stale.
+ */
+const cache = new Map<string, { key: string; stamp: string; copy: WriterCopy }>();
 
 /** The pinned Writer copy of one consumer (`<root>/clossys`). */
 export function writerCopy(consumer: string): WriterCopy {
   const pinned = listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."));
   const key = pinned.map(entry => `${entry.id}@${entry.pin!.sha256}`).join("|");
+  const stamp = pinned.map(entry => { try { return candidateStamp(consumer, "writer", entry.id, entry.pin!.candidate); } catch { return "-"; } }).join("|");
   const hit = cache.get(consumer);
-  if (hit?.key === key) return hit.copy;
+  if (hit?.key === key && hit.stamp === stamp && !stamp.split("|").includes("-")) return hit.copy;
   const entries: { id: string; text: string; context: string; status: "draft" }[] = [];
   const seen = new Set<string>();
   let locale: string | undefined;
@@ -68,6 +73,6 @@ export function writerCopy(consumer: string): WriterCopy {
       return result.text;
     },
   };
-  cache.set(consumer, { key, copy });
+  cache.set(consumer, { key, stamp, copy });
   return copy;
 }

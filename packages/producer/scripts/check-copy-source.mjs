@@ -27,6 +27,11 @@
  *             (whose `errorText` shows a StudioCopyError's Writer text, or a Writer fallback). This is
  *             what keeps the Producer's JSON error strings (src/server) from ever rendering.
  *   lang      the document's `<html lang>` is the Writer's source locale (an expression), not a literal.
+ *   row       a server row Studio shows never composes words from a finding: no string or template
+ *             literal with letters pushed into a row list (`issues.push('...')`), and a finding's
+ *             `.message` or `.code` is read only as a Writer copy value (`copyRef(key, { message })`)
+ *             or into a thrown Error (which the message rule keeps from rendering), never joined
+ *             into text (`${issue.code}: ${issue.message}`).
  *
  * Usage: node packages/producer/scripts/check-copy-source.mjs [--root <repository>] [--rev <git rev>] [--all]
  *   --root  check another repository-shaped tree (a fixture) instead of this repository
@@ -275,7 +280,37 @@ for (const file of studioSources.filter(file => file.endsWith('.tsx'))) {
   visit(source);
 }
 
-const rules = ['jsx', 'prop', 'record', 'label', 'names', 'keys', 'message', 'lang'];
+/* row */
+for (const file of serverRows) {
+  const text = read(file);
+  if (text === undefined) continue;
+  const source = parse(file, text);
+  const call = (node, test) => ts.isCallExpression(node) && test(ts.isIdentifier(node.expression) ? node.expression.text : ts.isPropertyAccessExpression(node.expression) ? node.expression.name.text : '');
+  // A finding's words reach Studio only as a copyRef value or a thrown Error.
+  const carried = node => {
+    for (let at = node.parent; at && !ts.isSourceFile(at); at = at.parent) {
+      if (ts.isNewExpression(at) && ts.isIdentifier(at.expression) && /Error$/.test(at.expression.text)) return true;
+      if (call(at, name => name === 'copyRef') && at.arguments.length > 1 && at.arguments.slice(1).some(argument => argument.pos <= node.pos && node.end <= argument.end)) return true;
+      if (ts.isFunctionLike(at)) return false;
+    }
+    return false;
+  };
+  // A lookup or a comparison reads the value as an id, not as words.
+  const lookup = node => (ts.isElementAccessExpression(node.parent) && node.parent.argumentExpression === node)
+    || (ts.isBinaryExpression(node.parent) && [ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken].includes(node.parent.operatorToken.kind));
+  const visit = node => {
+    if (call(node, name => name === 'push')) {
+      for (const argument of node.arguments) for (const literal of literals(argument)) if (/[A-Za-z]/.test(literalText(literal))) fail('row', `${file}:${lineOf(source, literal)}`, `a row pushes the literal "${literalText(literal).slice(0, 48)}" (push a Writer copy reference)`);
+    }
+    if (ts.isPropertyAccessExpression(node) && (node.name.text === 'message' || node.name.text === 'code') && !ts.isPropertyAccessExpression(node.parent) && !lookup(node) && !carried(node)) {
+      fail('row', `${file}:${lineOf(source, node)}`, `${node.getText(source).slice(0, 48)} becomes row text (pass it as a Writer copy value)`);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+}
+
+const rules = ['jsx', 'prop', 'record', 'label', 'names', 'keys', 'message', 'lang', 'row'];
 for (const rule of rules) {
   const rows = findings.filter(row => row.rule === rule);
   console.log(`${rows.length ? 'FAIL' : 'ok  '} ${rule}${rows.length ? ` (${rows.length})` : ''}`);

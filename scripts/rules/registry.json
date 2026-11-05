@@ -223,6 +223,18 @@
           "expect": "^lang\\s+packages/producer/studio/components/Probe\\.tsx:9: a literal <html lang>"
         },
         {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^row\\s+packages/producer/src/server/slot-detail\\.ts:5: issue\\.message becomes row text"
+        },
+        {
+          "check": "packages/producer#check:copy-source",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-copy-source.mjs --root {fixture}",
+          "expect": "^row\\s+packages/producer/src/server/slot-detail\\.ts:6: a row pushes the literal \"candidate-identity"
+        },
+        {
           "check": "check:studio#producer check-copy-rendered (live)",
           "cwd": "packages/producer",
           "run": "node studio/checks/check-copy-rendered.mjs --root {fixture} --pages {fixture}/pages",
@@ -235,7 +247,7 @@
           "expect": "^lang\\s+\"de\" \\(html\\[lang\\]\\)"
         }
       ],
-      "note": "Every string a person sees in Studio is Writer copy or registry data. check:copy-source fails on JSX text or a literal copy attribute (aria-*, title, placeholder, alt, label) or copy property in Studio, Designer Studio frames and the server rows; a literal label, prompt, title, message or tree name in a pinned Publisher record; an id turned into a label outside src/records/slot-labels.ts; a slot or IA node, group or layer with no pinned strings.names record; a Writer key no pinned record holds; Studio reading a thrown or served .message/.error (so Producer JSON errors never render); and a literal <html lang>. check-copy-rendered opens every route Publisher installed in one built Studio and fails on any rendered text, copy attribute, title or meta description that is neither pinned Writer text (ICU templates matched) nor pinned registry data, and on an <html lang> that is not the Writer source locale. The fixture breaks each rule once."
+      "note": "Every string a person sees in Studio is Writer copy or registry data. check:copy-source fails on JSX text or a literal copy attribute (aria-*, title, placeholder, alt, label) or copy property in Studio, Designer Studio frames and the server rows; a literal label, prompt, title, message or tree name in a pinned Publisher record; an id turned into a label outside src/records/slot-labels.ts; a slot or IA node, group or layer with no pinned strings.names record; a Writer key no pinned record holds; Studio reading a thrown or served .message/.error (so Producer JSON errors never render); a literal <html lang>; and a server row that pushes a literal or joins a finding's .message/.code into text instead of passing it as a Writer copy value. check-copy-rendered opens every route Publisher installed in one built Studio and fails on any rendered text, copy attribute, title or meta description that is neither pinned Writer text (ICU templates matched) nor pinned registry data, and on an <html lang> that is not the Writer source locale. The fixture breaks each rule once."
     },
     {
       "id": "R-CONTENT-MAP",

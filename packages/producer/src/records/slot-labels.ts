@@ -11,24 +11,33 @@
  */
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
 import { parseFrontmatter, type SlotAgent } from "./slot-model/index.js";
-import { readCandidate, readPin } from "./slots.js";
+import { candidateStamp, readCandidate, readPin } from "./slots.js";
 
 const NAMES = "strings.names";
-const cache = new Map<string, { key: string; names: ReadonlyMap<string, string> }>();
+/**
+ * Keyed on the pin and the pinned candidate's own sha256 (`key`); `stamp` adds the candidate file's
+ * stamp, so bytes that change in place after a first read are re-hashed, never served stale.
+ */
+const cache = new Map<string, { stamp: string; key: string; names: ReadonlyMap<string, string> }>();
 
 /** The pinned Writer names, keyed by record context; empty without a valid pin. */
 export function pinnedNames(consumer: string): ReadonlyMap<string, string> {
   let pin;
   try { pin = readPin(consumer, "writer", NAMES); } catch { return new Map(); }
   if (!pin) return new Map();
-  const key = `${pin.candidate}#${pin.sha256}`;
+  const pinned = `${pin.candidate}#${pin.sha256}`;
+  let stamp = "-";
+  try { stamp = `${pinned}#${candidateStamp(consumer, "writer", NAMES, pin.candidate)}`; } catch { /* unreadable: never a cache hit */ }
   const hit = cache.get(consumer);
-  if (hit?.key === key) return hit.names;
+  if (hit && stamp !== "-" && hit.stamp === stamp) return hit.names;
+  let candidate;
+  try { candidate = readCandidate(consumer, "writer", NAMES, pin.candidate); } catch { /* unreadable names: every label below throws */ }
+  const key = `${pinned}#${candidate?.sha256 ?? "-"}`;
+  if (candidate && hit?.key === key) { cache.set(consumer, { ...hit, stamp }); return hit.names; }
   const names = new Map<string, string>();
   try {
-    const candidate = readCandidate(consumer, "writer", NAMES, pin.candidate);
     // A drifted candidate is not the pinned one; its names are not read.
-    if (candidate.sha256 === pin.sha256) {
+    if (candidate && candidate.sha256 === pin.sha256) {
       const parsed = parseFrontmatter(candidate.bytes);
       if (parsed.ok) {
         const locales = parsed.value.fields.locales as readonly string[];
@@ -38,7 +47,7 @@ export function pinnedNames(consumer: string): ReadonlyMap<string, string> {
       }
     }
   } catch { /* unreadable names: every label below throws */ }
-  cache.set(consumer, { key, names });
+  cache.set(consumer, { stamp, key, names });
   return names;
 }
 

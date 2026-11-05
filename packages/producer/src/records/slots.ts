@@ -279,6 +279,21 @@ export function readSlot(consumer: string, agent: SlotAgent, id: string): SlotDo
   });
 }
 
+/**
+ * A candidate file's stamp (inode, size, mtime and ctime in nanoseconds): every write to its bytes
+ * changes it, so a reader cache keyed on it re-reads and re-hashes the candidate. A cache key, never
+ * a decision (the pin decides by the candidate's sha256).
+ */
+export function candidateStamp(consumer: string, agent: SlotAgent, id: string, name: string): string {
+  return withSlotReadScope(() => {
+    if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);
+    const path = join(candidatesDir(locate(consumer, agent, id).dir), name);
+    assertModelPath(path);
+    const stat = lstatSync(path, { bigint: true });
+    return `${stat.ino}:${stat.size}:${stat.mtimeNs}:${stat.ctimeNs}`;
+  });
+}
+
 export function readCandidate(consumer: string, agent: SlotAgent, id: string, name: string): Candidate {
   return withSlotReadScope(() => {
     if (!CANDIDATE_NAME.test(name)) throw new Error(`invalid candidate name ${name}`);

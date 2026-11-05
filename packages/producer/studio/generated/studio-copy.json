@@ -1,7 +1,7 @@
 {
   "id": "studio-copy",
   "locale": "en",
-  "revision": "4eef1b54667dde4e149f4b7a9d60e59285f3ee6130649abe94122dedece788dd",
+  "revision": "b234b3b87be168fa5088646ba2085d0474b95586e2d172a780b77505ee710304",
   "source": {
     "kind": "consumer",
     "reference": "clossys/agents/writer"
@@ -2855,6 +2855,60 @@
       "id": "studio.team.initials.unassigned",
       "text": "U",
       "context": "lib/pipeline-flow.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-inputs-undeclared",
+      "text": "This slot declares no inputs",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-invalid-pin",
+      "text": "Pin file is not a valid pin",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-missing-candidate",
+      "text": "Pinned candidate file is missing",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-block-invalid-slot",
+      "text": "Slot record is invalid or out of place",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-name",
+      "text": "File name is not valid: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-invalid",
+      "text": "Candidate does not match its slot contract: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-source",
+      "text": "Source record is missing or invalid: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.candidate-issue.candidate-status",
+      "text": "Pin state belongs in the pin, not the candidate: {message}",
+      "context": "../src/server/slot-detail.ts",
+      "status": "draft"
+    },
+    {
+      "id": "studio.check-candidate-identity",
+      "text": "Element identity differs from the candidate name or slot",
+      "context": "../src/server/slot-detail.ts",
       "status": "draft"
     },
     {

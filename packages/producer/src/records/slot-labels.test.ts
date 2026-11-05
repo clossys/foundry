@@ -33,6 +33,16 @@ describe('slot labels', () => {
     expect(() => iaLabel(join(root, 'clossys'), 'director', 'unnamed')).toThrow(/No Writer name for director\.ia\.unnamed/);
   });
 
+  it('drops its cached names when the pinned candidate drifts after a first read (same pin, same consumer)', () => {
+    const root = consumer();
+    writeFixtureNames(root);
+    const clossys = join(root, 'clossys');
+    expect(pinnedNames(clossys).get('director.ia.context')).toBe('Context');
+    appendFileSync(join(clossys, 'agents/writer/strings.names/candidates/names-v1.md'), '\n');
+    expect(pinnedNames(clossys).size).toBe(0);
+    expect(() => iaLabel(clossys, 'director', 'market')).toThrow(/No Writer name/);
+  });
+
   it('reads no names without a pin, or from a candidate that drifted from its pin', () => {
     const root = consumer();
     const clossys = join(root, 'clossys');

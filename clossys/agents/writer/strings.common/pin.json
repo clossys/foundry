@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-v14.md",
-  "sha256": "3f9e57a2b41f1e119992150a612569d27d97fb66dbb1087022f05d8746e3e480",
-  "decidedBy": "planner:SEEN-COPY",
+  "candidate": "studio-v15.md",
+  "sha256": "cf9e9d4533531141c9f7e1b4d5e36194ae9a5bccf66636f555a107199dc79675",
+  "decidedBy": "planner:SEEN-COPY-R2",
   "basis": "planner",
-  "at": "2026-11-05T05:31:30.039Z"
+  "at": "2026-11-05T08:14:15.720Z"
 }
