@@ -1,7 +1,7 @@
 {
-  "candidate": "simple-hero-v1.json",
-  "sha256": "5ae74467891a312fe3c7f8d729717419aa8b98f15d025ef4719dafc398037fb9",
-  "decidedBy": "planner:SITE-TEMPLATE",
+  "candidate": "simple-hero-v2.json",
+  "sha256": "e71615eac1bee004aad733aa71c5069bd1b226671f84899b15e41effe7d62a9c",
+  "decidedBy": "planner:INTEGRATE-R2",
   "basis": "planner",
-  "at": "2026-11-04T00:00:00Z"
+  "at": "2026-11-05T00:00:00Z"
 }

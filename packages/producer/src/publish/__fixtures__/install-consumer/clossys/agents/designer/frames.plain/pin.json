@@ -1,7 +1,7 @@
 {
-  "candidate": "plain-frame-v1.json",
-  "sha256": "4644e4272e8d39aa733ae7b06e194b11c2979a1857a2bb2324248ec91abac15c",
-  "decidedBy": "planner:SITE-TEMPLATE",
+  "candidate": "plain-frame-v2.json",
+  "sha256": "3e165401a923d874516f456c62e0a2d633ee3dc4e29da4fd8f0ee8549f1143ee",
+  "decidedBy": "planner:INTEGRATE-R2",
   "basis": "planner",
-  "at": "2026-11-04T00:00:00Z"
+  "at": "2026-11-05T16:39:13.238Z"
 }
