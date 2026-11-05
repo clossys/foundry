@@ -53,11 +53,14 @@ node packages/producer/studio/checks/check-no-page-jsx.cjs
 ```
 
 Every Studio page is a Publisher assembly (frame + ordered sections + bindings)
-rendered by the one generic renderer, `components/StudioPage.tsx`. `app/` may
-hold only `layout.tsx`, `globals.css` and the route files Publisher installs (they mount
-`components/StudioInstalledPage.tsx`, which hands the page to the renderer).
-Those files may render only the document shell, `StudioProviders` and
-`StudioPage`. Any other app file, page JSX (fragments included), an import of a
+rendered by the one generic renderer, `components/StudioPage.tsx`. `app/` holds
+only the files Publisher installs: one route per page (mounting
+`components/StudioInstalledPage.tsx`, which hands the page to the renderer), the
+root `layout.tsx` (mounting the assembly's `PublishedDocument`) and the
+`loading`, `not-found`, `error` and `global-error` states (mounting the
+renderer's `PublishedState`). They render no JSX. `npm run check:route-parity`
+reinstalls them into a temp directory and fails on any byte that differs.
+Any other app file, page JSX (fragments included), an import of a
 section, frame, old view or binding module into `app/`, an installed route or
 assembly that stops handing the page to the renderer, or a parked `views/`
 folder fails. The tests

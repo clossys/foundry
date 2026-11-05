@@ -10,7 +10,9 @@ import { notFound } from 'next/navigation';
 import { ArrowRightIcon } from 'lucide-react';
 import type { ContentMapEntry } from '@clossys/publisher/content-map';
 import { studioFrames, studioSections } from '../generated/assembly-bindings';
-import { studioPages, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
+import { studioHomeId, studioPages, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
+import '../styles/studio.css';
+import { StudioDocument } from './StudioProviders';
 import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
 import type { ChecksInput } from '../sections/studio-checks';
 import type { HistoryInput } from '../sections/studio-history';
@@ -343,4 +345,35 @@ function StudioRoute({ segments }: { segments: readonly string[] }) {
   const Loader = LOADERS[route.spec.data.loader as keyof typeof LOADERS];
   if (!Loader) return <Frame entry={route.entry} page={route.page} spec={route.spec}><PageNotice notice={{ title: studioCopy("studio.this-page-cannot-load"), description: studioCopy("studio.studio-has-no-loader-named", { value0: String(route.spec.data.loader) }) }} /></Frame>;
   return <Loader key={route.key} entry={route.entry} page={route.page} spec={route.spec} {...(route.state === 'leaf' ? { slug: route.slug } : {})} />;
+}
+
+/* Publication states: the app-root files Publisher installs beside the routes mount these. */
+
+/** A state the publication serves from an app-root file (`loading.tsx`, `not-found.tsx`, `error.tsx`, `global-error.tsx`). */
+export type PublishedStateName = 'loading' | 'not-found' | 'error' | 'global-error';
+/** Each failed state's notice, by Writer key. */
+const STATE_NOTICE: Record<'not-found' | 'error', { title: string; description: string }> = {
+  'not-found': { title: 'studio.this-page-cannot-load', description: 'studio.no-matching-pages' },
+  error: { title: 'studio.this-page-cannot-load', description: 'studio.producer-returned-an-error' },
+};
+const stateNotice = (state: 'not-found' | 'error'): PageNoticeData => ({ title: studioCopy(STATE_NOTICE[state].title), description: studioCopy(STATE_NOTICE[state].description) });
+
+/**
+ * One publication state: the publication's home record assembled in its pinned frame, the state in
+ * place of its sections. `global-error` replaces the root layout, so it renders its own document
+ * around the notice alone (the providers the frame reads are what failed).
+ */
+export function PublishedState({ state }: { state: PublishedStateName }) {
+  if (state === 'global-error') return <StudioDocument><PageNotice notice={stateNotice('error')} /></StudioDocument>;
+  return <StateRoute state={state} />;
+}
+
+function StateRoute({ state }: { state: Exclude<PublishedStateName, 'global-error'> }) {
+  const { map } = useStudioRoutes();
+  const home = pageById.get(studioHomeId);
+  const route: StudioRoute = home ? resolveStudioRoute(map, home.path.split('/').filter(Boolean)) : { state: 'missing' };
+  const loaded: Loaded = state === 'loading' ? { state: 'loading' } : { state: 'notice', notice: stateNotice(state) };
+  const body = state === 'loading' ? <PageNotice loadingLabel={studioCopy('studio.loading-page')} /> : <PageNotice notice={stateNotice(state)} />;
+  if (route.state === 'missing') return body;
+  return <Frame entry={route.entry} page={route.page} spec={route.spec} loaded={loaded}>{body}</Frame>;
 }

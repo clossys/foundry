@@ -47294,5 +47294,54 @@
         }
       }
     }
+  ],
+  "document": {
+    "stylesheets": [
+      {
+        "href": "/api/designer/globals.css",
+        "precedence": "consumer"
+      }
+    ],
+    "icons": {
+      "icon": "/api/brand/favicon.svg",
+      "apple": "/api/brand/app-icon.svg"
+    }
+  },
+  "shell": [
+    {
+      "state": "document",
+      "entry": {
+        "file": "studio/app/layout.tsx",
+        "export": "default"
+      }
+    },
+    {
+      "state": "loading",
+      "entry": {
+        "file": "studio/app/loading.tsx",
+        "export": "default"
+      }
+    },
+    {
+      "state": "not-found",
+      "entry": {
+        "file": "studio/app/not-found.tsx",
+        "export": "default"
+      }
+    },
+    {
+      "state": "error",
+      "entry": {
+        "file": "studio/app/error.tsx",
+        "export": "default"
+      }
+    },
+    {
+      "state": "global-error",
+      "entry": {
+        "file": "studio/app/global-error.tsx",
+        "export": "default"
+      }
+    }
   ]
 }

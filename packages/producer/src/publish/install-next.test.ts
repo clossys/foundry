@@ -94,3 +94,25 @@ it("refuses an unknown publication and a non-publication out dir", async () => {
   await writeFile(join(root, "out", "keep.txt"), "user file\n");
   await expect(install()).rejects.toThrow(/was not written by clossys publish --install/);
 });
+
+it("with a states module installs the publication's shell, reports it, and refuses to overwrite a hand-written layout", async () => {
+  await mkdir(join(root, "app"), { recursive: true });
+  await writeFile(join(root, "app", "layout.tsx"), "export default function Layout() { return null; }\n");
+  const refused = await install({ states: "../components/Renderer.tsx" });
+  expect(nextFailed(refused)).toBe(true);
+  expect(refused.findings).toEqual([expect.objectContaining({ code: "site-contract", detail: "layout.tsx exists and was not installed by Publisher" })]);
+  await rm(join(root, "app", "layout.tsx"));
+  const result = await install({ states: "../components/Renderer.tsx" });
+  expect(nextFailed(result)).toBe(false);
+  const shell = result.files.filter(row => row.kind === "shell");
+  // The refused run already wrote the states it could; only the freed layout is new.
+  expect(shell.map(row => [row.file, row.shell, row.state])).toEqual([
+    ["layout.tsx", "document", "written"], ["loading.tsx", "loading", "unchanged"], ["not-found.tsx", "not-found", "unchanged"], ["error.tsx", "error", "unchanged"], ["global-error.tsx", "global-error", "unchanged"],
+  ]);
+  for (const row of shell) expect((await readFile(join(root, "app", row.file), "utf8")).split("\n", 1)[0]).toBe(NEXT_ROUTE_MARKER);
+  const report = JSON.parse(await readFile(join(root, "out", "install-report.json"), "utf8"));
+  expect(report.shell.map((row: { state: string }) => row.state)).toEqual(["document", "loading", "not-found", "error", "global-error"]);
+  // A reinstall without the states module retires the marked shell, as it does any route no longer planned.
+  const retired = await install();
+  expect(retired.files.filter(row => row.state === "removed").map(row => row.file).sort()).toEqual(["error.tsx", "global-error.tsx", "layout.tsx", "loading.tsx", "not-found.tsx"]);
+});

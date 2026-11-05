@@ -9,6 +9,7 @@ import { studioCellChange } from '../lib/cell-events';
 import type { StudioReport } from '../lib/studio-report';
 import { loadBrand, loadReports, type Resource, type StudioBrandInfo, type StudioSeed } from '../lib/studio-seed';
 import { StudioRouteMapProvider } from './StudioRouteMap';
+import copyRegistry from '../generated/studio-copy.json';
 
 export type { Resource, StudioBrandInfo } from '../lib/studio-seed';
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -23,6 +24,19 @@ export function useThemeMode() { return useContext(ThemeContext); }
 
 /** Runs before hydration so the first paint already carries the stored mode. */
 export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||((!t||t==='system')&&matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.classList.toggle('dark',d);r.dataset.theme=d?'dark':'light';r.style.colorScheme=d?'dark':'light';}catch(e){}})();`;
+
+/**
+ * The publication's one document element: `<html>` in the Writer registry's locale around a head
+ * and a body. The installed root layout (through the assembly's `PublishedDocument`) and the
+ * installed `global-error` state (which replaces the root layout) both render it, so the document
+ * is written once and no state draws its own.
+ */
+export function StudioDocument({ head, children }: { head?: ReactNode; children: ReactNode }) {
+  return <html lang={copyRegistry.locale} suppressHydrationWarning>
+    <head>{head}</head>
+    <body>{children}</body>
+  </html>;
+}
 
 function storedMode(): ThemeMode {
   try { const value = localStorage.getItem('theme'); return value === 'light' || value === 'dark' ? value : 'system'; } catch { return 'system'; }

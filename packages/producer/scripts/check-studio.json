@@ -27,6 +27,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:route-parity",
+      "cwd": "packages/producer",
+      "run": "npm run check:route-parity",
+      "kind": "static"
+    },
+    {
       "id": "producer check:studio-template",
       "cwd": "packages/producer",
       "run": "npm run check:studio-template",
@@ -48,6 +54,18 @@
       "id": "producer scripts/build-studio.test.mjs",
       "cwd": "packages/producer",
       "run": "node --test scripts/build-studio.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer scripts/check-route-parity.test.mjs",
+      "cwd": "packages/producer",
+      "run": "node --test scripts/check-route-parity.test.mjs",
+      "kind": "test"
+    },
+    {
+      "id": "producer src/studio/designer-views.ds-only.test.ts",
+      "cwd": "packages/producer",
+      "run": "npm test -- src/studio/designer-views.ds-only.test.ts",
       "kind": "test"
     },
     {

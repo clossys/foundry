@@ -6,7 +6,7 @@ import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
 
-import { HOOK_CHECKS, delta, normalize, pushedRefs, ratchet, report } from "./pre-push-ratchet.mjs";
+import { HOOK_CHECKS, PENDING_HOOK_CHECKS, delta, normalize, pushedRefs, ratchet, report } from "./pre-push-ratchet.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const git = (cwd, ...args) => execFileSync("git", ["-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", ...args], { cwd, encoding: "utf8" }).trim();
@@ -156,6 +156,23 @@ test("the pre-push hook measures every pushed ref, not HEAD, and skips deletes (
   git(root, "push", "-q", "origin", `${main}:refs/heads/gone`);
   git(root, "push", "-q", "origin", ":refs/heads/gone");
   assert.equal(git(remote, "branch", "--list", "gone"), "");
+});
+
+test("the hook runs the route, ds-only and copy-source checks; only a pending id may be absent, and its skip is reported", async () => {
+  for (const id of ["producer check:routes-published", "producer check:studio-routes", "producer check:route-parity", "producer src/studio/designer-views.ds-only.test.ts", "producer check:copy-source"]) assert.ok(HOOK_CHECKS.includes(id), id);
+  assert.deepEqual(PENDING_HOOK_CHECKS, ["producer check:copy-source"]);
+  const { root, base } = repository();
+  const head = commit(root, { "packages/producer/README.md": "unrelated\n" }, "unrelated");
+  const result = await ratchet({ cwd: root, base, head, ids: ["fixture probe", "producer check:copy-source"] });
+  assert.deepEqual(result.skipped, ["producer check:copy-source"]);
+  assert.deepEqual(result.delta.checks.map(check => check.id), ["fixture probe"]);
+  assert.match(report(result), /^skipped\s+producer check:copy-source: not in the head's check:studio manifest yet$/m);
+  await assert.rejects(ratchet({ cwd: root, base, head, ids: ["fixture probe", "producer check:route-parity"] }), /no check:studio sub-check "producer check:route-parity" at head/);
+  // Once the head lists it, the pending id runs like any other hook check.
+  const listed = commit(root, { "packages/producer/scripts/check-studio.json": manifest([{ id: "producer check:copy-source", kind: "static", cwd: "packages/producer", run: "node scripts/probe.mjs" }]) }, "wire copy-source");
+  const wired = await ratchet({ cwd: root, base, head: listed, ids: ["producer check:copy-source"] });
+  assert.deepEqual(wired.skipped, []);
+  assert.deepEqual(wired.delta.checks.map(check => check.id), ["producer check:copy-source"]);
 });
 
 test("pushedRefs reads git's pre-push lines, drops deletes and refuses unreadable input", () => {

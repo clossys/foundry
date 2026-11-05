@@ -16,7 +16,7 @@ export async function runPublish(args: CliArgs, root: string, cwd = process.cwd(
   const hash = args.selection?.lastIndexOf("#") ?? -1;
   const selection = args.selection === undefined ? {} : { selection: hash > 0 ? { module: args.selection.slice(0, hash), export: args.selection.slice(hash + 1) } : { module: args.selection } };
   if (args.site !== undefined && args.next !== undefined) {
-    const next = await publishNext({ root, publication: args.site, app: resolve(cwd, args.next), assembly: args.assembly!, live: args.live, check: args.check, ...(args.out ? { out: resolve(cwd, args.out) } : {}) });
+    const next = await publishNext({ root, publication: args.site, app: resolve(cwd, args.next), assembly: args.assembly!, ...(args.states !== undefined ? { states: args.states } : {}), live: args.live, check: args.check, ...(args.out ? { out: resolve(cwd, args.out) } : {}) });
     return { exitCode: nextFailed(next) ? 1 : 0, verb: "publish", root, check: args.check, message: nextSummary(next) };
   }
   if (args.site !== undefined) {

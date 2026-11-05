@@ -12,6 +12,11 @@
  * exists at request time, so a leaf recorded after the install still resolves and an unknown
  * slug is a 404. A static install serves exactly the leaves it was installed with.
  * Installed files carry `NEXT_ROUTE_MARKER`; anything without it was not written by Publisher.
+ *
+ * With a `states` module, the install also writes the publication's shell at the app root
+ * (`NEXT_SHELL_FILES`): the root `layout.tsx` mounts the assembly's document export and re-exports
+ * its metadata, and `loading.tsx`, `not-found.tsx`, `error.tsx` and `global-error.tsx` each mount
+ * the states module's state export for that state. No App Router file is then left to a hand.
  */
 import { projectStaticParams } from "../content-map/projections.js";
 import { contentMapPath } from "../content-map/check.js";
@@ -25,6 +30,23 @@ export const NEXT_ROUTE_MARKER = "// Installed by Publisher (clossys publish --i
 export const NEXT_PAGE_EXPORT = "PublishedPage";
 /** The assembly export a live leaf route asks: `(page, slug) => Promise<boolean>`, whether the leaf exists. */
 export const NEXT_LEAF_EXPORT = "publishedLeaf";
+
+/** The assembly export the root layout mounts: `({ children })` renders the publication's document around the routes. */
+export const NEXT_DOCUMENT_EXPORT = "PublishedDocument";
+/** The assembly export the root layout serves as its Next `metadata`. */
+export const NEXT_METADATA_EXPORT = "publishedMetadata";
+/** The states module export every state file mounts: `({ state })` renders that state of the publication. */
+export const NEXT_STATE_EXPORT = "PublishedState";
+/** A publication state Next serves from an app-root file instead of a route. */
+export type NextShellState = "document" | "loading" | "not-found" | "error" | "global-error";
+/** The app-root files one publication's shell installs, and the state each serves. Error states are client modules (Next's rule). */
+export const NEXT_SHELL_FILES: readonly { readonly file: string; readonly state: NextShellState; readonly client: boolean }[] = Object.freeze([
+  Object.freeze({ file: "layout.tsx", state: "document", client: false }),
+  Object.freeze({ file: "loading.tsx", state: "loading", client: false }),
+  Object.freeze({ file: "not-found.tsx", state: "not-found", client: false }),
+  Object.freeze({ file: "error.tsx", state: "error", client: true }),
+  Object.freeze({ file: "global-error.tsx", state: "global-error", client: true }),
+] as const);
 
 /** One leaf the record store holds under a gallery page. */
 export interface NextRouteLeaf { readonly slug: string; readonly title: string }
@@ -41,12 +63,20 @@ export interface NextRoutesOptions {
   readonly assembly: string;
   /** Resolve leaves at request time through the assembly's `publishedLeaf`. */
   readonly live?: boolean;
+  /**
+   * The consumer's states module (a client module exporting `PublishedState`), relative to the app
+   * directory. When set, the publication's shell (`NEXT_SHELL_FILES`) installs at the app root.
+   */
+  readonly states?: string;
 }
 /** One installed route file, relative to the app directory. */
 export interface NextRouteFile {
   readonly file: string;
   readonly pageId: string;
-  readonly kind: "page" | "leaf";
+  /** `shell` is an app-root file of the publication (its document or a state), not a page route. */
+  readonly kind: "page" | "leaf" | "shell";
+  /** The state a shell file serves. */
+  readonly state?: NextShellState;
   /** The served route, `[slug]` standing for the leaf parameter. */
   readonly route: string;
   readonly content: string;
@@ -96,6 +126,34 @@ export default async function Page({ params }: { params: Promise<{ slug: string 
 `;
 }
 
+const SHELL_NAMES: Record<NextShellState, string> = { document: "Layout", loading: "Loading", "not-found": "NotFound", error: "StateError", "global-error": "GlobalError" };
+
+function layoutModule(file: string, assembly: string, live: boolean): string {
+  return `${NEXT_ROUTE_MARKER}
+import { createElement, type ReactNode } from "react";
+import { ${NEXT_DOCUMENT_EXPORT}, ${NEXT_METADATA_EXPORT} } from ${literal(relativeSpecifier(file, assembly))};
+
+export const metadata = ${NEXT_METADATA_EXPORT};
+${live ? `export const dynamic = "force-dynamic";
+` : ""}
+export default function ${SHELL_NAMES.document}({ children }: { children: ReactNode }) {
+  return createElement(${NEXT_DOCUMENT_EXPORT}, { children });
+}
+`;
+}
+
+function stateModule(file: string, states: string, state: NextShellState, client: boolean): string {
+  return `${NEXT_ROUTE_MARKER}
+${client ? `"use client";
+` : ""}import { createElement } from "react";
+import { ${NEXT_STATE_EXPORT} } from ${literal(relativeSpecifier(file, states))};
+
+export default function ${SHELL_NAMES[state]}() {
+  return createElement(${NEXT_STATE_EXPORT}, { state: ${literal(state)} });
+}
+`;
+}
+
 /** Plan the route files a publication installs into a Next app; blocking findings mean nothing installs. */
 export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
   const findings: InstallFinding[] = [];
@@ -139,6 +197,14 @@ export function planNextRoutes(options: NextRoutesOptions): NextRoutesPlan {
     const slugs = params.filter(row => row.slug.length === segments.length + 1 && row.slug.slice(0, -1).join("/") === prefix).map(row => row.slug.at(-1)!);
     const file = [...folder(segments), "[slug]", "page.tsx"].join("/");
     add({ file, pageId: page.id, kind: "leaf", route: `/${[...segments, "[slug]"].join("/")}`, content: leafModule(file, options.assembly, page.id, slugs, options.live === true) });
+  }
+  if (options.states !== undefined) {
+    for (const shell of NEXT_SHELL_FILES) {
+      const content = shell.state === "document"
+        ? layoutModule(shell.file, options.assembly, options.live === true)
+        : stateModule(shell.file, options.states, shell.state, shell.client);
+      add({ file: shell.file, pageId: options.map.publicationId, kind: "shell", state: shell.state, route: "/", content });
+    }
   }
   return { files, findings };
 }

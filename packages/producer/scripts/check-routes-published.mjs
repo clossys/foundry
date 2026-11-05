@@ -13,6 +13,11 @@
  *                       published page or leaf path
  *   not-projected       breadcrumbs (trails), tabs or landings are missing from the projection, or a
  *                       served page has no projected trail: the Studio would derive them by hand
+ *   shell-unpublished   the publication's root layout or a state file (`loading`, `not-found`, `error`,
+ *                       `global-error`) is missing, not installed by Publisher, mounts anything but the
+ *                       publication's document or that state, or is not in the projection's shell
+ *   route-unpublished   (also) any other App Router file (a nested layout, template or state, a route
+ *                       handler): no publication installs it
  *
  * Usage: node scripts/check-routes-published.mjs [--root <repository>] [--json]. `--root` checks another
  * repository tree (its packages/producer/studio) instead of this one. Exit 1 on any finding.
@@ -21,6 +26,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { projectCommands, projectNavigation } from '@clossys/publisher/content-map';
+import { NEXT_DOCUMENT_EXPORT, NEXT_ROUTE_MARKER, NEXT_SHELL_FILES, NEXT_STATE_EXPORT } from '@clossys/publisher/install';
 
 const PRODUCER_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPOSITORY_ROOT = path.resolve(PRODUCER_ROOT, '../..');
@@ -52,6 +58,21 @@ export function installedRoutes(studioRoot) {
   });
 }
 
+/** Every App Router file name that serves a route, a layout or a state. */
+const APP_ROUTER_FILE = /^(?:page|route|default|layout|template|loading|error|global-error|not-found)\.[cm]?[jt]sx?$/;
+const escape = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+/** What an installed shell file mounts: the document for the root layout, else its own state. */
+const shellMount = shell => shell.state === 'document'
+  ? new RegExp(`createElement\\(${NEXT_DOCUMENT_EXPORT}\\s*,`)
+  : new RegExp(`createElement\\(${NEXT_STATE_EXPORT}\\s*,\\s*\\{\\s*state:\\s*"${escape(shell.state)}"\\s*\\}\\)`);
+
+/** The App Router files under app/ that are not `page.tsx`: the publication's shell, and anything else. */
+export function installedAppFiles(studioRoot) {
+  const app = path.join(studioRoot, 'app');
+  return walk(app).filter(file => APP_ROUTER_FILE.test(path.basename(file)) && path.basename(file) !== 'page.tsx')
+    .map(file => ({ file: posix(path.relative(studioRoot, file)), name: posix(path.relative(app, file)), text: fs.readFileSync(file, 'utf8') }));
+}
+
 /** Every finding for one repository tree. */
 export function checkRoutesPublished(root = REPOSITORY_ROOT) {
   const studioRoot = path.join(root, 'packages/producer/studio');
@@ -76,6 +97,21 @@ export function checkRoutesPublished(root = REPOSITORY_ROOT) {
       for (const slug of route.slugs) if (!leaves.some(leaf => leaf.page === route.id && leaf.slug === slug)) add('leaf-unpublished', route.file, `lists ${slug}, which is no published leaf of ${route.id}`);
     } else served.add(route.id);
   }
+  // The publication's shell: every shell file installed, mounting its document or state, and projected.
+  const shellFiles = new Map(NEXT_SHELL_FILES.map(shell => [shell.file, shell]));
+  const others = installedAppFiles(studioRoot);
+  for (const other of others) {
+    const shell = shellFiles.get(other.name);
+    if (!shell) { add('route-unpublished', other.file, 'is an App Router file no publication installs'); continue; }
+    if (other.text.split('\n', 1)[0] !== NEXT_ROUTE_MARKER) add('shell-unpublished', other.file, `the publication's ${shell.state} is not installed by Publisher`);
+    else if (!shellMount(shell).test(other.text)) add('shell-unpublished', other.file, `mounts something other than the publication's ${shell.state}`);
+  }
+  const projected = new Set((projection.shell ?? []).map(row => row.state));
+  for (const shell of NEXT_SHELL_FILES) {
+    if (!others.some(other => other.name === shell.file)) add('shell-unpublished', `app/${shell.file}`, `the publication's ${shell.state} has no installed file, so Next's built-in one renders`);
+    if (!projected.has(shell.state)) add('not-projected', `projection.shell.${shell.state}`, `the publication's ${shell.state} is not in the Publisher projection`);
+  }
+
   for (const page of pages.values()) if (!served.has(page.id)) add('record-unserved', page.id, `published at ${page.path}, but no installed route serves it`);
   for (const id of new Set(leaves.map(leaf => leaf.page))) if (!templates.has(id)) add('record-unserved', id, `publishes leaves under ${pages.get(id)?.path ?? id}, but no installed leaf template serves them`);
 
@@ -97,7 +133,7 @@ export function checkRoutesPublished(root = REPOSITORY_ROOT) {
     for (const page of pages.values()) if (!projection.trails[page.id]) add('not-projected', page.id, `served at ${page.path} with no projected trail`);
     for (const leaf of leaves) if (!projection.trails[`${leaf.page}:${leaf.slug}`]) add('not-projected', `${leaf.page}:${leaf.slug}`, `served at ${leaf.path} with no projected trail`);
   }
-  return { findings, routes: routes.length, links: links.length };
+  return { findings, routes: routes.length + others.length, links: links.length };
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

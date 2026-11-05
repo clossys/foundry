@@ -604,11 +604,13 @@
       },
       "status": "enforced",
       "checks": [
-        "packages/producer#check:routes-published"
+        "packages/producer#check:routes-published",
+        "packages/producer#check:studio-routes",
+        "packages/producer#check:route-parity"
       ],
       "related": [
         "packages/producer#check:assemble-only",
-        "packages/producer#check:studio-routes"
+        "check:studio#producer scripts/check-route-parity.test.mjs"
       ],
       "fixture": "scripts/rules/fixtures/R-ROUTES-PUBLISHED",
       "fixture_runs": [
@@ -629,9 +631,45 @@
           "cwd": "packages/producer",
           "run": "node scripts/check-routes-published.mjs --root {fixture}",
           "expect": "^link-unpublished\\s+docs > gone"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^shell-unpublished\\s+app/layout\\.tsx\\s+mounts something other than the publication's document"
+        },
+        {
+          "check": "packages/producer#check:routes-published",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-routes-published.mjs --root {fixture}",
+          "expect": "^shell-unpublished\\s+app/not-found\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:studio-routes",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-studio-routes.cjs --root {fixture}",
+          "expect": "\"kind\": \"not-found\",\\s*\"file\": \"app/not-found\\.tsx\""
+        },
+        {
+          "check": "packages/producer#check:studio-routes",
+          "cwd": "packages/producer",
+          "run": "node studio/checks/check-studio-routes.cjs --root {fixture}",
+          "expect": "\"rule\": \"route-not-installed\",\\s*\"file\": \"app/probe/page\\.tsx\"|\"rule\": \"stale-installed-route\",\\s*\"file\": \"app/probe/page\\.tsx\""
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture}",
+          "expect": "^route-drift\\s+app/layout\\.tsx"
+        },
+        {
+          "check": "packages/producer#check:route-parity",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-route-parity.mjs --root {fixture}",
+          "expect": "^route-not-installed\\s+app/probe/page\\.tsx"
         }
       ],
-      "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json): check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, and breadcrumbs, tabs or landings missing from the projection. The fixture serves an unpublished probe route, leaves an orphan record unserved and links a breadcrumb to an unpublished path."
+      "note": "Every Studio route, nav link, command, breadcrumb, tab, landing and redirect target comes from the Publisher projection (studio/generated/studio-map.json), and every file under studio/app is what Publisher installs: check:routes-published fails on an installed app/**/page.tsx that mounts no published page record or sits off its record's path, a leaf template slug that is no published leaf, a published record or leaf set with no installed route, any link to a path that is no published page or leaf, breadcrumbs, tabs or landings missing from the projection, a root layout or loading/not-found/error/global-error file that is missing, unmarked or mounts anything but the publication's document or state, and any other App Router file; check:studio-routes fails on a content-map page, leaf template or shell file without Publisher's install, and on any other route file; check:route-parity reinstalls publication.studio into a temp directory and fails on any file under studio/app that a fresh install does not write or writes with other bytes (a hand edit under a copied marker) and on any file it writes that app/ lacks. The fixture serves an unpublished probe route, leaves an orphan record unserved, links a breadcrumb to an unpublished path, lacks the not-found and other state files, and hand-writes the root layout under a copied marker."
     },
     {
       "id": "R-SINGLE-READER",

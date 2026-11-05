@@ -119,7 +119,7 @@ export async function compileStudio({ root, out, decisionInputs = DECISION_INPUT
     }
     await mkdir(appDir, { recursive: true });
     const projection = await generateStudioMap({ clossysRoot: join(stage, 'clossys'), outputDir, appDir, installOut: join(stage, '.install') });
-    const routeFiles = projection.routes.flatMap(route => [route.entry.file, ...(route.leaf ? [route.leaf.entry.file] : [])])
+    const routeFiles = [...projection.routes.flatMap(route => [route.entry.file, ...(route.leaf ? [route.leaf.entry.file] : [])]), ...projection.shell.map(row => row.entry.file)]
       .map(file => file.replace(/^studio\//, ''));
     const outputs = [...(await walk(outputDir)).map(rel => `generated/${rel}`), ...routeFiles].sort();
     const lockOutputs = [];

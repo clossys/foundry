@@ -8,8 +8,12 @@
  * `clossys publish --install --next` (their first line is Publisher's route marker). The map and
  * route pack are read after content-map expansion: each parameterized `page.<agent>-<ns>` record
  * becomes its top page plus one nested tab page per IA group, each tab with a `[slug]` leaf route.
+ * The publication's shell is Publisher's too: the root `layout.tsx` and the `loading`, `not-found`,
+ * `error` and `global-error` files (`NEXT_SHELL_FILES`) must each exist with the marker, so no
+ * document, loading or failure state is a hand-written file or Next's built-in page.
  * No other route file may exist under `app/`: the record-specimen frame is `/__specimen`, served by
  * the Producer server, not a Next page.
+ * Usage: node studio/checks/check-studio-routes.cjs [--root <repository>].
  */
 const fs = require('node:fs');
 const path = require('node:path');
@@ -20,8 +24,8 @@ const REPOSITORY_ROOT = path.resolve(STUDIO_ROOT, '../../..');
 const ROUTE_MARKER = '// Installed by Publisher (clossys publish --install --next). Reinstall rather than editing this file.';
 /** Route files under app/ Publisher does not install: none (the specimen frame is a server route). */
 const EXEMPT_ROUTES = [];
-/** Files that make a URL servable in the App Router. */
-const ROUTE_FILE = /^(?:page|route|default)\.[cm]?[jt]sx?$/;
+/** Files that make a URL servable, or a document or state renderable, in the App Router. */
+const ROUTE_FILE = /^(?:page|route|default|layout|template|loading|error|global-error|not-found)\.[cm]?[jt]sx?$/;
 
 const readJson = file => JSON.parse(fs.readFileSync(file, 'utf8'));
 const folder = segment => (segment.startsWith('_') ? `%5F${segment.slice(1)}` : segment);
@@ -59,7 +63,9 @@ async function readStudioPublication(repositoryRoot = REPOSITORY_ROOT) {
 async function checkStudioRoutes({ studioRoot = STUDIO_ROOT, repositoryRoot = REPOSITORY_ROOT, publication } = {}) {
   const findings = [];
   const { map, routePack: pack } = publication ?? await readStudioPublication(repositoryRoot);
+  const { NEXT_SHELL_FILES } = await import('@clossys/publisher/install');
   const expected = new Map();
+  for (const shell of NEXT_SHELL_FILES) expected.set(`app/${shell.file}`, { page: map.publicationId, kind: shell.state });
   for (const entry of map.entries.filter(row => row.kind === 'page')) expected.set(pageFile(entry.path), { page: entry.id, kind: 'page' });
   for (const route of pack.routes.filter(row => row.leaf)) expected.set(leafFile(route.path), { page: route.instanceId, kind: 'leaf' });
   for (const [file, row] of expected) {
@@ -77,10 +83,13 @@ async function checkStudioRoutes({ studioRoot = STUDIO_ROOT, repositoryRoot = RE
 
 module.exports = { checkStudioRoutes, readStudioPublication, ROUTE_MARKER, EXEMPT_ROUTES };
 if (require.main === module) {
-  checkStudioRoutes().then(findings => {
+  // `--root <repository>` checks another tree's packages/producer/studio/app against this repository's records.
+  const at = process.argv.indexOf('--root');
+  const studioRoot = at >= 0 ? path.join(path.resolve(process.argv[at + 1]), 'packages/producer/studio') : STUDIO_ROOT;
+  checkStudioRoutes({ studioRoot }).then(findings => {
     if (findings.length) {
       console.error(JSON.stringify({ check: 'Studio routes', findings }, null, 2));
       process.exitCode = 1;
-    } else console.log('Studio routes: every content-map page and leaf template is installed by Publisher; app/ holds no other route.');
+    } else console.log('Studio routes: every content-map page, leaf template, the root layout and each state file is installed by Publisher; app/ holds no other route.');
   }, error => { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; });
 }
