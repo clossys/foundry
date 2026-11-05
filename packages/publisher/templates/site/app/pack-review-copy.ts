@@ -29,7 +29,7 @@ const ENTRIES: ReadonlyArray<readonly [id: string, text: string, context: string
   ["front-door.pack-review.description", "The pack's strategy brief, brand kit, voice and copy, then this site's pages, forced states and exports, read from the repository's records.", "pack review page: line under the heading"],
   ["front-door.pack-review-surface.label", "Review", "pack review page: surface badge in the page banner"],
   ["front-door.pack-review-strategy.label", "Strategy brief", "pack review page: heading of the strategy brief section"],
-  ["front-door.pack-review-strategy-empty.notice", "The publisher.launch strategy brief is missing. Activate the required launch cells and compile the brief.", "pack review page: the strategy brief section when required launch cells or its written brief are missing"],
+  ["front-door.pack-review-strategy-empty.notice", "The publisher.launch strategy brief is missing. Pin the required Director launch slots, then write the brief.", "pack review page: the strategy brief section when required launch slots or its written brief are missing"],
   ["front-door.pack-review-strategy-contract.notice", "Read from the publisher.launch strategy brief.", "pack review page: strategy brief source, the Publisher launch contract"],
   ["front-door.pack-review-strategy-brief.notice", "Context read from the engagement brief.", "pack review page: strategy brief source, the engagement brief alone"],
   ["front-door.pack-review-strategy-stale.notice", "This strategy brief is stale. Review its cell references before proceeding.", "pack review page: visible stale strategy brief flag"],

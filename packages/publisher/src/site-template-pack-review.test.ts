@@ -915,7 +915,7 @@ describe("resolvePackReviewSections", () => {
         labels: SECTION_TEXT.labels,
       }),
     );
-    expect(html).toContain("The publisher.launch strategy brief is missing. Activate the required launch cells and compile the brief.");
+    expect(html).toContain("The publisher.launch strategy brief is missing. Pin the required Director launch slots, then write the brief.");
     expect(html).toContain("No brand file is recorded yet.");
     expect(html).toContain("No voice record and no reusable copy are recorded yet.");
     expect(html).not.toContain("private");
