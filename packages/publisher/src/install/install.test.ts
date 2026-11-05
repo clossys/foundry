@@ -152,6 +152,49 @@ describe("unpinned and unbound slots", () => {
   });
 });
 
+describe("declared copy slots", () => {
+  // A hero whose fixtures read preview Writer keys and whose element declares its copy slots.
+  const hero = {
+    name: "simple-hero", type: "registry:block",
+    files: [{ path: "simple-hero.tsx", type: "registry:component", target: "components/sections/simple-hero.tsx", content: "export function SimpleHero() { return null; }\n" }],
+  };
+  const declared = [
+    { slot: "hero.heading", prop: "heading", previewKey: "home.hero.heading" },
+    { slot: "hero.body", prop: "body", previewKey: "home.hero.body" },
+  ];
+  const sourceWith = (preview: Record<string, unknown>) => recordStoreSource({
+    async load(id, version) {
+      if (id !== "sections.hero/simple-hero" || version !== 1) return undefined;
+      return { id, version: 1, kind: "visual", files: [{ path: "simple-hero.json", content: JSON.stringify(hero) }], preview, contentHash: "" };
+    },
+  });
+  const heroPins: InstallPins = { "sections.hero": { element: "simple-hero", version: 1 } };
+  const fixtures = { heading: { $copy: "home.hero.heading" }, body: { $copy: "home.hero.body" } };
+  const writer = { "home.hero.heading": "Home heading", "home.hero.body": "Home body", "hero.body": "Same-named key", "about.heading": "About heading" };
+
+  it("binds only the declared slot names; an unbound slot renders empty, never its preview key or a same-named key", async () => {
+    const about: InstallPageRecord = { id: "about", frame: "sections.hero", sections: [], copy: { "hero.heading": "about.heading" } };
+    const { slots, findings } = await resolvePage(about, heroPins, sourceWith({ fixtures, copySlots: declared }));
+    expect(findings).toEqual([]);
+    expect(slots[0]!.copySlots).toEqual(["hero.body", "hero.heading"]);
+    expect(slots[0]!.previewCopy).toEqual({ "hero.heading": "home.hero.heading", "hero.body": "home.hero.body" });
+    expect(slots[0]!.props).toEqual({ heading: { $copy: "hero.heading" }, body: { $copy: "hero.body" } });
+    const bound = bindPage({ page: about, slots, copy: writer });
+    expect(bound.page!.frame.text).toEqual({ "hero.heading": "About heading", "hero.body": "" });
+    // The frame's props carry its (empty) children alongside the bound copy.
+    expect(bound.page!.frame.props).toEqual({ heading: "About heading", body: "", children: [] });
+    expect(bound.findings).toEqual([expect.objectContaining({ code: "unbound-copy-slot", slot: "sections.hero", severity: "info" })]);
+  });
+
+  it("refuses a fixture $copy the element does not declare, and a declared prop that holds no preview key", async () => {
+    const page: InstallPageRecord = { id: "home", frame: "sections.hero", sections: [] };
+    const extra = await resolvePage(page, heroPins, sourceWith({ fixtures: { ...fixtures, note: { $copy: "home.note" } }, copySlots: declared }));
+    expect(extra.findings).toEqual([expect.objectContaining({ code: "invalid-copy-slot", slot: "sections.hero", detail: expect.stringContaining("home.note is not a declared copy slot") })]);
+    const moved = await resolvePage(page, heroPins, sourceWith({ fixtures, copySlots: [{ ...declared[0]!, prop: "title" }, declared[1]] }));
+    expect(moved.findings).toEqual([expect.objectContaining({ code: "invalid-copy-slot", detail: expect.stringContaining("prop title") }), expect.objectContaining({ code: "invalid-copy-slot", detail: expect.stringContaining("home.hero.heading is not a declared copy slot") })]);
+  });
+});
+
 describe("substrate dependencies", () => {
   it("unions every slot's npm dependencies, splitting a version range from the name", () => {
     const slot = (dependencies: string[]) => ({ dependencies }) as unknown as ResolvedSlot;

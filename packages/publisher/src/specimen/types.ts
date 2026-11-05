@@ -42,6 +42,22 @@ export interface SpecimenPreview {
   readonly export?: string;
   /** Named payload export mapping copy props to Writer slot names. */
   readonly copyKeys?: string;
+  /**
+   * The element's declared copy slots (`meta.element.reads.copyKeys` entries). When present they
+   * are the element's only copy slots: a page binds `slot`, the text renders at `prop` (a dot path
+   * into the mounted props), and the specimen previews it with Writer key `previewKey`.
+   */
+  readonly copySlots?: readonly SpecimenCopySlot[];
+}
+
+/** One declared copy slot of an element. */
+export interface SpecimenCopySlot {
+  /** The page-binding name, such as `hero.heading`. */
+  readonly slot: string;
+  /** Where the text renders: a dot path into the mounted props (`heading`, `nav.items.0.label`). */
+  readonly prop: string;
+  /** The Writer key the specimen and preview read. */
+  readonly previewKey: string;
 }
 
 /** One file of a payload, in shadcn registry-item form (`files[]`). */

@@ -3,7 +3,7 @@
  * record in an iframe-ready page, with a live health reporter (Node only).
  */
 export { SPECIMEN_CONTAINERS, SPECIMEN_KINDS, SPECIMEN_TEXT_ROLES } from "./types.js";
-export type { SpecimenAliasContext, SpecimenContainer, SpecimenCopy, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenQuery, SpecimenRecord, SpecimenRecordSource, SpecimenTextRole, SpecimenTheme } from "./types.js";
+export type { SpecimenAliasContext, SpecimenContainer, SpecimenCopy, SpecimenCopySlot, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenQuery, SpecimenRecord, SpecimenRecordSource, SpecimenTextRole, SpecimenTheme } from "./types.js";
 export { adaptPreview, adaptTheme, directoryRecordSource, recordStoreSource, specimenKindOf, specimenRecordFrom, validSpecimenId } from "./source.js";
 export type { DirectorySourceOptions, SpecimenElementVersion, SpecimenRecordStore } from "./source.js";
 export { parseThemeParam, themeCss } from "./theme.js";

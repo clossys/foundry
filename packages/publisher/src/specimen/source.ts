@@ -15,7 +15,7 @@ import { createHash } from "node:crypto";
 import { readdir, readFile, realpath, stat } from "node:fs/promises";
 import { isAbsolute, join, relative, resolve, sep } from "node:path";
 import { SPECIMEN_CONTAINERS, SPECIMEN_KINDS, SPECIMEN_TEXT_ROLES } from "./types.js";
-import type { SpecimenAliasContext, SpecimenCopy, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenRecord, SpecimenRecordSource, SpecimenTheme } from "./types.js";
+import type { SpecimenAliasContext, SpecimenCopy, SpecimenCopySlot, SpecimenFile, SpecimenKind, SpecimenPreview, SpecimenRecord, SpecimenRecordSource, SpecimenTheme } from "./types.js";
 
 /** Element ids are path-like (`slot/element`), never absolute, never dotted segments. */
 export const SPECIMEN_ID = /^[A-Za-z0-9@][A-Za-z0-9@._-]*(?:\/[A-Za-z0-9@][A-Za-z0-9@._-]*)*$/;
@@ -83,13 +83,34 @@ export function adaptPreview(value: unknown): SpecimenPreview {
   const copyKeys = typeof value.copyKeys === "string" ? value.copyKeys : descriptor && typeof rawFixtures.copyKeys === "string" ? rawFixtures.copyKeys : undefined;
   if (exported !== undefined && !exported) throw new Error("preview export must name a component");
   const copy = adaptCopy(value.copy);
+  const copySlots = adaptCopySlots(value.copySlots);
   return {
     ...(fixtures ? { fixtures } : {}), ...(copy ? { copy } : {}), ...(container ? { container } : {}),
     ...(theme ? { theme } : {}), ...(width ? { width } : {}),
     ...(entry !== undefined ? { entry } : {}),
     ...(exported !== undefined ? { export: exported } : {}),
     ...(copyKeys !== undefined ? { copyKeys } : {}),
+    ...(copySlots ? { copySlots } : {}),
   };
+}
+
+const COPY_SLOT_NAME = /^[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+const COPY_SLOT_PROP = /^[A-Za-z_$][\w$-]*(?:\.(?:\d+|[A-Za-z_$][\w$-]*))*$/;
+/** Declared copy slots (`{ slot, prop, previewKey }`), each slot and prop once; anything else throws. */
+function adaptCopySlots(value: unknown): SpecimenCopySlot[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) throw new Error("preview copySlots must list { slot, prop, previewKey } entries");
+  const slots = new Set<string>(), props = new Set<string>();
+  return value.map(entry => {
+    if (!isRecord(entry) || Object.keys(entry).some(key => key !== "slot" && key !== "prop" && key !== "previewKey")
+      || typeof entry.slot !== "string" || !COPY_SLOT_NAME.test(entry.slot)
+      || typeof entry.prop !== "string" || !COPY_SLOT_PROP.test(entry.prop)
+      || typeof entry.previewKey !== "string" || !entry.previewKey) throw new Error(`preview copy slot ${JSON.stringify(entry)} is not { slot, prop, previewKey }`);
+    if (slots.has(entry.slot)) throw new Error(`preview copy slot ${entry.slot} is declared twice`);
+    if (props.has(entry.prop)) throw new Error(`preview copy prop ${entry.prop} is declared by two copy slots`);
+    slots.add(entry.slot); props.add(entry.prop);
+    return { slot: entry.slot, prop: entry.prop, previewKey: entry.previewKey };
+  });
 }
 
 /** Payload files: a shadcn registry item's `files[]`, or the payload itself as one file. */

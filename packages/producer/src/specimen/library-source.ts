@@ -187,7 +187,15 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
   return store;
 }
 
-type CandidateItem = { type?: unknown; files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[]; meta?: { preview?: unknown } };
+type CandidateItem = { type?: unknown; files?: { path?: unknown; type?: unknown; target?: unknown; content?: unknown }[]; meta?: { preview?: unknown; element?: { reads?: { copyKeys?: unknown } } } };
+
+/** One declared copy slot (`meta.element.reads.copyKeys` entry); a bare string there is a key the element reads through host data. */
+interface CopySlotEntry { readonly slot: string; readonly prop: string; readonly previewKey: string }
+/** The candidate's declared copy slots: the `{ slot, prop, previewKey }` entries of `meta.element.reads.copyKeys`. */
+function declaredCopySlots(item: CandidateItem): CopySlotEntry[] {
+  const keys = item.meta?.element?.reads?.copyKeys;
+  return Array.isArray(keys) ? keys.filter((key): key is CopySlotEntry => !!key && typeof key === "object") : [];
+}
 
 /** One slot a specimen mounts through `{ "$element": "<slot>" }`: its pinned item's entry, import and resolved props. */
 interface SlotInput { readonly slot: string; readonly sha256: string; readonly module: string; readonly export: string; readonly props: unknown }
@@ -258,6 +266,9 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
   for (const slot of used.slots) if (!slotIds.includes(slot)) issues.push(`fixture $element ${slot} is not a declared input (meta.preview.inputs.slots)`);
   for (const key of copyKeys) if (typeof writer()[key] !== "string") issues.push(`input ${key} is not a key of a pinned Writer slot`);
   if (slotIds.length && !mounting) issues.push(`a mounted input slot mounts no further slot (${slotIds.join(", ")})`);
+  // A declared copy slot previews with a declared input: the D4 rule holds for its preview key too.
+  const copySlots = declaredCopySlots(item);
+  for (const entry of copySlots) if (!copyKeys.includes(entry.previewKey)) issues.push(`copy slot ${entry.slot} previews with ${entry.previewKey}, which is not a declared input (meta.preview.inputs.copy)`);
   const slots: SlotInput[] = [];
   if (mounting) for (const slot of slotIds) {
     const input = slotInput(root, slot);
@@ -269,8 +280,9 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
   if (item.type === "registry:theme" || item.type === "registry:font") {
     for (const key of Object.values(SPECIMEN_SAMPLE_COPY_KEYS)) if (typeof writer()[key] === "string") copy[key] = writer()[key]!;
   }
-  const { inputs: _inputs, ...rest } = preview;
-  return { preview: { ...rest, copy }, slots };
+  // Copy slots come from meta.element.reads.copyKeys only, never from a preview field of the same name.
+  const { inputs: _inputs, copySlots: _ignored, ...rest } = preview;
+  return { preview: { ...rest, copy, ...(copySlots.length ? { copySlots } : {}) }, slots };
 }
 
 /** The pinned item a `$element` input mounts, or why it cannot be mounted. */

@@ -105,9 +105,16 @@ export type ElementRecord = {
   readonly createdAt: string;
   readonly checks: readonly CheckResult[];
   readonly deps: { readonly npm: Readonly<Record<string, string>>; readonly elements: readonly ElementDependency[] };
-  readonly reads: { readonly copyKeys: readonly string[]; readonly themeVars: readonly string[] };
+  readonly reads: { readonly copyKeys: readonly ElementCopyKey[]; readonly themeVars: readonly string[] };
   readonly payload?: readonly string[];
 };
+
+/**
+ * What an element reads from Writer: a copy slot `{ slot, prop, previewKey }` (a page binds `slot`,
+ * the text renders at `prop`, the specimen previews it with `previewKey`), or a bare Writer key it
+ * reads through host data.
+ */
+export type ElementCopyKey = string | { readonly slot: string; readonly prop: string; readonly previewKey: string };
 
 export type PreviewRecord = {
   readonly schema: "clossys.preview/1";

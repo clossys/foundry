@@ -1,11 +1,12 @@
 /**
  * The consumer's pinned Writer copy, read on the Producer side: every record of every pinned Writer
- * `strings.*` candidate whose bytes match its pin, keyed by record id (`studio.<key>`), resolved by
- * the Writer's own resolver. This is how the Producer turns a Writer key into text where it writes
+ * `strings.*` candidate whose bytes match its pin, keyed by record id in any namespace the consumer
+ * registers (`studio.<key>`, `site.<key>`, ...), resolved by the Writer's own resolver. This is how the Producer turns a Writer key into text where it writes
  * text itself (the content-map projection, a plain-text response, a frame's title); Studio resolves
  * the same keys in the browser through `studio/lib/studio-copy.ts`.
  *
- * A key the pinned Writer copy does not hold throws: there is no literal fallback.
+ * A key the pinned Writer copy does not hold throws: there is no literal fallback. Whether a value
+ * is a key is decided by registration (`has`), never by a namespace prefix.
  */
 import { createHash } from "node:crypto";
 import { parseWriterSlotBody } from "@clossys/writer/slot-body";
@@ -13,8 +14,11 @@ import { createCopyResolver } from "@clossys/writer/resolve";
 import { parseFrontmatter } from "./slot-model/index.js";
 import { candidateStamp, listSlots, readCandidate } from "./slots.js";
 
-/** A Writer key: `<namespace>.<key>`, lower case, dot or dash joined. */
-export const WRITER_KEY = /^studio\.[a-z0-9]+(?:[.-][a-z0-9]+)*$/;
+/**
+ * The shape of a Writer key: `<namespace>.<key>`, lower case, dot or dash joined, in any namespace.
+ * It tells a key-shaped value from a literal; only registration in the pinned Writer copy makes it a key.
+ */
+export const WRITER_KEY = /^[a-z][a-z0-9-]*(?:\.[a-z0-9]+(?:[.-][a-z0-9]+)*)+$/;
 
 export interface WriterCopy {
   /** The source locale: the first locale of the pinned Writer candidates. */
@@ -52,7 +56,7 @@ export function writerCopy(consumer: string): WriterCopy {
     const locales = parsed.value.fields.locales as readonly string[];
     locale ??= locales[0];
     for (const row of parseWriterSlotBody(parsed.value.body, locales)) {
-      if (row.locale !== locale || typeof row.record.text !== "string" || !WRITER_KEY.test(row.record.id)) continue;
+      if (row.locale !== locale || typeof row.record.text !== "string") continue;
       if (seen.has(row.record.id)) throw new Error(`Writer copy: ${row.record.id} is recorded twice`);
       seen.add(row.record.id);
       entries.push({ id: row.record.id, text: row.record.text, context: row.record.context, status: "draft" });
