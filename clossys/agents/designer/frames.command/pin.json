@@ -1,7 +1,7 @@
 {
-  "candidate": "command-v2.json",
-  "sha256": "ba45504c8a8245edd382999b5397ec042f32003c00a069f4b6ea35990fd58de7",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "command-v3.json",
+  "sha256": "d6c0506bee4264f2b36e1c5f6b2d2c69926c4245a5d07a5343fc412b32ed69dd",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:22Z"
+  "at": "2026-11-05T02:54:54.709Z"
 }

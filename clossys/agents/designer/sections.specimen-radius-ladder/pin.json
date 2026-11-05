@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-radius-ladder-v2.json",
-  "sha256": "bdaacea6cc8a35a7f9e7ce2d60c70b7d44d5e5b55f5adbdea3fd3a14ffd384e2",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "specimen-radius-ladder-v3.json",
+  "sha256": "541bde857c39263194c5f4d2251c7d9f9d7b5d7b35ce0bd8bc4b60fc1139509b",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:19Z"
+  "at": "2026-11-05T02:55:03.628Z"
 }

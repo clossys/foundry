@@ -1,7 +1,7 @@
 {
-  "candidate": "pagination-v2.json",
-  "sha256": "351050b7705a3d908a31f8b93c9e957ceda1fea6b57ba323a5af2bedf34cfd70",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "pagination-v4.json",
+  "sha256": "09bbbed97e3396b8f3279bb34330d944b9bcba408ba62f097c32091de77776e4",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:16Z"
+  "at": "2026-11-05T02:56:00.963Z"
 }

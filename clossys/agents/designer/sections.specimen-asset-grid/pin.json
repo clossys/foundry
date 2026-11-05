@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-asset-grid-v2.json",
-  "sha256": "b23795b42e5ae92bdde48fcf25b0beb57f855723f02cba5f3012460c1bdc0ec0",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "specimen-asset-grid-v3.json",
+  "sha256": "dfcad98e53b7e36c154cfa5e995046cf46887571a0ce3a94b37776d6196d38a9",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:16Z"
+  "at": "2026-11-05T02:55:00.988Z"
 }

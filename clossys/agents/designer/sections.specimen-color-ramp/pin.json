@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-color-ramp-v2.json",
-  "sha256": "2860d6c72bcfd0915c029c30e74529d28d15bb210074d9dfdecadf7840a5559e",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "specimen-color-ramp-v3.json",
+  "sha256": "fa283363e57187c0924f76d512bf5b9bdcef520f9aa086203f537542d58facea",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:17Z"
+  "at": "2026-11-05T02:55:01.365Z"
 }

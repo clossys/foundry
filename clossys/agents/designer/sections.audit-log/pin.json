@@ -1,7 +1,7 @@
 {
-  "candidate": "audit-log-v2.json",
-  "sha256": "7444dd5b8dc54d8c1ace09ea8aba4eb8754ca8b10a322e5436684e2f4c5de4b1",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "audit-log-v3.json",
+  "sha256": "9fd47ab8d77b3e9d3f6fd9a32908edc5c9f6dc769124d8ea0cb5c0a000bf1215",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:13Z"
+  "at": "2026-11-05T02:54:56.524Z"
 }

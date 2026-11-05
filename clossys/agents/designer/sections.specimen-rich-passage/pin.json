@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-rich-passage-v2.json",
-  "sha256": "693c84063678878de0bde859fd8e22f820e3f343fa01e7d76b445c8e98ee5426",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "specimen-rich-passage-v3.json",
+  "sha256": "e3bab80f82c78401342c4bc78d0e16670b094f2c293d60f4ebca34c97a9a9fcd",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:19Z"
+  "at": "2026-11-05T02:55:04.003Z"
 }

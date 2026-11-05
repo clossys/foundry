@@ -1,7 +1,7 @@
 {
-  "candidate": "boundary-message-v2.json",
-  "sha256": "df7f5a862733be9033947fa9d13b9775c4b80d6b716ca83708d51d9fe9017df6",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "boundary-message-v3.json",
+  "sha256": "10df9b70c58310c1da57a48b98b47ed73eb6b0e0a79248ac05530ef87c675dba",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:13Z"
+  "at": "2026-11-05T02:54:56.889Z"
 }

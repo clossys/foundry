@@ -1,7 +1,7 @@
 {
-  "candidate": "access-matrix-v2.json",
-  "sha256": "267c9e2f7278a2b1e4f4d9c0e42007798e26c83dcb1868484355b353efd00335",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "access-matrix-v3.json",
+  "sha256": "6e52a0153646ec98cfa800bd56aa8f8503472bac46b78b9aa35a3da504260ec7",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:12Z"
+  "at": "2026-11-05T02:54:55.795Z"
 }

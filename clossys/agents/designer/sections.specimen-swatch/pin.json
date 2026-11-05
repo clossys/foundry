@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-swatch-v2.json",
-  "sha256": "88610cf5461cd7b158c18256e68b46cac0a7a051504e0cf1ea16e9a2d829f133",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-REPICK)",
+  "candidate": "specimen-swatch-v3.json",
+  "sha256": "f8cbba946f40f29feacb1dfc3335026e0397654bbbdb46a0c589cd39c887a39f",
+  "decidedBy": "planner:DESIGNER-FINDINGS",
   "basis": "planner",
-  "at": "2026-11-03T14:00:20Z"
+  "at": "2026-11-05T02:55:05.140Z"
 }
