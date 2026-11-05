@@ -7,6 +7,7 @@ import { globRegex, parseGlob, staticPrefix } from "./globs.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
+import { FOLDER_KIND } from "../records/slot-model/types.js";
 import type { SeatReport } from "./seats.js";
 
 /**
@@ -134,7 +135,8 @@ function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["a
   if (counter === "slots-without-slot-json") {
     const dir = join(root, "clossys", "agents");
     if (!modelExists(dir)) return 0;
-    return listModelDir(dir).reduce((sum, agent) => sum + iaSlots(root, agent).filter(slot => !modelExists(join(dir, agent, slot, "slot.json"))).length, 0);
+    // The seat tree's ia.json places seats, which have no slot.json (slot-model FOLDER_KIND).
+    return listModelDir(dir).filter(agent => (FOLDER_KIND as Readonly<Record<string, string>>)[agent] !== "seat").reduce((sum, agent) => sum + iaSlots(root, agent).filter(slot => !modelExists(join(dir, agent, slot, "slot.json"))).length, 0);
   }
   const agent = counter.slice("slots-without-candidates:".length);
   return (agents[agent]?.bySlot ?? []).filter(row => row.candidates === 0).length;

@@ -12,9 +12,9 @@ import { lstat } from "node:fs/promises";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { sha256Hex } from "./hash.js";
 import {
-  CANDIDATE_NAME, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, slotDir, slotFile, slotPositions,
+  CANDIDATE_NAME, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, seatDir, seatFile, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
-  type IaDoc, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
+  type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
 
 export interface SlotEntry {
@@ -104,7 +104,7 @@ function deepFreeze<T>(value: T): T {
   }
   return value;
 }
-function loadIa(consumer: string, agent: SlotAgent): IaCacheEntry | null {
+function loadIa(consumer: string, agent: ModelAgent): IaCacheEntry | null {
   const path = iaPath(consumer, agent);
   assertModelPath(path);
   if (!existsSync(path)) { iaCache.delete(path); return null; }
@@ -142,6 +142,40 @@ function locate(consumer: string, agent: SlotAgent, id: string): { position: Slo
   const position = loadIa(consumer, agent)?.positions.get(id);
   if (!position) throw new Error(`${agent} slot ${id} is not in ia.json`);
   return { position, dir: slotDir(consumer, agent, id) };
+}
+
+/** One seat of the Producer tree (the seat kind): a decide step's folder, placed by producer ia.json. */
+export interface SeatEntry {
+  readonly id: string;
+  readonly position: SlotPosition;
+  /** Absolute seat folder. */
+  readonly dir: string;
+  /** seat.json text, or undefined when the placed seat has no file (an open seat). */
+  readonly text: string | undefined;
+}
+
+/** Every seat producer ia.json places, in IA order; a seat without seat.json is listed with no text. */
+export function listSeats(consumer: string): SeatEntry[] {
+  return withSlotReadScope(() => {
+    const ia = loadIa(consumer, SEAT_AGENT);
+    if (!ia) return [];
+    return [...ia.positions].map(([id, position]) => ({ id, position, dir: seatDir(consumer, id), text: seatTextAt(consumer, id) }));
+  });
+}
+
+/**
+ * The seat.json text of one decide step, read by step id whether or not producer ia.json places
+ * it (check:git-cms fails an unplaced seat folder); undefined when the file is absent.
+ */
+export function readSeatText(consumer: string, step: string): string | undefined {
+  return withSlotReadScope(() => seatTextAt(consumer, step));
+}
+const SEAT_ID = /^[a-z][a-z0-9-]*(\.[a-z0-9][a-z0-9-]*)*$/;
+function seatTextAt(consumer: string, step: string): string | undefined {
+  if (!SEAT_ID.test(step)) throw new Error(`Invalid seat id ${JSON.stringify(step)}`);
+  const file = seatFile(seatDir(consumer, step));
+  assertModelPath(file);
+  return existsSync(file) ? readBytes(file) : undefined;
 }
 
 /** Every IA slot of one agent, in IA order; empty slots included. */

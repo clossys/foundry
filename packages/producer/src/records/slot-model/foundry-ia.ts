@@ -7,7 +7,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadBuildCatalog, type PlacementNode } from "@clossys/designer/catalog";
 import { resolveAgent } from "../../agents.js";
-import { IA_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
+import { IA_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
 export interface FoundrySlot {
   readonly id: string;
@@ -112,7 +112,8 @@ export function writerIa(): FoundryIa {
 }
 
 /** Slot -> its IA position (L0 for layered agents, L1, L2, order in IA order). */
-export function slotPositions(agent: SlotAgent, ia: IaDoc): Map<string, SlotPosition> {
+/** Each placed folder id (a slot, or a seat in the Producer tree) and its IA position. */
+export function slotPositions(agent: ModelAgent, ia: IaDoc): Map<string, SlotPosition> {
   const positions = new Map<string, SlotPosition>();
   let order = 0;
   for (const node of ia.nodes) for (const child of node.children) for (const slot of child.slots) {

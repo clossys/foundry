@@ -45,7 +45,8 @@
 //                     the repository (a write whose path resolves, symlinks included, outside the
 //                     repository root, such as a scratch copy under os.tmpdir(), is not a repo write)
 //   seat.invalid      a seat file (clossys/agents/producer/<step>/seat.json) fails the seat schema,
-//                     names a missing prompt file or an unknown clossys command, or has no decide step
+//                     names a missing prompt file or an unknown clossys command, or has no decide step;
+//                     or a pick.<agent> seat's llm differs from its make step <agent>.candidates (W4)
 //   option.unknown    a flag the step's CLI parser does not define
 //
 // A missing seat file, or a seat part set to null, is listed as OPEN (unassigned), never as passing.
@@ -418,6 +419,14 @@ for (const [id, seat] of Object.entries(seatReports)) {
   if (owners.every(owner => isPending(owner)) && flags.size === 0) continue;
   for (const flag of rest.filter(word => word.startsWith("--"))) if (!flags.has(flag)) fail("option.unknown", `${seat.path}: human.command uses ${flag}, which the clossys ${verb} parser does not define`);
 }
+/** W4: a pick seat's llm is its agent's make step's llm (seats.ts llmSourceOf); open on both sides is the same. */
+if (lib) for (const [id, seat] of Object.entries(seatReports)) {
+  const source = lib.seats.llmSourceOf(id);
+  if (!source || seat.state === "invalid") continue;
+  const made = seatReports[source];
+  if (!made) { fail("seat.invalid", `${seat.path}: its llm comes from the make step ${source}, which is not a decide step`); continue; }
+  if (made.state !== "invalid" && JSON.stringify(seat.llm) !== JSON.stringify(made.llm)) fail("seat.invalid", `${seat.path}: llm ${JSON.stringify(seat.llm)} differs from the make step ${source} llm ${JSON.stringify(made.llm)}; a pick seat uses its agent's make llm`);
+}
 /** WHO: every step's holder is a roster entry (the canvas's lanes are the roster); an unresolved holder is OPEN. */
 if (lib) for (const step of defined) {
   const holder = lib.roster.holderOf(step, seatReports[step.id]);
@@ -429,6 +438,17 @@ if (existsSync(seatDir)) for (const name of readdirSync(seatDir)) {
   if (!statSync(join(seatDir, name)).isDirectory()) continue;
   const step = byId.get(name);
   if (!step || !isDecide(step)) fail("seat.invalid", `clossys/agents/producer/${name}/ has a seat, but ${step ? "that step is plumb" : "no step has that id"}`);
+}
+/** The seat kind's IA (producer ia.json) places each seat under its step's round (L1) and stage (L2). */
+const seatIa = join(seatDir, "ia.json");
+if (existsSync(seatIa)) {
+  let ia;
+  try { ia = JSON.parse(readFileSync(seatIa, "utf8")); } catch { fail("seat.invalid", "clossys/agents/producer/ia.json is not JSON"); }
+  for (const node of Array.isArray(ia?.nodes) ? ia.nodes : []) for (const child of Array.isArray(node?.children) ? node.children : []) for (const id of Array.isArray(child?.slots) ? child.slots : []) {
+    const step = byId.get(id);
+    if (!step || !isDecide(step)) { fail("seat.invalid", `clossys/agents/producer/ia.json places ${id}, which is not a decide step`); continue; }
+    if (node.id !== step.stage.split(".")[0] || child.id !== step.stage) fail("seat.invalid", `clossys/agents/producer/ia.json places ${id} under ${node.id}/${child.id}; its step's stage is ${step.stage}`);
+  }
 }
 
 // ---------------------------------------------------------------- runner

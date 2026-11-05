@@ -6,7 +6,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
-import { checkGitCms, iaSlots } from "./check-git-cms.mjs";
+import { SEAT_TREES, checkGitCms, iaSlots } from "./check-git-cms.mjs";
 
 const scriptPath = resolve(dirname(fileURLToPath(import.meta.url)), "check-git-cms.mjs");
 const CANDIDATE = '{\n  "name": "example"\n}\n';
@@ -57,13 +57,57 @@ test("a tree in the flat layout is green and the CLI exits 0", () => withRepo(({
 }));
 
 test("an agent folder without ia.json fails, and nothing is exempt", () => withRepo(({ repo }) => {
-  mkdirSync(join(repo, "clossys", "agents", "producer", "pin"), { recursive: true });
-  writeFileSync(join(repo, "clossys", "agents", "producer", "pin", "seat.json"), "{}\n");
-  assert.deepEqual(rules(repo), ["missing-ia producer/ia.json", "stray-entry producer/pin"]);
+  mkdirSync(join(repo, "clossys", "agents", "controller", "pin"), { recursive: true });
+  writeFileSync(join(repo, "clossys", "agents", "controller", "pin", "seat.json"), "{}\n");
+  assert.deepEqual(rules(repo), ["missing-ia controller/ia.json", "stray-entry controller/pin"]);
   const run = spawnSync(process.execPath, [scriptPath, "--repo", repo], { encoding: "utf8" });
   assert.equal(run.status, 1);
-  assert.match(run.stdout, /^red {3}producer: /m);
+  assert.match(run.stdout, /^red {3}controller: /m);
   assert.match(run.stdout, /^green designer: /m);
+}));
+
+const SEAT = { by: "owner", llm: null, human: { procedure: "Pin one candidate.", command: "clossys pin" } };
+const seatIa = (ids) => json({ schema: "clossys.ia/1", source: "@clossys/producer#steps", extensions: [], nodes: [{ id: "design", label: "Design", children: [{ id: "design.pin", label: "Pin", slots: ids }] }] });
+function withSeats(repo, ids = ["pin.designer", "pick.designer"]) {
+  const producer = join(repo, "clossys", "agents", "producer");
+  mkdirSync(producer, { recursive: true });
+  writeFileSync(join(producer, "ia.json"), seatIa(ids));
+  for (const id of ids) { mkdirSync(join(producer, id)); writeFileSync(join(producer, id, "seat.json"), json(SEAT)); }
+  return producer;
+}
+
+test("the seat-kind trees match the slot model's FOLDER_KIND", () => {
+  const types = readFileSync(resolve(dirname(scriptPath), "..", "packages", "producer", "src", "records", "slot-model", "types.ts"), "utf8");
+  const table = /FOLDER_KIND[^=]*=\s*\{([^}]*)\}/.exec(types)?.[1] ?? "";
+  const seats = [...table.matchAll(/(\w+):\s*"seat"/g)].map((match) => match[1]);
+  assert.deepEqual([...SEAT_TREES], seats);
+  assert.deepEqual(seats, ["producer"]);
+});
+
+test("a Producer seat tree placed by ia.json is green and counted as seats", () => withRepo(({ repo }) => {
+  withSeats(repo);
+  const { findings, summary } = checkGitCms(join(repo, "clossys"));
+  assert.deepEqual(findings, []);
+  assert.deepEqual(summary.producer, { seats: 2, llm: 0, human: 2, findings: 0 });
+  const run = spawnSync(process.execPath, [scriptPath, "--repo", repo], { encoding: "utf8" });
+  assert.equal(run.status, 0, run.stdout + run.stderr);
+  assert.match(run.stdout, /^green producer: 2 seats \(llm 0, human 2\), 0 finding\(s\)$/m);
+}));
+
+test("a Producer tree without ia.json, an unlisted or missing seat, and a misshapen seat fail", () => withRepo(({ repo }) => {
+  const producer = withSeats(repo);
+  unlinkSync(join(producer, "ia.json"));
+  assert.deepEqual(rules(repo), ["missing-ia producer/ia.json", "unlisted-seat producer/pick.designer", "unlisted-seat producer/pin.designer"]);
+  writeFileSync(join(producer, "ia.json"), seatIa(["pin.designer", "pin.writer"]));
+  assert.deepEqual(rules(repo), ["unlisted-seat producer/pick.designer", "missing-seat producer/pin.writer"]);
+  writeFileSync(join(producer, "ia.json"), seatIa(["pin.designer", "pick.designer"]));
+  writeFileSync(join(producer, "pin.designer", "notes.md"), "x\n");
+  writeFileSync(join(producer, "pick.designer", "seat.json"), json({ llm: null }));
+  writeFileSync(join(producer, "README.md"), "x\n");
+  assert.deepEqual(rules(repo), ["stray-entry producer/README.md", "seat-shape producer/pin.designer/notes.md", "seat-shape producer/pick.designer/seat.json"]);
+  unlinkSync(join(producer, "pick.designer", "seat.json"));
+  mkdirSync(join(producer, "pick.designer", "candidates"));
+  assert.deepEqual(rules(repo).slice(1), ["seat-shape producer/pin.designer/notes.md", "seat-shape producer/pick.designer/candidates", "seat-shape producer/pick.designer/seat.json"]);
 }));
 
 test("evidence, notes and files inside an agent or slot folder are stray entries", () => withRepo(({ repo, agent, pinned }) => {

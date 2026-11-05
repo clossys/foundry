@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,7 +15,7 @@ import { stepOptions } from "./options.js";
 import { runPipeline, selectStep } from "./runner.js";
 import { loadSchema, validateFile } from "./schema.js";
 import { ELEMENT_SCHEMA } from "../records/schemas.js";
-import { readSeat } from "./seats.js";
+import { llmSourceOf, readSeat } from "./seats.js";
 import { pipelineStatus, slotCounts } from "./status.js";
 import { STEPS } from "./steps/index.js";
 
@@ -177,7 +177,8 @@ describe("derived graph", () => {
     expect(stepOptions(step("pin.designer"))!.map(option => option.flag)).toContain("--by");
   });
   it("reads an unassigned seat as open and the pin seat as owner-held", () => {
-    const root = workspace();
+    // The slot reader refuses symlinked ancestors (the macOS tmpdir is one), so read the real path.
+    const root = realpathSync(workspace());
     expect(readSeat(root, step("pin.director"))!.state).toBe("unassigned");
     mkdirSync(join(root, "clossys", "agents", "producer", "pin.director"), { recursive: true });
     writeFileSync(join(root, "clossys", "agents", "producer", "pin.director", "seat.json"), JSON.stringify({ by: "owner", llm: null, human: { procedure: "p", command: "clossys pin" } }));
@@ -186,6 +187,17 @@ describe("derived graph", () => {
     writeFileSync(join(root, "clossys", "agents", "producer", "pin.director", "seat.json"), JSON.stringify({ by: "code", llm: null, human: null }));
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
     expect(buildGraph(root).seats["pin.director"]!.state).toBe("invalid");
+    rmSync(join(root, "clossys", "agents", "producer", "pin.director", "seat.json"));
+    symlinkSync(join(root, "elsewhere.json"), join(root, "clossys", "agents", "producer", "pin.director", "seat.json"));
+    expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
+  });
+  it("takes each pick seat's llm from its agent's make step (W4)", () => {
+    for (const agent of ["director", "designer", "writer", "publisher"]) {
+      expect(llmSourceOf(`pick.${agent}`)).toBe(`${agent}.candidates`);
+      expect(step(`${agent}.candidates`).kind).toBe("decide:creative");
+    }
+    expect(llmSourceOf("pin.designer")).toBeNull();
+    expect(llmSourceOf("designer.candidates")).toBeNull();
   });
 });
 
@@ -214,6 +226,18 @@ describe("status", () => {
     const status = pipelineStatus(root);
     expect(status.steps.find(each => each.id === "pin.designer")!.state).toBe("ready");
     expect(status.steps.every(each => each.checks.every(check => check.state !== "pass" as never))).toBe(true);
+  });
+  it("never counts the Producer seat tree's placed seats as slots without slot.json", () => {
+    const root = workspace();
+    const ia = (slots: string[]) => JSON.stringify({ schema: "clossys.ia/1", source: "x#y", extensions: [], nodes: [{ id: "design", label: "Design", children: [{ id: "design.pin", label: "Pin", slots }] }] });
+    const opened = () => pipelineStatus(root).steps.find(each => each.id === "ia")!.open!.count;
+    const before = opened();
+    mkdirSync(join(root, "clossys", "agents", "producer", "pin.designer"), { recursive: true });
+    writeFileSync(join(root, "clossys", "agents", "producer", "ia.json"), ia(["pin.designer"]));
+    expect(opened()).toBe(before);
+    expect(slotCounts(root).producer).toBeUndefined();
+    writeFileSync(join(root, "clossys", "agents", "writer", "ia.json"), ia(["writer.ghost"]));
+    expect(opened()).toBe(before + 1);
   });
   it("prints status and graph through the pipeline verb", async () => {
     const root = workspace();

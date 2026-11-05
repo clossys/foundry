@@ -3586,6 +3586,10 @@
       "sha256": "6b33a9da34342e0ce0b9561950e8adfd933e3c1238c7a9ea6bf3057ff41fe902"
     },
     {
+      "path": "clossys/agents/producer/ia.json",
+      "sha256": "e2716cccb07cb2c8467fec2a1b242c6fc972d82591d30a65f3576d53a74f4771"
+    },
+    {
       "path": "clossys/agents/publisher/ia.json",
       "sha256": "7f55136bc8185021ad0cd83e8cc04c830856017bb0a3d200232ee752308007a9"
     },

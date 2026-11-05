@@ -2,7 +2,7 @@
 /**
  * check:single-reader: one reader opens the Git CMS slot model. Every file under a consumer's
  * clossys/agents/<director|designer|writer|publisher>/ tree (ia.json, slot.json, pin.json,
- * candidates/*) is opened by packages/producer/src/records/slots.ts, the reader, or written by
+ * candidates/*), and of the Producer seat tree (ia.json, <step>/seat.json), is opened by packages/producer/src/records/slots.ts, the reader, or written by
  * packages/producer/src/records/slot-write.ts, the one writer. Publisher, the agent verbs, Studio
  * and the specimen source import the reader; nothing else touches those paths.
  *
@@ -11,9 +11,9 @@
  * dependency and build folders. Each file is parsed with the TypeScript compiler, and a finding is
  * a file-system call whose path argument is derived from slot-model vocabulary:
  *   - a string naming the model: an "agents" path segment, a non-route string holding
- *     agents/<slot agent>, ia.json, slot.json, pin.json, a candidates folder;
+ *     agents/<slot agent or producer>, ia.json, slot.json, pin.json, seat.json, a candidates folder;
  *   - a call to a slot-model path helper (agentsDir, agentDir, iaPath, slotDir, slotFile, pinFile,
- *     candidatesDir, slotRel);
+ *     candidatesDir, slotRel, seatDir, seatFile);
  *   - a local name whose initializer, or a local function whose return value, is derived from
  *     either of the above (traced to a fixpoint within the file).
  * File-system calls are the node:fs and node:fs/promises reads, stats, listings, watches and
@@ -32,7 +32,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const READER = "packages/producer/src/records/slots.ts";
 export const WRITER = "packages/producer/src/records/slot-write.ts";
 export const SLOT_AGENTS = Object.freeze(["director", "designer", "writer", "publisher"]);
-export const HELPERS = Object.freeze(["agentsDir", "agentDir", "iaPath", "slotDir", "slotFile", "pinFile", "candidatesDir", "slotRel"]);
+/** The agent trees the reader owns: the slot trees and the Producer seat tree (slot-model types.ts MODEL_AGENTS). */
+export const MODEL_TREES = Object.freeze([...SLOT_AGENTS, "producer"]);
+export const HELPERS = Object.freeze(["agentsDir", "agentDir", "iaPath", "slotDir", "slotFile", "pinFile", "candidatesDir", "slotRel", "seatDir", "seatFile"]);
 export const FS_CALLS = Object.freeze([
   "readFileSync", "readFile", "existsSync", "exists", "lstatSync", "lstat", "statSync", "stat", "readdirSync", "readdir",
   "opendirSync", "opendir", "watch", "watchFile", "createReadStream", "accessSync", "access", "realpathSync", "realpath",
@@ -47,8 +49,8 @@ const CHILD_CALLS = new Set(["execFileSync", "execFile", "spawnSync", "spawn", "
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".next", ".turbo", "coverage", "__fixtures__", "__tests__", "fixtures", "__golden__", "checks"]);
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 const TEST = /\.(?:test|spec)\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
-const AGENT_PATH = new RegExp(`(?:^|/)agents/(?:${SLOT_AGENTS.join("|")})(?:/|$)`);
-const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin)\.json$|(?:^|\/)candidates(?:\/|$)/;
+const AGENT_PATH = new RegExp(`(?:^|/)agents/(?:${MODEL_TREES.join("|")})(?:/|$)`);
+const MODEL_FILE = /(?:^|\/)(?:ia|slot|pin|seat)\.json$|(?:^|\/)candidates(?:\/|$)/;
 
 const toPosix = path => path.split(sep).join("/");
 

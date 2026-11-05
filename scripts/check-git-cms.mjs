@@ -10,6 +10,12 @@
  *   clossys/agents/<agent>/<slot>/candidates/<file>
  *   clossys/agents/<agent>/<slot>/pin.json            (absent only when slot.json says notNeeded)
  *
+ * except the Producer tree, which is the seat kind (slot-model types.ts SEAT_AGENT): its folders are
+ * pipeline decide-step seats, placed by its ia.json like slots, each holding only seat.json:
+ *
+ *   clossys/agents/producer/ia.json
+ *   clossys/agents/producer/<step>/seat.json
+ *
  * Evidence, findings and other working files live outside the agent trees (clossys/evidence/).
  * The check reads the files directly (no build needed) and fails on:
  *
@@ -25,6 +31,10 @@
  *   pin-hash            pin.json sha256 differs from the candidate file's bytes
  *   pin-attribution     pin.json has no decidedBy, or no basis (picked | bulk | planner | agent)
  *   not-needed-reason   slot.json notNeeded has no reason
+ *   unlisted-seat       a seat folder (it has a seat.json) that the Producer ia.json does not list
+ *   missing-seat        a Producer ia.json seat with no folder
+ *   seat-shape          a listed seat folder has no seat.json, seat.json is not a JSON object with a
+ *                       `by`, or the folder holds anything else (the seat schema is check:pipeline's)
  *
  * Nothing is exempt: an agent folder that is not in this layout fails until it is converted.
  *
@@ -38,6 +48,9 @@ import { fileURLToPath } from 'node:url';
 
 export const PIN_BASES = Object.freeze(['picked', 'bulk', 'planner', 'agent']);
 const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
+/** Agent trees of the seat kind (slot-model types.ts FOLDER_KIND: producer is "seat"); every other tree holds slots. */
+export const SEAT_TREES = Object.freeze(['producer']);
+const SEAT_FILE = 'seat.json';
 
 const stat = path => { try { return lstatSync(path); } catch { return undefined; } };
 const isDir = path => { const info = stat(path); return !!info && info.isDirectory() && !info.isSymbolicLink(); };
@@ -99,6 +112,47 @@ function checkSlot(agentDir, agent, slot, add) {
   return { pinned: true, basis: pin.basis };
 }
 
+/** One listed seat folder: seat.json only, a JSON object naming who holds the seat. */
+function checkSeat(agentDir, agent, seat, add) {
+  const dir = join(agentDir, seat), where = `${agent}/${seat}`;
+  for (const name of readdirSync(dir).sort()) {
+    if (name !== SEAT_FILE) add('seat-shape', `${where}/${name}`, 'a seat folder holds only seat.json');
+  }
+  if (!isFile(join(dir, SEAT_FILE))) { add('seat-shape', `${where}/${SEAT_FILE}`, 'seat folder has no seat.json'); return {}; }
+  const read = readJson(join(dir, SEAT_FILE));
+  if (!read.ok || !object(read.value) || !nonEmpty(read.value.by)) { add('seat-shape', `${where}/${SEAT_FILE}`, 'seat.json is not a JSON object with a by'); return {}; }
+  return { llm: object(read.value.llm), human: object(read.value.human) };
+}
+
+/** A seat-kind tree (the Producer): ia.json lists seats, each folder is one seat. */
+function checkSeatTree(agentDir, agent, add) {
+  const row = { seats: 0, llm: 0, human: 0, findings: 0 };
+  let listed;
+  if (!isFile(join(agentDir, 'ia.json'))) add('missing-ia', `${agent}/ia.json`, 'agent folder has no ia.json');
+  else {
+    const read = readJson(join(agentDir, 'ia.json'));
+    listed = read.ok ? iaSlots(read.value) : undefined;
+    if (!listed) add('missing-ia', `${agent}/ia.json`, 'ia.json is not an IA document that lists seats');
+  }
+  const present = new Set();
+  for (const name of readdirSync(agentDir).sort()) {
+    if (name === 'ia.json') continue;
+    const path = join(agentDir, name);
+    if (!isDir(path)) { add('stray-entry', `${agent}/${name}`, 'a seat tree holds only ia.json and seat folders'); continue; }
+    if (listed?.has(name)) { present.add(name); continue; }
+    if (isFile(join(path, SEAT_FILE))) add('unlisted-seat', `${agent}/${name}`, 'seat folder is not listed in ia.json');
+    else add('stray-entry', `${agent}/${name}`, 'a seat tree holds only ia.json and seat folders');
+  }
+  for (const seat of listed ?? []) {
+    if (!present.has(seat)) { add('missing-seat', `${agent}/${seat}`, 'ia.json lists a seat with no folder'); continue; }
+    row.seats++;
+    const state = checkSeat(agentDir, agent, seat, add);
+    if (state.llm) row.llm++;
+    if (state.human) row.human++;
+  }
+  return row;
+}
+
 /** Every Git CMS finding and a per-agent summary under `<consumer>/agents`. */
 export function checkGitCms(consumer) {
   const agents = join(consumer, 'agents');
@@ -108,6 +162,11 @@ export function checkGitCms(consumer) {
     const agentDir = join(agents, agent);
     const before = findings.length;
     const add = (rule, path, message) => findings.push({ rule, agent, path, message });
+    if (SEAT_TREES.includes(agent) && isDir(agentDir)) {
+      const row = summary[agent] = checkSeatTree(agentDir, agent, add);
+      row.findings = findings.length - before;
+      continue;
+    }
     const row = summary[agent] = { slots: 0, pinned: 0, notNeeded: 0, basis: Object.fromEntries(PIN_BASES.map((basis) => [basis, 0])), findings: 0 };
     if (!isDir(agentDir)) { add('stray-entry', agent, 'clossys/agents holds only agent folders'); row.findings = findings.length - before; continue; }
     let listed;
@@ -152,6 +211,7 @@ if (isMain) {
   else {
     for (const row of findings) console.log(`FAIL ${row.rule} ${row.path}: ${row.message}`);
     for (const [agent, row] of Object.entries(summary)) {
+      if (row.seats !== undefined) { console.log(`${row.findings ? 'red  ' : 'green'} ${agent}: ${row.seats} seats (llm ${row.llm}, human ${row.human}), ${row.findings} finding(s)`); continue; }
       console.log(`${row.findings ? 'red  ' : 'green'} ${agent}: ${row.slots} slots, ${row.pinned} pinned (${PIN_BASES.map((basis) => `${basis} ${row.basis[basis]}`).join(', ')}), ${row.notNeeded} not needed, ${row.findings} finding(s)`);
     }
     const red = Object.entries(summary).filter(([, row]) => row.findings).map(([agent]) => agent);

@@ -15,6 +15,29 @@
 export const SLOT_AGENTS = ["director", "designer", "writer", "publisher"] as const;
 export type SlotAgent = typeof SLOT_AGENTS[number];
 
+/**
+ * The seat kind: the Producer tree holds seats, not slots. A seat folder is one pipeline decide
+ * step that has a seat (`pin.<agent>`, `pick.<agent>`, ...), holds only seat.json, and is placed by
+ * the Producer ia.json exactly as a slot folder is placed by its agent's ia.json:
+ *
+ *   <consumer>/agents/producer/ia.json                  seat ids in IA order (grouped by round and stage)
+ *   <consumer>/agents/producer/<step>/seat.json         who decides that step (pipeline/schemas/seat.schema.json)
+ *
+ * Seats have no candidates and no pin; the pipeline (src/pipeline/seats.ts) reads them through
+ * records/slots.ts and check:git-cms (R-GIT-CMS) holds the tree to this layout.
+ */
+export const SEAT_AGENT = "producer" as const;
+export type SeatAgent = typeof SEAT_AGENT;
+/** Every agent tree under `<consumer>/agents`: the four slot trees and the seat tree. */
+export const MODEL_AGENTS = [...SLOT_AGENTS, SEAT_AGENT] as const;
+export type ModelAgent = typeof MODEL_AGENTS[number];
+/** What a folder in an agent tree is: a slot (slot.json, candidates/, pin.json) or a seat (seat.json). */
+export const FOLDER_KINDS = ["slot", "seat"] as const;
+export type FolderKind = typeof FOLDER_KINDS[number];
+export const FOLDER_KIND: Readonly<Record<ModelAgent, FolderKind>> = {
+  director: "slot", designer: "slot", writer: "slot", publisher: "slot", producer: "seat",
+};
+
 export const SLOT_KINDS = ["brief", "element", "strings", "page", "publication"] as const;
 export type SlotKind = typeof SLOT_KINDS[number];
 
@@ -27,6 +50,7 @@ export const IA_FILE = "ia.json";
 export const SLOT_FILE = "slot.json";
 export const PIN_FILE = "pin.json";
 export const CANDIDATES_DIR = "candidates";
+export const SEAT_FILE = "seat.json";
 
 /** Decision provenance for migrated pins (D6, and the decidedBy rewrite) and for the owner-cleared Director brief. */
 export const MIGRATION_DECIDED_BY = "migrated";
