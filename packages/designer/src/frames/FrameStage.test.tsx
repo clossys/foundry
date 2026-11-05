@@ -222,9 +222,12 @@ it('keeps flow region and document scrolling in the Stage and refuses unmeasured
   expect(f.renderLayout).not.toHaveBeenCalled();
   expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveAttribute('aria-busy', 'true');
   width = f.threshold; act(() => resize());
-  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveStyle({ overflow: 'auto', height: '100%' });
+  // GATES-RED G5: the scroll answer is a stock Tailwind class pair, not an inline style (WL4).
+  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveClass('h-full', 'overflow-auto');
+  expect(screen.getByRole('region', { name: 'Flow stage' }).getAttribute('style')).toBeNull();
   view.rerender(<FrameStage {...f.value} contract={{ accepts: ['flow', 'canvas'], scroll: 'document' }} />);
-  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveStyle({ overflow: 'visible', height: 'auto' });
+  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveClass('h-auto', 'overflow-visible');
+  expect(screen.getByRole('region', { name: 'Flow stage' })).not.toHaveClass('overflow-auto');
   expect(screen.queryByRole('toolbar')).toBeNull();
 });
 it('refuses missing canonical flow nodes and a Frame that does not accept flow', () => {

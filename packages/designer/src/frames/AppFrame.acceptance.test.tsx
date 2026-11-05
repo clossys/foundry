@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import React, { useEffect, useState } from "react";
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -328,7 +330,9 @@ describe("AppFrame floating stage", () => {
     expect(header.firstElementChild).toContainElement(screen.getByRole("button", { name: "Find a command" }));
     // The brand row takes the token-sized corner row before search.
     const brand = header.querySelector<HTMLElement>('[data-application-frame-slot="brand"]')!;
-    expect(brand.style.minBlockSize).toContain("--ui-layout-tap-target"); expect(brand.style.marginBlockEnd).toContain("--spacing-md");
+    // GATES-RED G5: the corner row is the named frame-brand-row utility, not an inline style (WL4).
+    expect(brand).toHaveClass("frame-brand-row");
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toContain("@utility frame-brand-row { min-block-size: var(--ui-layout-tap-target, 44px); margin-block-end: var(--spacing-md, 12px); }");
     expect(brand.compareDocumentPosition(screen.getByRole("button", { name: "Find a command" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 

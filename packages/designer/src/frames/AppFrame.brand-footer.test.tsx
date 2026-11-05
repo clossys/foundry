@@ -1,5 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
@@ -40,7 +42,9 @@ describe("AppFrame navigation brand mark", () => {
     // The plate keeps its own radius: no pill-clipped Avatar wraps the mark.
     expect(mark.closest(".rounded-pill")).toBeNull();
     expect(slot.compareDocumentPosition(screen.getByRole("button", { name: "Commands" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(slot.style.minBlockSize).toContain("--ui-layout-tap-target");
+    // GATES-RED G5: the corner row is the named frame-brand-row utility, not an inline style (WL4).
+    expect(slot).toHaveClass("frame-brand-row");
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toContain("@utility frame-brand-row { min-block-size: var(--ui-layout-tap-target, 44px); margin-block-end: var(--spacing-md, 12px); }");
   });
 
   it("renders the host mark and its name at the navigation top, before search, never in the header bar", () => {
@@ -52,7 +56,9 @@ describe("AppFrame navigation brand mark", () => {
     expect(slot.querySelector(".truncate")).toHaveTextContent("Example Studio");
     // The brand row takes the corner row: it precedes command search and replaces the bare padding.
     expect(slot.compareDocumentPosition(screen.getByRole("button", { name: "Commands" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(slot.style.minBlockSize).toContain("--ui-layout-tap-target");
+    // GATES-RED G5: the corner row is the named frame-brand-row utility, not an inline style (WL4).
+    expect(slot).toHaveClass("frame-brand-row");
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toContain("@utility frame-brand-row { min-block-size: var(--ui-layout-tap-target, 44px); margin-block-end: var(--spacing-md, 12px); }");
     expect(document.querySelector('[data-application-frame-region="header"]')!.textContent).not.toContain("Example Studio");
   });
 

@@ -82,7 +82,7 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
             <Select label={labels.operator} size="sm" selectedKey={condition.operator} options={operatorOptions}
               onSelectionChange={key => { if (typeof key === "string") update(group.id, condition.id, { operator: key }); }} />
             {takesValue ? <TextField label={labels.value} size="sm" value={condition.value} onChange={value => update(group.id, condition.id, { value })} /> : <SemanticContent as="span" aria-hidden="true" />}
-            <Button variant="quiet" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: current.conditions.filter(row => row.id !== condition.id) }))}>
+            <Button variant="ghost" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: current.conditions.filter(row => row.id !== condition.id) }))}>
               {labels.removeCondition(conditionIndex + 1)}
             </Button>
           </SemanticContent>;

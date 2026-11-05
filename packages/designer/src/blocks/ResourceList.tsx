@@ -78,7 +78,7 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   return <SemanticContent as="div" className="flex shrink-0 items-center gap-sm">
     <SemanticContent as="div" className="flex flex-wrap items-center gap-sm">
       {actions.slice(0, 2).map((action, index) => <SemanticContent as="span" key={action.id} className="inline-flex">
-        <Button variant="quiet" size="sm" trailingIcon={null} className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
+        <Button variant="ghost" size="sm" className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
         {reasonId(action, index, "inline") && <SemanticContent as="span" id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</SemanticContent>}
       </SemanticContent>)}

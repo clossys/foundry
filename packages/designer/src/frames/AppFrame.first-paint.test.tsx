@@ -67,7 +67,12 @@ describe("AppFrame first paint (cross-08)", () => {
     expect(panel.style.width).toBe("");
     const docked = panel.dataset.open !== "false";
     expect(panel).toHaveClass(...APP_FRAME_PANEL_SIZE[docked ? "docked" : "closed"].split(" "));
-    if (docked) expect(panel.style.getPropertyValue(APP_FRAME_PANEL_WIDTH_VAR)).toBe("300px");
+    // GATES-RED G5: the frame no longer styles inline (WL4). Before hydration the custom property is
+    // unset, so the media-ruled inline-size is invalid at computed-value time and falls back to auto:
+    // the docked panel takes the Components-layer ResizablePane's own inline-size. The frame writes the
+    // property before the first client paint, so open/close still animates between lengths.
+    expect(panel.getAttribute("style")).toBeNull();
+    if (docked) expect(panel.querySelector<HTMLElement>('[data-application-frame-panel="pane"]')!.style.inlineSize).toBe("300px");
     const css = await utilities(APP_FRAME_PANEL_SIZE.docked.split(" "));
     const wide = TOKENS["--breakpoint-tablet-lg"]!.value;
     const rem = `${Number.parseFloat(wide) / 16}rem`;
@@ -105,7 +110,9 @@ describe("AppFrame route notices at short heights (cross-18)", () => {
     expect(region().children).toHaveLength(1);
     expect(region()).toHaveTextContent("Changes pending");
     expect(screen.getByText("Changes pending")).toHaveClass("min-w-0", "truncate");
-    expect(region().firstElementChild).toHaveClass("py-xs", "items-center", "first-child-shrink");
+    // GATES-RED G5: the compact padding is the named dock utility (G2), not an ad hoc spacing class.
+    expect(region().firstElementChild).toHaveClass("py-dock-compact", "items-center", "first-child-shrink");
+    expect(readFileSync(resolve(packageRoot, "styles/theme-keys.css"), "utf8")).toContain("@utility py-dock-compact { padding-block: var(--spacing-xs, 4px); }");
   });
   it("stacks every notice at full size in a tall frame", () => {
     measure(900);
@@ -113,6 +120,6 @@ describe("AppFrame route notices at short heights (cross-18)", () => {
     expect(region()).not.toHaveAttribute("data-frame-notices-compact");
     expect(region().children).toHaveLength(2);
     expect(screen.getByText("Route notice with a long explanation")).not.toHaveClass("truncate");
-    expect(region().firstElementChild).not.toHaveClass("py-xs");
+    expect(region().firstElementChild).not.toHaveClass("py-dock-compact");
   });
 });

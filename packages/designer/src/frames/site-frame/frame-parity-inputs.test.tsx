@@ -73,8 +73,9 @@ for (const mode of ["server", "client"] as const) {
   it(`forwards only the transparent footer top rule: ${mode}`, () => {
     const shell = { ...base, footer: { ground: "transparent", rule: "top", legal } } as SiteShellInput;
     const footer = output(frame(shell), mode).querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-border");
-    expect(footer.querySelector(".border-t")).toBeNull();
+    // GATES-RED G5: the footer rule is the named hairline-t utility, not border-t plus an inline width (WL4).
+    expect(footer).toHaveClass("hairline-t", "border-border");
+    expect(footer.querySelector(".hairline-t")).toBeNull();
     for (const ground of ["base", "inverse"] as const) {
       const ordinary = output(frame({ ...base, footer: { ground, legal } }), mode).querySelector("footer")!.outerHTML;
       expect(output(frame({ ...base, footer: { ground, rule: "top", legal } } as SiteShellInput), mode).querySelector("footer")!.outerHTML).toBe(ordinary);
@@ -114,14 +115,16 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector("h1")).toHaveClass("tablet-lg:text-display-xl");
     expect(root.querySelector("h1")!.parentElement).toHaveStyle({ maxWidth: "none" });
     const eyebrow = [...root.querySelectorAll("p")].find(p => p.textContent === "Eyebrow")!;
-    expect(eyebrow).toHaveClass("text-background/75");
+    // GATES-RED G5: the eyebrow ink comes from the Sections layer (section-ground.ts), outside the frame inverse map.
+    expect(eyebrow).toHaveClass("text-ink-on-inverse-muted");
     const description = [...root.querySelectorAll("p")].find(p => p.textContent === "Supporting words.")!;
     expect(description.style.maxWidth).toBe("var(--ui-width-hero-wide, 64rem)");
     const footer = root.querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-border");
+    // GATES-RED G5: the footer rule is the named hairline-t utility, not border-t plus an inline width (WL4).
+    expect(footer).toHaveClass("hairline-t", "border-border");
     expect(footer).not.toHaveClass("bg-surface-base", "bg-foreground");
     expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
-    expect(footer.querySelector(".border-t")).toBeNull();
+    expect(footer.querySelector(".hairline-t")).toBeNull();
     expect(root.querySelector("[data-frame-footer-overlay]")).toBeNull();
   });
 }
