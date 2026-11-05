@@ -306,7 +306,7 @@
     "typecheck": "node scripts/pack-plan-contract.mjs && tsc -p tsconfig.json --noEmit",
     "test": "node scripts/pack-plan-contract.mjs && vitest run",
     "check:records": "node scripts/check-record-drift.mjs",
-    "check:cells": "vitest run src/cells/cells.test.ts"
+    "check:cells": "vitest run src/cells/parse.test.ts"
   },
   "devDependencies": {
     "@types/node": "^26.6.3",

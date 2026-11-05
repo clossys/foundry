@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
+// @ts-expect-error untyped test-support module
+import { writeDesignerSlot } from "../../../designer/scripts/__fixtures__/slot-model.mjs";
 import { recordSuitesSummary, refVerbatimSuite, runRecordSuites, slotContractSuite } from "./record-suites.js";
 
 const temps: string[] = [];
@@ -36,15 +38,21 @@ describe("record suites", () => {
 
   it("runs Designer's ref-verbatim check over every pin", async () => {
     const root = consumer();
+    // A pinned Designer slot whose candidate carries code with no lineage source.
+    const item = { name: "hero", type: "registry:block", files: [{ path: "hero.tsx", content: "export const Hero = () => null\n" }] };
+    writeDesignerSlot(join(root, "clossys"), { id: "sections.hero", candidates: { "hero-v1.json": item }, pin: "hero-v1.json" });
+    const suite = await refVerbatimSuite(root);
+    expect(suite).toMatchObject({ suite: "ref-verbatim", status: "ran", checked: 1, totals: { error: 1 } });
+    expect(suite.findings[0]).toMatchObject({ code: "REF-NO-SOURCE", where: expect.stringMatching(/^sections\.hero\/hero/) });
+  });
+
+  it("never reads a legacy library or selection store", async () => {
+    const root = consumer();
     const dir = join(root, "clossys", "library", "sections.hero", "hero", "v1");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "hero.tsx"), "export const Hero = () => null\n");
-    const hash = `sha256:${"4".repeat(64)}`;
-    writeFileSync(join(dir, "element.json"), JSON.stringify({ schema: "clossys.element/1", id: "hero", slot: "sections.hero", version: 1, hash, lineage: { mode: "original" }, payload: ["hero.tsx"] }));
-    writeFileSync(join(root, "clossys", "selection.json"), JSON.stringify({ pins: { "sections.hero": { element: "hero", version: 1, hash, event: "e1" } } }));
-    const suite = await refVerbatimSuite(root);
-    expect(suite).toMatchObject({ suite: "ref-verbatim", status: "ran", checked: 1, totals: { error: 1 } });
-    expect(suite.findings[0]).toMatchObject({ code: "REF-NO-SOURCE", where: "sections.hero/hero@v1" });
+    writeFileSync(join(root, "clossys", "selection.json"), JSON.stringify({ pins: { "sections.hero": { element: "hero", version: 1, hash: `sha256:${"4".repeat(64)}`, event: "e1" } } }));
+    expect(await refVerbatimSuite(root)).toMatchObject({ suite: "ref-verbatim", checked: 0, totals: { error: 0 } });
   });
 
   it("reports a suite that cannot run without failing the command unless strict", async () => {

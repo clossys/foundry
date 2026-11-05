@@ -76,7 +76,8 @@
   },
   "inputs": [
     "advantage.proposition.proof",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "capability.team.role"
   ],
   "uses": []
 }

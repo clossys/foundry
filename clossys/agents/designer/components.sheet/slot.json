@@ -60,7 +60,24 @@
       "components.icon"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-close",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.shadow",
+    "themes.spacing"
+  ],
   "uses": [
     "assets.icon-close",
     "components.button"

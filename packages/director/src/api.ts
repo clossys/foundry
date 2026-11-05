@@ -1,6 +1,7 @@
 import { compileBrief, type Brief } from "./brief.js";
 import { discoverBriefContracts, mergeBriefContracts, type BriefContract } from "./brief-contracts.js";
 import type { Cell, CellId, CellRef, StrategyRootIssue } from "./format/types.js";
+import { slotCandidateCell, slotCandidateVersion } from "./format/slot.js";
 import { readStrategyRoot } from "./store.js";
 import type { DirectorStoreReader } from "./store-io.js";
 import { strategyStatus, type CheckOptions, type StatusReport } from "./checks/index.js";
@@ -37,8 +38,29 @@ export function openStrategy(root: string, store: DirectorStoreReader, options: 
   const issues = [...discovered.issues, ...merged.issues];
   if (issues.length) throw new Error(`Invalid brief contracts: ${issues.map(issue => `${issue.path}: ${issue.message}`).join("; ")}`);
   const contracts = new Map(merged.contracts.map(contract => [contract.id, contract]));
+  const candidates = new Map<string, Cell | undefined>();
+  /**
+   * An unpinned candidate of a slot, read on demand: it resolves as a draft cell, so a ref to a superseded
+   * or not-yet-pinned version is stale, not dangling. It carries no decision date.
+   */
+  function candidateCell(id: CellId, version: number): Cell | undefined {
+    const key = `${id}@${version}`;
+    if (candidates.has(key)) return candidates.get(key);
+    let cell: Cell | undefined;
+    if (model.candidateVersions?.[id]?.includes(version)) {
+      const name = (store.list(model.root, `${id}/candidates`) ?? []).find(entry => slotCandidateVersion(entry) === version);
+      const path = name && `${id}/candidates/${name}`;
+      const bytes = path ? store.read(model.root, path) : undefined;
+      if (path && bytes !== undefined) {
+        try { cell = { ...slotCandidateCell({ id, version, updated: "", path, bytes }), status: "draft" }; } catch { cell = undefined; }
+      }
+    }
+    candidates.set(key, cell);
+    return cell;
+  }
   function getCell(id: CellId, version?: number): Cell | undefined {
-    return model.cells.filter(cell => cell.id === id && (version === undefined || cell.version === version)).sort((a, b) => b.version - a.version)[0];
+    const pinned = model.cells.filter(cell => cell.id === id && (version === undefined || cell.version === version)).sort((a, b) => b.version - a.version)[0];
+    return pinned ?? (version === undefined ? undefined : candidateCell(id, version));
   }
   function getActive(id: CellId): Cell | undefined {
     const version = model.tree?.active[id];

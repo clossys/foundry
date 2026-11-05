@@ -369,12 +369,14 @@
       "l2": "display-content",
       "leaves": [
         "components.semantic-content",
+        "components.rich-text",
         "components.item"
       ],
       "offers": [
         {
           "source": "shadcn@aria",
           "leaves": [
+            "components.rich-text",
             "components.item"
           ]
         },

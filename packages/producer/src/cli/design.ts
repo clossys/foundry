@@ -7,17 +7,9 @@ import { readPinned, type PinnedSet } from "../records/pinned.js";
 import { hasSlotModel, readIa } from "../records/slots.js";
 import type { CliArgs } from "./args.js";
 import { emitProjection } from "./projection.js";
+import { DESIGN_BRIEF_INPUTS } from "../records/slot-model/design-brief-inputs.js";
 
-const INPUTS = [
-  ["essence", "identity.brand.essence", true],
-  ["personality", "identity.brand.personality", true],
-  ["visual-direction", "identity.visual.style", true],
-  ["imagery", "identity.visual.imagery", false],
-  ["voice", "identity.verbal.voice", true],
-  ["audience", "focus.segment.core", true],
-  ["position", "advantage.proposition.promise", true],
-  ["category", "focus.category.definition", true],
-] as const;
+const INPUTS = DESIGN_BRIEF_INPUTS;
 type Finding = { code: string; subject: string; message: string };
 export interface DesignTrait {
   id: string; ref: string; kind: "brand-trait" | "visual-direction" | "voice-rule";
@@ -100,11 +92,14 @@ function checkDesign(consumer: string, director: Awaited<ReturnType<typeof readP
   const findings: Finding[] = brief.limits.filter(limit => limit.code === "missing-director-input");
   for (const issue of designer.issues) findings.push({ code: issue.reason, subject: `designer:${issue.slot}`, message: issue.message });
   if (!designer.pinned.length) findings.push({ code: "missing-designer-pins", subject: "designer", message: "The consumer has no pinned Designer slot" });
-  // A declared input is an upstream Director slot; it must be pinned for this slot to derive from it.
+  // A declared input is an upstream Director slot or a Designer theme/asset slot the element reads.
+  // A Director input must be pinned for this slot to derive from it; an unpinned Designer input is an
+  // open owner decision (readiness reports it), never an error here.
   const directorPinned = new Map(director.cells.map(cell => [cell.id, cell]));
+  const designerSlots = new Set([...designer.pinned.map(candidate => candidate.id), ...designer.unpinned]);
   for (const candidate of designer.pinned) {
     for (const input of candidate.doc.inputs) {
-      if (!directorPinned.has(input)) findings.push({ code: "unpinned-director-input", subject: `designer:${candidate.id}`, message: `Declared input director:${input} has no pinned candidate` });
+      if (!directorPinned.has(input) && !designerSlots.has(input)) findings.push({ code: "unpinned-director-input", subject: `designer:${candidate.id}`, message: `Declared input director:${input} has no pinned candidate` });
     }
   }
   const theme = libraryTheme(consumer);

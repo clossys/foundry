@@ -116,22 +116,22 @@ export function checkWontClaimDrift(files: readonly ScannedFile[], source: Strat
 }
 
 
-/** Only Direction labels in the tree-selected active Proof and Voice govern copy. */
+/** Only Direction labels in the pinned (active) Proof and Voice govern copy. */
 function activeWontClaim(model: StrategyModel): { entries: { id: string; statement: string; matchPhrases: string[] }[]; issues: string[] } {
   const entries: { id: string; statement: string; matchPhrases: string[] }[] = []; const issues: string[] = [];
   const sources = [["advantage.proposition.proof", "Never-claim"], ["identity.verbal.voice", "Never"]] as const;
   for (const issue of model.issues) {
-    if (issue.path === "." || issue.path === "tree.json" || sources.some(([id]) => issue.path === `cells/${id}` || issue.path === `cells/${id}/v${model.tree?.active[id]}.md`)) {
+    if (issue.path === "." || sources.some(([id]) => issue.path === id || issue.path.startsWith(`${id}/`))) {
       issues.push(`${issue.path}:${issue.line}: ${issue.message}`);
     }
   }
-  if (!model.tree) issues.push("tree.json: no valid active pointers");
+  if (!model.tree) issues.push(".: no valid active pointers");
   for (const [id, key] of sources) {
     const version = model.tree?.active[id];
     const cells = model.cells.filter(c => c.id === id && c.version === version);
     const cell = cells[0];
     if (version == null || cells.length !== 1 || cell?.status !== "active") {
-      issues.push(`${id}: active cell is missing or disagrees with tree.json`); continue;
+      issues.push(`${id}: pinned candidate is missing or disagrees with its pin`); continue;
     }
     const bullets = cell.direction.filter(b => b.key === key);
     if (!bullets.length) issues.push(`${cell.path}: missing ${key}: label`);

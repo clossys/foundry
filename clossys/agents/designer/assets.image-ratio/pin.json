@@ -1,7 +1,7 @@
 {
-  "candidate": "image-ratio-v1.json",
-  "sha256": "cb992bee4b75353dedb996b52f4353c9d21798f90d3f05021bca5162774cd5ff",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "candidate": "image-ratio-v2.json",
+  "sha256": "f5cd3d0d2be7c720f8fad0f3755f24b55badf6dd91851ec792e2bc7e5927c00f",
+  "decidedBy": "planner:FLAT-SLOTS",
+  "basis": "planner",
+  "at": "2026-11-05T12:57:00.225Z"
 }

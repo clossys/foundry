@@ -1,13 +1,13 @@
-# Director brief to Designer cells
+# Director brief to Designer slots
 
-For a consumer using the `clossys` CLI and native cells, run:
+For a consumer using the `clossys` CLI and the flat slot store, run:
 
 ```text
 clossys design --brief --root <consumer> --json
 clossys design --check --root <consumer> --json
 ```
 
-`--brief` reads active Director cells and lists existing Designer leaves. Its
+`--brief` reads the pinned Director slots and lists the existing Designer slots. Its
 `result.inputs` preserves the source Direction, Watch, citations, ids and versions
 for essence, personality, visual direction, imagery, voice, audience and position.
 `result.wontClaim` carries actual `Never` and `Never-claim` bullets; it invents no
@@ -22,52 +22,53 @@ radius and motion; select available components and Section/Frame emphasis to
 serve the stated audience and position. Explain the choice and its tradeoff.
 Do not substitute generic starter values for the brand, invent unsupported
 inputs, add new permanent leaf ids, or claim that a CLI made these decisions.
-Use the existing native catalog and consumer library APIs for fills and their
-provenance. Missing installed capability is a named limit, not permission to
-fabricate package evidence or bypass native library checks.
+Missing installed capability is a named limit, not permission to fabricate
+package evidence or bypass the slot checks.
 
-Write proposals only as **draft** native Designer cell versions under
-`clossys/agents/designer/cells/<existing-slot>/v<N>.md`. Preserve active sources,
-versions and tree pointers. For a currently active slot, use
-`designer-library cells propose <slot> --root <cell-root>` to allocate
-the next version; never overwrite an earlier version. An unchanged proposal
-should reuse the existing draft rather than allocate a duplicate. The shared
-propose command requires an active version; missing roots and new slot creation
-need the native library migration/initialisation capability first. Do not silently
-invent a new tree or composite metadata. If it is unavailable, report that limit.
+The store is flat: one folder per slot, `clossys/agents/designer/<slot-id>/`
+holding `slot.json`, `candidates/` and `pin.json`. Grouping lives only in
+`clossys/agents/designer/ia.json`; never invent folders. Write proposals only as
+unpinned candidate files in the existing slot folder,
+`clossys/agents/designer/<slot-id>/candidates/<element>-v<N>.json`, through the
+installed Producer API (it numbers the candidate and refuses an invalid one).
+Never change a pinned candidate, a `pin.json` or another slot's files; a revision
+is a new candidate file. An unchanged proposal reuses the existing candidate
+rather than adding a duplicate. A new slot needs the library capability
+first; if it is unavailable, report that limit.
 
-Use the closed Designer frontmatter, canonical links such as
-`director:identity.brand.personality@1`, `originKinds`, `sources`, and the native
-`## Rationale` bullets followed by exactly one `## Fill` JSON block. Validate
-every draft with the installed `parseLibraryCell(source, cellPath)` API before
-handoff. Every proposed cell must link the actual Director ids **and versions**
-that informed it. Preserve the actual identity brief fingerprint in native
-selection strategy where supported; never manufacture one.
+A candidate is a shadcn registry item (`name`, `type`, `files[]` with full
+content) with `meta.slot`, `meta.source` (the reference it starts from, see the
+Designer skill) and `meta.element` (`id`, `layer`, `kind`, `creator`, `reason`,
+`reads`). Trace the Director the slot model's way: the slot's `slot.json`
+`inputs` lists every Director slot id the element derives from (for example
+`identity.brand.personality`), and the pinned Director candidates are the
+versions read. `clossys design --check` fails on a declared Director input with
+no pinned candidate, and names pinned slots that declare none.
 
 The brief supplies per-Direction-bullet `result.traits[].id` markers, for example
 `director:identity.brand.personality@1#direction-L18`. Declare each realised
-trait in a rationale bullet using the exact marker supplied by this brief:
+trait in the candidate's `meta.element.reason`, using the exact marker:
 
 ```text
-- Realises <trait.id>: <the concrete visual decision and why it expresses this input>
+Realises <trait.id>: <the concrete visual decision and why it expresses this input>
 ```
 
-Also put the marker's canonical `trait.ref` in frontmatter `links`. Markers belong
-in rationale, not links: the canonical link grammar has no fragment. Map each
-resolved brand trait, visual direction and voice rule to at least one downstream
-cell. One Director bullet may contain several traits; explain how the decision
-addresses the entire bullet. Audience and position are contextual inputs, not
-arbitrarily expanded into trait obligations. Unresolved owner inputs are retained
-as limits. Matching this declaration proves traceability, not visual taste.
+and list the trait's slot (`trait.ref` without the version) in `slot.json`
+`inputs`. Map each resolved brand trait, visual direction and voice rule to at
+least one downstream slot. One Director bullet may contain several traits;
+explain how the decision addresses the entire bullet. Audience and position are
+contextual inputs, not arbitrarily expanded into trait obligations. Unresolved
+owner inputs are retained as limits. Matching this declaration proves
+traceability, not visual taste.
 
-Run `clossys design --check` before and after activation and report actual findings.
-The check measures **active** downstream cells: an unactivated draft cannot make
-the active result clean. Preserve expected findings until the requested native
-activation occurs. Use `designer-library cells activate <slot@version...>
---confirm <valid-confirmation-ref> --root <cell-root>` only within the
-session's activation authority. Then `clossys design --root <consumer>` compiles
-the active cells into the native `compiled` projection; it neither generates
-creative proposals nor activates them. Do not edit that projection by hand.
+Run `clossys design --check` before and after pinning and report actual findings.
+The check measures **pinned** candidates: an unpinned candidate cannot make the
+pinned result clean. Preserve expected findings until the requested pin occurs.
+Pin only within the session's decision authority, with
+`clossys pin designer/<slot> <candidate-id> --by <who> --basis <picked|bulk|planner>`.
+Then `clossys design --root <consumer>` prints the pinned set (written only to
+`--out`); it neither generates creative proposals nor pins them. Never hand-edit
+a `pin.json` or a generated projection.
 
 The check includes native value-contract and token-contrast findings, reports
 missing contrast bindings, and names runtime WCAG and visual review limits.

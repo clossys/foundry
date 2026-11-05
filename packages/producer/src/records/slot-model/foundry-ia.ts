@@ -8,6 +8,7 @@ import { join } from "node:path";
 import { loadBuildCatalog, type PlacementNode } from "@clossys/designer/catalog";
 import { resolveAgent } from "../../agents.js";
 import { isAbsent } from "../../errors.js";
+import { DESIGN_BRIEF_INPUTS } from "./design-brief-inputs.js";
 import { IA_SCHEMA, type IaDoc, type IaLeafGroup, type IaNode, type ModelAgent, type SlotAgent, type SlotKind, type SlotPosition } from "./types.js";
 
 export interface FoundrySlot {
@@ -88,12 +89,22 @@ export function designerIa(): FoundryIa {
       : node.children.map(child => ({ id: child.id, label: child.label, slots: leavesOf(child) }));
     nodes.push({ id: `${placement.layer}.${node.id}`, label: node.label, children });
   }
+  // The read graph: every Designer decision reads the Designer brief's Director slots, and each
+  // slot contract names the theme and asset slots its element reads.
+  const reads = new Map<string, string[]>();
+  for (const layer of DESIGNER_LAYERS) {
+    let rows: { slot: string; inputs?: { name: string; kind: string }[] }[] = [];
+    try { rows = readJson(root, `src/catalog/slot-contracts/${layer}.json`) as typeof rows; } catch { /* Older designer builds carry no slot contracts. */ }
+    for (const row of rows) reads.set(row.slot, (row.inputs ?? []).filter(input => input.kind === "theme" || input.kind === "asset").map(input => input.name));
+  }
+  const brief = DESIGN_BRIEF_INPUTS.map(([, id]) => id as string);
   const slots = new Map<string, FoundrySlot>();
   for (const node of nodes) for (const child of node.children) for (const id of child.slots) {
     const slot = contracts.get(id) as { contract?: Record<string, unknown>; requires?: readonly string[] } | undefined;
     const contract = (slot?.contract ?? {}) as Record<string, unknown>;
     const composes = [...strings(contract.allowedComposes), ...strings(contract.composes)];
-    slots.set(id, { id, kind: "element", contract, declaredInputs: [], declaredUses: [...strings(slot?.requires), ...composes], feeds: [] });
+    const declaredInputs = [...new Set([...brief, ...(reads.get(id) ?? []).filter(input => input !== id)])].sort();
+    slots.set(id, { id, kind: "element", contract, declaredInputs, declaredUses: [...strings(slot?.requires), ...composes], feeds: [] });
   }
   return { agent: "designer", ia: { schema: IA_SCHEMA, source: `@clossys/designer#${ref}`, extensions: [], nodes }, slots };
 }

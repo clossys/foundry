@@ -45,6 +45,28 @@
       ]
     }
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.lockup",
+    "assets.mark",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent-foreground",
+    "themes.card-foreground",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover-foreground",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.secondary-foreground",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary-foreground"
+  ],
   "uses": []
 }

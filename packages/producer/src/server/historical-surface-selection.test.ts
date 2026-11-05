@@ -48,15 +48,13 @@ describe("historical package surfaces through native consumer operations", () =>
       ...historicalHolds.map(([slot]) => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot, source: "foundry" } })),
     ] }, { surfaceOptions });
     const reader = await agentModule("designer", "library-cli/fs-library.js");
-    const source = join(directory, "library");
+    // The designer-library CLI operates on an explicit projection root; no legacy cell store is involved.
+    const source = join(agentRoot(consumer, "designer"), "compiled");
     for (const [name, contents] of reader.libraryFiles(catalog, library, [], undefined, surfaceOptions)) {
       const path = join(source, name); await mkdir(dirname(path), { recursive: true }); await writeFile(path, contents);
     }
     await mkdir(join(consumer, "clossys"), { recursive: true });
     await writeFile(join(consumer, "clossys/clossys.config.ts"), "export default {};\n");
-    const cells = await agentModule("designer", "library-cli/cells.js");
-    await cells.libraryToCells(source, agentRoot(consumer, "designer"), { catalog, date: "2026-10-30", surfaceOptions });
-    await cells.compileLibraryCells(agentRoot(consumer, "designer"), join(agentRoot(consumer, "designer"), "compiled"), { catalog, surfaceOptions });
     const bin = join(consumer, "clossys/node_modules/.bin");
     await mkdir(bin, { recursive: true });
     const manifest = JSON.parse(await readFile(join(repository, "packages/designer/package.json"), "utf8"));

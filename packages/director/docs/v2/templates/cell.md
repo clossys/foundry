@@ -1,5 +1,7 @@
 # Cell template
 
+> Superseded (2026-11-05): this is the 2026-10-29 cell-model draft. The consumer store is now flat slot folders, `clossys/agents/director/<id>/{slot.json,candidates/,pin.json}` with `ia.json` grouping and evidence in `clossys/evidence/director/` (rule R-FLAT-SLOTS). The current instructions are `packages/director/skill/SKILL.md` and `packages/director/skill/templates/cell.md`. The `tree.json`, `cells/`, `sessions/`, `findings/` and `requests/` layout below is historical.
+
 A cell is one file in `cells/<cell-id>/v<N>.md` under the strategy root. It holds bullets only. The frontmatter is a flat YAML subset: `key: value` or `key: [a, b]`, with no nesting.
 
 ## Blank template

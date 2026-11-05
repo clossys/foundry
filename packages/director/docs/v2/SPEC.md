@@ -1,5 +1,7 @@
 # @clossys/director v2: the cell model (SPEC draft, 2026-10-29)
 
+> Superseded (2026-11-05): this is the 2026-10-29 cell-model draft. The consumer store is now flat slot folders, `clossys/agents/director/<id>/{slot.json,candidates/,pin.json}` with `ia.json` grouping and evidence in `clossys/evidence/director/` (rule R-FLAT-SLOTS). The current instructions are `packages/director/skill/SKILL.md` and `packages/director/skill/templates/cell.md`. The `tree.json`, `cells/`, `sessions/`, `findings/` and `requests/` layout below is historical.
+
 Status: design draft written by a planner-side subagent. It builds nothing: no repository was edited and nothing was pushed or posted.
 
 What it upgrades: `@clossys/director` 0.6.0 (facts, claims and brand-facts model) in clossys/foundry. The reference ref is `origin/codex/integrate-scroll-preview` @ 003e3590e.

@@ -6,6 +6,9 @@ import { surfaceEntryOf } from "../catalog-core/surface-library.js";
 import { applyLibraryChange, libraryHash } from "../catalog-core/library.js";
 import { check as checkValues } from "../catalog-core/check.js";
 import type { SourceBundle } from "../catalog-core/changeset-components.js";
+
+/** A library read: a member of one of the five layers. */
+const LAYER_READ = /^(themes|assets|components|sections|frames)\.[a-zA-Z0-9][a-zA-Z0-9_.-]*$/;
 import type { BuildCatalogData, CatalogSlot, CompositeCatalogData, LibraryData } from "../catalog-core/types.js";
 
 export interface DefaultCandidatesInput {
@@ -84,7 +87,7 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
   for (const slot of nativeSlots) if (slot && typeof slot.id === "string" && !slots.has(slot.id)) fail(`${slot.id}: native composite contract is unregistered`);
   const orderedSlots = [...slots.values()].sort((a, b) => b.id.length - a.id.length || a.id.localeCompare(b.id));
   const addRead = (surface: string, fill: string, read: unknown) => {
-    if (typeof read !== "string" || !read || !/^(themes|assets|components|sections|frames)\.[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(read)) { fail(`${fill}: malformed read ${JSON.stringify(read)}`); return; }
+    if (typeof read !== "string" || !read || !LAYER_READ.test(read)) { fail(`${fill}: malformed read ${JSON.stringify(read)}`); return; }
     const slot = orderedSlots.find(slot => read === slot.id || read.startsWith(`${slot.id}.`));
     if (!slot) { fail(`${fill}: unregistered read ${read}`); return; }
     try { if (!validMember(slot, read)) { fail(`${fill}: invalid member read ${read}`); return; } }
@@ -153,7 +156,13 @@ export function checkDefaultCandidates(input: DefaultCandidatesInput): { exitCod
         const value = entry as unknown as Record<string, unknown>;
         readArrays(meta.slot, meta.id, value.reads, true);
         links(meta.slot, meta.id, value.composes);
+        // A registered contract part outside the five layers (a host render part such as
+        // `renderSurface` or `studio.specimen-contrast`) is a host-supplied slot, not a library read;
+        // any other string part is a read and must name a registered slot member.
+        const declared = (slot.contract as { parts?: unknown }).parts;
+        const hostParts = new Set(strings(declared) ? declared.filter(part => !LAYER_READ.test(part)) : []);
         if (Array.isArray(value.parts)) for (const part of value.parts) {
+          if (typeof part === "string" && hostParts.has(part)) continue;
           if (typeof part === "string") addRead(meta.slot, meta.id, part);
           else if (record(part) && part.slot !== undefined) addRead(meta.slot, meta.id, part.slot);
         }

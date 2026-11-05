@@ -18,13 +18,11 @@ export const CLI_STEPS = [
   defineStep({
     id: "director.store", kind: "plumb", actor: "code", stage: "direct.pin",
     summary: "Director's own store commands (clossys director check, rate-check) through the slot-model reader and writer.",
-    // The pinned Director slots, then the whole strategy store under the default root (--root may name
-    // another); outputs are @clossys/director's foundry.outputs.
-    inputs: [...DIRECTOR_PINS, "clossys/agents/director/**"],
+    // The pinned Director slots, then everything under the default root (--root may name another), plus
+    // the consumer's Director evidence. The commands write only generated files; pins are made by `clossys pin`.
+    inputs: [...DIRECTOR_PINS, "clossys/agents/director/**", "clossys/evidence/director/*.md"],
     outputs: [
-      "clossys/agents/director/tree.json", "clossys/agents/director/cells/**", "clossys/agents/director/sessions/**",
-      "clossys/agents/director/findings/**", "clossys/agents/director/requests/**", "clossys/agents/director/briefs/**",
-      "clossys/agents/director/citations.json", "clossys/agents/director/reports/*.json",
+      "clossys/evidence/director/briefs/**", "clossys/evidence/director/reports/*.json",
     ],
     command: { cli: { verb: "director", parser: "src/cli/director.ts" }, entry: "src/cli/director.ts#runDirectorVerb" }, checks: ["workspace"],
   }),

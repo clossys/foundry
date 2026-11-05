@@ -34,13 +34,16 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   authored.surfaces ??= { version: 1, fills: [], files: [] };
   const own = new Map<string, any>([...authored.values.fills, ...authored.components.fills, ...authored.surfaces.fills].map(fill => [meta(fill).slot, fill]));
   let values: LibraryData = { ...authored.values, source: authored.source, adoptedAt: authored.adoptedAt };
-  const absentValues = catalog.values.slots.filter(slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-")).filter(slot => !values.fills.some(fill => meta(fill).slot === slot.id));
-  const changes = absentValues.flatMap(slot => {
-    const offers = catalog.values.fills.filter(fill => meta(fill).slot === slot.id && meta(fill).mode !== "reference");
-    const fill = ["foundry", "tailwind-default"].map(source => offers.find(fill => meta(fill).source === source)).find(Boolean) ?? offers[0];
-    return fill ? [{ op: "adopt" as const, slot: slot.id, source: meta(fill).source }] : [];
-  });
-  if (changes.length) values = applyLibraryChange(catalog.values, values, { baseHash: libraryHash(values), changes });
+  // Adopt the preferred offer for every listed value slot the library does not fill yet.
+  const adoptValues = (library: LibraryData, wanted: (slot: { id: string; layer?: string }) => boolean): LibraryData => {
+    const changes = catalog.values.slots.filter(slot => wanted(slot) && !library.fills.some(fill => meta(fill).slot === slot.id)).flatMap(slot => {
+      const offers = catalog.values.fills.filter(fill => meta(fill).slot === slot.id && meta(fill).mode !== "reference");
+      const fill = ["foundry", "tailwind-default"].map(source => offers.find(fill => meta(fill).source === source)).find(Boolean) ?? offers[0];
+      return fill ? [{ op: "adopt" as const, slot: slot.id, source: meta(fill).source }] : [];
+    });
+    return changes.length ? applyLibraryChange(catalog.values, library, { baseHash: libraryHash(library), changes }) : library;
+  };
+  values = adoptValues(values, slot => slot.layer === "themes" || slot.id.startsWith("assets.icon-"));
   const profile = resolve({ catalog: catalog.values, library: values });
   const literal = (id: string, mode: "light" | "dark", seen = new Set<string>()): string => {
     if (seen.has(id) || !profile.members[id]) throw new Error("Unresolved selected token");
@@ -66,6 +69,13 @@ export async function prepareStudioSelection(stored?: StudioDesignerLibrary, sou
   for (const leaf of [...needed]) visit(leaf);
   // Registered compositions require their planned inputs even without a direct candidate.
   for (const row of componentPlan.decisions) if (needed.has(row.slot) && "reads" in row) for (const leaf of row.reads) if (!needed.has(leaf)) { needed.add(leaf); visit(leaf); }
+  // A needed seat's asset reads are needed values too (sections.cards reads assets.image).
+  const assetReads = [...needed].flatMap(leaf => {
+    const fill = own.get(leaf) ?? defaults.get(leaf);
+    const descriptor: any = fill ? Object.values(fill.components ?? fill.sections ?? fill.frames ?? {})[0] : undefined;
+    return (descriptor?.reads?.assets ?? []) as string[];
+  });
+  values = adoptValues(values, slot => assetReads.some(id => id === slot.id || id.startsWith(slot.id + ".")));
   let library: CompositeLibraryData = { ...authored, values: { ...values } };
   delete (library.values as any).source; delete (library.values as any).adoptedAt;
   const surfaceOptions = { packages: await evidenceApi.readSurfacePackageEvidence(surfaceCatalog.fills), measurements: [] };

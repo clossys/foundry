@@ -10,8 +10,9 @@ ENGAGEMENT_CONTEXT_FIELD_IDS audienceContextValue engagementContextFieldById rea
 assessStrategyTraceabilityRate scanStrategyDirectory buildFactIndex isTracedSurfaceForm readFindings checkGrounding checkWontClaimDrift
 loadCatalog validateCatalog openStrategy compileBrief validateBriefContract discoverBriefContracts
 parseCell serializeCell parseRef formatRef parseSession parseFinding validateFinding validateRequest validateTree readStrategyRoot
+EVIDENCE_PREFIX readStrategyFile isSlotCandidatePath parseSlotCandidateDocument parseSlotPin slotCandidateCell slotCandidateVersion SLOT_CANDIDATE_NAME
 checkCell checkCoherence completion strategyStatus validWatch blocks cellJudgeId
-buildCitationIndex propose activate createRequest listRequests resolveRequest review
+buildCitationIndex planReview
 runDirectorCli runDirectorRateCli storeFault
 `.trim().split(/\s+/).sort();
 
@@ -24,7 +25,7 @@ CatalogCell CatalogNode StrategyCatalog CatalogRule CatalogIssue CatalogValidati
 Strategy StrategyInventoryReport Brief BriefCell BriefContract BriefContractDiscovery
 CellId CellRef Ref Bullet Cell FormatIssue FormatResult StrategyTreeNode StrategyTree SessionLine Session Finding StrategyRequest StrategyRootIssue StrategyModel
 Scope JudgeVerdict CheckOptions CheckContext CheckFinding CellFinding CoherenceFinding CellCompletion StorylineReport StatusReport CompletionReport
-CitationEntry CitationIndex ScanInput ProposeOptions ActivateOptions NewRequest ReviewReport ReviewRequest
+CitationEntry CitationIndex ScanInput ReviewReport ReviewRequest SlotCandidateInput SlotPin
 DirectorStore DirectorStoreChange DirectorStoreEntry DirectorStoreError DirectorStoreFault DirectorStoreReader DirectorStoreWriter
 `.trim().split(/\s+/).sort();
 

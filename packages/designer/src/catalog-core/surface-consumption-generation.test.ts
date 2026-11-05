@@ -58,11 +58,10 @@ it("refuses unavailable source instead of generating empty measured success", ()
 });
 
 
-const privateTarget = "packages/designer/src/blocks/internal/assets.ts";
-function privateFixture(extra = "", declaration: unknown = [privateTarget], importText = 'import { value } from "./internal/assets.js";') {
+function privateFixture(extra = "", importText = 'import { value } from "./internal/assets.js";') {
   const test = fixture();
   test.json("src/catalog/slots/sections.json", []);
-  test.json("src/catalog/slots/frames.json", [{ id: "frames.example", contract: { allowedReads: { themes: [], assets: [], privateInternal: declaration }, composes: [] } }]);
+  test.json("src/catalog/slots/frames.json", [{ id: "frames.example", contract: { allowedReads: { themes: [], assets: [] }, composes: [] } }]);
   rmSync(join(test.root, "src/catalog/fills/foundry/sections.example.json"));
   test.json("src/catalog/fills/foundry/frames.example.json", { $extensions: { "com.clossys.fill": { id: "synthetic/frames.example", slot: "frames.example", source: "synthetic", pin: { package: "@example/designer", version: "1.0.0", export: "./blocks#Example" } } }, frames: { example: {} } });
   test.write("src/blocks/internal/assets.ts", "export const value = 1;");
@@ -70,46 +69,29 @@ function privateFixture(extra = "", declaration: unknown = [privateTarget], impo
   return test;
 }
 
-it("classifies a proven private runtime import and retains raw asset evidence", () => {
+it("never reads a private runtime module path as an asset", () => {
   const test = privateFixture();
   try {
     const row = measureFoundrySurfaces(test.root, buildSurfaceConsumption).measurements["frames.example"].consumption;
     expect(row.scannedReads.assets).toEqual([]);
-    expect(row.rawScannedReads.assets).toEqual(["assets.js"]);
-    expect(row.privateInternalReads).toEqual([expect.objectContaining({ target: privateTarget, file: "packages/designer/src/blocks/Example.tsx", specifier: "./internal/assets.js", line: 1, rawAssets: ["assets.js"], targetSha256: expect.stringMatching(/^[a-f0-9]{64}$/), sourceSha256: row.sourceFiles.find((file: { path: string }) => file.path.endsWith("Example.tsx")).sha256 })]);
+    expect(Object.keys(row)).not.toContain("rawScannedReads");
+    expect(Object.keys(row)).not.toContain("privateInternalReads");
   } finally { test.cleanup(); }
 });
 
-it("preserves a genuine same-name consumer asset alongside its private import", () => {
+it("preserves genuine consumer asset ids next to a private import", () => {
   const test = privateFixture('{"assets.js"}{"assets.unrelated"}');
   try {
     const { measurements, report } = measureFoundrySurfaces(test.root, buildSurfaceConsumption);
     expect(measurements["frames.example"].consumption.scannedReads.assets).toEqual(["assets.js", "assets.unrelated"]);
-    expect(measurements["frames.example"].consumption.privateInternalReads).toHaveLength(1);
     expect(report.fills[0].missingDeclaredReads.assets).toEqual(["assets.js", "assets.unrelated"]);
   } finally { test.cleanup(); }
 });
 
-it.each([{ declaration: [] }, { declaration: ["packages/designer/src/blocks/internal/unrelated.ts"] }])("does not infer private use from unrelated permission $declaration", ({ declaration }) => {
-  const test = privateFixture('{"assets.other"}', declaration);
-  try {
-    const row = measureFoundrySurfaces(test.root, buildSurfaceConsumption).measurements["frames.example"].consumption;
-    expect(row.scannedReads.assets).toEqual(["assets.js", "assets.other"]);
-    expect(row.privateInternalReads).toBeUndefined();
-  } finally { test.cleanup(); }
-});
-
-it.each([{ declaration: ["assets.js"] }, { declaration: ["packages/designer/src/blocks/Example.tsx"] }, { declaration: ["../internal/assets.ts"] }, { declaration: [{ target: privateTarget, hide: "assets.js" }] }])("refuses arbitrary private declarations $declaration", ({ declaration }) => {
-  const test = privateFixture("", declaration);
-  try { expect(() => measureFoundrySurfaces(test.root, buildSurfaceConsumption)).toThrow(/private internal/i); }
-  finally { test.cleanup(); }
-});
-
-it("does not classify a type-only import as runtime private evidence", () => {
-  const test = privateFixture('{"assets.js"}', [privateTarget], 'import type { value } from "./internal/assets.js";');
+it("measures a type-only private import like any other source", () => {
+  const test = privateFixture('{"assets.js"}', 'import type { value } from "./internal/assets.js";');
   try {
     const row = measureFoundrySurfaces(test.root, buildSurfaceConsumption).measurements["frames.example"].consumption;
     expect(row.scannedReads.assets).toEqual(["assets.js"]);
-    expect(row.privateInternalReads).toBeUndefined();
   } finally { test.cleanup(); }
 });

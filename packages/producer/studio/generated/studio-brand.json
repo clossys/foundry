@@ -2,8 +2,8 @@
   "name": "Clossys",
   "sources": {
     "assets.mark": {
-      "candidate": "mark-v2.json",
-      "hash": "sha256:fad5f7207ca75e693177d312baf0800bd5754d50c26200cc873f6634b2c2189d"
+      "candidate": "mark-v3.json",
+      "hash": "sha256:d25eee2e1767af8286fc6017905011f0a399c97fceed900b1d34bd66982fef76"
     },
     "assets.favicon": {
       "candidate": "favicon-v2.json",
@@ -14,8 +14,8 @@
       "hash": "sha256:9b8a8061faed4b1966fac63e4bc359e4d411a3e95fee2e6a3b2df033a2dda6db"
     },
     "assets.lockup": {
-      "candidate": "lockup-v2.json",
-      "hash": "sha256:faf73ffd979087a4ec33bb4f14bb5843659ef9af55b7a4bdb7f79656ef0e513a"
+      "candidate": "lockup-v3.json",
+      "hash": "sha256:cc39cf23fc015c3b6f8e87bb99225b64fb339072dc5f062b4321f7d2e57a3cb9"
     },
     "assets.image": {
       "candidate": "image-v2.json",

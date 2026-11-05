@@ -1,7 +1,7 @@
-/** CLI-only generated artifacts. Cell, confirmation and activation writes stay separate. */
+/** CLI-only generated artifacts. Pins are made by `clossys pin`; this writes only briefs. */
 import { compileBrief, type Brief } from "../brief.js";
 import { discoverBriefContracts } from "../brief-contracts.js";
-import { readStrategyRoot } from "../store.js";
+import { directorOutput, readStrategyFile, readStrategyRoot, type DirectorOutput } from "../store.js";
 import type { DirectorStore } from "../store-io.js";
 import type { Change } from "./transaction.js";
 
@@ -16,12 +16,12 @@ function outputBefore(root: string, store: DirectorStore, path: string): string 
 }
 
 /** Rebuild the inventory from stored briefs, so another contract's entry survives a write. */
-function inventory(root: string, store: DirectorStore, brief: Brief) {
+function inventory(out: DirectorOutput, store: DirectorStore, brief: Brief) {
   const briefs = new Map<string, Brief>();
-  const names = store.reader.list(root, "briefs") ?? [];
+  const names = store.reader.list(out.base, out.briefs) ?? [];
   for (const name of names) {
     if (!name.endsWith(".json") || name === "index.json" || name === `${brief.contract}.json`) continue;
-    const value = JSON.parse(outputBefore(root, store, `briefs/${name}`) ?? "null") as Brief | null;
+    const value = JSON.parse(outputBefore(out.base, store, `${out.briefs}/${name}`) ?? "null") as Brief | null;
     if (!value || typeof value.contract !== "string" || !contractId.test(value.contract) || name !== `${value.contract}.json`
       || !["ready", "missing", "stale"].includes(value.state) || typeof value.fingerprint !== "string"
       || !Array.isArray(value.cells) || !Array.isArray(value.missing) || !Array.isArray(value.stale) || typeof value.compiledAt !== "string"
@@ -39,7 +39,7 @@ function inventory(root: string, store: DirectorStore, brief: Brief) {
 }
 
 /** Compile and stage the requested outputs under the existing strategy writer lock. */
-export function compileAndPersistBrief(root: string, store: DirectorStore, id: string, options: { write?: boolean; request?: boolean }): Brief {
+export function compileAndPersistBrief(root: string, store: DirectorStore, id: string, options: { write?: boolean }): Brief {
   return store.writer.locked(root, () => {
     const model = readStrategyRoot(root, store.reader);
     if (!model.tree || model.issues.length) throw new Error("Cannot compile an invalid strategy root");
@@ -49,34 +49,19 @@ export function compileAndPersistBrief(root: string, store: DirectorStore, id: s
     if (!contract) throw new Error(`Unknown brief contract: ${id}`);
     if (options.write && id === "index") throw new Error("Brief contract id index is reserved for the generated inventory");
     const brief = compileBrief(model, contract, store.reader);
-    const changes: Change[] = [];
+    const changes: Change[] = [], out = directorOutput(root);
     if (options.write) {
-      const path = `briefs/${id}.json`;
-      const before = outputBefore(root, store, path);
-      const indexBefore = outputBefore(root, store, "briefs/index.json");
-      const index = inventory(root, store, brief);
-      changes.push({ path, before, after: json(brief) }, { path: "briefs/index.json", before: indexBefore, after: json(index) });
-    }
-    if (options.request && brief.state === "missing") {
-      const detail = `${id} brief requested; no active version for: ${brief.missing.join(", ")}.`;
-      const existing = model.requests.some(request => request.kind === "missing" && request.raisedBy === contract.owner
-        && ["open", "drafted"].includes(request.status) && request.detail === detail
-        && request.cells.length === brief.missing.length && request.cells.every(cell => brief.missing.includes(cell)));
-      if (!existing) {
-        const next = Math.max(0, ...model.requests.map(request => Number(request.id.slice(4)))) + 1;
-        if (next > 9999) throw new Error("Request id limit reached");
-        const requestId = `REQ-${String(next).padStart(4, "0")}`;
-        const path = `requests/${requestId}.json`;
-        if (outputBefore(root, store, path) !== undefined) throw new Error("Request destination already exists");
-        changes.push({ path, after: json({ id: requestId, raisedBy: contract.owner, kind: "missing", cells: brief.missing,
-          detail, status: "open", opened: new Date().toISOString().slice(0, 10), resolvedBy: null }) });
-      }
+      const path = `${out.briefs}/${id}.json`, indexPath = `${out.briefs}/index.json`;
+      const before = outputBefore(out.base, store, path);
+      const indexBefore = outputBefore(out.base, store, indexPath);
+      const index = inventory(out, store, brief);
+      changes.push({ path, before, after: json(brief) }, { path: indexPath, before: indexBefore, after: json(index) });
     }
     // Recheck input bytes before the transaction, which also checks every output.
     for (const [path, bytes] of Object.entries(model.files)) {
-      if (store.reader.read(root, path) !== bytes) throw new Error(`Strategy source changed during validation: ${path}`);
+      if (readStrategyFile(root, store.reader, path) !== bytes) throw new Error(`Strategy source changed during validation: ${path}`);
     }
-    if (changes.length) store.writer.commit(root, changes);
+    if (changes.length) store.writer.commit(out.base, changes);
     return brief;
   });
 }

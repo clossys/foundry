@@ -78,19 +78,4 @@ describe("consumer cell root resolution", () => {
     const repo = temp();
     expect(publicCellFormat.resolveCellRoot("writer", { repoRoot: repo })).toBe(join(repo, "clossys", "agents", "writer"));
   });
-
-  it("lets public store readers consume all four canonical roots from nested cwd without altering input bytes", async () => {
-    const repo = temp(); const cwd = join(repo, "apps", "admin"); mkdirSync(cwd, { recursive: true }); mkdirSync(join(repo, ".git"));
-    const source = "---\nid: example.current\nversion: 1\nstatus: active\nupdated: 2026-10-29\nconfirmed: migration:2026-10-29\n---\n## Example\n- Neutral fixture.\n";
-    const tree = JSON.stringify({ schemaVersion: 1, active: { "example.current": 1 } });
-    for (const agent of agents) {
-      const root = join(repo, "clossys", "agents", agent);
-      const cell = join(root, "cells", "example.current", "v1.md"); mkdirSync(join(root, "cells", "example.current"), { recursive: true });
-      writeFileSync(cell, source); writeFileSync(join(root, "tree.json"), tree);
-      const resolved = publicCellFormat.resolveCellRoot(agent, { cwd });
-      expect(resolved).toBe(root);
-      expect((await publicCellFormat.readActive(resolved)).map(record => [record.id, record.version])).toEqual([["example.current", 1]]);
-      expect(readFileSync(cell, "utf8")).toBe(source); expect(readFileSync(join(root, "tree.json"), "utf8")).toBe(tree);
-    }
-  });
 });

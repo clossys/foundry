@@ -36,7 +36,16 @@
     "checkSuite": "studio",
     "specimenKind": "data"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style"
+  ],
   "uses": [],
   "notNeeded": {
     "reason": "counts composed into sections.producer.pipeline-legend v3 (one compact row)",

@@ -93,7 +93,27 @@
       "components.icon"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-close",
+    "assets.icon-search",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.foreground",
+    "themes.input",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.radius",
+    "themes.spacing"
+  ],
   "uses": [
     "assets.icon-date",
     "assets.icon-document",

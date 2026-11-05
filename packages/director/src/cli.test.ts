@@ -4,19 +4,21 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CliInputError, main, parseArgs, runDirectorCli } from "./cli.js";
-import { stageFinding, stageWontClaimCells } from "./ground/fixtures.js";
+import { evidenceDir, findingFixture, stageFinding, stageWontClaimCells, strategyRoot } from "./ground/fixtures.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (strategy + scan), removed afterward, and calls the exported `main(argv, store)`
 // directly rather than spawning the real CLI process.
 
+let base: string;
 let strategyDir: string;
 let scanDir: string;
 let factsDir: string;
 
 
 beforeEach(() => {
-  strategyDir = mkdtempSync(join(tmpdir(), "strategy-cli-strategy-"));
+  base = mkdtempSync(join(tmpdir(), "strategy-cli-strategy-"));
+  strategyDir = strategyRoot(base);
   scanDir = mkdtempSync(join(tmpdir(), "strategy-cli-scan-"));
   factsDir = mkdtempSync(join(tmpdir(), "strategy-cli-factsdir-"));
   vi.spyOn(console, "log").mockImplementation(() => {});
@@ -24,7 +26,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(strategyDir, { recursive: true, force: true });
+  rmSync(base, { recursive: true, force: true });
   rmSync(scanDir, { recursive: true, force: true });
   rmSync(factsDir, { recursive: true, force: true });
   vi.restoreAllMocks();
@@ -100,8 +102,8 @@ describe("main — default ground root", () => {
     process.chdir(cwd);
     try {
       writeFileSync(join(cwd, "page.md"), "4,200 customers");
-      mkdirSync(join(cwd, "strategy")); stageFinding(join(cwd, "strategy"));
-      mkdirSync(join(cwd, "clossys/director"), { recursive: true }); stageFinding(join(cwd, "clossys/director"));
+      // Old roots kept findings inside the root; they are never read as the default.
+      for (const old of ["strategy", "clossys/director"]) { mkdirSync(join(cwd, old, "findings"), { recursive: true }); writeFileSync(join(cwd, old, "findings/active-customers.md"), findingFixture()); }
       expect(() => main([], store)).toThrow(CliInputError);
       expect(existsSync(join(cwd, "clossys/agents/director"))).toBe(false);
       mkdirSync(join(cwd, "clossys/agents/director"), { recursive: true }); stageFinding(join(cwd, "clossys/agents/director"));
@@ -118,7 +120,7 @@ describe("main — default ground root", () => {
     mkdirSync(cwd, { recursive: true });
     if (marker === "directory") mkdirSync(join(repo, ".git"));
     else writeFileSync(join(repo, ".git"), "gitdir: ../metadata/worktrees/app\n");
-    stageFinding(root);
+    mkdirSync(root, { recursive: true }); stageFinding(root);
     writeFileSync(join(cwd, "page.md"), "We serve 4,200 customers.");
     process.chdir(cwd);
     try {
@@ -133,16 +135,16 @@ describe("main — default ground root", () => {
     const repo = mkdtempSync(join(tmpdir(), "strategy-cli-repo-"));
     const original = process.cwd();
     const cwd = join(repo, "packages", "app");
-    const explicitRoot = join(cwd, "custom-root");
+    const explicitRoot = join(cwd, "custom", "agents", "director");
     mkdirSync(cwd, { recursive: true });
     mkdirSync(join(repo, ".git"));
-    stageFinding(explicitRoot);
+    mkdirSync(explicitRoot, { recursive: true }); stageFinding(explicitRoot);
     writeFileSync(join(cwd, "page.md"), "We serve 4,200 customers.");
     process.chdir(cwd);
     try {
-      expect(main(["ground", "--root", "custom-root", "."], store)).toBe(0);
-      expect(main(["ground", "--root=custom-root", "."], store)).toBe(0);
-      expect(main(["custom-root", "."], store)).toBe(0);
+      expect(main(["ground", "--root", "custom/agents/director", "."], store)).toBe(0);
+      expect(main(["ground", "--root=custom/agents/director", "."], store)).toBe(0);
+      expect(main(["custom/agents/director", "."], store)).toBe(0);
       expect(loggedLines("log").filter(line => line === `Strategy directory: ${explicitRoot}`)).toHaveLength(3);
     } finally { process.chdir(original); rmSync(repo, { recursive: true, force: true }); }
   });
@@ -160,7 +162,8 @@ describe("main — default ground root", () => {
     process.chdir(cwd);
     try {
       expect(main(["wont-claim", "."], store)).toBe(0);
-      expect(existsSync(join(root, "reports", "wont-claim.json"))).toBe(true);
+      expect(existsSync(join(repo, "clossys", "evidence", "director", "reports", "wont-claim.json"))).toBe(true);
+      expect(existsSync(join(root, "reports"))).toBe(false);
       expect(existsSync(join(cwd, "clossys"))).toBe(false);
     } finally { process.chdir(original); rmSync(repo, { recursive: true, force: true }); }
   });
@@ -173,8 +176,8 @@ describe("main — the third state: could not run", () => {
   });
 
   it("returns 2 when a finding is invalid", () => {
-    mkdirSync(join(strategyDir, "findings"));
-    writeFileSync(join(strategyDir, "findings/broken.md"), "not frontmatter");
+    mkdirSync(evidenceDir(strategyDir), { recursive: true });
+    writeFileSync(join(evidenceDir(strategyDir), "broken.md"), "not frontmatter");
     writeFileSync(join(scanDir, "about.md"), "Nothing claim-shaped here.");
     expect(main([strategyDir, scanDir], store)).toBe(2);
   });
@@ -281,10 +284,10 @@ describe("main — wont-claim", () => {
 
     writeFileSync(join(scanDir, "page.md"), "Fine.");
     expect(main(["wont-claim", strategyDir, strategyDir], store)).toBe(2); // evidence is not a surface
-    rmSync(join(strategyDir, "tree.json"));
+    for (const id of ["advantage.proposition.proof", "identity.verbal.voice"]) rmSync(join(strategyDir, id, "pin.json"));
     expect(main(["wont-claim", strategyDir, scanDir], store)).toBe(2);
 
-    writeFileSync(join(strategyDir, "tree.json"), "invalid JSON");
+    writeFileSync(join(strategyDir, "identity.verbal.voice", "pin.json"), "invalid JSON");
     expect(main(["wont-claim", strategyDir, scanDir], store)).toBe(2);
 
     stageWontClaimCells(strategyDir);

@@ -1,21 +1,18 @@
 # Cell template
 
-A cell is one file in `cells/<cell-id>/v<N>.md` under the strategy root. It holds bullets only. The frontmatter is a flat YAML subset: `key: value` or `key: [a, b]`, with no nesting.
+A cell is one slot folder, `clossys/agents/director/<cell-id>/`. Each version is a candidate file, `<cell-id>/candidates/<name>-v<N>.md`; the slot's `pin.json`, written by `clossys pin`, names the active one. A candidate holds bullets only. The frontmatter is one `key: <JSON value>` line per field.
 
 ## Blank template
 
-Copy this to `cells/<cell-id>/v<N>.md`. Replace every `<…>`. Take the `Key:` labels from the cell's must-contain list in the catalog.
+Copy this to `<cell-id>/candidates/<name>-v<N>.md`. Replace every `<…>`. Take the `Key:` labels from the cell's must-contain list in its `slot.json` contract.
 
 ```markdown
 ---
-id: <l1.l2.l3>
-version: <N>
-status: draft
-updated: <YYYY-MM-DD>
-cites: [<every ref used in Because, exactly once>]
-feeds: [<brief contract ids that require or use this cell>]
-functions: [<product|gtm|brand|people|ops|tech|finance|corp-dev>]
-note: <why this version exists; "option A" when it is one of several options>
+slot: "<l1.l2.l3>"
+source: {"kind":"derived","ref":[<every ref used in Because, exactly once, as JSON strings>]}
+feeds: [<brief contract ids that require or use this cell, as JSON strings>]
+functions: [<"product"|"gtm"|"brand"|"people"|"ops"|"tech"|"finance"|"corp-dev">]
+note: "<why this version exists; \"option A\" when it is one of several options>"
 ---
 
 ## Direction
@@ -35,18 +32,17 @@ note: <why this version exists; "option A" when it is one of several options>
 Rules:
 - **Direction:** 2–6 bullets. Every must-contain key appears once as a leading `Key:` label. At least one bullet gives something up: use `Not`, `Never`, `Avoid`, `over`, `rather than`, `instead of` or `only`.
 - **Because:** every bullet ends with refs in parentheses. A ref is one of:
-  - `msg:<session>#U<n>` for what the user said;
-  - `finding:<id>` for observed evidence;
-  - `<cell-id>@<N>` for a cell this one builds on (cite the active version).
-  - `cites` lists exactly these refs.
+  - `finding:<id>` for evidence in `clossys/evidence/director/<id>.md`, including what the owner said;
+  - `<cell-id>@<N>` for a cell this one builds on (cite the pinned version).
+  - `source.ref` lists exactly these refs.
 - **Watch:** at least one testable tripwire.
   - Comparators: `>`, `<`, `>=`, `<=`, `=`, `rises above`, `falls below`, `reaches`, `stays below`, `stays above`, `is still`, `appears`.
   - The threshold has a number or a quoted value.
-- **Status:**
-  - `draft` until the user confirms.
-  - Activation sets `status: active` and adds `confirmed: msg:<session>#U<n>`. That U line must answer an S line that listed this `id@N`.
-  - After activation the file never changes again, except that retiring it rewrites only the `status` line.
-  - A change is always a new version.
+- **Pin:**
+  - A candidate is a draft until the owner confirms it.
+  - Confirmation runs `clossys pin director/<cell-id> <name>-v<N> --by owner --basis picked`, which records the candidate, its sha256, who decided, the basis and the time in `pin.json`.
+  - A pinned candidate file never changes again; its sha256 is in the pin.
+  - A change is always a new candidate `<name>-v<N+1>.md`, pinned the same way.
 - **Links (optional):** add `links: [designer:frames.app-shell@1, writer:admin.writer@3]` for cross-agent cell references, or use `<cell-id>@<N>` for a same-agent link. Shared link ids contain two or three lowercase kebab segments; `N` is a positive safe integer. Links do not replace Because citations. Omit the field to preserve the existing format, or use `links: []` explicitly. Cross-agent resolution belongs to the consuming agent.
 - **Never:**
   - prose paragraphs;
@@ -55,21 +51,17 @@ Rules:
 
 ## Anonymous worked example
 
-This illustrative core segment describes an unnamed studio tool. It is version 2, after the user narrowed version 1 during a pricing pushback. The session and finding excerpts below are fictional format examples, not consumer evidence.
+This illustrative core segment describes an unnamed studio tool. It is version 2, after the user narrowed version 1 during a pricing pushback. The finding excerpts below are fictional format examples, not consumer evidence.
 
-File `cells/focus.segment.core/v2.md`:
+File `focus.segment.core/candidates/studio-segment-core-v2.md`:
 
 ```markdown
 ---
-id: focus.segment.core
-version: 2
-status: active
-updated: 2026-10-29
-cites: [context.customer.need@1, msg:2026-10-29-1#U4, msg:2026-10-29-1#U7, finding:studio-interviews-2026-10]
-feeds: [writer.messaging, customer.persona]
-functions: [gtm, product]
-confirmed: msg:2026-10-29-1#U9
-note: Narrowed from v1; home potters dropped after the pricing pushback.
+slot: "focus.segment.core"
+source: {"kind":"derived","ref":["context.customer.need@1","finding:owner-kiln-queue-2026-10-29","finding:owner-home-potters-2026-10-29","finding:studio-interviews-2026-10"]}
+feeds: ["writer.messaging","customer.persona"]
+functions: ["gtm","product"]
+note: "Narrowed from v1; home potters dropped after the pricing pushback."
 ---
 
 ## Direction
@@ -79,29 +71,23 @@ note: Narrowed from v1; home potters dropped after the pricing pushback.
 - Studios with a membership waitlist come first, rather than studios still looking for members.
 
 ## Because
-- Owners called kiln scheduling "the weekly fire drill" (msg:2026-10-29-1#U4)
+- Owners called kiln scheduling "the weekly fire drill" (finding:owner-kiln-queue-2026-10-29)
 - 11 of 14 interviewed owners ran memberships in a spreadsheet (finding:studio-interviews-2026-10)
 - The need cell names the kiln queue as the job to be done (context.customer.need@1)
-- Home potters will not pay a monthly fee, so v1's wider segment broke the pricing (msg:2026-10-29-1#U7)
+- Home potters will not pay a monthly fee, so v1's wider segment broke the pricing (finding:owner-home-potters-2026-10-29)
 
 ## Watch
 - If the share of signups from studios under 40 members rises above 30% in any quarter, then propose a review of this cell with focus.segment.next.
 - If the trial-to-paid rate of waitlisted studios falls below 10% by 2027-03-31, then propose a v3 that drops the waitlist rule.
 ```
 
-The session lines this cell relies on (`sessions/2026-10-29-1.md`, excerpt):
+The owner confirmed it, so it was pinned:
 
-```markdown
-- U4: Honestly the kiln queue is the weekly fire drill. Every Sunday night I'm moving shelves around in a sheet.
-- S5: Hypothesis: your first customers are membership studios, not home potters. Options: A) membership studios 40-150 members, B) any studio with a kiln, C) A plus community colleges. I lean A.
-- U6: A, but I also wanted home potters.
-- S6: Pushback: home potters fire maybe twice a month and pay per firing. A monthly fee at your pricing loses them. Keep them out of core and park them under segment.next?
-- U7: Fine, they won't pay monthly anyway. Park them.
-- S8: Playback for confirm: focus.segment.core@2 (Who: membership studios 40-150; Not: home kilns, universities), advantage.proposition.promise@1. Yes to both?
-- U9: Yes, both.
+```sh
+npx clossys pin director/focus.segment.core studio-segment-core-v2 --by owner --basis picked
 ```
 
-The finding it cites (`findings/studio-interviews-2026-10.md`):
+One finding it cites (`clossys/evidence/director/studio-interviews-2026-10.md`):
 
 ```markdown
 ---
@@ -123,11 +109,11 @@ Why it passes:
 |---|---|
 | Q1 size | 4 Direction bullets |
 | Q2 must-contain | Who, Situation and Not are labelled |
-| Q3 grounded | every Because bullet has a resolving ref, and `cites` equals their union |
+| Q3 grounded | every Because bullet has a resolving ref, and `source.ref` equals their union |
 | Q4 testable | both Watch bullets follow the grammar, with numbers and a date or period |
 | Q5 specific | numbers, named alternatives, no banned phrases |
 | Q6 real choice | `Not:` plus "rather than" |
-| Q7 confirmed | U9 answers S8, which lists `focus.segment.core@2` |
+| Confirmed | `pin.json` names `studio-segment-core-v2.md`, decided by the owner |
 | C1 | `advantage.proposition.promise@1` must cite `context.customer.need@1`. `focus.reach.channel` will need to cite `focus.segment.core@2` |
-| Effect on v1 | v1's `status` line now reads `retired` |
+| Effect on v1 | v1 stays in `candidates/`, unpinned and unchanged |
 | Effect on citations | anything citing `focus.segment.core@1` is now stale |

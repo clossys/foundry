@@ -10,8 +10,8 @@ import type { CliResult } from "./main.js";
 
 export const DIRECTOR_USAGE = "Usage: clossys director check <command> [args]\n"
   + "       clossys director rate-check <assessment.json>\n"
-  + "check runs Director's store commands (ground, wont-claim, brief, checks, review, write, citations, read)\n"
-  + "through the slot-model reader and writer; rate-check rates a caller-supplied assessment.";
+  + "check runs Director's commands (ground, wont-claim, brief, checks, review, citations, read) over the pinned\n"
+  + "Director slots through the slot-model reader and writer; rate-check rates a caller-supplied assessment.";
 
 const exit = (code: number): 0 | 1 | 2 => code === 0 ? 0 : code === 1 ? 1 : 2;
 

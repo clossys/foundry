@@ -16,7 +16,15 @@
  *              legacy store segment onto a root (`join(root, "cells" | "tree.json" | "library")` and
  *              the same shape through resolve/readJson/read/readFile/readdir/directory/entries/safe);
  *   - shipped  a package manifest (packages/<pkg>/package.json) or the committed pipeline graph
- *              (packages/producer/pipeline/graph.json) declares a legacy store path.
+ *              (packages/producer/pipeline/graph.json) declares a legacy store path, or a record
+ *              folder the slot model does not keep (`clossys/agents/<agent>/{findings,requests,sessions}/`;
+ *              Director evidence is `clossys/evidence/director/`), or a generated file inside an agent
+ *              tree (`clossys/agents/<agent>/{briefs/,reports/,citations.json}`; Director's compiled
+ *              briefs and reports are `clossys/evidence/director/{briefs,reports}/`); code naming one
+ *              in a quoted path is a reader finding;
+ *   - skill    shipped agent instructions (packages/<pkg>/skill/**\/*.md and the launcher's
+ *              skill-catalogue copies) name a legacy store path or record folder, or teach the
+ *              cells layout (`cells/<id>`, `tree.json`, `sessions/<…>`, `requests/REQ-…`).
  * Code files are those check:no-selection-store scans (scripts/check-no-selection-store.mjs
  * `scopeFiles`): packages/<pkg>/{src,bin,scripts}, the Studio app and root scripts/, outside tests,
  * fixtures, node_modules and dist.
@@ -36,6 +44,12 @@ const q = "[\"'`]";
 const STORE_PATH = new RegExp(`clossys/(?:library|cells|tree\\.json|agents/[a-z][a-z0-9-]*/(?:library|cells|tree\\.json))(?![\\w.-])`);
 const QUOTED_STORE_PATH = new RegExp(`${q}[^"'\`\\n]*${STORE_PATH.source}`);
 const STORE_JOIN = new RegExp(`\\b(?:join|resolve|readJson|read|readFile|readdir|directory|entries|safe)\\(\\s*[A-Za-z_$][\\w$.]*\\s*,\\s*${q}(?:cells|tree\\.json|library)${q}`);
+const RECORD_PATH = /clossys\/agents\/[a-z][a-z0-9-]*\/(?:findings|requests|sessions)\//;
+// Generated working files (compiled briefs, reports, the citation index) never sit in an agent tree.
+const GENERATED_PATH = /clossys\/agents\/[a-z][a-z0-9-]*\/(?:briefs\/|reports\/|citations\.json)/;
+const QUOTED_GENERATED_PATH = new RegExp(`${q}[^"'\`\\n]*${GENERATED_PATH.source}`);
+const CELLS_LAYOUT = /(?:^|[\s`'"(])(?:cells\/<|tree\.json|sessions\/<|requests\/REQ-)/;
+const SKILL_ROOTS = ["skill", "skill-catalogue"];
 const SLOT_DIRS = new Set(["candidates"]);
 
 const isDir = path => { try { return lstatSync(path).isDirectory(); } catch { return false; } };
@@ -75,13 +89,28 @@ export function codeFindings(root) {
       for (const [what, pattern] of patterns) if (pattern.test(line)) { findings.push({ kind, path: `${file}:${index + 1}`, message: what }); break; }
     });
   };
-  for (const file of scopeFiles(root)) if (file !== SELF) scan(file, "reader", [["names a legacy store path", QUOTED_STORE_PATH], ["joins a legacy store segment onto a root", STORE_JOIN]]);
+  for (const file of scopeFiles(root)) if (file !== SELF) scan(file, "reader", [["names a legacy store path", QUOTED_STORE_PATH], ["joins a legacy store segment onto a root", STORE_JOIN], ["names a generated file inside an agent tree", QUOTED_GENERATED_PATH]]);
   const manifests = [];
   const packages = join(root, "packages");
   if (isDir(packages)) for (const pkg of readdirSync(packages).sort()) if (existsSync(join(packages, pkg, "package.json"))) manifests.push(`packages/${pkg}/package.json`);
   if (existsSync(join(root, "packages/producer/pipeline/graph.json"))) manifests.push("packages/producer/pipeline/graph.json");
-  for (const file of manifests) scan(file, "shipped", [["declares a legacy store path", STORE_PATH]]);
+  for (const file of manifests) scan(file, "shipped", [["declares a legacy store path", STORE_PATH], ["declares a record folder the slot model does not keep", RECORD_PATH], ["declares a generated file inside an agent tree (Director outputs are clossys/evidence/director/)", GENERATED_PATH]]);
+  for (const file of skillFiles(root)) scan(file, "skill", [["names a legacy store path", STORE_PATH], ["names a record folder the slot model does not keep", RECORD_PATH], ["teaches the legacy cells layout", CELLS_LAYOUT]]);
   return findings;
+}
+
+/** Shipped agent instructions: every Markdown file under packages/<pkg>/{skill,skill-catalogue}/. */
+export function skillFiles(root) {
+  const files = [], packages = join(root, "packages");
+  const walk = rel => {
+    for (const entry of readdirSync(join(root, rel), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
+      const at = `${rel}/${entry.name}`;
+      if (entry.isDirectory()) walk(at);
+      else if (entry.isFile() && entry.name.endsWith(".md")) files.push(at);
+    }
+  };
+  if (isDir(packages)) for (const pkg of readdirSync(packages).sort()) for (const dir of SKILL_ROOTS) if (isDir(join(packages, pkg, dir))) walk(`packages/${pkg}/${dir}`);
+  return files;
 }
 
 function main(args) {

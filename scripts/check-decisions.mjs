@@ -14,7 +14,8 @@
  *   both               the slot is pinned and marked not needed at once
  *   not-needed-shape   slot.json notNeeded is missing reason, since or decidedBy
  *
- * Usage: node scripts/check-decisions.mjs [--repo <checkout>] [--json]
+ * Usage: node scripts/check-decisions.mjs [--repo <checkout>] [--agent <agent>] [--json]
+ *   --agent  only that agent's slots (Designer's write receipt is its pin records: check:designer-receipt)
  * Exit 0 clean, 1 findings, 2 usage or load error.
  */
 import { createHash } from 'node:crypto';
@@ -33,13 +34,13 @@ const isFile = path => { try { const stat = lstatSync(path); return stat.isFile(
 const nonEmpty = value => typeof value === 'string' && value.trim().length > 0;
 const object = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 
-/** Every decision finding and the state count under `<consumer>/agents`. */
-export function checkDecisions(consumer) {
+/** Every decision finding and the state count under `<consumer>/agents`, or under one agent's folder. */
+export function checkDecisions(consumer, { agent: only } = {}) {
   const agents = join(consumer, 'agents');
   const findings = [];
   const counts = { pinned: 0, 'not-needed': 0, open: 0 };
   const add = (rule, path, message) => findings.push({ rule, path, message });
-  for (const agent of readdirSync(agents).filter(name => !name.startsWith('_') && !name.startsWith('.')).sort()) {
+  for (const agent of readdirSync(agents).filter(name => !name.startsWith('_') && !name.startsWith('.') && (only === undefined || name === only)).sort()) {
     const agentDir = join(agents, agent);
     if (!isDir(agentDir)) continue;
     for (const slot of readdirSync(agentDir).filter(name => !name.startsWith('_') && !name.startsWith('.')).sort()) {
@@ -92,7 +93,12 @@ if (isMain) {
   const repo = resolve(at >= 0 ? args[at + 1] : join(dirname(fileURLToPath(import.meta.url)), '..'));
   const consumer = join(repo, 'clossys');
   if (!existsSync(join(consumer, 'agents'))) { console.error(`check-decisions: no clossys/agents under ${repo}`); process.exit(2); }
-  const { findings, counts } = checkDecisions(consumer);
+  const agentAt = args.indexOf('--agent');
+  const agent = agentAt >= 0 ? args[agentAt + 1] : undefined;
+  if (agentAt >= 0 && (!agent || agent.startsWith('--'))) { console.error('check-decisions: --agent requires a value'); process.exit(2); }
+  // A named agent with no slot folder is a wiring error, never an empty pass.
+  if (agent !== undefined && !isDir(join(consumer, 'agents', agent))) { console.error(`check-decisions: no clossys/agents/${agent} under ${repo}`); process.exit(2); }
+  const { findings, counts } = checkDecisions(consumer, { agent });
   if (args.includes('--json')) console.log(JSON.stringify({ ok: findings.length === 0, counts, findings }, null, 2));
   else {
     const byRule = {};

@@ -40,10 +40,6 @@
       "types": "./dist/content-map/index.d.ts",
       "import": "./dist/content-map/index.js"
     },
-    "./content-map/cells": {
-      "types": "./dist/content-map/cells.d.ts",
-      "node": "./dist/content-map/cells.js"
-    },
     "./archetypes": {
       "types": "./dist/archetypes/index.d.ts",
       "import": "./dist/archetypes/index.js"

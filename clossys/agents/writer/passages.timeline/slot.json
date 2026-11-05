@@ -76,7 +76,10 @@
   },
   "inputs": [
     "execution.roadmap.milestone",
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "execution.measure.driver",
+    "execution.measure.north-star",
+    "execution.roadmap.release"
   ],
   "uses": []
 }

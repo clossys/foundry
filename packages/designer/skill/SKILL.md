@@ -35,7 +35,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
 
 ## Director derivation
 
-- [Derive native Designer drafts](director-brief.md): read the active Director brief, make design decisions as the agent, and declare versioned trait coverage in cell rationale.
+- [Derive Designer candidates from the Director](director-brief.md): read the pinned Director brief, make design decisions as the agent, declare the Director slots read in `slot.json` `inputs` and each realised trait in `meta.element.reason`.
 
 ## Loop (one slot)
 
@@ -43,8 +43,9 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    `src/catalog/slot-contracts/` of the installed `@clossys/designer` (one file per layer: themes, assets, components, sections, frames; every Designer slot has a row).
    Note every required input: copy keys (`kind: copy`), theme variables
    (`themes.*`) and assets. Read the Director brief:
-   `npx clossys director check handoff designer.identity --root clossys/agents/director`.
-   A missing brief blocks the slot; open a Director request instead of guessing.
+   `npx clossys design --brief --root clossys --json` (exit 1 names each
+   missing Director input). A missing input blocks the slot; ask the Director
+   for it instead of guessing.
 2. **Read the references.** Each `references[]` row names a registry, item and
    version (shadcn, Magic UI, Tailark and other trusted free registries). Read
    that item before building anything.

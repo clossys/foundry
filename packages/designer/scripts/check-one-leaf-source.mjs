@@ -54,6 +54,15 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     while (node && (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isNonNullExpression(node))) node = node.expression;
     return node;
   };
+  // memo(...)/forwardRef(...) wrap a render function, inline or named and possibly
+  // nested: the wrapped function's declaration is the one source.
+  function wrappedIdentity(node, seen) {
+    node = unwrap(node);
+    if (!node) return [];
+    if (ts.isCallExpression(node) && /^(?:React\.)?(?:memo|forwardRef)$/.test(node.expression.getText())) return wrappedIdentity(node.arguments[0], seen);
+    if (ts.isIdentifier(node) || ts.isPropertyAccessExpression(node)) return declarations(node).flatMap(item => identity(item, seen));
+    return identity(node, seen);
+  }
   // A direct alias is one source. A function with its own logic/markup is an
   // implementation, even if its public name or provenance matches another.
   function identity(node, seen = new Set()) {
@@ -64,7 +73,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
       if (!expression) return [];
       if (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression)) return declarations(expression).flatMap(item => identity(item, seen));
       if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) return identity(expression, seen);
-      if (ts.isCallExpression(expression) && /^(?:React\.)?(?:memo|forwardRef)$/.test(expression.expression.getText())) return identity(unwrap(expression.arguments[0]), seen);
+      if (ts.isCallExpression(expression) && /^(?:React\.)?(?:memo|forwardRef)$/.test(expression.expression.getText())) return wrappedIdentity(expression.arguments[0], seen);
       if (ts.isCallExpression(expression) && expression.expression.getText() === "Object.assign") return declarations(expression.arguments[0]).flatMap(item => identity(item, seen));
     }
     if (!(ts.isFunctionLike(node) || ts.isClassDeclaration(node) || ts.isVariableDeclaration(node) || ts.isMethodDeclaration(node))) return [];

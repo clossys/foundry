@@ -100,9 +100,8 @@ test("current surface descriptors select all measured surfaces and retain their 
   assert.equal(unresolved.filter(row => row.code === "DF5").length, 39);
   const site = report.surfaceEvidence.fills.find(fill => fill.slot === "frames.site-shell");
   assert.deepEqual(site.scannedReads.assets, []);
-  assert.deepEqual(site.rawScannedReads.assets, ["assets.js"]);
-  assert.equal(site.privateInternalReads.length, 1);
-  assert.ok(site.privateInternalReads.every(row => row.target === "packages/designer/src/frames/site-frame/landing/internal/assets.ts" && row.targetSha256.length === 64));
+  assert.equal("rawScannedReads" in site, false);
+  assert.equal("privateInternalReads" in site, false);
   for (const from of ["sections.activity-feed", "sections.resource-list", "sections.usage"]) {
     assert.ok(report.edges.some(edge => edge.from === from && edge.to === "sections.empty-state" && edge.kind === "composes" && edge.evidence.includes("scanned")), from);
   }

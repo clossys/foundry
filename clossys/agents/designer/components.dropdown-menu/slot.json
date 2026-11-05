@@ -60,7 +60,29 @@
       "components.icon"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-check",
+    "assets.icon-chevron-right",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent",
+    "themes.accent-foreground",
+    "themes.border",
+    "themes.destructive",
+    "themes.foreground",
+    "themes.muted-foreground",
+    "themes.popover",
+    "themes.popover-foreground",
+    "themes.radius",
+    "themes.shadow",
+    "themes.spacing"
+  ],
   "uses": [
     "assets.icon-check",
     "assets.icon-chevron-right"

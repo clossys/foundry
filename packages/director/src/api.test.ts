@@ -1,45 +1,41 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { join } from "node:path";
 import { openStrategy } from "./api.js";
-import { loadCatalog } from "./catalog.js";
-import { readStrategyRoot } from "./store.js";
+import { stageSlot } from "./ground/fixtures.js";
 import { reader } from "../test/store.js";
 
 const roots: string[] = [];
 const id = "focus.segment.core";
 const contract = { id: "fixture.read", schemaVersion: 1 as const, owner: "fixture", requires: [id], optional: [] };
+const direction = ["Who: Fictional studio teams.", "Not: Large factories."];
+const options = { because: ["Interview evidence."], watch: ["If requests > 5 each month, then review."] };
 function fixture() {
   const root = mkdtempSync(join(tmpdir(), "strategy-api-")); roots.push(root);
-  put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: { [id]: 1 } }));
-  put(root, `cells/${id}/v1.md`, cell(1, "active"));
-  put(root, `cells/${id}/v2.md`, cell(2, "draft"));
+  stageSlot(root, id, 1, direction, options);
+  stageSlot(root, id, 2, direction, { ...options, unpinned: true });
   return root;
-}
-function put(root: string, path: string, bytes: string) { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); }
-function cell(version: number, status: string) {
-  return `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: []\nfeeds: []\nfunctions: []\n${status === "active" ? "confirmed: msg:2026-10-29-1#U2\n" : ""}---\n\n## Direction\n- Who: Fictional studio teams.\n- Not: Large factories.\n\n## Because\n- Interview evidence.\n\n## Watch\n- If requests > 5 each month, then review.\n`;
 }
 afterEach(() => { for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true }); });
 
 describe("synchronous strategy read API", () => {
-  it("gets the latest or pinned version while active follows the tree pointer", () => {
+  it("reads the pinned candidate as the cell; an unpinned candidate resolves only by its version, as a draft", () => {
     const strategy = openStrategy(fixture(), reader, { contracts: [contract] });
     expect(strategy).not.toBeInstanceOf(Promise);
-    expect(strategy.getCell(id)?.version).toBe(2);
+    expect(strategy.getCell(id)?.version).toBe(1);
     expect(strategy.getCell(id, 1)?.version).toBe(1);
+    expect(strategy.getCell(id, 2)).toMatchObject({ version: 2, status: "draft" });
     expect(strategy.getCell(id, 3)).toBeUndefined();
     expect(strategy.getCell("unknown.cell.id")).toBeUndefined();
     expect(strategy.getActive(id)?.version).toBe(1);
     expect(strategy.getBrief(contract.id).state).toBe("ready");
   });
-  it("drafts never stale a current ref, but activating a newer version does", () => {
+  it("unpinned candidates never stale a current ref, but pinning a newer version does", () => {
     const root = fixture();
     expect(openStrategy(root, reader).isStale({ cell: id, version: 1 })).toBe(false);
     expect(openStrategy(root, reader).isStale({ cell: id, version: 2 })).toBe(true);
-    put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: { [id]: 2 } }));
-    put(root, `cells/${id}/v2.md`, cell(2, "active"));
+    stageSlot(root, id, 2, direction, options);
     const activated = openStrategy(root, reader);
     expect(activated.isStale({ cell: id, version: 1 })).toBe(true);
     expect(activated.isStale({ cell: id, version: 2 })).toBe(false);
@@ -48,18 +44,14 @@ describe("synchronous strategy read API", () => {
   it("uses the selected archetype core with canonical quality and completion levels", () => {
     const strategy = openStrategy(fixture(), reader, { archetype: "product-saas" });
     expect(strategy.status().counts.total).toBe(27);
+    // The fixture misses a Direction label and a Because reference, so it is not complete;
+    // a pin records who decided, so a pinned candidate needs no Q7 session confirmation.
     expect(strategy.status().cells.find(cell => cell.id === id)?.active).toBe(false);
-    expect(strategy.status().cells.find(cell => cell.id === id)?.findings.some(f => f.rule === "Q7")).toBe(true);
+    expect(strategy.status().cells.find(cell => cell.id === id)?.findings.filter(f => f.severity === "hard").map(f => f.rule)).toEqual(["Q2", "Q3"]);
+    expect(strategy.status().cells.find(cell => cell.id === id)?.findings.some(f => f.rule === "Q7")).toBe(false);
     expect(strategy.status().l0Clean).toBe(false);
     expect(strategy.status({ scope: "full" }).counts.total).toBe(57);
     expect(() => openStrategy(fixture(), reader, { archetype: "unknown" })).toThrow(/archetype/i);
-  });
-  it("keeps persisted custom core selection when an archetype is overridden", () => {
-    const root = fixture();
-    const core = [...loadCatalog().archetypes.default, "context.market.size"];
-    put(root, "tree.json", JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core, active: { [id]: 1 } }));
-    expect(readStrategyRoot(root, reader).issues).toEqual([]);
-    expect(openStrategy(root, reader, { archetype: "product-saas" }).status().cells.map(cell => cell.id)).toEqual(core);
   });
   it("does not silently accept invalid or conflicting explicit contracts", () => {
     const root = fixture();

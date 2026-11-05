@@ -1,16 +1,14 @@
 import { reader, store } from "../test/store.js";
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
-import { evaluateReview, parseWatch, evaluateModelReview, reviewCitationScan, reviewRequestDetail, planReview, review, type ReviewInput } from './loop.js';
+import { evaluateReview, parseWatch, evaluateModelReview, reviewCitationScan, reviewRequestDetail, planReview, type ReviewInput } from './loop.js';
 
 import { runReviewCli } from './cli/review.js';
 import { main } from './cli.js';
-import { listRequests } from './write/index.js';
+import { stageFinding, stageSlot, strategyRoot } from './ground/fixtures.js';
 import { loadCatalog } from './catalog.js';
-import { formatRef } from './format/ref.js';
 import type { StrategyModel } from './format/types.js';
 import type { CitationIndex } from './citations/index.js';
 
@@ -146,29 +144,15 @@ describe('production review read graph', () => {
   const roots: string[] = [];
   afterEach(() => { for (const root of roots.splice(0)) rmSync(root,{recursive:true,force:true}); });
   const temporary = () => { const root=mkdtempSync(join(tmpdir(),'strategy-review-')); roots.push(root); return root; };
-  function fixture() {
-    const root=temporary();
-    cpSync(fileURLToPath(new URL('../test-fixtures/strategy-v2/example/',import.meta.url)),root,{recursive:true});
-    const ownerPath=join(root,`cells/${cell}/v2.md`);
-    const original=readFileSync(ownerPath,'utf8');
-    writeFileSync(ownerPath,original.replace(/## Watch[\s\S]*/,`## Watch\n- ${watch('each month')}\n`));
-    const target='context.customer.need';
-    mkdirSync(join(root,'cells',target),{recursive:true});
-    for (const version of [1,2]) writeFileSync(join(root,'cells',target,`v${version}.md`),original
-      .replace(`id: ${cell}`,`id: ${target}`).replace('version: 2',`version: ${version}`)
-      .replace('status: active',`status: ${version===1?'retired':'active'}`)
-      .replace(/cites: \[[^\n]*\]/,'cites: []').replace(/## Watch[\s\S]*/,''));
-    // Parsing needs all sections; this target carries no review rules.
-    for (const version of [1,2]) {
-      const path=join(root,'cells',target,`v${version}.md`);
-      writeFileSync(path,readFileSync(path,'utf8')+'## Watch\n');
-    }
-    const treePath=join(root,'tree.json'); const tree=JSON.parse(readFileSync(treePath,'utf8'));
-    tree.active[target]=2; writeFileSync(treePath,JSON.stringify(tree));
-    const findingPath=join(root,'findings/studio-interviews-2026-10.md');
-    writeFileSync(findingPath,readFileSync(findingPath,'utf8').replace('observed: 2026-10-20','observed: 2026-10-29')
-      .replace('unit: of 14 owners\n','').replace('aliases: [eleven of fourteen owners]','aliases: [signups]'));
-    return root;
+  const target='context.customer.need';
+  /** The owner pins a watched cell that cites a superseded need; signups evidence trips its watch. */
+  function fixture(extraWatch: string[] = []) {
+    const base=temporary(); const root=strategyRoot(base);
+    stageSlot(root,cell,2,'Who: owner-led studios.',{refs:[`${target}@1`],watch:[watch('each month'),...extraWatch]});
+    stageSlot(root,target,1,'Need: fictional scheduling.',{watch:[],unpinned:true});
+    stageSlot(root,target,2,'Need: fictional planning.',{watch:[]});
+    stageFinding(root,'signups','---\nid: signups\nsource: user\nobserved: 2026-10-29\nby: researcher\nvalue: 11\n---\n- Observed signups.\n');
+    return {base,root};
   }
   function snapshot(root: string): Record<string,string> {
     const result: Record<string,string>={};
@@ -180,90 +164,56 @@ describe('production review read graph', () => {
     }
     walk(''); return result;
   }
-  it('uses actual store and citation index, opens the citing-cell drift, and preserves every filesystem byte', () => {
-    const root=fixture(); const before=snapshot(root);
+  it('uses actual store and citation index, plans the citing-cell drift, and preserves every filesystem byte', () => {
+    const {base,root}=fixture(); const before=snapshot(base);
     const report=planReview(root, reader,{today:'2026-10-29'});
     expect(report.issues).toEqual([]);
     expect(report.requests.map(request=>request.kind)).toEqual(['tripwire','drift']);
     expect(report.requests.find(request=>request.kind==='drift')?.cells).toEqual([cell]);
-    expect(snapshot(root)).toEqual(before);
+    expect(snapshot(base)).toEqual(before);
     expect(planReview(root, reader,{today:'2026-10-28'}).requests.some(request=>request.kind==='tripwire')).toBe(false);
   });
   it('rejects a symlinked root without reading or writing the outside tree', () => {
-    const outside=fixture(); const alias=join(temporary(),'alias'); symlinkSync(outside,alias);
-    const before=snapshot(outside);
+    const {base,root}=fixture(); const alias=join(temporary(),'alias'); symlinkSync(root,alias);
+    const before=snapshot(base);
     expect(()=>planReview(alias, reader,{today:'2026-10-29'})).toThrow(/invalid/);
-    expect(snapshot(outside)).toEqual(before);
+    expect(snapshot(base)).toEqual(before);
   });
-  it('persists actual request IDs and confines every changed byte to requests/', () => {
-    const root=fixture(); const before=snapshot(root);
-    const result=review(root, store,{today:'2026-10-29'});
-    expect(result.created.map(request=>request.id)).toEqual(['REQ-0001','REQ-0002']);
-    expect(result.created.map(request=>request.kind)).toEqual(['tripwire','drift']);
-    expect(result.created.every(request=>request.raisedBy==='strategy-loop' && request.status==='open' && request.opened==='2026-10-29')).toBe(true);
-    const after=snapshot(root);
-    const changed=[...new Set([...Object.keys(before),...Object.keys(after)])].filter(path=>before[path]!==after[path]);
-    expect(changed).toEqual(['requests/REQ-0001.json','requests/REQ-0002.json']);
-    expect(review(root, store,{today:'2026-10-29'}).created).toEqual([]);
-    expect(snapshot(root)).toEqual(after);
-    expect(listRequests(root, store)).toHaveLength(2);
+  it('reports malformed watches without writing', () => {
+    const {base,root}=fixture(['If signups > 10 each fortnight, then review.']); const before=snapshot(base);
+    expect(planReview(root, reader,{today:'2026-10-29'}).issues).toHaveLength(1);
+    expect(snapshot(base)).toEqual(before);
   });
-  it.each(['open','drafted','resolved','declined'] as const)('deduplicates persisted %s markers after an unchanged rule is re-cited', status => {
-    const root=fixture(); review(root, store,{today:'2026-10-29'});
-    for (const name of ['REQ-0001','REQ-0002']) {
-      const path=join(root,'requests',`${name}.json`), request=JSON.parse(readFileSync(path,'utf8'));
-      request.status=status; if (status==='resolved') request.resolvedBy=formatRef({kind:'cell',ref:{cell,version:2}}); writeFileSync(path,JSON.stringify(request));
-    }
-    const source=join(root,`cells/${cell}/v2.md`), next=join(root,`cells/${cell}/v3.md`);
-    writeFileSync(next,readFileSync(source,'utf8').replace('version: 2','version: 3'));
-    writeFileSync(source,readFileSync(source,'utf8').replace('status: active','status: retired'));
-    const treePath=join(root,'tree.json'), tree=JSON.parse(readFileSync(treePath,'utf8'));
-    tree.active[cell]=3; writeFileSync(treePath,JSON.stringify(tree));
-    const before=snapshot(root);
-    expect(review(root, store,{today:'2026-10-29'}).created).toEqual([]);
-    expect(snapshot(root)).toEqual(before);
-  });
-  it('fails visibly at the actual request ID limit without changing any source bytes', () => {
-    const root=fixture(); mkdirSync(join(root,'requests'),{recursive:true});
-    writeFileSync(join(root,'requests/REQ-9999.json'),JSON.stringify({id:'REQ-9999',raisedBy:'researcher',kind:'reading',cells:[cell],detail:'Existing review',status:'open',opened:'2026-10-01',resolvedBy:null}));
-    const before=snapshot(root);
-    expect(()=>review(root, store,{today:'2026-10-29'})).toThrow(/limit/);
-    expect(snapshot(root)).toEqual(before);
-    const errors=vi.spyOn(console,'error').mockImplementation(()=>{});
-    try { expect(runReviewCli(['--root',root,'--today','2026-10-29'], store)).toBe(2); }
-    finally { errors.mockRestore(); }
-    expect(snapshot(root)).toEqual(before);
-  });
-  it('reports malformed watches without persisting partial review output', () => {
-    const root=fixture(), path=join(root,`cells/${cell}/v2.md`);
-    writeFileSync(path,readFileSync(path,'utf8')+'- If signups > 10 each fortnight, then review.\n');
-    const before=snapshot(root), result=review(root, store,{today:'2026-10-29'});
-    expect(result.issues).toHaveLength(1);
-    expect(result.created).toEqual([]);
-    expect(snapshot(root)).toEqual(before);
-  });
-  it('refuses request symlink escapes and preserves outside bytes', () => {
-    const root=fixture(), outside=temporary();
-    writeFileSync(join(outside,'sentinel'),'unchanged');
-    rmSync(join(root,'requests'),{recursive:true,force:true}); symlinkSync(outside,join(root,'requests'));
-    const before=snapshot(outside);
-    expect(()=>review(root, store,{today:'2026-10-29'})).toThrow();
-    expect(snapshot(outside)).toEqual(before);
-  });
-  it('exposes CLI findings, clean reruns, invalid arguments and persistence failures as 1/0/2', () => {
-    const root=fixture(); const output=vi.spyOn(console,'log').mockImplementation(()=>{});
+  it('exposes planned requests, clean plans and invalid arguments as 1/0/2 and never writes requests', () => {
+    const {base,root}=fixture(); const before=snapshot(base);
+    const output=vi.spyOn(console,'log').mockImplementation(()=>{});
     const errors=vi.spyOn(console,'error').mockImplementation(()=>{});
     try {
       expect(main(['review','--root',root,'--today','2026-10-29','--json'], store)).toBe(1);
-      expect(runReviewCli(['--root',root,'--today','2026-10-29'], store)).toBe(0);
+      expect(runReviewCli(['--root',root,'--today','2026-10-29'], store)).toBe(1);
+      expect(runReviewCli(['--root',root,'--today','2026-10-28'], store)).toBe(1);
       expect(runReviewCli(['--root',root,'--today','2026-02-30'], store)).toBe(2);
       expect(runReviewCli(['--force'], store)).toBe(2);
       expect(runReviewCli(['--root',root,'--root',root], store)).toBe(2);
       expect(runReviewCli(['--root',join(root,'missing')], store)).toBe(2);
-      const failedRoot=fixture(); rmSync(join(failedRoot,'requests'),{recursive:true,force:true});
-      symlinkSync(temporary(),join(failedRoot,'requests'));
-      expect(runReviewCli(['--root',failedRoot,'--today','2026-10-29'], store)).toBe(2);
+      const clean=strategyRoot(temporary()); stageSlot(clean,cell,1,'Who: owner-led studios.',{watch:[]});
+      expect(runReviewCli(['--root',clean,'--today','2026-10-29'], store)).toBe(0);
     } finally { output.mockRestore(); errors.mockRestore(); }
+    expect(snapshot(base)).toEqual(before);
+    expect(existsSync(join(root,'requests'))).toBe(false);
   });
-
+  it('saves the plan as reports/review.json only with --write, and never a request', () => {
+    const {base,root}=fixture(); const before=snapshot(base);
+    const output=vi.spyOn(console,'log').mockImplementation(()=>{});
+    try {
+      expect(runReviewCli(['--root',root,'--today','2026-10-29','--write'], store)).toBe(1);
+    } finally { output.mockRestore(); }
+    const saved=JSON.parse(readFileSync(join(root,'..','..','evidence','director','reports','review.json'),'utf8'));
+    expect(existsSync(join(root,'reports'))).toBe(false);
+    expect(saved).toEqual(planReview(root, reader,{today:'2026-10-29'}));
+    expect(saved.requests.length).toBeGreaterThan(0);
+    expect(existsSync(join(root,'requests'))).toBe(false);
+    const after=snapshot(base); delete after[Object.keys(after).find(key => key.endsWith('reports/review.json'))!];
+    expect(after).toEqual(before);
+  });
 });

@@ -26,6 +26,8 @@ export const STUDIO_MAP: Port = { glob: "pkg:studio/generated/studio-map.json", 
 export const COMPILE_LOCK: Port = { glob: "pkg:studio/compile.lock.json", schema: "compile-lock" };
 /** The page-check source receipt the build writes and `clossys check --pages` reads. */
 export const SOURCE_RECEIPT: Port = { glob: "pkg:dist/check/source-receipt.json", schema: "source-receipt" };
+/** The native specimen compiler evidence, written into the installed Designer build it certifies. */
+export const SPECIMEN_EVIDENCE = "packages/designer/dist/catalog/native-specimen-evidence.json";
 /** The committed pipeline graph the Studio server reads at GET /api/pipeline. */
 export const PIPELINE_GRAPH: Port = { glob: "pkg:pipeline/graph.json", schema: "pipeline-graph" };
 /*

@@ -30,7 +30,8 @@ function walk(value: unknown, visit: (ref: CellRef, pointer: string) => void, po
 
 /**
  * Builds from explicit source snapshots. Known non-active versions are stale;
- * unknown cells/versions are dangling. Drafts have no effect on active citations.
+ * unknown cells/versions are dangling. A slot candidate's version is known whether or not it is
+ * pinned. Drafts have no effect on active citations.
  * Brief fingerprints use the same compiler as the read API, including cited bytes.
  */
 export function buildCitationIndex(model: StrategyModel, scan: ScanInput = {}): CitationIndex {
@@ -63,13 +64,16 @@ export function buildCitationIndex(model: StrategyModel, scan: ScanInput = {}): 
   const key = (entry: CitationEntry) => JSON.stringify([entry.by.path, entry.by.kind, entry.by.line ?? 0, entry.by.id ?? "", entry.ref.cell, entry.ref.version]);
   const unique = [...new Map(entries.map(entry => [key(entry), entry])).values()].sort((a, b) => key(a).localeCompare(key(b)));
   drift.sort((a, b) => a.path.localeCompare(b.path));
-  const known = new Set(model.cells.map(cell => `${cell.id}@${cell.version}`));
+  const known = new Set([
+    ...model.cells.map(cell => `${cell.id}@${cell.version}`),
+    ...Object.entries(model.candidateVersions ?? {}).flatMap(([id, versions]) => versions.map(version => `${id}@${version}`)),
+  ]);
   const dangling = unique.filter(entry => !known.has(`${entry.ref.cell}@${entry.ref.version}`));
   const stale = unique.filter(entry => known.has(`${entry.ref.cell}@${entry.ref.version}`) && model.tree!.active[entry.ref.cell] !== entry.ref.version);
   // Hash only material sources and their current governing pointers: an unrelated
   // draft or a different enumeration order cannot change this index fingerprint.
   const targets = [...new Set(unique.map(entry => entry.ref.cell))].sort().map(id => [id, model.tree!.active[id] ?? null]);
-  const bytes = [...new Set(unique.map(entry => `cells/${entry.ref.cell}/v${entry.ref.version}.md`))].sort().map(path => [path, model.files[path] ?? null]);
+  const bytes = [...new Set(unique.map(entry => model.cells.find(cell => cell.id === entry.ref.cell && cell.version === entry.ref.version)?.path ?? `cell:${entry.ref.cell}@${entry.ref.version}`))].sort().map(path => [path, model.files[path] ?? null]);
   const fingerprint = createHash("sha256").update(JSON.stringify({ entries: unique, targets, bytes, fresh: [...fresh].sort(([a], [b]) => a.localeCompare(b)) })).digest("hex");
   return { schemaVersion: 1, generatedAt: new Date().toISOString(), fingerprint, entries: unique, stale, dangling, drift };
 }

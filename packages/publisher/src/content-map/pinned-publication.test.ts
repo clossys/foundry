@@ -6,7 +6,6 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { adminContentMap } from "./__fixtures__/admin.js";
-import { contentMapFromCells, contentMapToCells } from "./cells.js";
 import type { ContentMap } from "./contract.js";
 import { pageId } from "./page-identity.js";
 import { projectPinnedPublication, type PinnedPublicationSource } from "./pinned-publication.js";
@@ -46,16 +45,30 @@ function ordinary(): ContentMap {
       ...(entry.id !== "writer" ? {} : { source: { frameId: "frames.app-shell", sectionIds: ["sections.data-table"] } }) }) };
   }) };
 }
+/** IA grouping carried by the publication candidate: group nodes hold entries, pages sit in `cells` lists by page id. */
+function groupingTree(map: ContentMap): JsonObject {
+  const top: JsonObject = { id: map.publicationId, name: map.publicationId, children: [] }, nodes = new Map<string, JsonObject>();
+  for (const entry of map.entries) if (entry.kind === "group") {
+    const { id, title, parentId: _parent, order: _order, ...rest } = entry;
+    nodes.set(id, { id, name: title, entry: rest, children: [], cells: [] });
+  }
+  const ordered = [...map.entries].sort((a, b) => a.order - b.order);
+  for (const entry of ordered) if (entry.kind === "group") (entry.parentId ? nodes.get(entry.parentId)! : top).children.push(nodes.get(entry.id));
+  let ungrouped: JsonObject | undefined;
+  for (const entry of ordered) if (entry.kind !== "group") {
+    let parent = entry.parentId ? nodes.get(entry.parentId) : undefined;
+    if (!parent) { if (!ungrouped) { ungrouped = { id: `${map.publicationId}.pages`, name: "Pages", cells: [] }; top.children.push(ungrouped); } parent = ungrouped; }
+    parent.cells.push(pageId(entry.id));
+  }
+  return top;
+}
 async function fixture(map = ordinary(), withRoutes = true) {
   const path = await root(), pages = map.entries.filter(entry => entry.kind !== "group");
   const pack = withRoutes ? { packId: map.publicationId, homeRouteId: pages[0]!.id, root: { kind: "local-origin", note: "Fixture origin" },
     roots: { documentation: "https://example.com" }, headers: [{ name: "x-fixture", value: "native" }],
     routes: pages.map(entry => ({ instanceId: entry.id, path: entry.path ?? `/${entry.slug}`, label: entry.title, ...(entry.keywords === undefined ? {} : { keywords: entry.keywords }),
       entry: { file: `views/${entry.id}.tsx`, export: "default" }, body: "plain", data: { loader: entry.id }, inputs: {}, manifest: { modules: [], actions: [] } })) } : undefined;
-  await contentMapToCells(map, path, { date: "2026-10-30", routePack: pack });
-  const oracle = await contentMapFromCells(path, map.publicationId);
-  const routePack = pack === undefined ? undefined : JSON.parse(await readFile(join(path, "route-pack", `${map.publicationId}.json`), "utf8"));
-  const oldTree = JSON.parse(await readFile(join(path, "tree.json"), "utf8"));
+  const oracle = map, routePack = pack;
   const pubId = `publication.${map.publicationId}`, ids = [...pages.map(entry => pageId(entry.id)), pubId];
   await put(join(path, "ia.json"), { schema: "clossys.ia/1", source: "consumer#publisher", extensions: [], nodes: [{ id: "catalog", label: "Catalog", children: [{ id: "bindings", label: "Bindings", slots: ids }] }] });
   for (const [order, id] of ids.entries()) {
@@ -67,7 +80,7 @@ async function fixture(map = ordinary(), withRoutes = true) {
       const { routes: _routes, ...header } = pack ?? {};
       await put(candidatePath(path, id), { schema: "clossys.publication/1", format: map.format, entryOrder: map.entries.map(entry => entry.id), ...(pack ? { routePack: header } : {}),
         ...(map.actions === undefined ? {} : { actions: map.actions }), ...(map.redirects === undefined ? {} : { redirects: map.redirects }),
-        meta: { source: { kind: "derived", ref: ["publisher:fixture"] }, tree: oldTree.tree[0] } });
+        meta: { source: { kind: "derived", ref: ["publisher:fixture"] }, tree: groupingTree(map) } });
     } else {
       const entry = pages.find(entry => pageId(entry.id) === id)!;
       const fields: JsonObject = { kind: entry.kind };
@@ -92,11 +105,10 @@ async function selectedBytes(path: string, ids: string[]) {
   return await Promise.all(ids.flatMap(id => [candidatePath(path, id), join(dir(path, id), "pin.json")]).map(file => readFile(file)));
 }
 
-it("NATIVE projection equals the legacy oracle exactly, then survives removal of all legacy stores without changing candidate or pin bytes", async () => {
+it("NATIVE projection equals the authored map exactly from slot folders alone, without changing candidate or pin bytes", async () => {
   const f = await fixture(), before = await selectedBytes(f.path, f.ids);
   expect(f.map).toEqual(ordinary());
-  expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
-  for (const name of ["tree.json", "cells", "content-map", "route-pack", "compile.json"]) await rm(join(f.path, name), { recursive: true, force: true });
+  for (const name of ["tree.json", "cells", "content-map", "route-pack", "compile.json"]) await expect(readFile(join(f.path, name))).rejects.toThrow(/ENOENT|EISDIR/);
   expect(await readPinnedPublication(f.path, f.map.publicationId)).toEqual({ map: f.map, routePack: f.routePack });
   expect(await selectedBytes(f.path, f.ids)).toEqual(before);
   expect(JSON.parse((await readFile(candidatePath(f.path, "page.designer"))).toString()).copy).toEqual({ heading: "strings.headings#heading" });
@@ -118,7 +130,6 @@ it("NATIVE ignores a newer unselected candidate and preserves exact migration id
   const f = await fixture();
   await put(join(dir(f.path, "page.writer-panel"), "candidates", "record-v99.json"), { title: "Unselected" });
   expect((await readPinnedPublication(f.path, f.map.publicationId)).map.entries.map(entry => entry.id)).toEqual(["agents", "designer", "writerPanel", "library.item"]);
-  expect(await contentMapFromCells(f.path, f.map.publicationId)).toEqual(f.map);
 });
 
 it("NATIVE reads the repository's actual selected Studio publication and page payloads", async () => {
@@ -145,17 +156,15 @@ it("NATIVE reads the repository's actual selected Studio publication and page pa
   }
 });
 
-it("NATIVE hash-verification mutation control refuses tampered selected bytes even while valid legacy fallback exists", async () => {
+it("NATIVE hash-verification mutation control refuses tampered selected bytes", async () => {
   const f = await fixture();
   await edit(candidatePath(f.path, "page.designer"), value => { value.title = "Tampered"; });
-  expect(await contentMapFromCells(f.path, f.map.publicationId)).toEqual(f.map);
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/hash drift/);
 });
 
-it("NATIVE legacy-fallback-restoration mutation control refuses an unpinned page despite valid legacy and generated outputs", async () => {
+it("NATIVE legacy-fallback-restoration mutation control refuses an unpinned page", async () => {
   const f = await fixture();
   await rm(join(dir(f.path, "page.designer"), "pin.json"));
-  expect(await contentMapFromCells(f.path, f.map.publicationId)).toEqual(f.map);
   await expect(readPinnedPublication(f.path, f.map.publicationId)).rejects.toThrow(/pin.json.*Missing native record/);
 });
 

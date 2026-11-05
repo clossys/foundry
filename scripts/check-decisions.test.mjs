@@ -88,3 +88,21 @@ test("a not-needed marker without decidedBy fails", () => {
     assert.deepEqual(rules(consumer), ["not-needed-shape"]);
   });
 });
+
+test("--agent scopes the check to one agent's pin records, and a missing agent folder is a wiring error", () => {
+  withRepo(({ repo, consumer, pinned }) => {
+    const writer = join(consumer, "agents", "writer", "strings.common");
+    mkdirSync(join(writer, "candidates"), { recursive: true });
+    writeFileSync(join(writer, "slot.json"), json({ schema: "clossys.slot/1", id: "strings.common" }));
+    writeFileSync(join(writer, "pin.json"), json({ candidate: "missing-v1.md", sha256: sha(""), decidedBy: "owner", at: "2026-11-03T00:00:00.000Z" }));
+    assert.deepEqual(checkDecisions(consumer, { agent: "designer" }).findings, []);
+    assert.deepEqual(checkDecisions(consumer, { agent: "writer" }).findings.map((row) => row.rule), ["pin-candidate"]);
+    // A hand edit of a pinned Designer candidate is caught when scoped to Designer.
+    writeFileSync(join(pinned, "candidates", "example-v1.json"), CANDIDATE.replace("example", "edited"));
+    assert.deepEqual(checkDecisions(consumer, { agent: "designer" }).findings.map((row) => row.rule), ["pin-hash"]);
+    const run = (...args) => spawnSync(process.execPath, [scriptPath, "--repo", repo, ...args], { encoding: "utf8" });
+    assert.equal(run("--agent", "designer").status, 1);
+    assert.equal(run("--agent", "director").status, 2);
+    assert.equal(run("--agent").status, 2);
+  });
+});

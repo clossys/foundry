@@ -284,7 +284,22 @@
     "data": "host-injected",
     "surface": "app"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.card",
+    "themes.muted",
+    "themes.primary",
+    "themes.primary-foreground",
+    "themes.radius",
+    "themes.spacing"
+  ],
   "uses": [
     "components.button",
     "components.card",

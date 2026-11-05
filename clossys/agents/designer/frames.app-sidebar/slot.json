@@ -115,7 +115,32 @@
       "components.icon"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-check",
+    "assets.icon-chevron-down",
+    "assets.icon-chevron-left",
+    "assets.icon-chevron-up",
+    "assets.icon-theme-dark",
+    "assets.icon-theme-light",
+    "assets.icon-theme-system",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.border",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.radius",
+    "themes.sidebar-accent",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-foreground",
+    "themes.sidebar-primary-foreground",
+    "themes.spacing"
+  ],
   "uses": [
     "assets.icon-arrow-right",
     "assets.icon-chevron-right",

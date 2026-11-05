@@ -62,7 +62,28 @@
       "components.sheet"
     ]
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.icon-panel-left",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.background",
+    "themes.border",
+    "themes.radius",
+    "themes.shadow",
+    "themes.sidebar",
+    "themes.sidebar-accent",
+    "themes.sidebar-accent-foreground",
+    "themes.sidebar-border",
+    "themes.sidebar-foreground",
+    "themes.sidebar-ring",
+    "themes.spacing"
+  ],
   "uses": [
     "assets.icon-panel-left",
     "components.button",

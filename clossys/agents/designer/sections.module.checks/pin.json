@@ -1,7 +1,7 @@
 {
-  "candidate": "module-checks-v4.json",
-  "sha256": "24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199",
-  "decidedBy": "planner:CONVERGE-R2",
+  "candidate": "module-checks-v5.json",
+  "sha256": "49ace7671f63039ed121af4ec767b116abc4dc3ccc4b5de27db873502a6539dc",
+  "decidedBy": "planner:FLAT-SLOTS",
   "basis": "planner",
-  "at": "2026-11-04T00:50:32.625Z"
+  "at": "2026-11-05T12:59:54.227Z"
 }

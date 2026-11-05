@@ -364,7 +364,7 @@ test("actual shipped ref-verbatim source imports without any optional UI peer", 
   // Exact shipped source bytes, with no dist build or packed-artifact claim.
   // Importing this entry does not invoke the verifier's lazy TypeScript API.
   const sources = ["scripts/check-ref-verbatim.mjs", ...[
-    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only",
+    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only", "flavor",
   ].map((name) => `scripts/ref-verbatim/${name}.mjs`)];
   for (const source of sources) {
     await mkdir(dirname(join(packageRoot, source)), { recursive: true });
@@ -464,7 +464,7 @@ test("Publisher's optional-peer matrix binds both default and react-server web o
   // client peers, and content-route follows the web entry's two conditions.
   const landedSpecifiers = [
     "@clossys/publisher/archetypes", "@clossys/publisher/content", "@clossys/publisher/content-map",
-    "@clossys/publisher/content-map/cells", "@clossys/publisher/content/node", "@clossys/publisher/install",
+    "@clossys/publisher/content/node", "@clossys/publisher/install",
     "@clossys/publisher/specimen", "@clossys/publisher/web/admin-pages", "@clossys/publisher/web/preview",
     "@clossys/publisher/web/publisher-v2",
   ];

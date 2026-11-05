@@ -16,7 +16,7 @@ import { buildSurfaceConsumption } from '../dist/catalog-core/surface-consumptio
 import { surfaceManifest, surfaceOf } from '../dist/catalog-core/surface-library.js';
 import { specimenSectionSourceCatalog } from '../dist/importers/specimen-sections.js';
 import { STUDIO_SPECIMEN_HOST_PARTS } from '../dist/catalog-core/studio-host-parts.js';
-import { agentModule, agentRoot } from '../../producer/dist/server/cells.js';
+import { agentModule } from '../../producer/dist/server/cells.js';
 import { studioComponentProviderSource } from '../../producer/dist/server/selection-component-provider.js';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -73,11 +73,9 @@ const changes = catalog.values.slots.filter(slot => slot.layer === 'themes').fla
 const library = applyLibraryChange(catalog, empty, { baseHash: libraryHash(empty), changes: [...changes, { portion: 'components', change: { op: 'adopt', slot: 'components.semantic-content', source: 'foundry' } }] }, { componentOptions });
 const reader = await agentModule('designer', 'library-cli/fs-library.js');
 for (const [name, content] of reader.libraryFiles(catalog, library, [], componentOptions)) {
-  const file = join(directory, 'library', name); await mkdir(dirname(file), { recursive: true }); await writeFile(file, content);
+  const file = join(directory, 'projection', name); await mkdir(dirname(file), { recursive: true }); await writeFile(file, content);
 }
-const cells = agentRoot(join(directory, 'consumer'), 'designer');
-await (await agentModule('designer', 'library-cli/cells.js')).libraryToCells(join(directory, 'library'), cells, { catalog, date: '2026-10-30' });
-const profile = resolveProfile({ catalog, library: await reader.readLibraryFromCells(cells, catalog), componentOptions });
+const profile = resolveProfile({ catalog, library: await reader.readLibrary(join(directory, 'projection'), catalog), componentOptions });
 const providerSource = await studioComponentProviderSource(profile, new Map());
 const canonicalDist = join(root, 'packages/designer/dist/studio/specimen-token-assets.js');
 const source = `${providerSource}\nexport { Swatch } from ${JSON.stringify(canonicalDist)};\nexport { renderSpecimenSwatchHostPart, renderSpecimenContrastHostPart, studioSpecimenTokenStyle, specimenTokenReference, componentSpecimenPreview } from "@clossys/designer/studio";\n`;
@@ -135,7 +133,7 @@ expectRefusal('wrong mode capability', () => executable.studioSpecimenTokenStyle
 expectRefusal('different selected values identity', () => executable.studioSpecimenTokenStyle('studio.specimen-swatch', structuredClone(profile.values), { memberId, mode: 'light' }, { member: good }));
 for (const value of ['#ffffff', 'var(--unknown)', 'var(--color-surface-base, #ffffff)']) expectRefusal(`unregistered token input ${value}`, () => executable.specimenTokenReference(profile.values, value, 'light'));
 const df2 = nativeFindings.filter(finding => finding.code === 'DF2');
-const result = { scope: 'Actual current canonical Swatch and two registered host-part S5 styling/binding proof; not complete native-leaf or S8 qualification.', status: !df2.length && !runtimeFindings.length && negatives.every(row => row.rejected) ? 'PASS' : 'FAIL', qualifiedNativeLeaves: 0, canonical: { path: canonicalPath, sha256: sha256(canonical) }, sourceInputs, sourceSymbolIdentity: { constructor: 'actual host import === actual public export', registeredParts: Object.keys(STUDIO_SPECIMEN_HOST_PARTS) }, publicFixture: directory, lineage: ['actual-engine', 'libraryFiles', 'libraryToCells', 'readLibraryFromCells', 'actual shared production provider source', 'full current canonical compiled module'], dependencyCompiler: { argv: [process.execPath, 'dist/library-cli/surface-evidence-compiler.js'], exitCode: compiler.status, stdoutSha256: sha256(compiler.stdout), stderrSha256: sha256(compiler.stderr) }, cases, df2, otherNativeFindings: nativeFindings.filter(finding => finding.code !== 'DF2'), runtimeFindings, actualCanonicalCallbackCalls: callbackCalls, negatives, runtimeBundleSha256: sha256(bundled.outputFiles[0].text) };
+const result = { scope: 'Actual current canonical Swatch and two registered host-part S5 styling/binding proof; not complete native-leaf or S8 qualification.', status: !df2.length && !runtimeFindings.length && negatives.every(row => row.rejected) ? 'PASS' : 'FAIL', qualifiedNativeLeaves: 0, canonical: { path: canonicalPath, sha256: sha256(canonical) }, sourceInputs, sourceSymbolIdentity: { constructor: 'actual host import === actual public export', registeredParts: Object.keys(STUDIO_SPECIMEN_HOST_PARTS) }, publicFixture: directory, lineage: ['actual-engine', 'libraryFiles', 'readLibrary', 'actual shared production provider source', 'full current canonical compiled module'], dependencyCompiler: { argv: [process.execPath, 'dist/library-cli/surface-evidence-compiler.js'], exitCode: compiler.status, stdoutSha256: sha256(compiler.stdout), stderrSha256: sha256(compiler.stderr) }, cases, df2, otherNativeFindings: nativeFindings.filter(finding => finding.code !== 'DF2'), runtimeFindings, actualCanonicalCallbackCalls: callbackCalls, negatives, runtimeBundleSha256: sha256(bundled.outputFiles[0].text) };
 if (reportArgument.length) await writeFile(resolve(reportArgument[1]), JSON.stringify(result, null, 2) + '\n');
 console.log(JSON.stringify({ scope: result.scope, status: result.status, canonical: result.canonical, df2: result.df2, otherNativeFindings: result.otherNativeFindings, runtimeFindings, negatives, report: reportArgument[1] }));
 process.exitCode = result.status === 'PASS' ? 0 : 1;

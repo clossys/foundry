@@ -909,32 +909,17 @@
         },
         {
           "glob": "clossys/agents/director/**"
+        },
+        {
+          "glob": "clossys/evidence/director/*.md"
         }
       ],
       "outputs": [
         {
-          "glob": "clossys/agents/director/tree.json"
+          "glob": "clossys/evidence/director/briefs/**"
         },
         {
-          "glob": "clossys/agents/director/cells/**"
-        },
-        {
-          "glob": "clossys/agents/director/sessions/**"
-        },
-        {
-          "glob": "clossys/agents/director/findings/**"
-        },
-        {
-          "glob": "clossys/agents/director/requests/**"
-        },
-        {
-          "glob": "clossys/agents/director/briefs/**"
-        },
-        {
-          "glob": "clossys/agents/director/citations.json"
-        },
-        {
-          "glob": "clossys/agents/director/reports/*.json"
+          "glob": "clossys/evidence/director/reports/*.json"
         }
       ],
       "command": {
@@ -1827,7 +1812,7 @@
       "kind": "plumb",
       "actor": "code",
       "stage": "publish.assemble",
-      "summary": "Derive each slot's uses list from pinned candidates.",
+      "summary": "Derive each slot's uses list from pinned candidates, and the consumer's shadcn flavor from the Designer config.",
       "inputs": [
         {
           "glob": "clossys/agents/*/*/pin.json",
@@ -1853,6 +1838,9 @@
       "outputs": [
         {
           "glob": "clossys/agents/*/*/slot.json#uses"
+        },
+        {
+          "glob": "clossys/components.json"
         }
       ],
       "command": {
@@ -1962,6 +1950,48 @@
       }
     },
     {
+      "id": "specimen.evidence",
+      "kind": "plumb",
+      "actor": "code",
+      "stage": "publish.assemble",
+      "summary": "Measure every native specimen section with the installed build and write its compiler evidence.",
+      "inputs": [
+        {
+          "glob": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        },
+        {
+          "glob": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ],
+      "outputs": [
+        {
+          "glob": "packages/designer/dist/catalog/native-specimen-evidence.json"
+        }
+      ],
+      "command": {
+        "script": "../designer/scripts/generate-specimen-surface-evidence.mjs",
+        "npm": "generate:specimen-evidence"
+      },
+      "checks": [
+        "specimen-evidence"
+      ],
+      "holder": {
+        "id": "publisher",
+        "kind": "code",
+        "source": "derived",
+        "tier": null
+      },
+      "layout": {
+        "lane": "publisher",
+        "stage": "publish.assemble",
+        "rank": 5,
+        "x": 4000,
+        "y": 1300
+      }
+    },
+    {
       "id": "build.receipt",
       "kind": "plumb",
       "actor": "code",
@@ -2063,7 +2093,7 @@
         "stage": "publish.assemble",
         "rank": 5,
         "x": 4000,
-        "y": 1300
+        "y": 1472
       }
     },
     {
@@ -2881,6 +2911,17 @@
     },
     {
       "from": "pin.designer",
+      "to": "specimen.evidence",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/pin.json",
+          "input": "clossys/agents/designer/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "pin.designer",
       "to": "build.receipt",
       "via": [
         {
@@ -3530,6 +3571,17 @@
     },
     {
       "from": "designer.candidates",
+      "to": "specimen.evidence",
+      "via": [
+        {
+          "output": "clossys/agents/designer/*/candidates/*",
+          "input": "clossys/agents/designer/*/candidates/*",
+          "schema": "candidate-element"
+        }
+      ]
+    },
+    {
+      "from": "designer.candidates",
       "to": "build.receipt",
       "via": [
         {
@@ -4008,43 +4060,18 @@
     },
     {
       "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/tree.json"
+      "port": "input",
+      "glob": "clossys/evidence/director/*.md"
     },
     {
       "step": "director.store",
       "port": "output",
-      "glob": "clossys/agents/director/cells/**"
+      "glob": "clossys/evidence/director/briefs/**"
     },
     {
       "step": "director.store",
       "port": "output",
-      "glob": "clossys/agents/director/sessions/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/findings/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/requests/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/briefs/**"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/citations.json"
-    },
-    {
-      "step": "director.store",
-      "port": "output",
-      "glob": "clossys/agents/director/reports/*.json"
+      "glob": "clossys/evidence/director/reports/*.json"
     },
     {
       "step": "options",
@@ -4065,6 +4092,11 @@
       "step": "derive.uses",
       "port": "output",
       "glob": "clossys/agents/*/*/slot.json#uses"
+    },
+    {
+      "step": "derive.uses",
+      "port": "output",
+      "glob": "clossys/components.json"
     },
     {
       "step": "studio.map",
@@ -4102,6 +4134,11 @@
       "glob": "pkg:studio/generated/studio-flow-theme.css"
     },
     {
+      "step": "specimen.evidence",
+      "port": "output",
+      "glob": "packages/designer/dist/catalog/native-specimen-evidence.json"
+    },
+    {
       "step": "studio.checks",
       "port": "input",
       "glob": "pkg:studio/generated/assembly-bindings.ts"
@@ -4121,8 +4158,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 3120,
-      "after": 3036
+      "before": 3224,
+      "after": 3143
     },
     "lanes": [
       {
@@ -4543,7 +4580,7 @@
         "ai",
         "code"
       ],
-      "steps": 15,
+      "steps": 16,
       "sources": [
         "derived"
       ],

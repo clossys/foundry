@@ -138,7 +138,8 @@
     }
   },
   "inputs": [
-    "identity.verbal.voice"
+    "identity.verbal.voice",
+    "focus.offer.included"
   ],
   "uses": []
 }

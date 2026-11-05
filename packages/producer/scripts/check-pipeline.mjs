@@ -36,6 +36,8 @@
 //                     and `<agent>/` target) declared by two steps
 //   entry.missing     a step names an entry, module, script, npm script or skill that does not exist
 //   entry.stale       a pending step whose branch has landed (or whose removal already happened)
+//   build.unstepped   the package build runs a node script (or `dist/cli/index.js <verb>`) that no
+//                     step declares as its script (or CLI verb): every build stage is a named step
 //   verb.undeclared   a CLI verb no step declares; verb.unknown is the reverse
 //   check.undeclared  a check script or npm check no defineCheck declares
 //   check.unknown     a step cites a check id the registry lacks; check.orphan: no step runs it
@@ -372,6 +374,28 @@ for (const step of steps) {
     else note(step.id, `${pendingWhy(step)}; still runnable here`);
   }
   entryFiles.set(step.id, refs.filter(([, exists, path]) => exists && path).map(([, , path]) => path));
+}
+
+// ---------------------------------------------------------------- build stages
+// The build is a chain of `&&` commands; each `node <file>` in it is a pipeline step's script, each
+// `node dist/cli/index.js <verb>` a step's CLI verb, and `npm run <name>` expands to that script.
+function buildStages(name, seen = new Set()) {
+  if (seen.has(name) || pkgScripts[name] === undefined) return [];
+  seen.add(name);
+  return String(pkgScripts[name]).split("&&").map(part => part.trim()).flatMap(part => {
+    const npm = /^npm run(?: -s)? ([\w:.-]+)$/.exec(part);
+    if (npm) return buildStages(npm[1], seen);
+    const node = /^node (\S+)(?: (\S+))?/.exec(part);
+    return node ? [{ part, file: node[1], verb: node[1] === "dist/cli/index.js" ? node[2] : undefined }] : [];
+  });
+}
+{
+  const scripts = new Set(steps.map(step => step.run?.script).filter(Boolean));
+  const verbs = new Set(steps.map(step => step.run?.cli?.verb).filter(Boolean));
+  for (const stage of buildStages("build")) {
+    const stepped = stage.verb !== undefined ? verbs.has(stage.verb) : scripts.has(stage.file);
+    if (!stepped) fail("build.unstepped", `npm run build runs \`${stage.part}\`, which no step declares; define it as a named step in src/pipeline/steps/`);
+  }
 }
 
 // ---------------------------------------------------------------- CLI verbs

@@ -8,18 +8,20 @@ import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "../fact-ind
 import type { Finding } from "../format/types.js";
 import { readStrategyRoot } from "../store.js";
 import { checkWontClaimDrift } from "../wont-claim-drift.js";
-import { stageCell, stageFinding, stageWontClaimCells } from "./fixtures.js";
+import { evidenceDir, stageFinding, stageSlot, stageWontClaimCells, strategyRoot } from "./fixtures.js";
 
+let base: string;
 let root: string;
 let scan: string;
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), "ground-regression-root-"));
+  base = mkdtempSync(join(tmpdir(), "ground-regression-root-"));
+  root = strategyRoot(base);
   scan = mkdtempSync(join(tmpdir(), "ground-regression-scan-"));
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => {
-  rmSync(root, { recursive: true, force: true });
+  rmSync(base, { recursive: true, force: true });
   rmSync(scan, { recursive: true, force: true });
   vi.restoreAllMocks();
 });
@@ -30,8 +32,8 @@ it.each([
   ["Don’t claim ‘guaranteed results’.", "Don’t say “risk-free” because it isn’t."],
 ])("finds quoted active prohibitions after contractions: %s / %s", (proof, voice) => {
   stageWontClaimCells(root);
-  stageCell(root, "advantage.proposition.proof", 1, "Never-claim", proof);
-  stageCell(root, "identity.verbal.voice", 1, "Never", voice);
+  stageSlot(root, "advantage.proposition.proof", 1, `Never-claim: ${proof}`);
+  stageSlot(root, "identity.verbal.voice", 1, `Never: ${voice}`);
   const result = checkWontClaimDrift([{ path: "page.md", content: "guaranteed results; risk-free" }], readStrategyRoot(root, reader));
   expect(result.state).toBe("hit");
   expect(result.findings.map(finding => finding.found)).toEqual(["guaranteed results", "risk-free"]);
@@ -41,8 +43,8 @@ it.each([
 it.each(["'", '"', "‘", "“"])("does not treat a %s delimiter within a word as a quoted prohibition", opening => {
   const closing = opening === "‘" ? "’" : opening === "“" ? "”" : opening;
   stageWontClaimCells(root);
-  stageCell(root, "advantage.proposition.proof", 1, "Never-claim", `prefix${opening}guaranteed results${closing}`);
-  stageCell(root, "identity.verbal.voice", 1, "Never", `${opening}risk-free${closing}suffix`);
+  stageSlot(root, "advantage.proposition.proof", 1, `Never-claim: prefix${opening}guaranteed results${closing}`);
+  stageSlot(root, "identity.verbal.voice", 1, `Never: ${opening}risk-free${closing}suffix`);
   const result = checkWontClaimDrift([{ path: "page.md", content: "guaranteed results; risk-free" }], readStrategyRoot(root, reader));
   expect(result.state).toBe("clean");
   expect(result.findings).toEqual([]);
@@ -55,13 +57,13 @@ it.each([
   ['Do not say "world\'s best".', "world's best"],
 ])("finds the full quoted prohibition containing an apostrophe: %s", (proof, surface) => {
   stageWontClaimCells(root);
-  stageCell(root, "advantage.proposition.proof", 1, "Never-claim", proof);
+  stageSlot(root, "advantage.proposition.proof", 1, `Never-claim: ${proof}`);
   const model = readStrategyRoot(root, reader);
   expect(model.issues).toEqual([]);
   const result = checkWontClaimDrift([{ path: "page.md", content: surface }], model);
   expect(result.state).toBe("hit");
   expect(result.findings).toEqual([expect.objectContaining({
-    id: "advantage.proposition.proof@1#13", file: "page.md", line: 1, found: surface,
+    id: "advantage.proposition.proof@1#9", file: "page.md", line: 1, found: surface,
   })]);
   expect(result.unchecked).toEqual([]);
 });
@@ -69,10 +71,11 @@ it.each([
 it.each(["missing-findings", "malformed-findings", "partial-findings", "empty-scan", "filtered-scan", "evidence-only-scan"])(
   "ground --json returns exactly one structured indeterminate result for %s", scenario => {
     if (scenario !== "missing-findings") stageFinding(root);
-    if (scenario === "malformed-findings") writeFileSync(join(root, "findings/active-customers.md"), "broken");
-    if (scenario === "partial-findings") writeFileSync(join(root, "findings/bad.md"), "broken");
+    if (scenario === "malformed-findings") writeFileSync(join(evidenceDir(root), "active-customers.md"), "broken");
+    if (scenario === "partial-findings") writeFileSync(join(evidenceDir(root), "bad.md"), "broken");
     if (scenario !== "empty-scan") writeFileSync(join(scan, "page.md"), "4,200 customers");
-    const scanRoot = scenario === "evidence-only-scan" ? root : scan;
+    const scanRoot = scenario === "evidence-only-scan" ? base : scan;
+    if (scenario === "evidence-only-scan") stageSlot(root, "focus.segment.core", 1, "Who: owner-led studios.");
     const flags = scenario === "filtered-scan" ? ["--extensions", ".html"] : [];
     expect(main(["ground", root, scanRoot, "--json", ...flags], store)).toBe(2);
     const calls = vi.mocked(console.log).mock.calls;
@@ -84,7 +87,7 @@ it.each(["missing-findings", "malformed-findings", "partial-findings", "empty-sc
     expect(result.indeterminateReasons.every((reason: unknown) => typeof reason === "string" && reason.length > 0)).toBe(true);
     const reasons = result.indeterminateReasons.join(" ");
     if (scenario === "missing-findings") expect(reasons).toContain("no valid findings");
-    if (scenario === "malformed-findings" || scenario === "partial-findings") expect(reasons).toContain("findings/");
+    if (scenario === "malformed-findings" || scenario === "partial-findings") expect(reasons).toContain("evidence/director/");
     if (scenario === "empty-scan" || scenario === "filtered-scan") expect(reasons).toContain("No files matched");
     if (scenario === "evidence-only-scan") expect(reasons).toContain("No surface files");
   },

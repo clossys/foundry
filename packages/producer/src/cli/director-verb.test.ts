@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 // Director's own fixtures (test-only source import; @clossys/director ships them in no export).
-import { stageFinding } from "../../../director/src/ground/fixtures.js";
+import { stageFinding, strategyRoot } from "../../../director/src/ground/fixtures.js";
 import { runCli } from "./main.js";
 
 /** `clossys director check|rate-check`: Director's commands, run through the compiled clossys CLI. */
@@ -20,9 +20,9 @@ const run = (...args: string[]) => {
 afterEach(() => roots.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
 
 describe("clossys director", () => {
-  it("check <strategy-dir> <scan-dir> with no subcommand runs ground over findings", { timeout: 30_000 }, () => {
-    const base = temp(); const strategy = join(base, "strategy"); const scan = join(base, "surfaces");
-    mkdirSync(strategy); mkdirSync(scan); stageFinding(strategy);
+  it("check <strategy-dir> <scan-dir> with no subcommand runs ground over the consumer's Director evidence", { timeout: 30_000 }, () => {
+    const base = temp(); const strategy = strategyRoot(base); const scan = join(base, "surfaces");
+    mkdirSync(scan); stageFinding(strategy);
     writeFileSync(join(scan, "about.md"), "We now serve 4,200 customers.");
     const clean = run("check", strategy, scan);
     expect(clean.stdout).toContain("No findings."); expect(clean.code).toBe(0);
@@ -32,8 +32,8 @@ describe("clossys director", () => {
   });
 
   it("check --json prints Director's own JSON once, with nothing appended", { timeout: 30_000 }, () => {
-    const base = temp(); const strategy = join(base, "strategy"); const scan = join(base, "surfaces");
-    mkdirSync(strategy); mkdirSync(scan); stageFinding(strategy);
+    const base = temp(); const strategy = strategyRoot(base); const scan = join(base, "surfaces");
+    mkdirSync(scan); stageFinding(strategy);
     writeFileSync(join(scan, "about.md"), "We now serve 4,200 customers.");
     const result = run("check", strategy, scan, "--json");
     expect(result.code).toBe(0);

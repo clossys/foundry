@@ -58,4 +58,10 @@ export interface StrategyModel {
   cells: Cell[]; sessions: Session[]; findings: Finding[]; requests: StrategyRequest[];
   /** Exact UTF-8 source contents keyed by root-relative paths, for fingerprints. */
   files: Record<string, string>; issues: StrategyRootIssue[];
+  /**
+   * Candidate versions present per slot (`<slot-id>/candidates/<name>-v<n>.md`), pinned or not.
+   * Only the pinned candidate is a cell; the others make a citation of their version known
+   * (stale) rather than unknown (dangling). Absent for models that list every version as a cell.
+   */
+  candidateVersions?: Record<string, number[]>;
 }

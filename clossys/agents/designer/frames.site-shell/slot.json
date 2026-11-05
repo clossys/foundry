@@ -134,9 +134,6 @@
       ],
       "assets": [
         "assets.image"
-      ],
-      "privateInternal": [
-        "packages/designer/src/frames/site-frame/landing/internal/assets.ts"
       ]
     },
     "composes": [
@@ -162,7 +159,29 @@
     ],
     "skipTarget": "main-content"
   },
-  "inputs": [],
+  "inputs": [
+    "advantage.proposition.promise",
+    "assets.image",
+    "focus.category.definition",
+    "focus.segment.core",
+    "identity.brand.essence",
+    "identity.brand.personality",
+    "identity.verbal.voice",
+    "identity.visual.imagery",
+    "identity.visual.style",
+    "themes.accent-foreground",
+    "themes.background",
+    "themes.border",
+    "themes.font-heading",
+    "themes.foreground",
+    "themes.muted",
+    "themes.muted-foreground",
+    "themes.primary",
+    "themes.radius",
+    "themes.ring",
+    "themes.shadow",
+    "themes.spacing"
+  ],
   "uses": [
     "components.logo"
   ]

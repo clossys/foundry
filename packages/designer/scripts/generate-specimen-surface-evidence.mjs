@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-import { readFile, writeFile } from "node:fs/promises";
-import { fileURLToPath } from "node:url";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname } from "node:path";
 import { prepareStudioSelection } from "../../producer/dist/server/selection-defaults.js";
 import * as sourceEvidence from "../dist/library-cli/measure-specimen-surfaces.js";
+import { INSTALLED_NATIVE_SPECIMEN_EVIDENCE } from "../dist/library-cli/qualify-specimen-surfaces.js";
 import { stableStringify } from "../dist/catalog-core/stable.js";
 import { SPECIMEN_SECTION_EXPORTS } from "../dist/importers/specimen-sections.js";
 
@@ -25,9 +26,10 @@ const artifact = { version: 1, packages: environment.input.surfaceOptions.packag
   // before creating a current measurement; provenance remains the surface engine's job.
   certificates: measurements.map(({ slot, source, compiled, checks }) => ({ slot, source, compiled, checks })),
 };
-const path = fileURLToPath(new URL("../src/catalog/native-specimen-evidence.json", import.meta.url));
+// Written into the installed build it certifies (the workspace build runs this after Producer).
+const path = INSTALLED_NATIVE_SPECIMEN_EVIDENCE;
 const text = stableStringify(artifact);
 if (args.includes("--check")) {
-  if (await readFile(path, "utf8") !== text) throw new Error("Native specimen compiler evidence is stale; regenerate it from the current completed builds.");
-} else await writeFile(path, text);
+  if (await readFile(path, "utf8").catch(() => undefined) !== text) throw new Error("Native specimen compiler evidence is stale; regenerate it from the current completed builds.");
+} else { await mkdir(dirname(path), { recursive: true }); await writeFile(path, text); }
 console.log(`${args.includes("--check") ? "PASS current" : "Wrote"}: ${native.length} real native compiler certificates; ${first.command.argv.join(" ")}`);

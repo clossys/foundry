@@ -150,6 +150,10 @@
       "types": "./dist/frames/site-frame/landing/internal/errors.d.ts",
       "import": "./dist/frames/site-frame/landing/internal/errors.js"
     },
+    "./shadcn-flavor": {
+      "types": "./scripts/ref-verbatim/flavor.d.ts",
+      "import": "./scripts/ref-verbatim/flavor.mjs"
+    },
     "./ref-verbatim": {
       "types": "./scripts/check-ref-verbatim.d.ts",
       "import": "./scripts/check-ref-verbatim.mjs"
@@ -399,7 +403,7 @@
     "generate:icons": "node scripts/generate-icons.mjs",
     "generate:compiled-css": "npm run build && node dist/compiled-css/cli.js --write",
     "check:compiled-css": "npm run build && node dist/compiled-css/cli.js --check",
-    "check:designer-receipt": "npm run build && node dist/library-cli/cli.js receipt",
+    "check:designer-receipt": "node ../../scripts/check-decisions.mjs --repo ../.. --agent designer",
     "check:process": "node scripts/check-process-gates.mjs",
     "check:default-candidates": "node scripts/check-default-candidates.mjs",
     "test:process": "node --test scripts/check-one-leaf-source.test.mjs scripts/check-fill-source-imports.test.mjs scripts/check-rendered-class-rules.test.mjs scripts/check-process-gates.test.mjs",

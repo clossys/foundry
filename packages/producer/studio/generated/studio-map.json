@@ -45457,12 +45457,12 @@
     {
       "slot": "sections.module.outline",
       "element": "module-outline",
-      "version": 5
+      "version": 6
     },
     {
       "slot": "sections.module.checks",
       "element": "module-checks",
-      "version": 4
+      "version": 5
     },
     {
       "slot": "sections.producer.team-strip",
