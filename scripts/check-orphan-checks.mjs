@@ -13,13 +13,19 @@
  * Reachability is a static trace, no command runs:
  *   - root `check` and `test` are parsed as POSIX command lists (`&&`, `||`, `;`, `|`); a step after
  *     `&&` counts only if the step before can exit 0 (`false`, `exit N` and the scripts named in
- *     `failing` cannot), a step after `||` only if the one before can fail;
+ *     `failing` cannot), a step after `||` only if the one before can fail; an `exit` that runs (not
+ *     in a pipeline or background) ends the list, so no later step is reached through it;
  *   - `npm run <s>` / `npm test` follow the script in the current package, `--workspace`/`-w`,
- *     `--prefix` or every workspace for `--workspaces`;
+ *     `--prefix` or every workspace for `--workspaces`; a script or workspace that does not exist
+ *     fails (npm exits 1) and is reported `missing-script`, unless `--if-present` is given;
+ *   - check:rules exits 1 while scripts/rules/registry.json has any rule not `enforced`, so it is
+ *     traced as failing then;
  *   - `node <file>`, `node --test <file|glob>...`, `tsx <file>`, `sh|bash <file>` reach the files;
  *   - `vitest run [--config C] [filters]` reaches the files its config `include` globs match;
  *   - a reached JS/TS file reaches what it imports, requires, dynamically imports or names with
- *     `new URL('./x', import.meta.url)`, relative specifiers only;
+ *     `new URL('./x', import.meta.url)`, relative specifiers only; a governed file counts as run only
+ *     when a command runs it or a run non-test file imports it: a check that only a test imports is
+ *     loaded by that test, not run as a check, and is still an orphan;
  *   - scripts/run-check-steps.mjs (the root `check` aggregate) runs each argument as an npm script;
  *   - three runners dispatch dynamically and are expanded explicitly: scripts/build-workspaces.mjs
  *     (every workspace `build`), scripts/run-gate-suites.mjs (scripts/lib/gate-test-set.mjs) and
@@ -39,6 +45,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 export const SCOPE = Object.freeze(["packages/producer", "packages/designer"]);
 export const EXEMPTIONS_FILE = "scripts/check-orphan-checks.exemptions.json";
 export const ENTRY_SCRIPTS = Object.freeze(["check", "test"]);
+/** The rule meta-check and its registry: it exits 1 whenever a registry rule is not enforced. */
+export const RULES_SCRIPT = ".#check:rules";
+const RULES_REGISTRY = "scripts/rules/registry.json";
 const SKIP_DIRS = new Set(["node_modules", "dist", "build", ".next", ".git", ".turbo", "coverage", "__fixtures__", "fixtures", "__golden__"]);
 const JS = /\.(?:mjs|cjs|js)$/;
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
@@ -203,19 +212,33 @@ export function workspaces(root) {
 /**
  * Trace everything reachable from the entries (default: the root `check` and `test` scripts).
  * An entry is an npm script `{ dir, script }` or a shell command `{ cwd, run }`.
- * Returns the reached file set and the scripts followed (keyed `<dir>#<script>`, root dir ".").
+ * Returns the reached file set, the scripts followed (keyed `<dir>#<script>`, root dir "."), the
+ * `executed` files (run by a command, or imported by an executed non-test file: a file only a test
+ * imports is reached, not executed), the `direct` files a command names itself (no import edges),
+ * and the `missing` npm scripts a command runs that do not exist (`<dir>#<script>`).
  * `files` may pass a previous `repositoryFiles(root)` listing to skip the walk on repeated traces.
  */
 const OK = Object.freeze({ ok: true, fail: false }), FAILS = Object.freeze({ ok: false, fail: true }), MAY = Object.freeze({ ok: true, fail: true });
 /** Two commands that both run: the pair exits 0 only if each can, and fails if either can. */
 const both = (a, b) => ({ ok: a.ok && b.ok, fail: a.fail || b.fail });
+/** One of two outcomes: exits 0 if either can, fails if either can. */
+const either = (a, b) => a ? b ? { ok: a.ok || b.ok, fail: a.fail || b.fail } : a : b;
+const exitStatus = (arg, last) => arg === undefined ? last : /^0+$/.test(arg) ? OK : /^\d+$/.test(arg) ? FAILS : MAY;
 
 export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({ dir: ".", script })), files = repositoryFiles(root), failing = new Set() } = {}) {
   const packages = workspaces(root);
   const statuses = new Map();
   const byName = new Map([...packages].map(([dir, manifest]) => [manifest.name, dir]));
-  const reached = new Set(), scripts = new Set(), queue = [];
-  const reach = rel => { if (rel && !reached.has(rel) && existsSync(join(root, rel))) { reached.add(rel); queue.push(rel); } };
+  const reached = new Set(), executed = new Set(), direct = new Set(), missing = new Set(), scripts = new Set(), queue = [];
+  // `run`: the file is executed (a command runs it, or an executed non-test file imports it).
+  const reach = (rel, run = true, named = run) => {
+    if (!rel || !existsSync(join(root, rel))) return;
+    if (named) direct.add(rel);
+    const fresh = !reached.has(rel), runs = run && !executed.has(rel);
+    reached.add(rel);
+    if (run) executed.add(rel);
+    if (fresh || runs) queue.push(rel);
+  };
   const packageOf = cwd => { for (let dir = cwd; ; dir = posix.dirname(dir)) { if (packages.has(dir)) return dir; if (dir === "." || dir === "") return "."; } };
 
   // A script runs; its status says whether it can exit 0 (`ok`) and whether it can fail (`fail`).
@@ -223,7 +246,7 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
     const key = `${dir}#${name}`;
     if (scripts.has(key)) return statuses.get(key) ?? MAY;
     const command = packages.get(dir)?.scripts?.[name];
-    if (typeof command !== "string") return MAY;
+    if (typeof command !== "string") { missing.add(key); return FAILS; }
     scripts.add(key);
     const status = runCommand(command, dir);
     statuses.set(key, failing.has(key) ? FAILS : status);
@@ -231,29 +254,43 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
   };
   // A command list: a step after `&&` runs only if the one before can succeed, after `||` only if
   // it can fail, and a `|` stage only if its pipeline runs. Steps that cannot run are not traced.
+  // An `exit` outside a pipeline or background job ends the list: after it, only the path on which
+  // it did not run continues (none when it runs unconditionally), and its status joins the result.
   const runCommand = (command, cwd) => {
-    let last = MAY, ran = true;
-    for (const { words, op } of commandList(command)) {
+    let last = MAY, ran = true, exits;
+    const list = commandList(command);
+    for (let i = 0; i < list.length; i++) {
+      const { words, op } = list[i], next = list[i + 1]?.op;
       if ((op === "&&" && !last.ok) || (op === "||" && !last.fail) || (op === "|" && !ran)) { ran = false; continue; }
       ran = true;
       while (words.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(words[0])) words.shift();
       if (!words.length) { last = MAY; continue; }
       const [program, ...args] = words;
+      if (program === "exit" && op !== "|" && next !== "|" && next !== "&") {
+        // `a && exit` runs only when a exits 0, `a || exit` only when a fails; otherwise it always runs.
+        const runs = op === "&&" ? last.ok : op === "||" ? last.fail : true;
+        if (runs) exits = either(exits, exitStatus(args[0], op === "&&" ? OK : op === "||" ? FAILS : last));
+        const stays = op === "&&" ? last.fail && FAILS : op === "||" ? last.ok && OK : false;
+        if (!stays) return exits ?? last;
+        last = stays;
+        continue;
+      }
       if (program === "cd" && args[0]) { cwd = posix.normalize(posix.join(cwd, args[0])); last = MAY; continue; }
       if (program === "npm" || program === "pnpm") last = npm(args, cwd);
       else if (program === "npx") last = runWords(args.filter(arg => arg !== "--yes" && arg !== "-y"), cwd);
       else last = runWords(words, cwd);
     }
-    return last;
+    return either(exits, last);
   };
   const scriptDir = (cwd, workspace) => workspace ? byName.get(workspace) ?? posix.normalize(workspace) : packageOf(cwd);
   const npm = (args, cwd) => {
-    let all = false, prefix, script, scripted = false;
+    let all = false, prefix, script, scripted = false, ifPresent = false;
     const targets = [];
     for (let i = 0; i < args.length; i++) {
       const arg = args[i];
       if (arg === "--") break;
-      if (arg === "--workspaces" || arg === "-ws") all = true;
+      if (arg === "--if-present") ifPresent = true;
+      else if (arg === "--workspaces" || arg === "-ws") all = true;
       else if (arg === "-w" || arg === "--workspace") targets.push(args[++i]);
       else if (arg.startsWith("--workspace=")) targets.push(arg.slice(12));
       else if (arg === "--prefix" || arg === "-C") prefix = args[++i];
@@ -266,17 +303,23 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
       else if (scripted && !script) script = arg;
     }
     if (!script) return MAY;
+    const named = targets.map(target => byName.get(target) ?? posix.normalize(target));
+    // npm fails on a --workspace that is no workspace, even with --if-present.
+    const unknown = named.filter(dir => !packages.has(dir));
+    for (const dir of unknown) missing.add(`${dir}#${script}`);
     const dirs = all ? [...packages.keys()].filter(dir => dir !== ".")
-      : targets.length ? targets.map(target => byName.get(target) ?? posix.normalize(target)).filter(dir => packages.has(dir))
+      : named.length ? named.filter(dir => packages.has(dir))
       : [packageOf(prefix ? posix.normalize(posix.join(cwd, prefix)) : cwd)];
-    return dirs.length ? dirs.reduce((status, dir) => both(status, runScript(dir, script)), OK) : MAY;
+    const run = dir => ifPresent && typeof packages.get(dir)?.scripts?.[script] !== "string" ? OK : runScript(dir, script);
+    const status = dirs.reduce((status, dir) => both(status, run(dir)), OK);
+    return unknown.length ? FAILS : dirs.length ? status : MAY;
   };
   const runWords = (words, cwd) => {
     const [program, ...args] = words;
     if (!program) return MAY;
     if (program === "false") return FAILS;
     if (program === "true" || program === ":") return OK;
-    if (program === "exit") return /^0?$/.test(args[0] ?? "") ? OK : /^\d+$/.test(args[0]) ? FAILS : MAY;
+    if (program === "exit") return exitStatus(args[0], MAY);
     if (program === "vitest") { for (const file of vitestFiles(root, cwd, args, files)) reach(file); return MAY; }
     if (program === "node" || program === "tsx" || program === "ts-node") {
       const test = args.includes("--test");
@@ -318,7 +361,7 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
   }
   while (queue.length) {
     const rel = queue.shift();
-    if (rel === "scripts/build-workspaces.mjs") for (const dir of packages.keys()) if (dir !== ".") runScript(dir, "build");
+    if (rel === "scripts/build-workspaces.mjs") for (const [dir, manifest] of packages) if (dir !== "." && typeof manifest?.scripts?.build === "string") runScript(dir, "build");
     if (rel === "scripts/run-gate-suites.mjs" && existsSync(join(root, "scripts/lib/gate-test-set.mjs"))) {
       const { discoverGateTestFiles } = await import(pathToFileURL(join(root, "scripts/lib/gate-test-set.mjs")).href);
       for (const file of discoverGateTestFiles({ root })) reach(toPosix(relative(root, resolve(root, file))));
@@ -328,9 +371,22 @@ export async function reachable(root, { entries = ENTRY_SCRIPTS.map(script => ({
     }
     if (!CODE.test(rel)) continue;
     const text = readFileSync(join(root, rel), "utf8");
-    for (const specifier of relativeSpecifiers(text)) reach(resolveModule(root, rel, specifier));
+    // What a test imports is loaded by the test, not run as a check: reached, not executed.
+    const runs = executed.has(rel) && !TEST.test(rel);
+    for (const specifier of relativeSpecifiers(text)) reach(resolveModule(root, rel, specifier), runs, false);
   }
-  return { reached, scripts };
+  return { reached, scripts, executed, direct, missing };
+}
+
+/** Scripts known to fail on this tree: check:rules while any registry rule is not enforced. */
+export function knownFailing(root) {
+  const out = new Set();
+  const path = join(root, RULES_REGISTRY);
+  if (!existsSync(path)) return out;
+  let doc;
+  try { doc = readJson(path); } catch { return out; }
+  if (Array.isArray(doc?.rules) && doc.rules.some(rule => rule?.status !== "enforced")) out.add(RULES_SCRIPT);
+  return out;
 }
 
 /** Validate the exemption file. Returns { exemptions: Map(file -> reason), findings }. */
@@ -354,8 +410,9 @@ export function readExemptions(root) {
 }
 
 export async function orphanFindings(root) {
-  const { reached } = await reachable(root);
+  const { executed: reached, missing } = await reachable(root, { failing: knownFailing(root) });
   const { exemptions, findings } = readExemptions(root);
+  for (const key of [...missing].sort()) findings.push({ rule: "missing-script", file: key, message: "root check/test runs an npm script or workspace that does not exist (npm exits 1)" });
   const governed = scopeFiles(root).filter(isGoverned);
   for (const file of governed) {
     if (reached.has(file)) { if (exemptions.has(file)) findings.push({ rule: "exemption-stale", file, message: "exempt, but reachable from root check/test: drop the exemption" }); continue; }

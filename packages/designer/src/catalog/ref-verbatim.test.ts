@@ -808,7 +808,7 @@ describe("composition lineage (W6)", () => {
 
   // npm parts: the package itself, as named re-exports of the version package-lock.json resolves.
   const CANVAS = read("ui/src/components/flow-canvas.ts");
-  const npmItem = (content = CANVAS, version = "12.12.1", patch: Record<string, unknown> = {}) => ({ name: "canvas", type: "registry:lib", files: [{ path: "LICENCE.md", content: "MIT" }, { path: "flow-canvas.ts", content }], meta: { source: { kind: "npm", ref: [`npm/@xyflow/react@${version}`] }, ...patch } });
+  const npmItem = (content = CANVAS, version = "12.12.1", patch: Record<string, unknown> = {}) => ({ name: "canvas", type: "registry:lib", files: [{ path: "flow-canvas.ts", content }], meta: { source: { kind: "npm", ref: [`npm/@xyflow/react@${version}`] }, ...patch } });
   const locked = (root: string, version = "12.12.1") => {
     writeFileSync(join(root, "package-lock.json"), JSON.stringify({ lockfileVersion: 3, packages: { "node_modules/@xyflow/react": { version } } }));
     return root;
@@ -827,7 +827,7 @@ describe("composition lineage (W6)", () => {
     expect(npmCheck(npmItem('export * from "@xyflow/react"\n'))).toEqual(["REF-NPM-CODE"]);
     expect(npmCheck(npmItem('export { default as Flow } from "@xyflow/react"\n'))).toEqual(["REF-NPM-CODE"]);
     expect(npmCheck(npmItem('export { ReactFlow } from "@xyflow/system"\n'))).toEqual(["REF-NPM-CODE"]);
-    expect(npmCheck({ ...npmItem(), files: [{ path: "LICENCE.md", content: "MIT" }] })).toEqual(["REF-NPM-CODE"]);
+    expect(npmCheck({ ...npmItem(), files: [] })).toEqual(["REF-NPM-CODE"]);
     expect(npmCheck(npmItem(CANVAS, "12.12.1", { refVerbatim: { files: {} } }))).toEqual(["REF-ADAPTATION"]);
   });
   it("fails an npm candidate whose non-code file is not the installed package's own file byte for byte", () => {
@@ -840,6 +840,16 @@ describe("composition lineage (W6)", () => {
     expect(assetCheck(withAsset("dist/style.css", css.replace(".react-flow", ".react-flaw")))).toEqual(["REF-NPM-ASSET"]);
     expect(assetCheck(withAsset("dist/theme.css", css))).toEqual(["REF-NPM-ASSET"]);
     expect(assetCheck(withAsset("../../package.json", "{}"))).toEqual(["REF-NPM-ASSET"]);
+  });
+  it("fails an npm candidate whose LICENCE.md is not the installed package's own licence file byte for byte", () => {
+    const lockfile = resolve(pkg, "../../package-lock.json");
+    const licence = readFileSync(resolve(pkg, "../../node_modules/@xyflow/react/LICENSE"), "utf8");
+    const withLicence = (content: string) => ({ ...npmItem(), files: [{ path: "LICENCE.md", content }, ...npmItem().files] });
+    const licenceCheck = (item: unknown, root = setup()) => codes(checkRegistryItem(root, "components.flow.canvas", item, { strict: true, lockfile }).findings);
+    expect(licenceCheck(withLicence(licence))).toEqual([]);
+    expect(licenceCheck(withLicence("MIT"))).toEqual(["REF-NPM-ASSET"]);
+    // Without an install to compare to, the record cannot be proved.
+    expect(npmCheck(withLicence(licence))).toEqual(["REF-NPM-ASSET"]);
   });
   it("lets a composition place a declared npm part through the layer's verbatim re-export file", () => {
     const FLOW = 'import { Card, CardContent, ReactFlow } from "@clossys/designer-ui"\n\nexport function Flow() {\n  return (\n    <Card>\n      <CardContent><ReactFlow nodes={[]} edges={[]} /></CardContent>\n    </Card>\n  )\n}\n';

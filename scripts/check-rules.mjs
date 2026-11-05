@@ -14,11 +14,23 @@
  *   fixture-missing      an enforcing check has no fixture run, or its fixture path is absent;
  *   fixture-passed       a check exits 0 (or not with the expected code) on its fixture;
  *   fixture-not-detected a check fails on its fixture without reporting the expected violation;
- *   fixture-unrelated    a fixture run executes none of the files the listed check runs;
+ *   fixture-unrelated    a fixture run executes none of the files the listed check's own commands
+ *                        name (sharing a library file the check imports is not enough);
  *   unmapped             a check:studio sub-check or root meta-check maps to no rule (directly or
  *                        through a package script its command runs) and has no exemption;
  *   exemption-*          an exemption is malformed, names no governed check, or is also mapped;
- *   shape                a registry row breaks scripts/rules/registry.schema.json.
+ *   shape                a registry row breaks scripts/rules/registry.schema.json (`expect_exit`, when
+ *                        given, is an exit code 1-255: a fixture run expecting 0 proves nothing), or
+ *                        the registry falls below RULE_FLOOR: a rule row it lists is gone, or a check
+ *                        it lists no longer enforces that rule;
+ *   fixture-missing      also: an enforcing check has fewer fixture runs than RULE_FLOOR records;
+ *   unknown-check        also: a root script in ROOT_SCRIPT_FLOOR (`check`, `test`, the meta-checks)
+ *                        is gone from the root package.json.
+ *
+ * The floor is code, not registry data, so the pre-push ratchet's overlay applies it to the base and
+ * the head alike: deleting a rule, an enforcing check, a fixture run or a root script is a finding
+ * until the floor itself is lowered in a reviewed code change. It is a lower bound: new rules,
+ * checks and fixture runs need no floor entry.
  *
  * A check reference is `<package dir>#<npm script>` (root dir ".") or `check:studio#<sub-check id>`.
  * Fixture runs execute `run` with /bin/sh in `<root>/<cwd>`; `{fixture}` becomes the absolute fixture
@@ -47,6 +59,54 @@ const ID = /^R-[A-Z0-9]+(?:-[A-Z0-9]+)*$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const CODE = /\.(?:mjs|cjs|js|jsx|ts|tsx|mts|cts)$/;
 
+/**
+ * Registry floor: every rule id the registry must keep, and for each enforced rule the checks that
+ * must keep enforcing it with at least this many fixture runs each. Raise it as rules land; lower it
+ * only together with the reviewed removal.
+ */
+export const RULE_FLOOR = Object.freeze({
+  "R-ASSEMBLE-ONLY": { "packages/producer#check:assemble-only": 1, "check:studio#producer check-no-page-jsx": 1 },
+  "R-DS-ONLY": {},
+  "R-SHADCN-STOCK": { "packages/designer#check:ref-verbatim": 4 },
+  "R-VENDORED-SOURCES": { "packages/designer#check:provenance": 1 },
+  "R-WRITER-COPY": {},
+  "R-CONTENT-MAP": { "packages/producer#check:studio-map": 1 },
+  "R-FLAT-SLOTS": {},
+  "R-SLOT-PINS": {},
+  "R-ONE-BRAND": {},
+  "R-STUDIO-CARD-DETAIL": { "packages/producer#check:studio-template": 1 },
+  "R-REAL-SPECIMENS": {},
+  "R-USAGE-GRAPH": {},
+  "R-CLI-DETERMINISTIC": {},
+  "R-CHECKS-WIRED": { ".#check:orphan-checks": 1, ".#check:rules": 1 },
+  "R-NO-HIDDEN-FALLBACKS": {},
+  "R-SLOT-STATE": {},
+  "R-COMPILE-PURE": {},
+  "R-DECISIONS-BY-CLI": { ".#check:decisions": 1 },
+  "R-GIT-CMS": { ".#check:git-cms": 4 },
+  "R-SLOT-OPTIONS": { ".#check:slot-options": 1 },
+  "R-PIPELINE-IS-CODE": { ".#check:pipeline": 4 },
+  "R-PIPELINE-CANVAS": { ".#check:pipeline-canvas": 10 },
+  "R-ROUTES-PUBLISHED": { "packages/producer#check:routes-published": 5, "packages/producer#check:studio-routes": 2, "packages/producer#check:route-parity": 2 },
+  "R-SINGLE-READER": { ".#check:single-reader": 1 },
+  "R-PIN-PROPAGATION": { ".#check:pin-propagation": 1 },
+  "R-EVERY-CANDIDATE-PREVIEWABLE": { ".#check:every-candidate-previewable": 1 },
+});
+/** Root scripts that must exist: the two entries every reachability trace starts from, and the meta-checks. */
+export const ROOT_SCRIPT_FLOOR = Object.freeze(["check", "test", ...META_CHECKS]);
+export const DEFAULT_FLOOR = Object.freeze({ rules: RULE_FLOOR, scripts: ROOT_SCRIPT_FLOOR });
+/** The repository the floor belongs to (its root package name). */
+export const FLOOR_REPOSITORY = "foundry-packages";
+/**
+ * The floor binds this repository: a root named FLOOR_REPOSITORY, or a registry that still lists any
+ * floored rule (so emptying the registry and renaming the root at once is the only way out, and both
+ * are visible). Other repositories, such as the throwaway trees tests build, carry their own rules.
+ */
+export function floorApplies(doc, rootManifest, floor = DEFAULT_FLOOR) {
+  return rootManifest?.name === FLOOR_REPOSITORY || (doc?.rules ?? []).some(row => Object.hasOwn(floor.rules ?? {}, row?.id));
+}
+const validExit = code => Number.isInteger(code) && code >= 1 && code <= 255;
+
 const readJson = path => JSON.parse(readFileSync(path, "utf8"));
 const oneLine = text => typeof text === "string" && text.trim() !== "" && !/\n/.test(text);
 
@@ -71,9 +131,29 @@ export function shapeFindings(doc) {
     for (const run of row?.fixture_runs ?? []) {
       if (typeof run?.check !== "string" || typeof run?.run !== "string" || typeof run?.cwd !== "string" || typeof run?.expect !== "string") bad(id, "a fixture run needs check, cwd, run and expect");
       else { try { new RegExp(run.expect, "m"); } catch { bad(id, `fixture run expect is not a regular expression: ${run.expect}`); } }
+      if (run && run.expect_exit !== undefined && !validExit(run.expect_exit)) bad(id, `fixture run expect_exit must be an exit code 1-255, not ${JSON.stringify(run.expect_exit)}: a check that exits 0 on its fixture enforces nothing`);
     }
   }
   if (doc.exemptions !== undefined && !Array.isArray(doc.exemptions)) bad(REGISTRY, "exemptions must be a list");
+  return out;
+}
+
+/** Findings for a registry (and root manifest) that fell below the floor. */
+export function floorFindings(doc, rootManifest, floor = DEFAULT_FLOOR) {
+  const out = [];
+  const rows = new Map((doc?.rules ?? []).map(row => [row?.id, row]));
+  for (const [id, checks] of Object.entries(floor.rules ?? {})) {
+    const row = rows.get(id);
+    if (!row) { out.push({ rule: "shape", id, message: `rule row removed: ${id} is in the registry floor (RULE_FLOOR in scripts/check-rules.mjs); retire a rule by lowering the floor in code` }); continue; }
+    for (const [ref, min] of Object.entries(checks)) {
+      if (!(row.checks ?? []).includes(ref)) { out.push({ rule: "shape", id, message: `${ref} no longer enforces ${id}, but RULE_FLOOR lists it` }); continue; }
+      const runs = (row.fixture_runs ?? []).filter(run => run?.check === ref).length;
+      if (runs < min) out.push({ rule: "fixture-missing", id, message: `${ref} has ${runs} fixture run(s); RULE_FLOOR records ${min}` });
+    }
+  }
+  for (const name of floor.scripts ?? []) {
+    if (typeof rootManifest?.scripts?.[name] !== "string") out.push({ rule: "unknown-check", id: `.#${name}`, message: `root script ${name} is gone from package.json, but ROOT_SCRIPT_FLOOR lists it` });
+  }
   return out;
 }
 
@@ -103,7 +183,7 @@ function runFixture(command, cwd, timeoutMs) {
 
 const fill = (text, fixture, out) => text.replaceAll("{fixture}", fixture).replaceAll("{out}", out);
 
-export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} } = {}) {
+export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {}, floor = DEFAULT_FLOOR } = {}) {
   const path = join(root, REGISTRY);
   if (!existsSync(path)) throw new Error(`${REGISTRY} is missing`);
   const doc = readJson(path);
@@ -111,6 +191,7 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
   if (findings.some(finding => finding.id === REGISTRY)) return { rules: 0, enforced: 0, findings };
   const add = (rule, id, message) => findings.push({ rule, id, message });
   const packages = workspaces(root);
+  if (floorApplies(doc, packages.get("."), floor)) findings.push(...floorFindings(doc, packages.get("."), floor));
   const files = repositoryFiles(root);
   const wiring = [];
   const subChecks = new Map(existsSync(join(root, STUDIO_MANIFEST)) ? (readJson(join(root, STUDIO_MANIFEST)).checks ?? []).map(check => [check.id, check]) : []);
@@ -149,15 +230,18 @@ export async function ruleFindings(root, { timeoutMs = 600_000, log = () => {} }
         const fixture = run.fixture ? resolve(root, run.fixture) : fixtureRoot;
         if (!existsSync(fixture)) { add("fixture-missing", row.id, `fixture ${run.fixture} does not exist`); held = false; continue; }
         if (entry) {
-          const checkFiles = (await trace(JSON.stringify(entry), entry)).reached;
+          // The check's own entry files (what its commands name), not every library it imports: a
+          // fixture run of another check that shares one helper module does not exercise this one.
+          const checkFiles = (await trace(JSON.stringify(entry), entry)).direct;
           const runEntry = { cwd: run.cwd, run: fill(run.run, fixture, "/tmp/out") };
           const runFiles = (await trace(JSON.stringify(runEntry), runEntry)).reached;
-          if (![...runFiles].some(file => CODE.test(file) && checkFiles.has(file))) { add("fixture-unrelated", row.id, `the fixture run for ${ref} executes none of the files ${ref} runs`); held = false; }
+          if (![...checkFiles].some(file => CODE.test(file) && runFiles.has(file))) { add("fixture-unrelated", row.id, `the fixture run for ${ref} executes none of the files ${ref}'s commands run`); held = false; }
         }
         const out = mkdtempSync(join(tmpdir(), "check-rules-"));
         const started = Date.now();
         const result = await runFixture(fill(run.run, fixture, out), join(root, run.cwd), timeoutMs);
         const expectExit = run.expect_exit ?? 1;
+        if (!validExit(expectExit)) { held = false; continue; }
         log(`${result.code === expectExit && new RegExp(run.expect, "m").test(result.output) ? "FAILS AS REQUIRED" : "DOES NOT FAIL"}  ${row.id}  ${ref}  (exit ${result.code}, ${Math.round((Date.now() - started) / 100) / 10}s)`);
         if (result.code !== expectExit) { add("fixture-passed", row.id, `${ref} exited ${result.code} on its fixture, expected ${expectExit}`); held = false; }
         else if (!new RegExp(run.expect, "m").test(result.output)) { add("fixture-not-detected", row.id, `${ref} failed on its fixture without reporting /${run.expect}/`); held = false; }

@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import test from "node:test";
 
-import { commandList, globRegExp, isGoverned, orphanFindings, reachable, simpleCommands } from "./check-orphan-checks.mjs";
+import { commandList, globRegExp, isGoverned, knownFailing, orphanFindings, reachable, simpleCommands } from "./check-orphan-checks.mjs";
 
 /** A throwaway repository: { "path": "contents" }; objects are written as JSON. */
 function tree(files) {
@@ -74,6 +74,7 @@ test("a check file nothing runs is an orphan; npm run, node --test, vitest inclu
     assert.deepEqual(rules(before), [
       "orphan packages/designer/scripts/x.test.mjs",
       "orphan packages/designer/ui/c.test.cjs",
+      "orphan packages/producer/scripts/check-imported.mjs",
       "orphan packages/producer/scripts/check-studio.mjs",
       "orphan packages/producer/studio/b.test.tsx",
     ]);
@@ -83,6 +84,7 @@ test("a check file nothing runs is an orphan; npm run, node --test, vitest inclu
       { cwd: "packages/designer", run: "npm run test:x" },
       { cwd: "packages/designer/ui", run: "node --test c.test.cjs" },
       { cwd: "packages/producer", run: "npx vitest run --config vitest.studio.config.ts" },
+      { cwd: "packages/producer", run: "node scripts/check-imported.mjs" },
     ] }));
     writeFileSync(join(root, "packages/producer/vitest.studio.config.ts"), `export default { test: { include: ["studio/**/*.test.{ts,tsx}"] } }`);
     const after = await orphanFindings(root);
@@ -111,5 +113,82 @@ test("an exemption needs a one-line reason, a real governed file, and must still
       "exemption-reason packages/producer/scripts/check-other.mjs",
       "exemption-stale packages/producer/scripts/check-run.mjs",
     ]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+const steps = (graph, names) => names.filter(name => graph.scripts.has(`.#${name}`));
+const checkScripts = names => Object.fromEntries(names.map(name => [name, `node scripts/${name.slice(6)}.mjs`]));
+
+test("G7: an exit that runs ends the command list; only the path it did not take continues", async () => {
+  const names = ["check:a", "check:b", "check:c", "check:d", "check:e", "check:f"];
+  const root = tree({
+    "package.json": rootManifest({
+      check: "exit 1; npm run check:a",
+      test: "npm run maybe || exit 0; npm run check:b; npm run maybe && exit 1; npm run check:c; true && exit 0; npm run check:d; exit 0 | cat; npm run check:e; false || exit 2 || npm run check:f",
+      maybe: "node scripts/maybe.mjs", ...checkScripts(names),
+    }),
+    "scripts/maybe.mjs": "", ...Object.fromEntries(names.map(name => [`scripts/${name.slice(6)}.mjs`, ""])),
+  });
+  try {
+    const graph = await reachable(root);
+    // `exit 1;` ends check before check:a; `|| exit 0` and `&& exit 1` leave the other path open;
+    // `true && exit 0` always exits, so nothing after it runs; a pipeline exit is a subshell.
+    assert.deepEqual(steps(graph, names), ["check:b", "check:c"]);
+    assert.deepEqual(steps(await reachable(root, { entries: [{ cwd: ".", run: "exit 0 | cat; npm run check:e; false || exit 2 || npm run check:f" }] }), names), ["check:e"]);
+    // The status of a list that exits is the exit's: `exit 1; ...` can only fail.
+    const after = tree({ "package.json": rootManifest({ check: "npm run gate && npm run check:a", gate: "exit 1; true", ...checkScripts(["check:a"]) }), "scripts/a.mjs": "" });
+    try { assert.deepEqual(steps(await reachable(after), ["check:a"]), []); } finally { rmSync(after, { recursive: true, force: true }); }
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("G8: a missing npm script or workspace fails and is reported, unless --if-present", async () => {
+  const root = tree({
+    "package.json": rootManifest({ check: "npm run gone && npm run check:a; npm run check:b --workspace=@x/nobody; npm run lint --workspaces --if-present && npm run check:c", test: "true", ...checkScripts(["check:a", "check:b", "check:c"]) }),
+    "packages/producer/package.json": { name: "@x/producer", scripts: {} },
+    "packages/producer/scripts/check-a.mjs": "",
+    ...Object.fromEntries(["a", "b", "c"].map(name => [`scripts/${name}.mjs`, ""])),
+  });
+  try {
+    const graph = await reachable(root);
+    assert.deepEqual(steps(graph, ["check:a", "check:b", "check:c"]), ["check:c"]);
+    assert.deepEqual([...graph.missing].sort(), [".#gone", "@x/nobody#check:b"]);
+    assert.deepEqual(rules(await orphanFindings(root)).filter(row => row.startsWith("missing-script")), ["missing-script .#gone", "missing-script @x/nobody#check:b"]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("G9: a check only a reached test imports is not run, so it is an orphan", async () => {
+  const root = tree({
+    "package.json": rootManifest({ check: "node --test packages/producer/scripts/check-x.test.mjs", test: "node packages/producer/scripts/check-run.mjs" }),
+    "packages/producer/package.json": { name: "@x/producer" },
+    "packages/producer/scripts/check-x.test.mjs": "import './check-x.mjs';",
+    "packages/producer/scripts/check-x.mjs": "import './lib/helper.mjs';",
+    "packages/producer/scripts/lib/helper.mjs": "",
+    "packages/producer/scripts/check-run.mjs": "import './check-lib.mjs';",
+    "packages/producer/scripts/check-lib.mjs": "",
+  });
+  try {
+    const graph = await reachable(root);
+    assert.equal(graph.reached.has("packages/producer/scripts/check-x.mjs"), true, "still reached, for overlays and fixture tracing");
+    assert.equal(graph.executed.has("packages/producer/scripts/check-x.mjs"), false);
+    assert.equal(graph.executed.has("packages/producer/scripts/check-lib.mjs"), true, "an executed check's import runs");
+    assert.deepEqual(rules(await orphanFindings(root)), ["orphan packages/producer/scripts/check-x.mjs"]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("G10: check:rules is traced as failing while the registry has a rule that is not enforced", async () => {
+  const rule = status => ({ id: "R-A", status });
+  const root = tree({
+    "package.json": rootManifest({ check: "npm run check:rules && node packages/producer/scripts/check-after.mjs", test: "true", "check:rules": "node scripts/check-rules.mjs" }),
+    "scripts/check-rules.mjs": "",
+    "packages/producer/package.json": { name: "@x/producer" },
+    "packages/producer/scripts/check-after.mjs": "",
+    "scripts/rules/registry.json": { rules: [rule("enforced"), { id: "R-B", status: "unenforced" }] },
+  });
+  try {
+    assert.deepEqual([...knownFailing(root)], [".#check:rules"]);
+    assert.deepEqual(rules(await orphanFindings(root)), ["orphan packages/producer/scripts/check-after.mjs"]);
+    writeFileSync(join(root, "scripts/rules/registry.json"), JSON.stringify({ rules: [rule("enforced")] }));
+    assert.deepEqual([...knownFailing(root)], []);
+    assert.deepEqual(rules(await orphanFindings(root)), []);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });

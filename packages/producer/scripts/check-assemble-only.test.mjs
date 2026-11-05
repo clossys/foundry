@@ -135,3 +135,14 @@ test('mutation: a record whose tabs the Publisher projects beside it passes; dro
   const unprojected = fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify({ map: { entries }, tabs: [] }) });
   assert.ok(unprojected.some(row => /designer-themes.colors: places page-tabs but projects no tab routes/.test(row.detail)));
 });
+
+test('G27: producer is an agent word, provenance-named sources are scanned, and an agent group without ia.json fails', () => {
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/lib/load.ts': "export const load = agent => agent === 'producer' ? 1 : 2;\n" })), ['agent-branch']);
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/lib/copy.ts': "const PURPOSE = {\n  producer: 'run',\n};\n" })), ['agent-branch']);
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/lib/nav.ts': "export const href = '/producer/run';\n" })), ['hard-coded-route']);
+  assert.deepEqual(rules(fixture({ 'packages/producer/studio/lib/stamp.provenance.ts': "export const pick = agent => agent === 'designer';\n" })), ['agent-branch']);
+  const map = structuredClone(MAP);
+  map.map.entries.push({ id: 'writer', kind: 'group', path: '/writer', parentId: null }, { id: 'writer-copy', kind: 'page', path: '/writer/copy', parentId: 'writer', source: { sectionIds: [PAGE_HEADER] } });
+  const findings = fixture({ 'packages/producer/studio/generated/studio-map.json': JSON.stringify(map) });
+  assert.deepEqual(findings.map(row => row.detail), ['writer: an agent group with no clossys/agents/writer/ia.json to project its tabs from']);
+});

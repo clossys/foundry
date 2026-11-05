@@ -204,3 +204,23 @@ test("unknown operations, stale source hashes, extra bindings and version drift 
   }
   assert.throws(() => replayDataFit(source.text, source.path, good, { ...source, source: { ...source.source, version: "next" } }));
 });
+
+// O3: an allowed H-IMPORT must not rebind cn, which would make cn(...) and the className passthrough call arbitrary code.
+test("O3: a payload's cn must be the registry's own cn import", () => {
+  const ref = 'import { cn } from "cn"\nexport function Hero({ className }: { className?: string }) {\n  return <section className={cn("bg-background p-8", className)}><h1 className="text-lg">Title</h1></section>\n}\n';
+  const plain = 'export function Hero({ className }: { className?: string }) {\n  return <section className="bg-background p-8"><h1 className="text-lg">Title</h1></section>\n}\n';
+  const failing = (refText, file, options) => diffSources(refText, "hero.tsx", file, "hero.tsx", options).hunks.filter(h => !h.ok).map(h => h.rule);
+  // The registry's own cn: the reference's module, the "cn" alias, the default or the consumer's utils path.
+  assert.deepEqual(failing(ref, ref), []);
+  assert.deepEqual(failing(ref, ref.replace('"cn"', '"@/lib/utils"')), []);
+  assert.deepEqual(failing(ref, ref.replace('"cn"', '"~/utils"'), { utils: "~/utils" }), []);
+  assert.deepEqual(failing(plain, `import { cn } from "cn"\n${plain.replace('className="bg-background p-8"', 'className={cn("bg-background p-8", className)}')}`), []);
+  // Anything else bound to cn fails, whether the reference calls cn or only the passthrough does.
+  assert.deepEqual(failing(ref, ref.replace('"cn"', '"./evil"')), ["REF-HUNK-LOGIC"]);
+  assert.deepEqual(failing(ref, ref.replace('import { cn } from "cn"', 'import { twMerge as cn } from "tailwind-merge"')), ["REF-HUNK-LOGIC"]);
+  assert.deepEqual(failing(ref, ref.replace('import { cn } from "cn"', 'import cn from "cn"')), ["REF-HUNK-LOGIC"]);
+  assert.ok(failing(ref, ref.replace('import { cn } from "cn"\n', "")).includes("REF-HUNK-LOGIC"));
+  const evilPassthrough = `import { cn } from "./evil"\n${plain.replace('className="bg-background p-8"', 'className={cn("bg-background p-8", className)}')}`;
+  assert.deepEqual(failing(plain, evilPassthrough), ["REF-HUNK-LOGIC"]);
+  assert.ok(failing(ref, ref.replace("export function Hero({ className }", "export function Hero({ className, cn }")).includes("REF-HUNK-LOGIC"));
+});

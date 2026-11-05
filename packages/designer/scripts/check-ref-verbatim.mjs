@@ -773,6 +773,7 @@ function checkVersion(root, target, options = {}, versionInput) {
       const { hunks } = diffSources(normalized, target.path, candidate, file, {
         themeVars: record?.reads?.themeVars ?? [],
         linkComponents: opts.linkComponents,
+        utils: config?.aliases?.utils,
       });
       entry.hunks = hunks;
       for (const h of hunks) {
@@ -825,13 +826,36 @@ function checkLineageItem(root, slot, candidate, options = {}) {
 /** `npm/<package>@<exact version>`: the one ref of an `npm` source. */
 export const NPM_REF = /^npm\/((?:@[a-z0-9][a-z0-9._-]*\/)?[a-z0-9][a-z0-9._-]*)@(\d+\.\d+\.\d+)$/;
 
-/** The package-lock.json that governs a consumer root: the explicit option, else the nearest one at or above the root. */
+/**
+ * The repository a consumer root lives in: the nearest folder at or above the
+ * root that holds `.git` (a folder, or the file a worktree holds). A root in no
+ * repository is its own boundary. Lockfile and install lookups never leave it,
+ * so a stray package-lock.json or node_modules above the repository (a home
+ * folder, a temp root) can neither resolve a version nor supply a file.
+ */
+export function repositoryBoundary(root) {
+  for (let dir = resolve(root); ; dir = dirname(dir)) {
+    if (existsSync(join(dir, ".git"))) return dir;
+    if (dirname(dir) === dir) return resolve(root);
+  }
+}
+
+/** The folders from `start` up to and including `boundary` (just `start` when it is not inside `boundary`). */
+function foldersUpTo(start, boundary) {
+  const out = [];
+  for (let dir = resolve(start); ; dir = dirname(dir)) {
+    out.push(dir);
+    if (dir === boundary || !dir.startsWith(`${boundary}/`) || dirname(dir) === dir) return out;
+  }
+}
+
+/** The package-lock.json that governs a consumer root: the explicit option, else the nearest one at or above the root, inside its repository. */
 function lockfileFor(root, explicit) {
   if (explicit) return existsSync(explicit) ? explicit : undefined;
-  for (let dir = resolve(root); ; dir = dirname(dir)) {
+  for (const dir of foldersUpTo(root, repositoryBoundary(root))) {
     if (existsSync(join(dir, "package-lock.json"))) return join(dir, "package-lock.json");
-    if (dirname(dir) === dir) return undefined;
   }
+  return undefined;
 }
 
 /** The version package-lock.json resolves for one package (its hoisted `node_modules/<package>` entry). */
@@ -842,19 +866,23 @@ export function lockedVersion(root, pkg, explicit) {
   return typeof version === "string" ? version : undefined;
 }
 
-/** The installed directory of `pkg` at exactly `version`: the nearest node_modules/<pkg> at or above the lockfile's folder. */
+/** The installed directory of `pkg` at exactly `version`: the nearest node_modules/<pkg> at or above the lockfile's folder, inside the lockfile's repository. */
 export function installedPackageDir(root, pkg, version, explicit) {
   const lock = lockfileFor(root, explicit);
   if (!lock) return undefined;
-  for (let dir = dirname(lock); ; dir = dirname(dir)) {
+  for (const dir of foldersUpTo(dirname(lock), repositoryBoundary(dirname(lock)))) {
     const manifest = join(dir, "node_modules", pkg, "package.json");
     if (existsSync(manifest) && json(manifest).version === version) return dirname(manifest);
-    if (dirname(dir) === dir) return undefined;
   }
+  return undefined;
 }
 
-/** Record-only payload files: the licence record, never a package path. */
-const NPM_RECORD_ONLY = new Set(["LICENCE.md", "registry-item.json"]);
+/** Record-only payload files: the item record, never a package path. */
+const NPM_RECORD_ONLY = new Set(["registry-item.json"]);
+/** The candidate's licence record: it must be the installed package's own licence file, byte for byte. */
+const NPM_LICENCE = "LICENCE.md";
+/** The names a package ships its licence under, in the order they are tried. */
+export const PACKAGE_LICENCE_FILES = Object.freeze(["LICENSE", "LICENCE", "LICENSE.md", "LICENCE.md", "LICENSE.txt", "LICENCE.txt"]);
 
 /**
  * An `npm` source: the candidate ships the package itself, unmodified.
@@ -866,7 +894,12 @@ const NPM_RECORD_ONLY = new Set(["LICENCE.md", "registry-item.json"]);
  *   statement of any kind (REF-NPM-CODE);
  * - every other (non-code, non-record) file is byte-identical to the same path
  *   inside the installed package at the lockfile-resolved version, e.g. its
- *   stylesheet dist/style.css (REF-NPM-ASSET).
+ *   stylesheet dist/style.css (REF-NPM-ASSET);
+ * - its LICENCE.md record is byte-identical to the installed package's own
+ *   licence file (LICENSE, LICENCE, LICENSE.md, ...), so the licence it records
+ *   is the one the package ships (REF-NPM-ASSET).
+ * The lockfile and the install are looked up inside the consumer root's
+ * repository only (repositoryBoundary).
  */
 const syntaxName = (ts, kind) => Object.keys(ts.SyntaxKind).find(name => ts.SyntaxKind[name] === kind && !/^(?:First|Last)/.test(name)) ?? String(kind);
 
@@ -920,10 +953,13 @@ function checkNpmItem(root, slot, candidate, options = {}) {
     const installed = installedPackageDir(root, pkg, version, opts.lockfile);
     for (const [file, text] of assets) {
       const before = findings.length;
-      const target = installed && resolve(installed, file);
+      const licence = file === NPM_LICENCE;
+      const found = installed && licence ? PACKAGE_LICENCE_FILES.map(name => join(installed, name)).find(path => existsSync(path) && statSync(path).isFile()) : undefined;
+      const target = installed && (licence ? found : resolve(installed, file));
       if (!installed) fail("REF-NPM-ASSET", `${file}: ${pkg}@${version} is not installed, so the file cannot be compared to the package`, { file });
+      else if (licence && !target) fail("REF-NPM-ASSET", `${file}: ${pkg}@${version} ships no licence file (${PACKAGE_LICENCE_FILES.join(", ")}) to compare the record to`, { file });
       else if (!target.startsWith(`${installed}/`) || !existsSync(target) || !statSync(target).isFile()) fail("REF-NPM-ASSET", `${file} is not a file of ${pkg}@${version}`, { file });
-      else if (sha256(readFileSync(target)) !== sha256(Buffer.from(text, "utf8"))) fail("REF-NPM-ASSET", `${file} differs from ${pkg}@${version}/${file}: an npm candidate ships the package's own files byte for byte`, { file });
+      else if (sha256(readFileSync(target)) !== sha256(Buffer.from(text, "utf8"))) fail("REF-NPM-ASSET", `${file} differs from ${pkg}@${version}/${target.slice(installed.length + 1)}: an npm candidate ships the package's own files byte for byte`, { file });
       const codes = [...new Set(findings.slice(before).map(f => f.code))];
       files.push({ file, mapping: "npm-asset", hunks: [], codes, status: codes.length ? "fail" : "pass" });
     }
