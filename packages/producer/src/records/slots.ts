@@ -13,7 +13,7 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader } from "@clossys/director";
 import { sha256Hex } from "./hash.js";
 import {
-  CANDIDATE_NAME, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, seatDir, seatFile, slotDir, slotFile, slotPositions,
+  CANDIDATE_NAME, MODEL_AGENTS, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, seatDir, seatFile, slotDir, slotFile, slotPositions,
   validateCandidate, validateIa, validatePin, validateSlotDoc,
   type IaDoc, type ModelAgent, type NotNeeded, type PinDoc, type SlotAgent, type SlotDoc, type SlotPosition, type SlotStateResult,
 } from "./slot-model/index.js";
@@ -440,10 +440,23 @@ export function readiness(consumer: string, agent: SlotAgent, id: string, index 
 // with their own semantics (status counts, migrations, the model check, Studio
 // presence) the access they need without a second reader.
 
-/** Refuse anything that is not under a consumer's `agents/` folder. */
+/**
+ * Refuse anything that is not a consumer's `agents/` folder or inside one of its model agents
+ * (`agents/<director|designer|writer|publisher|producer>/…`), and any path with a symbolic link in
+ * it: the same no-alias rule every other slot-model read keeps.
+ */
 function modelScoped(path: string): string {
   const target = resolve(path);
-  if (!target.split(sep).includes("agents")) throw new Error(`Not a slot-model path: ${path}`);
+  const parts = target.split(sep);
+  const at = parts.findIndex((part, i) => part === "agents" && i > 0 && (i === parts.length - 1 || (MODEL_AGENTS as readonly string[]).includes(parts[i + 1]!)));
+  if (at < 0) throw new Error(`Not a slot-model path: ${path}`);
+  assertModelPath(dirname(target));
+  return target;
+}
+/** A model file read: scoped, no alias anywhere (the file included), a regular file. */
+function modelFile(path: string): string {
+  const target = modelScoped(path);
+  if (!lstatSync(target).isFile()) throw new Error("Expected a regular slot-model file");
   return target;
 }
 
@@ -469,19 +482,27 @@ export function modelPresence(path: string): "present" | "missing" | "error" {
   try { lstatSync(modelScoped(path)); return "present"; }
   catch (error) { return (error as NodeJS.ErrnoException).code === "ENOENT" ? "missing" : "error"; }
 }
-/** existsSync over a model path. */
-export function modelExists(path: string): boolean { return existsSync(modelScoped(path)); }
-/** A real (non-alias) directory under the model. */
-export function isModelDir(path: string): boolean { return isDir(modelScoped(path)); }
+/** Whether a model path exists, without following its last component (an alias counts; reads refuse it). */
+export function modelExists(path: string): boolean {
+  const target = modelScoped(path);
+  try { lstatSync(target); return true; }
+  catch (error) { if (["ENOENT", "ENOTDIR"].includes((error as NodeJS.ErrnoException).code ?? "")) return false; throw error; }
+}
+/** A real (non-alias) directory under the model; false for a path outside a model agent. */
+export function isModelDir(path: string): boolean {
+  let target: string;
+  try { target = modelScoped(path); } catch (error) { if ((error as Error).message.startsWith("Not a slot-model path")) return false; throw error; }
+  return isDir(target);
+}
 /** The names in a real model directory (unsorted, as the OS returns them); [] when absent or not a directory. */
 export function listModelDir(path: string): string[] { return isModelDir(path) ? readdirSync(path) : []; }
 /**
- * The raw text of a model file, unvalidated and without the alias walk: for status counts,
+ * The raw text of a model file, unvalidated: for status counts,
  * migrations and the model check, which report malformed files themselves. Never selection authority.
  */
-export function readModelText(path: string): string { return readFileSync(modelScoped(path), "utf8"); }
+export function readModelText(path: string): string { return readFileSync(modelFile(path), "utf8"); }
 /** The raw bytes of a model file (exact hashing), as `readModelText`. */
-export function readModelBytes(path: string): Buffer { return readFileSync(modelScoped(path)); }
+export function readModelBytes(path: string): Buffer { return readFileSync(modelFile(path)); }
 
 /** The raw text of a slot folder's own record (slot.json or pin.json); aliases refused; undefined when absent. */
 export function readSlotRecordText(dir: string, file: "slot.json" | "pin.json"): string | undefined {

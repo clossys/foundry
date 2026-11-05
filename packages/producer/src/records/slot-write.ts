@@ -5,7 +5,8 @@
  * history is git. Decisions are written through `clossys pin` (rule R-DECISIONS-BY-CLI).
  */
 import { randomUUID } from "node:crypto";
-import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, realpathSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, writeFileSync } from "node:fs";
+import { hostname } from "node:os";
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
 import {
@@ -13,6 +14,58 @@ import {
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
 import { directorStoreReader, listSlots, readCandidate, readSlot } from "./slots.js";
+
+// ---------------------------------------------------------------------------
+// Locks and atomic replacement, shared by slot decisions and the Director store.
+// ---------------------------------------------------------------------------
+
+/** A lock with no owner record this old was left by a writer that died before recording itself. */
+export const OWNERLESS_LOCK_MS = 60_000;
+/** A lock held this long by a writer on another host is abandoned: no decision write takes minutes. */
+export const FOREIGN_LOCK_MS = 15 * 60_000;
+const OWNER_FILE = "owner.json";
+interface LockOwner { pid: number; host: string; at: number }
+
+const alive = (pid: number) => {
+  try { process.kill(pid, 0); return true; }
+  catch (error) { return (error as NodeJS.ErrnoException).code === "EPERM"; }
+};
+/** True when the lock at `lock` was left by a writer that can no longer release it. */
+function staleLock(lock: string, now = Date.now()): boolean {
+  let owner: LockOwner | undefined;
+  try { owner = JSON.parse(readFileSync(join(lock, OWNER_FILE), "utf8")) as LockOwner; } catch { owner = undefined; }
+  if (!owner || !Number.isInteger(owner.pid) || typeof owner.host !== "string") {
+    try { return now - statSync(lock).mtimeMs > OWNERLESS_LOCK_MS; } catch { return false; }
+  }
+  if (owner.host === hostname()) return !alive(owner.pid);
+  return now - owner.at > FOREIGN_LOCK_MS;
+}
+/**
+ * Run `action` holding the directory lock at `lock`. A lock whose owner is gone (a dead process on
+ * this host, an ownerless lock past OWNERLESS_LOCK_MS, another host's lock past FOREIGN_LOCK_MS) is
+ * taken over by renaming it aside, so of two racing recoveries exactly one wins; a live lock refuses.
+ */
+export function withDirLock<T>(lock: string, busy: string, action: () => T): T {
+  const acquire = () => { mkdirSync(lock); writeFileSync(join(lock, OWNER_FILE), JSON.stringify({ pid: process.pid, host: hostname(), at: Date.now() } satisfies LockOwner), { flag: "wx" }); };
+  try { acquire(); }
+  catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST" || !staleLock(lock)) throw new Error(busy);
+    const aside = `${lock}.stale-${randomUUID()}`;
+    try { renameSync(lock, aside); } catch { throw new Error(busy); }
+    rmSync(aside, { recursive: true, force: true });
+    try { acquire(); } catch { throw new Error(busy); }
+  }
+  try { return action(); } finally { rmSync(lock, { recursive: true, force: true }); }
+}
+/** Replace `path` by renaming a fully written sibling over it: a reader sees the old bytes or the new, never a torn file. */
+function replaceFile(path: string, bytes: string): void {
+  const staged = join(dirname(path), `.${randomUUID()}.tmp`);
+  writeFileSync(staged, bytes, { flag: "wx" });
+  try { renameSync(staged, path); } catch (error) { rmSync(staged, { force: true }); throw error; }
+}
+/** One decision write per slot at a time. */
+const SLOT_LOCK = ".slot-write.lock";
+const slotLocked = <T>(dir: string, action: () => T): T => withDirLock(join(dir, SLOT_LOCK), "Slot is unavailable or another decision write is in progress", action);
 
 function located(consumer: string, agent: SlotAgent, id: string) {
   const doc = readSlot(consumer, agent, id);
@@ -57,7 +110,9 @@ export function writeCandidate(consumer: string, agent: SlotAgent, id: string, n
  * the slot is cleared: the pin replaces it.
  */
 export function writePin(consumer: string, agent: SlotAgent, id: string, candidate: string, input: { decidedBy: string; basis: PinBasis; at: string }): PinDoc {
-  const { doc, entry } = located(consumer, agent, id);
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+  const { doc } = located(consumer, agent, id);
   if (!entry.candidates.includes(candidate)) throw new Error(`${agent} slot ${id} has no candidate ${candidate}`);
   const read = readCandidate(consumer, agent, id, candidate);
   const issues = validateCandidate(doc.kind, id, candidate, read.bytes);
@@ -65,23 +120,29 @@ export function writePin(consumer: string, agent: SlotAgent, id: string, candida
   const pin: PinDoc = { candidate, sha256: read.sha256, decidedBy: input.decidedBy, basis: input.basis, at: input.at };
   const pinIssues = validatePin(pin);
   if (pinIssues.length) throw new Error(`pin refused: ${pinIssues.map(issue => issue.message).join("; ")}`);
+  // The pin lands first: an interruption leaves a pinned slot still marked notNeeded, which the
+  // slot check reports, never a slot whose notNeeded was cleared with no pin to replace it.
+  replaceFile(pinFile(entry.dir), jsonBytes(pin));
   if (doc.notNeeded) {
     const { notNeeded: _cleared, ...rest } = doc;
-    writeFileSync(slotFile(entry.dir), jsonBytes(rest));
+    replaceFile(slotFile(entry.dir), jsonBytes(rest));
   }
-  writeFileSync(pinFile(entry.dir), jsonBytes(pin));
   return pin;
+  });
 }
 
 /** Mark a slot not needed: slot.json `notNeeded {reason, since, decidedBy}`, and any pin.json removed. */
 export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, notNeeded: NotNeeded): SlotDoc {
-  const { doc, entry } = located(consumer, agent, id);
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+  const { doc } = located(consumer, agent, id);
   const next: SlotDoc = { ...doc, notNeeded: { reason: notNeeded.reason, since: notNeeded.since, decidedBy: notNeeded.decidedBy } };
   const issues = validateSlotDoc(next);
   if (issues.length) throw new Error(`not-needed refused: ${issues.map(issue => issue.message).join("; ")}`);
-  writeFileSync(slotFile(entry.dir), jsonBytes(next));
+  replaceFile(slotFile(entry.dir), jsonBytes(next));
   if (existsSync(pinFile(entry.dir))) unlinkSync(pinFile(entry.dir));
   return next;
+  });
 }
 
 /**
@@ -89,15 +150,18 @@ export function writeNotNeeded(consumer: string, agent: SlotAgent, id: string, n
  * other key. options 1 removes both keys (1 is the default). Returns true when slot.json changed.
  */
 export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string, input: { options: 1 | 2 | 3; varyOn?: string }): boolean {
-  const { doc, entry } = located(consumer, agent, id);
+  const { entry } = located(consumer, agent, id);
+  return slotLocked(entry.dir, () => {
+  const { doc } = located(consumer, agent, id);
   const { options: _options, varyOn: _varyOn, ...rest } = doc;
   const next: SlotDoc = input.options > 1 ? { ...rest, options: input.options, ...(input.varyOn ? { varyOn: input.varyOn } : {}) } : rest;
   const issues = validateSlotDoc(next);
   if (issues.length) throw new Error(`options refused: ${issues.map(issue => issue.message).join("; ")}`);
   const before = jsonBytes(doc), after = jsonBytes(next);
   if (before === after) return false;
-  writeFileSync(slotFile(entry.dir), after);
+  replaceFile(slotFile(entry.dir), after);
   return true;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -120,8 +184,7 @@ function storeWritePath(root: string, path: string): string {
 export const directorStoreWriter: DirectorStoreWriter = {
   locked(root, action) {
     const lock = storeWritePath(root, ".director-write.lock");
-    try { mkdirSync(lock); } catch { throw new Error("Strategy root is unavailable or another write is in progress"); }
-    try { return action(); } finally { rmSync(lock, { recursive: true, force: true }); }
+    return withDirLock(lock, "Strategy root is unavailable or another write is in progress", action);
   },
   commit(root, changes) {
     if (new Set(changes.map(change => change.path)).size !== changes.length) throw new Error("Duplicate transaction path");

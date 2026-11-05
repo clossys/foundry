@@ -119,11 +119,36 @@ const newest = (dir, ext) => {
   }
   return latest;
 };
+/**
+ * Sources of the dist modules this check loads (transitively) that are newer than their build output.
+ * The pipeline imports ../records, ../cli and more; a stale import is as stale as a stale step.
+ */
+const LOADED = ["steps/index.js", "define.js", "graph.js", "globs.js", "schema.js", "seats.js", "roster.js"].map(file => join(DIST, file));
+function staleImports(entries) {
+  const DIST_ROOT = join(PKG, "dist");
+  const seen = new Set();
+  const stale = [];
+  const queue = [...entries];
+  while (queue.length) {
+    const file = queue.shift();
+    if (seen.has(file) || !existsSync(file)) continue;
+    seen.add(file);
+    const rel = relative(DIST_ROOT, file);
+    const source = [".ts", ".tsx"].map(ext => join(PKG, "src", rel.replace(/\.js$/, ext))).find(existsSync);
+    if (source && statSync(source).mtimeMs > statSync(file).mtimeMs) stale.push(relative(PKG, source).split(sep).join("/"));
+    for (const match of readFileSync(file, "utf8").matchAll(/\b(?:import|export)\b[^"'`;]*?\bfrom\s*["'](\.{1,2}\/[^"']+)["']|\bimport\s*\(?\s*["'](\.{1,2}\/[^"']+)["']/g)) {
+      const next = resolve(dirname(file), match[1] ?? match[2]);
+      if (next.startsWith(DIST_ROOT + sep)) queue.push(next);
+    }
+  }
+  return stale;
+}
 if (!existsSync(join(PKG, "src", "pipeline", "steps"))) fail("step.invalid", "src/pipeline/steps/ does not exist; every step must be a defineStep call there");
 // Without loadable definitions the check still runs every source and data rule, against no steps.
 let mod = {}, lib = null;
 if (!existsSync(join(DIST, "steps", "index.js"))) fail("dist.missing", "dist/pipeline/steps/index.js does not exist; build src/pipeline before check:pipeline");
 else if (newest(join(PKG, "src", "pipeline"), ".ts") > newest(DIST, ".js")) fail("dist.missing", "dist/pipeline is older than src/pipeline; rebuild before check:pipeline");
+else if (staleImports(LOADED).length) fail("dist.missing", `dist is older than ${staleImports(LOADED).slice(0, 5).join(", ")}, which this check loads; rebuild before check:pipeline`);
 else try {
   mod = await import(pathToFileURL(STEPS_MODULE).href);
   lib = {
@@ -649,7 +674,8 @@ function realLocation(path) {
   try { return join(realpathSync(head), ...rest); } catch { return resolve(path); }
 }
 const REPO_REAL = realLocation(REPO);
-const insideRepo = path => { const real = realLocation(path); return real === REPO_REAL || real.startsWith(REPO_REAL + sep); };
+// Case-folded: macOS and Windows volumes are case-insensitive, so /Users/X/CODE is the repository too (fail closed elsewhere).
+const insideRepo = path => { const real = realLocation(path).toLowerCase(); const repo = REPO_REAL.toLowerCase(); return real === repo || real.startsWith(repo + sep); };
 const PLAIN_RELATIVE = /^(["'])((?!\/)(?:(?!\1)[^\\$`])*)\1$/;
 const plainRelative = arg => { const match = PLAIN_RELATIVE.exec(arg.trim()); return match && !match[2].split("/").includes("..") ? match[2] : null; };
 /** `callee(args)` when the whole expression is one call, else null. */
@@ -666,10 +692,53 @@ function wholeCall(expr) {
   }
   return null;
 }
+/**
+ * The callees a file binds to the real node:path, node:os and node:fs helpers. A name is trusted only
+ * when imported from that module and never declared again in the file; tmpdir() is trusted only when
+ * the file never assigns or deletes TMPDIR, TMP or TEMP in process.env (os.tmpdir() reads them).
+ */
+function trustedCallees(source) {
+  const declaredAgain = name => new RegExp(`\\b(?:function\\s*\\*?|class|const|let|var)\\s+${name.replace(/\$/g, "\\$")}(?![\\w$])`).test(source);
+  const bound = { join: new Set(), resolve: new Set(), tmpdir: new Set(), mkdtemp: new Set(), mkdtempSync: new Set() };
+  const modules = { path: /^(?:node:)?path(?:\/posix)?$/, os: /^(?:node:)?os$/, fs: /^(?:node:)?fs(?:\/promises)?$/ };
+  const owner = { join: "path", resolve: "path", tmpdir: "os", mkdtemp: "fs", mkdtempSync: "fs" };
+  const namespaces = { path: new Set(), os: new Set(), fs: new Set() };
+  const moduleOf = specifier => Object.keys(modules).find(key => modules[key].test(specifier));
+  for (const match of source.matchAll(/\bimport\s+([^;]*?)\s+from\s*["']([^"']+)["']/g)) {
+    const module = moduleOf(match[2]);
+    if (!module) continue;
+    const clause = match[1];
+    const named = /\{([^}]*)\}/.exec(clause);
+    for (const part of named ? named[1].split(",") : []) {
+      const [imported, local = imported] = part.trim().split(/\s+as\s+/).map(each => each.trim());
+      if (owner[imported] === module) bound[imported].add(local);
+      if (module === "path" && imported === "posix") namespaces.path.add(local);
+    }
+    const star = /\*\s*as\s+([A-Za-z_$][\w$]*)/.exec(clause);
+    if (star) namespaces[module].add(star[1]);
+    const fallback = /^\s*([A-Za-z_$][\w$]*)\s*(?:,|$)/.exec(clause);
+    if (fallback) namespaces[module].add(fallback[1]);
+  }
+  for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:await\s+import|require)\s*\(\s*["']([^"']+)["']\s*\)/g)) {
+    const module = moduleOf(match[2]);
+    if (module) namespaces[module].add(match[1]);
+  }
+  const trusted = new Set();
+  for (const [name, locals] of Object.entries(bound)) for (const local of locals) if (!declaredAgain(local)) trusted.add(`${name}:${local}`);
+  for (const [module, locals] of Object.entries(namespaces)) for (const local of locals) {
+    if (declaredAgain(local) && !new RegExp(`\\b(?:const|let|var)\\s+${local.replace(/\$/g, "\\$")}\\s*=\\s*(?:await\\s+import|require)\\s*\\(`).test(source)) continue;
+    for (const [name, from] of Object.entries(owner)) if (from === module) { trusted.add(`${name}:${local}.${name}`); if (module === "path") trusted.add(`${name}:${local}.posix.${name}`); }
+  }
+  const envTouched = /\bprocess\.env\s*(?:\.\s*(?:TMPDIR|TMP|TEMP)\b|\[\s*["'`](?:TMPDIR|TMP|TEMP)["'`]\s*\])\s*(?:[-+*/%&|^?]|\|\||&&|\?\?)?=(?!=)|\bdelete\s+process\.env\b|\bObject\.assign\s*\(\s*process\.env\b|\bprocess\.env\s*=(?!=)/.test(source);
+  if (envTouched) for (const key of [...trusted]) if (key.startsWith("tmpdir:")) trusted.delete(key);
+  return callee => [...trusted].find(key => key.slice(key.indexOf(":") + 1) === callee)?.split(":")[0] ?? null;
+}
 /** The absolute path an expression stands for, or null when it cannot be traced. */
 function locate(expr, names) {
   const source = expr.trim().replace(/^await\s+/, "");
-  if (/^(?:os\.)?tmpdir\(\s*\)$/.test(source)) return tmpdir();
+  const callee = names.callee ?? (() => null);
+  const bare = /^([A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*)\(\s*\)$/.exec(source);
+  if (bare && callee(bare[1]) === "tmpdir") return tmpdir();
   if (/^[A-Za-z_$][\w$]*$/.test(source)) return names.get(source) ?? null;
   const absolute = /^(["'])(\/(?:(?!\1)[^\\$`])*)\1$/.exec(source);
   if (absolute) return absolute[2].split("/").includes("..") ? null : absolute[2];
@@ -680,12 +749,12 @@ function locate(expr, names) {
   }
   const call = wholeCall(source);
   if (!call || !call.args.length) return null;
-  if (/^(?:[A-Za-z_$][\w$]*\.)?mkdtemp(?:Sync)?$/.test(call.callee)) {
+  if (/^mkdtemp(?:Sync)?$/.test(callee(call.callee) ?? "")) {
     // mkdtemp creates a fresh directory beside its prefix; the placeholder stands for the random suffix.
     const prefix = locate(call.args[0], names);
     return prefix ? `${prefix}XXXXXX` : null;
   }
-  if (/^(?:(?:path|posix|nodePath)\.)?(?:join|resolve)$/.test(call.callee)) {
+  if (/^(?:join|resolve)$/.test(callee(call.callee) ?? "")) {
     const base = locate(call.args[0], names);
     const rest = call.args.slice(1).map(plainRelative);
     return base && rest.every(part => part !== null) ? join(base, ...rest) : null;
@@ -701,13 +770,24 @@ function locations(source) {
   for (const match of source.matchAll(/\b(?:const|let|var)\s*[{[]([^=]*)=/g)) identifiers(match[1]);
   for (const match of source.matchAll(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s+(?:of|in)\b/g)) shadowed.add(match[1]);
   for (const match of source.matchAll(/\bcatch\s*\(\s*([A-Za-z_$][\w$]*)/g)) shadowed.add(match[1]);
+  // A bare `let name;` or `var a, name;` declares a new binding that a later assignment fills.
+  for (const match of source.matchAll(/\b(?:let|var)\s+([A-Za-z_$][\w$]*(?:\s*,\s*[A-Za-z_$][\w$]*)*)\s*(?=[;\n\r]|$)/g)) identifiers(match[1]);
   const declared = new Map();
   for (const match of source.matchAll(/\b(const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*([^;\n]*)/g)) {
     declared.set(match[2], declared.has(match[2]) ? null : match[1] === "const" ? match[3] : null);
   }
-  const assigned = name => [...source.matchAll(new RegExp(`(?<![\\w$.])${name.replace(/\$/g, "\\$")}\\s*(?:[-+*/%&|^]|\\*\\*|<<|>>>?|&&|\\|\\||\\?\\?)?=(?![=>])`, "g"))].length > 1
-    || new RegExp(`(?:\\+\\+|--)${name.replace(/\$/g, "\\$")}\\b|(?<![\\w$])${name.replace(/\$/g, "\\$")}(?:\\+\\+|--)`).test(source);
+  const assigned = name => {
+    const id = name.replace(/\$/g, "\\$");
+    const target = `(?<![\\w$.])${id}(?![\\w$])(?!\\s*:)`;
+    return [...source.matchAll(new RegExp(`(?<![\\w$.])${id}\\s*(?:[-+*/%&|^]|\\*\\*|<<|>>>?|&&|\\|\\||\\?\\?)?=(?![=>])`, "g"))].length > 1
+      || new RegExp(`(?:\\+\\+|--)${id}\\b|(?<![\\w$])${id}(?:\\+\\+|--)`).test(source)
+      // Destructuring assignment, ({ name } = value) or [name] = value, outside a declaration.
+      || [...source.matchAll(new RegExp(`[{[][^;]*?${target}[^;]*?[}\\]]\\s*=(?![=>])`, "g"))].some(match => !/\b(?:const|let|var)\s*$/.test(source.slice(Math.max(0, match.index - 12), match.index)))
+      // A loop that assigns the name itself: for (name of list), for ({ name } of list).
+      || new RegExp(`\\bfor\\s*(?:await\\s*)?\\(\\s*(?:[{[][^)]*?${target}[^)]*?[}\\]]|${id})\\s+(?:of|in)\\b`).test(source);
+  };
   const names = new Map();
+  names.callee = trustedCallees(source);
   for (let changed = true; changed;) {
     changed = false;
     for (const [name, value] of declared) {
@@ -746,12 +826,16 @@ function writersOf(marker) {
         if (mentions(match[2], local, inPackage)) { local.add(match[1]); changed = true; }
       }
     }
-    // A function whose own parameter reaches a write is a write wrapper.
+    // A function whose own parameter reaches a write (or a copy's destination) is a write wrapper.
+    const COPIES = ["cp", "cpSync", "copyFile", "copyFileSync", "rename", "renameSync"];
     const wrappers = new Set();
     for (const match of source.matchAll(/(?:function\s+([A-Za-z_$][\w$]*)\s*\(\s*([A-Za-z_$][\w$]*)|(?:const|let)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(\s*([A-Za-z_$][\w$]*))/g)) {
       const name = match[1] ?? match[3]; const param = match[2] ?? match[4];
       const body = source.slice(match.index, match.index + 1200);
-      for (const call of body.matchAll(WRITE_CALL)) if ((callArgs(body, call.index + call[0].length)[0] ?? "").trim() === param) wrappers.add(name);
+      for (const call of body.matchAll(WRITE_CALL)) {
+        const args = callArgs(body, call.index + call[0].length);
+        if ((args[0] ?? "").trim() === param || (COPIES.includes(call[1]) && (args[1] ?? "").trim() === param)) wrappers.add(name);
+      }
     }
     const isWrite = (name, args) => {
       if (name === "open" || name === "openSync") return /["'`][wa]x?\+?["'`]|O_WRONLY|O_CREAT|O_RDWR|O_TRUNC/.test(args.slice(1).join(","));
@@ -760,13 +844,19 @@ function writersOf(marker) {
     };
     const names = locations(source);
     const calls = [...source.matchAll(WRITE_CALL)].map(call => [call[1], call.index + call[0].length]);
+    // A file that writes the marker outside the repository (a staging copy) may move it in with a later copy.
+    const stagesOutside = calls.some(([name, at]) => { const arg = callArgs(source, at)[COPIES.includes(name) ? 1 : 0] ?? ""; return mentions(arg, local, inPackage) && outsideRepo(arg, names); });
     for (const name of wrappers) for (const call of source.matchAll(new RegExp(`\\b${name.replace(/\$/g, "\\$")}\\s*\\(`, "g"))) calls.push([name, call.index + call[0].length]);
     for (const [name, at] of calls) {
       if (source[at - name.length - 2] === ".") { /* method on an object: still a write when its path is a decision file */ }
       const args = callArgs(source, at);
       if (!isWrite(name, args)) continue;
-      const paths = ["cp", "cpSync", "copyFile", "copyFileSync", "rename", "renameSync"].includes(name) ? args.slice(0, 2) : args.slice(0, 1);
+      const copy = COPIES.includes(name);
+      const paths = copy ? args.slice(0, 2) : args.slice(0, 1);
       if (paths.some(arg => mentions(arg, local, inPackage) && !outsideRepo(arg, names))) { writers.add(file); break; }
+      // The destination is where a copy lands: a decision file copied or renamed from anywhere, or a tree copied out of
+      // this file's outside staging area, is a write unless the destination itself traces outside the repository.
+      if (copy && args.length >= 2 && (paths.some(arg => mentions(arg, local, inPackage)) || (stagesOutside && outsideRepo(args[0], names))) && !outsideRepo(args[1], names)) { writers.add(file); break; }
     }
   }
   return writers;

@@ -497,6 +497,27 @@
         {
           "check": ".#check:pipeline",
           "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor/env-tmpdir\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor/local-tmpdir\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/path-impostor/shadowed-join\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in/copy-file\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in/rename-file\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/copy-in/stage-tree\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
+          "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/reassigned",
+          "run": "node packages/producer/scripts/check-pipeline.mjs --scan {fixture}",
+          "expect": "^FAIL decide\\.foreign-writer: workspace\\.config \\(decide\\) owns clossys/clossys\\.config\\.ts, but scripts/rules/fixtures/R-PIPELINE-IS-CODE/reassigned/destructured\\.mjs, scripts/rules/fixtures/R-PIPELINE-IS-CODE/reassigned/loop-target\\.mjs can write it"
+        },
+        {
+          "check": ".#check:pipeline",
+          "cwd": ".",
           "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/stage-missing",
           "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
           "expect": "^FAIL stage\\.missing: step \"ia\": names no stage"

@@ -539,11 +539,11 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
   });
   it("K5 disabled state does not require activation keys", () => {
     const k5 = (profile: ComponentCheckInput) => checkComponentProfile(profile).findings.filter(f => f.code === "K5").map(f => f.message);
-    const disabled = (keyboard: string[]) => {
+    const disabled = (keyboard: string[], probed: string[] | null = ["Enter", "Space"]) => {
       const profile = fixture();
       for (const names of [(profile.slots[0]!.contract.members as { names: string[] }).names, profile.fills[0]!.members]) names[names.indexOf("state.hover")] = "state.disabled";
       delete profile.fills[0]!.propMap["state.hover"]; profile.fills[0]!.propMap["state.disabled"] = "isDisabled";
-      for (const measurement of profile.observations["components.button"]!.measurements) { measurement.state = "disabled"; measurement.keyboard = keyboard; }
+      for (const measurement of profile.observations["components.button"]!.measurements) { measurement.state = "disabled"; measurement.keyboard = keyboard; if (probed) measurement.probed = probed; else delete measurement.probed; }
       return profile;
     };
     // Enter and Space produced no activation on the disabled button: that is the evidence, not a missing key.
@@ -552,6 +552,12 @@ describe("qualification rule groups (QUAL-RECOUNT G1, G2, G7a, G11)", () => {
     // Must still flag: a disabled control that DOES activate, on either key, and a disabled control missing its roles.
     for (const keys of [["Enter"], ["Space"], ["Enter", "Space"]]) expect(k5(disabled(keys)), keys.join("+")).toContain("Roles, keyboard or axe evidence fails for disabled/light/base");
     const roleless = disabled([]); roleless.observations["components.button"]!.measurements[0]!.roles = []; expect(k5(roleless)).toContain("Roles, keyboard or axe evidence fails for disabled/light/base");
+    // G19: a disabled state whose activation keys were never pressed is unprobed, not proven inert.
+    for (const probed of [null, [], ["Enter"], ["Space"]]) {
+      const unprobed = k5(disabled([], probed));
+      expect(unprobed, JSON.stringify(probed)).toContain("Roles, keyboard or axe evidence fails for disabled/light/base");
+      for (const key of ["Enter", "Space"].filter(key => !probed?.includes(key))) expect(unprobed).toContain(`Disabled state never probed ${key} for disabled/light/base`);
+    }
     // An enabled state still requires the activation keys to be observed.
     const enabled = fixture(); for (const measurement of enabled.observations["components.button"]!.measurements) measurement.keyboard = [];
     expect(k5(enabled)).toContain("Roles, keyboard or axe evidence fails for hover/light/base");

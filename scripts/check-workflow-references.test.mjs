@@ -1093,3 +1093,22 @@ test("issue #1420 (N1): mutation proofs -- each of these must make the coverage 
     `mutation (c) (an uncommented offending step, with the always-run copy also removed) must surface check-changelog-location.mjs as uncovered (got uncovered: ${JSON.stringify(resultC.uncovered)})`,
   );
 });
+
+// GATE-SWEEP-B G28: `prose quality` gained `npm ci` and the full root build
+// (for the Director facts step) but kept the 5-minute budget of a tree-read
+// job. Any ci.yml job that runs the root build gets at least the budget of
+// the shortest dedicated build job (artifact-pack, 10 minutes).
+test("every ci.yml job that runs the root build has at least a full-build timeout", () => {
+  const workflow = readFileSync(join(workflowsDir, "ci.yml"), "utf8");
+  const jobsAt = workflow.indexOf("\njobs:\n");
+  assert.notEqual(jobsAt, -1, "ci.yml has a jobs: section");
+  const FULL_BUILD_FLOOR_MINUTES = 10;
+  const names = [...workflow.slice(jobsAt).matchAll(/^  ([a-z][a-z0-9-]*):\n/gm)].map((match) => match[1]);
+  const building = names.filter((name) => /^ +(?:- )?run: npm run build$/m.test(workflowJob(workflow, name)));
+  assert.ok(building.includes("prose"), "the prose job runs the root build");
+  const short = building
+    .map((name) => [name, Number(workflowJob(workflow, name).match(/^    timeout-minutes: (\d+)$/m)?.[1])])
+    .filter(([, minutes]) => !(minutes >= FULL_BUILD_FLOOR_MINUTES))
+    .map(([name, minutes]) => `${name}: ${minutes}`);
+  assert.deepEqual(short, []);
+});
