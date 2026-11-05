@@ -46,6 +46,14 @@
 /*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
 @layer properties;
 @layer foundry-ui-compiled {
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after, ::backdrop {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
   [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:hover, [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:focus {
     fill-opacity: .85;
     stroke: var(--color-chart-surface, var(--color-surface-raised, oklch(1 0 0)));
@@ -1257,9 +1265,6 @@
   .mt-xs {
     margin-top: var(--spacing-xs, 4px);
   }
-  .mb-lg {
-    margin-bottom: var(--spacing-lg, 16px);
-  }
   .mb-md {
     margin-bottom: var(--spacing-md, 12px);
   }
@@ -1525,6 +1530,15 @@
   .table {
     display: table;
   }
+  .table-caption {
+    display: table-caption;
+  }
+  .table-cell {
+    display: table-cell;
+  }
+  .table-row {
+    display: table-row;
+  }
   .field-sizing-content {
     field-sizing: content;
   }
@@ -1591,9 +1605,6 @@
   }
   .h-2 {
     height: calc(var(--spacing, 0.25rem) * 2);
-  }
-  .h-3xl {
-    height: var(--spacing-3xl, 48px);
   }
   .h-4 {
     height: calc(var(--spacing, 0.25rem) * 4);
@@ -1784,6 +1795,9 @@
   }
   .table-fixed {
     table-layout: fixed;
+  }
+  .caption-bottom {
+    caption-side: bottom;
   }
   .border-collapse {
     border-collapse: collapse;
@@ -4008,6 +4022,9 @@
   .data-empty\:p-0[data-empty] {
     padding: 0px;
   }
+  .data-empty\:text-center[data-empty] {
+    text-align: center;
+  }
   .data-entering\:library-enter[data-entering] {
     animation: library-transition var(--ui-duration-fast, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
     @media (prefers-reduced-motion: reduce) {
@@ -5032,6 +5049,10 @@
     }
   }
   @media (forced-colors: active) {
+    .forced-colors\:border-dashed {
+      --tw-border-style: dashed;
+      border-style: dashed;
+    }
     .forced-colors\:border-solid {
       --tw-border-style: solid;
       border-style: solid;

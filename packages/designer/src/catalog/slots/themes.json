@@ -59,13 +59,15 @@
     "contract": {
       "$type": "duration",
       "emit": {
-        "default": "--animate-marquee"
+        "default": "--animate-marquee",
+        "duration": "--duration"
       },
       "kind": "token",
       "members": {
         "mode": "closed",
         "names": [
-          "default"
+          "default",
+          "duration"
         ]
       },
       "modes": [

@@ -2418,16 +2418,16 @@
       "sha256": "a48c2e6a2adfa7122b3d5c7ed0bb98f40ea33c3665df18c9dbcdc98ce47cff8a"
     },
     {
-      "path": "clossys/agents/designer/themes.animate-marquee/candidates/animate-marquee-v1.json",
-      "sha256": "944d2c57c0bb887ffb51893712ced487b0eab323fd2d72c750e834cee810fd83"
+      "path": "clossys/agents/designer/themes.animate-marquee/candidates/animate-marquee-v2.json",
+      "sha256": "6b7deea12e85277b65a51c05577d4f2df445248ebafbf374a46db5cce2fa8570"
     },
     {
       "path": "clossys/agents/designer/themes.animate-marquee/pin.json",
-      "sha256": "de7d06fcf6fd6b781debc5a47cb8e7b548c75ec5d6ce8f5ce978e3dd63fb20c7"
+      "sha256": "4c5c2b2554801b0527f997d259283727bf9e87139598eea888c5e43b56e70ee2"
     },
     {
       "path": "clossys/agents/designer/themes.animate-marquee/slot.json",
-      "sha256": "530d8cca2ccd613448f341f334dc044e8eb526a3ca8f584011501a487bcf9bf8"
+      "sha256": "169afa736fca5035b2c54e18834041357c6f11c9c6e2e02d26d85e995d01fa5f"
     },
     {
       "path": "clossys/agents/designer/themes.animate-shiny-text/candidates/animate-shiny-text-v1.json",

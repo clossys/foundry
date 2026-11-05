@@ -281,6 +281,30 @@
   }
 }
 
+/*
+ * Global reduced-motion floor. Stock shadcn files stay unmodified, so their
+ * `transition-*` / `animate-*` utilities carry no `motion-reduce:` variant of
+ * their own; this one rule neutralises every animation and transition under
+ * `prefers-reduced-motion: reduce` instead. Durations collapse to 0.01ms
+ * (not `none`) so `transitionend` / `animationend` still fire for exit logic
+ * that waits on them, and looping animations run once. `!important` is what
+ * lets a universal selector outrank class utilities in any layer. Rendered
+ * proof: `src/reduced-motion.browser.test.ts`.
+ */
+@layer foundry-ui-compiled {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after,
+    ::backdrop {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
 @layer foundry-ui-compiled {
   /* Existing cluster attributes keep the fixed interactive markup unchanged. */
   [data-chart-part="frame"] [data-chart-part="cluster"] rect[tabindex="0"]:hover,

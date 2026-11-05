@@ -106,6 +106,17 @@ export function surfaceConsumptionFindings(slot: SectionSlot | FrameSlot, fill: 
   return findings;
 }
 
+/**
+ * reads, composes and consumption are derived from the measured package source, never authored. Registered
+ * descriptors that predate measurement carry none of the three; their pinned bytes stay unchanged and this
+ * read-time view takes all three from the canonical measurement of the same pin. A descriptor that carries
+ * any of them is checked as written, so a stale or partial declaration still under-reports visibly.
+ */
+function derivedPackageDescriptor(fill: SurfaceDefaultDescriptor, actual: NonNullable<SurfaceDefaultDescriptor["consumption"]>): SurfaceDefaultDescriptor {
+  if (fill.consumption !== undefined || fill.composes !== undefined || fill.reads !== undefined) return fill;
+  return { ...fill, reads: { themes: [...actual.scannedReads.themes], assets: [...actual.scannedReads.assets] }, composes: [...actual.scannedComposes], consumption: structuredClone(actual) };
+}
+
 /** Shared mapping eligibility and package source-consumption truth. */
 export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, packagePin?: unknown): string[] {
   const contract = slot.contract;
@@ -131,10 +142,11 @@ export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDef
   for (const blocker of fill.blockers ?? []) other.push(`S5 ${blocker.code}: ${blocker.message}`);
   if (fill.impl?.kind === "package") {
     const actual = canonicalSurfaceConsumption(fill.slot, fill.impl, packagePin);
-    if (!fill.consumption || !actual) other.push("S8 surface consumption measurement unavailable");
-    if (actual) {
-      if (fill.consumption && stableStringify(fill.consumption) !== stableStringify(actual)) other.push("S8 package consumption snapshot differs from canonical measurement");
-      other.push(...surfaceConsumptionFindings(slot, fill, actual));
+    if (!actual) other.push("S8 surface consumption measurement unavailable");
+    else {
+      const derived = derivedPackageDescriptor(fill, actual);
+      if (!derived.consumption || stableStringify(derived.consumption) !== stableStringify(actual)) other.push("S8 package consumption snapshot differs from canonical measurement");
+      other.push(...surfaceConsumptionFindings(slot, derived, actual));
     }
   }
   return [

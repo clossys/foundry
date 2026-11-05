@@ -27,7 +27,7 @@ describe("consumer library truth",()=>{
     const input=adoptFoundry(); const before=resolve(input); const offline={...input,catalog:{...input.catalog,fills:[],sources:[]}};
     expect(stableStringify(resolve(offline))).toBe(stableStringify(before));
     expect(emit(resolve(offline),["css-brand","css-scales","css-fonts","tailwind-theme","notices"])).toEqual(emit(before,["css-brand","css-scales","css-fonts","tailwind-theme","notices"]));
-    const drift=check(offline).findings.filter(f=>f.code==="C10"); expect(drift).toHaveLength(48); expect(drift.every(f=>f.severity==="notice")).toBe(true);
+    const drift=check(offline).findings.filter(f=>f.code==="C10"); expect(drift).toHaveLength(49); expect(drift.every(f=>f.severity==="notice")).toBe(true);
   });
   it("distinguishes adopted-content tamper from upstream drift",()=>{
     const {catalog}=fixture(); catalog.fills=[candidate("themes.sample",{paint:{$type:"number",$value:2}})];

@@ -514,24 +514,14 @@ describe("public UI contract", () => {
   });
 
   it("honors reduced-motion preferences for every shipped animation or transition", () => {
-    // Scanned, not hand-listed: a hand-written file list can't notice a new
-    // motion site (see the package README and #907 — this is that
-    // mechanism). Every source file under the component layer directories
-    // is checked for a Tailwind `animate-*`/`transition-*` class literal;
-    // any file that has one must also carry a `motion-reduce:` override.
-    const MOTION_CLASS_RE = /\b(?:animate|transition)-[a-zA-Z[\]-]+/;
-
-    const motionFiles = [...COMPONENT_DIRS, "tokens/preview"].flatMap((dir) =>
-      sourceFiles(join(packageRoot, "src", dir))
-        .filter((file) => MOTION_CLASS_RE.test(readFileSync(file, "utf8")))
-        .map((file) => file.slice(packageRoot.length + 1)),
-    );
-
-    expect(motionFiles.length).toBeGreaterThan(0);
-
-    for (const file of motionFiles) {
-      const source = readFileSync(join(packageRoot, file), "utf8");
-      expect(source, `${file} must include a motion-reduce override`).toContain("motion-reduce:");
+    // Stock shadcn files stay unmodified, so the guarantee is one global
+    // rule every CSS path ships (theme-keys.css, inlined into theme.css and
+    // compiled.css). src/reduced-motion.browser.test.ts renders every moving
+    // utility of every scanned motion file in Chromium under the preference;
+    // this fast check only pins that the rule ships on each path.
+    const rule = /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*::before,\s*::after,\s*::backdrop\s*\{\s*animation-duration: 0\.01ms !important;\s*animation-iteration-count: 1 !important;\s*transition-duration: 0\.01ms !important;/;
+    for (const sheet of ["styles/theme-keys.css", "styles/compiled.css"]) {
+      expect(readFileSync(join(packageRoot, sheet), "utf8"), `${sheet} ships the global reduced-motion rule`).toMatch(rule);
     }
   });
 
