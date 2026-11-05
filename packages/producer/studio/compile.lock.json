@@ -526,12 +526,12 @@
       "sha256": "faf271e83e097512dd46d581acc9df836e3622b6fb62914babb7a1caad798699"
     },
     {
-      "path": "clossys/agents/designer/assets.image-ratio/candidates/image-ratio-v2.json",
-      "sha256": "f5cd3d0d2be7c720f8fad0f3755f24b55badf6dd91851ec792e2bc7e5927c00f"
+      "path": "clossys/agents/designer/assets.image-ratio/candidates/image-ratio-v3.json",
+      "sha256": "491173ede4a78697e0b45a533bc56ef6d959a31cf335d99eecf430fc38f2a7c7"
     },
     {
       "path": "clossys/agents/designer/assets.image-ratio/pin.json",
-      "sha256": "2d7f9bd704d76fb0f470c50c55425c3c5d6c0fa6f0de63b0b804235b12c263af"
+      "sha256": "3c11ef087a6ebccb682889424ce01b88df445b07c071ee6662c2107483be5137"
     },
     {
       "path": "clossys/agents/designer/assets.image-ratio/slot.json",
@@ -574,12 +574,12 @@
       "sha256": "28f7def9c115882bed5b515fdde4c4260fd0e5d58a2582b5e8b22bf1c730933c"
     },
     {
-      "path": "clossys/agents/designer/assets.pattern/candidates/pattern-v2.json",
-      "sha256": "834d6f93674741e5f43ae64afbacbc8f9c69d40257fba67d1592814ea721981a"
+      "path": "clossys/agents/designer/assets.pattern/candidates/pattern-v3.json",
+      "sha256": "dacfdedb9835155bcbe5b8b153ae295b9a5050484e86bf189f58146fbf7f177a"
     },
     {
       "path": "clossys/agents/designer/assets.pattern/pin.json",
-      "sha256": "89862a640f82b797d8c94cbde0fe9bff7bd34448fac83184dc850d031c94e6da"
+      "sha256": "422ee3d8b24a3f35977d0c78d85b099042a6a03c8adab240bcd9f61b56196384"
     },
     {
       "path": "clossys/agents/designer/assets.pattern/slot.json",

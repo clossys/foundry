@@ -1,7 +1,7 @@
 {
-  "candidate": "image-ratio-v2.json",
-  "sha256": "f5cd3d0d2be7c720f8fad0f3755f24b55badf6dd91851ec792e2bc7e5927c00f",
-  "decidedBy": "planner:FLAT-SLOTS",
+  "candidate": "image-ratio-v3.json",
+  "sha256": "491173ede4a78697e0b45a533bc56ef6d959a31cf335d99eecf430fc38f2a7c7",
+  "decidedBy": "planner:SPECIMEN-RENDER",
   "basis": "planner",
-  "at": "2026-11-05T12:57:00.225Z"
+  "at": "2026-11-05T17:12:37.956Z"
 }

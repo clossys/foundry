@@ -1,7 +1,7 @@
 {
-  "candidate": "pattern-v2.json",
-  "sha256": "834d6f93674741e5f43ae64afbacbc8f9c69d40257fba67d1592814ea721981a",
-  "decidedBy": "planner:FLAT-SLOTS",
+  "candidate": "pattern-v3.json",
+  "sha256": "dacfdedb9835155bcbe5b8b153ae295b9a5050484e86bf189f58146fbf7f177a",
+  "decidedBy": "planner:SPECIMEN-RENDER",
   "basis": "planner",
-  "at": "2026-11-05T12:57:00.625Z"
+  "at": "2026-11-05T17:12:40.678Z"
 }
