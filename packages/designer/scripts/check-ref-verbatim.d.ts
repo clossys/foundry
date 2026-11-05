@@ -93,6 +93,10 @@ export type DsOnlyEvent =
 
 export declare const DS_COMPONENT_LAYER: "@clossys/designer-ui";
 export declare const DS_FRAME_LANDMARKS: ReadonlySet<string>;
+/** Every code extension a registry payload may ship (`.tsx`, `.ts`, `.jsx`, `.js`, `.mjs`, `.cjs`, `.mts`, `.cts`). */
+export declare const CODE_FILE: RegExp;
+/** The TypeScript parse mode for a payload file: JSX is enabled for `.tsx`, `.jsx` and every plain JavaScript extension. */
+export declare function scriptKind(ts: typeof import("typescript"), fileName: string): import("typescript").ScriptKind;
 /** The ds-only scan shared by the Studio ds-only test and the composition rule. */
 export declare function dsOnlyEvents(text: string, fileName: string, options?: { readonly kind?: "section" | "frame"; readonly blockMarkup?: ReadonlySet<string> }): readonly DsOnlyEvent[];
 /** True when a lineage reference points into Foundry's own package folders or the `foundry` registry. */

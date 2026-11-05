@@ -1,14 +1,14 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { isBuiltin } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 import { listSlots, readCandidate, readSlot } from '../records/slots.js';
 import { CANDIDATE_NAME, validateCandidate, validateSlotDoc } from '../records/slot-model/index.js';
-import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS } from '@clossys/designer/ref-verbatim';
+import { CODE_FILE, DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from '@clossys/designer/ref-verbatim';
 
 /**
  * AMEND-1 ds-only check for every Studio section and frame the page records place: each folder
@@ -136,7 +136,8 @@ const RENDERER_DIRS = ['components', 'lib'];
 const RENDERER_RUNTIME = new Set(['react', 'next/navigation', 'lucide-react']);
 const UI_FRAME_RUNTIME = new Set(['react', 'lucide-react']);
 const UI_FRAMES = ['foundry/block-viewer-iframe.tsx', 'foundry/layout.tsx', 'foundry/studio-frames.tsx'];
-const sourceFiles = (folder: string) => readdirSync(folder).filter(name => /\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name)).map(name => join(folder, name));
+// Every code extension the ref-verbatim gate accepts (`CODE_FILE`), so a `.jsx`/`.js`/`.mjs` file cannot sit outside the scan.
+const sourceFiles = (folder: string) => readdirSync(folder).filter(name => CODE_FILE.test(name) && !name.endsWith('.d.ts') && !/\.test\.[cm]?[jt]sx?$/.test(name)).map(name => join(folder, name));
 const within = (file: string, specifier: string, root: string) => specifier.startsWith('.') && resolve(dirname(file), specifier).startsWith(root + sep);
 
 function importAllowed(kind: Kind, file: string, folder: string, specifier: string, typeOnly: boolean, composes: ReadonlySet<string>): boolean {
@@ -155,14 +156,16 @@ export function fileViolations(file: string, kind: Kind = 'section', composes: R
   const violations: string[] = [];
   const label = relative(base, file);
   const landmarks = kind === 'frame' || kind === 'ui-frame';
-  const source = ts.createSourceFile(file, readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const text = readFileSync(file, 'utf8');
+  // Imports come from the shared ds-only scanner: static imports and re-exports, and every `import(...)`
+  // or `require(...)` call, which is held to the same rule as a static import (never type-only).
+  for (const event of dsOnlyEvents(text, file)) {
+    if (event.type === 'import' && !importAllowed(kind, file, folder, event.specifier, event.typeOnly, composes)) violations.push(`${label}: imports ${event.specifier}`);
+    if (event.type === 'dynamic' && !importAllowed(kind, file, folder, event.specifier, false, composes)) violations.push(`${label}: imports ${event.specifier}`);
+  }
+  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, scriptKind(ts, file));
   const markerTyped = source.text.includes('{ [marker: `data-clossys-${string}`]: string }');
   const visit = (node: ts.Node) => {
-    const specifier = (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
-    if (specifier !== undefined) {
-      const typeOnly = ts.isImportDeclaration(node) && !!node.importClause?.isTypeOnly;
-      if (!importAllowed(kind, file, folder, specifier, typeOnly, composes)) violations.push(`${label}: imports ${specifier}`);
-    }
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const tag = node.tagName.getText(source);
       const value = classAttribute(node)?.initializer;
@@ -293,6 +296,20 @@ describe('Studio sections are ds-only', () => {
       expect(fileViolations(file, 'ui-frame', new Set(), new Set(), undefined, probe)).toEqual(['Probe.tsx: imports node:fs', 'Probe.tsx: imports react-aria-components', 'Probe.tsx: imports @clossys/publisher/content-map', 'Probe.tsx: imports ./utils', 'Probe.tsx: <div style>']);
       } finally { rmSync(probe, { recursive: true, force: true }); }
     });
+
+  it('scans .jsx/.js/.mjs files and holds require() and import() to the import rule (gate F2)', () => {
+    const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-js-')));
+    try {
+      writeFileSync(join(probe, 'Raw.jsx'), "export const A = () => <div className=\"p-4\" />;\n");
+      writeFileSync(join(probe, 'Raw.js'), "export const B = () => <span style={{}} />;\n");
+      writeFileSync(join(probe, 'load.mjs'), "const ui = require('other-ui');\nexport const C = () => import('../elsewhere');\nexport const D = () => import('@clossys/designer-ui');\n");
+      writeFileSync(join(probe, 'Dyn.tsx'), "const x = require('react-aria-components');\nexport const E = async () => (await import('./local')).F;\n");
+      expect(dsOnlyViolations(probe).map(line => { const [path, ...rest] = line.split(': '); return `${basename(path!)}: ${rest.join(': ')}`; }).sort()).toEqual([
+        'Dyn.tsx: imports react-aria-components', 'Raw.js: <span style>', 'Raw.jsx: <div className>', 'load.mjs: imports ../elsewhere', 'load.mjs: imports other-ui',
+      ]);
+      expect(fileViolations(join(probe, 'Dyn.tsx'), 'renderer', new Set(), new Set(), undefined, probe)).toEqual(['Dyn.tsx: imports react-aria-components', 'Dyn.tsx: imports ./local']);
+    } finally { rmSync(probe, { recursive: true, force: true }); }
+  });
 
   it('admits only the marker-typed provenance spread on raw markup', () => {
     const probe = mkdtempSync(join(tmpdir(), 'ds-only-'));

@@ -32,8 +32,8 @@ export { ADAPTATION_KINDS, adaptationHash };
 import { loadTypeScript } from "./ref-verbatim/typescript.mjs";
 import { designerSlotRecords } from "./slot-pins.mjs";
 import { diffSources, isEngineNeutral, tokenSwapAllowed } from "./ref-verbatim/diff.mjs";
-import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents } from "./ref-verbatim/ds-only.mjs";
-export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents };
+import { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind } from "./ref-verbatim/ds-only.mjs";
+export { DS_COMPONENT_LAYER, DS_FRAME_LANDMARKS, dsOnlyEvents, scriptKind };
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const json = (path) => JSON.parse(readFileSync(path, "utf8"));
