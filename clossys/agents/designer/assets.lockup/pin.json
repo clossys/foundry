@@ -1,7 +1,7 @@
 {
-  "candidate": "lockup-v3.json",
-  "sha256": "cc39cf23fc015c3b6f8e87bb99225b64fb339072dc5f062b4321f7d2e57a3cb9",
-  "decidedBy": "planner:FLAT-SLOTS",
+  "candidate": "lockup-v4.json",
+  "sha256": "4964ef422182a9ad58f45301512abb777c5f326cbe16a122e9c37921113a5c0b",
+  "decidedBy": "planner:INTEGRATE",
   "basis": "planner",
-  "at": "2026-11-05T12:55:19.857Z"
+  "at": "2026-11-05T16:05:29.144Z"
 }

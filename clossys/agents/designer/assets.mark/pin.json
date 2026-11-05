@@ -1,7 +1,7 @@
 {
-  "candidate": "mark-v3.json",
-  "sha256": "d25eee2e1767af8286fc6017905011f0a399c97fceed900b1d34bd66982fef76",
-  "decidedBy": "planner:FLAT-SLOTS",
+  "candidate": "mark-v4.json",
+  "sha256": "235de802ff04413ffcbadb021c5799eb6145ded4f241ec6bd40056abc881a8b1",
+  "decidedBy": "planner:INTEGRATE",
   "basis": "planner",
-  "at": "2026-11-05T12:55:19.467Z"
+  "at": "2026-11-05T16:05:28.309Z"
 }
