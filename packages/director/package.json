@@ -56,13 +56,14 @@
       "clossys/agents/director/ia.json",
       "clossys/agents/director/*/candidates/",
       "clossys/agents/director/*/pin.json",
-      "clossys/agents/director/findings/",
+      "clossys/evidence/director/*.md",
       "clossys/agents/director/briefs/",
       "clossys/agents/director/citations.json",
       "clossys/agents/director/reports/cell-quality.json",
       "clossys/agents/director/reports/coherence.json",
       "clossys/agents/director/reports/completion.json",
-      "clossys/agents/director/reports/wont-claim.json"
+      "clossys/agents/director/reports/wont-claim.json",
+      "clossys/agents/director/reports/review.json"
     ],
     "fit": "fit-signals.json",
     "feeds": [
@@ -174,7 +175,7 @@
         "worldClass": "Findings record observed evidence with values and aliases so grounding can report untraced claims.",
         "inputs": [],
         "outputs": [
-          "clossys/agents/director/findings/"
+          "clossys/evidence/director/*.md"
         ],
         "proofCase": null,
         "maturity": "planned",
@@ -200,7 +201,7 @@
         "worldClass": "Review opens deduplicated requests from Watch tripwires, due reviews and stale cascades without activating or editing a strategy cell.",
         "inputs": [],
         "outputs": [
-          "clossys/agents/director/requests/"
+          "clossys/agents/director/reports/review.json"
         ],
         "proofCase": null,
         "maturity": "planned",

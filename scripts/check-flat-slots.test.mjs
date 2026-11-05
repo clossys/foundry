@@ -46,3 +46,22 @@ test("readers and shipped manifests of a legacy store fail; tests and package da
     assert.deepEqual(kinds(codeFindings(root)), ["reader packages/a/src/read.ts:1", "reader packages/a/src/read.ts:2", "reader packages/a/src/read.ts:3", "shipped packages/a/package.json:1"]);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("shipped skills and manifests that teach the cells layout or a record folder the slot model does not keep fail", () => {
+  const root = tree({
+    "clossys/agents/director/ia.json": "{}",
+    "packages/a/skill/SKILL.md": "Write `cells/<id>/v<N>.md` and point `tree.json` at it.\nLog to sessions/<date>-<n>.md.\n",
+    "packages/a/skill/templates/cell.md": "Evidence: clossys/agents/director/findings/<id>.md\nOpen requests/REQ-0001.json\n",
+    "packages/a/skill/ok.md": "Write `<id>/candidates/<name>-v<N>.md`; evidence is clossys/evidence/director/<id>.md.\nThe package catalog is src/catalog/cells/strategy.json.\n",
+    "packages/launcher/skill-catalogue/a/SKILL.md": "clossys/agents/designer/cells/<slot>/v1.md\n",
+    "packages/a/package.json": '{ "foundry": { "outputs": ["clossys/agents/director/requests/", "clossys/evidence/director/*.md"] } }\n',
+  });
+  try {
+    assert.deepEqual(kinds(codeFindings(root)), [
+      "shipped packages/a/package.json:1",
+      "skill packages/a/skill/SKILL.md:1", "skill packages/a/skill/SKILL.md:2",
+      "skill packages/a/skill/templates/cell.md:1", "skill packages/a/skill/templates/cell.md:2",
+      "skill packages/launcher/skill-catalogue/a/SKILL.md:1",
+    ]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

@@ -1,6 +1,6 @@
 ---
 name: clossys-director
-description: Director loop. Turns the owner's brief into confirmed facts and claims, stored as versioned Director cells, and compiles the briefs Designer and Writer cite. Invoke with @clossys-director to set or change direction, or when a downstream agent needs a brief.
+description: Director loop. Turns the owner's brief into confirmed facts and claims, stored as pinned Director slot candidates, and compiles the briefs Designer and Writer cite. Invoke with @clossys-director to set or change direction, or when a downstream agent needs a brief.
 disable-model-invocation: true
 ---
 # clossys-director (Director)
@@ -14,17 +14,20 @@ conversation is your work, done through this loop.
 
 ## Where the records live
 
-The root is `<repo root>/clossys/agents/director/`. Pass it explicitly to every
-command as `--root clossys/agents/director` (the CLI default is an older
-folder). Write only inside this root.
+The root is `<repo root>/clossys/agents/director/`, the CLI default; `--root`
+overrides it. Each cell is one flat slot folder named by its id, grouped only by
+`ia.json` data, never by folders:
 
 ```
-clossys/agents/director/tree.json               active pointer per cell id
-clossys/agents/director/cells/<id>/v<N>.md      one file per cell version
-clossys/agents/director/findings/<id>.md        evidence with a source
-clossys/agents/director/sessions/<date>-<n>.md  the conversation log (U<n>, S<n>)
-clossys/agents/director/briefs/                 written by the CLI; never hand-edit
+clossys/agents/director/ia.json                      L1/L2 grouping of the slot ids
+clossys/agents/director/<id>/slot.json               the slot record: contract, inputs, uses
+clossys/agents/director/<id>/candidates/<name>.md    one file per candidate; never edited once pinned
+clossys/agents/director/<id>/pin.json                which candidate is active, who decided and why
+clossys/evidence/director/<finding-id>.md            evidence with a source (top-level files only)
 ```
+
+Write candidate files only. `pin.json` is written by `clossys pin`, never by
+hand. The CLI compiles briefs and reports; never hand-edit what it writes.
 
 Cell ids are `l1.l2.l3` from the installed contract list,
 `node_modules/@clossys/director/src/slot-contracts/contracts.json` (for
@@ -39,63 +42,62 @@ only:
 
 - `## Direction`: 2 to 6 bullets. Each must-contain key is a leading `Key:`
   label. These are the facts and claims downstream agents cite.
-- `## Because`: every bullet ends with refs: `msg:<session>#U<n>` (the owner
-  said it), `finding:<id>` (evidence) or `<cell-id>@<N>` (another cell).
-  Frontmatter `cites` is exactly their union.
+- `## Because`: every bullet ends with refs: `finding:<id>` (evidence in
+  `clossys/evidence/director/`) or `<cell-id>@<N>` (another cell's version).
 - `## Watch`: a signal, comparator, threshold, period and action.
 
-A fact needs a source: the owner's words or a finding with `source` and
-`observed`. A claim is a choice the owner confirmed. Never record an opinion as
+A fact needs a source: a finding with `source` and `observed`, which may record
+the owner's own words. A claim is a choice the owner confirmed. Never record an opinion as
 a finding.
 
 ## Loop
 
-1. **Read the brief.** Log the owner's words to
-   `sessions/<date>-<n>.md` as `- U<n>: ...` bullets. Run
-   `npx clossys director check status --root clossys/agents/director` to see which
-   core cells are missing.
-2. **Pick the nearest unlock.** Choose the one missing core cell that blocks
+1. **Read the brief.** Record what the owner said that a cell will rely on as
+   a finding in `clossys/evidence/director/<finding-id>.md`. Run
+   `npx clossys director check status` to see which core cells are unpinned.
+2. **Pick the nearest unlock.** Choose the one unpinned core cell that blocks
    the most downstream briefs (`designer.identity`, `writer.messaging`).
-3. **Draft.** Write `cells/<id>/v<N>.md` with `status: draft`. Offer two or
-   three options as parallel drafts (`note: option A`, `option B`) when the
-   owner has not decided.
+3. **Draft.** Write `<id>/candidates/<name>.md`. Offer two or three options as
+   parallel candidates (`note: option A`, `option B`) when the owner has not
+   decided. A new version of a pinned cell is a new candidate file; the pinned
+   file never changes.
 4. **Play back and confirm.** Show the Direction bullets in plain language.
-   Ask one question. Only the owner's explicit yes activates a draft.
-5. **Activate.** On confirmation set `status: active` and
-   `confirmed: msg:<session>#U<n>`, retire the previous active version
-   (`status: retired`, the only edit allowed to an active file) and point
-   `tree.json` `active` at the new version. Active files never change again;
-   a change is a new draft `v<N+1>`.
+   Ask one question. Only the owner's explicit yes pins a candidate.
+5. **Pin.** On confirmation run
+   `npx clossys pin director/<id> <name> --by owner --basis picked`. The pin
+   records the candidate, its sha256, who decided, the basis and the time.
 6. **Check.**
    ```sh
-   npx clossys director check check --root clossys/agents/director
-   npx clossys director check slots --strict clossys/agents/director/cells
+   npx clossys director check check
+   npx clossys director check slots --strict clossys/agents/director
    ```
-   Fix every finding in the draft; never weaken a cell to pass.
+   Fix every finding in a new candidate; never weaken a cell to pass.
 7. **Compile the briefs** downstream agents read:
    ```sh
-   npx clossys director check brief writer.messaging --root clossys/agents/director --write
-   npx clossys director check brief designer.identity --root clossys/agents/director --write
-   npx clossys director check handoff writer.messaging --root clossys/agents/director
+   npx clossys director check brief writer.messaging --write
+   npx clossys director check brief designer.identity --write
+   npx clossys director check handoff writer.messaging
    ```
    A `missing` line names the next cell to draft; go back to step 2.
-8. **Commit** the cells, `tree.json`, findings and session log together:
-   `git commit -m "director: activate <id>@<N>"`.
+8. **Commit** the candidates, pins and findings together:
+   `git commit -m "director: pin <id> <name>"`.
 
-## Requests from other agents
+## What other agents need
 
-Designer and Writer open requests (`requests/REQ-<NNNN>.json`, kind `missing`,
-`contradiction` or `drift`) when they need a fact that does not exist. Answer a
-request by drafting the cell it names; the owner's confirmation resolves it.
-Downstream agents cite cells as `strategy:<cell-id>@<N>`.
+`npx clossys director check review` lists what needs a decision (Watch
+tripwires, due reviews, stale cascades) and writes nothing. When Designer or
+Writer reports a missing, contradicting or drifted fact, answer it by drafting
+a candidate in the slot it names; the owner's pin resolves it. Downstream
+agents cite cells as `strategy:<cell-id>@<N>`.
 
 ## Done when
 
-- `npx clossys director check handoff writer.messaging --root clossys/agents/director`
-  and the same for `designer.identity` exit 0 (state `ready`).
+- `npx clossys director check handoff writer.messaging` and the same for
+  `designer.identity` exit 0 (state `ready`).
 - `npx clossys check --suites --strict` reports no Director slot findings.
-- Every active cell has `confirmed:` and every Because bullet has a ref.
+- Every core cell has a `pin.json` decided by the owner, and every Because
+  bullet has a ref.
 - The records are committed.
 
-Report in plain language: which cells are active, which brief is ready, and
+Report in plain language: which cells are pinned, which brief is ready, and
 the one question that unlocks the next cell.

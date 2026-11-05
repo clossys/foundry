@@ -9,7 +9,7 @@ const roots: string[] = [];
 function root() { const dir = mkdtempSync(join(tmpdir(), "director-reports-")); roots.push(dir); return dir; }
 afterEach(() => roots.splice(0).forEach(dir => rmSync(dir, { recursive: true, force: true })));
 describe("scoped CLI report persistence", () => {
-  it.each(["cell-quality", "coherence", "completion", "wont-claim"] as const)("writes only the exact %s report and preserves the returned report shape", capability => {
+  it.each(["cell-quality", "coherence", "completion", "wont-claim", "review"] as const)("writes only the exact %s report and preserves the returned report shape", capability => {
     const dir = root();
     writeFileSync(join(dir, "tree.json"), "untouched");
     mkdirSync(join(dir, "cells"));

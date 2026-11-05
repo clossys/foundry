@@ -103,7 +103,8 @@ export function isOwnedOutputPath(role, path) {
   const short = roleShortName(role);
   if (!/^[a-z][a-z0-9-]*$/.test(short) || short === "agents") return false;
   const prefixes = [`clossys/${short}/`];
-  if (NATIVE_CELL_ROLES.has(short)) prefixes.push(`clossys/agents/${short}/`);
+  // A native agent also owns its evidence folder: R-GIT-CMS keeps evidence outside the agent trees.
+  if (NATIVE_CELL_ROLES.has(short)) prefixes.push(`clossys/agents/${short}/`, `clossys/evidence/${short}/`);
   return prefixes.some(prefix => path.startsWith(prefix)
     && path.slice(prefix.length).split("/").some(segment => segment !== "" && segment !== "."));
 }

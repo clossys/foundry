@@ -540,11 +540,11 @@ test("validateFitSignalsShape rejects a non-array signals field", () => {
 
 // Native declaration compatibility does not grant a sibling or unimplemented agent folder.
 const NATIVE_OUTPUT_ROLES = ["director", "writer", "designer", "publisher"];
-const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["advisor", "clossys/agents/advisor/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"]];
+const INVALID_OWNED_OUTPUTS = [["alpha", "clossys/agents/alpha/report.json"], ["customer", "clossys/agents/customer/report.json"], ["advisor", "clossys/agents/advisor/report.json"], ["writer", "clossys/agents/publisher/report.json"], ["writer", "clossys/publisher/report.json"], ["writer", "clossys/agents/writer-other/report.json"], ["writer", "clossys/agents/writer/../publisher/report.json"], ["writer", "clossys/writer/../publisher/report.json"], ["writer", "/clossys/agents/writer/report.json"], ["writer", "C:/clossys/agents/writer/report.json"], ["writer", "clossys/agents/writer\\../publisher/report.json"], ["writer", "clossys/agents/writer/"], ["agents", "clossys/agents/writer/report.json"], ["writer", "clossys/evidence/publisher/"], ["writer", "clossys/evidence/writer/../publisher/"], ["alpha", "clossys/evidence/alpha/"], ["writer", "clossys/evidence/"]];
 for (const short of NATIVE_OUTPUT_ROLES) {
   test(`owned outputs and feeds accept both declaration roots for ${short}`, () => {
     const role = `@scope/${short}`;
-    for (const path of [`clossys/${short}/report.json`, `clossys/agents/${short}/cells/`]) {
+    for (const path of [`clossys/${short}/report.json`, `clossys/agents/${short}/cells/`, `clossys/evidence/${short}/*.md`]) {
       const result = evaluatePackageFramework([role], manifests([{ name: role, foundry: { outputs: [path], feeds: [{ artifact: "report", path }] } }]));
       assert.deepEqual(result.findings, [], path);
       assert.equal(result.table[0].outputs, "declared");

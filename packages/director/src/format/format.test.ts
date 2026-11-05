@@ -7,6 +7,7 @@ import { parseSession } from "./session.js";
 import { parseFinding, validateFinding } from "./finding.js";
 import { validateRequest } from "./request.js";
 import { validateTree } from "./tree.js";
+import { SLOT_CANDIDATE_NAME, slotCandidateCell } from "./slot.js";
 
 const example = readFileSync(new URL("../../test-fixtures/strategy-v2/example/cells/focus.segment.core/v2.md", import.meta.url), "utf8");
 const finding = readFileSync(new URL("../../test-fixtures/strategy-v2/example/findings/studio-interviews-2026-10.md", import.meta.url), "utf8");
@@ -56,8 +57,20 @@ describe("cell format", () => {
       if (parsed.ok) expect(serializeCell(parsed.value), id).toBe(text);
     }
   });
-  it("keeps the existing published worked templates byte-compatible", () => {
-    for (const path of ["../../skill/templates/cell.md", "../../docs/v2/templates/cell.md"]) {
+  it("ships a cell template whose blank and worked candidates are flat slot candidates the engine reads", () => {
+    const template = readFileSync(new URL("../../skill/templates/cell.md", import.meta.url), "utf8");
+    expect(template).not.toMatch(/cells\/|tree\.json|sessions\/|msg:|status: (?:draft|active|retired)/);
+    const file = /File `focus\.segment\.core\/candidates\/([^`]+)`/.exec(template)?.[1];
+    expect(file && SLOT_CANDIDATE_NAME.test(file)).toBe(true);
+    const worked = [...template.matchAll(/```markdown\n(---\nslot: "focus\.segment\.core"\n[\s\S]*?)```/g)];
+    expect(worked).toHaveLength(1);
+    const cell = slotCandidateCell({ id: "focus.segment.core", version: 2, updated: "2026-10-29", path: file!, bytes: worked[0]![1]! });
+    expect(cell.direction.map(bullet => bullet.key)).toEqual(expect.arrayContaining(["Who", "Situation", "Not"]));
+    expect(cell.cites.map(formatRef).sort()).toEqual(["context.customer.need@1", "finding:owner-home-potters-2026-10-29", "finding:owner-kiln-queue-2026-10-29", "finding:studio-interviews-2026-10"]);
+    expect(cell.watch).toHaveLength(2);
+  });
+  it("keeps the v2 design draft's worked template byte-compatible", () => {
+    for (const path of ["../../docs/v2/templates/cell.md"]) {
       const template = readFileSync(new URL(path, import.meta.url), "utf8");
       const worked = [...template.matchAll(/```markdown\n(---\nid: focus\.segment\.core\n[\s\S]*?)```/g)];
       expect(worked, path).toHaveLength(1);

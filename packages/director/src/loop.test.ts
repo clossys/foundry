@@ -202,4 +202,17 @@ describe('production review read graph', () => {
     expect(snapshot(base)).toEqual(before);
     expect(existsSync(join(root,'requests'))).toBe(false);
   });
+  it('saves the plan as reports/review.json only with --write, and never a request', () => {
+    const {base,root}=fixture(); const before=snapshot(base);
+    const output=vi.spyOn(console,'log').mockImplementation(()=>{});
+    try {
+      expect(runReviewCli(['--root',root,'--today','2026-10-29','--write'], store)).toBe(1);
+    } finally { output.mockRestore(); }
+    const saved=JSON.parse(readFileSync(join(root,'reports','review.json'),'utf8'));
+    expect(saved).toEqual(planReview(root, reader,{today:'2026-10-29'}));
+    expect(saved.requests.length).toBeGreaterThan(0);
+    expect(existsSync(join(root,'requests'))).toBe(false);
+    const after=snapshot(base); delete after[Object.keys(after).find(key => key.endsWith('reports/review.json'))!];
+    expect(after).toEqual(before);
+  });
 });

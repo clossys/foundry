@@ -26,15 +26,13 @@ Use the existing native catalog and consumer library APIs for fills and their
 provenance. Missing installed capability is a named limit, not permission to
 fabricate package evidence or bypass native library checks.
 
-Write proposals only as **draft** native Designer cell versions under
-`clossys/agents/designer/cells/<existing-slot>/v<N>.md`. Preserve active sources,
-versions and tree pointers. For a currently active slot, use
-`designer-library cells propose <slot> --root <cell-root>` to allocate
-the next version; never overwrite an earlier version. An unchanged proposal
-should reuse the existing draft rather than allocate a duplicate. The shared
-propose command requires an active version; missing roots and new slot creation
-need the native library migration/initialisation capability first. Do not silently
-invent a new tree or composite metadata. If it is unavailable, report that limit.
+Write proposals only as unpinned candidate files in the existing slot folder,
+`clossys/agents/designer/<existing-slot>/candidates/<name>-v<N>.json`. Never
+change a pinned candidate, its `pin.json` or another slot's files; a revision is
+a new candidate file. An unchanged proposal reuses the existing candidate rather
+than adding a duplicate. New slot creation needs the native library capability
+first; if it is unavailable, report that limit. Grouping lives only in
+`clossys/agents/designer/ia.json`; never invent folders.
 
 Use the closed Designer frontmatter, canonical links such as
 `director:identity.brand.personality@1`, `originKinds`, `sources`, and the native
@@ -60,14 +58,14 @@ addresses the entire bullet. Audience and position are contextual inputs, not
 arbitrarily expanded into trait obligations. Unresolved owner inputs are retained
 as limits. Matching this declaration proves traceability, not visual taste.
 
-Run `clossys design --check` before and after activation and report actual findings.
-The check measures **active** downstream cells: an unactivated draft cannot make
-the active result clean. Preserve expected findings until the requested native
-activation occurs. Use `designer-library cells activate <slot@version...>
---confirm <valid-confirmation-ref> --root <cell-root>` only within the
-session's activation authority. Then `clossys design --root <consumer>` compiles
-the active cells into the native `compiled` projection; it neither generates
-creative proposals nor activates them. Do not edit that projection by hand.
+Run `clossys design --check` before and after pinning and report actual findings.
+The check measures **pinned** candidates: an unpinned candidate cannot make the
+pinned result clean. Preserve expected findings until the requested pin occurs.
+Pin only within the session's decision authority, with
+`clossys pin designer/<slot> <candidate-id> --by <who> --basis <picked|bulk|planner>`.
+Then `clossys design --root <consumer>` compiles the pinned candidates into the
+native `compiled` projection; it neither generates creative proposals nor pins
+them. Do not edit that projection by hand.
 
 The check includes native value-contract and token-contrast findings, reports
 missing contrast bindings, and names runtime WCAG and visual review limits.
