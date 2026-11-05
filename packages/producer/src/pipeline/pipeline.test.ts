@@ -18,6 +18,15 @@ import { ELEMENT_SCHEMA } from "../records/schemas.js";
 import { llmSourceOf, readSeat } from "./seats.js";
 import { pipelineStatus, slotCounts } from "./status.js";
 import { STEPS } from "./steps/index.js";
+import { createHash } from "node:crypto";
+
+/** A seat as its folder holds it: one candidate file and the pin.json that chooses it. */
+function writeSeat(root: string, step: string, value: unknown): void {
+  const dir = join(root, "clossys", "agents", "producer", step), name = `${step}-v1.json`, bytes = JSON.stringify(value);
+  mkdirSync(join(dir, "candidates"), { recursive: true });
+  writeFileSync(join(dir, "candidates", name), bytes);
+  writeFileSync(join(dir, "pin.json"), JSON.stringify({ candidate: name, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "planner", at: "2026-11-04T00:00:00.000Z" }));
+}
 
 const step = (id: string) => STEPS.find(candidate => candidate.id === id)!;
 const dirs: string[] = [];
@@ -54,8 +63,8 @@ describe("step definitions", () => {
   });
   it("gives every decide step a seat file and no plumb step one", () => {
     for (const each of STEPS) expect(Boolean(each.seat)).toBe(each.kind !== "plumb");
-    expect(step("pin.director").seat).toBe("clossys/agents/producer/pin.director/seat.json");
-    expect(step("pin.publisher").seat).toBe("clossys/agents/producer/pin.publisher/seat.json");
+    expect(step("pin.director").seat).toBe("clossys/agents/producer/pin.director/pin.json");
+    expect(step("pin.publisher").seat).toBe("clossys/agents/producer/pin.publisher/pin.json");
   });
 });
 
@@ -181,16 +190,22 @@ describe("derived graph", () => {
     // The slot reader refuses symlinked ancestors (the macOS tmpdir is one), so read the real path.
     const root = realpathSync(workspace());
     expect(readSeat(root, step("pin.director"))!.state).toBe("unassigned");
-    mkdirSync(join(root, "clossys", "agents", "producer", "pin.director"), { recursive: true });
-    writeFileSync(join(root, "clossys", "agents", "producer", "pin.director", "seat.json"), JSON.stringify({ by: "owner", llm: null, human: { procedure: "p", command: "clossys pin" } }));
+    writeSeat(root, "pin.director", { by: "owner", llm: null, human: { procedure: "p", command: "clossys pin" } });
     const seat = readSeat(root, step("pin.director"))!;
     expect([seat.state, seat.by, seat.llm]).toEqual(["partial", "owner", "open"]);
-    writeFileSync(join(root, "clossys", "agents", "producer", "pin.director", "seat.json"), JSON.stringify({ by: "code", llm: null, human: null }));
+    writeSeat(root, "pin.director", { by: "code", llm: null, human: null });
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
     expect(buildGraph(root).seats["pin.director"]!.state).toBe("invalid");
-    rmSync(join(root, "clossys", "agents", "producer", "pin.director", "seat.json"));
-    symlinkSync(join(root, "elsewhere.json"), join(root, "clossys", "agents", "producer", "pin.director", "seat.json"));
+    // A pin that drifts from its candidate, a symlinked pin and a retired seat.json are invalid, never read.
+    writeFileSync(join(root, "clossys", "agents", "producer", "pin.director", "candidates", "pin.director-v1.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
     expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
+    writeSeat(root, "pin.director", { by: "owner", llm: null, human: null });
+    rmSync(join(root, "clossys", "agents", "producer", "pin.director", "pin.json"));
+    symlinkSync(join(root, "elsewhere.json"), join(root, "clossys", "agents", "producer", "pin.director", "pin.json"));
+    expect(readSeat(root, step("pin.director"))!.state).toBe("invalid");
+    writeSeat(root, "pick.director", { by: "owner", llm: null, human: null });
+    writeFileSync(join(root, "clossys", "agents", "producer", "pick.director", "seat.json"), JSON.stringify({ by: "owner", llm: null, human: null }));
+    expect(readSeat(root, step("pick.director"))!.state).toBe("invalid");
   });
   it("takes each pick seat's llm from its agent's make step (W4)", () => {
     for (const agent of ["director", "designer", "writer", "publisher"]) {

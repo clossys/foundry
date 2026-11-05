@@ -11,10 +11,12 @@
  *   clossys/agents/<agent>/<slot>/pin.json            (absent only when slot.json says notNeeded)
  *
  * except the Producer tree, which is the seat kind (slot-model types.ts SEAT_AGENT): its folders are
- * pipeline decide-step seats, placed by its ia.json like slots, each holding only seat.json:
+ * pipeline decide-step seats, placed by its ia.json like slots, each holding its seat as candidate
+ * files plus one pin under the slot pin contract (no slot.json: the step is its contract):
  *
  *   clossys/agents/producer/ia.json
- *   clossys/agents/producer/<step>/seat.json
+ *   clossys/agents/producer/<step>/candidates/<step>-v<n>.json
+ *   clossys/agents/producer/<step>/pin.json
  *
  * Evidence, findings and other working files live outside the agent trees (clossys/evidence/).
  * The check reads the files directly (no build needed) and fails on:
@@ -33,10 +35,12 @@
  *   pin-hash            pin.json sha256 differs from the candidate file's bytes
  *   pin-attribution     pin.json has no decidedBy, or no basis (picked | bulk | planner | agent)
  *   not-needed-reason   slot.json notNeeded has no reason
- *   unlisted-seat       a seat folder (it has a seat.json) that the Producer ia.json does not list
+ *   unlisted-seat       a seat folder (it has candidates/ or pin.json) that the Producer ia.json does not list
  *   missing-seat        a Producer ia.json seat with no folder
- *   seat-shape          a listed seat folder has no seat.json, seat.json is not a JSON object with a
- *                       `by`, or the folder holds anything else (the seat schema is check:pipeline's)
+ *   seat-shape          a listed seat folder has no pin.json, its pinned candidate is not a JSON object
+ *                       with a `by`, it holds the retired seat.json, or it holds anything other than
+ *                       candidates/ and pin.json (no-candidates and pin-* as for a slot; the seat schema
+ *                       is check:pipeline's)
  *
  * Nothing is exempt: an agent folder that is not in this layout fails until it is converted.
  *
@@ -54,7 +58,7 @@ const SLOT_ENTRIES = new Set(['slot.json', 'candidates', 'pin.json']);
 export const SEAT_TREES = Object.freeze(['producer']);
 /** The only agent folders clossys/agents may hold (slot-model types.ts FOLDER_KIND keys). */
 export const AGENTS = Object.freeze(['director', 'designer', 'writer', 'publisher', 'producer']);
-const SEAT_FILE = 'seat.json';
+const SEAT_ENTRIES = new Set(['candidates', 'pin.json']);
 
 const stat = path => { try { return lstatSync(path); } catch { return undefined; } };
 const isDir = path => { const info = stat(path); return !!info && info.isDirectory() && !info.isSymbolicLink(); };
@@ -74,6 +78,37 @@ export function iaSlots(doc) {
   return ids.size ? ids : undefined;
 }
 
+/** A folder's candidates/ and pin.json under the slot pin contract; `bytes` is the pinned candidate when it verifies. */
+function checkCandidatesPin(dir, where, add, kind) {
+  const candidatesDir = join(dir, 'candidates');
+  const candidates = [];
+  if (isDir(candidatesDir)) {
+    for (const name of readdirSync(candidatesDir).sort()) {
+      if (isFile(join(candidatesDir, name))) candidates.push(name);
+      else add('stray-entry', `${where}/candidates/${name}`, 'candidates/ holds only candidate files');
+    }
+  } else if (stat(candidatesDir)) add('stray-entry', `${where}/candidates`, 'candidates must be a folder');
+  if (!candidates.length) add('no-candidates', where, `${kind} has no candidate files`);
+  const pinPath = join(dir, 'pin.json');
+  if (!stat(pinPath)) return { pinned: false };
+  if (!isFile(pinPath)) { add('stray-entry', `${where}/pin.json`, 'pin.json must be a file'); return { pinned: false }; }
+  const read = readJson(pinPath);
+  if (!read.ok || !object(read.value)) { add('pin-attribution', `${where}/pin.json`, 'pin.json is not a JSON object'); return { pinned: true }; }
+  const pin = read.value;
+  let bytes;
+  if (!nonEmpty(pin.decidedBy)) add('pin-attribution', `${where}/pin.json`, 'pin has no decidedBy');
+  if (pin.basis === undefined) add('pin-attribution', `${where}/pin.json`, `pin has no basis (${PIN_BASES.join(' | ')})`);
+  else if (!PIN_BASES.includes(pin.basis)) add('pin-attribution', `${where}/pin.json`, `pin basis ${JSON.stringify(pin.basis)} is not ${PIN_BASES.join(' | ')}`);
+  if (!nonEmpty(pin.candidate) || pin.candidate.includes('/') || pin.candidate.includes('\\') || !candidates.includes(pin.candidate)) {
+    add('pin-candidate', `${where}/pin.json`, `pinned candidate ${nonEmpty(pin.candidate) ? pin.candidate : '(none)'} does not exist`);
+  } else {
+    const sha256 = createHash('sha256').update(readFileSync(join(candidatesDir, pin.candidate))).digest('hex');
+    if (pin.sha256 !== sha256) add('pin-hash', `${where}/pin.json`, `sha256 differs from ${pin.candidate}`);
+    else bytes = readFileSync(join(candidatesDir, pin.candidate));
+  }
+  return { pinned: true, basis: pin.basis, bytes };
+}
+
 function checkSlot(agentDir, agent, slot, add) {
   const dir = join(agentDir, slot), where = `${agent}/${slot}`;
   for (const name of readdirSync(dir).sort()) {
@@ -89,43 +124,23 @@ function checkSlot(agentDir, agent, slot, add) {
       if (!object(notNeeded) || !nonEmpty(notNeeded.reason)) add('not-needed-reason', `${where}/slot.json`, 'notNeeded has no reason');
     }
   }
-  const candidatesDir = join(dir, 'candidates');
-  const candidates = [];
-  if (isDir(candidatesDir)) {
-    for (const name of readdirSync(candidatesDir).sort()) {
-      if (isFile(join(candidatesDir, name))) candidates.push(name);
-      else add('stray-entry', `${where}/candidates/${name}`, 'candidates/ holds only candidate files');
-    }
-  } else if (stat(candidatesDir)) add('stray-entry', `${where}/candidates`, 'candidates must be a folder');
-  if (!candidates.length) add('no-candidates', where, 'slot has no candidate files');
-  const pinPath = join(dir, 'pin.json');
-  if (!stat(pinPath)) return { pinned: false, notNeeded: notNeeded !== undefined };
-  if (!isFile(pinPath)) { add('stray-entry', `${where}/pin.json`, 'pin.json must be a file'); return { pinned: false, notNeeded: notNeeded !== undefined }; }
-  const read = readJson(pinPath);
-  if (!read.ok || !object(read.value)) { add('pin-attribution', `${where}/pin.json`, 'pin.json is not a JSON object'); return { pinned: true }; }
-  const pin = read.value;
-  if (!nonEmpty(pin.decidedBy)) add('pin-attribution', `${where}/pin.json`, 'pin has no decidedBy');
-  if (pin.basis === undefined) add('pin-attribution', `${where}/pin.json`, `pin has no basis (${PIN_BASES.join(' | ')})`);
-  else if (!PIN_BASES.includes(pin.basis)) add('pin-attribution', `${where}/pin.json`, `pin basis ${JSON.stringify(pin.basis)} is not ${PIN_BASES.join(' | ')}`);
-  if (!nonEmpty(pin.candidate) || pin.candidate.includes('/') || pin.candidate.includes('\\') || !candidates.includes(pin.candidate)) {
-    add('pin-candidate', `${where}/pin.json`, `pinned candidate ${nonEmpty(pin.candidate) ? pin.candidate : '(none)'} does not exist`);
-  } else {
-    const sha256 = createHash('sha256').update(readFileSync(join(candidatesDir, pin.candidate))).digest('hex');
-    if (pin.sha256 !== sha256) add('pin-hash', `${where}/pin.json`, `sha256 differs from ${pin.candidate}`);
-  }
-  return { pinned: true, basis: pin.basis };
+  return { ...checkCandidatesPin(dir, where, add, 'slot'), notNeeded: notNeeded !== undefined };
 }
 
-/** One listed seat folder: seat.json only, a JSON object naming who holds the seat. */
+/** One listed seat folder: candidates/ and pin.json only; the pinned candidate is a JSON object naming who holds the seat. */
 function checkSeat(agentDir, agent, seat, add) {
   const dir = join(agentDir, seat), where = `${agent}/${seat}`;
   for (const name of readdirSync(dir).sort()) {
-    if (name !== SEAT_FILE) add('seat-shape', `${where}/${name}`, 'a seat folder holds only seat.json');
+    if (name === 'seat.json') add('seat-shape', `${where}/${name}`, 'seat.json is retired: a seat is a candidate file plus pin.json');
+    else if (!SEAT_ENTRIES.has(name)) add('seat-shape', `${where}/${name}`, 'a seat folder holds only candidates/ and pin.json');
   }
-  if (!isFile(join(dir, SEAT_FILE))) { add('seat-shape', `${where}/${SEAT_FILE}`, 'seat folder has no seat.json'); return {}; }
-  const read = readJson(join(dir, SEAT_FILE));
-  if (!read.ok || !object(read.value) || !nonEmpty(read.value.by)) { add('seat-shape', `${where}/${SEAT_FILE}`, 'seat.json is not a JSON object with a by'); return {}; }
-  return { llm: object(read.value.llm), human: object(read.value.human) };
+  const state = checkCandidatesPin(dir, where, add, 'seat');
+  if (!state.pinned) { add('seat-shape', `${where}/pin.json`, 'seat folder has no pin.json'); return {}; }
+  if (!state.bytes) return {};
+  let value;
+  try { value = JSON.parse(state.bytes.toString('utf8')); } catch { value = undefined; }
+  if (!object(value) || !nonEmpty(value.by)) { add('seat-shape', `${where}/pin.json`, 'the pinned seat candidate is not a JSON object with a by'); return {}; }
+  return { llm: object(value.llm), human: object(value.human) };
 }
 
 /** A seat-kind tree (the Producer): ia.json lists seats, each folder is one seat. */
@@ -144,7 +159,7 @@ function checkSeatTree(agentDir, agent, add) {
     const path = join(agentDir, name);
     if (!isDir(path)) { add('stray-entry', `${agent}/${name}`, 'a seat tree holds only ia.json and seat folders'); continue; }
     if (listed?.has(name)) { present.add(name); continue; }
-    if (isFile(join(path, SEAT_FILE))) add('unlisted-seat', `${agent}/${name}`, 'seat folder is not listed in ia.json');
+    if (stat(join(path, 'candidates')) || stat(join(path, 'pin.json')) || stat(join(path, 'seat.json'))) add('unlisted-seat', `${agent}/${name}`, 'seat folder is not listed in ia.json');
     else add('stray-entry', `${agent}/${name}`, 'a seat tree holds only ia.json and seat folders');
   }
   for (const seat of listed ?? []) {

@@ -5,7 +5,8 @@
  * 1. Every IA slot under <repo>/clossys/agents/ is in the closed slot-state union: `pinned`
  *    (pin.json) or `not-needed` (slot.json `notNeeded: {reason, since}`). The decision is the
  *    shared loader's (records/slots.ts `rejectedSlots`), never re-derived here.
- * 2. No Studio specimen or slot-groups code path renders candidate file contents as text.
+ * 2. No Studio specimen, slot-groups or slot-detail code path (Studio lib, or the server's slot
+ *    detail, gallery and specimen builders) renders candidate file contents as text.
  *
  * Usage: node scripts/check-slot-state.mjs [--repo <foundry checkout>] [--json]
  * Needs `npm run build` (reads dist). Exit 0 clean, 1 findings, 2 usage or load error.
@@ -38,7 +39,9 @@ const RAW_TEXT = [
   { pattern: /\bfallback\s*[:?]/, message: 'a specimen fallback path draws the candidate instead of an explicit state' },
 ];
 const studio = join(repo, 'packages/producer/studio');
-const files = [join(studio, 'lib/slot-detail.ts')];
+// The Studio slot detail and the server code that builds slot detail, gallery and specimen payloads.
+const server = join(repo, 'packages/producer/src/server');
+const files = [join(studio, 'lib/slot-detail.ts'), ...['slot-detail.ts', 'slot-gallery.ts', 'installed-specimens.ts', 'specimen-frame.ts'].map(name => join(server, name))];
 const walk = dir => existsSync(dir) ? readdirSync(dir).flatMap(name => {
   const path = join(dir, name);
   return statSync(path).isDirectory() ? walk(path) : /\.tsx?$/.test(name) && !/\.test\./.test(name) ? [path] : [];

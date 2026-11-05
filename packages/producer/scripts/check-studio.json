@@ -39,6 +39,48 @@
       "kind": "static"
     },
     {
+      "id": "producer check:slot-state",
+      "cwd": "packages/producer",
+      "run": "npm run check:slot-state",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:slot-pins",
+      "cwd": "packages/producer",
+      "run": "npm run check:slot-pins",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:cli-verbs",
+      "cwd": "packages/producer",
+      "run": "npm run check:cli-verbs",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:one-brand",
+      "cwd": "packages/producer",
+      "run": "npm run check:one-brand",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:no-hidden-fallbacks",
+      "cwd": "packages/producer",
+      "run": "npm run check:no-hidden-fallbacks",
+      "kind": "static"
+    },
+    {
+      "id": "producer check:generated-derived",
+      "cwd": "packages/producer",
+      "run": "npm run check:generated-derived",
+      "kind": "static"
+    },
+    {
+      "id": "producer test:studio-capture",
+      "cwd": "packages/producer",
+      "run": "npm run test:studio-capture",
+      "kind": "test"
+    },
+    {
       "id": "producer test:assemble-only",
       "cwd": "packages/producer",
       "run": "npm run test:assemble-only",
@@ -313,6 +355,18 @@
       "cwd": "packages/designer",
       "run": "npm run check:slot-contracts",
       "kind": "static"
+    },
+    {
+      "id": "designer check:copy-port-ids",
+      "cwd": "packages/designer",
+      "run": "npm run check:copy-port-ids",
+      "kind": "static"
+    },
+    {
+      "id": "designer test:copy-port-ids",
+      "cwd": "packages/designer",
+      "run": "npm run test:copy-port-ids",
+      "kind": "test"
     },
     {
       "id": "designer test:section-tokens",

@@ -8,16 +8,15 @@ import { build } from 'esbuild';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { studioCopyRegistry } from './generate-studio-map.mjs';
-import { checkPayload } from './studio-payload.mjs';
+import { candidateFiles, checkPayload, materializeCandidate } from './studio-payload.mjs';
 
 const root = new URL('../../../', import.meta.url).pathname;
-const library = join(root, 'clossys/library/sections.studio.contract/studio-contract');
 const source = join(root, 'packages/producer/studio/sections/studio-contract');
 const expected = { title: 'Contract', description: 'What this leaf promises and reads.', factsLabel: 'Contract facts', inputsLabel: 'Contract inputs',
   fact: 'Fact', value: 'Value', input: 'Input', type: 'Type', required: 'Required', yes: 'Yes', no: 'No', none: 'None' };
 
 test('Contract copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
-  await checkPayload({ slot: 'sections.studio.contract', element: 'studio-contract', version: 2, versionDir: join(library, 'v2'), studioDir: source,
+  await checkPayload({ slot: 'sections.studio.contract', element: 'studio-contract', version: 2, files: await candidateFiles(join(root, 'clossys'), 'sections.studio.contract', 'studio-contract-v2.json'), studioDir: source,
     payload: ['LICENCE.md', 'index.tsx', 'registry-item.json'] });
   const registry = await studioCopyRegistry(join(root, 'clossys'));
   for (const [field, text] of Object.entries(expected)) {
@@ -45,7 +44,7 @@ test('Writer input preserves exact Contract markup across all conditional branch
   const bundles = [];
   for (const version of ['v1', 'v2']) {
     const out = join(dir, `${version}.cjs`);
-    await build({ entryPoints: [join(library, version, 'index.tsx')], outfile: out, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
+    await build({ entryPoints: [join(await materializeCandidate(join(root, 'clossys'), 'sections.studio.contract', `studio-contract-${version}.json`, join(dir, `candidate-${version}`)), 'index.tsx')], outfile: out, bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic', packages: 'external',
       alias: { '@clossys/designer-ui': join(root, 'packages/designer/ui/src/index.ts'), '@': join(root, 'packages/designer/ui/src') },
       nodePaths: [join(root, 'node_modules')] });
     // Keep React's server render and components on the same instance.

@@ -1,6 +1,6 @@
 import { defineStep } from "../define.js";
 import type { Stage } from "../define.js";
-import { IA, LIBRARY_ELEMENTS, SEATS, SLOTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
+import { IA, SEATS, SEAT_PINS, SLOTS, candidatesOf, pinsOf, slotsOf } from "./ports.js";
 import type { Agent } from "./ports.js";
 
 /** One `clossys pin` step per agent, at the pin stage of the agent's round; You hold every one. */
@@ -30,8 +30,8 @@ export const DECISION_STEPS = [
   defineStep({
     id: "seats", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
     summary: "Who decides each decide step: an llm seat, a human seat, or both.",
-    inputs: [], outputs: [SEATS],
-    command: { manual: "owner writes clossys/agents/producer/<step>/seat.json" }, checks: ["pipeline"], open: "seats-open",
+    inputs: [], outputs: [SEATS, SEAT_PINS],
+    command: { manual: "owner writes a seat candidate clossys/agents/producer/<step>/candidates/<step>-v<n>.json and pins it (pin.json)" }, checks: ["pipeline"], open: "seats-open",
   }),
   defineStep({
     id: "rules", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
@@ -50,7 +50,7 @@ export const DECISION_STEPS = [
     summary: `Pin one candidate per ${agent[0]!.toUpperCase()}${agent.slice(1)} L3 slot, or mark the slot not needed.`,
     inputs: [candidatesOf(agent), slotsOf(agent)],
     outputs: [pinsOf(agent), `clossys/agents/${agent}/*/slot.json#notNeeded`],
-    command: { cli: { verb: "pin", parser: "src/cli/pin.ts", target: agent }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state", "pin-propagation", "every-candidate-previewable"],
+    command: { cli: { verb: "pin", parser: "src/cli/pin.ts", target: agent }, entry: "src/cli/pin.ts#runPinCli" }, checks: ["decisions", "slot-state", "slot-pins", "pin-propagation", "every-candidate-previewable"],
     open: `slots-undecided:${agent}`,
   })),
   // An agent seat's pick: the same pin.json, written by clossys pick with basis agent at the agent's pin stage.

@@ -18,7 +18,9 @@
     "redirects",
     "items",
     "pageActions",
-    "routes"
+    "routes",
+    "document",
+    "shell"
   ],
   "additionalProperties": false,
   "properties": {
@@ -82,6 +84,99 @@
       "minItems": 1,
       "items": {
         "type": "object"
+      }
+    },
+    "document": {
+      "description": "The publication document's Producer-served assets (studioDocument): stylesheets in order and the icon URLs.",
+      "type": "object",
+      "required": [
+        "stylesheets",
+        "icons"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "stylesheets": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": [
+              "href",
+              "precedence"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "href": {
+                "type": "string",
+                "pattern": "^/"
+              },
+              "precedence": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "icons": {
+          "type": "object",
+          "required": [
+            "icon",
+            "apple"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "icon": {
+              "type": "string",
+              "pattern": "^/"
+            },
+            "apple": {
+              "type": "string",
+              "pattern": "^/"
+            }
+          }
+        }
+      }
+    },
+    "shell": {
+      "description": "The publication's shell Publisher installed at the app root (studioShell): the document layout and each state.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "state",
+          "entry"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "state": {
+            "enum": [
+              "document",
+              "loading",
+              "not-found",
+              "error",
+              "global-error"
+            ]
+          },
+          "entry": {
+            "type": "object",
+            "required": [
+              "file",
+              "export"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "type": "string",
+                "pattern": "^studio/app/"
+              },
+              "export": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
       }
     }
   }

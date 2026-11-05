@@ -17,21 +17,25 @@ export type SlotAgent = typeof SLOT_AGENTS[number];
 
 /**
  * The seat kind: the Producer tree holds seats, not slots. A seat folder is one pipeline decide
- * step that has a seat (`pin.<agent>`, `pick.<agent>`, ...), holds only seat.json, and is placed by
- * the Producer ia.json exactly as a slot folder is placed by its agent's ia.json:
+ * step that has a seat (`pin.<agent>`, `pick.<agent>`, ...), placed by the Producer ia.json exactly
+ * as a slot folder is placed by its agent's ia.json, and holds its seat as a candidate file plus a
+ * pin under the slot pin contract (pin.json: candidate, sha256, decidedBy, basis, at):
  *
- *   <consumer>/agents/producer/ia.json                  seat ids in IA order (grouped by round and stage)
- *   <consumer>/agents/producer/<step>/seat.json         who decides that step (pipeline/schemas/seat.schema.json)
+ *   <consumer>/agents/producer/ia.json                         seat ids in IA order (grouped by round and stage)
+ *   <consumer>/agents/producer/<step>/candidates/<step>-v<n>.json  who decides that step (pipeline/schemas/seat.schema.json)
+ *   <consumer>/agents/producer/<step>/pin.json                 the pinned seat candidate
  *
- * Seats have no candidates and no pin; the pipeline (src/pipeline/seats.ts) reads them through
- * records/slots.ts and check:git-cms (R-GIT-CMS) holds the tree to this layout.
+ * A seat has no slot.json (the step is its contract). The pipeline (src/pipeline/seats.ts) reads the
+ * pinned seat through records/slots.ts; check:git-cms (R-GIT-CMS) holds the tree to this layout and
+ * check:slot-pins (R-SLOT-PINS) fails a placed seat without exactly one valid pin. The retired
+ * seat.json file is refused wherever it is found.
  */
 export const SEAT_AGENT = "producer" as const;
 export type SeatAgent = typeof SEAT_AGENT;
 /** Every agent tree under `<consumer>/agents`: the four slot trees and the seat tree. */
 export const MODEL_AGENTS = [...SLOT_AGENTS, SEAT_AGENT] as const;
 export type ModelAgent = typeof MODEL_AGENTS[number];
-/** What a folder in an agent tree is: a slot (slot.json, candidates/, pin.json) or a seat (seat.json). */
+/** What a folder in an agent tree is: a slot (slot.json, candidates/, pin.json) or a seat (candidates/, pin.json). */
 export const FOLDER_KINDS = ["slot", "seat"] as const;
 export type FolderKind = typeof FOLDER_KINDS[number];
 export const FOLDER_KIND: Readonly<Record<ModelAgent, FolderKind>> = {
@@ -50,7 +54,8 @@ export const IA_FILE = "ia.json";
 export const SLOT_FILE = "slot.json";
 export const PIN_FILE = "pin.json";
 export const CANDIDATES_DIR = "candidates";
-export const SEAT_FILE = "seat.json";
+/** The retired seat file: a seat is a pinned candidate now, and a seat.json left in a seat folder is refused. */
+export const RETIRED_SEAT_FILE = "seat.json";
 
 /** Decision provenance for migrated pins (D6, and the decidedBy rewrite) and for the owner-cleared Director brief. */
 export const MIGRATION_DECIDED_BY = "migrated";

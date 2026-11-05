@@ -44,7 +44,7 @@
 //   decide.foreign-writer  code outside a decide step's declared entry can write its outputs inside
 //                     the repository (a write whose path resolves, symlinks included, outside the
 //                     repository root, such as a scratch copy under os.tmpdir(), is not a repo write)
-//   seat.invalid      a seat file (clossys/agents/producer/<step>/seat.json) fails the seat schema,
+//   seat.invalid      a seat (the pinned candidate of clossys/agents/producer/<step>/) fails the seat schema,
 //                     names a missing prompt file or an unknown clossys command, or has no decide step;
 //                     or a pick.<agent> seat's llm differs from its make step <agent>.candidates (W4)
 //   option.unknown    a flag the step's CLI parser does not define

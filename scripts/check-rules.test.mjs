@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -150,4 +150,18 @@ test("G3: removing a floored rule row, an enforcing check, a fixture run or a ro
   assert.equal(floorApplies({ rules: [{ id: "R-HOLDS" }] }, { name: "fixture" }), false);
   const own = repository([{ id: "R-GIT-CMS", owner_words: words, status: "unenforced", note: "a floored rule in another tree" }]);
   assert.ok(kinds(await checkRules.ruleFindings(own)).includes("shape R-ONE-BRAND"), "the default floor applies once a floored rule is listed");
+});
+
+test("each fixture run's temp folder is removed after the run: check-rules-* folders do not grow", async () => {
+  const root = repository([
+    { id: "R-HOLDS", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/bad", fixture_runs: [run(".#check:a", "check-a.mjs"), run(".#check:a", "check-a.mjs")] },
+    { id: "R-PASSES", owner_words: words, status: "enforced", checks: [".#check:a"], fixture: "scripts/rules/fixtures/clean", fixture_runs: [run(".#check:a", "check-a.mjs")] },
+  ]);
+  const folders = () => readdirSync(tmpdir()).filter(name => name.startsWith("check-rules-")).length;
+  try {
+    const before = folders();
+    const result = await ruleFindings(root);
+    assert.deepEqual(kinds(result), ["fixture-passed R-PASSES"]);
+    assert.equal(folders(), before, "a fixture run left its check-rules-* temp folder behind");
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

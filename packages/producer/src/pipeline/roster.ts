@@ -3,7 +3,7 @@
  *
  * The roster is declared once here, from the slot agents: You (the owner), each content agent, and
  * Checks (the code that verifies). A step's holder comes from its seat file
- * (clossys/agents/producer/<step>/seat.json) when one exists; otherwise it is derived from the step:
+ * (the pinned candidate of clossys/agents/producer/<step>/, read through records/slots.ts) when one exists; otherwise it is derived from the step:
  *   decide:judgment  You
  *   decide:creative  the agent the step names (actor agent:<name>), at its tier once a seat names one
  *   plumb            Code: Checks for a step at a check stage, otherwise Publisher (it assembles and serves)

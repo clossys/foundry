@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://clossys.com/schemas/producer/seat.schema.json",
-  "title": "Decide-step seat (clossys/agents/producer/<step>/seat.json)",
+  "title": "Decide-step seat (the pinned candidate clossys/agents/producer/<step>/candidates/<step>-v<n>.json)",
   "description": "Derived from src/pipeline/seats.ts Seat.",
   "type": "object",
   "required": [

@@ -26,7 +26,7 @@
         "workspace"
       ],
       "open": "slots-without-slot-json",
-      "seat": "clossys/agents/producer/ia/seat.json",
+      "seat": "clossys/agents/producer/ia/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -62,7 +62,7 @@
       "checks": [
         "workspace"
       ],
-      "seat": "clossys/agents/producer/evidence/seat.json",
+      "seat": "clossys/agents/producer/evidence/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -95,7 +95,7 @@
       "checks": [
         "workspace"
       ],
-      "seat": "clossys/agents/producer/workspace.config/seat.json",
+      "seat": "clossys/agents/producer/workspace.config/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -119,18 +119,22 @@
       "inputs": [],
       "outputs": [
         {
-          "glob": "clossys/agents/producer/*/seat.json",
+          "glob": "clossys/agents/producer/*/candidates/*",
           "schema": "seat"
+        },
+        {
+          "glob": "clossys/agents/producer/*/pin.json",
+          "schema": "pin"
         }
       ],
       "command": {
-        "manual": "owner writes clossys/agents/producer/<step>/seat.json"
+        "manual": "owner writes a seat candidate clossys/agents/producer/<step>/candidates/<step>-v<n>.json and pins it (pin.json)"
       },
       "checks": [
         "pipeline"
       ],
       "open": "seats-open",
-      "seat": "clossys/agents/producer/seats/seat.json",
+      "seat": "clossys/agents/producer/seats/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -163,7 +167,7 @@
       "checks": [
         "rules"
       ],
-      "seat": "clossys/agents/producer/rules/seat.json",
+      "seat": "clossys/agents/producer/rules/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -202,7 +206,7 @@
         "workspace"
       ],
       "open": "writer-keys-unapproved",
-      "seat": "clossys/agents/producer/writer.approve/seat.json",
+      "seat": "clossys/agents/producer/writer.approve/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -253,11 +257,12 @@
       "checks": [
         "decisions",
         "slot-state",
+        "slot-pins",
         "pin-propagation",
         "every-candidate-previewable"
       ],
       "open": "slots-undecided:director",
-      "seat": "clossys/agents/producer/pin.director/seat.json",
+      "seat": "clossys/agents/producer/pin.director/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -308,11 +313,12 @@
       "checks": [
         "decisions",
         "slot-state",
+        "slot-pins",
         "pin-propagation",
         "every-candidate-previewable"
       ],
       "open": "slots-undecided:designer",
-      "seat": "clossys/agents/producer/pin.designer/seat.json",
+      "seat": "clossys/agents/producer/pin.designer/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -363,11 +369,12 @@
       "checks": [
         "decisions",
         "slot-state",
+        "slot-pins",
         "pin-propagation",
         "every-candidate-previewable"
       ],
       "open": "slots-undecided:writer",
-      "seat": "clossys/agents/producer/pin.writer/seat.json",
+      "seat": "clossys/agents/producer/pin.writer/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -418,11 +425,12 @@
       "checks": [
         "decisions",
         "slot-state",
+        "slot-pins",
         "pin-propagation",
         "every-candidate-previewable"
       ],
       "open": "slots-undecided:publisher",
-      "seat": "clossys/agents/producer/pin.publisher/seat.json",
+      "seat": "clossys/agents/producer/pin.publisher/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -470,7 +478,7 @@
         "decisions",
         "slot-options"
       ],
-      "seat": "clossys/agents/producer/pick.director/seat.json",
+      "seat": "clossys/agents/producer/pick.director/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -518,7 +526,7 @@
         "decisions",
         "slot-options"
       ],
-      "seat": "clossys/agents/producer/pick.designer/seat.json",
+      "seat": "clossys/agents/producer/pick.designer/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -566,7 +574,7 @@
         "decisions",
         "slot-options"
       ],
-      "seat": "clossys/agents/producer/pick.writer/seat.json",
+      "seat": "clossys/agents/producer/pick.writer/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -614,7 +622,7 @@
         "decisions",
         "slot-options"
       ],
-      "seat": "clossys/agents/producer/pick.publisher/seat.json",
+      "seat": "clossys/agents/producer/pick.publisher/pin.json",
       "holder": {
         "id": "you",
         "kind": "you",
@@ -663,7 +671,7 @@
         "workspace"
       ],
       "open": "slots-without-candidates:director",
-      "seat": "clossys/agents/producer/director.candidates/seat.json",
+      "seat": "clossys/agents/producer/director.candidates/pin.json",
       "holder": {
         "id": "director",
         "kind": "ai",
@@ -715,7 +723,7 @@
         "workspace"
       ],
       "open": "slots-without-candidates:designer",
-      "seat": "clossys/agents/producer/designer.candidates/seat.json",
+      "seat": "clossys/agents/producer/designer.candidates/pin.json",
       "holder": {
         "id": "designer",
         "kind": "ai",
@@ -770,7 +778,7 @@
         "workspace"
       ],
       "open": "slots-without-candidates:writer",
-      "seat": "clossys/agents/producer/writer.candidates/seat.json",
+      "seat": "clossys/agents/producer/writer.candidates/pin.json",
       "holder": {
         "id": "writer",
         "kind": "ai",
@@ -829,7 +837,7 @@
         "workspace"
       ],
       "open": "slots-without-candidates:publisher",
-      "seat": "clossys/agents/producer/publisher.candidates/seat.json",
+      "seat": "clossys/agents/producer/publisher.candidates/pin.json",
       "holder": {
         "id": "publisher",
         "kind": "ai",
@@ -842,53 +850,6 @@
         "rank": 6,
         "x": 3360,
         "y": 1128
-      }
-    },
-    {
-      "id": "designer.library",
-      "kind": "decide:creative",
-      "actor": "agent:designer",
-      "stage": "design.select",
-      "summary": "Adopt a Designer element version into the consumer library.",
-      "inputs": [
-        {
-          "glob": "clossys/agents/designer/*/pin.json",
-          "schema": "pin"
-        },
-        {
-          "glob": "clossys/agents/designer/*/candidates/*",
-          "schema": "candidate-element"
-        }
-      ],
-      "outputs": [
-        {
-          "glob": "clossys/library/*/*/v*/element.json",
-          "schema": "library-element"
-        },
-        {
-          "glob": "clossys/library/**"
-        }
-      ],
-      "command": {
-        "skill": "packages/designer/skill/SKILL.md",
-        "module": "src/records/library.ts#writeElementVersion"
-      },
-      "checks": [
-        "studio-template"
-      ],
-      "seat": "clossys/agents/producer/designer.library/seat.json",
-      "holder": {
-        "id": "designer",
-        "kind": "ai",
-        "source": "derived",
-        "tier": null
-      },
-      "layout": {
-        "lane": "designer",
-        "stage": "design.select",
-        "rank": 5,
-        "x": 3040,
-        "y": 736
       }
     },
     {
@@ -1329,7 +1290,9 @@
         "entry": "src/cli/check.ts#runCheck"
       },
       "checks": [
-        "workspace"
+        "workspace",
+        "slot-pins",
+        "cli-verbs"
       ],
       "holder": {
         "id": "checks",
@@ -1564,7 +1527,8 @@
         "entry": "src/cli/produce.ts#runProduce"
       },
       "checks": [
-        "studio-p0"
+        "studio-p0",
+        "one-brand"
       ],
       "holder": {
         "id": "publisher",
@@ -1594,9 +1558,6 @@
         {
           "glob": "clossys/agents/publisher/*/candidates/*",
           "schema": "candidate-publisher"
-        },
-        {
-          "glob": "clossys/library/**"
         }
       ],
       "outputs": [
@@ -1802,7 +1763,7 @@
       "summary": "Report pipeline status (read-only) and the step graph built from these definitions.",
       "inputs": [
         {
-          "glob": "clossys/agents/producer/*/seat.json",
+          "glob": "clossys/agents/producer/*/candidates/*",
           "schema": "seat"
         },
         {
@@ -2118,9 +2079,6 @@
         },
         {
           "glob": "pkg:studio/generated/assembly-bindings.ts"
-        },
-        {
-          "glob": "clossys/library/**"
         }
       ],
       "outputs": [
@@ -2145,7 +2103,9 @@
         "studio-template",
         "assemble-only",
         "routes-published",
+        "route-parity",
         "copy-source",
+        "no-hidden-fallbacks",
         "studio"
       ],
       "holder": {
@@ -2465,12 +2425,105 @@
     },
     {
       "from": "seats",
+      "to": "workspace.check",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "compile",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "options",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "decisions",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "studio.produce",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
       "to": "pipeline",
       "via": [
         {
-          "output": "clossys/agents/producer/*/seat.json",
-          "input": "clossys/agents/producer/*/seat.json",
+          "output": "clossys/agents/producer/*/candidates/*",
+          "input": "clossys/agents/producer/*/candidates/*",
           "schema": "seat"
+        },
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "derive.uses",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "studio.map",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
+        }
+      ]
+    },
+    {
+      "from": "seats",
+      "to": "build.receipt",
+      "via": [
+        {
+          "output": "clossys/agents/producer/*/pin.json",
+          "input": "clossys/agents/*/*/pin.json",
+          "schema": "pin"
         }
       ]
     },
@@ -2686,17 +2739,6 @@
     {
       "from": "pin.designer",
       "to": "publisher.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/designer/*/pin.json",
-          "input": "clossys/agents/designer/*/pin.json",
-          "schema": "pin"
-        }
-      ]
-    },
-    {
-      "from": "pin.designer",
-      "to": "designer.library",
       "via": [
         {
           "output": "clossys/agents/designer/*/pin.json",
@@ -3357,17 +3399,6 @@
     {
       "from": "designer.candidates",
       "to": "publisher.candidates",
-      "via": [
-        {
-          "output": "clossys/agents/designer/*/candidates/*",
-          "input": "clossys/agents/designer/*/candidates/*",
-          "schema": "candidate-element"
-        }
-      ]
-    },
-    {
-      "from": "designer.candidates",
-      "to": "designer.library",
       "via": [
         {
           "output": "clossys/agents/designer/*/candidates/*",
@@ -3971,11 +4002,6 @@
       "glob": "clossys/evidence/director/findings/*.md"
     },
     {
-      "step": "designer.library",
-      "port": "output",
-      "glob": "clossys/library/**"
-    },
-    {
       "step": "director.store",
       "port": "input",
       "glob": "clossys/agents/director/**"
@@ -4031,11 +4057,6 @@
       "glob": "clossys/agents/*/*/slot.json#varyOn"
     },
     {
-      "step": "publish.install",
-      "port": "input",
-      "glob": "clossys/library/**"
-    },
-    {
       "step": "specimen",
       "port": "output",
       "glob": "node_modules/.cache/clossys/specimen-thumbs/**"
@@ -4084,11 +4105,6 @@
       "step": "studio.checks",
       "port": "input",
       "glob": "pkg:studio/generated/assembly-bindings.ts"
-    },
-    {
-      "step": "studio.checks",
-      "port": "input",
-      "glob": "clossys/library/**"
     }
   ],
   "layout": {
@@ -4105,8 +4121,8 @@
       "columnGap": 280
     },
     "crossings": {
-      "before": 2660,
-      "after": 2547
+      "before": 3120,
+      "after": 3036
     },
     "lanes": [
       {
@@ -4307,7 +4323,7 @@
   },
   "seats": {
     "ia": {
-      "path": "clossys/agents/producer/ia/seat.json",
+      "path": "clossys/agents/producer/ia/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4315,7 +4331,7 @@
       "issues": []
     },
     "evidence": {
-      "path": "clossys/agents/producer/evidence/seat.json",
+      "path": "clossys/agents/producer/evidence/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4323,7 +4339,7 @@
       "issues": []
     },
     "workspace.config": {
-      "path": "clossys/agents/producer/workspace.config/seat.json",
+      "path": "clossys/agents/producer/workspace.config/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4331,7 +4347,7 @@
       "issues": []
     },
     "seats": {
-      "path": "clossys/agents/producer/seats/seat.json",
+      "path": "clossys/agents/producer/seats/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4339,7 +4355,7 @@
       "issues": []
     },
     "rules": {
-      "path": "clossys/agents/producer/rules/seat.json",
+      "path": "clossys/agents/producer/rules/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4347,7 +4363,7 @@
       "issues": []
     },
     "writer.approve": {
-      "path": "clossys/agents/producer/writer.approve/seat.json",
+      "path": "clossys/agents/producer/writer.approve/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4355,7 +4371,7 @@
       "issues": []
     },
     "pin.director": {
-      "path": "clossys/agents/producer/pin.director/seat.json",
+      "path": "clossys/agents/producer/pin.director/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4366,7 +4382,7 @@
       "issues": []
     },
     "pin.designer": {
-      "path": "clossys/agents/producer/pin.designer/seat.json",
+      "path": "clossys/agents/producer/pin.designer/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4377,7 +4393,7 @@
       "issues": []
     },
     "pin.writer": {
-      "path": "clossys/agents/producer/pin.writer/seat.json",
+      "path": "clossys/agents/producer/pin.writer/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4388,7 +4404,7 @@
       "issues": []
     },
     "pin.publisher": {
-      "path": "clossys/agents/producer/pin.publisher/seat.json",
+      "path": "clossys/agents/producer/pin.publisher/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4399,7 +4415,7 @@
       "issues": []
     },
     "pick.director": {
-      "path": "clossys/agents/producer/pick.director/seat.json",
+      "path": "clossys/agents/producer/pick.director/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4410,7 +4426,7 @@
       "issues": []
     },
     "pick.designer": {
-      "path": "clossys/agents/producer/pick.designer/seat.json",
+      "path": "clossys/agents/producer/pick.designer/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4421,7 +4437,7 @@
       "issues": []
     },
     "pick.writer": {
-      "path": "clossys/agents/producer/pick.writer/seat.json",
+      "path": "clossys/agents/producer/pick.writer/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4432,7 +4448,7 @@
       "issues": []
     },
     "pick.publisher": {
-      "path": "clossys/agents/producer/pick.publisher/seat.json",
+      "path": "clossys/agents/producer/pick.publisher/pin.json",
       "state": "partial",
       "by": "owner",
       "llm": "open",
@@ -4443,7 +4459,7 @@
       "issues": []
     },
     "director.candidates": {
-      "path": "clossys/agents/producer/director.candidates/seat.json",
+      "path": "clossys/agents/producer/director.candidates/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4451,7 +4467,7 @@
       "issues": []
     },
     "designer.candidates": {
-      "path": "clossys/agents/producer/designer.candidates/seat.json",
+      "path": "clossys/agents/producer/designer.candidates/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4459,7 +4475,7 @@
       "issues": []
     },
     "writer.candidates": {
-      "path": "clossys/agents/producer/writer.candidates/seat.json",
+      "path": "clossys/agents/producer/writer.candidates/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4467,15 +4483,7 @@
       "issues": []
     },
     "publisher.candidates": {
-      "path": "clossys/agents/producer/publisher.candidates/seat.json",
-      "state": "unassigned",
-      "by": null,
-      "llm": "open",
-      "human": "open",
-      "issues": []
-    },
-    "designer.library": {
-      "path": "clossys/agents/producer/designer.library/seat.json",
+      "path": "clossys/agents/producer/publisher.candidates/pin.json",
       "state": "unassigned",
       "by": null,
       "llm": "open",
@@ -4512,7 +4520,7 @@
       "kinds": [
         "ai"
       ],
-      "steps": 2,
+      "steps": 1,
       "sources": [
         "derived"
       ],
@@ -5205,6 +5213,10 @@
         {
           "flag": "--site",
           "value": true
+        },
+        {
+          "flag": "--states",
+          "value": true
         }
       ],
       "publish.page": [
@@ -5266,6 +5278,10 @@
         },
         {
           "flag": "--site",
+          "value": true
+        },
+        {
+          "flag": "--states",
           "value": true
         }
       ],

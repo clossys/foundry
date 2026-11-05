@@ -12,14 +12,14 @@ export const CANDIDATE_SCHEMA: Readonly<Record<Agent, string>> = { director: "ca
 export const IA: Port = { glob: "clossys/agents/*/ia.json", schema: "ia" };
 export const SLOTS: Port = { glob: "clossys/agents/*/*/slot.json", schema: "slot" };
 export const PINS: Port = { glob: "clossys/agents/*/*/pin.json", schema: "pin" };
-export const SEATS: Port = { glob: "clossys/agents/producer/*/seat.json", schema: "seat" };
+/** Seat candidates (the seat schema) and the pins that choose one per decide step. */
+export const SEATS: Port = { glob: "clossys/agents/producer/*/candidates/*", schema: "seat" };
+export const SEAT_PINS: Port = { glob: "clossys/agents/producer/*/pin.json", schema: "pin" };
 export const slotsOf = (agent: Agent): Port => ({ glob: `clossys/agents/${agent}/*/slot.json`, schema: "slot" });
 export const pinsOf = (agent: Agent): Port => ({ glob: `clossys/agents/${agent}/*/pin.json`, schema: "pin" });
 export const candidatesOf = (agent: Agent): Port => ({ glob: `clossys/agents/${agent}/*/candidates/*`, schema: CANDIDATE_SCHEMA[agent] });
 /** Every agent's candidate files, one typed port per agent schema. */
 export const CANDIDATES: readonly Port[] = AGENTS.map(candidatesOf);
-/** Library element records (src/records/schemas.ts ELEMENT_SCHEMA); their payload files stay untyped. */
-export const LIBRARY_ELEMENTS: Port = { glob: "clossys/library/*/*/v*/element.json", schema: "library-element" };
 /** The Studio map projection the Studio checks and capture read. */
 export const STUDIO_MAP: Port = { glob: "pkg:studio/generated/studio-map.json", schema: "studio-map" };
 /** The compile lock `clossys compile` writes. */

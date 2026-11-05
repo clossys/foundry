@@ -81,6 +81,23 @@ describe("uniform slot resolution", () => {
     c.source = { kind: "derived", ref: ["synthetic:origin"] };
     expect(codes(input)).not.toContain("no-source");
   });
+  it("binds a multi-ref registry source's hash to its primary ref and still requires every ref vendored", () => {
+    const input = store(); const c = input.candidates["sections.synthetic"]![0]!;
+    const other = "b".repeat(64);
+    const refCodes = (references: Map<string, string>) => resolveSlots([input], writer(), references)[0]!.findings.map(row => row.code);
+    c.source = { kind: "registry", ref: ["synthetic/item@1", "synthetic/part@1"], hash };
+    const both = new Map([["synthetic/item@1", hash], ["synthetic/part@1", other]]);
+    expect(refCodes(both)).not.toContain("source-ref-unknown");
+    expect(refCodes(new Map([["synthetic/item@1", hash]]))).toContain("source-ref-unknown");
+    c.source = { kind: "registry", ref: ["synthetic/part@1", "synthetic/item@1"], hash };
+    expect(refCodes(both)).toContain("source-ref-unknown");
+  });
+  it("accepts a not-needed slot with no pin and still rejects an unpinned slot that is needed", () => {
+    const input = store(); input.pins = {}; input.candidates = {};
+    expect(codes(input)).toEqual(["no-candidate", "no-pin"]);
+    input.notNeeded = ["sections.synthetic"];
+    expect(codes(input)).toEqual([]);
+  });
   it("reports inverse orphan candidates and all named copy failures", () => {
     const input = store(); input.ia = [];
     expect(codes(input)).toEqual(["not-in-ia", "orphan-candidate"]);

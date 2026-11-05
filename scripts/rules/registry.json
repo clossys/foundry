@@ -150,7 +150,12 @@
         "check:studio#designer check-fill-source-imports",
         "check:studio#designer check-surface-source-identity",
         "check:studio#designer scripts/surface-source-identity.test.mjs",
-        "check:studio#designer scripts/surface-source-runtime.test.mjs"
+        "check:studio#designer scripts/surface-source-runtime.test.mjs",
+        "check:studio#designer check:surface-leaves",
+        "check:studio#designer test:surface-leaves",
+        "check:studio#designer check-one-leaf-source",
+        "check:studio#designer check-surface-history-continuity",
+        "check:studio#designer scripts/surface-history-continuity.test.mjs"
       ],
       "fixture": "scripts/rules/fixtures/R-VENDORED-SOURCES",
       "fixture_runs": [
@@ -177,7 +182,9 @@
         "check:studio#producer scripts/studio-contract-copy.test.mjs",
         "check:studio#producer scripts/studio-options-copy.test.mjs",
         "check:studio#producer scripts/studio-references-copy.test.mjs",
-        "check:studio#designer generate-copy-ports --check"
+        "check:studio#designer generate-copy-ports --check",
+        "check:studio#designer check:copy-port-ids",
+        "check:studio#designer test:copy-port-ids"
       ],
       "note": "No check fails on a literal string in a Studio frame, section or renderer; the copy tests prove resolution only (W2 all copy through Writer)."
     },
@@ -220,10 +227,28 @@
         "quote": "agents/<agent>/<slot-id>/ flat; grouping only in ia.json data",
         "date": "2026-11-02"
       },
-      "status": "unenforced",
-      "note": "No check fails when a legacy library/ or cells store is read or shipped (W3 CLI on flat slot folders); the selection.json store alone is refused by check:no-selection-store.",
+      "status": "enforced",
+      "note": "check:flat-slots runs from root check and fails when a legacy store is kept, read or shipped: clossys/{library,cells,tree.json} or an agent folder holding library, cells or tree.json; an agent folder entry other than ia.json and slot folders, or a slot folder nesting a directory other than candidates/; a code file naming a legacy store path or joining cells, tree.json or library onto a root; a package manifest or the pipeline graph declaring one. clossys/library was retired (git rm) after Designer ref-verbatim --pinned gave identical output with and without it. Red on the real tree until the Director, Designer library-cli, Publisher content-map and Writer cells stores move to flat slot folders (engine gap). The fixture keeps clossys/library, a grouping folder and a tree.json reader.",
       "related": [
         ".#check:no-selection-store"
+      ],
+      "checks": [
+        ".#check:flat-slots"
+      ],
+      "fixture": "scripts/rules/fixtures/R-FLAT-SLOTS",
+      "fixture_runs": [
+        {
+          "check": ".#check:flat-slots",
+          "cwd": ".",
+          "run": "node scripts/check-flat-slots.mjs --root {fixture}",
+          "expect": "^\\s+clossys/library \\[store\\]"
+        },
+        {
+          "check": ".#check:flat-slots",
+          "cwd": ".",
+          "run": "node scripts/check-flat-slots.mjs --root {fixture}",
+          "expect": "^\\s+packages/probe/src/store\\.mjs:4 \\[reader\\]"
+        }
       ]
     },
     {
@@ -233,11 +258,29 @@
         "quote": "every L3 is a slot, candidates are files, one pinned",
         "date": "2026-10-31"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "packages/designer#check:slot-contracts"
       ],
-      "note": "slot-resolve no-pin/multi-pin runs only inside clossys check, never from root check (W4 pin schema)."
+      "note": "check:slot-pins runs the clossys check slot resolver from root check through check:studio and fails on a needed slot with no pin, more than one pin, a pin off its candidate bytes or an unvendored pinned source; a not-needed slot holds no pin. Producer seats ride the same contract (candidate file plus one pin.json, sha256 checked); an open seat, a drifted pin or a retired seat.json fails. The fixture is a needed Director slot with one candidate and no pin, and a Producer seat still holding a retired seat.json.",
+      "checks": [
+        "packages/producer#check:slot-pins"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-PINS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-pins",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-pins.mjs --root {fixture}",
+          "expect": "^\\s+director:identity\\.brand\\.essence \\[no-pin\\]"
+        },
+        {
+          "check": "packages/producer#check:slot-pins",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-pins.mjs --root {fixture}",
+          "expect": "^\\s+agents/producer/pin\\.director \\[seat-rejected\\]"
+        }
+      ]
     },
     {
       "id": "R-ONE-BRAND",
@@ -246,12 +289,30 @@
         "quote": "Studio previews the consumer workspace in the consumer brand; never greyscale",
         "date": "2026-10-29"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#producer check-theme-parity (live)",
         "check:studio#producer studio/checks/check-theme-parity.test.cjs"
       ],
-      "note": "No check fails when consumer brand assets point at Foundry files or a theme failure falls back to the Foundry theme."
+      "note": "check:one-brand runs the Studio theme and brand code over the consumer store from root check through check:studio: the theme compiles from the consumer's pinned themes.* (the Foundry theme or a theme error fails), the name, mark, favicon, app icon and lockup resolve from its pinned assets.*, and no asset token points at a file. The fixture drifts the themes.background pin and points assets.mark at a Foundry file.",
+      "checks": [
+        "packages/producer#check:one-brand"
+      ],
+      "fixture": "scripts/rules/fixtures/R-ONE-BRAND",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:one-brand",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-one-brand.mjs --root {fixture}",
+          "expect": "^\\s+theme \\[error\\] Consumer theme could not be compiled: themes\\.background"
+        },
+        {
+          "check": "packages/producer#check:one-brand",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-one-brand.mjs --root {fixture}",
+          "expect": "^\\s+assets\\.mark \\[points-outside\\] positive\\.\\$value = \"packages/designer/assets/foundry-mark\\.svg\""
+        }
+      ]
     },
     {
       "id": "R-STUDIO-CARD-DETAIL",
@@ -285,7 +346,7 @@
         "quote": "Studio previews what cells produce, not file text",
         "date": "2026-10-29"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#producer publisher-preview (live)",
         "check:studio#designer check-specimen-token-host-parts",
@@ -293,9 +354,22 @@
         "check:studio#designer generate-default-component-preview --check",
         "check:studio#designer components-coverage --check",
         "check:studio#designer sections-frames-coverage --check",
-        "check:studio#designer scripts/sections-frames-source.test.mjs"
+        "check:studio#designer scripts/sections-frames-source.test.mjs",
+        "check:studio#producer test:studio-capture"
       ],
-      "note": "No check fails when a slot detail falls back to a raw candidate-file-text table."
+      "note": "No Studio slot detail, specimen or slot-groups code path, nor the server slot detail, gallery and specimen builders, renders candidate file contents as text (check:slot-state raw-candidate-text). The fixture is a server slot detail whose row text is the candidate file content.",
+      "checks": [
+        "packages/producer#check:slot-state"
+      ],
+      "fixture": "scripts/rules/fixtures/R-REAL-SPECIMENS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-state",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-state.mjs --repo {fixture}",
+          "expect": "^\\s+packages/producer/src/server/slot-detail\\.ts:\\d+ \\[raw-candidate-text\\]"
+        }
+      ]
     },
     {
       "id": "R-USAGE-GRAPH",
@@ -304,13 +378,31 @@
         "quote": "all layers link uses and used-by; DOM provenance",
         "date": "2026-10-26"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#designer check (usage-graph)",
         "check:studio#designer test:usage-graph",
         "check:studio#designer generate-surface-consumption --check"
       ],
-      "note": "usage-graph --check is freshness only; nothing compares slot.json uses with candidate imports or checks DOM provenance ids."
+      "note": "check:generated-derived runs from root check through check:studio: every slot.json uses equals what its pinned candidate imports or references (R-USES-COMPUTED, so used-by is the inverse), and the DOM data-clossys-slot/candidate/hash markers come from the generated provenance the assembly bindings apply (R-PROVENANCE-GENERATED). The fixture is a pinned hero section importing button with uses [] and no generated bindings.",
+      "checks": [
+        "packages/producer#check:generated-derived"
+      ],
+      "fixture": "scripts/rules/fixtures/R-USAGE-GRAPH",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:generated-derived",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-generated-derived.mjs --root {fixture}",
+          "expect": "^R-USES-COMPUTED clossys/agents/designer/sections\\.hero/slot\\.json: uses \\[\\] != computed \\[\"components\\.button\"\\]"
+        },
+        {
+          "check": "packages/producer#check:generated-derived",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-generated-derived.mjs --root {fixture}",
+          "expect": "^R-PROVENANCE-GENERATED packages/producer/studio/generated/assembly-bindings\\.ts: assembly bindings do not apply the generated provenance markers"
+        }
+      ]
     },
     {
       "id": "R-CLI-DETERMINISTIC",
@@ -319,8 +411,24 @@
         "quote": "clossys verbs = brief, check, compile only",
         "date": "2026-10-29"
       },
-      "status": "unenforced",
-      "note": "No check runs the CLI verbs against the real consumer store, where they exit 2 (W3)."
+      "status": "enforced",
+      "note": "check:cli-verbs runs every read-only clossys verb (direct, design and write --brief and --check, publish, decisions, options --classes --check) twice on the real store from root check through check:studio: each exits 0 with byte-identical output, and clossys check runs (0 or 1) and repeats byte for byte. The fixture is a consumer store holding only a Director IA.",
+      "checks": [
+        "packages/producer#check:cli-verbs"
+      ],
+      "related": [
+        ".#check:compile-pure",
+        "packages/producer#check:slot-pins"
+      ],
+      "fixture": "scripts/rules/fixtures/R-CLI-DETERMINISTIC",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:cli-verbs",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-cli-verbs.mjs --root {fixture}",
+          "expect": "^\\s+clossys design --check \\[exit\\] exited 2"
+        }
+      ]
     },
     {
       "id": "R-CHECKS-WIRED",
@@ -360,14 +468,26 @@
         "quote": "no temp solutions; delete shims, never extend",
         "date": "2026-10-23"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#producer scripts/preview-studio-config.test.mjs",
         "check:studio#producer scripts/studio-draft-items.test.mjs",
         "check:studio#producer scripts/pack-five.test.mjs",
         "check:studio#producer scripts/build-studio.test.mjs"
       ],
-      "note": "No class check fails on a silent fallback (theme catch, unknown icon, newest-draft preview); only per-feature tests exist."
+      "note": "check:no-hidden-fallbacks parses shipped Producer code (src, bin, Studio app, lib, components, frames, sections) with TypeScript and fails on a catch that swallows its error: no throw, no use of the error, no report, no error record or error state handed on, and not the bare `return false` of a yes/no probe. The fixture is a theme loader that falls back to the Foundry theme in a catch. The real tree is red: 55 catch sites substitute a silent default (engine gap, each needs its failure surfaced at the catch).",
+      "checks": [
+        "packages/producer#check:no-hidden-fallbacks"
+      ],
+      "fixture": "scripts/rules/fixtures/R-NO-HIDDEN-FALLBACKS",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:no-hidden-fallbacks",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-no-hidden-fallbacks.mjs --root {fixture}",
+          "expect": "^\\s+src/theme\\.ts:7 \\[silent-catch\\]"
+        }
+      ]
     },
     {
       "id": "R-SLOT-STATE",
@@ -375,8 +495,20 @@
         "quote": "shadcn item, else a composition of pinned parts, else mark unneeded",
         "date": "2026-11-03"
       },
-      "status": "unenforced",
-      "note": "Every L3 slot is pinned or marked not-needed: check-slot-state lands with W4 and is not on this base."
+      "status": "enforced",
+      "note": "Every Director, Designer and Writer slot is pinned or marked not-needed (records/slots rejectedSlots), checked by check:slot-state from root check through check:studio. The fixture is a Director slot holding one candidate and no pin.",
+      "checks": [
+        "packages/producer#check:slot-state"
+      ],
+      "fixture": "scripts/rules/fixtures/R-SLOT-STATE",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:slot-state",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-slot-state.mjs --repo {fixture}",
+          "expect": "^\\s+director/identity\\.brand\\.essence \\[no-pin\\]"
+        }
+      ]
     },
     {
       "id": "R-COMPILE-PURE",
@@ -384,12 +516,20 @@
         "quote": "the rendering itself is just the same deterministic plumbing that works everytime without llm token spend",
         "date": "2026-11-03"
       },
-      "status": "pending-wire",
-      "pending_wire": {
-        "check": "check:compile-pure",
-        "branch": "claude/compile-pure"
-      },
-      "note": "compile reads only ia.json, the content map, pins and pinned candidate files, offline, byte-identical across runs; the check is built on claude/compile-pure."
+      "status": "enforced",
+      "checks": [
+        ".#check:compile-pure"
+      ],
+      "note": "compile reads only the decision files packages/producer/decision-inputs.json lists, offline, with no model client or agent binary reachable from the built CLI, byte-identical across runs; a root of only the decision files compiles to the same bytes, non-decision edits change nothing, and re-pinning a Writer slot whose keys the compiled copy renders changes the output. The fixture is a built CLI whose compile verb imports a model client.",
+      "fixture": "scripts/rules/fixtures/R-COMPILE-PURE",
+      "fixture_runs": [
+        {
+          "check": ".#check:compile-pure",
+          "cwd": ".",
+          "run": "cp -R {fixture}/repo {out}/repo && cp -R {fixture}/built {out}/repo/packages/producer/dist && node packages/producer/scripts/check-compile-pure.mjs --root {out}/repo",
+          "expect": "^\\s+purity: packages/producer/dist/cli/index\\.js imports the agent or model client openai"
+        }
+      ]
     },
     {
       "id": "R-DECISIONS-BY-CLI",
@@ -410,7 +550,10 @@
           "expect": "\\[pin-shape\\] missing decidedBy"
         }
       ],
-      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape)."
+      "note": "Slot decisions (pin, not-needed) are written only by the clossys pin CLI; check:decisions fails on any hand-edited decision record (pin shape, candidate, hash, both, not-needed shape).",
+      "related": [
+        "check:studio#designer check:designer-receipt"
+      ]
     },
     {
       "id": "R-GIT-CMS",

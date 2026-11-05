@@ -90,8 +90,15 @@ function withSeats(repo, ids = ["pin.designer", "pick.designer"]) {
   const producer = join(repo, "clossys", "agents", "producer");
   mkdirSync(producer, { recursive: true });
   writeFileSync(join(producer, "ia.json"), seatIa(ids));
-  for (const id of ids) { mkdirSync(join(producer, id)); writeFileSync(join(producer, id, "seat.json"), json(SEAT)); }
+  for (const id of ids) writeSeat(producer, id, SEAT);
   return producer;
+}
+/** A seat as the slot pin contract holds it: one candidate file and the pin.json that chooses it. */
+function writeSeat(producer, id, value) {
+  const candidates = join(producer, id, "candidates"), name = `${id}-v1.json`, bytes = json(value);
+  mkdirSync(candidates, { recursive: true });
+  writeFileSync(join(candidates, name), bytes);
+  writeFileSync(join(producer, id, "pin.json"), json({ candidate: name, sha256: createHash("sha256").update(bytes).digest("hex"), decidedBy: "migrated", basis: "planner", at: "2026-11-04T00:00:00.000Z" }));
 }
 
 test("the seat-kind trees match the slot model's FOLDER_KIND", () => {
@@ -120,12 +127,16 @@ test("a Producer tree without ia.json, an unlisted or missing seat, and a missha
   assert.deepEqual(rules(repo), ["unlisted-seat producer/pick.designer", "missing-seat producer/pin.writer"]);
   writeFileSync(join(producer, "ia.json"), seatIa(["pin.designer", "pick.designer"]));
   writeFileSync(join(producer, "pin.designer", "notes.md"), "x\n");
-  writeFileSync(join(producer, "pick.designer", "seat.json"), json({ llm: null }));
+  writeFileSync(join(producer, "pick.designer", "seat.json"), json(SEAT));
   writeFileSync(join(producer, "README.md"), "x\n");
   assert.deepEqual(rules(repo), ["stray-entry producer/README.md", "seat-shape producer/pin.designer/notes.md", "seat-shape producer/pick.designer/seat.json"]);
   unlinkSync(join(producer, "pick.designer", "seat.json"));
-  mkdirSync(join(producer, "pick.designer", "candidates"));
-  assert.deepEqual(rules(repo).slice(1), ["seat-shape producer/pin.designer/notes.md", "seat-shape producer/pick.designer/candidates", "seat-shape producer/pick.designer/seat.json"]);
+  writeSeat(producer, "pick.designer", { llm: null });
+  assert.deepEqual(rules(repo).slice(1), ["seat-shape producer/pin.designer/notes.md", "seat-shape producer/pick.designer/pin.json"]);
+  writeFileSync(join(producer, "pick.designer", "candidates", "pick.designer-v1.json"), json(SEAT));
+  assert.deepEqual(rules(repo).slice(1), ["seat-shape producer/pin.designer/notes.md", "pin-hash producer/pick.designer/pin.json"]);
+  unlinkSync(join(producer, "pick.designer", "pin.json"));
+  assert.deepEqual(rules(repo).slice(1), ["seat-shape producer/pin.designer/notes.md", "seat-shape producer/pick.designer/pin.json"]);
 }));
 
 test("evidence, notes and files inside an agent or slot folder are stray entries", () => withRepo(({ repo, agent, pinned }) => {

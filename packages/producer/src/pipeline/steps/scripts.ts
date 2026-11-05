@@ -14,7 +14,7 @@ export const SCRIPT_STEPS = [
   defineStep({
     id: "studio.map", kind: "plumb", actor: "code", stage: "publish.assemble",
     summary: "Generate the Studio map, copy, bindings, icons, provenance, brand and flow theme.",
-    // It never reads clossys/library or selection.json: compile runs it over a root holding only the
+    // It never reads selection.json: compile runs it over a root holding only the
     // decision-inputs.json files, and check:compile-pure proves that root and edits to both leave the output unchanged.
     inputs: [IA, SLOTS, PINS, ...CANDIDATES],
     outputs: [STUDIO_MAP, ...STUDIO_GENERATED.map(name => `pkg:studio/generated/${name}`)],
@@ -37,9 +37,9 @@ export const SCRIPT_STEPS = [
   defineStep({
     id: "studio.checks", kind: "plumb", actor: "code", stage: "publish.check",
     summary: "Studio render, routing, assembly and propagation checks.",
-    inputs: [STUDIO_MAP, "pkg:studio/generated/assembly-bindings.ts", "clossys/library/**"], outputs: ["arg:--out"],
+    inputs: [STUDIO_MAP, "pkg:studio/generated/assembly-bindings.ts"], outputs: ["arg:--out"],
     command: { script: "studio/checks/p0-studio-check.cjs", npm: "studio:check" },
-    checks: ["studio-p0", "studio-mutations", "studio-propagate", "studio-dom", "studio-modules", "publisher-preview", "theme-parity", "no-handrolling", "no-page-jsx", "studio-template", "assemble-only", "routes-published", "copy-source", "studio"],
+    checks: ["studio-p0", "studio-mutations", "studio-propagate", "studio-dom", "studio-modules", "publisher-preview", "theme-parity", "no-handrolling", "no-page-jsx", "studio-template", "assemble-only", "routes-published", "route-parity", "copy-source", "no-hidden-fallbacks", "studio"],
   }),
   defineStep({
     id: "capture", kind: "plumb", actor: "code", stage: "publish.check",

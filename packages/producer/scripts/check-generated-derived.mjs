@@ -23,6 +23,7 @@
  *
  *   node scripts/check-generated-derived.mjs            check; exit 1 with findings
  *   node scripts/check-generated-derived.mjs --write    write slot.json `uses` (the build step)
+ *   node scripts/check-generated-derived.mjs --root <checkout>   check another tree (a fixture)
  *
  * Node builtins only: the generator imports these derivations, and the check runs on any tree.
  */
@@ -498,7 +499,10 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     const changed = writeUses(join(repo, 'clossys'));
     console.log(`check-generated-derived: wrote computed uses into ${changed} slot.json file(s)`);
   } else {
-    const { findings, temp } = checkGeneratedDerived();
+    // --root <checkout> checks another tree's clossys/ and generated Studio data (a fixture).
+    const at = args.indexOf('--root');
+    if (at >= 0 && !args[at + 1]) { console.error('check-generated-derived: --root needs a directory'); process.exit(2); }
+    const { findings, temp } = checkGeneratedDerived(at >= 0 ? { root: resolve(args[at + 1]) } : {});
     for (const finding of findings) console.log(`${finding.rule} ${finding.file}: ${finding.detail}`);
     const counts = {};
     for (const finding of findings) counts[finding.rule] = (counts[finding.rule] ?? 0) + 1;
