@@ -1,6 +1,7 @@
 {
   "candidate": "simple-hero-v1.json",
   "sha256": "5ae74467891a312fe3c7f8d729717419aa8b98f15d025ef4719dafc398037fb9",
-  "pinnedBy": "migration:SLOT-MODEL",
-  "at": "2026-10-31T00:00:00Z"
+  "decidedBy": "planner:SITE-TEMPLATE",
+  "basis": "planner",
+  "at": "2026-11-04T00:00:00Z"
 }

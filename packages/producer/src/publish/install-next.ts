@@ -21,6 +21,7 @@ import { isBlocking, NEXT_ROUTE_MARKER, planNextRoutes, type InstallFinding, typ
 import { readPinnedPublication } from "./pinned-publication.js";
 import { expandPublication } from "./expand-tabs.js";
 import { INSTALL_MARKER, installOutRoot } from "./install-out.js";
+import { isBindGenerated, NEXT_BIND_PAGES, planNextBind, type NextBindOptions } from "./install-next-bind.js";
 
 export const NEXT_INSTALL_REPORT = "install-report.json";
 export const NEXT_INSTALL_KIND = "next";
@@ -31,8 +32,14 @@ export interface PublishNextOptions {
   readonly publication: string;
   /** The Next app directory the routes install into. */
   readonly app: string;
-  /** The consumer's assembly module, relative to the app directory. */
-  readonly assembly: string;
+  /** The consumer's assembly module, relative to the app directory. Not with `bind`, which generates it. */
+  readonly assembly?: string;
+  /**
+   * Publisher generates the assembly, the states module and every page module from the pinned
+   * page records (`install-next-bind.ts`), and installs their items into the site project (the
+   * app directory's parent). The shell installs too.
+   */
+  readonly bind?: NextBindOptions;
   /** Resolve leaves at request time through the assembly's leaf export. */
   readonly live?: boolean;
   /** The consumer's states module (client, exports `PublishedState`), relative to the app directory: installs the publication's shell. */
@@ -42,7 +49,7 @@ export interface PublishNextOptions {
   /** The install record dir; defaults to `next-<publication>` in the install out root. */
   readonly out?: string;
 }
-export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf" | "shell"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift"; readonly shell?: NextShellState }
+export interface PublishNextFile { readonly file: string; readonly pageId: string; readonly kind: "page" | "leaf" | "shell" | "bind"; readonly route: string; readonly state: "written" | "unchanged" | "removed" | "drift"; readonly shell?: NextShellState }
 export interface PublishNextResult { readonly app: string; readonly out?: string; readonly files: readonly PublishNextFile[]; readonly findings: readonly InstallFinding[] }
 /** The install record `/api/publication` reads: one row per installed page route. */
 export interface NextInstallReport {
@@ -90,10 +97,37 @@ export async function publishNext(options: PublishNextOptions): Promise<PublishN
   const pinned = await readPinnedPublication(join(root, "clossys"), options.publication);
   if (!pinned.routePack) throw new Error(`publish --install --next: publication ${options.publication} has no route pack`);
   const { map, leafTemplates } = expandPublication(join(root, "clossys"), pinned.map, pinned.routePack.routes as readonly Record<string, unknown>[]);
-  const plan = planNextRoutes({ map, leafTemplates, assembly: options.assembly, live: options.live === true, ...(options.states !== undefined ? { states: options.states } : {}) });
-  const findings: InstallFinding[] = [...plan.findings];
+  if ((options.bind === undefined) === (options.assembly === undefined)) throw new Error("publish --install --next: name the consumer's --assembly, or --bind to have Publisher generate it (not both)");
+  const site = dirname(app);
+  const bound = options.bind ? await planNextBind({ root, site, map, check: options.check === true, bind: options.bind, leafTemplates }) : undefined;
+  const assembly = bound ? bound.assembly : options.assembly!;
+  const states = bound ? bound.states : options.states;
+  const plan = planNextRoutes({ map, leafTemplates, assembly, live: options.live === true, ...(states !== undefined ? { states } : {}) });
+  const findings: InstallFinding[] = [...(bound?.findings ?? []), ...plan.findings];
   const files: PublishNextFile[] = [];
   if (findings.some(isBlocking)) return { app, files, findings };
+  if (bound) {
+    const generated = new Set(bound.files.map(row => row.file));
+    for (const row of bound.files) {
+      const path = join(site, ...row.file.split("/"));
+      const stored = existsSync(path) ? await readFile(path, "utf8") : undefined;
+      if (stored !== undefined && !isBindGenerated(row.file, stored)) {
+        findings.push({ code: "site-contract", ...(row.pageId ? { slot: row.pageId } : {}), detail: `${row.file} exists and was not installed by Publisher` });
+        continue;
+      }
+      const state = stored === row.content ? "unchanged" : options.check ? "drift" : "written";
+      if (state === "written") { await mkdir(dirname(path), { recursive: true }); await writeFile(path, row.content); }
+      files.push({ file: row.file, pageId: row.pageId, kind: "bind", route: "", state });
+    }
+    // A page module no page binds any more is removed, like a stale route file.
+    const pagesDir = join(site, ...NEXT_BIND_PAGES.split("/"));
+    for (const name of existsSync(pagesDir) ? await readdir(pagesDir) : []) {
+      const file = `${NEXT_BIND_PAGES}/${name}`;
+      if (generated.has(file) || !isBindGenerated(file, await readFile(join(pagesDir, name), "utf8").catch(() => ""))) continue;
+      if (!options.check) await unlink(join(pagesDir, name));
+      files.push({ file, pageId: "", kind: "bind", route: "", state: options.check ? "drift" : "removed" });
+    }
+  }
   const planned = new Set(plan.files.map(row => row.file));
   for (const row of plan.files) {
     const path = join(app, ...row.file.split("/"));
