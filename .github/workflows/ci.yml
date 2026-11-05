@@ -1402,7 +1402,10 @@ jobs:
     needs: [push-tree]
     if: github.event_name != 'push' || needs.push-tree.outputs.duplicate != 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    # The Director facts step below pays `npm ci` and the full root build
+    # (every workspace), so this job gets the same budget as `build` and
+    # `root tests`, the other full-build jobs, not the tree-read-only 5.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:

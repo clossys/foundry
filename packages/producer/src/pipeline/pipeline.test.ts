@@ -22,7 +22,8 @@ import { STEPS } from "./steps/index.js";
 const step = (id: string) => STEPS.find(candidate => candidate.id === id)!;
 const dirs: string[] = [];
 const workspace = () => {
-  const root = mkdtempSync(join(tmpdir(), "pipeline-"));
+  // Every slot-model read refuses symlinked ancestors (the macOS tmpdir is one), so use the real path.
+  const root = realpathSync(mkdtempSync(join(tmpdir(), "pipeline-")));
   dirs.push(root);
   mkdirSync(join(root, "clossys"), { recursive: true });
   writeFileSync(join(root, "clossys", "clossys.config.ts"), "export default {}\n");

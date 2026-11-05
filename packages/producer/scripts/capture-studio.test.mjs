@@ -108,3 +108,32 @@ test("parseArgs defaults --out to a temp dir and the port to 4620; contact sheet
   ] });
   assert.ok(html.indexOf("/bad") < html.indexOf("/ok"));
 });
+
+test("a cross-origin frame no target probed, and a frame target the capture could not attach, fail the shot", () => {
+  const facts = probe(`<!doctype html><title>Home</title><h1>Your agents</h1>`);
+  const opaque = { ...facts, frames: [{ src: "/__specimen?a", readyState: "cross-origin", height: 200, width: 300, textLength: 0, media: 0, hidden: false }] };
+  const unprobed = detectFindings(opaque, {});
+  assert.deepEqual(unprobed.map(f => f.type), ["probe-error"]);
+  assert.match(unprobed[0].detail, /__specimen\?a.*no frame target/);
+  const swallowed = detectFindings(facts, { probeErrors: ["attach http://127.0.0.1/__specimen?a: Target closed"] });
+  assert.deepEqual(swallowed.map(f => f.type), ["probe-error"]);
+  assert.ok(FAILING.includes("probe-error"), "probe errors fail the run");
+});
+
+test("a cross-origin frame takes the paint its own target reported, so a blank one is an empty specimen", async () => {
+  const { mergeFramePaint, framePaint } = await import("./capture-studio.mjs");
+  assert.equal(typeof mergeFramePaint, "function");
+  const facts = { readyState: "complete", scrollWidth: 375, clientWidth: 375, bodyText: "", labels: [], specimens: [], frames: [
+    { src: "/__specimen?blank", readyState: "cross-origin", height: 200, width: 300, textLength: 0, media: 0, hidden: false },
+    { src: "/__specimen?painted", readyState: "cross-origin", height: 200, width: 300, textLength: 0, media: 0, hidden: false },
+    { src: "/__specimen?loading", readyState: "cross-origin", height: 200, width: 300, textLength: 0, media: 0, hidden: false },
+  ] };
+  const blankDom = new JSDOM(`<!doctype html><body></body>`, { url: "http://127.0.0.1:4620/__specimen?blank", runScripts: "outside-only" });
+  // jsdom stays "loading" until its load event; the probe's own fields are what is under test.
+  const blank = { ...blankDom.window.eval(`(${framePaint.toString()})()`), readyState: "complete" };
+  assert.deepEqual(blank, { url: "http://127.0.0.1:4620/__specimen?blank", readyState: "complete", textLength: 0, media: 0 });
+  const merged = mergeFramePaint(facts, [blank, { url: "http://127.0.0.1:4620/__specimen?painted", readyState: "complete", textLength: 12, media: 1 }, { url: "http://127.0.0.1:4620/__specimen?loading", readyState: "loading", textLength: 0, media: 0 }], "http://127.0.0.1:4620/designer");
+  assert.equal(isSettled(merged), false, "a frame target still loading is not settled");
+  const findings = detectFindings(merged, {});
+  assert.deepEqual(findings.map(f => [f.type, f.detail]), [["empty-specimen", "frame /__specimen?blank painted nothing"]]);
+});

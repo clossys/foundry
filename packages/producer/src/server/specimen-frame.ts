@@ -73,8 +73,12 @@ export function specimenFramePage(options: { src: string; width: number; title: 
     + `<script>${SCRIPT}</script></body></html>\n`;
 }
 
-/** Built specimen files: an installed specimen build (`/__specimen-site/<key>/...`) or a Publisher specimen bundle. */
-const SPECIMEN_ASSET = /^(?:\/__specimen-site\/[a-z0-9]+(?:-[a-f0-9]{12})?\/[A-Za-z0-9._/-]+|\/__specimen\/assets\/[0-9a-f]{24}\.(?:js|css))$/;
+/**
+ * Built specimen files: an installed specimen build (`/__specimen-site/<key>/...`, the 16-hex build
+ * key with an optional 12-hex option suffix) or a Publisher specimen bundle. Only those exact key
+ * shapes get the opaque-origin grant.
+ */
+const SPECIMEN_ASSET = /^(?:\/__specimen-site\/[0-9a-f]{16}(?:-[0-9a-f]{12})?\/[A-Za-z0-9._/-]+|\/__specimen\/assets\/[0-9a-f]{24}\.(?:js|css))$/;
 const SPECIMEN_ASSET_DEST = new Set(["script", "style", "font"]);
 /**
  * The one cross-origin read the server answers: a specimen running in a served preview page is

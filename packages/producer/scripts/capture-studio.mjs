@@ -20,7 +20,7 @@ export const THEMES = Object.freeze(["light", "dark"]);
 export const DEFAULT_PORT = 4620;
 export const DIFF_LIMIT = 0.02;
 /** Failing finding types, in severity order (first is worst). */
-export const FAILING = Object.freeze(["console-error", "failed-request", "unresolved-copy", "empty-specimen", "id-label", "overflow", "readiness-timeout"]);
+export const FAILING = Object.freeze(["console-error", "failed-request", "unresolved-copy", "empty-specimen", "id-label", "overflow", "readiness-timeout", "probe-error"]);
 const UNRESOLVED = "Studio copy is unresolved";
 
 // ---------------------------------------------------------------- route enumeration
@@ -88,7 +88,7 @@ export function pageProbe() {
           const box = el.getBoundingClientRect();
           if (box.width > 0 && box.height > 0) { media++; break; }
         }
-      }
+      } else readyState = "cross-origin"; // contentDocument is null for a frame of another origin
     } catch { readyState = "cross-origin"; }
     const rect = frame.getBoundingClientRect();
     frames.push({ src: frame.getAttribute("src") ?? "", readyState, loading: frame.getAttribute("loading") ?? "", height: rect.height, width: rect.width, textLength: text.length, media, hidden: !visible(frame) });
@@ -103,6 +103,34 @@ export function pageProbe() {
     specimens,
     frames,
   };
+}
+
+/** Paint facts for one out-of-process frame, evaluated in that frame's own target. */
+export function framePaint() {
+  const doc = document;
+  const text = (doc.body?.innerText ?? doc.body?.textContent ?? "").trim();
+  let media = 0;
+  for (const el of [...(doc.body?.querySelectorAll("*") ?? [])].slice(0, 400)) {
+    if (["SCRIPT", "STYLE", "TEMPLATE", "NOSCRIPT"].includes(el.tagName)) continue;
+    const box = el.getBoundingClientRect();
+    if (box.width > 0 && box.height > 0) { media++; break; }
+  }
+  return { url: location.href, readyState: doc.readyState, textLength: text.length, media };
+}
+
+/**
+ * Give each cross-origin frame the paint facts its own target reported, matched by resolved URL.
+ * A frame no target answered for keeps readyState "cross-origin", which the detectors flag.
+ */
+export function mergeFramePaint(facts, painted, base) {
+  if (!facts) return facts;
+  const byUrl = new Map(painted.map(entry => [entry.url, entry]));
+  const resolve = src => { try { return new URL(src, base).href; } catch { return src; } };
+  return { ...facts, frames: facts.frames.map(frame => {
+    if (frame.readyState !== "cross-origin") return frame;
+    const own = byUrl.get(resolve(frame.src));
+    return own ? { ...frame, readyState: own.readyState, textLength: own.textLength, media: own.media, probed: "target" } : frame;
+  }) };
 }
 
 /** Is the probed page settled: document complete, no loading specimen, every visible frame loaded. */
@@ -141,6 +169,8 @@ export function detectFindings(facts, events = {}) {
   for (const message of events.consoleErrors ?? []) findings.push({ type: "console-error", detail: String(message).slice(0, 500) });
   for (const request of events.failedRequests ?? []) findings.push({ type: "failed-request", detail: `${request.status ?? request.errorText ?? "failed"} ${request.url}`.slice(0, 500) });
   if (events.timedOut) findings.push({ type: "readiness-timeout", detail: events.timedOut });
+  // A frame target the capture could not attach, resume or probe is unobserved, not clean.
+  for (const message of events.probeErrors ?? []) findings.push({ type: "probe-error", detail: String(message).slice(0, 500) });
   if (!facts) return findings;
   if (facts.scrollWidth > facts.clientWidth) findings.push({ type: "overflow", detail: `scrollWidth ${facts.scrollWidth} > clientWidth ${facts.clientWidth}` });
   const seen = new Set();
@@ -159,6 +189,7 @@ export function detectFindings(facts, events = {}) {
   for (const frame of facts.frames ?? []) {
     if (frame.hidden) continue;
     if (frame.height < 2) findings.push({ type: "empty-specimen", detail: `frame ${frame.src} has no height` });
+    else if (frame.readyState === "cross-origin") findings.push({ type: "probe-error", detail: `frame ${frame.src} is cross-origin and no frame target reported its paint` });
     else if (frame.readyState === "complete" && frame.textLength === 0 && frame.media === 0) findings.push({ type: "empty-specimen", detail: `frame ${frame.src} painted nothing` });
   }
   if ((facts.bodyText ?? "").includes(UNRESOLVED)) {
@@ -343,17 +374,25 @@ async function captureShot(browser, contextId, origin, job, outDir) {
   // navigation start and the frame's session sees it finish. Every such frame (and frame within it)
   // is attached paused, given the same listener, then resumed, so its requests count toward network
   // idle and its console errors and failed loads are findings like the page's own.
-  const children = new Set();
-  const attachChild = async child => {
-    children.add(child);
+  // A failed attach, resume or paint probe on a frame that is still attached means that frame went
+  // unobserved, so it is a failing finding; a frame that detached meanwhile simply went away.
+  const children = new Map();
+  const probeErrors = [];
+  const unobserved = (child, step) => error => { if (children.has(child)) probeErrors.push(`${step} ${children.get(child).url || child}: ${error?.message ?? error}`); };
+  const attachChild = async (child, info) => {
+    children.set(child, { url: info?.url ?? "", type: info?.type ?? "" });
     browser.on(child, listener);
     const sendChild = (method, params) => browser.send(method, params, child);
     try {
       await Promise.all([sendChild("Runtime.enable"), sendChild("Log.enable"), sendChild("Network.enable"), sendChild("Target.setAutoAttach", { autoAttach: true, waitForDebuggerOnStart: true, flatten: true })]);
-    } finally { await sendChild("Runtime.runIfWaitingForDebugger").catch(() => {}); }
+    } catch (error) { unobserved(child, "attach")(error); }
+    finally { await sendChild("Runtime.runIfWaitingForDebugger").catch(unobserved(child, "resume")); }
   };
+  const paintProbe = `(${framePaint.toString()})()`;
+  const probeChildren = async () => (await Promise.all([...children].filter(([, info]) => info.type === "iframe").map(([child]) =>
+    browser.send("Runtime.evaluate", { expression: paintProbe, returnByValue: true }, child).then(result => result.result?.value, () => undefined)))).filter(Boolean);
   function listener(method, params) {
-    if (method === "Target.attachedToTarget") { attachChild(params.sessionId).catch(() => {}); return; }
+    if (method === "Target.attachedToTarget") { attachChild(params.sessionId, params.targetInfo).catch(unobserved(params.sessionId, "attach")); return; }
     if (method === "Target.detachedFromTarget") { browser.off(params.sessionId); children.delete(params.sessionId); return; }
     if (method === "Runtime.consoleAPICalled" && params.type === "error") consoleErrors.push(params.args.map(arg => arg.value ?? arg.description ?? "").join(" "));
     else if (method === "Runtime.exceptionThrown") consoleErrors.push(params.exceptionDetails?.exception?.description ?? params.exceptionDetails?.text ?? "exception");
@@ -387,7 +426,7 @@ async function captureShot(browser, contextId, origin, job, outDir) {
       if (loaded) {
         await send("Runtime.evaluate", { expression: eager });
         const result = await send("Runtime.evaluate", { expression: probe, returnByValue: true, awaitPromise: false });
-        facts = result.result?.value;
+        facts = mergeFramePaint(result.result?.value, await probeChildren(), origin + job.path);
         const idle = inflight.size === 0 && Date.now() - lastActivity >= IDLE_MS;
         if (facts && idle && isSettled(facts)) {
           await send("Runtime.evaluate", { expression: "document.fonts.ready.then(() => true)", awaitPromise: true });
@@ -402,11 +441,11 @@ async function captureShot(browser, contextId, origin, job, outDir) {
     const shot = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true, clip: { x: 0, y: 0, width: job.width, height: Math.max(height, 1), scale: 1 } });
     const png = Buffer.from(shot.data, "base64");
     await writeFile(join(outDir, job.file), png);
-    const findings = detectFindings(facts, { consoleErrors, failedRequests: failed, timedOut });
+    const findings = detectFindings(facts, { consoleErrors, failedRequests: failed, timedOut, probeErrors });
     return { png, findings, counts: { consoleErrors: consoleErrors.length, failedRequests: failed.length }, overflow: facts ? facts.scrollWidth > facts.clientWidth : null };
   } finally {
     browser.off(sessionId);
-    for (const child of children) browser.off(child);
+    for (const child of children.keys()) browser.off(child);
     await browser.send("Target.closeTarget", { targetId }).catch(() => {});
   }
 }

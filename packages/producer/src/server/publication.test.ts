@@ -382,29 +382,34 @@ it("answers an opaque origin only for a built specimen file fetched as a script,
     const all = { origin: "null", "sec-fetch-mode": "cors", "sec-fetch-dest": "script", ...headers };
     return opaqueSpecimenRequest({ method, url, headers: all, rawHeaders: Object.entries(all).flat() });
   };
-  expect(opaque("/__specimen-site/0123abcd/assets/index-a.js")).toBe(true);
-  expect(opaque("/__specimen-site/0123abcd-0123456789ab/assets/a.woff2", { "sec-fetch-dest": "font" })).toBe(true);
+  expect(opaque("/__specimen-site/0123456789abcdef/assets/index-a.js")).toBe(true);
+  expect(opaque("/__specimen-site/0123456789abcdef-0123456789ab/assets/a.woff2", { "sec-fetch-dest": "font" })).toBe(true);
   expect(opaque("/__specimen/assets/0123456789abcdef01234567.js?x=1")).toBe(true);
   expect(opaque("/__specimen/assets/0123456789abcdef01234567.css", { "sec-fetch-dest": "style" })).toBe(true);
   for (const [url, headers, method] of [
-    ["/__specimen-site/0123abcd/index.html", { "sec-fetch-dest": "iframe", "sec-fetch-mode": "navigate" }],
-    ["/__specimen-site/0123abcd/assets/a.js", { "sec-fetch-dest": "empty" }],
-    ["/__specimen-site/0123abcd/assets/a.js", { "sec-fetch-mode": "no-cors" }],
-    ["/__specimen-site/0123abcd/assets/a.js", { origin: "http://example.test" }],
-    ["/__specimen-site/0123abcd/assets/a.js", {}, "POST"],
-    ["/__specimen-site/0123abcd/../../api/config", {}],
-    ["/__specimen-site/0123abcd/.env", {}],
+    ["/__specimen-site/0123456789abcdef/index.html", { "sec-fetch-dest": "iframe", "sec-fetch-mode": "navigate" }],
+    ["/__specimen-site/0123456789abcdef/assets/a.js", { "sec-fetch-dest": "empty" }],
+    ["/__specimen-site/0123456789abcdef/assets/a.js", { "sec-fetch-mode": "no-cors" }],
+    ["/__specimen-site/0123456789abcdef/assets/a.js", { origin: "http://example.test" }],
+    ["/__specimen-site/0123456789abcdef/assets/a.js", {}, "POST"],
+    ["/__specimen-site/0123456789abcdef/../../api/config", {}],
+    ["/__specimen-site/0123456789abcdef/.env", {}],
     ["/__specimen?element=a", {}],
     ["/api/config", {}],
     ["/preview/studio/pages/home.html", {}],
     ["/__specimen/assets/0123.js", {}],
+    // Only the real build-key shapes: no short, named or upper-case key segment is granted.
+    ["/__specimen-site/0123abcd/assets/a.js", {}],
+    ["/__specimen-site/demo/assets/a.js", {}],
+    ["/__specimen-site/0123456789ABCDEF/assets/a.js", {}],
+    ["/__specimen-site/0123456789abcdef-01234/assets/a.js", {}],
   ] as [string, Record<string, string>, string?][]) expect(opaque(url, headers, method), url).toBe(false);
   // Two Origin headers are never one opaque request.
   expect(opaqueSpecimenRequest({ method: "GET", url: "/__specimen/assets/0123456789abcdef01234567.js", headers: { origin: "null", "sec-fetch-mode": "cors", "sec-fetch-dest": "script" }, rawHeaders: ["Origin", "null", "origin", "null"] })).toBe(false);
   // Through the server: the guard still refuses every other opaque request; an unknown specimen file is a 404 without the CORS grant.
   await launch();
   expect((await get("/api/config", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "script" })).status).toBe(403);
-  expect((await get("/__specimen-site/0123abcd/assets/a.js", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty" })).status).toBe(403);
-  const unknown = await get("/__specimen-site/0123abcd/assets/a.js", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "script" });
+  expect((await get("/__specimen-site/0123456789abcdef/assets/a.js", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "empty" })).status).toBe(403);
+  const unknown = await get("/__specimen-site/0123456789abcdef/assets/a.js", "GET", { Origin: "null", "Sec-Fetch-Mode": "cors", "Sec-Fetch-Dest": "script" });
   expect(unknown.status).toBe(404); expect(unknown.headers["access-control-allow-origin"]).toBeUndefined();
 }, 45_000);

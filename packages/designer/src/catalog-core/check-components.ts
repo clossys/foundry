@@ -34,6 +34,8 @@ export interface ComponentSourceFile {
 export interface ComponentMeasurement {
   state: string; mode: "light" | "dark"; ground: string;
   roles: readonly string[]; keyboard: readonly string[]; axeViolations: readonly string[];
+  /** Keys the runner actually pressed; `keyboard` lists the ones the control handled. A disabled state proves non-activation only for keys named here. */
+  probed?: readonly string[];
   focusTokens: readonly string[];
   /** Direct composed child independently observed to own this focus indicator. */
   focusOwner?: string;
@@ -487,9 +489,11 @@ export function checkComponentProfile(input: ComponentCheckInput): ComponentChec
       const measurement = matching[0]!;
       const roots = rootNames(contract.root);
       const protocols = roots.map(root => ROOT_PROTOCOL[root]);
-      // A disabled state proves its activation keys produce no activation (the key is not handled), rather than being observed.
+      // A disabled state proves its activation keys produce no activation: each was pressed (probed) and not handled. An unprobed key is no evidence.
       const noActivation = state === "disabled";
-      if (measurement.axeViolations.length || protocols.some(protocol => protocol && (protocol.roles.some(role => !measurement.roles.includes(role)) || protocol.keys.some(key => noActivation && ACTIVATION_KEYS.includes(key) ? measurement.keyboard.includes(key) : !measurement.keyboard.includes(key)))) || protocols.some(protocol => !protocol)) add("K5", fill.slot, `Roles, keyboard or axe evidence fails for ${state}/${mode}/${ground}`);
+      const keyFails = (key: string) => noActivation && ACTIVATION_KEYS.includes(key) ? measurement.keyboard.includes(key) || !(measurement.probed ?? []).includes(key) : !measurement.keyboard.includes(key);
+      if (measurement.axeViolations.length || protocols.some(protocol => protocol && (protocol.roles.some(role => !measurement.roles.includes(role)) || protocol.keys.some(keyFails))) || protocols.some(protocol => !protocol)) add("K5", fill.slot, `Roles, keyboard or axe evidence fails for ${state}/${mode}/${ground}`);
+      if (noActivation) for (const key of [...new Set(protocols.flatMap(protocol => protocol?.keys ?? []))]) if (ACTIVATION_KEYS.includes(key) && !(measurement.probed ?? []).includes(key)) add("K5", fill.slot, `Disabled state never probed ${key} for ${state}/${mode}/${ground}`);
       const interactive = protocols.some(protocol => !!protocol?.keys.length) || fill.slot === "components.resize-handle";
       const directFocus = measurement.focusTokens.length > 0 && measurement.focusTokens.every(member => /^themes\.ring\./.test(member) && !!input.tokens[member] && isRead(fill, member));
       let delegatedFocus = false;
