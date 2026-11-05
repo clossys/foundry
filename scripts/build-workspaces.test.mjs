@@ -9,12 +9,12 @@ const ws = (dir, name, dependencies = {}, extra = {}) => ({ dir, manifest: { nam
 
 test("a dependency builds before a dependent that sorts ahead of it", () => {
   const order = buildOrder([
-    ws("packages/designer", "@x/designer", { "@x/strategist": "1.0.0" }),
+    ws("packages/designer", "@x/designer", { "@x/director": "1.0.0" }),
     ws("packages/publisher", "@x/publisher", { "@x/designer": "1.0.0", "@x/writer": "1.0.0" }),
-    ws("packages/strategist", "@x/strategist"),
-    ws("packages/writer", "@x/writer", { "@x/strategist": "1.0.0" }),
+    ws("packages/director", "@x/director"),
+    ws("packages/writer", "@x/writer", { "@x/director": "1.0.0" }),
   ]).map((w) => w.dir);
-  assert.deepEqual(order, ["packages/strategist", "packages/designer", "packages/writer", "packages/publisher"]);
+  assert.deepEqual(order, ["packages/director", "packages/designer", "packages/writer", "packages/publisher"]);
 });
 
 test("dev and peer dependencies on workspaces are edges too", () => {

@@ -7,9 +7,10 @@
  * stores and `hasSlotModel` is false; callers keep the old-store behavior.
  */
 import { execFileSync } from "node:child_process";
-import { existsSync, lstatSync, readdirSync, readFileSync, statSync, watch, type FSWatcher } from "node:fs";
+import { closeSync, constants, existsSync, fstatSync, lstatSync, openSync, readdirSync, readFileSync, realpathSync, statSync, watch, type FSWatcher, type Stats } from "node:fs";
 import { lstat } from "node:fs/promises";
-import { dirname, join, relative, resolve, sep } from "node:path";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import type { DirectorStoreEntry, DirectorStoreError, DirectorStoreFault, DirectorStoreReader } from "@clossys/director";
 import { sha256Hex } from "./hash.js";
 import {
   CANDIDATE_NAME, SEAT_AGENT, SLOT_AGENTS, agentDir, agentsDir, candidatesDir, iaPath, pinFile, seatDir, seatFile, slotDir, slotFile, slotPositions,
@@ -575,3 +576,107 @@ export async function watchSlotModel(consumer: string, onChange: (segments: stri
   watcher.on("error", () => { if (!closed) onChange(null); });
   return () => { closed = true; watcher.close(); };
 }
+
+// ---------------------------------------------------------------------------
+// Director's strategy store reader. @clossys/director owns no filesystem access
+// to its store; `clossys director …` injects this reader (and slot-write.ts's
+// writer). Reads are uncached, root-confined and never follow a symbolic link.
+// ---------------------------------------------------------------------------
+
+function storeError(fault: DirectorStoreFault, message: string): DirectorStoreError {
+  return Object.assign(new Error(message), { fault });
+}
+function absentError(error: unknown): boolean {
+  const code = (error as NodeJS.ErrnoException).code;
+  return code === "ENOENT" || code === "ENOTDIR";
+}
+function entryType(stat: Stats): DirectorStoreEntry["type"] {
+  return stat.isSymbolicLink() ? "symlink" : stat.isFile() ? "file" : stat.isDirectory() ? "directory" : "other";
+}
+/** The real root directory; a symlink root, or a root that is absent or not a directory, refuses. */
+function storeAnchor(root: string): string {
+  let stat: Stats;
+  try { stat = lstatSync(resolve(root)); } catch { throw storeError("root-unreadable", "Strategy root is unreadable or is not a directory"); }
+  if (stat.isSymbolicLink()) throw storeError("root-symlink", "Symlink roots are not followed");
+  let anchor: string;
+  try { anchor = realpathSync(resolve(root)); } catch { throw storeError("root-unreadable", "Strategy root is unreadable or is not a directory"); }
+  if (!lstatSync(anchor).isDirectory()) throw storeError("root-unreadable", "Strategy root is unreadable or is not a directory");
+  return anchor;
+}
+/**
+ * Confine a root-relative path: no escape, no symbolic link in any component, and a
+ * real path inside the root. Undefined when a component is absent. With `finalLink`,
+ * a symbolic link as the last component is returned unresolved (stat reports it, never follows it).
+ */
+function storePath(anchor: string, path: string, finalLink = false): string | undefined {
+  const rel = relative(anchor, resolve(anchor, path));
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw storeError("outside", "Path resolves outside the strategy root");
+  let current = anchor;
+  const parts = rel.split(sep);
+  for (const [index, part] of parts.entries()) {
+    current = join(current, part);
+    try {
+      if (lstatSync(current).isSymbolicLink()) {
+        if (finalLink && index === parts.length - 1) return current;
+        throw storeError("symlink", "Symlink paths are not followed");
+      }
+    } catch (error) {
+      if ((error as Partial<DirectorStoreError>).fault) throw error;
+      if (absentError(error)) return undefined;
+      throw storeError("path-unreadable", "Path could not be read");
+    }
+  }
+  let real: string;
+  try { real = realpathSync(current); } catch (error) {
+    if (absentError(error)) return undefined;
+    throw storeError("path-unreadable", "Path could not be read");
+  }
+  const inside = relative(anchor, real);
+  if (inside === ".." || inside.startsWith(`..${sep}`) || isAbsolute(inside)) throw storeError("outside", "Path resolves outside the strategy root");
+  return real;
+}
+
+export const directorStoreReader: DirectorStoreReader = {
+  stat(root, path) {
+    if (path === ".") {
+      let stat: Stats;
+      try { stat = lstatSync(resolve(root)); } catch (error) {
+        if (absentError(error)) return undefined;
+        throw storeError("root-unreadable", "Strategy root is unreadable or is not a directory");
+      }
+      // A symlink root is reported, not used: its real path is where it points (itself when dangling).
+      let real = resolve(root);
+      try { real = realpathSync(real); } catch (error) { if (!stat.isSymbolicLink()) throw storeError("root-unreadable", "Strategy root is unreadable or is not a directory"); }
+      return { type: entryType(stat), links: stat.nlink, dev: stat.dev, ino: stat.ino, real };
+    }
+    const full = storePath(storeAnchor(root), path, true);
+    if (full === undefined) return undefined;
+    const stat = lstatSync(full);
+    return { type: entryType(stat), links: stat.nlink, dev: stat.dev, ino: stat.ino, real: full };
+  },
+  list(root, path) {
+    const full = storePath(storeAnchor(root), path);
+    if (full === undefined) return undefined;
+    if (!lstatSync(full).isDirectory()) throw storeError("not-directory", "Expected a directory");
+    try { return readdirSync(full).sort(); } catch { throw storeError("io", "Directory could not be listed"); }
+  },
+  read(root, path) {
+    const anchor = storeAnchor(root);
+    const full = storePath(anchor, path);
+    if (full === undefined) return undefined;
+    if (!lstatSync(full).isFile()) throw storeError("not-file", "Expected a regular file");
+    let fd: number | undefined;
+    try {
+      try { fd = openSync(full, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK); }
+      catch (error) { if (absentError(error)) return undefined; throw storeError("io", "File could not be read"); }
+      const opened = fstatSync(fd);
+      if (!opened.isFile()) throw storeError("not-file", "Expected a regular file");
+      // Recheck the confined path after open, before reading its bytes.
+      const current = storePath(anchor, path);
+      if (current === undefined) throw storeError("changed", "File changed during confinement checks");
+      const now = lstatSync(current);
+      if (opened.dev !== now.dev || opened.ino !== now.ino) throw storeError("changed", "File changed during confinement checks");
+      try { return readFileSync(fd, "utf8"); } catch { throw storeError("io", "File could not be read"); }
+    } finally { if (fd !== undefined) closeSync(fd); }
+  },
+};

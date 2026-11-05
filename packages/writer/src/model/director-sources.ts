@@ -1,4 +1,4 @@
-import { parseLinkRef, positiveInteger } from "@clossys/strategist/cell-format/schema";
+import { parseLinkRef, positiveInteger } from "@clossys/director/cell-format/schema";
 import type { RecordBase } from "./types.js";
 
 /** Native citation shape only; derivation checks current source lines and cell links. */

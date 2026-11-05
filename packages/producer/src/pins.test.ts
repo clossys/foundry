@@ -11,7 +11,7 @@ function readJson<T>(url: URL): T {
 const { scope } = readJson<{ scope: string }>(new URL("../../../package-scope.json", import.meta.url));
 const packageName = (name: string) => `${scope}/${name}`;
 const agentContract: AgentPackages = {
-  director: [packageName("director"), packageName("strategist")],
+  director: [packageName("director")],
   designer: [packageName("designer")],
   writer: [packageName("writer")],
   publisher: [packageName("publisher")],
@@ -118,22 +118,11 @@ describe("Producer dependency pins", () => {
   it("rejects a dependency on an unavailable Director", () => {
     const versions = new Map(workspaceVersions);
     versions.delete(packageName("director"));
-    const dependencies = { ...exactDependencies(versions), [packageName("director")]: "1.0.0" };
+    // With no Director in the workspace, no pin can be selected for it, and a declared one is refused.
+    const dependencies = { ...exactDependencies(), [packageName("director")]: "1.0.0" };
     expect(pinFindings(dependencies, versions, agentContract, esbuildVersion!)).toEqual([
+      "director: no workspace package",
       `${packageName("director")}: unselected agent dependency`,
-    ]);
-  });
-
-  it("prefers the Director pin when both Director and Strategist exist", () => {
-    const versions = new Map(workspaceVersions);
-    versions.set(packageName("director"), "1.0.0");
-    const dependencies = exactDependencies(versions);
-    expect(dependencies[packageName("director")]).toBe("1.0.0");
-    expect(dependencies[packageName("strategist")]).toBeUndefined();
-    expect(pinFindings(dependencies, versions, agentContract, esbuildVersion!)).toEqual([]);
-    dependencies[packageName("strategist")] = versions.get(packageName("strategist"))!;
-    expect(pinFindings(dependencies, versions, agentContract, esbuildVersion!)).toEqual([
-      `${packageName("strategist")}: unselected agent dependency`,
     ]);
   });
 });

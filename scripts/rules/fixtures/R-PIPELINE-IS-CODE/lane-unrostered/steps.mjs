@@ -3,5 +3,5 @@
 import { CHECKS as REAL_CHECKS, STEPS as REAL_STEPS } from "../../../../../packages/producer/dist/pipeline/steps/index.js";
 
 const designer = REAL_STEPS.find(step => step.id === "designer.candidates");
-export const STEPS = [...REAL_STEPS, { ...designer, id: "strategist.candidates", actor: "agent:strategist", seat: "clossys/agents/producer/strategist.candidates/seat.json" }];
+export const STEPS = [...REAL_STEPS, { ...designer, id: "auditor.candidates", actor: "agent:auditor", seat: "clossys/agents/producer/auditor.candidates/seat.json" }];
 export const CHECKS = REAL_CHECKS;

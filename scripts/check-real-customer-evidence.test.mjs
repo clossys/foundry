@@ -96,7 +96,7 @@ test("a phone-number-shaped value is caught lexically", () => {
 
 test("retention.holder must be keeper, never the citing role", () => {
   const wrongHolder = structuredClone(fixtureRecord);
-  wrongHolder.retention.holder = "strategist";
+  wrongHolder.retention.holder = "director";
   const result = evaluateRealCustomerEvidenceRecord({ record: wrongHolder, contract, lifecycle });
   assert.equal(result.verdict, "violated");
   assert.ok(rules(result).includes("invalid-retention-holder"));

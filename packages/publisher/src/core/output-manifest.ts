@@ -77,7 +77,7 @@ export function createResolvedOutputManifest(
   };
 }
 
-/** Structural metadata only; freshness is checked against Strategist's active pointers. */
+/** Structural metadata only; freshness is checked against Director's active pointers. */
 export function validateStrategyProvenance(value: unknown):
   | { ok: true; value: StrategyProvenance }
   | { ok: false; issues: Array<{ path: string; message: string }> } {

@@ -3,10 +3,10 @@
 // moved under `clossys/agents/`. Checks import this instead of rebuilding the
 // prefix so a layout move is one edit, not one per check.
 const MOVED_ROLE_FOLDERS = Object.freeze({
-  strategist: "clossys/agents/strategist/",
+  director: "clossys/agents/director/",
 });
 
-/** `@clossys/strategist` -> `clossys/agents/strategist/`; `@clossys/writer` -> `clossys/writer/`. */
+/** `@clossys/director` -> `clossys/agents/director/`; `@clossys/writer` -> `clossys/writer/`. */
 export function roleFolder(role) {
   const short = String(role).split("/").pop();
   return Object.hasOwn(MOVED_ROLE_FOLDERS, short) ? MOVED_ROLE_FOLDERS[short] : `clossys/${short}/`;

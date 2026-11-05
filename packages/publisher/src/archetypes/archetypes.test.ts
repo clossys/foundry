@@ -10,7 +10,7 @@ const ids = (path: string): Set<string> => new Set((JSON.parse(readFileSync(reso
 const designerSections = ids("designer/src/catalog/slots/sections.json");
 const designerFrames = ids("designer/src/catalog/slots/frames.json");
 const writerPassages = ids("writer/src/catalog/slots/passages.json");
-const directorCells = ids("strategist/src/catalog/cells/strategy.json");
+const directorCells = ids("director/src/catalog/cells/strategy.json");
 
 describe("page archetype and format data", () => {
   it("declares seven archetypes and three formats", () => {

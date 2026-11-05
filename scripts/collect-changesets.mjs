@@ -71,6 +71,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { workspaceDirectory } from "./lib/package-renames.mjs";
 
 export const CHANGESETS_DIR = ".changesets";
 export const BUMP_LEVELS = ["patch", "minor", "major"];
@@ -130,7 +131,9 @@ export function parseChangesetText(text, { knownPackageDirs } = {}) {
       ownerApprovedLevel = value;
       continue;
     }
-    const [pkg, bump] = [key, value];
+    // A changeset written before a package was renamed names it by its old
+    // directory; the record stays as written and is read as the same package.
+    const [pkg, bump] = [workspaceDirectory(key), value];
     if (knownPackageDirs && !knownPackageDirs.has(pkg)) return { error: `frontmatter names "${pkg}", which is not a packages/ directory` };
     if (!BUMP_LEVELS.includes(bump)) return { error: `frontmatter names "${pkg}: ${bump}" -- bump must be one of ${BUMP_LEVELS.join(", ")}` };
     if (Object.hasOwn(packages, pkg)) return { error: `frontmatter names "${pkg}" more than once` };

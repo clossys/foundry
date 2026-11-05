@@ -1,4 +1,4 @@
-import { parseDocument, serializeScalar, parseLinkRef, parseConfirmRef, isoDate } from '@clossys/strategist/cell-format';
+import { parseDocument, serializeScalar, parseLinkRef, parseConfirmRef, isoDate } from '@clossys/director/cell-format';
 
 export type JsonRecord = Record<string, unknown>;
 export interface CellRecord { locale: string; record: JsonRecord; bindings: JsonRecord[] }

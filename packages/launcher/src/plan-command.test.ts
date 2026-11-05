@@ -7,7 +7,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
 import { devNull, tmpdir } from "node:os";
 import { dirname, join, sep } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { READINESS_BIN, approvedPlan, assessmentFor, clone as cloneValue, writeReadinessStub } from "./admission-fixture.js";
+import { DIRECTION_ROLE, READINESS_BIN, approvedPlan, assessmentFor, clone as cloneValue, writeReadinessStub } from "./admission-fixture.js";
 import type { ReadinessRunner } from "./admission.js";
 import type { Loose } from "./admission-fixture.js";
 import { BUNDLE_STORE_REL, CHANGE_SET_STORE_REL, listStoredChangeSets, readStoredApplyBundle } from "./apply-store.js";
@@ -113,8 +113,8 @@ const hubManifest = (ranges: Partial<Record<"advisor" | "integrator", string>> =
 function pinnedPlan(): AdvisorPlan {
   const plan = cloneValue(setupPlan()) as unknown as Loose;
   plan.staffing = [
-    { repository: SITE, roles: ["strategist", "writer"] },
-    { repository: DOCS, roles: ["strategist"] },
+    { repository: SITE, roles: [DIRECTION_ROLE, "writer"] },
+    { repository: DOCS, roles: [DIRECTION_ROLE] },
   ];
   plan.packages = [
     ...plan.packages.filter((entry: Loose) => entry.act !== "install"),
@@ -810,7 +810,7 @@ describe("launcher-apply-plan plan", () => {
       { name: "a missing skill", token: "skill-unreadable", options: () => ({ skills: SKILLS.filter((skill) => skill.role !== "writer") }) },
       { name: "a ranged engine pin", token: "engine-pin-unreadable", options: () => ({ manifest: hubManifest({ advisor: "^0.8.0" }) }) },
       { name: "a ranged Integrator pin", token: "engine-pin-unreadable", options: () => ({ manifest: hubManifest({ integrator: "~0.6.0" }) }) },
-      { name: "a hub brief the planner refuses", token: "planner-refused", options: () => ({ brief: { ...HUB_BRIEF, staffedHere: ["strategist"] } }) },
+      { name: "a hub brief the planner refuses", token: "planner-refused", options: () => ({ brief: { ...HUB_BRIEF, staffedHere: [DIRECTION_ROLE] } }) },
       { name: "an authorization that is not an object", token: "authorization-malformed", options: () => ({ assessment: { engagement: { executionAuthorization: "yes" } } }) },
       { name: "an authorization with no planDigest", token: "authorization-malformed", options: () => ({ assessment: { engagement: { executionAuthorization: { expiresAt: "2999-01-01T00:00:00Z" } } } }) },
       { name: "an authorization with a non-string expiresAt", token: "authorization-malformed", options: () => ({ assessment: { engagement: { executionAuthorization: { planDigest: `sha256:${"0".repeat(64)}`, expiresAt: 5 } } } }) },

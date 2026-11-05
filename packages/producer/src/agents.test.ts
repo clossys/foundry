@@ -6,14 +6,14 @@ import { AGENT_PACKAGES, AgentResolutionError, resolveAgent } from "./agents.js"
 describe("agent mapping", () => {
   it("keeps the four agent candidate lists in one table", () => {
     expect(AGENT_PACKAGES).toEqual({
-      director: ["@clossys/director", "@clossys/strategist"],
+      director: ["@clossys/director"],
       designer: ["@clossys/designer"],
       writer: ["@clossys/writer"],
       publisher: ["@clossys/publisher"],
     });
   });
 
-  it("prefers Director when both Director and Strategist resolve", () => {
+  it("resolves Director through its one package name", () => {
     const tried: string[] = [];
     const result = resolveAgent("director", (name) => {
       tried.push(name);
@@ -27,22 +27,11 @@ describe("agent mapping", () => {
     expect(tried).toEqual(["@clossys/director"]);
   });
 
-  it("tries Strategist only after Director is unavailable", () => {
-    const tried: string[] = [];
-    const result = resolveAgent("director", (name) => {
-      tried.push(name);
-      if (name === "@clossys/director") throw new Error("not installed");
-      return join("installed", name);
-    });
-    expect(result.packageName).toBe("@clossys/strategist");
-    expect(tried).toEqual(["@clossys/director", "@clossys/strategist"]);
-  });
-
-  it("resolves the workspace Strategist without requiring a package root export", () => {
+  it("resolves the workspace Director without requiring a package root export", () => {
     const result = resolveAgent("director");
-    expect(result.packageName).toBe("@clossys/strategist");
+    expect(result.packageName).toBe("@clossys/director");
     expect(JSON.parse(readFileSync(join(result.packageRoot, "package.json"), "utf8")).name)
-      .toBe("@clossys/strategist");
+      .toBe("@clossys/director");
   });
 
   it.each(["designer", "writer", "publisher"] as const)("resolves the installed %s manifest", (kind) => {
@@ -60,8 +49,7 @@ describe("agent mapping", () => {
       failure = error;
     }
     expect(failure).toBeInstanceOf(AgentResolutionError);
-    expect(failure).toMatchObject({ exitCode: 2, tried: ["@clossys/director", "@clossys/strategist"] });
+    expect(failure).toMatchObject({ exitCode: 2, tried: ["@clossys/director"] });
     expect((failure as Error).message).toContain("@clossys/director");
-    expect((failure as Error).message).toContain("@clossys/strategist");
   });
 });

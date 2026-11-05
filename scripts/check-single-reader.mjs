@@ -64,7 +64,7 @@ export function isModelString(text) {
   return AGENT_PATH.test(text) || MODEL_FILE.test(text);
 }
 
-/** An "agents" argument followed by a literal folder that is not a slot agent (agents/strategist, agents/producer) is not the slot model. */
+/** An "agents" argument followed by a literal folder that is not a slot agent (agents/producer) is not the slot model. */
 function otherAgentsFolder(node) {
   if (node.text !== "agents" || !node.parent || !ts.isCallExpression(node.parent)) return false;
   const args = node.parent.arguments, next = args[args.indexOf(node) + 1];

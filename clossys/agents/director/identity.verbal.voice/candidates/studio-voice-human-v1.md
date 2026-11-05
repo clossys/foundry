@@ -14,7 +14,7 @@ vary: {"angle":"human"}
 
 ## Because
 - The essence is Pick, never invent (finding:foundry-public-studio-essence)
-- Generic phrases are banned in Director cells by the strategist template (finding:foundry-public-repo-facts)
+- Generic phrases are banned in Director cells by the director template (finding:foundry-public-repo-facts)
 
 ## Watch
 - If Writer strings containing a Never word > 0 in any voice check, then return them to Writer for a new candidate.

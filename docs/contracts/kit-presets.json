@@ -6,7 +6,7 @@
       "id": "launch",
       "label": "Launch",
       "problem": "We can't explain what we are, and our site doesn't sell.",
-      "roles": ["strategist", "designer", "writer", "customer", "publisher"]
+      "roles": ["director", "designer", "writer", "customer", "publisher"]
     },
     {
       "id": "grow",

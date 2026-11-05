@@ -126,7 +126,7 @@ describe("renderApprovalSheet", () => {
       for (const text of Object.values(set.texts ?? {})) expect(sheet).not.toContain(String(text).slice(0, 24));
       for (const file of set.files) if ("after" in file && typeof file.after === "string") expect(sheet).not.toContain(file.after);
     }
-    expect(sheet).not.toContain("Strategist");
+    expect(sheet).not.toContain("Director");
   });
 
   it("lists a skipped repository by id and reason token, and prints a bundle with no change set", () => {

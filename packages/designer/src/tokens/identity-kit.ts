@@ -158,7 +158,7 @@ function escapeXml(value: string): string {
 // -----------------------------------------------------------------------
 // Token-value validation - a plain `string`-typed public export, and
 // #1210's own design anticipates IdentityTokenInput values eventually
-// flowing from Strategist's brand attributes (client-influenced), not
+// flowing from Director's brand attributes (client-influenced), not
 // only this repository's own trusted resolution path. `name`/`initials`
 // were already run through `escapeXml` before this fix;
 // `fontFamily`/`ink`/`onInverse`/`accent`/`onAccent` were interpolated

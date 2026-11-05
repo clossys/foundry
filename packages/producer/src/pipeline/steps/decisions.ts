@@ -17,8 +17,8 @@ export const DECISION_STEPS = [
   }),
   defineStep({
     id: "evidence", kind: "decide:judgment", actor: "owner", stage: "direct.brief",
-    summary: "Owner answers and strategist findings the Director cites.",
-    inputs: [], outputs: ["clossys/evidence/director/*.md", "clossys/evidence/strategist/findings/*.md"],
+    summary: "Owner answers and director findings the Director cites.",
+    inputs: [], outputs: ["clossys/evidence/director/*.md", "clossys/evidence/director/findings/*.md"],
     command: { manual: "owner records answers as evidence files" }, checks: ["workspace"],
   }),
   defineStep({

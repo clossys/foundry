@@ -95,7 +95,7 @@ function isSafeRelativePath(value) {
 }
 
 const roleShortName = (role) => role.split("/").pop();
-const NATIVE_CELL_ROLES = new Set(["strategist", "writer", "designer", "publisher"]);
+const NATIVE_CELL_ROLES = new Set(["director", "writer", "designer", "publisher"]);
 
 /** Declaration compatibility only; this does not select or fall back between runtime roots. */
 export function isOwnedOutputPath(role, path) {

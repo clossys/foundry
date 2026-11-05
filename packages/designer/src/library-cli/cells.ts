@@ -3,7 +3,7 @@ import { cliErrorDetail, cliRemedy } from "../cli-remedies.js";
 import * as fs from "node:fs/promises";
 import { dirname, join, resolve, relative, isAbsolute, sep } from "node:path";
 import { constants } from "node:fs";
-import { activate, cellPath, isoDate, parseConfirmRef, parseDocument, parseLinkRef, positiveInteger, propose, readActive, serializeScalar, strings, tokenizeBody, validateGenericTree, type GenericTree } from "@clossys/strategist/cell-format";
+import { activate, cellPath, isoDate, parseConfirmRef, parseDocument, parseLinkRef, positiveInteger, propose, readActive, serializeScalar, strings, tokenizeBody, validateGenericTree, type GenericTree } from "@clossys/director/cell-format";
 import { generateSelection, loadCatalog, stableStringify, type CatalogData, type CompositeCatalogData, type CompositeEngineInput, type CompositeLibraryData, type LibraryData } from "../catalog-core/index.js";
 import { loadNativeCompositeCatalog } from "./native-catalog.js";
 import { componentOf, type ComponentDocument } from "../catalog-core/resolve-components.js";

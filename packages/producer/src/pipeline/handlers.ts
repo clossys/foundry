@@ -3,6 +3,7 @@ import { runCheck } from "../cli/check.js";
 import { runCompileCli } from "../cli/compile.js";
 import { runDesign } from "../cli/design.js";
 import { runDirect } from "../cli/direct.js";
+import { runDirectorVerb } from "../cli/director.js";
 import type { CliResult } from "../cli/main.js";
 import { runMigrateCli } from "../cli/migrate.js";
 import { runDecisionsCli, runPinCli } from "../cli/pin.js";
@@ -53,6 +54,7 @@ export const HANDLERS: Readonly<Record<string, Handler>> = {
   "src/cli/specimen.ts#runSpecimenCli": async context => runSpecimenCli(context.argv, context.cwd),
   "src/cli/migrate.ts#runMigrateCli": async context => runMigrateCli(context.argv, context.cwd),
   "src/cli/pipeline.ts#runPipelineCli": async context => runPipelineCli(context.argv, context.cwd),
+  "src/cli/director.ts#runDirectorVerb": async context => runDirectorVerb(context.argv),
 };
 
 /** Modules a composed step runs (command.steps). No step composes modules in this build. */

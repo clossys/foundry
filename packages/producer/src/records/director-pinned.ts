@@ -5,7 +5,7 @@
  */
 import { readdirSync, readFileSync, lstatSync } from "node:fs";
 import { join } from "node:path";
-import type { Bullet, Cell, Finding, StrategyModel } from "@clossys/strategist";
+import type { Bullet, Cell, Finding, StrategyModel } from "@clossys/director";
 import { agentModule } from "../server/cells.js";
 import { candidateDocument, readPinned, type PinnedCandidate, type PinnedSet } from "./pinned.js";
 

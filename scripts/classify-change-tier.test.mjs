@@ -61,7 +61,7 @@ test("classifyPath: every tier boundary", () => {
     ["README.md", "prose"],
     // A package's own README or packed skill.
     ["packages/advisor/README.md", "packed-prose"],
-    ["packages/strategist/skill/SKILL.md", "packed-prose"],
+    ["packages/director/skill/SKILL.md", "packed-prose"],
     // Everything else, including near-misses of the patterns above.
     ["packages/advisor/src/index.ts", "full"],
     ["packages/advisor/package.json", "full"],
@@ -94,7 +94,7 @@ test("classifyChangeTier: table over combinations, renames, deletions, and moves
     // A single packed-prose path alongside otherwise-prose paths widens to
     // 'packed-prose', never narrows back to 'prose'.
     [["docs/RELEASING.md", "packages/advisor/README.md"], "packed-prose"],
-    [["packages/advisor/README.md", "packages/strategist/skill/SKILL.md"], "packed-prose"],
+    [["packages/advisor/README.md", "packages/director/skill/SKILL.md"], "packed-prose"],
     // One non-prose path anywhere forces 'full', even alongside many prose
     // paths.
     [["docs/RELEASING.md", "packages/advisor/src/index.ts"], "full"],

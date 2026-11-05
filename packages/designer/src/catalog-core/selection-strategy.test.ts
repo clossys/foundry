@@ -3,10 +3,11 @@ import { afterEach, describe, expect, it } from "vitest";
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
-import { formatRef } from "@clossys/strategist";
-import { openStrategy } from "../../../strategist/src/api.js";
-import { loadCatalog } from "../../../strategist/src/catalog.js";
-import { validateBriefContract } from "../../../strategist/src/brief-contracts.js";
+import { formatRef } from "@clossys/director";
+import { openStrategy } from "../../../director/src/api.js";
+import { directorStoreReader } from "../../../producer/src/records/slots.js";
+import { loadCatalog } from "../../../director/src/catalog.js";
+import { validateBriefContract } from "../../../director/src/brief-contracts.js";
 import { check } from "./check.js";
 import { generateSelection } from "./library.js";
 import { check as publicCheck, resolve as publicResolve } from "./api.js";
@@ -26,7 +27,7 @@ function fixture() {
   const root = mkdtempSync(join(tmpdir(), "designer-brief-")); roots.push(root);
   const ids = [...required, "identity.verbal.voice"];
   const active = Object.fromEntries(ids.map(id => [id, 1]));
-  const tree = { schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core: "archetype", active };
+  const tree = { schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active };
   put(root, "tree.json", JSON.stringify(tree));
   put(root, "sessions/2026-10-29-1.md", `- U1: Choose the bounded fixture approach.\n- S2: Playback for confirm: ${ids.map(cell => formatRef({ kind: "cell", ref: { cell, version: 1 } })).join(", ")}\n- U3: Yes.\n`);
   const definitions = loadCatalog();
@@ -37,7 +38,7 @@ function fixture() {
     put(root, `cells/${id}/v${version}.md`, `---\nid: ${id}\nversion: ${version}\nstatus: ${status}\nupdated: 2026-10-29\ncites: [${refs.join(", ")}]\nfeeds: [designer.identity]\nfunctions: [brand]\n${status === "active" ? "confirmed: msg:2026-10-29-1#U3\n" : ""}---\n\n## Direction\n${keys.map(key => `- ${key.key}: Choose 1 bounded fixture approach over broader alternatives.`).join("\n")}\n\n## Because\n- The fixture user selected this approach (${refs.join(", ")})\n\n## Watch\n- If requests > 5 each month, then review.\n`);
   }
   ids.forEach(id => cell(id, 1));
-  function reader() { return openStrategy(root, { contracts: [contract] }); }
+  function reader() { return openStrategy(root, directorStoreReader, { contracts: [contract] }); }
   const assignable: SelectionStrategyReader = reader();
   expect(assignable.getBrief(contract.id).state).toBe("ready");
   const initial = reader(); const brief = initial.getBrief(contract.id);

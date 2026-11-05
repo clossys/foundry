@@ -1,4 +1,4 @@
-import type { Strategy } from "@clossys/strategist";
+import type { Strategy } from "@clossys/director";
 import { createHash } from "node:crypto";
 import { validateWriterRecord } from "../model/validate.js";
 import type { WriterLayer, WriterLibrary, WriterRecord } from "../model/types.js";
@@ -45,7 +45,7 @@ const libraryFor = (subjects: Subject[], defaultLocale: string, declared: string
 
 /** Build readiness only: native completeness is independent of owner approval and translation currency. */
 export function checkWriterRecordDrift(sources: readonly WriterRecordSource[], options: {
-  /** Open manifest.strategy.root with Strategist.openStrategy; reopen after activation. Required when sources contain claims. */
+  /** Open manifest.strategy.root with Director.openStrategy; reopen after activation. Required when sources contain claims. */
   strategy?: Pick<Strategy, "getCell" | "isStale">;
 } = {}) {
   const findings: WriterRecordDriftFinding[] = [];
@@ -77,7 +77,7 @@ export function checkWriterRecordDrift(sources: readonly WriterRecordSource[], o
         if (!("kind" in record) || record.kind !== "claim") continue;
         const ref = record.strategy;
         const finding = { severity: "error" as const, path, locale, recordId: record.id, field: "strategy" };
-        if (!options.strategy) findings.push({ ...finding, code: "WR_STRATEGY_MISSING", message: "Claim currency requires a Strategist snapshot: pass { strategy: openStrategy(manifest.strategy.root) } to checkWriterRecordDrift." });
+        if (!options.strategy) findings.push({ ...finding, code: "WR_STRATEGY_MISSING", message: "Claim currency requires a Director snapshot: pass { strategy: openStrategy(manifest.strategy.root, reader) } (reader: the clossys CLI's strategy store reader) to checkWriterRecordDrift." });
         else if (!options.strategy.getCell(ref.cell, ref.version)) findings.push({ ...finding, code: "WR_STRATEGY_DANGLING", message: `Strategy cell ${ref.cell}@${ref.version} does not resolve; cite an existing confirmed cell version.` });
         else if (options.strategy.isStale(ref)) findings.push({ ...finding, code: "WR_STRATEGY_STALE", message: `Strategy cell ${ref.cell}@${ref.version} is not active; review this claim against the active cell before updating its reference.` });
       }

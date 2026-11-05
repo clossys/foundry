@@ -14,6 +14,6 @@ Use `--root <dir>` to select the starting directory for discovery of an ancestor
 containing `clossys/clossys.config.ts`. The scaffold does not evaluate the config.
 Use `--json` for one result object and `--check` for a run that preserves files.
 
-Resolve agent packages through `resolveAgent` and `AGENT_PACKAGES`. Director
-prefers the Director package and falls back to Strategist. A resolution failure
+Resolve agent packages through `resolveAgent` and `AGENT_PACKAGES`. Each agent
+resolves through one package name. A resolution failure
 reports the package names tried and exit code `2`.

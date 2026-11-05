@@ -13,6 +13,7 @@ import type { InstalledLedger } from "./ledger-contract.js";
 import * as keyEditor from "./key-editor.js";
 import { editJsonPointer } from "./key-editor.js";
 import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
+import { DIRECTION_ROLE, DIRECTION_SKILL, DIRECTOR } from "./admission-fixture.js";
 import { SITE_ID as SETUP_SITE_ID, setupInputs, setupObservation } from "./plan-bundle-setup-fixture.js";
 import { PUBLIC_PROBLEM_PLACEHOLDER, planApplyBundle, projectEngagementBrief, serializeComposedSkillsManifest, serializeEngagementBrief } from "./plan-bundle.js";
 import type { PlanApplyBundleInputs, RepositoryObservation } from "./plan-bundle.js";
@@ -38,10 +39,10 @@ const HUB_BRIEF: EngagementBrief = {
   schemaVersion: 1,
   problem: "Our site doesn't explain what we do.",
   roles: [
-    { role: "strategist", why: "Sets the direction.", goal: { metric: "direction-clarity", direction: "increase" }, inputsFrom: [], outputsTo: ["writer"] },
-    { role: "writer", why: "Writes the pages.", goal: { metric: "pages-published", direction: "increase" }, inputsFrom: ["strategist"], outputsTo: [] },
+    { role: DIRECTION_ROLE, why: "Sets the direction.", goal: { metric: "direction-clarity", direction: "increase" }, inputsFrom: [], outputsTo: ["writer"] },
+    { role: "writer", why: "Writes the pages.", goal: { metric: "pages-published", direction: "increase" }, inputsFrom: [DIRECTION_ROLE], outputsTo: [] },
   ],
-  sequence: ["strategist", "writer"],
+  sequence: [DIRECTION_ROLE, "writer"],
   deliverables: ["A direction.", "The pages."],
 };
 
@@ -94,7 +95,7 @@ const INPUTS: PlanApplyBundleInputs = {
   repositories: [SITE, DOCS],
   skills: [
     { role: "advisor", content: "# Advisor\n" },
-    { role: "strategist", content: "# Strategist\n" },
+    { role: DIRECTION_ROLE, content: DIRECTION_SKILL },
     { role: "writer", content: "# Writer\n" },
   ],
   producer: { name: "@example/launcher", version: "0.4.0" },
@@ -251,7 +252,7 @@ describe("planApplyBundle", () => {
 
   it("changes only that repository's change when its staffing changes; the other set moves only through the covered plan digest", () => {
     const plan = clone(PLAN) as unknown as { staffing: { repository: string; roles: string[] }[] };
-    plan.staffing[1]!.roles = ["strategist", "writer"];
+    plan.staffing[1]!.roles = [DIRECTION_ROLE, "writer"];
     const before = run();
     const after = run({ ...INPUTS, plan: plan as unknown as AdvisorPlan });
     const content = (set: RepositoryChangeSet) => {
@@ -260,7 +261,7 @@ describe("planApplyBundle", () => {
     };
     expect(content(setFor(after.changeSets, SITE.id))).toEqual(content(setFor(before.changeSets, SITE.id)));
     expect(content(setFor(after.changeSets, DOCS.id))).not.toEqual(content(setFor(before.changeSets, DOCS.id)));
-    expect(setFor(after.changeSets, DOCS.id).items.find((item) => item.act === "compose-skills")).toEqual({ id: "skills", act: "compose-skills", roles: ["advisor", "strategist", "writer"] });
+    expect(setFor(after.changeSets, DOCS.id).items.find((item) => item.act === "compose-skills")).toEqual({ id: "skills", act: "compose-skills", roles: ["advisor", DIRECTION_ROLE, "writer"] });
   });
 
   it("keeps a package act the base already satisfies as a no-op item: no key, no lockfile invariant", () => {
@@ -271,7 +272,7 @@ describe("planApplyBundle", () => {
     const lock = site.files.find((file) => file.path === "package-lock.json");
     expect(lock).toMatchObject({ derived: true, before: sha("site lock") });
     expect(lock !== undefined && "invariants" in lock ? lock.invariants.map((invariant) => ("item" in invariant ? invariant.item : null)) : []).toEqual([
-      "example-owner/site:@example/strategist",
+      DIRECTOR,
       "example-owner/site:@example/writer",
     ]);
   });
@@ -301,7 +302,7 @@ describe("planApplyBundle", () => {
     const briefAfter = (set: RepositoryChangeSet) => set.files.find((file) => file.path === "clossys/brief.json")!.after;
     expect(setFor(run().changeSets, DOCS.id).refused).toContainEqual({ path: "clossys/brief.json", reason: "unowned-existing", item: "brief" });
     expect(expected("public", ["writer"])).toBe(sha(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "public"))));
-    expect(briefAfter(setFor(changeSets, SITE.id))).toBe(expected("private", ["strategist", "writer"]));
+    expect(briefAfter(setFor(changeSets, SITE.id))).toBe(expected("private", [DIRECTION_ROLE, "writer"]));
 
     const publicBytes = serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "public"));
     expect(publicBytes).toContain(JSON.stringify(PUBLIC_PROBLEM_PLACEHOLDER));
@@ -310,7 +311,7 @@ describe("planApplyBundle", () => {
     expect(serializeEngagementBrief(projectEngagementBrief(HUB_BRIEF, ["writer"], "private"))).toContain(HUB_BRIEF.problem);
 
     const flipped = applyOverSetup({ visibility: "public" });
-    expect(briefAfter(setFor(flipped.changeSets, SITE.id))).toBe(expected("public", ["strategist", "writer"]));
+    expect(briefAfter(setFor(flipped.changeSets, SITE.id))).toBe(expected("public", [DIRECTION_ROLE, "writer"]));
     expect(setFor(flipped.changeSets, SITE.id).changeSetDigest).not.toBe(setFor(changeSets, SITE.id).changeSetDigest);
   });
 
@@ -380,7 +381,7 @@ describe("planApplyBundle", () => {
   it("refuses, before computing anything, a staffed role that is not a lowercase id token, and a planItem that is not derived", () => {
     for (const role of ["a/b", "Writer", "ship the site"]) {
       const plan = clone(PLAN) as unknown as { mandate: { roles: string[] }; staffing: { roles: string[] }[] };
-      plan.mandate.roles = ["strategist", "writer", role];
+      plan.mandate.roles = [DIRECTION_ROLE, "writer", role];
       plan.staffing[1]!.roles = ["writer", role];
       const brief = clone(HUB_BRIEF) as unknown as { roles: unknown[] };
       brief.roles.push({ ...HUB_BRIEF.roles[1]!, role });
@@ -414,7 +415,7 @@ describe("planApplyBundle", () => {
   it("writes each role's discovery links, as links to its skill, and the composed-skill manifest", () => {
     const ledger = SETUP_GENERATION1();
     const site = setFor(applyOverSetup().changeSets, SITE.id);
-    for (const role of ["strategist", "writer"]) {
+    for (const role of [DIRECTION_ROLE, "writer"]) {
       for (const root of [".claude/skills", ".cursor/skills"]) {
         const path = `${root}/clossys-${role}`;
         const before = ledgerRowAfter(ledger, path)!;
@@ -425,7 +426,7 @@ describe("planApplyBundle", () => {
     expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-advisor/SKILL.md", reason: "unowned-existing", item: "skills" });
     const manifest = serializeComposedSkillsManifest(
       [
-        { role: "strategist", sha256: sha("# Strategist\n") },
+        { role: DIRECTION_ROLE, sha256: sha(DIRECTION_SKILL) },
         { role: "writer", sha256: sha("# Writer\n") },
       ],
       "0.4.0",
@@ -441,11 +442,11 @@ describe("planApplyBundle", () => {
   });
 
   it("writes the composed-skill manifest's exact bytes: sorted by name, no time, and only skills the set writes", () => {
-    expect(serializeComposedSkillsManifest([{ role: "writer", sha256: sha("w") }, { role: "strategist", sha256: sha("s") }], "0.4.0")).toBe(
-      `{\n  "schemaVersion": 1,\n  "skills": [\n    {\n      "name": "strategist",\n      "source": "catalogue",\n      "sha256": "${sha("s").slice(7)}",\n      "version": "0.4.0"\n    },\n    {\n      "name": "writer",\n      "source": "catalogue",\n      "sha256": "${sha("w").slice(7)}",\n      "version": "0.4.0"\n    }\n  ]\n}\n`,
+    expect(serializeComposedSkillsManifest([{ role: "writer", sha256: sha("w") }, { role: DIRECTION_ROLE, sha256: sha("s") }], "0.4.0")).toBe(
+      `{\n  "schemaVersion": 1,\n  "skills": [\n    {\n      "name": "${DIRECTION_ROLE}",\n      "source": "catalogue",\n      "sha256": "${sha("s").slice(7)}",\n      "version": "0.4.0"\n    },\n    {\n      "name": "writer",\n      "source": "catalogue",\n      "sha256": "${sha("w").slice(7)}",\n      "version": "0.4.0"\n    }\n  ]\n}\n`,
     );
     const refused = setFor(applyOverSetup({ files: [...siteAfterSetup().files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] }).changeSets, SITE.id);
-    const manifest = serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0");
+    const manifest = serializeComposedSkillsManifest([{ role: DIRECTION_ROLE, sha256: sha(DIRECTION_SKILL) }], "0.4.0");
     expect(refused.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(sha(manifest));
   });
 
@@ -453,7 +454,7 @@ describe("planApplyBundle", () => {
     const site = setFor(applyOverSetup({ files: [...siteAfterSetup().files, { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("theirs") }] }).changeSets, SITE.id);
     expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "client-edited", item: "skills" });
     expect(site.files.filter((file) => file.path.includes("clossys-writer") && file.before === null)).toEqual([]);
-    expect(site.files.map((file) => file.path)).toContain(".claude/skills/clossys-strategist");
+    expect(site.files.map((file) => file.path)).toContain(`.claude/skills/clossys-${DIRECTION_ROLE}`);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
     const linked = setFor(applyOverSetup({ linkedAgentsPaths: [".agents"] }).changeSets, SITE.id);
     expect(linked.files.map((file) => file.path).filter((path) => path.includes("/skills/clossys-"))).toEqual([]);
@@ -464,7 +465,7 @@ describe("planApplyBundle", () => {
     expect(linked.observed.symlinkedSkillRoots).toEqual([".claude/skills"]);
     expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".claude/"))).toEqual([]);
     expect(linked.pathAllowList).not.toContain(".claude/skills/clossys-*");
-    expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".cursor/"))).toEqual([".cursor/skills/clossys-strategist", ".cursor/skills/clossys-writer"]);
+    expect(linked.files.map((file) => file.path).filter((path) => path.startsWith(".cursor/"))).toEqual([`.cursor/skills/clossys-${DIRECTION_ROLE}`, ".cursor/skills/clossys-writer"]);
     expect(validateRepositoryChangeSet(linked)).toEqual({ valid: true });
 
     const copied = setFor(
@@ -539,9 +540,9 @@ describe("planApplyBundle", () => {
     const site = setFor(changeSets, SITE.id);
     expect(validateRepositoryChangeSet(site)).toEqual({ valid: true });
     expect(site.refused).toContainEqual({ path: ".agents/skills/clossys-writer/SKILL.md", reason: "skills-root-is-link", item: "skills" });
-    expect(site.files.map((file) => file.path)).toContain(".agents/skills/clossys-strategist/SKILL.md");
+    expect(site.files.map((file) => file.path)).toContain(`.agents/skills/clossys-${DIRECTION_ROLE}/SKILL.md`);
     expect(site.files.find((file) => file.path === "clossys/.state/skills.json")!.after).toBe(
-      sha(serializeComposedSkillsManifest([{ role: "strategist", sha256: sha("# Strategist\n") }], "0.4.0")),
+      sha(serializeComposedSkillsManifest([{ role: DIRECTION_ROLE, sha256: sha(DIRECTION_SKILL) }], "0.4.0")),
     );
     expect(bundle.repositories[0]).toMatchObject({
       verdict: "indeterminate",
@@ -967,7 +968,7 @@ describe("the installed-state ledger", () => {
 
   it("reports a trusted row the desired state no longer names as removal-unbuilt, and leaves it unnamed", () => {
     const fewer = clone(PLAN) as unknown as { staffing: { repository: string; roles: string[] }[] };
-    fewer.staffing[0]!.roles = ["strategist"];
+    fewer.staffing[0]!.roles = [DIRECTION_ROLE];
     const fewerPlan = fewer as unknown as AdvisorPlan;
     const result = run(withSite(second, [SETUP_HELD, corpusSet("apply-after-setup")], { plan: fewerPlan, authorization: { ...INPUTS.authorization!, planDigest: planDigest(fewerPlan) } }));
     const site = setFor(result.changeSets, SITE.id);
@@ -1250,7 +1251,7 @@ describe("canonical output", () => {
       { path: "package-lock.json", sha256: sha("site lock") },
       { path: ".agents/skills/clossys-writer/SKILL.md", sha256: sha("a writer skill") },
       { path: "clossys/brief.json", sha256: sha("a brief") },
-      { path: ".agents/skills/clossys-strategist/SKILL.md", sha256: sha("a strategist skill") },
+      { path: `.agents/skills/clossys-${DIRECTION_ROLE}/SKILL.md`, sha256: sha(`a ${DIRECTION_ROLE} skill`) },
     ],
     manifestEntries: [
       { placement: "dependencies", name: "@example/writer", value: "^0.6.0" },

@@ -19,7 +19,7 @@ const BASE = CORPUS.digests.find((entry) => entry.name === "base")!.snapshot;
 const PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-24T12:00:00Z",
-  mandate: { problem: "FOUNDER-PROSE we cannot explain our product", primaryProblemId: "strategist-unclear-direction", roles: ["writer", "designer"] },
+  mandate: { problem: "FOUNDER-PROSE we cannot explain our product", primaryProblemId: "director-unclear-direction", roles: ["writer", "designer"] },
   whereWeAre: [],
   recommendedNext: null,
   decisions: [],

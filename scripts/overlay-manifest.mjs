@@ -90,7 +90,7 @@ export const OVERLAY_FILES = Object.freeze(overlayFilesFor(OVERLAY_PACKAGES));
  * schema, over all six packages a consumer vendors (see
  * docs/releasing/overlay.md, "Consumer cohort pack").
  */
-export const COHORT_PACKAGES = Object.freeze(["producer", "strategist", "designer", "writer", "publisher", "controller"]);
+export const COHORT_PACKAGES = Object.freeze(["producer", "director", "designer", "writer", "publisher", "controller"]);
 
 /** Every file a pack of `packages` carries: <dir>.tgz for each, plus the manifest, byte-sorted. */
 export function overlayFilesFor(packages) {

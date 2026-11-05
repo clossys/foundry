@@ -26,7 +26,7 @@ function tempDir(): string {
 const VALID_PLAN = {
   schemaVersion: 1,
   asOf: "2026-09-22T00:00:00Z",
-  mandate: { problem: "x", primaryProblemId: "unclear-positioning", roles: ["strategist"] },
+  mandate: { problem: "x", primaryProblemId: "unclear-positioning", roles: ["director"] },
   whereWeAre: ["Fit and readiness both satisfied."],
   recommendedNext: null,
   decisions: [{ at: "2026-09-20T00:00:00Z", recommended: "compose", chosen: "approved", by: "sponsor" }],
@@ -36,8 +36,8 @@ const VALID_PLAN = {
 const VALID_BRIEF = {
   schemaVersion: 1,
   problem: "x",
-  roles: [{ role: "strategist", why: "y", goal: { metric: "m", direction: "increase" }, inputsFrom: [], outputsTo: [] }],
-  sequence: ["strategist"],
+  roles: [{ role: "director", why: "y", goal: { metric: "m", direction: "increase" }, inputsFrom: [], outputsTo: [] }],
+  sequence: ["director"],
   deliverables: ["z"],
 };
 

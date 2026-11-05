@@ -193,7 +193,7 @@ describe("app/pack/page.tsx source shape", () => {
   it("reads each pack-review record only through site-records", TIMEOUT, () => {
     expect(page).not.toMatch(/contract\.json|brief\.json|voice\.json|brand\.css|readBrandCss/);
     const files = ["site-copy.ts", "site-wiring.ts", "pack-review.ts", "pack-review-copy.ts", "pack-review-files.ts", "pack/page.tsx", "pack/export/route.ts"];
-    for (const needle of ['"strategist", "briefs", "publisher.launch.json"', '"brief.json"', '"writer", "voice.json"', '"designer", "brand.css"']) {
+    for (const needle of ['"agents", "director", "briefs", "publisher.launch.json"', '"brief.json"', '"writer", "voice.json"', '"designer", "brand.css"']) {
       expect(code(readFileSync(join(APP_DIR, "site-records.ts"), "utf8")), needle).toContain(needle);
       for (const file of files) expect(code(readFileSync(join(APP_DIR, file), "utf8")), `${file} ${needle}`).not.toContain(needle);
     }
@@ -1107,7 +1107,7 @@ describe("the record-section loaders in site-records", () => {
   it("reads each record at request time from the repository's clossys directory, and imports none of them", TIMEOUT, () => {
     expect(records).toMatch(/resolve\(process\.cwd\(\), "\.\.", "\.\.", "clossys", \.\.\.segments\)/);
     for (const [name, path] of [
-      ["loadStrategyBrief", '"strategist", "briefs", "publisher.launch.json"'],
+      ["loadStrategyBrief", '"agents", "director", "briefs", "publisher.launch.json"'],
       ["loadEngagementBrief", '"brief.json"'],
       ["loadVoiceRecord", '"writer", "voice.json"'],
     ]) {

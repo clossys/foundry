@@ -10,7 +10,7 @@ let root: string;
 const BASE_PLAN: AdvisorPlan = {
   schemaVersion: 1,
   asOf: "2026-09-22T00:00:00Z",
-  mandate: { problem: "Our site doesn't explain what we do.", primaryProblemId: "strategist-unclear-direction", roles: ["strategist"] },
+  mandate: { problem: "Our site doesn't explain what we do.", primaryProblemId: "director-unclear-direction", roles: ["director"] },
   whereWeAre: ["Fit and readiness both satisfied."],
   recommendedNext: null,
   decisions: [],

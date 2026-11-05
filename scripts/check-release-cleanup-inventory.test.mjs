@@ -33,7 +33,7 @@ const REPLACEMENT_FLOORS = [
   ["@clossys/advisor", "0.1.6"],
   ["@clossys/starter", "0.1.5"],
   ["@clossys/controller", "0.8.24"],
-  ["@clossys/strategist", "0.1.2"],
+  ["@clossys/director", "0.1.2"],
 ];
 
 // Builds a scratch `packages/<slug>/package.json` tree so the manifest loop

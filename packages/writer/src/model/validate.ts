@@ -1,4 +1,4 @@
-import { formatRef, parseRef } from "@clossys/strategist";
+import { formatRef, parseRef } from "@clossys/director";
 import { isValidWriterLeafId, WRITER_LAYERS, type WriterLayer } from "../catalog-core/ids.js";
 import { loadWriterCatalog } from "../catalog/ia/index.js";
 import { canonicalLocale, intlDirectionFor } from "../locale.js";
@@ -18,10 +18,10 @@ class Shape {
   issue(path: string, message: string): void { this.issues.push({ code: "WR1", path, message }); }
   obj(value: unknown, path: string, fields: Record<string, Check>, optional: readonly string[] = []): value is Obj {
     if (!object(value)) { this.issue(path, "Expected an object"); return false; }
-    for (const key of Object.keys(value)) if (!owns(fields, key)) this.issue(`${path}.${key}`, key === "strategistClaimKey"
-      ? "strategistClaimKey was removed; migrate to strategy: { cell: <cell-id>, version: <positive integer> } using the confirmed strategy cell."
-      : key === "strategist" && owns(fields, "leafFreeze")
-        ? 'strategist.path was removed; migrate to strategy: { root: <strategy directory>, contract: "writer.messaging" }.'
+    for (const key of Object.keys(value)) if (!owns(fields, key)) this.issue(`${path}.${key}`, key === "directorClaimKey"
+      ? "directorClaimKey was removed; migrate to strategy: { cell: <cell-id>, version: <positive integer> } using the confirmed strategy cell."
+      : key === "director" && owns(fields, "leafFreeze")
+        ? 'director.path was removed; migrate to strategy: { root: <strategy directory>, contract: "writer.messaging" }.'
         : "Unknown field");
     for (const [key, check] of Object.entries(fields)) {
       if (!owns(value, key)) { if (!optional.includes(key)) this.issue(`${path}.${key}`, "Required field"); }

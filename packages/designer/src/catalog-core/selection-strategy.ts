@@ -1,6 +1,6 @@
 import type { Finding } from "./types.js";
 
-/** A citation to an immutable Strategist cell version. */
+/** A citation to an immutable Director cell version. */
 export interface SelectionCellRef { cell: string; version: number }
 export interface SelectionStrategy {
   contract: "designer.identity";
@@ -8,7 +8,7 @@ export interface SelectionStrategy {
   fingerprint: string;
 }
 
-/** The read-only subset of Strategist's Strategy API needed by a selection. */
+/** The read-only subset of Director's Strategy API needed by a selection. */
 export interface SelectionStrategyReader {
   getCell(id: string, version?: number): { id: string; version: number } | undefined;
   isStale(ref: SelectionCellRef): boolean;

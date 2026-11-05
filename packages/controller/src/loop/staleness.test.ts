@@ -63,7 +63,7 @@ describe("change propagation", () => {
   it("propagates only to capabilities that declared the changed path as their own input", () => {
     const result = affectedCapabilities(["clossys/advisor/brief.json"], {
       "cap-reads-brief": ["clossys/advisor/brief.json"],
-      "cap-unrelated": ["clossys/strategist/direction.json"],
+      "cap-unrelated": ["clossys/director/direction.json"],
     });
     expect(result).toEqual(["cap-reads-brief"]);
   });

@@ -63,7 +63,7 @@ test("the reader and the writer may open the model; tests, routes and other agen
     "packages/demo/src/route.ts": `import { readFileSync } from "node:fs";
 import { join } from "node:path";
 export const route = "/agents/designer/hero";
-export const strategist = (root: string) => readFileSync(join(root, "agents", "strategist", "loop.json"));
+export const producer = (root: string) => readFileSync(join(root, "agents", "producer", "loop.json"));
 export const own = (root: string) => readFileSync(root + "/package.json");
 `,
   });

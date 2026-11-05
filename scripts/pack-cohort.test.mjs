@@ -53,7 +53,7 @@ function cohort(t, { studio = true, preview } = {}) {
 }
 
 test("rule 1: the cohort manifest is exactly the six packages and the sets do not cross", (t) => {
-  assert.deepEqual([...COHORT_PACKAGES], ["producer", "strategist", "designer", "writer", "publisher", "controller"]);
+  assert.deepEqual([...COHORT_PACKAGES], ["producer", "director", "designer", "writer", "publisher", "controller"]);
   const { manifest } = cohort(t);
   assert.deepEqual(Object.keys(manifest.packages), [...COHORT_PACKAGES]);
   assert.doesNotThrow(() => validateOverlayManifest(manifest, COHORT_PACKAGES));

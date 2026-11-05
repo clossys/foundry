@@ -59,7 +59,7 @@ export interface LegacyV0PackItemSpec {
 
 /** The fixed, ordered item table: earlier key to pack item id, layer, owner, visibility and needs. */
 export const LEGACY_V0_PACK_ITEMS: readonly LegacyV0PackItemSpec[] = [
-  { key: "brief", id: "strategy-brief", layer: "foundation", owner: "strategist", visibility: "internal", needs: [] },
+  { key: "brief", id: "strategy-brief", layer: "foundation", owner: "director", visibility: "internal", needs: [] },
   { key: "brandKit", id: "brand-kit", layer: "identity", owner: "designer", visibility: "internal", needs: ["strategy-brief"] },
   { key: "voice", id: "voice", layer: "identity", owner: "writer", visibility: "internal", needs: ["strategy-brief"] },
   { key: "shareCard", id: "share-card", layer: "surface", owner: "publisher", visibility: "public", needs: ["brand-kit", "voice"] },

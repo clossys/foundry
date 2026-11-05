@@ -134,7 +134,7 @@ describe("planDelegateCopyAuthority: refusals, in the order the checks run", () 
 
   it("reports a code-rule failure of the plan (R9) by rule and position, and a schema failure of a decision time", () => {
     const base = plan("delegated-copy-approval-scoped");
-    const repeatedRole = planDelegateCopyAuthority(encode({ ...base, mandate: { ...base.mandate, roles: ["strategist", "writer", "strategist"] } }));
+    const repeatedRole = planDelegateCopyAuthority(encode({ ...base, mandate: { ...base.mandate, roles: ["director", "writer", "director"] } }));
     expect(repeatedRole).toEqual({ authorized: false, refusal: "plan-invalid", violations: [{ rule: "R9", path: "mandate.roles[2]" }] });
     const badTime = planDelegateCopyAuthority(encode(withDecisions("delegated-copy-approval-scoped", decide("yesterday", "approved", SCOPED))));
     expect(badTime).toEqual({ authorized: false, refusal: "plan-invalid", violations: [{ rule: "schema", path: "decisions[0].at" }] });
@@ -150,10 +150,10 @@ describe("planDelegateCopyAuthority: refusals, in the order the checks run", () 
 
   it("never carries plan text in a refusal", () => {
     const base = plan("delegated-copy-approval-scoped");
-    const result = planDelegateCopyAuthority(encode({ ...base, mandate: { ...base.mandate, problem: "", roles: ["strategist", "strategist"] } }));
+    const result = planDelegateCopyAuthority(encode({ ...base, mandate: { ...base.mandate, problem: "", roles: ["director", "director"] } }));
     const text = JSON.stringify(result);
     expect(text).not.toContain("Our site");
-    expect(text).not.toContain("strategist");
+    expect(text).not.toContain("director");
   });
 
   it("refuses a valid plan that does not declare delegatedCopyApproval, whatever its approval names", () => {

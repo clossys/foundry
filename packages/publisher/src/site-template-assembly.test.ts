@@ -678,7 +678,7 @@ describe("template file rules", () => {
     for (const name of ["site-wiring.ts", "site-copy.ts"]) {
       const source = readFileSync(join(APP_DIR, name), "utf8");
       expect(source).not.toMatch(/from\s+["']next(\/|["'])/);
-      expect(source).not.toMatch(/clossys\/(strategist|writer|publisher)\/.*\.json/);
+      expect(source).not.toMatch(/clossys\/(director|writer|publisher)\/.*\.json/);
     }
   });
 

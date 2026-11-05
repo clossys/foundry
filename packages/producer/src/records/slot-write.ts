@@ -4,13 +4,15 @@
  * Candidates are immutable (a change is the next version); a decision is replaced, and its
  * history is git. Decisions are written through `clossys pin` (rule R-DECISIONS-BY-CLI).
  */
-import { existsSync, lstatSync, mkdirSync, realpathSync, unlinkSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import { closeSync, constants, existsSync, fstatSync, ftruncateSync, lstatSync, mkdirSync, openSync, realpathSync, renameSync, rmSync, unlinkSync, writeFileSync } from "node:fs";
+import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
+import type { DirectorStore, DirectorStoreChange, DirectorStoreWriter } from "@clossys/director";
 import {
   CANDIDATE_NAME, KIND_EXT, candidatesDir, jsonBytes, pinFile, slotFile, validateCandidate, validatePin, validateSlotDoc,
   type NotNeeded, type PinBasis, type PinDoc, type SlotAgent, type SlotDoc,
 } from "./slot-model/index.js";
-import { listSlots, readCandidate, readSlot } from "./slots.js";
+import { directorStoreReader, listSlots, readCandidate, readSlot } from "./slots.js";
 
 function located(consumer: string, agent: SlotAgent, id: string) {
   const doc = readSlot(consumer, agent, id);
@@ -97,3 +99,81 @@ export function writeSlotOptions(consumer: string, agent: SlotAgent, id: string,
   writeFileSync(slotFile(entry.dir), after);
   return true;
 }
+
+// ---------------------------------------------------------------------------
+// Director's strategy store writer. `clossys director …` injects this writer and
+// slots.ts's reader into @clossys/director, which owns no filesystem writes.
+// Writes are root-confined, refuse symbolic links, and commit all-or-nothing.
+// ---------------------------------------------------------------------------
+
+/** A root-relative write target: no escape, no "." and no symbolic link in any existing component (root included). */
+function storeWritePath(root: string, path: string): string {
+  const base = resolve(root), target = resolve(base, path), rel = relative(base, target);
+  if (!rel || rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel)) throw new Error("Write path escapes the strategy root");
+  for (const cursor of [base, ...rel.split(sep).map((_, i, parts) => join(base, ...parts.slice(0, i + 1)))]) {
+    try { if (lstatSync(cursor).isSymbolicLink()) throw new Error("Strategy writes refuse symbolic links"); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  }
+  return target;
+}
+
+export const directorStoreWriter: DirectorStoreWriter = {
+  locked(root, action) {
+    const lock = storeWritePath(root, ".director-write.lock");
+    try { mkdirSync(lock); } catch { throw new Error("Strategy root is unavailable or another write is in progress"); }
+    try { return action(); } finally { rmSync(lock, { recursive: true, force: true }); }
+  },
+  commit(root, changes) {
+    if (new Set(changes.map(change => change.path)).size !== changes.length) throw new Error("Duplicate transaction path");
+    const stageDir = storeWritePath(root, `.director-write-${randomUUID()}`);
+    mkdirSync(stageDir);
+    const applied: DirectorStoreChange[] = [];
+    const unchanged = (change: DirectorStoreChange) => {
+      storeWritePath(root, change.path);
+      if (directorStoreReader.read(root, change.path) !== change.before) throw new Error(`Strategy file changed during write: ${change.path}`);
+    };
+    try {
+      changes.forEach((change, i) => { unchanged(change); writeFileSync(join(stageDir, String(i)), change.after, { flag: "wx" }); });
+      changes.forEach((change, i) => {
+        unchanged(change);
+        const target = storeWritePath(root, change.path);
+        mkdirSync(dirname(target), { recursive: true });
+        renameSync(join(stageDir, String(i)), target);
+        applied.push(change);
+      });
+    } catch (error) {
+      for (const change of applied.reverse()) {
+        const target = storeWritePath(root, change.path);
+        if (change.before === undefined) unlinkSync(target); else writeFileSync(target, change.before);
+      }
+      throw error;
+    } finally { rmSync(stageDir, { recursive: true, force: true }); }
+  },
+  replace(root, path, text, options = {}) {
+    if (lstatSync(root).isSymbolicLink()) throw new Error("Symlink strategy root is not allowed");
+    const strategyRoot = realpathSync(root);
+    if (!lstatSync(strategyRoot).isDirectory()) throw new Error("Strategy root must be a directory");
+    const destinationPath = storeWritePath(strategyRoot, path);
+    const directory = dirname(destinationPath);
+    if (directory !== strategyRoot) {
+      try { mkdirSync(directory, { recursive: true }); } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== "EEXIST") throw error;
+      }
+    }
+    if (!lstatSync(directory).isDirectory() || realpathSync(directory) !== directory) throw new Error("Generated output must be in a real directory inside the strategy root");
+    // O_NOFOLLOW also protects an existing destination from symlink traversal.
+    const fd = openSync(destinationPath, constants.O_WRONLY | constants.O_CREAT | constants.O_NOFOLLOW | constants.O_NONBLOCK, options.mode ?? 0o666);
+    try {
+      const destination = fstatSync(fd);
+      if (!destination.isFile() || destination.nlink !== 1) throw new Error("Report destination must be a regular file");
+      const current = lstatSync(destinationPath);
+      if (current.isSymbolicLink() || current.dev !== destination.dev || current.ino !== destination.ino || realpathSync(directory) !== directory) throw new Error("Report destination changed while opening");
+      // Truncate only after verifying the opened destination.
+      ftruncateSync(fd, 0);
+      writeFileSync(fd, text, { encoding: "utf8" });
+    } finally { closeSync(fd); }
+  },
+};
+
+/** The store `clossys director …` injects into @clossys/director. */
+export const directorStore: DirectorStore = { reader: directorStoreReader, writer: directorStoreWriter };

@@ -5,7 +5,9 @@ import { runCli } from "./main.js";
 
 const argv = process.argv.slice(2);
 const result = await runCli(argv);
-if (argv.includes("--json") && result.output !== undefined) {
+if (result.printed) {
+  // The command wrote its own stdout and stderr.
+} else if (argv.includes("--json") && result.output !== undefined) {
   console.log(JSON.stringify(result.output, null, 2));
 } else if (argv.includes("--json")) {
   if (argv[0] === "check") {

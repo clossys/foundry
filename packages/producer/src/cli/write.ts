@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { Cell } from "@clossys/strategist";
+import type { Cell } from "@clossys/director";
 import type { WriterSlotBodyRecord } from "@clossys/writer/slot-body";
 import { agentModule } from "../server/cells.js";
 import { directorRef, pinnedStrategyModel, readPinnedDirector } from "../records/director-pinned.js";

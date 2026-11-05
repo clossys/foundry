@@ -249,7 +249,7 @@ retired donor and compatibility names are not adoption targets.
 | --- | --- | --- |
 | Engagement direction | `advisor` | Reconcile each active engagement to a current, evidence-backed, authority-bound next decision or action. |
 | Operating control | `controller`, `architect`, `inspector`, `builder`, `locksmith`, `integrator`, `observer` | Define rules and topology; judge changes; reconcile machine and package state; steward keys; independently measure outcomes. |
-| Strategy and expression | `strategist`, `writer`, `designer`, `publisher`, `influencer` | Trace strategy, govern copy and design, verify publication, and learn from audience response. |
+| Strategy and expression | `director`, `writer`, `designer`, `publisher`, `influencer` | Trace strategy, govern copy and design, verify publication, and learn from audience response. |
 | Agreements and custody | `bouncer`, `butler`, `messenger`, `giver`, `keeper` | Reconcile authority, confirm intent, transport messages, close obligations, and steward held information. |
 
 The exact scoped identifier is `@clossys/<role>`. The release and

@@ -224,6 +224,7 @@ import { changesetsForPackage, loadChangesets } from "./collect-changesets.mjs";
 // gate cannot afford to run that full proof chain.
 import { TRIO_PUBLICATION_PATH } from "./lib/release-publication-cohort.mjs";
 import { LATER_PUBLICATION_DIRECTORY } from "./lib/release-later-publication.mjs";
+import { publishedDirectory, samePackage } from "./lib/package-renames.mjs";
 
 function git(args, cwd) {
   return execFileSync("git", args, { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -989,6 +990,21 @@ function pendingChangesetDetailForStaleRecord(gitRoot, relPkgDir) {
   return `a pending changeset covers it: ${matches.map((m) => `${m.file} (${m.bump})`).join(", ")} — scripts/apply-release-changesets.mjs will bump it in the next release PR`;
 }
 
+// The directory `relPkgDir` had at `commit`: itself, or, for a package
+// renamed since (scripts/lib/package-renames.mjs), its published directory
+// when only that one existed then.
+function baseDirectoryAtCommit(gitRoot, relPkgDir, commit) {
+  const parts = relPkgDir.split("/");
+  const published = publishedDirectory(parts.at(-1));
+  if (published === parts.at(-1)) return relPkgDir;
+  const exists = (dir) => {
+    try { git(["cat-file", "-e", `${commit}:${dir ? `${dir}/` : ""}package.json`], gitRoot); return true; } catch { return false; }
+  };
+  if (exists(relPkgDir)) return relPkgDir;
+  const candidate = [...parts.slice(0, -1), published].join("/");
+  return exists(candidate) ? candidate : relPkgDir;
+}
+
 // DEFAULT MODE — diff-scoped against the merge base. See header comment.
 function evaluatePackageDiff(pkgDir, requestedBase) {
   const ctx = loadPackageContext(pkgDir);
@@ -1017,9 +1033,14 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
     return { package: label, status: "pass", detail: `no common history with ${baseRef} — nothing to compare` };
   }
 
+  // A package renamed in the workspace (scripts/lib/package-renames.mjs) is
+  // the same package at the merge base under its published directory: it is
+  // compared against that tree, never waved through as brand-new.
+  const baseRelPkgDir = baseDirectoryAtCommit(gitRoot, relPkgDir, mergeBase);
+  const baseRelManifestPath = baseRelPkgDir ? `${baseRelPkgDir}/package.json` : "package.json";
   let baseManifest, baseVersion;
   try {
-    baseManifest = JSON.parse(git(["show", `${mergeBase}:${relManifestPath}`], gitRoot));
+    baseManifest = JSON.parse(git(["show", `${mergeBase}:${baseRelManifestPath}`], gitRoot));
     baseVersion = baseManifest.version;
   } catch {
     return {
@@ -1051,19 +1072,19 @@ function evaluatePackageDiff(pkgDir, requestedBase) {
 
   let changed, oldFiles, newFiles, buildInputsChanged;
   try {
-    oldFiles = packedFilesAtCommit(gitRoot, relPkgDir, mergeBase);
+    oldFiles = packedFilesAtCommit(gitRoot, baseRelPkgDir, mergeBase);
     newFiles = packedFilesAtWorktree(absPkgDir);
     changed = diffPackedFiles(oldFiles, newFiles);
     // See buildInputFiles()'s header comment: tsconfig*.json never appears
     // in `changed` above (npm never packs it) but can still change compiled
     // dist/ output, so it is read and diffed on its own axis.
-    buildInputsChanged = diffPackedFiles(buildInputFilesAtCommit(gitRoot, relPkgDir, mergeBase), buildInputFiles(absPkgDir));
+    buildInputsChanged = diffPackedFiles(buildInputFilesAtCommit(gitRoot, baseRelPkgDir, mergeBase), buildInputFiles(absPkgDir));
   } catch (error) {
     return { package: label, status: "error", detail: error.message };
   }
 
   let identityTransitionFailure;
-  if (baseManifest.name !== manifest.name) {
+  if (baseManifest.name !== manifest.name && !(baseRelPkgDir !== relPkgDir && samePackage(baseManifest.name, manifest.name))) {
     const transition = exactIdentityTransitionForPackage({ gitRoot, mergeBase, relPkgDir, baseManifest, manifest });
     if (transition.ok) {
       return {

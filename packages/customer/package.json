@@ -40,7 +40,7 @@
     ],
     "needs": [
       {
-        "producerRole": "@clossys/strategist",
+        "producerRole": "@clossys/director",
         "artifact": "strategy-brief"
       },
       {
@@ -65,7 +65,7 @@
         "worldClass": "Every candidate gets one independently observed, first-person, append-only keep-or-fail verdict from someone actually inhabiting the named audience — never a self-assessment by the role that built it, never overwritten once recorded.",
         "inputs": [
           {
-            "producerRole": "@clossys/strategist",
+            "producerRole": "@clossys/director",
             "artifact": "strategy-brief"
           },
           {

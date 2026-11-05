@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import type { Cell, FactsGateResult, WontClaimResult } from "@clossys/strategist";
+import type { Cell, FactsGateResult, WontClaimResult } from "@clossys/director";
 import { agentModule } from "../server/cells.js";
 import { directorRef, pinnedStrategyModel, readDirectorEvidence, readPinnedDirector } from "../records/director-pinned.js";
 import { readPinned } from "../records/pinned.js";

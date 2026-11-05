@@ -91,7 +91,7 @@ describe("importLegacyV0Pack", () => {
 
   it("item table is fixed", TIMEOUT, () => {
     expect(LEGACY_V0_PACK_ITEMS).toEqual([
-      { key: "brief", id: "strategy-brief", layer: "foundation", owner: "strategist", visibility: "internal", needs: [] },
+      { key: "brief", id: "strategy-brief", layer: "foundation", owner: "director", visibility: "internal", needs: [] },
       { key: "brandKit", id: "brand-kit", layer: "identity", owner: "designer", visibility: "internal", needs: ["strategy-brief"] },
       { key: "voice", id: "voice", layer: "identity", owner: "writer", visibility: "internal", needs: ["strategy-brief"] },
       { key: "shareCard", id: "share-card", layer: "surface", owner: "publisher", visibility: "public", needs: ["brand-kit", "voice"] },

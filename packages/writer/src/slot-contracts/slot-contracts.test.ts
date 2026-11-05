@@ -10,7 +10,7 @@ import { copiedExemplar, trigramJaccard } from "./similarity.js";
 const contracts = loadWriterContracts();
 const byId = new Map(contracts.slots.map(s => [s.id, s]));
 const catalogSlots = (layer: string) => JSON.parse(readFileSync(new URL(`../catalog/slots/${layer}.json`, import.meta.url), "utf8")) as Array<{ id: string; contract: Record<string, any> }>;
-const directorContracts = JSON.parse(readFileSync(new URL("../../../strategist/src/slot-contracts/contracts.json", import.meta.url), "utf8")) as { slots: Array<{ id: string; feeds: string[] }> };
+const directorContracts = JSON.parse(readFileSync(new URL("../../../director/src/slot-contracts/contracts.json", import.meta.url), "utf8")) as { slots: Array<{ id: string; feeds: string[] }> };
 
 interface Rec { context: string; leaf: string; text?: string; json?: Record<string, unknown>; meta?: Record<string, unknown> }
 function writerCell(id: string, records: Rec[], locales: Record<string, Rec[]> = {}) {

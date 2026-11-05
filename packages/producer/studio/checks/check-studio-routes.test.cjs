@@ -41,7 +41,7 @@ test('mutation: a map page entry with no installed page fails', async t => {
 
 test('mutation: a new map page entry Publisher has not installed fails', async t => {
   const { publication: { map }, options } = await fixture(t);
-  map.entries.push({ ...map.entries.find(row => row.id === 'writer-lexicon'), id: 'strategist', path: '/strategist', title: 'Strategist' });
+  map.entries.push({ ...map.entries.find(row => row.id === 'writer-lexicon'), id: 'director', path: '/director', title: 'Director' });
   assert.deepEqual(rules(await checkStudioRoutes(options)), ['map-page-not-installed']);
 });
 

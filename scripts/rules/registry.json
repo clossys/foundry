@@ -506,7 +506,7 @@
           "cwd": ".",
           "fixture": "scripts/rules/fixtures/R-PIPELINE-IS-CODE/lane-unrostered",
           "run": "node packages/producer/scripts/check-pipeline.mjs --steps {fixture}/steps.mjs",
-          "expect": "^FAIL lane\\.unrostered: step \"strategist\\.candidates\": its holder strategist .* is not a roster entry"
+          "expect": "^FAIL lane\\.unrostered: step \"auditor\\.candidates\": its holder auditor .* is not a roster entry"
         },
         {
           "check": ".#check:pipeline",

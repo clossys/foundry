@@ -29,7 +29,7 @@ const stripAgent = (ref: string) => ref.replace(/^[a-z]+:/, "").replace(/@\d+$/,
 export const DESIGNER_LAYERS = ["themes", "assets", "components", "sections", "frames"] as const;
 export const WRITER_LAYERS = ["lexicon", "strings", "patterns", "passages", "narratives"] as const;
 
-/** Director: the strategist catalog (57 slots, 7 L1 / 28 L2). */
+/** Director: the director catalog (57 slots, 7 L1 / 28 L2). */
 export function directorIa(): FoundryIa {
   const root = resolveAgent("director").packageRoot;
   const ia = readJson(root, "src/catalog/ia/strategy.json") as { nodes: { id: string; name: string; children: { id: string; name: string; leaves: string[] }[] }[] };
@@ -39,7 +39,7 @@ export function directorIa(): FoundryIa {
   try {
     const raw = readJson(root, "src/slot-contracts/contracts.json") as { slots: { id: string; inputs: string[]; feeds: string[] }[] };
     contracts = new Map(raw.slots.map(slot => [slot.id, { inputs: strings(slot.inputs), feeds: strings(slot.feeds) }]));
-  } catch { /* Older strategist builds carry no slot contracts: inputs stay undeclared. */ }
+  } catch { /* Older director builds carry no slot contracts: inputs stay undeclared. */ }
   const slots = new Map<string, FoundrySlot>();
   const nodes: IaNode[] = ia.nodes.map(node => ({
     id: node.id, label: node.name,
@@ -52,7 +52,7 @@ export function directorIa(): FoundryIa {
       declaredInputs: (contract?.inputs ?? []).map(stripAgent), declaredUses: [], feeds: (contract?.feeds ?? []).map(stripAgent),
     });
   }
-  return { agent: "director", ia: { schema: IA_SCHEMA, source: `@clossys/strategist#leaf-freeze:${freeze.frozenAt}`, extensions: [], nodes }, slots };
+  return { agent: "director", ia: { schema: IA_SCHEMA, source: `@clossys/director#leaf-freeze:${freeze.frozenAt}`, extensions: [], nodes }, slots };
 }
 
 /** Flatten a placement subtree: groups below L2 fold into their L2 ancestor. */

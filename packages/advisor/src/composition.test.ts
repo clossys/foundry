@@ -136,7 +136,7 @@ describe("composeKitFromProblems", () => {
 
   it("enforces the first-engagement role cap unless overCapReason is given", () => {
     const confirmedProblems = [
-      { id: "strategist-unclear-direction", primary: true },
+      { id: "director-unclear-direction", primary: true },
       { id: "writer-unapproved-copy" },
       { id: "designer-interface-quality" },
       { id: "customer-would-they-keep-it" },
@@ -176,13 +176,13 @@ describe("validateKitProposal", () => {
 
   it("drops a role that links to no confirmed problem and is not needed by one that does", () => {
     const result = validateKitProposal({
-      proposal: { problem: "Our words don't sound like us.", roles: [{ role: "writer", why: "writer job" }, { role: "strategist", why: "seemed related" }] },
+      proposal: { problem: "Our words don't sound like us.", roles: [{ role: "writer", why: "writer job" }, { role: "director", why: "seemed related" }] },
       confirmedProblems,
       catalogue: CAPABILITY_CATALOGUE,
     });
     expect(result.state).toBe("indeterminate");
-    expect(result.removalCandidates).toEqual(["strategist"]);
-    expect(result.findings.some((finding) => finding.rule === "ungrounded-role" && finding.role === "strategist")).toBe(true);
+    expect(result.removalCandidates).toEqual(["director"]);
+    expect(result.findings.some((finding) => finding.rule === "ungrounded-role" && finding.role === "director")).toBe(true);
   });
 
   it("accepts every role the deterministic composition itself justifies", () => {
@@ -204,11 +204,11 @@ describe("evidence tiers and the advisory preset floor", () => {
   });
 
   it("flags exactly the preset roles with no solves claim at or above the qualified floor", () => {
-    const presets = [{ id: "launch", roles: ["strategist", "writer", "designer", "publisher"] }];
+    const presets = [{ id: "launch", roles: ["director", "writer", "designer", "publisher"] }];
     const findings = presetEvidenceFindings({ presets, catalogue: SYNTHETIC_CATALOGUE });
     expect(findings.every((finding) => finding.rule === "preset-role-below-evidence-floor")).toBe(true);
     // writer and designer are `qualified` in the synthetic catalogue; the others `designed`.
-    expect(findings.map((finding) => finding.role).sort()).toEqual(["publisher", "strategist"]);
+    expect(findings.map((finding) => finding.role).sort()).toEqual(["director", "publisher"]);
   });
 
   it("is advisory against the real presets: findings name only roles whose best claim is below the floor", () => {

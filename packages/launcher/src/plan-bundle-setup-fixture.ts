@@ -7,7 +7,7 @@
 
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { SITE_ID as MATERIALIZED_SITE_ID, approvedPlan, basePlan, bundleOf, committedPlanPackages, reseal } from "./admission-fixture.js";
+import { DIRECTION_ROLE, DIRECTION_SKILL, SITE_ID as MATERIALIZED_SITE_ID, approvedPlan, basePlan, bundleOf, committedPlanPackages, reseal } from "./admission-fixture.js";
 import { AGENTS_GUIDE_PATH, AGENTS_GUIDE_TEXT } from "./agents-guide.js";
 import { buildMaterializedFixture } from "./apply-step-fixture.js";
 import { CANONICAL_KEYS, canonicalOrder, contentDigest } from "./change-set-contract.js";
@@ -17,6 +17,7 @@ import type { AdvisorPlan, EngagementBrief } from "./plan-contract.js";
 import { planDigest } from "./plan-digest.js";
 
 export type Loose = Record<string, any>;
+export { DIRECTION_ROLE };
 
 const REPO = new URL("../../../", import.meta.url);
 const read = (path: string): string => readFileSync(new URL(path, REPO), "utf8");
@@ -80,7 +81,7 @@ export function setupPlan(options: SetupPlanOptions = {}): AdvisorPlan {
     });
   }
   const plan = clone(CORPUS_PLAN) as unknown as Loose;
-  plan.staffing = [{ repository, roles: ["strategist", "writer"] }];
+  plan.staffing = [{ repository, roles: [DIRECTION_ROLE, "writer"] }];
   plan.packages = packages;
   return plan as AdvisorPlan;
 }
@@ -89,16 +90,16 @@ export const HUB_BRIEF: EngagementBrief = {
   schemaVersion: 1,
   problem: "Our site doesn't explain what we do.",
   roles: [
-    { role: "strategist", why: "Sets the direction.", goal: { metric: "direction-clarity", direction: "increase" }, inputsFrom: [], outputsTo: ["writer"] },
-    { role: "writer", why: "Writes the pages.", goal: { metric: "pages-published", direction: "increase" }, inputsFrom: ["strategist"], outputsTo: [] },
+    { role: DIRECTION_ROLE, why: "Sets the direction.", goal: { metric: "direction-clarity", direction: "increase" }, inputsFrom: [], outputsTo: ["writer"] },
+    { role: "writer", why: "Writes the pages.", goal: { metric: "pages-published", direction: "increase" }, inputsFrom: [DIRECTION_ROLE], outputsTo: [] },
   ],
-  sequence: ["strategist", "writer"],
+  sequence: [DIRECTION_ROLE, "writer"],
   deliverables: ["A direction.", "The pages."],
 };
 
 export const SKILLS = [
   { role: "advisor", content: "# Advisor\n" },
-  { role: "strategist", content: "# Strategist\n" },
+  { role: DIRECTION_ROLE, content: DIRECTION_SKILL },
   { role: "writer", content: "# Writer\n" },
 ];
 

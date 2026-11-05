@@ -24,7 +24,7 @@ const SETUP = corpus.changeSets.find((entry) => entry.name === "setup-public")!.
 const SETUP_SITE = corpus.changeSets.find((entry) => entry.name === "setup-site")!.changeSet;
 type Loose = Record<string, any>;
 const loose = (value: unknown): Loose => structuredClone(value) as Loose;
-const STRATEGIST = "example-owner/site:@example/strategist";
+const DIRECTOR = "example-owner/site:@example/director";
 const WRITER = "example-owner/site:@example/writer";
 const STARTER = "example-owner/site:@example/starter";
 
@@ -255,10 +255,10 @@ describe("change-set code rules C1-C16", () => {
 
   describe("C7: only the ledger and the lockfile may be derived (the digest hole)", () => {
     // Each repro marks a file derived, which takes its bytes out of the digest, gives it a junk invariant, and reseals.
-    const junk = { item: STRATEGIST, name: "@example/strategist", version: "1.4.0", integrity: SET.engine.integrity };
+    const junk = { item: DIRECTOR, name: "@example/director", version: "1.4.0", integrity: SET.engine.integrity };
     it("refuses package.json marked derived", () => {
       const set = loose(SET);
-      set.files.push({ path: "package.json", mode: "100644", derived: true, item: STRATEGIST, invariants: [junk] });
+      set.files.push({ path: "package.json", mode: "100644", derived: true, item: DIRECTOR, invariants: [junk] });
       set.files.sort((a: Loose, b: Loose) => (a.path < b.path ? -1 : 1));
       expect(repositoryChangeSetViolations(reseal(set)).some((violation) => violation.rule !== "C8")).toBe(true);
       expect(validateRepositoryChangeSet(set).valid).toBe(false);
@@ -350,7 +350,7 @@ describe("change-set code rules C1-C16", () => {
       value.keys[0].after = "9.9.9";
       expect(ruleIds(reseal(value))).toContain("C9");
       const pointer = loose(SET);
-      pointer.keys[0].pointer = "/dependencies/@example~1strategist";
+      pointer.keys[0].pointer = "/dependencies/@example~1director";
       expect(ruleIds(reseal(pointer))).toContain("C9");
       const nonPackage = loose(SET);
       nonPackage.keys[0].item = "brief";
@@ -395,7 +395,7 @@ describe("change-set code rules C1-C16", () => {
       fileAt(link, "clossys/brief.json").mode = "120000";
       expect(rulesOf(reseal(link))).toEqual([`C9 files[${fileIndex(link, "clossys/brief.json")}].mode`]);
       const target = loose(SET);
-      fileAt(target, ".claude/skills/clossys-writer").after = contentDigest("../../.agents/skills/clossys-strategist");
+      fileAt(target, ".claude/skills/clossys-writer").after = contentDigest("../../.agents/skills/clossys-director");
       expect(rulesOf(reseal(target))).toEqual([`C9 files[${linkAt(target)}].after`]);
       const removed = loose(SET);
       fileAt(removed, ".claude/skills/clossys-writer").after = null;
@@ -767,7 +767,7 @@ describe("change-set code rules C1-C16", () => {
       other.keys = other.keys.filter((key: Loose) => key.item !== WRITER);
       const lock = fileAt(other, "package-lock.json");
       lock.invariants = lock.invariants.filter((invariant: Loose) => invariant.item !== WRITER);
-      other.refused.push({ file: "package.json", pointer: "/devDependencies/@example~1strategist", reason: "unowned-existing", item: WRITER });
+      other.refused.push({ file: "package.json", pointer: "/devDependencies/@example~1director", reason: "unowned-existing", item: WRITER });
       expect(repositoryChangeSetViolations(reseal(other)).map((violation) => violation.message)).toContain(`changeSet.items[${itemIndex(other, WRITER)}] is named by a key refusal for another package (rule C9)`);
       const own = loose(other);
       own.refused[0].pointer = "/dependencies/@example~1writer";

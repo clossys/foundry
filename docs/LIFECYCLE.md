@@ -379,7 +379,7 @@ fails when the committed copy drifts from the derived one — #493.
 | `@clossys/producer` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
 | `@clossys/publisher` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/starter` | implemented | not yet | N/A — executable tooling | N/A — executable tooling | N/A — executable tooling |
-| `@clossys/strategist` | staged | yes | not yet | unknown — #484 | not yet |
+| `@clossys/director` | staged | yes | not yet | unknown — #484 | not yet |
 | `@clossys/writer` | staged | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/advisor` | published | yes | not yet | unknown — #484 | not yet |
 | `@vespeneventures/architect` | published | yes | not yet | unknown — #484 | not yet |

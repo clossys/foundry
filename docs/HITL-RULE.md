@@ -521,7 +521,7 @@ decision-record validator is follow-up owner-tier work, tracked in
   the validator change in #1408.
 - **One markup comment inside the quote.** The line quoting item 5's
   live-harm default ends with an HTML comment, `facts-gate:ignore`, so
-  the strategist facts gate (`npm run check:strategist-subject`) does
+  the director facts gate (`npm run check:director-subject`) does
   not read the ratified wording as an untraced superlative claim. It
   renders as nothing and changes no word of the quote. A byte-for-byte
   comparison has to strip HTML comments first; the decision record's

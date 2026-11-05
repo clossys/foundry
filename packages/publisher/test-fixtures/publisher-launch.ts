@@ -2,12 +2,13 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openStrategy, validateBriefContract } from "@clossys/strategist";
+import { openStrategy, validateBriefContract } from "@clossys/director";
 import contract from "../strategy-brief.json";
+import { directorStoreReader } from "../../producer/src/records/slots.js";
 export function launchRoot(ready = true): string {
   const root = mkdtempSync(join(tmpdir(), "publisher-launch-"));
   const ids = ready ? ["focus.segment.core", "focus.reach.channel", "focus.offer.included"] : [];
-  writeFileSync(join(root, "tree.json"), JSON.stringify({ schemaVersion: 1, catalog: "@clossys/strategist#strategy-v1", archetype: "default", core: "archetype", active: Object.fromEntries(ids.map(id => [id, 1])) }));
+  writeFileSync(join(root, "tree.json"), JSON.stringify({ schemaVersion: 1, catalog: "@clossys/director#strategy-v1", archetype: "default", core: "archetype", active: Object.fromEntries(ids.map(id => [id, 1])) }));
   for (const id of ids) {
     mkdirSync(join(root, "cells", id), { recursive: true });
     const cite = id === "focus.reach.channel" ? "focus.segment.core@1" : "";
@@ -18,5 +19,5 @@ export function launchRoot(ready = true): string {
 export function launchBrief(root: string) {
   const validated = validateBriefContract(contract);
   if (!validated.ok) throw new Error("Invalid Publisher test contract");
-  return openStrategy(root, { contracts: [validated.value] }).getBrief("publisher.launch");
+  return openStrategy(root, directorStoreReader, { contracts: [validated.value] }).getBrief("publisher.launch");
 }

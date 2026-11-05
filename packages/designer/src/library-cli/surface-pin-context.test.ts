@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { beforeAll, expect, it } from "vitest";
-import { activate, propose } from "@clossys/strategist/cell-format";
+import { activate, propose } from "@clossys/director/cell-format";
 import { applyLibraryChange, libraryHash, loadCatalog } from "../catalog-core/index.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import { isSurfacePackageEntry, surfaceEntryOf, surfacePackageDescriptorHash } from "../catalog-core/surface-library.js";

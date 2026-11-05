@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { validateBriefContract } from "@clossys/strategist";
+import { validateBriefContract } from "@clossys/director";
 
-it("ships the complete writer.messaging contract against the Strategist catalog", () => {
+it("ships the complete writer.messaging contract against the Director catalog", () => {
   const contract = JSON.parse(readFileSync(new URL("../strategy-brief.json", import.meta.url), "utf8"));
   expect(validateBriefContract(contract)).toEqual({ ok: true, value: contract });
   expect(contract).toEqual({

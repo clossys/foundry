@@ -27,7 +27,7 @@ source: {"kind":"derived","ref":["director:advantage.proposition.proof@1","direc
     },
     {
       "type": "paragraph",
-      "text": "Current package versions: producer 0.1.0, strategist 0.6.0, designer 0.12.0, writer 0.6.0 and publisher 0.13.0."
+      "text": "Current package versions: producer 0.1.0, director 0.6.0, designer 0.12.0, writer 0.6.0 and publisher 0.13.0."
     }
   ]
 }

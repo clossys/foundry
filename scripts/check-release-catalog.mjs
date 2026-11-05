@@ -10,6 +10,7 @@
 
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { publishedDirectory } from "./lib/package-renames.mjs";
 
 const TARGET_ID = /^[a-z0-9][a-z0-9-]*$/;
 const PACKAGE_DIRECTORY = /^[a-z0-9][a-z0-9-]*$/;
@@ -20,8 +21,11 @@ const PRECUTOVER_TARGET = Object.freeze({
   registry: "https://registry.npmjs.org",
   packages: Object.freeze(["advisor", "starter", "controller"]),
 });
+// Catalogue keys are the directories the packages were published from; a
+// package renamed since (scripts/lib/package-renames.mjs) keeps its published
+// key until the owner moves it on npm and the catalogue with it.
 export const ALL_PACKAGE_RELEASE_ORDER = Object.freeze([
-  "advisor", "starter", "controller", "launcher", "strategist", "writer", "designer",
+  "advisor", "starter", "controller", "launcher", publishedDirectory("director"), "writer", "designer",
   "customer",
   "architect", "bouncer", "butler", "giver", "influencer", "integrator",
   "keeper", "locksmith", "messenger", "observer", "builder", "inspector",

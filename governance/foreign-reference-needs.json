@@ -1954,7 +1954,7 @@
     {
       "id": "NEED-FOREIGN-a24add6f7659fc5f",
       "rule": "bare-scope",
-      "file": "packages/strategist/src/citations/index.test.ts",
+      "file": "packages/director/src/citations/index.test.ts",
       "count": 1,
       "approvedSources": [],
       "reason": "No approved source owns these references; no admission granted.",

@@ -20,7 +20,9 @@ import {
   READINESS_BIN,
   SITE_ID,
   STARTER,
-  STRATEGIST,
+  DIRECTION_PACKAGE,
+  DIRECTION_ROLE,
+  DIRECTOR,
   WRITER,
   advanceHubUpstream,
   approvedPlan,
@@ -337,14 +339,14 @@ describe("condition 2: the apply set is the setup set's, and nothing else (K8)",
       {
         editApply: (a) => {
           a.items.splice(a.items.findIndex((entry: Loose) => entry.id === STARTER), 1);
-          item(a, STRATEGIST).act = "pin-starter";
+          item(a, DIRECTOR).act = "pin-starter";
         },
       },
       "package-acts-differ",
     ],
-    ["C2-07 a deferred install's version", { editApply: (a) => retarget(a, STRATEGIST, { version: "1.4.1" }) }, "package-acts-differ"],
-    ["C2-08 a deferred install's integrity", { editApply: (a) => retarget(a, STRATEGIST, { integrity: OTHER_INTEGRITY }) }, "package-acts-differ"],
-    ["C2-09 a deferred install's placement", { editApply: (a) => retarget(a, STRATEGIST, { placement: "dependencies" }) }, "package-acts-differ"],
+    ["C2-07 a deferred install's version", { editApply: (a) => retarget(a, DIRECTOR, { version: "1.4.1" }) }, "package-acts-differ"],
+    ["C2-08 a deferred install's integrity", { editApply: (a) => retarget(a, DIRECTOR, { integrity: OTHER_INTEGRITY }) }, "package-acts-differ"],
+    ["C2-09 a deferred install's placement", { editApply: (a) => retarget(a, DIRECTOR, { placement: "dependencies" }) }, "package-acts-differ"],
     [
       "C2-10 the pin at another version, satisfied",
       {
@@ -840,7 +842,7 @@ describe("planPackagesFor", () => {
     const site = planPackagesFor(w.authority, SITE_ID);
     expect(site.map((row) => [row.planItem, row.act])).toEqual([
       [STARTER, "pin-starter"],
-      [STRATEGIST, "install"],
+      [DIRECTOR, "install"],
       [WRITER, "install"],
     ]);
     expect(Object.keys(site[0]!).sort()).toEqual(["act", "integrity", "name", "placement", "planItem", "version"]);
@@ -1165,7 +1167,7 @@ describe("decideSetBinding over a real hub and a real clone", () => {
   });
 
   it("C3-17: a discovery link removed from the base is base-content-missing", async () => {
-    const s = scene({ tree: (tree) => void tree.delete(".cursor/skills/clossys-strategist") });
+    const s = scene({ tree: (tree) => void tree.delete(`.cursor/skills/clossys-${DIRECTION_ROLE}`) });
     expect(await bind(s)).toEqual(aa("base-content-missing"));
   });
 
@@ -1294,7 +1296,7 @@ describe("K11: the execution authorization is current (readiness)", () => {
       expect(await bind(withAssessment(packages))).toEqual(notCurrent("package-not-permitted"));
     }
     // Every act counts: the deferred installs the setup set names are checked too, for an approved setup set.
-    const dropped = withAssessment(acts((rows) => rows.filter((row) => row.name !== "@example/strategist")));
+    const dropped = withAssessment(acts((rows) => rows.filter((row) => row.name !== DIRECTION_PACKAGE)));
     expect(await bind(dropped, { set: dropped.w.setup })).toEqual(notCurrent("package-not-permitted"));
   });
 

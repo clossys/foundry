@@ -130,6 +130,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { publishedName, workspaceDirectory } from "./lib/package-renames.mjs";
 import { evaluatePackageDiff } from "./check-release-readiness.mjs";
 import { qualificationRecordPresenceForCandidate, qualificationRecordRetainedForVersion } from "./check-qualification-record-present.mjs";
 
@@ -300,12 +301,15 @@ function loadDeferrals(root) {
 function candidateForDeferral(root, entry) {
   let manifest;
   try {
-    manifest = JSON.parse(readFileSync(resolve(root, `packages/${entry.package}/package.json`), "utf8"));
+    manifest = JSON.parse(readFileSync(resolve(root, `packages/${workspaceDirectory(entry.package)}/package.json`), "utf8"));
   } catch {
     return null;
   }
   if (typeof manifest?.name !== "string") return null;
-  return { name: manifest.name, version: entry.version };
+  // A deferral filed under a package's published directory (scripts/lib/package-renames.mjs)
+  // joins the records written under its published name.
+  const renamed = workspaceDirectory(entry.package) !== entry.package;
+  return { name: renamed ? publishedName(manifest.name) : manifest.name, version: entry.version };
 }
 
 // Re-checks every declared deferral against the record store, independent of
