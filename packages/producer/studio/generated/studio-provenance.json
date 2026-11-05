@@ -11,13 +11,13 @@
   },
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
-    "data-clossys-candidate": "module-outline-v5.json",
-    "data-clossys-hash": "sha256:5d8224fdd4d04b6c6b284e2cbfbe22d0c669aa97eede7b380ec3423ba14f026d"
+    "data-clossys-candidate": "module-outline-v6.json",
+    "data-clossys-hash": "sha256:c00cded9808e56269c045c8819e9c7b4c533d0f721f3753b29639b2852fbf8ce"
   },
   "sections.module.checks": {
     "data-clossys-slot": "sections.module.checks",
-    "data-clossys-candidate": "module-checks-v4.json",
-    "data-clossys-hash": "sha256:24d77971e4a4dfd10cae754d5f54bc4a78e39389a8d22ebd7d3cda7dc3a05199"
+    "data-clossys-candidate": "module-checks-v5.json",
+    "data-clossys-hash": "sha256:49ace7671f63039ed121af4ec767b116abc4dc3ccc4b5de27db873502a6539dc"
   },
   "sections.producer.team-strip": {
     "data-clossys-slot": "sections.producer.team-strip",
