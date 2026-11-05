@@ -27,6 +27,10 @@ const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
   .split(" ")
   .filter(token => !token.includes("transition-"))
   .join(" ");
+// On the inverse plate the toggle inherits the header's inverse ink: it drops the ink the ghost look
+// adds over the colourless outline look, read from the component, never named here.
+const OUTLINE_LOOK = buttonLinkClassName("outline", "sm").split(" ");
+const GHOST_INK = buttonLinkClassName("ghost", "sm").split(" ").filter(token => token.startsWith("text-") && !OUTLINE_LOOK.includes(token));
 
 // A collapsed header expands only with this much width to spare.
 const HYSTERESIS = parseFloat(TOKENS["--spacing-sm"]!.value);
@@ -50,7 +54,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   // Select a complete look before cx: tailwind-merge is an optional peer.
   const inverse = tone === "inverse";
   const look = inverse
-    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-foreground", "hover:bg-muted", "focus-visible:outline-primary"].includes(token)).join(" ")
+    ? TOGGLE_CLASSES.split(" ").filter(token => !GHOST_INK.includes(token)).join(" ")
     : TOGGLE_CLASSES;
   const panelId = useId();
   const toggle = useRef<HTMLButtonElement>(null);

@@ -65,17 +65,7 @@
     {
       "code": "WL2",
       "file": "src/frames/site-frame/FrameNavDisclosure.client.tsx",
-      "evidence": "frames reads themes.foreground.default directly with no current wiring exception (A3)"
-    },
-    {
-      "code": "WL2",
-      "file": "src/frames/site-frame/FrameNavDisclosure.client.tsx",
       "evidence": "frames reads themes.muted.default directly with no current wiring exception (A3)"
-    },
-    {
-      "code": "WL2",
-      "file": "src/frames/site-frame/FrameNavDisclosure.client.tsx",
-      "evidence": "frames reads themes.primary.default directly with no current wiring exception (A3)"
     },
     {
       "code": "WL2",
@@ -106,21 +96,6 @@
       "code": "WL2",
       "file": "src/shell/internal/shell-ground.ts",
       "evidence": "frames reads themes.muted-foreground.default directly with no current wiring exception (A3)"
-    },
-    {
-      "code": "WL2",
-      "file": "src/shell/NavDisclosure.tsx",
-      "evidence": "frames reads themes.foreground.default directly with no current wiring exception (A3)"
-    },
-    {
-      "code": "WL2",
-      "file": "src/shell/NavDisclosure.tsx",
-      "evidence": "frames reads themes.muted.default directly with no current wiring exception (A3)"
-    },
-    {
-      "code": "WL2",
-      "file": "src/shell/NavDisclosure.tsx",
-      "evidence": "frames reads themes.primary.default directly with no current wiring exception (A3)"
     },
     {
       "code": "WL2",

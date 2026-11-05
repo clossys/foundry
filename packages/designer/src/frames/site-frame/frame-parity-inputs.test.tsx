@@ -73,7 +73,7 @@ for (const mode of ["server", "client"] as const) {
   it(`forwards only the transparent footer top rule: ${mode}`, () => {
     const shell = { ...base, footer: { ground: "transparent", rule: "top", legal } } as SiteShellInput;
     const footer = output(frame(shell), mode).querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-line-base");
+    expect(footer).toHaveClass("border-t", "border-border");
     expect(footer.querySelector(".border-t")).toBeNull();
     for (const ground of ["base", "inverse"] as const) {
       const ordinary = output(frame({ ...base, footer: { ground, legal } }), mode).querySelector("footer")!.outerHTML;
@@ -118,7 +118,7 @@ for (const mode of ["server", "client"] as const) {
     const description = [...root.querySelectorAll("p")].find(p => p.textContent === "Supporting words.")!;
     expect(description.style.maxWidth).toBe("var(--ui-width-hero-wide, 64rem)");
     const footer = root.querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-line-base");
+    expect(footer).toHaveClass("border-t", "border-border");
     expect(footer).not.toHaveClass("bg-surface-base", "bg-surface-inverse");
     expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
     expect(footer.querySelector(".border-t")).toBeNull();
