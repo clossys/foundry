@@ -6,6 +6,7 @@ import sectionSlots from "../catalog/slots/sections.json" with { type: "json" };
 import sectionedDocument from "../catalog/fills/foundry/sections.sectioned-document.json" with { type: "json" };
 import type { SectionSlot } from "../catalog-core/sections-contract.js";
 import { specimenSectionSourceCatalog } from "./specimen-sections.js";
+import { generatedPublisherSectionFiles } from "./publisher-sections.js";
 import {
   FOUNDRY_SECTION_MAP, generatedFoundrySectionFiles, importFoundrySections,
 } from "./foundry-sections.js";
@@ -38,6 +39,17 @@ describe("Foundry section package descriptors", () => {
     expect(new Set([...nativePackageSlots, ...specimenSourceSlots, ...externalProviderSlots]).size).toBe(slots.length);
     expect(imported().coverage.map(row => row.slot)).toEqual(slots.map(slot => slot.id).sort());
     expect(generatedFoundrySectionFiles({ exports, slots: [...slots].reverse() })).toEqual(files);
+  });
+
+  it("generates the Publisher-package sectioned-document fill with its measured read evidence", () => {
+    const directory = resolve(dirname(fileURLToPath(import.meta.url)), "../catalog/fills/foundry");
+    const files = generatedPublisherSectionFiles();
+    expect(Object.keys(files)).toEqual(["sections.sectioned-document.json"]);
+    expect(readFileSync(resolve(directory, "sections.sectioned-document.json"), "utf8")).toBe(files["sections.sectioned-document.json"]);
+    const descriptor = sectionedDocument.sections["sectioned-document"] as unknown as { reads?: { themes: string[]; assets: string[] }; consumption?: { scanStatus: string; sourceFiles: unknown[] } };
+    expect(descriptor.reads).toEqual({ themes: ["themes.font-mono"], assets: [] });
+    expect(descriptor.consumption?.scanStatus).toBe("lower-bound");
+    expect(descriptor.consumption?.sourceFiles.length).toBeGreaterThan(0);
   });
 
   it("pins public package pointers without source copying or conformance claims", () => {

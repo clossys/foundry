@@ -22,6 +22,12 @@ const input = (): ConsumptionInput => ({
 });
 
 describe("component consumption lower bounds", () => {
+  it("reads asset ids, never an assets.* module path or member access", () => {
+    const fixture = input();
+    const scan = scanComponentReads('import { isRenderAsset } from "../../internal/assets.js";\nconst id = "assets.logo"; const x = props.assets.image;', fixture.themes, fixture.themeCss);
+    expect(scan.assets).toEqual(["assets.logo"]);
+  });
+
   it("expands theme utilities, variants and arbitrary properties into exact token members", () => {
     const fixture = input();
     const scan = scanComponentReads('"text-foreground dark:hover:px-md rounded-control ring-(--color-foreground)"', fixture.themes, fixture.themeCss);
