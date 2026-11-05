@@ -236,6 +236,11 @@
         "name": "assets.image",
         "kind": "asset",
         "required": false
+      },
+      {
+        "name": "assets.pattern",
+        "kind": "asset",
+        "required": false
       }
     ],
     "limits": {

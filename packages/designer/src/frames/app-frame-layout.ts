@@ -26,7 +26,8 @@ export const APP_FRAME_LAYOUT = {
   tap: variable("--ui-layout-tap-target"),
   gutter: variable("--spacing-md"),
   gap: variable("--spacing-sm"),
-  raised: variable("--color-surface-raised"),
+  // shadcn `card`, the themes-layer variable `styles/legacy-color-map.json` maps the legacy raised surface to.
+  raised: "var(--card)",
   glass: variable("--color-surface-glass"),
   blur: `blur(${variable("--blur-glass")})`,
   barLayer: variable("--ui-z-sticky"),

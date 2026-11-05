@@ -2440,6 +2440,9 @@
   .border-action {
     border-color: var(--color-action, #0A0A0A);
   }
+  .border-border {
+    border-color: var(--border);
+  }
   .border-current {
     border-color: currentcolor;
   }
@@ -2534,6 +2537,12 @@
   .bg-action-on-inverse {
     background-color: var(--color-action-on-inverse, #FAFAFA);
   }
+  .bg-background {
+    background-color: var(--background);
+  }
+  .bg-card {
+    background-color: var(--card);
+  }
   .bg-control-tonal {
     background-color: var(--color-control-tonal, oklch(0.2178 0 0 / 0.08));
   }
@@ -2576,6 +2585,9 @@
   .bg-overlay-surface {
     background-color: var(--color-overlay-surface, oklch(1 0 0));
   }
+  .bg-sidebar {
+    background-color: var(--sidebar);
+  }
   .bg-skeleton-fill {
     background-color: var(--color-skeleton-fill, oklch(0.9401 0 0));
   }
@@ -2602,9 +2614,6 @@
   }
   .bg-status-warning-tint {
     background-color: var(--color-status-warning-tint, oklch(0.4495 0 0 / 0.12));
-  }
-  .bg-surface-aside {
-    background-color: var(--color-surface-aside, oklch(0.9612 0 0));
   }
   .bg-surface-base {
     background-color: var(--color-surface-base, oklch(0.9702 0 0));
@@ -3139,6 +3148,9 @@
   .text-current {
     color: currentcolor;
   }
+  .text-foreground {
+    color: var(--foreground);
+  }
   .text-inherit {
     color: inherit;
   }
@@ -3171,6 +3183,9 @@
   }
   .text-line-strong {
     color: var(--color-line-strong, oklch(0.7763 0 0));
+  }
+  .text-muted-foreground {
+    color: var(--muted-foreground);
   }
   .text-status-danger-text {
     color: var(--color-status-danger-text, oklch(0.2178 0 0));
@@ -3741,6 +3756,9 @@
     .hover\:bg-control-tonal-inverse-hover:hover {
       background-color: var(--color-control-tonal-inverse-hover, oklch(0.9702 0 0 / 0.16));
     }
+    .hover\:bg-muted:hover {
+      background-color: var(--muted);
+    }
     .hover\:bg-status-danger-text:hover {
       background-color: var(--color-status-danger-text, oklch(0.2178 0 0));
     }
@@ -3820,8 +3838,8 @@
   .focus\:rounded-control:focus {
     border-radius: var(--radius-control, 6px);
   }
-  .focus\:bg-accent:focus {
-    background-color: var(--color-accent, oklch(0.4748 0 0));
+  .focus\:bg-primary:focus {
+    background-color: var(--primary);
   }
   .focus\:px-md:focus {
     padding-inline: var(--spacing-md, 12px);
@@ -3832,8 +3850,8 @@
   .focus\:text-body:focus {
     font-size: var(--text-body, 15px);
   }
-  .focus\:text-ink-on-accent:focus {
-    color: var(--color-ink-on-accent, oklch(0.9702 0 0));
+  .focus\:text-primary-foreground:focus {
+    color: var(--primary-foreground);
   }
   .focus\:outline-none:focus {
     --tw-outline-style: none;
@@ -3871,6 +3889,9 @@
   .focus-visible\:outline-ink-on-inverse:focus-visible {
     outline-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   }
+  .focus-visible\:outline-primary:focus-visible {
+    outline-color: var(--primary);
+  }
   .focus-visible\:grayscale-0:focus-visible {
     --tw-grayscale: grayscale(0%);
     filter: var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,);
@@ -3904,6 +3925,9 @@
   }
   .active\:bg-action-pressed:active {
     background-color: var(--color-action-pressed, #404040);
+  }
+  .active\:bg-muted:active {
+    background-color: var(--muted);
   }
   .active\:bg-surface-base:active {
     background-color: var(--color-surface-base, oklch(0.9702 0 0));

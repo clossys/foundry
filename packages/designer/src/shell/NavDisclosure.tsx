@@ -50,7 +50,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
   // Select a complete look before cx: tailwind-merge is an optional peer.
   const inverse = tone === "inverse";
   const look = inverse
-    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-ink-primary", "hover:bg-surface-sunken", "focus-visible:outline-accent"].includes(token)).join(" ")
+    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-foreground", "hover:bg-muted", "focus-visible:outline-primary"].includes(token)).join(" ")
     : TOGGLE_CLASSES;
   const panelId = useId();
   const toggle = useRef<HTMLButtonElement>(null);

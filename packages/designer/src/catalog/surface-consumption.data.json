@@ -91,7 +91,14 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.primary",
+          "themes.primary-foreground"
+        ]
       },
       "sourceFiles": [
         {
@@ -140,7 +147,7 @@
         },
         {
           "path": "packages/designer/src/frames/app-frame-layout.ts",
-          "sha256": "fec6d45d03384483481d50b6eee8629da2799c66f5b70438f36eb7504f055a5e"
+          "sha256": "083142e71d6bc18bf52b30e61451c5f09e7e9f8be702ab995bbe99ad3884a0ad"
         },
         {
           "path": "packages/designer/src/frames/app-frame-size-classes.ts",
@@ -148,7 +155,7 @@
         },
         {
           "path": "packages/designer/src/frames/AppFrame.tsx",
-          "sha256": "2e681bf48e0e1dd67724c5e5b09451eeb83044f992742cebe716650f25879a99"
+          "sha256": "23716b03f8b08c3b1a225b9a58df983f74f1f967c312c8f6cbfd17bbe87a555d"
         },
         {
           "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -172,7 +179,7 @@
         },
         {
           "path": "packages/designer/src/frames/FrameDock.tsx",
-          "sha256": "421f9a3bcc956f89c38413ccaf63e8325196b81f010910c0f421673ce5f9522b"
+          "sha256": "7e9e13f7a50e9aa2bd2f598dc24bded727efea049712ecc977b308c1d8027b7d"
         },
         {
           "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -212,7 +219,7 @@
         },
         {
           "path": "packages/designer/src/shell/SkipLink.tsx",
-          "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+          "sha256": "b52ac18ee8b09afbe0b5de181e85ffb2a06162efbfcbc3030b2587c0ac0694ee"
         },
         {
           "path": "packages/designer/src/shell/Toaster.tsx",
@@ -457,7 +464,12 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.foreground",
+          "themes.primary",
+          "themes.primary-foreground"
+        ]
       },
       "sourceFiles": [
         {
@@ -470,7 +482,7 @@
         },
         {
           "path": "packages/designer/src/frames/AuthFrame.tsx",
-          "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+          "sha256": "e52423313baada52ab4493a3785f3f11678c00d8fba24d96020acc3b50c9dd48"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -478,7 +490,7 @@
         },
         {
           "path": "packages/designer/src/shell/SkipLink.tsx",
-          "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+          "sha256": "b52ac18ee8b09afbe0b5de181e85ffb2a06162efbfcbc3030b2587c0ac0694ee"
         }
       ],
       "unresolved": [
@@ -606,7 +618,9 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": []
+        "themes": [
+          "themes.border"
+        ]
       },
       "sourceFiles": [
         {
@@ -627,7 +641,7 @@
         },
         {
           "path": "packages/designer/src/frames/InspectorFrame.tsx",
-          "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
+          "sha256": "135a33c060bb29f39e58d9497b97a08d296a3dc3242428cc559513e2175ac23c"
         },
         {
           "path": "packages/designer/src/frames/right-panel-config.ts",
@@ -756,7 +770,13 @@
           "components.logo",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground"
+        ]
       },
       "sourceFiles": [
         {
@@ -781,15 +801,15 @@
         },
         {
           "path": "packages/designer/src/shell/internal/shell-ground.ts",
-          "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+          "sha256": "118172e59c0469ce850b9253661036aa7b34cf19d2b97e2d66dc13457105150d"
         },
         {
           "path": "packages/designer/src/shell/internal/shell-vars.ts",
-          "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+          "sha256": "0d2e3e06c7664aa44d863fd3bc8b8f5ecdd67a500ac92a3135ca2dd9de1fa971"
         },
         {
           "path": "packages/designer/src/shell/SiteFooter.tsx",
-          "sha256": "b3f161c6c3d6d51521b0ad1574d56a070a8dba2f0c3c83f3b59d8656f9518781"
+          "sha256": "8973348c5e3ac6c58a5a7c4bdc9294d5600456234c98a8233b5d9d109cc3577c"
         }
       ],
       "unresolved": [
@@ -830,7 +850,12 @@
         "components": [
           "components.icon"
         ],
-        "themes": []
+        "themes": [
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground"
+        ]
       },
       "sourceFiles": [
         {
@@ -851,15 +876,15 @@
         },
         {
           "path": "packages/designer/src/shell/internal/shell-ground.ts",
-          "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+          "sha256": "118172e59c0469ce850b9253661036aa7b34cf19d2b97e2d66dc13457105150d"
         },
         {
           "path": "packages/designer/src/shell/internal/shell-vars.ts",
-          "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+          "sha256": "0d2e3e06c7664aa44d863fd3bc8b8f5ecdd67a500ac92a3135ca2dd9de1fa971"
         },
         {
           "path": "packages/designer/src/shell/SiteHeader.tsx",
-          "sha256": "2812237c178b75d2b9be9d04a8a830cda4de0c7a05b1e3d675b298574254cd7e"
+          "sha256": "2e9ae767a3387670ca59a325f70dfdab92fc9812b8a359ff704fe6bcf6cfc61a"
         }
       ],
       "unresolved": [
@@ -891,30 +916,6 @@
   },
   "frames.site-shell": {
     "consumption": {
-      "privateInternalReads": [
-        {
-          "file": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-          "line": 4,
-          "rawAssets": [
-            "assets.js"
-          ],
-          "sourceSha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
-          "specifier": "../landing/internal/assets.js",
-          "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
-          "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
-        }
-      ],
-      "rawScannedReads": {
-        "assets": [
-          "assets.js"
-        ],
-        "components": [
-          "components.icon",
-          "components.logo",
-          "components.semantic-content"
-        ],
-        "themes": []
-      },
       "scanStatus": "lower-bound",
       "scannedComposes": [
         "components.icon",
@@ -930,7 +931,9 @@
           "components.logo",
           "components.semantic-content"
         ],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "sourceFiles": [
         {
@@ -955,7 +958,7 @@
         },
         {
           "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-          "sha256": "cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c"
+          "sha256": "8bc08450feee0272b7dacecb75e075892084e9927c5708187366ca0752775b03"
         },
         {
           "path": "packages/designer/src/frames/site-frame/types.ts",
@@ -1446,7 +1449,9 @@
       "scannedReads": {
         "assets": [],
         "components": [],
-        "themes": []
+        "themes": [
+          "themes.muted-foreground"
+        ]
       },
       "sourceFiles": [
         {
@@ -3889,9 +3894,7 @@
         "sections.section-header"
       ],
       "scannedReads": {
-        "assets": [
-          "assets.js"
-        ],
+        "assets": [],
         "components": [
           "components.avatar",
           "components.badge",

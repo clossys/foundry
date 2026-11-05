@@ -33,6 +33,15 @@ import { scanCompiledCssSources, scanUtilitiesSources } from "./scan-sources.js"
 import { generateCompiledCss } from "./generate.js";
 import { checkCompiledCssFreshness } from "./check.js";
 import { generateUtilitiesCss } from "./utilities.js";
+import { renderThemeKeys, type ThemesTokenSlot } from "./shadcn-theme-keys.js";
+
+/** styles/theme-keys.css with its generated shadcn colour-key region re-derived from the themes layer. */
+function derivedThemeKeys(packageRoot: string): { path: string; current: string; expected: string } {
+  const path = resolve(packageRoot, "styles", "theme-keys.css");
+  const current = readFileSync(path, "utf8");
+  const themes = JSON.parse(readFileSync(resolve(packageRoot, "src", "catalog", "slots", "themes.json"), "utf8")) as ThemesTokenSlot[];
+  return { path, current, expected: renderThemeKeys(themes, current) };
+}
 
 const USAGE = `Usage: ui-compiled-css-check [--write] [--package-root <path>]
 
@@ -107,6 +116,12 @@ export async function main(argv: string[]): Promise<number> {
   try {
     if (args.mode === "write") {
       const stylesDir = resolve(packageRoot, "styles");
+      // theme-keys.css first: compiled.css is derived from it.
+      const themeKeys = derivedThemeKeys(packageRoot);
+      if (themeKeys.expected !== themeKeys.current) {
+        writeFileSync(themeKeys.path, themeKeys.expected, "utf8");
+        console.log(`Wrote ${themeKeys.path} (generated shadcn colour keys).`);
+      }
       const scan = scanCompiledCssSources(packageRoot);
       if (scan.filesScanned === 0) {
         console.error(`No files matched under src/components, src/blocks, or src/shell — nothing was scanned. Refusing to write a compiled.css derived from nothing.`);
@@ -132,6 +147,11 @@ export async function main(argv: string[]): Promise<number> {
       return 2;
     }
 
+    const themeKeys = derivedThemeKeys(packageRoot);
+    if (themeKeys.expected !== themeKeys.current) {
+      console.error(`"${themeKeys.path}": the generated shadcn colour-key region is stale against src/catalog/slots/themes.json. Run \`npm run generate:compiled-css\`.`);
+      return 1;
+    }
     const result = await checkCompiledCssFreshness({ packageRoot });
     console.log(`Scanned ${result.filesScanned} file(s), ${result.classCount} class rule(s) in a fresh re-derivation.`);
     const utilitiesPath = resolve(packageRoot, "styles", "utilities.css");

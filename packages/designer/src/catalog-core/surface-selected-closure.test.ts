@@ -89,11 +89,15 @@ it("refuses a real package Section when a measured composed component is not sel
 });
 
 it("refuses measured token reads when the selected consumer has no member of that slot", () => {
-  // The sidebar border is a real Frame read with no selected component dependency, so the
-  // component resolver does not refuse before the surface gate can inspect it.
-  const profile = withoutValue("themes.sidebar-border");
-  expect(Object.keys(profile.values.members).some(id => id === "themes.sidebar-border" || id.startsWith("themes.sidebar-border."))).toBe(false);
-  expect(profile.surfaces!.check.findings).toContainEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: "consumer read missing themes.sidebar-border" });
+  // Every themes read the scanner measures in the selected Frame, never a hand-picked one: with that
+  // slot's value gone from the selected library the consumer cannot hold it, and the surface gate refuses.
+  const measured = surfaceEntryOf(resolve(selected).surfaces!.fills["frames.app-shell"]!.document).consumption!.scannedReads.themes;
+  expect(measured.length).toBeGreaterThan(0);
+  for (const read of measured) {
+    const profile = withoutValue(read);
+    expect(Object.keys(profile.values.members).some(id => id === read || id.startsWith(`${read}.`)), read).toBe(false);
+    expect(profile.surfaces!.check.findings).toContainEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: `consumer read missing ${read}` });
+  }
 });
 
 it("refuses measured asset reads even when the catalog still offers the missing consumer value", () => {

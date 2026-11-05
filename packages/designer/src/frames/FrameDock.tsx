@@ -82,7 +82,7 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
   const panels = modules.map(module => <Tabs.Panel key={module.id} id={module.id} className="min-h-0 min-w-0 overflow-auto"><FrameModuleOutlet id={module.id} /></Tabs.Panel>);
   const content = modules.length > 0 ? <ResizablePane orientation="horizontal" handleEdge="start" label={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} handleLabel={dock?.handleLabel ?? copy(SHELL_COPY_REFS.dock.handle)}
     {...geometry} onChange={next => { setHeight(next); dock?.onChange?.(next); }} className="min-h-0 rounded-none border-0 p-0">{panels}</ResizablePane> : null;
-  return <>{gestures}<SemanticContent as="section" ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-line-base bg-surface-raised">
+  return <>{gestures}<SemanticContent as="section" ref={region} data-application-frame-region="dock" className="min-w-0 shrink-0 border-t border-border bg-card">
     <SemanticContent as="div" ref={noticesRegion} data-frame-notices="" data-frame-notices-compact={short || undefined} className="flex w-full flex-col">
       {visible.map(notice => <Banner key={notice.id} variant={notice.severity === "error" ? "danger" : notice.severity}
         className={cx("w-full rounded-none", short && "items-center py-xs first-child-shrink")} onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>

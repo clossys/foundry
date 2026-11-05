@@ -38,30 +38,6 @@
         "frames.site-header"
       ],
       "consumption": {
-        "privateInternalReads": [
-          {
-            "file": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
-            "line": 4,
-            "rawAssets": [
-              "assets.js"
-            ],
-            "sourceSha256": "7137b3a273852efc0b29dabd2f7db250e2e1550bde682018f1046ce21c905624",
-            "specifier": "../landing/internal/assets.js",
-            "target": "packages/designer/src/frames/site-frame/landing/internal/assets.ts",
-            "targetSha256": "54cc0184672dfc74981225929705b024611926fd305a88374c1040605cffa3f8"
-          }
-        ],
-        "rawScannedReads": {
-          "assets": [
-            "assets.js"
-          ],
-          "components": [
-            "components.icon",
-            "components.logo",
-            "components.semantic-content"
-          ],
-          "themes": []
-        },
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.icon",
@@ -77,7 +53,9 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -102,7 +80,7 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c"
+            "sha256": "8bc08450feee0272b7dacecb75e075892084e9927c5708187366ca0752775b03"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
@@ -143,7 +121,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "frames.site-shell",
       "slots": {

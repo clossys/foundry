@@ -49,7 +49,13 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground"
+          ]
         },
         "sourceFiles": [
           {
@@ -74,15 +80,15 @@
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
-            "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
+            "sha256": "118172e59c0469ce850b9253661036aa7b34cf19d2b97e2d66dc13457105150d"
           },
           {
             "path": "packages/designer/src/shell/internal/shell-vars.ts",
-            "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+            "sha256": "0d2e3e06c7664aa44d863fd3bc8b8f5ecdd67a500ac92a3135ca2dd9de1fa971"
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "b3f161c6c3d6d51521b0ad1574d56a070a8dba2f0c3c83f3b59d8656f9518781"
+            "sha256": "8973348c5e3ac6c58a5a7c4bdc9294d5600456234c98a8233b5d9d109cc3577c"
           }
         ],
         "unresolved": [
@@ -125,7 +131,13 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground"
+        ]
       },
       "slot": "frames.site-footer",
       "slots": {

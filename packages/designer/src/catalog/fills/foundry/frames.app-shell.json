@@ -40,7 +40,14 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.primary",
+            "themes.primary-foreground"
+          ]
         },
         "sourceFiles": [
           {
@@ -89,7 +96,7 @@
           },
           {
             "path": "packages/designer/src/frames/app-frame-layout.ts",
-            "sha256": "fec6d45d03384483481d50b6eee8629da2799c66f5b70438f36eb7504f055a5e"
+            "sha256": "083142e71d6bc18bf52b30e61451c5f09e7e9f8be702ab995bbe99ad3884a0ad"
           },
           {
             "path": "packages/designer/src/frames/app-frame-size-classes.ts",
@@ -97,7 +104,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "2e681bf48e0e1dd67724c5e5b09451eeb83044f992742cebe716650f25879a99"
+            "sha256": "23716b03f8b08c3b1a225b9a58df983f74f1f967c312c8f6cbfd17bbe87a555d"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -121,7 +128,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "421f9a3bcc956f89c38413ccaf63e8325196b81f010910c0f421673ce5f9522b"
+            "sha256": "7e9e13f7a50e9aa2bd2f598dc24bded727efea049712ecc977b308c1d8027b7d"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -161,7 +168,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+            "sha256": "b52ac18ee8b09afbe0b5de181e85ffb2a06162efbfcbc3030b2587c0ac0694ee"
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
@@ -282,7 +289,14 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.primary",
+          "themes.primary-foreground"
+        ]
       },
       "slot": "frames.app-shell",
       "slots": {

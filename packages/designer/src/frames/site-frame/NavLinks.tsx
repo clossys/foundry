@@ -15,7 +15,7 @@ export function NavLinks({ links, actions }: { readonly links: readonly Resolved
         {links.map((link, index) => (
           <SemanticContent as="li" key={index}>
             <Link variant="standalone" href={link.href} rel={/^https?:\/\//i.test(link.href) ? "noopener noreferrer" : undefined} aria-current={link.isCurrent ? "page" : undefined}
-              className="inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              className="inline-flex items-center px-xs text-inherit no-underline hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
               style={{ minHeight: "var(--ui-layout-tap-target, 44px)", minWidth: "var(--ui-layout-tap-target, 44px)" }}>{link.label}</Link>
           </SemanticContent>
         ))}

@@ -63,7 +63,7 @@ function SiteFooterRoot({ brand, columns, secondary, ground = "base", rule = "no
       {...FRAME_STAMP}
       {...rest}
       data-footer-root=""
-      className={cx("site-footer-dark", colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : topRule ? "border-t border-line-base" : "", className)}
+      className={cx("site-footer-dark", colors.surface, colors.primary, "py-lg", bordered ? cx("border-t", colors.border) : topRule ? "border-t border-border" : "", className)}
       style={{
         position: "relative",
         zIndex: UI_Z_SHELL,
@@ -311,7 +311,7 @@ function SiteFooterLegal({ entity, links, linksLabel, icons = [], home, iconsLab
         <FooterLink variant="link" href={link.href} aria-label={link.label} rel={externalRel(link.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>{link.icon}</FooterLink>
       </SemanticContent>)}
       {home ? <SemanticContent as="li"><FooterLink variant="link" href={home.href} aria-label={home.label} rel={externalRel(home.href)} className={LEGAL_LINK_CLASSES} style={LEGAL_LINK_STYLE}>
-        {home.variant === "text" ? home.label : <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-surface-base" style={HOME_PLATE_STYLE}>
+        {home.variant === "text" ? home.label : <SemanticContent as="span" data-footer-home-plate="" aria-hidden="true" className="inline-flex items-center justify-center bg-background" style={HOME_PLATE_STYLE}>
           <Logomark src={home.markSrc} size="sm" />
         </SemanticContent>}
       </FooterLink></SemanticContent> : null}

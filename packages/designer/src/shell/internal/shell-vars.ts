@@ -74,8 +74,8 @@ export const UI_Z_TOAST = "var(--ui-z-toast, 60)";
  * `--ui-`-prefixed token for exactly that reason), so a Tailwind class can
  * only ever reach Tailwind's own hardcoded `1px`, never this token's actual
  * value. Border STYLE and COLOR, unlike width, map onto real token families
- * (`--color-line-base`) and are applied as ordinary Tailwind classes
- * (`border-b border-line-base`, etc.) on each region in `Shell.tsx`.
+ * (`--border`) and are applied as ordinary Tailwind classes
+ * (`border-b border-border`, etc.) on each region in `Shell.tsx`.
  *
  * This used to be hardcoded to the literal `"1px"` instead of reading the
  * token: `--ui-border-hairline`'s own PROPERTY NAME contains the substring

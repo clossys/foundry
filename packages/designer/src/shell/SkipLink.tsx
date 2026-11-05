@@ -91,8 +91,8 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
       onKeyDown={onKeyDown}
       className={cx(
         "sr-only focus:not-sr-only",
-        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-accent focus:px-md focus:py-sm",
-        "focus:text-body focus:text-ink-on-accent focus:outline-none",
+        "focus:fixed focus:start-sm focus:top-sm focus:rounded-control focus:bg-primary focus:px-md focus:py-sm",
+        "focus:text-body focus:text-primary-foreground focus:outline-none",
         className,
       )}
       style={{ zIndex: UI_Z_SKIP_LINK }}

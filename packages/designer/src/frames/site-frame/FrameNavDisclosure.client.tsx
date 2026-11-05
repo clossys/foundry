@@ -34,7 +34,7 @@ export interface NavDisclosureProps {
 const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
   .split(" ")
   .filter(token => !token.includes("transition-"))
-  .join(" ") + " bg-transparent active:bg-surface-sunken transition-none";
+  .join(" ") + " bg-transparent active:bg-muted transition-none";
 
 // A collapsed header expands only with this much width to spare.
 const HYSTERESIS = parseFloat(TOKENS["--spacing-sm"]!.value);
@@ -51,7 +51,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
   // Select a complete look before cx: tailwind-merge is an optional peer.
   const inverse = tone === "inverse";
   const look = inverse
-    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-ink-primary", "hover:bg-surface-sunken", "focus-visible:outline-accent"].includes(token)).join(" ")
+    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-foreground", "hover:bg-muted", "focus-visible:outline-primary"].includes(token)).join(" ")
     : TOGGLE_CLASSES;
   const { locale, direction } = useLocale();
   const panelId = useId();

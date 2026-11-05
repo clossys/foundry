@@ -30,7 +30,12 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.foreground",
+            "themes.primary",
+            "themes.primary-foreground"
+          ]
         },
         "sourceFiles": [
           {
@@ -43,7 +48,7 @@
           },
           {
             "path": "packages/designer/src/frames/AuthFrame.tsx",
-            "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+            "sha256": "e52423313baada52ab4493a3785f3f11678c00d8fba24d96020acc3b50c9dd48"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -51,7 +56,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+            "sha256": "b52ac18ee8b09afbe0b5de181e85ffb2a06162efbfcbc3030b2587c0ac0694ee"
           }
         ],
         "unresolved": [
@@ -90,7 +95,12 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.foreground",
+          "themes.primary",
+          "themes.primary-foreground"
+        ]
       },
       "slot": "frames.auth-shell",
       "slots": {

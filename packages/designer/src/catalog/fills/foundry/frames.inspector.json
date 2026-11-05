@@ -34,7 +34,9 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": []
+          "themes": [
+            "themes.border"
+          ]
         },
         "sourceFiles": [
           {
@@ -55,7 +57,7 @@
           },
           {
             "path": "packages/designer/src/frames/InspectorFrame.tsx",
-            "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
+            "sha256": "135a33c060bb29f39e58d9497b97a08d296a3dc3242428cc559513e2175ac23c"
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",
@@ -110,7 +112,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.border"
+        ]
       },
       "slot": "frames.inspector",
       "slots": {

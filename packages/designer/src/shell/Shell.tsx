@@ -140,7 +140,7 @@ function ShellSideNav({
       {...rest}
       aria-label={ariaLabel}
       className={cx(
-        "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-e border-line-base",
+        "min-h-0 overflow-y-auto overflow-x-hidden py-lg border-e border-border",
         // Literal arbitrary-value classes, not `shell-vars.ts` constants:
         // Tailwind's build-time scanner needs this exact text in the
         // source file to generate the `tablet:` media query; a JS
@@ -203,7 +203,7 @@ export interface ShellRailProps extends HTMLAttributes<HTMLElement> {
 
 /**
  * The optional context panel — an `<aside>` landmark, styled with
- * `--color-surface-aside` (the token named specifically for this region).
+ * `--sidebar` (the token named specifically for this region).
  * Hidden below the `desktop` breakpoint entirely, CSS-only: a secondary
  * context panel is the first thing to go on a narrower viewport, and unlike
  * `Shell.SideNav` there's no primary-navigation reason it has to stay
@@ -214,7 +214,7 @@ function ShellRail({ children, className, style, ...rest }: ShellRailProps) {
     <aside
       {...rest}
       className={cx(
-        "hidden min-h-0 overflow-y-auto bg-surface-aside py-lg desktop:block border-s border-line-base",
+        "hidden min-h-0 overflow-y-auto bg-sidebar py-lg desktop:block border-s border-border",
         className,
       )}
       style={{

@@ -70,18 +70,25 @@
     "slot": "themes.animate-marquee",
     "package": "designer",
     "layer": "themes",
-    "purpose": "Motion token emitted as --animate-marquee (scale tier; light mode), under Motion / Animations.",
+    "purpose": "Motion token emitted as --animate-marquee and --duration (scale tier; light mode), under Motion / Animations.",
     "inputs": [
       {
         "name": "default",
         "kind": "data",
         "required": true,
         "description": "DTCG duration value for --animate-marquee in light mode"
+      },
+      {
+        "name": "duration",
+        "kind": "data",
+        "required": true,
+        "description": "DTCG duration value for --duration in light mode"
       }
     ],
     "limits": {
       "$type": "duration",
       "emit.default": "--animate-marquee",
+      "emit.duration": "--duration",
       "members.mode": "closed",
       "modes": "light",
       "requires": "dtcg#format,dtcg#alias",

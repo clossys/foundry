@@ -25,7 +25,7 @@ export interface AuthFrameProps {
 /** A document-scrolling, centred single column for standalone authentication and error pages. */
 export function AuthFrame({ skipLabel, children, className, locale }: AuthFrameProps) {
   if (!skipLabel.trim()) throw new TypeError("AuthFrame: skipLabel must be non-empty text");
-  return <ShellI18nProvider locale={locale}><ShellLocaleRoot><SemanticContent as="div" {...FRAME_STAMP} data-frame-root="" className={cx("min-h-dvh bg-surface-base text-ink-primary", className)}
+  return <ShellI18nProvider locale={locale}><ShellLocaleRoot><SemanticContent as="div" {...FRAME_STAMP} data-frame-root="" className={cx("min-h-dvh bg-background text-foreground", className)}
     style={{ paddingInline: "var(--ui-width-page-padding-x)" }}>
     <SkipLink targetId={MAIN_ID}>{skipLabel}</SkipLink>
     <SemanticContent as="main" id={MAIN_ID} tabIndex={-1} className="mx-auto flex min-h-dvh w-full min-w-0 flex-col justify-center gap-lg py-lg"

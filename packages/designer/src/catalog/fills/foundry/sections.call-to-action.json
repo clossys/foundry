@@ -34,7 +34,9 @@
         "scannedReads": {
           "assets": [],
           "components": [],
-          "themes": []
+          "themes": [
+            "themes.muted-foreground"
+          ]
         },
         "sourceFiles": [
           {
@@ -98,7 +100,9 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.muted-foreground"
+        ]
       },
       "slot": "sections.call-to-action",
       "slotMap": {

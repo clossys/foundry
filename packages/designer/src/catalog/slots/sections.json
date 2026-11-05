@@ -5612,7 +5612,8 @@
         ],
         "assets": [
           "assets.image-ratio",
-          "assets.image"
+          "assets.image",
+          "assets.pattern"
         ]
       },
       "data": "host-injected",

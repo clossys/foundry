@@ -7,7 +7,7 @@ import { NavLinks } from "./NavLinks.js";
 const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
   .split(" ")
   .filter(token => !token.includes("transition-"))
-  .join(" ") + " bg-transparent active:bg-surface-sunken transition-none";
+  .join(" ") + " bg-transparent active:bg-muted transition-none";
 const TAP_TARGET = "var(--ui-layout-tap-target, 44px)";
 
 /** Initial Designer disclosure markup for raw server imports; the client bridge supplies interaction. */

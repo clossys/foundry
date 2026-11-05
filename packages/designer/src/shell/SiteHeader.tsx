@@ -55,7 +55,7 @@ export interface SiteHeaderProps extends Omit<HTMLAttributes<HTMLElement>, "chil
   menuOpen?: boolean;
 }
 
-const INK_CLASSES: Record<SiteHeaderTone, string> = { base: "text-ink-primary", inverse: "text-ink-on-inverse" };
+const INK_CLASSES: Record<SiteHeaderTone, string> = { base: "text-foreground", inverse: "text-ink-on-inverse" };
 const actionPriority = (action: ReactElement<SiteHeaderActionLinkProps>) =>
   action.props.variant === "primary" ? 2 : action.props.variant === "ghost" ? 0 : 1;
 const isAction = (node: ReactNode): node is ReactElement<SiteHeaderActionLinkProps> =>

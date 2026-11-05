@@ -15,10 +15,10 @@ export interface ShellGroundClasses {
  */
 export const SHELL_GROUND_CLASSES = {
   base: {
-    surface: "bg-surface-raised",
-    primary: "text-ink-primary",
-    secondary: "text-ink-secondary",
-    border: "border-line-base",
+    surface: "bg-card",
+    primary: "text-foreground",
+    secondary: "text-muted-foreground",
+    border: "border-border",
   },
   inverse: {
     surface: "bg-surface-inverse",

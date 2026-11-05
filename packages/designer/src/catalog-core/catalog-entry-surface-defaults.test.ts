@@ -5,6 +5,7 @@ import type { SurfaceDefaultBasis, SurfaceDefaultCandidateDocument, SurfaceDefau
 import { planSurfaceDefaults } from "./surface-defaults.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
+import { FRAME_LEAVES, SECTION_LEAVES, SURFACE_DEFAULTS } from "./__fixtures__/surface-engine/catalog-surface-counts.js";
 
 describe("catalog entry surface-defaults surface", () => {
   it("exports planSurfaceDefaults and the surface candidate inventories from the catalog entry as the same functions", () => {
@@ -18,8 +19,9 @@ describe("catalog entry surface-defaults surface", () => {
     const slots = build.slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
     const fills: SurfaceDefaultCandidateDocument[] = [...catalogEntry.importFoundrySections().fills, ...catalogEntry.importFoundryFrames().fills];
     const plan: SurfaceDefaultsPlan = catalogEntry.planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] });
-    expect(plan.rows).toHaveLength(62);
-    expect(plan.decisions).toHaveLength(62);
+    // One row per Sections and Frames IA leaf; one decision per leaf the importer's coverage defaults.
+    expect(plan.rows.map(row => row.slot).sort()).toEqual([...SECTION_LEAVES, ...FRAME_LEAVES].sort());
+    expect(plan.decisions.map(row => row.slot).sort()).toEqual([...SURFACE_DEFAULTS].sort());
     const basis: SurfaceDefaultBasis = "preference";
     const row: SurfaceDefaultRow = plan.rows.find(candidate => candidate.slot === "frames.sheet")!;
     const decision: SurfaceDefaultDecision = plan.decisions.find(candidate => candidate.slot === "frames.sheet")!;
