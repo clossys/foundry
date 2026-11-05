@@ -1,8 +1,8 @@
 {
   "frames.studio-shell": {
     "data-clossys-slot": "frames.studio-shell",
-    "data-clossys-candidate": "studio-shell-v14.json",
-    "data-clossys-hash": "sha256:4f58fd6efc4d7ce6689223eaf1be57a225c1dc6cb29cdc5d4bce8a0b18b87376"
+    "data-clossys-candidate": "studio-shell-v15.json",
+    "data-clossys-hash": "sha256:6746b8236497adcdc93b4c9636a01df1effa0d9cd42cef14e7f94b1930b63510"
   },
   "sections.studio.page-header": {
     "data-clossys-slot": "sections.studio.page-header",

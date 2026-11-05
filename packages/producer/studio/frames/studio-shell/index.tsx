@@ -83,9 +83,8 @@ function writePopover(id: string | undefined) {
 const mainColumn = () => document.getElementById('studio-main');
 /** The page scrolls in the window (sidebar-15); the sticky header covers the top of the viewport. */
 const headerBottom = () => mainColumn()?.previousElementSibling?.getBoundingClientRect().bottom ?? 0;
-const target = (selector: string) => {
-  try { return mainColumn()?.querySelector<HTMLElement>(selector) ?? null; } catch { return null; }
-};
+/** A manifest target the column does not hold is null; a selector the browser cannot parse throws, so a bad manifest row is reported, not silently skipped. */
+const target = (selector: string) => mainColumn()?.querySelector<HTMLElement>(selector) ?? null;
 async function copyText(text: string): Promise<boolean> {
   try { await navigator.clipboard.writeText(text); return true; } catch { return false; }
 }
@@ -330,7 +329,7 @@ function StudioShellContent({ navigation, commands, breadcrumbs, copy, popovers 
       <ChatContent copy={copy.chat} />
     </Sidebar>}
     <CommandMenu commands={commands} pageCommands={pageCommands} open={searchOpen} onOpenChange={setSearchOpen} copy={copy.search} />
-    {isMobile && <Sidebar side={mobilePanel === 'chat' ? 'right' : 'left'} data-panel={mobilePanel}>
+    {isMobile && <Sidebar side={mobilePanel === 'chat' ? 'right' : 'left'} data-panel={mobilePanel} mobileTitle={copy.chat.sheets[mobilePanel === 'chat' ? 'chat' : 'left'].title} mobileDescription={copy.chat.sheets[mobilePanel === 'chat' ? 'chat' : 'left'].description}>
       {mobilePanel === 'chat' ? <ChatContent copy={copy.chat} /> : <AppSidebar navigation={navigation} copy={copy.sidebar} collapsible="none" />}
     </Sidebar>}
   </>;

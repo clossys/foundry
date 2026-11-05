@@ -159,11 +159,15 @@ function Sidebar({
   className,
   children,
   dir,
+  mobileTitle,
+  mobileDescription,
   ...props
 }: React.ComponentProps<"div"> & {
   side?: "left" | "right"
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
+  mobileTitle?: React.ReactNode
+  mobileDescription?: React.ReactNode
 }) {
   const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
@@ -201,8 +205,8 @@ function Sidebar({
         {...props}
       >
         <SheetHeader className="sr-only">
-          <SheetTitle>Sidebar</SheetTitle>
-          <SheetDescription>Displays the mobile sidebar.</SheetDescription>
+          <SheetTitle>{mobileTitle}</SheetTitle>
+          <SheetDescription>{mobileDescription}</SheetDescription>
         </SheetHeader>
         <div className="flex h-full w-full flex-col">{children}</div>
       </Sheet>

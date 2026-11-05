@@ -45442,7 +45442,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 14
+      "version": 15
     },
     {
       "slot": "sections.studio.page-header",

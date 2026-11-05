@@ -171,6 +171,23 @@ test('375px shell shares the stock Sidebar mobile sheet, stock geometry, close C
   } finally { await view.close(); delete globalThis.__stockFrameTheme; }
 });
 
+test('375px mobile sheets take their title and description from the Writer chat.sheets keys, not the stock English literal', async () => {
+  const Frame = shellComponent();
+  globalThis.__stockFrameTheme = { resolved: 'light', setMode() {} };
+  const sheets = { left: { title: 'Writer left title', description: 'Writer left description.' }, chat: { title: 'Writer chat title', description: 'Writer chat description.' } };
+  const copy = { ...shellCopy, chat: { ...chatCopy, sheets } };
+  const navigation = { tree: [{ id: 'home', label: 'Home', href: '/', icon: 'home' }], activeId: 'home' };
+  const view = await mounted(e(Frame, { copy, homeHref: '/', navigation, commands: [], breadcrumbs: [] }, 'Body'), 375);
+  const words = () => { const dialog = document.querySelector('[role="dialog"]'); return [dialog.querySelector('[data-slot="sheet-title"]').textContent, dialog.querySelector('[data-slot="sheet-description"]').textContent]; };
+  try {
+    for (const panel of ['left', 'chat']) {
+      await click(view.container.querySelector(`[data-panel-toggle="${panel}"]`));
+      assert.deepEqual(words(), [sheets[panel].title, sheets[panel].description]);
+      await act(async () => document.activeElement.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    }
+  } finally { await view.close(); delete globalThis.__stockFrameTheme; }
+});
+
 test('1280px module Popover keeps its body outside the page layout and shares one actual icon button', async () => {
   let open = false;
   function Harness() {
