@@ -351,13 +351,31 @@
         "quote": "all layers link uses and used-by; DOM provenance",
         "date": "2026-10-26"
       },
-      "status": "unenforced",
+      "status": "enforced",
       "related": [
         "check:studio#designer check (usage-graph)",
         "check:studio#designer test:usage-graph",
         "check:studio#designer generate-surface-consumption --check"
       ],
-      "note": "usage-graph --check is freshness only; nothing compares slot.json uses with candidate imports or checks DOM provenance ids."
+      "note": "check:generated-derived runs from root check through check:studio: every slot.json uses equals what its pinned candidate imports or references (R-USES-COMPUTED, so used-by is the inverse), and the DOM data-clossys-slot/candidate/hash markers come from the generated provenance the assembly bindings apply (R-PROVENANCE-GENERATED). The fixture is a pinned hero section importing button with uses [] and no generated bindings.",
+      "checks": [
+        "packages/producer#check:generated-derived"
+      ],
+      "fixture": "scripts/rules/fixtures/R-USAGE-GRAPH",
+      "fixture_runs": [
+        {
+          "check": "packages/producer#check:generated-derived",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-generated-derived.mjs --root {fixture}",
+          "expect": "^R-USES-COMPUTED clossys/agents/designer/sections\\.hero/slot\\.json: uses \\[\\] != computed \\[\"components\\.button\"\\]"
+        },
+        {
+          "check": "packages/producer#check:generated-derived",
+          "cwd": "packages/producer",
+          "run": "node scripts/check-generated-derived.mjs --root {fixture}",
+          "expect": "^R-PROVENANCE-GENERATED packages/producer/studio/generated/assembly-bindings\\.ts: assembly bindings do not apply the generated provenance markers"
+        }
+      ]
     },
     {
       "id": "R-CLI-DETERMINISTIC",

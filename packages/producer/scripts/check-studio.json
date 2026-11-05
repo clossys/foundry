@@ -63,6 +63,12 @@
       "kind": "static"
     },
     {
+      "id": "producer check:generated-derived",
+      "cwd": "packages/producer",
+      "run": "npm run check:generated-derived",
+      "kind": "static"
+    },
+    {
       "id": "producer test:assemble-only",
       "cwd": "packages/producer",
       "run": "npm run test:assemble-only",
