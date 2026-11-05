@@ -44,7 +44,11 @@ const manifest = checks => ({ checks: [{ id: "fixture probe", kind: "static", cw
 function repository() {
   const root = scratch("pre-push-ratchet-test-");
   git(root, "init", "-q");
-  const base = commit(root, {
+  const base = commit(root, repositoryFiles(), "base with existing debt");
+  return { root, base };
+}
+function repositoryFiles() {
+  return {
     "package.json": { name: "fixture", private: true, workspaces: ["packages/*"], scripts: { check: "node scripts/run-check-steps.mjs check:rules check:studio --workspace=packages/producer", "check:rules": "node scripts/check-rules.mjs" } },
     "scripts/check-rules.mjs": readFileSync(join(here, "check-rules.mjs"), "utf8"),
     "scripts/check-orphan-checks.mjs": readFileSync(join(here, "check-orphan-checks.mjs"), "utf8"),
@@ -56,8 +60,7 @@ function repository() {
     "packages/producer/scripts/check-studio.json": manifest([]),
     "packages/producer/scripts/probe.mjs": probe,
     "packages/producer/data/violations.txt": "old one\nold two\n",
-  }, "base with existing debt");
-  return { root, base };
+  };
 }
 const run = (root, base, head) => ratchet({ cwd: root, base, head, ids: ["fixture probe"] });
 
@@ -373,4 +376,99 @@ test("every hook run starts with the marker-mode clean; --adopt-legacy goes only
   assert.deepEqual(readdirSync(temp).filter(name => name.startsWith("pre-push-ratchet-")), ["pre-push-ratchet-Leg123"], "even a push with nothing to measure cleans first");
   assert.equal(cli(["--adopt-legacy"]).status, 2);
   assert.equal(cli(["--clean-stale", "--adopt-legacy", "--keep"]).status, 2);
+});
+
+/**
+ * PREPUSH-BASE: a base from before a package or a check existed (origin/main before packages/producer and
+ * check:rules) has no baseline for it. The head is measured absolutely there: a head finding blocks, a clean
+ * head passes, and "absent at base" is never unchanged or skipped. Any other base failure still fails closed.
+ */
+function absentBase() {
+  const root = scratch("pre-push-ratchet-test-");
+  git(root, "init", "-q");
+  const base = commit(root, { "package.json": { name: "fixture", private: true, workspaces: ["packages/*"], scripts: {} } }, "before the producer package and check:rules");
+  return { root, base };
+}
+/** The repository's files with the probe run through an npm script of the producer package, as the real hook checks are. */
+function npmProbeFiles(extra = {}) {
+  const files = repositoryFiles();
+  return {
+    ...files,
+    "packages/producer/package.json": { name: "@fixture/producer", private: true, scripts: { "check:studio": "node scripts/check-studio.mjs", probe: "node scripts/probe.mjs" } },
+    "packages/producer/scripts/check-studio.json": { checks: [{ id: "fixture probe", kind: "static", cwd: "packages/producer", run: "npm run --silent probe" }] },
+    ...extra,
+  };
+}
+const hookCli = root => {
+  const temp = scratch("pre-push-ratchet-cli-");
+  return (...args) => spawnSync(process.execPath, [join(here, "pre-push-ratchet.mjs"), ...args], { cwd: root, encoding: "utf8", env: { ...process.env, TMPDIR: temp } });
+};
+
+test("PREPUSH-BASE (a): a base without the package or check:rules measures the head absolutely; a head finding blocks", async () => {
+  const { root, base } = absentBase();
+  const head = commit(root, npmProbeFiles(), "add the producer package, with debt");
+  const result = await run(root, base, head);
+  assert.equal(result.delta.block, true, report(result));
+  assert.deepEqual(result.delta.checks.map(check => [check.state, check.absent]), [["absent-red", "the base has no packages/producer/package.json"]]);
+  assert.deepEqual(result.delta.checks[0].lines.filter(line => line.startsWith("VIOLATION")), ["VIOLATION old one", "VIOLATION old two"], "existing debt is new when the base has no baseline");
+  assert.equal(result.delta.rules.absent, "the base's root package.json defines no check:rules script");
+  assert.deepEqual(result.uncarried, ["packages/producer#probe"]);
+  assert.match(report(result), /^absent-red\s+fixture probe: base absent \(the base has no packages\/producer\/package\.json\), head exit 1, measured absolutely$[\s\S]*NEW VIOLATION old one[\s\S]*BLOCKED/m);
+  // A check:rules finding on the head is new when the base defines no check:rules.
+  const open = commit(root, { "packages/producer/data/violations.txt": null, "scripts/rules/registry.json": registry([enforced, { id: "R-OPEN", owner_words: words, status: "unenforced", note: "no check yet" }]) }, "clean debt, open rule");
+  const rule = await run(root, base, open);
+  assert.equal(rule.delta.block, true, report(rule));
+  assert.deepEqual(rule.delta.rules.new.map(finding => `${finding.rule} ${finding.id}`), ["unenforced R-OPEN"]);
+  assert.deepEqual(rule.delta.checks.map(check => check.state), ["absent-green"]);
+  const cli = hookCli(root);
+  const blocked = cli("--base", base, "--head", head, "--id", "fixture probe");
+  assert.equal(blocked.status, 1, blocked.stdout + blocked.stderr);
+  assert.match(blocked.stdout, /absent-red\s+fixture probe[\s\S]*BLOCKED/);
+  assert.equal(cli("--base", base, "--head", open, "--id", "fixture probe").status, 1);
+});
+
+test("PREPUSH-BASE (a): a sub-check the base's manifest does not list is measured absolutely, never as unchanged debt", async () => {
+  const { root, base } = repository();
+  const head = withExtra(root, "node scripts/probe.mjs");
+  const result = await ratchet({ cwd: root, base, head, ids: ["fixture probe", "fixture extra"] });
+  assert.deepEqual(result.delta.checks.map(check => [check.id, check.state]), [["fixture probe", "unchanged-red"], ["fixture extra", "absent-red"]], report(result));
+  assert.equal(result.delta.checks[1].absent, "the base's check:studio manifest does not list it");
+  assert.equal(result.delta.block, true);
+});
+
+test("PREPUSH-BASE (b): a base without the package or check:rules passes a clean head", async () => {
+  const { root, base } = absentBase();
+  const head = commit(root, npmProbeFiles({ "packages/producer/data/violations.txt": null }), "add the producer package, clean");
+  const result = await run(root, base, head);
+  assert.equal(result.delta.block, false, report(result));
+  assert.deepEqual(result.delta.checks.map(check => check.state), ["absent-green"]);
+  assert.equal(result.delta.rules.headExit, 0);
+  assert.match(report(result), /^check:rules: base absent \(the base's root package\.json defines no check:rules script\), measured absolutely: head exit 0, 0 finding\(s\)/m);
+  assert.match(report(result), /^absent-green\s+fixture probe: base absent \(the base has no packages\/producer\/package\.json\), head exit 0, measured absolutely$[\s\S]*PASS/m);
+  const passed = hookCli(root)("--base", base, "--head", head, "--id", "fixture probe");
+  assert.equal(passed.status, 0, passed.stdout + passed.stderr);
+});
+
+test("PREPUSH-BASE (c): a base that has the package and check:rules but crashes for another reason fails closed", async () => {
+  const { root } = repository();
+  const good = commit(root, npmProbeFiles({ "packages/producer/data/violations.txt": null }), "a clean head");
+  const cli = hookCli(root);
+  // The rule registry is not JSON: check:rules is defined at base and cannot run there.
+  const badRegistry = commit(root, { "scripts/rules/registry.json": "{ not json\n" }, "break the base registry");
+  const head1 = commit(root, { "scripts/rules/registry.json": registry([enforced]) }, "repair it");
+  await assert.rejects(run(root, badRegistry, head1), /check:rules could not run on the base/);
+  const one = cli("--base", badRegistry, "--head", head1, "--id", "fixture probe");
+  assert.equal(one.status, 2, one.stdout + one.stderr);
+  assert.match(one.stderr, /could not run, so the push is blocked/);
+  // The check:studio manifest is not JSON: not "absent", unreadable.
+  const badManifest = commit(root, { "packages/producer/scripts/check-studio.json": "{ nope\n" }, "break the base manifest");
+  const head2 = commit(root, { "packages/producer/scripts/check-studio.json": npmProbeFiles()["packages/producer/scripts/check-studio.json"] }, "repair it");
+  await assert.rejects(run(root, badManifest, head2), /could not run|unreadable/);
+  assert.equal(cli("--base", badManifest, "--head", head2, "--id", "fixture probe").status, 2);
+  // The base's root package.json is not JSON.
+  const badRoot = commit(root, { "package.json": "{ broken\n" }, "break the base root manifest");
+  const head3 = commit(root, { "package.json": repositoryFiles()["package.json"] }, "repair it");
+  await assert.rejects(run(root, badRoot, head3), /unreadable|Unexpected|JSON/);
+  assert.equal(cli("--base", badRoot, "--head", head3, "--id", "fixture probe").status, 2);
+  assert.ok(good);
 });

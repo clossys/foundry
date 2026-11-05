@@ -792,12 +792,21 @@ export const FINDING_EXIT = 1;
  * check code, each tree from its own sources), then give the base the head's checks. Builds run one
  * tree after the other; the second is restored from the cache when both trees are the same. `loosened`
  * is how the head loosens the policy data the entries read, compared on the pristine trees.
+ *
+ * A planned npm script lives in a package.json; when the base has no such package.json the script
+ * cannot be carried and applyOverlay refuses (an error, the run fails closed). The pre-push ratchet
+ * measures a package absent at base absolutely on the head and never runs it on the base, so it passes
+ * `absentPackages: true`: those scripts are then left uncarried and listed in `uncarried`
+ * (`<dir>#<script>`), decided on the pristine base before any build or overlay. Every other caller
+ * keeps the refusal.
  */
-export async function prepareTrees({ repo, baseSha, headSha, baseTree, headTree, entries, work, cache }) {
+export async function prepareTrees({ repo, baseSha, headSha, baseTree, headTree, entries, work, cache, absentPackages = false }) {
   const plan = await overlayPlan(headTree, entries);
   // Policy data is compared before any build or overlay touches either tree.
   const loosened = loosening(baseTree, headTree, plan.policy);
   plan.removed = policyFiles(baseTree, headTree, plan.reached).filter(file => file !== REGISTRY_FILE && !plan.policy.includes(file));
+  const uncarried = absentPackages ? plan.scripts.filter(key => !existsSync(join(baseTree, key.slice(0, key.lastIndexOf("#")), "package.json"))).sort() : [];
+  plan.scripts = plan.scripts.filter(key => !uncarried.includes(key));
   linkModules(repo, baseTree);
   linkModules(repo, headTree);
   const seeds = distSeeds(headTree, plan.reached);
@@ -810,7 +819,7 @@ export async function prepareTrees({ repo, baseSha, headSha, baseTree, headTree,
     builds[side] = { dirs, ...buildDist(repo, sha, tree, dirs, { cache, log: work ? join(work, `${side}-build.log`) : undefined }) };
   }
   const overlaid = applyOverlay(headTree, baseTree, plan);
-  return { overlaid, removed: plan.removed, seeds, builds, loosened };
+  return { overlaid, removed: plan.removed, seeds, builds, loosened, uncarried };
 }
 
 const LOGS = ["base-build.log", "head-build.log", "base.log", "head.log"];
