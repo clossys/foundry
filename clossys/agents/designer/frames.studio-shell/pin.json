@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-shell-v19.json",
-  "sha256": "6ce3d823bf4055fc93fabb60a8369f6127fa3e5bd68687009fd69a6097b79db1",
+  "candidate": "studio-shell-v20.json",
+  "sha256": "e65dda2f40ccc8edf8649d73dc2f3d633635a6b2312e2ddb562c811d5c497e30",
   "decidedBy": "planner:R2F-03b",
   "basis": "planner",
-  "at": "2026-11-06T19:58:24.253Z"
+  "at": "2026-11-06T20:23:05.932Z"
 }

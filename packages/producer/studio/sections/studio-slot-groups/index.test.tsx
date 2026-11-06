@@ -11,7 +11,7 @@ function card(id: string, specimen: SlotCard['specimen']): SlotCard {
 const framed = (id: string) => card(id, { name: id, kind: 'viewports', empty: EMPTY, specimens: [{ viewport: 1280, light: `/__specimen?element=${encodeURIComponent(id)}&width=1280`, title: id }] });
 
 function render(groups: SlotGroupsInput) {
-  return new JSDOM(renderToStaticMarkup(<SlotGroupsSection groups={groups} />)).window.document;
+  return new JSDOM(renderToStaticMarkup(<SlotGroupsSection groups={groups} />), { url: "http://localhost/" }).window.document;
 }
 
 describe('slot-groups gallery (R2F-03b)', () => {
@@ -35,6 +35,17 @@ describe('slot-groups gallery (R2F-03b)', () => {
     expect(frame.getAttribute('width')).toBe('100%');
     expect(frame.getAttribute('height')).toBe('100%');
     expect(frame.getAttribute('loading')).toBe('lazy');
+  });
+
+  it('never sets a long decision line (Not needed: <reason>) in a single-line badge, so it cannot widen the card', () => {
+    const reason = 'Not needed: planner:DS-COMPLETE; no pinned candidate, slot uses list or publication composes it; candidate v1 has no trusted registry lineage.';
+    const decided = card('decided', { name: 'decided', kind: 'record', empty: reason, status: { label: reason, tone: 'secondary', description: 'components.decided' } });
+    const document = render({ empty: 'none', groups: [{ id: 'g', label: 'Group', cards: [decided] }] });
+    const shown = document.querySelector('[data-preview-status="status"]')!;
+    expect(shown.textContent).toBe(reason);
+    expect(shown.closest('[data-slot="badge"]')).toBeNull();
+    expect(shown.getAttribute('data-slot')).toBe('card-description');
+    expect([...document.querySelectorAll('[data-slot="badge"]')].map(node => node.textContent)).not.toContain(reason);
   });
 
   it('never sets the long empty-state text in a single-line badge, so it cannot run out of the card', () => {

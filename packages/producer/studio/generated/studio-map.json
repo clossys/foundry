@@ -46072,7 +46072,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 19
+      "version": 20
     },
     {
       "slot": "sections.studio.page-header",
@@ -46117,7 +46117,7 @@
     {
       "slot": "sections.studio.slot-groups",
       "element": "studio-slot-groups",
-      "version": 10
+      "version": 11
     },
     {
       "slot": "sections.producer.system-empty",

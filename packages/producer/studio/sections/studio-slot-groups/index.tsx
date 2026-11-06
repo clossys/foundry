@@ -74,8 +74,10 @@ function CardPreview({ preview }: { preview: SlotPreview }) {
   if (preview.lead?.length) return <CardContent data-specimen-lead>
     {preview.lead.map((text, index) => <CardDescription key={index}>{text}</CardDescription>)}
   </CardContent>;
+  // The decision line carries its reason (Writer `Not needed: {reason}`), so it wraps as a description:
+  // a single-line badge would run out of the card. The header's status badge already names the state.
   if (preview.status) return <CardContent>
-    <Badge variant={preview.status.tone} data-preview-status="status">{preview.status.label}</Badge>
+    <CardDescription data-preview-status="status">{preview.status.label}</CardDescription>
     <CardDescription>{preview.status.description}</CardDescription>
   </CardContent>;
   return <CardContent><CardDescription data-preview-status="empty">{preview.empty}</CardDescription></CardContent>;

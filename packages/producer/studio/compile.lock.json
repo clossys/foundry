@@ -1610,12 +1610,12 @@
       "sha256": "3f4f3b2baa16de28242c9e964cf41590697d7c0ed8754c83a29db64fd1fb7f6b"
     },
     {
-      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v19.json",
-      "sha256": "6ce3d823bf4055fc93fabb60a8369f6127fa3e5bd68687009fd69a6097b79db1"
+      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v20.json",
+      "sha256": "e65dda2f40ccc8edf8649d73dc2f3d633635a6b2312e2ddb562c811d5c497e30"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/pin.json",
-      "sha256": "eda325b369d67ee23445efe05860c8adbdbec591dcf2bf6ae8a4d4bfcf4fe6bb"
+      "sha256": "11c79d48841b8f565afa30d689b57ce8ae3dbf0d48ea18f4376f58c3425a8b8f"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/slot.json",
@@ -2450,12 +2450,12 @@
       "sha256": "c88eaad10013e987730dc4672fbb06be1db6f8234c1166094e2815ad07eb1f8a"
     },
     {
-      "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v10.json",
-      "sha256": "eebd3323d7c1f3130dfbc24df20c0f2f9cc8c6f0dabd1ab7848abdc84d1dc0d2"
+      "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v11.json",
+      "sha256": "03a2e3827993bef896b1d58479991ba2e76e233cb3b462a514f9c2016bfc02ba"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/pin.json",
-      "sha256": "f2e49d97afb939f4cbeb6ca64adbc7276d6fa128f0cc301449e52dc4ced61b06"
+      "sha256": "3997d699f3d73924c3341b28b3ad83078dc6e8e7cfba14aefd6786f169bf08a0"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/slot.json",
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "07a9c88c8405510e24d6dccb85746de26b4c2252f4372150d230e27d19ba51be"
+      "sha256": "f0e27fd065e5d03f7ce18dfbc15fe43daecbbc5939b81c82223111fd6f69bbcf"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "329703aa062afe029b7d68c093af12eefb3d0467884890b3e50d02f201f25f46"
+      "sha256": "a3020f00029ef33354074efdaa7933e94f1ec26552dcf93165a9eaa184ee88c3"
     }
   ]
 }
