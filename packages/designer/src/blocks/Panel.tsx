@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { CardProps } from "../components/Card.js";
 import { cx } from "../components/internal/cx.js";
-import { stockCardGroundStyle, type SectionGround } from "./section-ground.js";
+import { stockCardGroundClass, type SectionGround } from "./section-ground.js";
 
 import { componentLeaf } from "../runtime/component-leaf.js";
 
@@ -24,8 +24,8 @@ export function Panel({ header, children, footer, className, ground = "base", st
   // The stock Card is the panel surface (E2, P0 shadcn reset): no Foundry variant/ground props reach it.
   return (
     <Card
-      {...rest} data-panel="" style={stockCardGroundStyle(ground, style)}
-      className={cx("flex min-h-0 min-w-0 flex-col gap-md", className)}
+      {...rest} data-panel="" style={style}
+      className={cx("flex min-h-0 min-w-0 flex-col gap-md", stockCardGroundClass(ground), className)}
     >
       {header !== undefined && header !== null && header !== false && (
         <SemanticContent as="div" data-panel-region="header" className="shrink-0">{header}</SemanticContent>

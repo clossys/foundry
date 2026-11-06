@@ -5,6 +5,7 @@ import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { I18nProvider } from "react-aria-components";
 import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
 import { contrastRatio } from "../tokens/color.js";
@@ -16,10 +17,10 @@ const props = { min: 100, max: 300, defaultValue: 180, step: 20, label: "Tools",
 describe("ResizablePane", () => {
   it("uses the on-inverse focus outline against its inverse raised Panel", () => {
     const { rerender } = render(<ResizablePane {...props} ground="inverse">Content</ResizablePane>);
-    // The Panel is the stock Card (E2): the inverse ground reaches it as re-pointed surface tokens.
+    // The Panel is the stock Card (E2): the inverse ground reaches it as token classes in place of its own surface and ink.
     const region = screen.getByRole("region", { name: "Tools" });
-    expect(region).toHaveClass("bg-(--color-surface-raised)");
-    expect(region.style.getPropertyValue("--color-surface-raised")).toBe("var(--color-surface-inverse-raised)");
+    expect(region).toHaveClass("bg-surface-inverse-raised", "text-ink-on-inverse");
+    expect(region).not.toHaveClass("bg-(--color-surface-raised)");
     expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent-on-inverse");
     rerender(<ResizablePane {...props} ground="base">Content</ResizablePane>);
     expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-accent-on-inverse");
@@ -165,9 +166,10 @@ describe("ResizablePane start edge", () => {
     "places the start handle before content and reports actual $orientation size in $dir", async ({ dir, orientation }) => {
       function Host() {
         const [size, setSize] = useState(180);
-        return <div dir={dir}><ResizablePane {...props} orientation={orientation} handleEdge="start" value={size} onChange={setSize}>
+        // Direction comes from the React Aria locale, as the shell shares it (ResizeHandle reads useLocale).
+        return <I18nProvider locale={dir === "rtl" ? "ar-EG" : "en-US"}><div dir={dir}><ResizablePane {...props} orientation={orientation} handleEdge="start" value={size} onChange={setSize}>
           <input aria-label="Inspector data" defaultValue="Retained" />
-        </ResizablePane></div>;
+        </ResizablePane></div></I18nProvider>;
       }
       render(<Host />);
       const panel = screen.getByRole("region", { name: "Tools" });

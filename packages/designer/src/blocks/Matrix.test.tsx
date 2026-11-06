@@ -152,10 +152,12 @@ describe("Matrix", () => {
     const plates = container.querySelectorAll("[data-slot=card]");
     expect(plates).toHaveLength(2);
     for (const plate of plates) {
-      expect(plate).toHaveClass("bg-(--color-surface-raised)");
-      // An inverse band reaches the stock card as tokens only, so on-inverse content keeps its contrast.
-      expect((plate as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe(ground === "inverse" ? "var(--color-surface-inverse-raised)" : "");
-      expect((plate as HTMLElement).style.getPropertyValue("--color-ink-primary")).toBe(ground === "inverse" ? "var(--color-ink-on-inverse)" : "");
+      // An inverse band reaches the stock card as token classes its merge puts in place of its own surface and ink.
+      if (ground === "inverse") {
+        expect(plate).toHaveClass("bg-surface-inverse-raised", "text-ink-on-inverse");
+        expect(plate).not.toHaveClass("bg-(--color-surface-raised)");
+      } else expect(plate).toHaveClass("bg-(--color-surface-raised)");
+      expect((plate as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe("");
     }
     expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");

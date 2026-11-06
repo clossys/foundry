@@ -85,12 +85,12 @@ describe("canonical ground and linked frame successors", () => {
         const body = container.querySelector("[data-item]")!;
         if (treatment === "plate") {
           // The stock Card is the plate (E4, P0 shadcn reset); its look is on the owner CREATIVE list.
-          // Every ground keeps the stock raised fill; inverse re-points the card's tokens for contrast.
+          // Base and sunken keep the stock raised fill; inverse paints the card through token classes.
           expect(body).toHaveAttribute("data-slot", "card");
           expect(body).not.toHaveAttribute("variant");
           expect(body).not.toHaveAttribute("ground");
-          expect(body).toHaveClass("bg-(--color-surface-raised)", "rounded-(--radius-control)");
-          expect((body as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe(ground === "inverse" ? "var(--color-surface-inverse-raised)" : "");
+          expect(body).toHaveClass("rounded-(--radius-control)", ground === "inverse" ? "bg-surface-inverse-raised" : "bg-(--color-surface-raised)");
+          expect((body as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe("");
         }
 
         const link = screen.getByRole("link", { name: "Title" });

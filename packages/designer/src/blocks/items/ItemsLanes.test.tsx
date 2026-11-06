@@ -3213,7 +3213,7 @@ describe("Items lanes", () => {
   it("keeps every 2-lane plate shape byte-identical to its stock Card capture", async () => {
     expect(PLATE_GOLDEN_KEYS).toHaveLength(216);
     const hashes = Object.fromEntries(PLATE_GOLDEN_KEYS.map(key => [key, goldenHash(key)]));
-    await expect(stableStringify({ $capture: "stock Card plate (E4, ebd6753ac); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/lanes-plate.sha256.json");
+    await expect(stableStringify({ $capture: "stock Card plate (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/lanes-plate.sha256.json");
   }, 60_000);
 
   it.each(validShapes)("lays %s lanes and %s steps in a grid only from tablet-lg", (laneCount, count) => {

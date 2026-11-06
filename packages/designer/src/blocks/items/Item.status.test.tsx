@@ -74,7 +74,7 @@ describe("Item status", () => {
       ...Object.fromEntries((["Item/plate", "Items/client/rows/disclose", "Items/server/rows/disclose"] as const).map(name => [name, sha(legacyIdSlotHtml(name))])),
       ...Object.fromEntries((["Faq/client", "Faq/server", "Items/client", "Items/server"] as const).map(consumer => [consumer, sha(legacyDisclosureHtml(consumer))])),
     };
-    await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
+    await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
   }, 60_000);
 
   it("renders StatusMark with a visible label in the meta row", () => {

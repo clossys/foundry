@@ -5,7 +5,7 @@ import { cx } from "../../components/internal/cx.js";
 import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { Check } from "../../icons/Check.js";
 import { hasContent } from "../items/policies.js";
-import { SECTION_GROUND_CLASSES, stockCardGroundStyle, type SectionGround } from "../section-ground.js";
+import { SECTION_GROUND_CLASSES, stockCardGroundClass, type SectionGround } from "../section-ground.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Card = componentLeaf<typeof import("../../components/Card.js").Card>("components.card");
@@ -115,7 +115,7 @@ export function MatrixRenderer({ arrangement: _arrangement, sides, featured, hea
     shared.visual ? "relative grid grid-cols-1 gap-lg tablet-lg:grid-cols-2 tablet-lg:gap-x-4xl" : "relative grid grid-cols-1 gap-lg tablet:grid-cols-2 tablet:gap-x-4xl", className,
   )} style={style}>
     {sides.map(side => <SemanticContent as="section" key={side.id} data-matrix-side={side.id} className={cx("flex min-w-0 flex-col gap-md", sideGrid)}>
-      <Card data-featured={side.id === featured ? "true" : undefined} className={cx("flex flex-1 flex-col gap-md tablet:p-xl", sideGrid, side.id === featured ? "border-t" : undefined, side.id === featured ? FEATURED_CLASSES[ground] : undefined)} style={stockCardGroundStyle(ground, side.id === featured ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined)}>
+      <Card data-featured={side.id === featured ? "true" : undefined} className={cx("flex flex-1 flex-col gap-md tablet:p-xl", sideGrid, side.id === featured ? "border-t" : undefined, side.id === featured ? FEATURED_CLASSES[ground] : undefined, stockCardGroundClass(ground))} style={side.id === featured ? { borderBlockStartWidth: UI_BORDER_HAIRLINE } : undefined}>
         <SideBody side={side} featured={side.id === featured} headingLevel={headingLevel} ground={ground} shared={shared} />
       </Card>
     </SemanticContent>)}
