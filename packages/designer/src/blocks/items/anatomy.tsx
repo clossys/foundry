@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 
 import { CardLinkTitle, type CardLinkFrame } from "../stretched-link.js";
-import type { SectionGround } from "../section-ground.js";
+import { stockCardGroundStyle, type SectionGround } from "../section-ground.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Card = componentLeaf<typeof import("../../components/Card.js").Card>("components.card");
@@ -29,5 +29,6 @@ export function ItemDescription({ as: Tag = "p", children, className, ...attribu
 }
 /** A plate's surface policy and slot ownership are shared; collection shells remain private. */
 export function ItemPlate({ ground, children, className, style, ...attributes }: { ground: SectionGround; children: ReactNode; className: string; style?: CSSProperties; [key: `data-${string}`]: string | boolean | undefined }) {
-  return <Card variant="plate" ground={ground} className={className} style={style} {...attributes}>{children}</Card>;
+  // The stock Card is the plate (E4, P0 shadcn reset): no Foundry variant/ground props; the ground reaches it as tokens only.
+  return <Card className={className} style={stockCardGroundStyle(ground, style)} {...attributes}>{children}</Card>;
 }

@@ -5,6 +5,7 @@ import { render, screen, within } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { Matrix, type MatrixProps } from "../Matrix.js";
 import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
+import { stableStringify } from "../../catalog-core/stable.js";
 
 type Grid = Extract<MatrixProps, { arrangement: "grid" }>;
 type Cell = Grid["rows"][number]["cells"][string];
@@ -99,7 +100,9 @@ describe("Matrix grid", () => {
     render(<Matrix {...props} />);
     const header = screen.getByRole("columnheader", { name: "Column 2 Selected measure" });
     const badge = within(header).getByText("Selected measure");
-    expect(badge).toHaveClass("rounded-pill", "text-caption");
+    // The selected stock Badge (E4 stock leaf routing): its own pill shape and type size.
+    expect(badge).toHaveAttribute("data-slot", "badge");
+    expect(badge).toHaveClass("rounded-4xl", "text-(length:--text-xs)");
     expect(badge).toHaveClass("whitespace-nowrap", "shrink-0");
     expect(header).toHaveClass("text-end", "tabular-nums");
     expect(header.className).not.toContain("border-t-accent");
@@ -110,7 +113,7 @@ describe("Matrix grid", () => {
   it("features one row header without reordering either axis", () => {
     const { container } = render(<Matrix {...grid()} featured={{ row: "row-1" }} featuredLabel="Selected row" headingLevel={5} />);
     const selected = screen.getByRole("rowheader", { name: /Previous record/ });
-    expect(within(selected).getByText("Selected row")).toHaveClass("rounded-pill");
+    expect(within(selected).getByText("Selected row")).toHaveClass("rounded-4xl");
     expect(selected.className).not.toContain("border-s-accent");
     expect(selected.style.borderInlineStartWidth).toBe("");
     expect([...container.querySelectorAll("tbody th h5")].map(node => node.textContent)).toEqual(["Current record", "Previous record"]);
@@ -207,7 +210,7 @@ describe("Matrix grid", () => {
 function Authored({ name }: { name: string }) { const id = useId(); return <span id={id}>{name}</span>; }
 
 describe("Matrix unchanged sides", () => {
-  it("matches 96 immutable base HTML records, including authored useId slots", () => {
+  it("matches 96 captured HTML records, including authored useId slots", async () => {
     const records: { key: string; html: string }[] = [];
     for (const ground of ["base", "sunken", "inverse"] as const) for (const form of ["points", "visual"]) for (const explicit of [false, true]) for (const nested of [false, true]) for (const labels of [false, true]) for (const headingLevel of [3, 6] as const) {
       const node = (name: string): ReactNode => nested ? <Authored name={name} /> : name;
@@ -216,10 +219,14 @@ describe("Matrix unchanged sides", () => {
       records.push({ key: `${ground}/${form}/${explicit}/${nested}/${labels}/${headingLevel}`, html: withoutDsAttrs(renderToStaticMarkup(<Matrix {...props} />)) });
     }
     expect(records).toHaveLength(96);
-    // Captured from valid legacy inputs before implementation; both new sides modes
-    // must consume arrangement and match that raw HTML without ID normalization.
-    expect(createHash("sha256").update(JSON.stringify(records)).digest("hex")).toBe("8120b98c4b9fecf4c87bf90943ffa74e6aeddc406a48f72f71aa4d1a5e169a41");
-  });
+    // Captured from valid legacy inputs before implementation (25e371b42, all records sha256 8120b98c…); both
+    // sides modes must consume arrangement and match that raw HTML without ID normalization. Re-captured by
+    // planner:R2F-05 into a generated file (`vitest run -u`), never a hand-edited hash: each side plate is the
+    // selected stock Card (E4, P0 shadcn reset; ebd6753ac), and diffed against 25e371b42 no other byte changed.
+    // The look is on the owner CREATIVE list.
+    const hashes = Object.fromEntries(records.map(record => [record.key, createHash("sha256").update(record.html).digest("hex")]));
+    await expect(stableStringify({ $capture: "stock Card side plates (E4, ebd6753ac); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/matrix-sides.sha256.json");
+  }, 60_000);
 });
 
 it("S4-6 preserves the grid table root, authored attributes and row heading outline", () => {

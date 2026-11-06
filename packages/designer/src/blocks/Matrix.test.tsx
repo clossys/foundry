@@ -17,8 +17,9 @@ describe("Matrix", () => {
     expect([...sides].map(side => side.getAttribute("data-matrix-side"))).toEqual(["first", "second"]);
     for (const side of sides) {
       const plate = side.firstElementChild as HTMLElement;
-      expect(plate).toHaveAttribute("data-variant", "plate");
-      expect(plate).toHaveClass("bg-surface-sunken", "rounded-panel");
+      // The stock Card is the plate (E4, P0 shadcn reset); its look is on the owner CREATIVE list.
+      expect(plate).toHaveAttribute("data-slot", "card");
+      expect(plate).toHaveClass("bg-(--color-surface-raised)", "rounded-(--radius-control)");
       expect(within(side as HTMLElement).getAllByRole("listitem")[0]).toHaveClass("text-ink-primary");
     }
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H3");
@@ -71,7 +72,7 @@ describe("Matrix", () => {
 
   it.each(["first", "second"])("features only the selected %s plate without reordering sides", featured => {
     const { container } = render(<Matrix sides={SIDES} featured={featured} />);
-    const plates = container.querySelectorAll("[data-matrix-side] > [data-variant=plate]");
+    const plates = container.querySelectorAll("[data-matrix-side] > [data-slot=card]");
     expect([...plates].filter(plate => plate.getAttribute("data-featured") === "true")).toHaveLength(1);
     const plate = container.querySelector(`[data-matrix-side="${featured}"] > div`) as HTMLElement;
     expect(plate).toHaveAttribute("data-featured", "true");
@@ -98,7 +99,7 @@ describe("Matrix", () => {
     const { container } = render(<Matrix sides={SIDES.map(side => ({ ...side, description: "Parallel supporting copy." })) as unknown as MatrixProps["sides"]} />);
     expect(container.querySelector("[data-matrix]")).toHaveClass("grid-cols-1", "tablet:grid-cols-2");
     expect(container.querySelector("[data-matrix]")).toHaveAttribute("data-matrix-rows", "3");
-    for (const plate of container.querySelectorAll("[data-variant=plate]")) expect(plate).toHaveClass("tablet:row-span-3", "tablet:grid-rows-subgrid");
+    for (const plate of container.querySelectorAll("[data-slot=card]")) expect(plate).toHaveClass("tablet:row-span-3", "tablet:grid-rows-subgrid");
     expect(within(container.querySelector('[data-matrix-side="first"]') as HTMLElement).getAllByRole("listitem").map(item => item.textContent)).toEqual(["One source", "Clear dates"]);
   });
 
@@ -108,7 +109,7 @@ describe("Matrix", () => {
     const root = container.querySelector("[data-matrix]") as HTMLElement;
     expect(root).toHaveClass("tablet-lg:grid-cols-2");
     expect(root.className).not.toMatch(/(^|\s)tablet:grid-cols-2/);
-    for (const plate of container.querySelectorAll("[data-variant=plate]")) {
+    for (const plate of container.querySelectorAll("[data-slot=card]")) {
       expect(plate).toHaveClass("tablet-lg:row-span-3", "tablet-lg:grid-rows-subgrid");
       expect(plate.lastElementChild).toHaveAttribute("data-matrix-visual");
       expect(plate.lastElementChild).toHaveClass("w-full", "min-w-0", "pt-md");
@@ -118,7 +119,7 @@ describe("Matrix", () => {
 
   it("reserves the shared description row when only one points side has description", () => {
     const { container } = render(<Matrix sides={[{ ...SIDES[0], description: "Supporting copy" }, SIDES[1]]} />);
-    const plates = container.querySelectorAll("[data-variant=plate]");
+    const plates = container.querySelectorAll("[data-slot=card]");
     expect(plates[0]!.children[1]).toHaveAttribute("data-matrix-description");
     expect(plates[1]!.children[1]).toHaveAttribute("data-matrix-empty-row", "description");
     expect(plates[1]!.children[1]).toHaveAttribute("aria-hidden", "true");
@@ -147,8 +148,15 @@ describe("Matrix", () => {
 
   it.each(["base", "sunken", "inverse"] as const)("uses the %s ground's plate and featured accent tokens", ground => {
     const { container } = render(<Matrix sides={SIDES} ground={ground} featured="second" headingLevel={4} id="options" aria-label="Options" style={{ inlineSize: "100%" }} />);
-    const fill = ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised";
-    for (const plate of container.querySelectorAll("[data-variant=plate]")) expect(plate).toHaveClass(fill);
+    // Stock Card: one raised fill on every ground (E4); the featured accent still follows the ground.
+    const plates = container.querySelectorAll("[data-slot=card]");
+    expect(plates).toHaveLength(2);
+    for (const plate of plates) {
+      expect(plate).toHaveClass("bg-(--color-surface-raised)");
+      // An inverse band reaches the stock card as tokens only, so on-inverse content keeps its contrast.
+      expect((plate as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe(ground === "inverse" ? "var(--color-surface-inverse-raised)" : "");
+      expect((plate as HTMLElement).style.getPropertyValue("--color-ink-primary")).toBe(ground === "inverse" ? "var(--color-ink-on-inverse)" : "");
+    }
     expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");
     expect(screen.getByLabelText("Options")).toHaveAttribute("id", "options");
@@ -213,7 +221,7 @@ describe("Matrix", () => {
   it.each(["base", "sunken", "inverse"] as const)("keeps both %s plates in primary body ink", ground => {
     const { container } = render(<Matrix sides={SIDES} featured="second" ground={ground} />);
     for (const side of container.querySelectorAll("[data-matrix-side]")) {
-      expect(side.firstElementChild).toHaveAttribute("data-variant", "plate");
+      expect(side.firstElementChild).toHaveAttribute("data-slot", "card");
       for (const point of side.querySelectorAll("li")) {
         expect(point).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
         expect(point.firstElementChild).toHaveAttribute("aria-hidden", "true");

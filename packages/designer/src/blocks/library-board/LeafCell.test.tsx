@@ -83,8 +83,9 @@ describe('board capture hooks (vf35)', () => {
   it('names the ground a leaf specimen is drawn on, matching the plate fill it actually renders', () => {
     const { container } = render(<LeafCell previewState="live" preview={<span>specimen</span>} />);
     const cell = container.querySelector<HTMLElement>('[data-candidate-cell]')!;
-    expect(cell).toHaveAttribute('data-ground', 'sunken');
-    expect(cell).toHaveClass(`bg-surface-${cell.dataset.ground}`);
+    expect(cell).toHaveAttribute('data-slot', 'card');
+    expect(cell).toHaveAttribute('data-ground', 'raised');
+    expect(cell).toHaveClass(`bg-(--color-surface-${cell.dataset.ground})`);
   });
 
   it('marks an unchosen library board leaf as not chosen', () => {

@@ -1,3 +1,5 @@
+import type { CSSProperties } from "react";
+
 /** The closed set of section grounds supported by Designer-owned site blocks. */
 export type SectionGround = "base" | "sunken" | "inverse";
 
@@ -75,3 +77,14 @@ export const SECTION_GROUND_CLASSES = {
     offAxis: "bg-ink-muted ring-2 ring-ink-on-inverse",
   },
 } as const satisfies Readonly<Record<SectionGround, SectionGroundClasses>>;
+
+/**
+ * The selected stock Card on a section ground (E4, P0 shadcn reset). The card is unmodified and reads
+ * its own surface and ink tokens. Base and sunken keep the stock card; an inverse band re-points the
+ * card's surface and ink tokens to the inverse raised surface and on-inverse ink, so the card and the
+ * on-inverse content it holds keep their contrast. Tokens only: no Foundry variant on a stock leaf.
+ */
+export function stockCardGroundStyle(ground: SectionGround, style?: CSSProperties): CSSProperties | undefined {
+  if (ground !== "inverse") return style;
+  return { "--color-surface-raised": "var(--color-surface-inverse-raised)", "--color-ink-primary": "var(--color-ink-on-inverse)", ...style } as CSSProperties;
+}

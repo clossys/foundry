@@ -1,0 +1,13 @@
+{
+  "$capture": "stock Card plate and selected stock accordion (E4, ebd6753ac); planner:R2F-05",
+  "hashes": {
+    "Faq/client": "f0bbf9178cf6f043160cdc5141196382417e827959a61da83e0944976d386af4",
+    "Faq/server": "a05d68ea58092fe30c9a830209378e40164a3f55595a31f3585dda386eff84c3",
+    "Item/plate": "e66da2a2b2ae3562138ba2591091695501ea1985324e1c48c6782dc5156a5479",
+    "Items/client": "0e24c4ecbd6a7b29eff5bcd1e0258e8af5125fd47354f01bdf35a2456a6ca7f8",
+    "Items/client/rows/disclose": "ec7d36c2d300172e01676ef7bbe6c1c9f67837fde3a4b2943a176573f5575be4",
+    "Items/server": "c3a0b645717f1e9618f8605eaa7a81fd5746e7eb7f7ea65afec9922fb29badc1",
+    "Items/server/rows/disclose": "ec7d36c2d300172e01676ef7bbe6c1c9f67837fde3a4b2943a176573f5575be4"
+  }
+}
+
