@@ -1,0 +1,113 @@
+{
+  "name": "studio-specimen",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, FieldGroup, LinkButton, ScrollArea, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';\n\nexport type SpecimenTone = 'secondary' | 'outline' | 'destructive';\nexport type SpecimenViewport = 375 | 768 | 1280;\n\n/** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px. */\nexport interface ViewportSpecimen {\n  viewport: SpecimenViewport; light: string; dark?: string;\n  /** The row's heading (Writer copy), and each frame's accessible title: the light frame, and the dark one when there is one. */\n  heading: string; title: string; darkTitle?: string;\n  /** False for a preview in a list (a gallery card): the frame is view-only so the page scrolls past it. */\n  interactive?: boolean;\n}\n\n/** A structured record kind (Writer voice, claims, names; Director direction): one titled table. */\nexport interface SpecimenTable {\n  id: string;\n  label: string;\n  columns: readonly string[];\n  /** The column containing prose. */\n  prose?: number;\n  rows: readonly { key: string; cells: readonly { text: string; href?: string; statusLabel?: string; statusTone?: SpecimenTone }[] }[];\n}\n\n/**\n * The `specimen` input of `sections.studio.specimen`, one shape for every agent:\n * `viewports` frames rendered output (Designer items, Publisher pages) at 375/768/1280 in light\n * and, when the source has one, dark; `record` lays out a record's own content as tables or rows.\n */\nexport type SpecimenInput = { name: string; title: string; description: string } & (\n  | { kind: 'viewports'; specimens: readonly ViewportSpecimen[]; empty: string;\n    /** A gallery card's text while its frame loads, and for a frame whose specimen failed to render. */\n    loading?: string; unavailable?: string }\n  | { kind: 'record'; tables?: readonly SpecimenTable[]; rows?: readonly { key: string; label: string; text: string; href?: string }[];\n    /** The rows table's accessible label and column headings (Writer copy). */\n    rowsCopy: { label: string; key: string; content: string };\n    /** A gallery card's lead: the record's first lines as text that reads at card size. */\n    lead?: readonly string[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }\n);\n\n/** A viewport's frame height in CSS px: a phone, a tablet and a laptop screen. */\nconst FRAME_HEIGHT: Readonly<Record<SpecimenViewport, number>> = { 375: 667, 768: 1024, 1280: 800 };\n/** A gallery card's view-only frame height in CSS px. */\nconst CARD_FRAME_HEIGHT = 480;\n\n/** The two projected specimen route shapes: Producer's specimen frame and a Publisher page preview (a shape, not a route this section links to). */\nconst PROJECTED_ROUTE = /^\\/(?:__specimen$|preview\\/)/;\n\n/** Only already-projected, local specimen routes whose width matches the frame are framed; never arbitrary URLs. */\nexport function specimenSource(src: string, viewport: SpecimenViewport): string {\n  if (/[\\\\\\s\\u0000-\\u001f\\u007f]/.test(src) || !src.startsWith('/') || src.startsWith('//')) throw new Error('Expected a local specimen route');\n  const url = new URL(src, 'https://example.com');\n  if (!PROJECTED_ROUTE.test(url.pathname)) throw new Error('Expected a projected specimen route');\n  const widths = url.searchParams.getAll('width');\n  // Producer's routes default to 1280 when width is absent.\n  if (widths.length > 1 || (widths.length ? widths[0] !== String(viewport) : viewport !== 1280)) throw new Error('Specimen viewport does not match its projected source');\n  return src;\n}\n\n/**\n * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames\n * side by side where there is room; each frame is the page at its own CSS width in a stock scroll area.\n * A single view-only viewport, as a gallery card shows it, is the frame alone at the card's width.\n */\nfunction Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {\n  if (!specimens.length) return <CardContent><Badge variant=\"outline\" data-preview-status=\"empty\">{empty}</Badge></CardContent>;\n  const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);\n  const card = rows.length === 1 && rows[0]!.interactive === false && !rows[0]!.dark ? rows[0]! : undefined;\n  if (card) return <CardContent data-specimen-viewport={card.viewport}>\n    <iframe key={`${name}:${card.viewport}:card`} src={specimenSource(card.light, card.viewport)} title={card.title} loading=\"lazy\" inert width=\"100%\" height={CARD_FRAME_HEIGHT} />\n  </CardContent>;\n  return <CardContent>\n    {rows.map(row => <CardContent key={row.viewport} data-specimen-viewport={row.viewport}>\n      {rows.length > 1 && <CardDescription role=\"heading\" aria-level={3}>{row.heading}</CardDescription>}\n      <FieldGroup>\n        <Field orientation=\"responsive\">\n          <ScrollArea>\n            <iframe key={`${name}:${row.viewport}:light`} src={specimenSource(row.light, row.viewport)} title={row.title} loading=\"lazy\" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />\n          </ScrollArea>\n          {row.dark && <ScrollArea>\n            <iframe key={`${name}:${row.viewport}:dark`} src={specimenSource(row.dark, row.viewport)} title={row.darkTitle ?? row.title} loading=\"lazy\" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />\n          </ScrollArea>}\n        </Field>\n      </FieldGroup>\n    </CardContent>)}\n  </CardContent>;\n}\n\nfunction RecordTable({ name, table, titled }: { name: string; table: SpecimenTable; titled: boolean }) {\n  return <CardContent>\n    {titled && <CardDescription role=\"heading\" aria-level={3}>{table.label}</CardDescription>}\n    <Table aria-label={`${name} ${table.label}`}>\n      <TableHeader>\n        {table.columns.map((column, index) => <TableHead key={column} isRowHeader={index === 0}>{column}</TableHead>)}\n      </TableHeader>\n      <TableBody>\n        {table.rows.map(row => <TableRow key={row.key} id={row.key}>\n          {row.cells.map((cell, index) => <TableCell key={index}>\n            {cell.href ? <LinkButton href={cell.href} variant=\"link\" size=\"sm\">{cell.text}</LinkButton> : cell.text}\n            {cell.statusLabel && <Badge variant={cell.statusTone ?? 'outline'}>{cell.statusLabel}</Badge>}\n          </TableCell>)}\n        </TableRow>)}\n      </TableBody>\n    </Table>\n  </CardContent>;\n}\n\n/** The specimen body without its card: what the leaf produces. */\nexport function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {\n  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;\n  if (specimen.lead?.length) return <CardContent data-specimen-lead>\n    {specimen.lead.map((text, index) => <CardDescription key={index}>{text}</CardDescription>)}\n  </CardContent>;\n  if (specimen.tables?.length) return <>{specimen.tables.map(table => <RecordTable key={table.id} name={specimen.name} table={table} titled={specimen.tables!.length > 1} />)}</>;\n  if (specimen.rows?.length) return <CardContent>\n    <Table aria-label={specimen.rowsCopy.label}>\n      <TableHeader>\n        <TableHead isRowHeader>{specimen.rowsCopy.key}</TableHead>\n        <TableHead>{specimen.rowsCopy.content}</TableHead>\n      </TableHeader>\n      <TableBody>\n        {specimen.rows.map(row => <TableRow key={row.key} id={row.key}>\n          <TableCell>{row.label}</TableCell>\n          <TableCell>\n            {row.href ? <LinkButton href={row.href} variant=\"link\" size=\"sm\">{row.text}</LinkButton> : row.text}\n          </TableCell>\n        </TableRow>)}\n      </TableBody>\n    </Table>\n  </CardContent>;\n  if (specimen.status) return <CardContent>\n    <Badge variant={specimen.status.tone} data-preview-status=\"status\">{specimen.status.label}</Badge>\n    <CardDescription>{specimen.status.description}</CardDescription>\n  </CardContent>;\n  return <CardContent><Badge variant=\"outline\" data-preview-status=\"empty\">{specimen.empty}</Badge></CardContent>;\n}\n\n/** `sections.studio.specimen`: what the leaf produces, framed at every viewport or laid out as its record content. */\nexport default function SpecimenSection({ specimen, ...provenance }: { specimen: SpecimenInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <Card size=\"sm\" {...provenance}>\n    <CardHeader>\n      <CardTitle role=\"heading\" aria-level={2}>{specimen.title}</CardTitle>\n      <CardDescription>{specimen.description}</CardDescription>\n    </CardHeader>\n    <SpecimenContent specimen={specimen} />\n  </Card>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-specimen\",\n  \"type\": \"registry:block\",\n  \"title\": \"Leaf Specimen\",\n  \"description\": \"What a leaf produces, for every agent: rendered output framed at 375, 768 and 1280 px in light and dark, or the record content as titled tables.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"badge\",\n    \"button\",\n    \"card\",\n    \"field\",\n    \"scroll-area\",\n    \"table\"\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.specimen",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.field",
+          "files": [
+            "registry/aria-nova/ui/field.tsx",
+            "registry/aria-nova/ui/label.tsx"
+          ]
+        },
+        {
+          "slot": "components.scroll-area",
+          "files": [
+            "registry/aria-nova/ui/scroll-area.tsx"
+          ]
+        },
+        {
+          "slot": "components.table",
+          "files": [
+            "registry/aria-nova/ui/table.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:094c09513f6a48eb362198e5cb67208a9ef67a18b13c051574e8f644abf2bd75",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-specimen",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.specimen",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "R2F-03"
+      },
+      "reason": "R2F-03: re-adopted as a composition of stock shadcn parts only; the projected-route guard is a route-shape pattern, so the section holds no route literal",
+      "createdAt": "2026-11-06T17:41:46.504Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card",
+          "--border",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

@@ -50,6 +50,8 @@
   ],
   "uses": [
     "components.badge",
-    "components.card"
+    "components.button",
+    "components.card",
+    "components.field"
   ]
 }

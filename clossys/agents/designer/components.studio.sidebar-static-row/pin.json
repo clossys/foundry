@@ -1,7 +1,7 @@
 {
-  "candidate": "sidebar-static-row-v2.json",
-  "sha256": "176e235aa34f28cf0ef5fc52c7aa2821d606a82dabec4b639b72a79050f9e0cf",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "sidebar-static-row-v3.json",
+  "sha256": "86ac3cead40dd0ec18a8e62c9ea7b198c9dbadea59f2e490dd7531fd7fc3a4ec",
+  "decidedBy": "planner:R2F-03",
   "basis": "planner",
-  "at": "2026-11-05T11:33:30.798Z"
+  "at": "2026-11-06T17:17:03.308Z"
 }

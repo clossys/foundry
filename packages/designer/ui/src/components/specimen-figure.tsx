@@ -1,15 +1,13 @@
-// Studio specimen figure: a specimen with the shadcn table caption beneath
-// (shadcn-aria table@4.23.0, TableCaption: `text-sm text-muted-foreground`).
-import type { ComponentProps, ReactNode } from "react"
-import { cn } from "../lib/utils"
+// Studio specimen figure: a stock shadcn field (components.field) holding the specimen, its caption the field description.
+import { Field, FieldDescription } from "@/components/ui/field"
 
-/** A specimen with its caption beneath (a version badge, a reason): one grid cell of a side-by-side comparison. */
-function SpecimenFigure({ caption, className, children, ...props }: ComponentProps<"figure"> & { caption: ReactNode }) {
+/** A specimen with its caption beneath (a version badge, a reason): one cell of a side-by-side comparison. */
+function SpecimenFigure({ caption, children, ...props }: React.ComponentProps<typeof Field> & { caption: React.ReactNode }) {
   return (
-    <figure data-slot="specimen-figure" className={cn("flex min-w-0 flex-col gap-2", className)} {...props}>
+    <Field {...props}>
       {children}
-      <figcaption className="flex min-w-0 flex-wrap items-center gap-2 text-sm text-muted-foreground">{caption}</figcaption>
-    </figure>
+      <FieldDescription>{caption}</FieldDescription>
+    </Field>
   )
 }
 

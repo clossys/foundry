@@ -1,19 +1,13 @@
-// Studio specimen frame: the shadcn aspect-ratio box (shadcn-aria aspect-ratio@4.23.0,
-// `relative aspect-(--ratio)`) holding the BlockViewer iframe. The ratio is a Designer layout token.
-import type { ComponentProps } from "react"
-import { cn } from "../lib/utils"
+// Studio specimen frame: a stock shadcn card (components.card) holding the specimen page in an unstyled iframe.
+// The frame fills the card's width; its height is the ratio's fixed CSS-pixel height.
+import { Card } from "@/components/ui/card"
 
-const SPECIMEN_RATIO = {
-  thumbnail: "aspect-(--specimen-ratio-thumbnail)",
-  mobile: "aspect-(--specimen-ratio-mobile)",
-  tablet: "aspect-(--specimen-ratio-tablet)",
-  desktop: "aspect-(--specimen-ratio-desktop)",
-} as const
+const SPECIMEN_HEIGHT = { thumbnail: 240, mobile: 667, tablet: 1024, desktop: 800 } as const
 
-export type SpecimenRatio = keyof typeof SPECIMEN_RATIO
+export type SpecimenRatio = keyof typeof SPECIMEN_HEIGHT
 
-/** A fixed-ratio specimen window: the framed page fills it and never sets the box's height. */
-function SpecimenFrame({ src, title, ratio = "thumbnail", interactive = false, className, ...props }: Omit<ComponentProps<"div">, "children"> & {
+/** A specimen window: the framed page at the card's width and the ratio's height. */
+function SpecimenFrame({ src, title, ratio = "thumbnail", interactive = false, ...props }: Omit<React.ComponentProps<typeof Card>, "children"> & {
   src: string
   title: string
   ratio?: SpecimenRatio
@@ -21,13 +15,9 @@ function SpecimenFrame({ src, title, ratio = "thumbnail", interactive = false, c
   interactive?: boolean
 }) {
   return (
-    <div
-      data-slot="specimen-frame"
-      className={cn("relative w-full overflow-hidden rounded-md border bg-background", SPECIMEN_RATIO[ratio], className)}
-      {...props}
-    >
-      <iframe title={title} src={src} loading="lazy" inert={!interactive} className="absolute inset-0 size-full border-0" />
-    </div>
+    <Card size="sm" data-specimen-ratio={ratio} {...props}>
+      <iframe title={title} src={src} loading="lazy" inert={!interactive} width="100%" height={SPECIMEN_HEIGHT[ratio]} />
+    </Card>
   )
 }
 

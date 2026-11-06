@@ -51,7 +51,11 @@ test('Writer input preserves exact Options markup across all conditional branche
       alias: { '@clossys/designer-ui': join(root, 'packages/designer/ui/src/index.ts'), '@': join(root, 'packages/designer/ui/src') },
       nodePaths: [join(root, 'node_modules')],
       plugins: [{ name: 'existing-preview-module', setup(build) {
-        build.onResolve({ filter: /^\.\.\/studio-specimen\/BlockViewerIframe$/ }, () => ({ path: join(root, 'packages/producer/studio/sections/studio-specimen/BlockViewerIframe.tsx') }));
+        // R2F-03: the specimen section no longer ships its own BlockViewerIframe module; both historical
+        // sources resolve it to the one pinned components.studio.block-viewer-iframe export, so the
+        // compared markup shares one frame and the test still pins the copy cut alone.
+        build.onResolve({ filter: /^\.\.\/studio-specimen\/BlockViewerIframe$/ }, () => ({ path: 'block-viewer-iframe', namespace: 'pinned-frame' }));
+        build.onLoad({ filter: /.*/, namespace: 'pinned-frame' }, () => ({ contents: "export { BlockViewerIframe } from '@clossys/designer-ui';", resolveDir: root, loader: 'ts' }));
       } }] });
     // Keep React's server render and components on the same instance.
     bundles.push(require(out).default);

@@ -35,6 +35,9 @@ test('Home application references bind official source snapshots and the existin
   const license = manifest.licenses.find(file => file.path === 'shadcn-app/LICENSE.md');
   assert.equal(license.sha256, proof.files.find(file => file.file === 'LICENSE.md').sha256);
   assert.deepEqual(read('../references/' + license.path), read('./studio-home-stock-source/LICENSE.md'));
-  assert.equal(proof.nativeQualification.state, 'unqualified');
-  assert.equal(proof.nativeQualification.pinChanged, false);
+  // R2F-03: the native composition pin supersedes this interim source adoption.
+  assert.equal(proof.state, 'superseded');
+  assert.equal(proof.nativeQualification.state, 'qualified');
+  assert.equal(proof.nativeQualification.candidate, 'home-grid-v3.json');
+  assert.equal(proof.nativeQualification.pinChanged, true);
 });

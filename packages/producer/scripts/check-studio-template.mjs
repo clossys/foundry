@@ -48,9 +48,13 @@ const notes = [];
 /* specimen */
 {
   const section = read(`${STUDIO}/sections/studio-slot-groups/index.tsx`) ?? '';
-  if (!/import\s*\{[^}]*\bSpecimenContent\b[^}]*\}\s*from\s*'\.\.\/studio-specimen'/.test(section)) fail('specimen', 'sections/studio-slot-groups', 'the slot card does not use the specimen section renderer (SpecimenContent)');
-  if (!/\bspecimen:\s*SpecimenInput;/.test(section)) fail('specimen', 'sections/studio-slot-groups', 'SlotCard.specimen is not a required SpecimenInput, so a card can render no specimen and no empty state');
-  if (/\{card\.specimen\s*\?/.test(section) || !/<SpecimenContent specimen=\{card\.specimen\}\s*\/>/.test(section)) fail('specimen', 'sections/studio-slot-groups', 'the card does not always render its specimen (a frame, the record or the explicit empty badge)');
+  // R2F-03 (DESIGNER-READOPT R3): a section composes stock parts only and never imports a sibling section, so
+  // the card draws its own preview of the shared slotSpecimen record instead of the specimen section renderer.
+  if (/from\s*'\.\.\/studio-[a-z-]+'/.test(section)) fail('specimen', 'sections/studio-slot-groups', 'the slot card imports a sibling section; it composes stock parts and previews the slotSpecimen record itself');
+  if (!/\bspecimen:\s*SlotPreview;/.test(section)) fail('specimen', 'sections/studio-slot-groups', 'SlotCard.specimen is not a required SlotPreview, so a card can render no specimen and no empty state');
+  const preview = (() => { const at = section.indexOf('function CardPreview('); return at < 0 ? '' : section.slice(at, section.indexOf('\n}\n', at)); })();
+  if (/\{card\.specimen\s*\?/.test(section) || !/<CardPreview preview=\{card\.specimen\}\s*\/>/.test(section)) fail('specimen', 'sections/studio-slot-groups', 'the card does not always render its specimen (a frame, the record or the explicit empty badge)');
+  else if (!/kind === 'viewports'/.test(preview) || !/if \(preview\.lead\?\.length\) return/.test(preview) || !/if \(preview\.status\) return/.test(preview) || (preview.match(/data-preview-status="empty"/g) ?? []).length < 2) fail('specimen', 'sections/studio-slot-groups', 'the card preview does not cover a frame, the record lead, its status and the explicit empty badge for both kinds');
   const lib = read(`${STUDIO}/lib/slot-detail.ts`) ?? '';
   const body = name => { const at = lib.indexOf(`export function ${name}(`); return at < 0 ? '' : lib.slice(at, lib.indexOf('\n}\n', at)); };
   if (!lib.includes('export function slotSpecimen(')) fail('specimen', 'lib/slot-detail', 'there is no one specimen path (slotSpecimen) shared by the detail page and the cards');

@@ -1,7 +1,7 @@
 import { JSDOM } from 'jsdom';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import SpecimenSection, { SpecimenContent, type SpecimenInput, type ViewportSpecimen } from './index';
+import SpecimenSection, { SpecimenContent, specimenSource, type SpecimenInput, type ViewportSpecimen } from './index';
 
 const frames: ViewportSpecimen[] = [375, 768, 1280].map(viewport => ({
   viewport: viewport as ViewportSpecimen['viewport'],
@@ -45,7 +45,9 @@ describe('detail and gallery specimen binding', () => {
     const actual = [...document.querySelectorAll('iframe')];
     expect(actual).toHaveLength(6);
     expect(actual.map(frame => frame.getAttribute('src'))).toEqual([...frames].reverse().flatMap(row => [row.light, row.dark]));
-    expect(actual.every(frame => frame.className === 'relative z-20 no-scrollbar w-full bg-background' && frame.height === '930')).toBe(true);
+    // Each frame is the page at its own CSS width and a screen-sized height, unstyled, in a stock scroll area.
+    expect(actual.map(frame => [frame.width, frame.height])).toEqual([[1280, 800], [1280, 800], [768, 1024], [768, 1024], [375, 667], [375, 667]].map(pair => pair.map(String)));
+    expect(actual.every(frame => !frame.hasAttribute('class') && !frame.hasAttribute('style') && frame.parentElement?.getAttribute('data-slot') === 'scroll-area')).toBe(true);
     expect(document.querySelector('[data-slot="specimen-frame"]')).toBeNull();
     expect(actual.every(frame => !frame.hasAttribute('inert'))).toBe(true);
   });
@@ -59,6 +61,18 @@ describe('detail and gallery specimen binding', () => {
     const error = render(<SpecimenSection specimen={{ kind: 'record', name: 'Example', title: 'Candidate', description: 'Native detail', rowsCopy, status: { label: 'Unavailable', tone: 'destructive', description: 'Artifact bytes did not match' }, empty: 'No candidate' }} />);
     expect(error.body.textContent).toContain('Artifact bytes did not match');
     expect(error.querySelector('iframe')).toBeNull();
+  });
+
+  it('accepts only projected local sources whose width matches the frame', () => {
+    expect(specimenSource('/__specimen?element=sample&width=375', 375)).toContain('width=375');
+    expect(specimenSource('/preview/publication/frame/page.html', 1280)).toContain('/preview/');
+    expect(specimenSource('/preview/example/frame/home.html?width=768', 768)).toContain('width=768');
+    for (const source of ['https://example.org/__specimen', '//example.org/__specimen', 'javascript:alert(1)', '/preview/../../other', '/\\example.org/__specimen', '/other', '/__specimen\n']) {
+      expect(() => specimenSource(source, 1280)).toThrow();
+    }
+    for (const source of ['/__specimen?width=1280', '/__specimen', '/__specimen?width=375&width=1280']) {
+      expect(() => specimenSource(source, 375)).toThrow('viewport');
+    }
   });
 
   it('rejects a viewport/source mismatch instead of accepting messages at an invented width', () => {

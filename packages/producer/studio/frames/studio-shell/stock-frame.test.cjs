@@ -30,7 +30,7 @@ const output = buildSync({
     export {NavUser} from './nav-user';
     export {ChatContent} from './stock-chat-sidebar';
     export {HeaderPopover} from './stock-header-controls';
-    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, useSidebar} from '@clossys/designer-ui';
+    export {SidebarProvider, SidebarTrigger, SidebarRail, Sidebar, SidebarMenuButton, useSidebar, Item} from '@clossys/designer-ui';
   `, resolveDir: __dirname, loader: 'tsx' },
   tsconfig: path.join(studio, 'tsconfig.json'), bundle: true, platform: 'node', format: 'cjs', jsx: 'automatic',
   external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, write: false, logLevel: 'silent',
@@ -86,7 +86,8 @@ test('actual sidebar keeps static workspace and profile rows with Clossys Studio
         assert.equal(mark.getAttribute('src'), `/api/brand/mark.svg?ground=${resolved === 'dark' ? 'light' : 'dark'}`);
         assert.match(footer.textContent, /Local workspace/);
         for (const row of [header, footer]) {
-          assert.equal(row.querySelectorAll('[data-sidebar="menu-button"]').length, 1);
+          // R2F-03: the static row is components.studio.sidebar-static-row, a stock Item (size sm).
+          assert.equal(row.querySelectorAll('[data-slot="item"][data-size="sm"]').length, 1);
           assert.equal(row.querySelector('button, [role="button"], [aria-haspopup], [data-slot="dropdown-menu-trigger"], [data-slot="popover-trigger"]'), null);
         }
       }
@@ -99,12 +100,12 @@ test('workspace and profile keep stock row presentation with no switch menu or i
   const html = renderToStaticMarkup(e(api.SidebarProvider, null,
     e(api.TeamSwitcher, { teams: [{ name: 'Workspace', logo: e('span', null, 'Mark'), itemLogo: null, plan: 'Studio' }] }),
     e(api.NavUser, { user: { name: 'Local workspace', email: 'Producer on this machine', initials: 'LW' } })));
-  assert.match(html, /data-sidebar="menu-button"/);
-  const stock = renderToStaticMarkup(e(api.SidebarProvider, null, e(api.SidebarMenuButton, {size: 'lg'}, 'Profile')));
-  const rows = [...html.matchAll(/<div[^>]+data-sidebar="menu-button"[^>]+class="([^"]+)"|<div[^>]+class="([^"]+)"[^>]+data-sidebar="menu-button"/g)].map(m => m[1] || m[2]);
-  const native = stock.match(/data-sidebar="menu-button"[^>]+class="([^"]+)"/)[1];
+  // R2F-03: each static row is the stock Item (size sm) with exactly its stock classes and none added.
+  const stock = renderToStaticMarkup(e(api.Item, { size: 'sm' }, 'Profile'));
+  const classOf = markup => markup.match(/<div[^>]+class="([^"]+)"/)[1];
+  const rows = [...html.matchAll(/<div[^>]*data-slot="item"[^>]*>/g)].map(m => classOf(m[0]));
   assert.equal(rows.length, 2);
-  for (const row of rows) assert.equal(row, native, 'static rows keep every stock presentation class and add none');
+  for (const row of rows) assert.equal(row, classOf(stock), 'static rows keep every stock presentation class and add none');
   assert.match(html, /Workspace/); assert.match(html, /Local workspace/);
   assert.doesNotMatch(html, /<button\b|role="button"|aria-haspopup|ChevronsUpDown|Add team|Upgrade|Billing/);
 });
@@ -112,7 +113,8 @@ test('workspace and profile keep stock row presentation with no switch menu or i
 test('native context guard remains enforced for trigger and chat sidebar', () => {
   assert.throws(() => renderToStaticMarkup(e(api.SidebarTrigger)), /within a SidebarProvider/);
   assert.throws(() => renderToStaticMarkup(e(api.Sidebar, { collapsible: 'none' }, e(api.ChatContent, { copy: chatCopy }))), /within a SidebarProvider/);
-  assert.throws(() => renderToStaticMarkup(e(api.TeamSwitcher, { teams: [{ name: 'Workspace', logo: null, itemLogo: null, plan: 'Studio' }] })), /within a SidebarProvider/);
+  // R2F-03: the static workspace row is a stock Item that reads no sidebar context, so it renders anywhere without a button.
+  assert.doesNotMatch(renderToStaticMarkup(e(api.TeamSwitcher, { teams: [{ name: 'Workspace', logo: null, itemLogo: null, plan: 'Studio' }] })), /<button\b|role="button"/);
 });
 
 test('native Trigger calls onPress then toggles only its nearest provider once; Rail toggles once', async () => {

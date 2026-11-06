@@ -33,10 +33,28 @@
         "themes.radius"
       ],
       "assets": [],
-      "components": []
+      "components": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.empty",
+        "components.item"
+      ]
     },
-    "composes": []
+    "composes": [
+      "components.badge",
+      "components.button",
+      "components.card",
+      "components.empty",
+      "components.item"
+    ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.badge",
+    "components.button",
+    "components.card",
+    "components.empty",
+    "components.item"
+  ]
 }

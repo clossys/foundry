@@ -1,0 +1,90 @@
+{
+  "name": "specimen-document",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "specimen-document.tsx",
+      "type": "registry:component",
+      "content": "/*\n * Studio specimen documents: one pinned theme, font or component shown alone on the page ground.\n * Each is a composition of stock shadcn parts (components.card, badge, button, item, empty); every\n * word is a Writer copy prop the page passes in, and every colour and font is the theme's own.\n */\nimport { Badge } from \"@/components/ui/badge\"\nimport { Button } from \"@/components/ui/button\"\nimport { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from \"@/components/ui/card\"\nimport { Empty } from \"@/components/ui/empty\"\nimport { Item, ItemContent, ItemDescription, ItemTitle } from \"@/components/ui/item\"\n\n/** A pinned theme: its stock buttons and badges in every variant, and the theme's colour names. */\nexport function ThemeSpecimen({ names, title, sample, glyph }: { names: readonly string[]; title: string; sample: string; glyph: string }) {\n  const pairs = names.filter((name) => !name.endsWith(\"-foreground\"))\n  return (\n    <main>\n      <Card data-specimen-document=\"theme\">\n        <CardHeader>\n          <CardTitle role=\"heading\" aria-level={1}>{title}</CardTitle>\n          <CardDescription>{sample}</CardDescription>\n        </CardHeader>\n        <CardContent>\n          <Button>{glyph}</Button>\n          <Button variant=\"secondary\">{glyph}</Button>\n          <Button variant=\"outline\">{glyph}</Button>\n          <Button variant=\"destructive\">{glyph}</Button>\n          <Badge>{glyph}</Badge>\n          <Badge variant=\"secondary\">{glyph}</Badge>\n          <Badge variant=\"outline\">{glyph}</Badge>\n          <Badge variant=\"destructive\">{glyph}</Badge>\n        </CardContent>\n        <CardFooter>\n          {pairs.map((name) => <Badge key={name} variant=\"outline\">{name}</Badge>)}\n        </CardFooter>\n      </Card>\n    </main>\n  )\n}\n\n/** The type ramp's steps, each the key of its Writer label. */\nconst RAMP = [\"display\", \"heading-1\", \"heading-2\", \"heading-3\", \"heading-4\", \"heading-5\", \"body\", \"small\"] as const\n\nexport type FontSpecimenStep = (typeof RAMP)[number]\n\n/** A pinned font: its family and the Writer sample at each ramp step, in the theme's own type. */\nexport function FontSpecimen({ variable, family, sample, labels }: { variable: string; family: string; sample: string; labels: Readonly<Record<FontSpecimenStep, string>> }) {\n  return (\n    <main>\n      <Card data-specimen-document=\"font\" data-font-variable={variable}>\n        <CardHeader>\n          <CardDescription>{family}</CardDescription>\n        </CardHeader>\n        <CardContent>\n          {RAMP.map((step) => (\n            <Item key={step} size=\"sm\" data-ramp-step={step}>\n              <ItemContent>\n                <ItemDescription>{labels[step]}</ItemDescription>\n                <ItemTitle>{sample}</ItemTitle>\n              </ItemContent>\n            </Item>\n          ))}\n        </CardContent>\n      </Card>\n    </main>\n  )\n}\n\n/** One component centred on the page ground (the stock empty state's centred flow), in its slot's declared specimen state. */\nexport function ComponentSpecimen({ state = \"rest\", children }: { state?: string; children?: React.ReactNode }) {\n  return (\n    <main data-specimen-state={state}>\n      <Empty>{children}</Empty>\n    </main>\n  )\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.specimen-document",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.empty",
+          "files": [
+            "registry/aria-nova/ui/empty.tsx"
+          ]
+        },
+        {
+          "slot": "components.item",
+          "files": [
+            "registry/aria-nova/ui/item.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:14660ecafee70b1b9842c8ff0cb5c35f925da700c7997691c2f877c2f24c76cb",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "specimen-document",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.specimen-document",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "R2F-03"
+      },
+      "reason": "R2F-03: re-adopted as a hookless composition of stock shadcn parts",
+      "createdAt": "2026-11-06T17:16:49.160Z",
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--background",
+          "--foreground",
+          "--muted-foreground",
+          "--card",
+          "--card-foreground",
+          "--border",
+          "--radius"
+        ]
+      }
+    }
+  }
+}

@@ -31,18 +31,15 @@
       ],
       "assets": [],
       "components": [
-        "components.badge",
-        "components.skeleton"
+        "components.card"
       ]
     },
     "composes": [
-      "components.badge",
-      "components.skeleton"
+      "components.card"
     ]
   },
   "inputs": [],
   "uses": [
-    "components.badge",
-    "components.skeleton"
+    "components.card"
   ]
 }

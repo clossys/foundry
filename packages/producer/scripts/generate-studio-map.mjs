@@ -143,6 +143,23 @@ export function designerContracts(clossysRoot) {
   return contracts;
 }
 
+/**
+ * A pinned item's lineage must be trusted: a registry or derived source citing a reference, or a
+ * composition whose every part is a pinned registry or npm (stock) slot. ref-verbatim proves the
+ * composition code only places those parts. Frames, sections and installed components share this rule.
+ */
+function trustedSource(clossysRoot, entries, slot, source) {
+  if (source?.kind === 'composition') {
+    if (!Array.isArray(source.parts) || !source.parts.length) fail(`${slot} composition must declare its stock parts`);
+    for (const part of source.parts) {
+      const owner = entries.get(part?.slot);
+      if (!owner?.pin || !owner.candidates.includes(owner.pin.candidate)) fail(`${slot} composes ${part?.slot}, which is not a pinned Designer slot`);
+      const bytes = readCandidate(clossysRoot, 'designer', part.slot, owner.pin.candidate);
+      if (bytes.sha256 !== owner.pin.sha256 || !['registry', 'npm'].includes(JSON.parse(bytes.bytes).meta?.source?.kind)) fail(`${slot} composes ${part.slot}, which is not pinned with registry or npm (stock) lineage`);
+    }
+  } else if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${slot} must come from a trusted reference (source registry or derived with a ref, or a composition of stock parts)`);
+}
+
 /** The pinned Designer candidate for a slot, and the Studio folder that runs it. */
 function pinnedItem(clossysRoot, entries, slot) {
   const entry = entries.get(slot);
@@ -156,17 +173,7 @@ function pinnedItem(clossysRoot, entries, slot) {
   const candidate = readCandidate(clossysRoot, 'designer', slot, pin.candidate);
   if (candidate.sha256 !== pin.sha256) fail(`${slot} pin hash does not match its candidate`);
   const item = JSON.parse(candidate.bytes);
-  const source = item.meta?.source;
-  if (source?.kind === 'composition') {
-    // A composition is trusted through its parts: each one a pinned registry (stock) slot. ref-verbatim proves the code only places them.
-    if (!Array.isArray(source.parts) || !source.parts.length) fail(`${slot} composition must declare its stock parts`);
-    for (const part of source.parts) {
-      const owner = entries.get(part?.slot);
-      if (!owner?.pin || !owner.candidates.includes(owner.pin.candidate)) fail(`${slot} composes ${part?.slot}, which is not a pinned Designer slot`);
-      const bytes = readCandidate(clossysRoot, 'designer', part.slot, owner.pin.candidate);
-      if (bytes.sha256 !== owner.pin.sha256 || !['registry', 'npm'].includes(JSON.parse(bytes.bytes).meta?.source?.kind)) fail(`${slot} composes ${part.slot}, which is not pinned with registry or npm (stock) lineage`);
-    }
-  } else if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${slot} must come from a trusted reference (source registry or derived with a ref, or a composition of stock parts)`);
+  trustedSource(clossysRoot, entries, slot, item.meta?.source);
   if (!nonEmpty(item.name) || !Array.isArray(item.files) || !item.files.length) fail(`${slot} candidate ${pin.candidate} carries no files`);
   const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
   if (!version) fail(`${slot} pins a non-element candidate ${pin.candidate}`);
@@ -199,8 +206,7 @@ function pinnedComponents(clossysRoot, entries) {
     const candidate = readCandidate(clossysRoot, 'designer', entry.id, pin.candidate);
     if (candidate.sha256 !== pin.sha256) fail(`${entry.id} pin hash does not match its candidate`);
     const item = JSON.parse(candidate.bytes);
-    const source = item.meta?.source;
-    if (!['registry', 'derived'].includes(source?.kind) || !Array.isArray(source.ref) || !source.ref.length) fail(`${entry.id} must come from a trusted reference (source registry or derived with a ref)`);
+    trustedSource(clossysRoot, entries, entry.id, item.meta?.source);
     const version = Number(/-v([1-9][0-9]*)\.json$/.exec(pin.candidate)?.[1] ?? 0);
     const files = new Map((item.files ?? []).map(file => [file.path, Buffer.from(file.content, 'utf8')]));
     out.push({ slot: entry.id, element: item.name, version, install, files, payload: [...files.keys()], target: componentTarget(layerDir(install.layer), install, entry.id) });

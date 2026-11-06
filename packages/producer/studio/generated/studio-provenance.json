@@ -11,8 +11,8 @@
   },
   "sections.studio.home": {
     "data-clossys-slot": "sections.studio.home",
-    "data-clossys-candidate": "studio-home-v9.json",
-    "data-clossys-hash": "sha256:659f7d716f87d036bab7d1e6839e860a11bf3336be3dbdccb4ed2308c8acb343"
+    "data-clossys-candidate": "studio-home-v10.json",
+    "data-clossys-hash": "sha256:9e4a3d3fb38db3fb98fc169f22b3b611142117f2e4c735c894d0b94afd881af7"
   },
   "sections.module.outline": {
     "data-clossys-slot": "sections.module.outline",
@@ -46,8 +46,8 @@
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
-    "data-clossys-candidate": "studio-slot-groups-v8.json",
-    "data-clossys-hash": "sha256:0045920111b2ed2d6d4001c164e831cf283ac05211abee6daf70c38fcb825c06"
+    "data-clossys-candidate": "studio-slot-groups-v9.json",
+    "data-clossys-hash": "sha256:8c75073385bc84cd3d43a69245c7feb0460cca03c78bc6b260de4efe5a34c4df"
   },
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",
@@ -61,13 +61,13 @@
   },
   "sections.studio.specimen": {
     "data-clossys-slot": "sections.studio.specimen",
-    "data-clossys-candidate": "studio-specimen-v11.json",
-    "data-clossys-hash": "sha256:2691cce4dc70400c4331b768a6cd39c340a86b79f7d951fba0ef1cea1fabe610"
+    "data-clossys-candidate": "studio-specimen-v12.json",
+    "data-clossys-hash": "sha256:aae9931442faf0724542761c1acea696c7774967338b06fc6c14b2747ab822ed"
   },
   "sections.studio.options": {
     "data-clossys-slot": "sections.studio.options",
-    "data-clossys-candidate": "studio-options-v7.json",
-    "data-clossys-hash": "sha256:163a29a691789e235c478380785df11d818aac80c7f549cbcc97816174caae78"
+    "data-clossys-candidate": "studio-options-v8.json",
+    "data-clossys-hash": "sha256:663dd26539ad2f342767df20995dd301d16325545839f1208bdb5425a6f3ec48"
   },
   "sections.studio.checks": {
     "data-clossys-slot": "sections.studio.checks",

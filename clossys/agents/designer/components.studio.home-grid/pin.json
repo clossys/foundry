@@ -1,7 +1,7 @@
 {
-  "candidate": "home-grid-v2.json",
-  "sha256": "777a867a21d0786c5cd4056eaa7440c6baef81ca82af81819464c0ce744783b7",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "home-grid-v3.json",
+  "sha256": "f26867ad01d6eef6b0638f22548e33363ab8ccc8755b7ff5a6fb69148aac5982",
+  "decidedBy": "planner:R2F-03",
   "basis": "planner",
-  "at": "2026-11-05T11:33:30.427Z"
+  "at": "2026-11-06T17:17:04.634Z"
 }
