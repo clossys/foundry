@@ -23,13 +23,37 @@
   },
   "frames": {
     "app-header": {
-      "composes": [],
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.link",
+        "components.menu",
+        "components.popover",
+        "components.semantic-content",
+        "components.toggle-button"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.link",
+          "components.menu",
+          "components.popover",
+          "components.semantic-content",
+          "components.toggle-button"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.link",
+            "components.menu",
+            "components.popover",
+            "components.semantic-content",
+            "components.toggle-button"
+          ],
           "themes": []
         },
         "sourceFiles": [

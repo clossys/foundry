@@ -26,14 +26,23 @@
   },
   "sections": {
     "content": {
-      "composes": [],
+      "composes": [
+        "components.card",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.card",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.card",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

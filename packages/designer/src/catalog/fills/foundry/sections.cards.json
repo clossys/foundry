@@ -26,7 +26,12 @@
   },
   "sections": {
     "cards": {
-      "composes": [],
+      "composes": [
+        "components.badge",
+        "components.card",
+        "components.link",
+        "components.semantic-content"
+      ],
       "configs": {
         "case-study": "config=case-study",
         "post": "config=post",
@@ -34,12 +39,22 @@
       },
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.badge",
+          "components.card",
+          "components.link",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [
             "assets.image"
           ],
-          "components": [],
+          "components": [
+            "components.badge",
+            "components.card",
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

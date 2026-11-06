@@ -9,6 +9,8 @@ export interface SurfaceConsumptionSlot {
 export interface SurfaceConsumptionScan {
   fill: string; files: { path: string; content: string }[];
   resolvedImports?: Readonly<Record<string, string>>;
+  /** `${file}:${binding}` -> component leaf id, from a resolved registered leaf factory call. */
+  resolvedLeaves?: Readonly<Record<string, string>>;
   unresolved?: readonly { file: string; line: number; evidence: string; code?: DogfoodCode }[];
 }
 export interface SurfaceConsumptionInput {
@@ -42,7 +44,7 @@ export function buildSurfaceConsumption(input: SurfaceConsumptionInput) {
     const contract: SurfaceReadContract = { id: fill.slot, allowedReads: declaredReads, allowedComposes: declaredComposes };
     const files = scan?.files ?? [];
     const dogfoodInput: DogfoodInput = { files: files.map(file => ({ file: file.path, content: file.content })), themes: input.themes, themeCss: input.themeCss,
-      contracts: Object.fromEntries(files.map(file => [file.path, contract])), resolvedImports: scan?.resolvedImports };
+      contracts: Object.fromEntries(files.map(file => [file.path, contract])), resolvedImports: scan?.resolvedImports, resolvedLeaves: scan?.resolvedLeaves };
     const observedComposes = dogfoodComposes(dogfoodInput), dogfood = runDogfood(dogfoodInput);
     const scannedComposes = sorted(observedComposes.map(row => row.slotId));
     const readScans = scanSurfaceReads(files, contract, input.themes, input.themeCss);

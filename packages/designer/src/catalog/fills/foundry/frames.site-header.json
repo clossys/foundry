@@ -24,16 +24,19 @@
   "frames": {
     "site-header": {
       "composes": [
+        "components.button",
         "components.icon"
       ],
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.icon"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.icon"
           ],
           "themes": []

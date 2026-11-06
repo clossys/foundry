@@ -1,10 +1,13 @@
 // Source-only import/export reachability for the section/frame consumption report.
 // This tooling never loads component modules, follows consumer files or runs a renderer.
+// A registered leaf factory (componentLeaf) is resolved from its exact export
+// identity and a literal registered leaf id in the TypeScript AST, never from a
+// local symbol's spelling; any other use of the factory is reported, not inferred.
 import { posix as path } from "node:path";
 import ts from "typescript";
 
 export function createSurfaceSourceScanner({ read, packages }) {
-  const modules = new Map(), owners = new Map(), printer = ts.createPrinter({ removeComments: true });
+  const modules = new Map(), owners = new Map(), leafFactories = new Map(), printer = ts.createPrinter({ removeComments: true });
   const key = target => `${target.file}#${target.name}`;
   const names = node => ts.isIdentifier(node) ? [node.text] : ts.isObjectBindingPattern(node) || ts.isArrayBindingPattern(node) ? node.elements.flatMap(item => ts.isBindingElement(item) ? names(item.name) : []) : [];
   function localTarget(file, specifier) {
@@ -53,6 +56,21 @@ export function createSurfaceSourceScanner({ read, packages }) {
     }
     return info;
   }
+  // Every binding the module declares at any depth, so a top-level leaf binding
+  // that a nested parameter, variable, function or class reuses is never resolved.
+  function declaredNames(info) {
+    if (info.declaredNames) return info.declaredNames;
+    const counts = new Map(), count = name => counts.set(name, (counts.get(name) ?? 0) + 1);
+    const walk = node => {
+      if ((ts.isVariableDeclaration(node) || ts.isParameter(node) || ts.isBindingElement(node)) && ts.isIdentifier(node.name)) count(node.name.text);
+      if ((ts.isFunctionDeclaration(node) || ts.isFunctionExpression(node) || ts.isClassDeclaration(node) || ts.isClassExpression(node)) && node.name) count(node.name.text);
+      if (ts.isImportClause(node) && node.name) count(node.name.text);
+      if ((ts.isImportSpecifier(node) || ts.isNamespaceImport(node)) && !(ts.isImportSpecifier(node) && node.isTypeOnly)) count(node.name.text);
+      ts.forEachChild(node, walk);
+    };
+    walk(info.ast);
+    return info.declaredNames = counts;
+  }
   function exportTarget(file, name, seen = new Set()) {
     const identity = `${file}#${name}`; if (seen.has(identity)) return undefined; seen.add(identity);
     const info = moduleInfo(file); if (!info) return undefined;
@@ -68,7 +86,7 @@ export function createSurfaceSourceScanner({ read, packages }) {
     return file ? exportTarget(file, match[2]) : undefined;
   }
   function scan({ fill, packageName, pointer: address }) {
-    const target = pointer(packageName, address), selected = new Map(), seen = new Set(), resolvedImports = {}, unresolved = [];
+    const target = pointer(packageName, address), selected = new Map(), seen = new Set(), resolvedImports = {}, resolvedLeaves = {}, unresolved = [];
     const issue = (file, node, evidence, code = "DF2") => unresolved.push({ file, line: node ? moduleInfo(file).ast.getLineAndCharacterOfPosition(node.getStart()).line + 1 : 0, code, evidence });
     const select = (file, name, node) => {
       if (!selected.has(file)) selected.set(file, new Map());
@@ -80,8 +98,32 @@ export function createSurfaceSourceScanner({ read, packages }) {
       if (!node) { issue(target.file, undefined, `unresolved runtime declaration ${target.name}`); return; }
       select(target.file, target.name, node);
       const references = new Set(), members = new Map();
+      // The registered leaf factory this reference resolves to, through a named or namespace import.
+      const factoryAt = node => {
+        const symbol = ts.isIdentifier(node) ? node.text : ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) ? node.expression.text : undefined;
+        const imported = symbol === undefined ? undefined : info.imports.get(symbol);
+        if (!imported?.file || (imported.name === "*") !== ts.isPropertyAccessExpression(node)) return undefined;
+        const resolved = exportTarget(imported.file, ts.isPropertyAccessExpression(node) ? node.name.text : imported.name);
+        return resolved ? leafFactories.get(key(resolved)) : undefined;
+      };
+      const leafCall = (call, leaves) => {
+        const [leaf, part, ...extra] = call.arguments, declaration = call.parent;
+        const id = leaf && (ts.isStringLiteral(leaf) || ts.isNoSubstitutionTemplateLiteral(leaf)) ? leaf.text : undefined;
+        const binding = ts.isVariableDeclaration(declaration) && declaration.initializer === call && ts.isIdentifier(declaration.name) && ts.isVariableDeclarationList(declaration.parent)
+          && (declaration.parent.flags & ts.NodeFlags.Const) && ts.isVariableStatement(declaration.parent.parent) && ts.isSourceFile(declaration.parent.parent.parent) ? declaration.name.text : undefined;
+        if (id === undefined || extra.length || (part && !ts.isStringLiteral(part) && !ts.isNoSubstitutionTemplateLiteral(part))) { issue(target.file, call, "unresolved component leaf call; leaf id or part is not a literal"); return; }
+        if (!leaves.has(id)) { issue(target.file, call, `unregistered component leaf ${id}`, "DF5"); return; }
+        if (binding === undefined) { issue(target.file, call, `unresolved component leaf ${id}; not a module-level const binding`); return; }
+        if (declaredNames(info).get(binding) !== 1) { issue(target.file, call, `shadowed component leaf binding ${binding} (${id})`); return; }
+        resolvedLeaves[`${target.file}:${binding}`] = id;
+      };
       function walk(node) {
         if (ts.isTypeNode(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)) return;
+        if (leafFactories.size && (ts.isIdentifier(node) || ts.isPropertyAccessExpression(node)) && !((ts.isPropertyAccessExpression(node.parent) || ts.isPropertyAssignment(node.parent) || ts.isJsxAttribute(node.parent)) && node.parent.name === node)) {
+          const leaves = factoryAt(node);
+          if (leaves && ts.isCallExpression(node.parent) && node.parent.expression === node) leafCall(node.parent, leaves);
+          else if (leaves) issue(target.file, node, "unresolved component leaf factory reference; only a direct call resolves a leaf");
+        }
         if (ts.isIdentifier(node)) references.add(node.text);
         if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression)) { const name = node.expression.text; if (!members.has(name)) members.set(name, new Set()); members.get(name).add(node.name.text); }
         if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) issue(target.file, node, "unresolved dynamic import; runtime source is not inferred");
@@ -108,8 +150,11 @@ export function createSurfaceSourceScanner({ read, packages }) {
       }
     }
     if (target) visit(target); else issue("", undefined, `unresolved source ${packageName}${address ?? ""}`);
-    return { fill, files: [...selected].sort(([a], [b]) => a.localeCompare(b)).map(([file, nodes]) => ({ path: file, content: [...nodes].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join("\n") })), resolvedImports,
+    return { fill, resolvedLeaves, files: [...selected].sort(([a], [b]) => a.localeCompare(b)).map(([file, nodes]) => ({ path: file, content: [...nodes].sort(([a], [b]) => a.localeCompare(b)).map(([, text]) => text).join("\n") })), resolvedImports,
       unresolved: [...new Map(unresolved.map(row => [JSON.stringify(row), row])).values()].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.evidence.localeCompare(b.evidence)) };
   }
-  return { pointer, scan, addOwner(target, slot) { if (target) { const identity = key(target); if (!owners.has(identity)) owners.set(identity, new Set()); owners.get(identity).add(slot); } } };
+  return { pointer, scan,
+    /** Registers the exact factory export whose literal first argument names a registered component leaf. */
+    addLeafFactory(target, leaves) { if (!target) throw new Error("Component leaf factory source unavailable"); leafFactories.set(key(target), new Set(leaves)); },
+    addOwner(target, slot) { if (target) { const identity = key(target); if (!owners.has(identity)) owners.set(identity, new Set()); owners.get(identity).add(slot); } } };
 }

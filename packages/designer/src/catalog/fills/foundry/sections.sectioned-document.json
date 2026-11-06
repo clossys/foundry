@@ -30,7 +30,9 @@
         "components.avatar",
         "components.badge",
         "components.card",
+        "components.disclosure",
         "components.icon",
+        "components.link",
         "components.semantic-content",
         "components.status-mark",
         "sections.content",
@@ -45,7 +47,9 @@
           "components.avatar",
           "components.badge",
           "components.card",
+          "components.disclosure",
           "components.icon",
+          "components.link",
           "components.semantic-content",
           "components.status-mark",
           "sections.content",
@@ -59,7 +63,9 @@
             "components.avatar",
             "components.badge",
             "components.card",
+            "components.disclosure",
             "components.icon",
+            "components.link",
             "components.semantic-content",
             "components.status-mark"
           ],
@@ -218,7 +224,7 @@
           },
           {
             "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+            "sha256": "f6e3c5f3e91db9912c1c135cefb40f2049b26132220ad977bcbe78c1811309ae"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",

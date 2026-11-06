@@ -57,6 +57,11 @@ export function measureFoundrySurfaces(root, buildSurfaceConsumption) {
   };
   const graph = createSurfaceSourceScanner({ read: sourceRead, packages });
   const designer = packageRoots[0].name;
+  // The consumer-selected leaf facade: its call site names the composed component
+  // leaf, so composition evidence follows the literal registered id, not an import.
+  const factory = graph.pointer(designer, "./runtime/component-leaf#componentLeaf");
+  if (factory?.file !== "packages/designer/src/runtime/component-leaf.tsx" || factory.name !== "componentLeaf") throw new Error("Component leaf factory source unavailable");
+  graph.addLeafFactory(factory, inventory.components.map(slot => slot.id));
   const native = nativeEmptyState(graph, designer, sourceRead);
   const sameTarget = target => native && target?.file === native.file && target?.name === native.name;
   const nativeRegistered = docs.some(doc => {

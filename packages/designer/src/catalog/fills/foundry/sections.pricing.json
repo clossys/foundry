@@ -26,14 +26,29 @@
   },
   "sections": {
     "pricing": {
-      "composes": [],
+      "composes": [
+        "components.badge",
+        "components.card",
+        "components.semantic-content",
+        "components.table"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.badge",
+          "components.card",
+          "components.semantic-content",
+          "components.table"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.badge",
+            "components.card",
+            "components.semantic-content",
+            "components.table"
+          ],
           "themes": []
         },
         "sourceFiles": [

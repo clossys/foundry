@@ -27,17 +27,27 @@
   "sections": {
     "activity-feed": {
       "composes": [
+        "components.avatar",
+        "components.icon",
+        "components.semantic-content",
         "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.avatar",
+          "components.icon",
+          "components.semantic-content",
           "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.avatar",
+            "components.icon",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

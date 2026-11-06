@@ -31,17 +31,27 @@
   "sections": {
     "features": {
       "composes": [
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.icon",
+          "components.link",
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.icon",
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

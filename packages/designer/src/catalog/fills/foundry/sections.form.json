@@ -26,16 +26,28 @@
   },
   "sections": {
     "form": {
-      "composes": [],
+      "composes": [
+        "components.form",
+        "components.link",
+        "components.semantic-content"
+      ],
       "configs": {
         "form.contact": "composition=contact"
       },
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.form",
+          "components.link",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.form",
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

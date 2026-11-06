@@ -23,13 +23,34 @@
   },
   "frames": {
     "sheet": {
-      "composes": [],
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.semantic-content",
+        "components.sheet"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.semantic-content",
+          "components.sheet"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon",
+            "components.semantic-content",
+            "components.sheet"
+          ],
           "themes": []
         },
         "sourceFiles": [

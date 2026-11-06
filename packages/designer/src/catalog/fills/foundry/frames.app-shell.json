@@ -24,6 +24,19 @@
   "frames": {
     "app-shell": {
       "composes": [
+        "components.banner",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.link",
+        "components.logo",
+        "components.menu",
+        "components.popover",
+        "components.resize-handle",
+        "components.semantic-content",
+        "components.tabs",
+        "components.toggle-button",
         "frames.app-header",
         "frames.app-sidebar",
         "frames.command",
@@ -32,6 +45,19 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.banner",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.link",
+          "components.logo",
+          "components.menu",
+          "components.popover",
+          "components.resize-handle",
+          "components.semantic-content",
+          "components.tabs",
+          "components.toggle-button",
           "frames.app-header",
           "frames.app-sidebar",
           "frames.command",
@@ -39,7 +65,21 @@
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.banner",
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon",
+            "components.link",
+            "components.logo",
+            "components.menu",
+            "components.popover",
+            "components.resize-handle",
+            "components.semantic-content",
+            "components.tabs",
+            "components.toggle-button"
+          ],
           "themes": []
         },
         "sourceFiles": [

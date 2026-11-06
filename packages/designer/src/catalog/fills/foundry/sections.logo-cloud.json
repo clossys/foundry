@@ -26,14 +26,26 @@
   },
   "sections": {
     "logo-cloud": {
-      "composes": [],
+      "composes": [
+        "components.item",
+        "components.link",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.item",
+          "components.link",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.item",
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

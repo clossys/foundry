@@ -27,17 +27,20 @@
   "sections": {
     "testimonials": {
       "composes": [
+        "components.card",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.card",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.card",
             "components.semantic-content"
           ],
           "themes": []

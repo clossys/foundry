@@ -27,17 +27,33 @@
   "sections": {
     "task-list": {
       "composes": [
+        "components.icon",
+        "components.link",
+        "components.meter",
+        "components.semantic-content",
+        "components.status-mark",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.icon",
+          "components.link",
+          "components.meter",
+          "components.semantic-content",
+          "components.status-mark",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.icon",
+            "components.link",
+            "components.meter",
+            "components.semantic-content",
+            "components.status-mark"
+          ],
           "themes": []
         },
         "sourceFiles": [

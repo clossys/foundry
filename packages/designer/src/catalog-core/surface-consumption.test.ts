@@ -57,6 +57,22 @@ describe("sections and frames observed consumption", () => {
     expect(runDogfood(input).findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "DF4", slotId: "frames.example" }), expect.objectContaining({ code: "DF5", tag: "Fake" })]));
   });
 
+  it("composes a component leaf bound by a resolved leaf factory call, and only that exact binding", () => {
+    const file = "src/Banner.tsx", content = 'import { componentLeaf } from "./component-leaf.js"; const Content = componentLeaf("components.button"); const Other = () => null; export const Banner = () => <section><Content.Item/><Other/></section>;';
+    const contract = { id: "sections.example", allowedReads: {}, allowedComposes: [] };
+    const input = { files: [{ file, content }], resolvedImports: {}, resolvedLeaves: { [`${file}:Content`]: "components.button" }, contracts: { [file]: contract } };
+    expect(dogfoodComposes(input)).toEqual([{ file, line: 1, tag: "Content.Item", slotId: "components.button", module: "", symbol: "Content" }]);
+    expect(runDogfood(input).findings).toEqual(expect.arrayContaining([expect.objectContaining({ code: "DF4", tag: "Content.Item" }), expect.objectContaining({ code: "DF5", tag: "Other" })]));
+    // Without the runner's resolution the same source composes nothing: a binding's spelling is never trusted.
+    expect(dogfoodComposes({ ...input, resolvedLeaves: {} })).toEqual([]);
+    expect(dogfoodComposes({ ...input, resolvedLeaves: { [`other.tsx:Content`]: "components.button" } })).toEqual([]);
+    const surface = fixture(); surface.sourceScans[0]!.files = [{ path: file, content }];
+    surface.sourceScans[0]!.resolvedImports = {}; surface.sourceScans[0]!.resolvedLeaves = { [`${file}:Content`]: "components.button" };
+    const row = buildSurfaceConsumption(surface).fills[0]!;
+    expect(row.scannedComposes).toEqual(["components.button"]);
+    expect(row.scannedReads.components).toEqual(["components.button"]);
+  });
+
   it("keeps deterministic output and makes loss of a known token or edge observable", () => {
     const input = fixture(), baseline = buildSurfaceConsumption(input);
     expect(buildSurfaceConsumption({ ...input, sections: [...input.sections].reverse(), frames: [...input.frames].reverse(), sourceScans: [...input.sourceScans].reverse() })).toEqual(baseline);

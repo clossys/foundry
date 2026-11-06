@@ -26,14 +26,32 @@
   },
   "sections": {
     "filter-builder": {
-      "composes": [],
+      "composes": [
+        "components.button",
+        "components.card",
+        "components.select",
+        "components.semantic-content",
+        "components.text-field"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.select",
+          "components.semantic-content",
+          "components.text-field"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.select",
+            "components.semantic-content",
+            "components.text-field"
+          ],
           "themes": []
         },
         "sourceFiles": [

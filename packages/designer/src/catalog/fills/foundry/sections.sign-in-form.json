@@ -31,14 +31,26 @@
   },
   "sections": {
     "sign-in-form": {
-      "composes": [],
+      "composes": [
+        "components.form",
+        "components.link",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.form",
+          "components.link",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.form",
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

@@ -29,14 +29,23 @@
   },
   "sections": {
     "logo-hero": {
-      "composes": [],
+      "composes": [
+        "components.logo",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.logo",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.logo",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [
