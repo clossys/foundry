@@ -472,3 +472,16 @@ test("PREPUSH-BASE (c): a base that has the package and check:rules but crashes 
   assert.equal(cli("--base", badRoot, "--head", head3, "--id", "fixture probe").status, 2);
   assert.ok(good);
 });
+
+test("PREPUSH-BASE (c): a base without the package whose check:rules crashes fails closed on that crash, not on the absent package", async () => {
+  const root = scratch("pre-push-ratchet-test-");
+  git(root, "init", "-q");
+  // The base defines check:rules but its registry is not JSON, and it predates the producer package.
+  const files = Object.fromEntries(Object.entries(repositoryFiles()).filter(([path]) => !path.startsWith("packages/producer/")));
+  const base = commit(root, { ...files, "scripts/rules/registry.json": "{ not json\n" }, "before the producer package, with a broken registry");
+  const head = commit(root, npmProbeFiles({ "packages/producer/data/violations.txt": null }), "add the producer package, clean, repair the registry");
+  await assert.rejects(run(root, base, head), /check:rules could not run on the base/);
+  const blocked = hookCli(root)("--base", base, "--head", head, "--id", "fixture probe");
+  assert.equal(blocked.status, 2, blocked.stdout + blocked.stderr);
+  assert.match(blocked.stderr, /could not run, so the push is blocked: check:rules could not run on the base/);
+});
