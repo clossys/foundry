@@ -5,7 +5,10 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
-const ProgressBar = componentLeaf<typeof import("../components/ProgressBar.js").ProgressBar>("components.progress-bar");
+type StockProgress = typeof import("../components/preview-runtime/components/progress-bar/progress.js");
+/** Stock anatomy (E2): the selected Progress names itself with its own ProgressLabel part. */
+const ProgressBar = componentLeaf<StockProgress["Progress"]>("components.progress-bar");
+const ProgressLabel = componentLeaf<StockProgress["ProgressLabel"]>("components.progress-bar", "ProgressLabel");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -52,7 +55,7 @@ export function FormWizard({ steps, currentStep, onNext, onBack, progress, revie
         <SemanticContent as="span" aria-hidden="true" className="tabular-nums">{stepIndex + 1}.</SemanticContent>{step.label}
       </SemanticContent>)}
     </ol>
-    {progress ?? <ProgressBar label={labels.progress(position, steps.length)} value={position} minValue={0} maxValue={steps.length} valueLabel={labels.progress(position, steps.length)} />}
+    {progress ?? <ProgressBar value={position} minValue={0} maxValue={steps.length} valueLabel={labels.progress(position, steps.length)}><ProgressLabel>{labels.progress(position, steps.length)}</ProgressLabel></ProgressBar>}
     <SemanticContent as="div" className="flex min-w-0 flex-col gap-md">{steps[index]!.content}</SemanticContent>
     {last && review ? <SemanticContent as="div" role="region" aria-label={labels.review} className="rounded-surface border border-line-base bg-surface-raised p-md">{review}</SemanticContent> : null}
     <SemanticContent as="div" className="flex flex-wrap items-center justify-between gap-sm border-t border-line-base pt-md">

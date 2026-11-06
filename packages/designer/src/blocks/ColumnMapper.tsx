@@ -6,8 +6,8 @@ import { useDebouncedSummary } from "./access-matrix/summary.js";
 import { assertColumnMapper, columnMapperIssues, mappedSource } from "./column-mapper/issues.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { StockSelect } from "./stock-select.js";
 
-const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
 const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -54,9 +54,9 @@ export function ColumnMapper(props: ColumnMapperProps) {
       const source = sourceColumns.find(column => column.id === sourceId);
       const errors = issues.filter(issue => issue.targetId === target.id);
       return <SemanticContent as="div" key={target.id} className="min-w-0">
-        <Select
+        <StockSelect
           label={<SemanticContent as="span" className="inline-flex min-w-0 flex-wrap items-baseline gap-xs"><SemanticContent as="span" className="wrap-anywhere">{target.label}</SemanticContent>{target.required ? <SemanticContent as="span" aria-hidden="true" className="text-caption text-ink-secondary">{labels.required}</SemanticContent> : null}</SemanticContent>}
-          isRequired={target.required} validationBehavior="aria" selectedKey={sourceId ?? ""} placeholder={labels.notMapped}
+          isRequired={target.required} selectedKey={sourceId ?? ""} placeholder={labels.notMapped}
           onSelectionChange={key => { if (typeof key === "string") onMappingChange({ ...mapping, [target.id]: key === "" ? null : key }); }}
           options={options} description={source ? labels.samples(source.samples) : undefined} isInvalid={errors.length > 0}
           errorMessage={<>{errors.map((issue, index) => <SemanticContent as="span" key={index} className="block">{issue.message}</SemanticContent>)}</>}

@@ -10,6 +10,7 @@ import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
 import type { ItemData, ItemProps } from "./types.js";
 import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
+import { stableStringify } from "../../catalog-core/stable.js";
 
 const single = { id: "one", heading: "Search", treatment: "plain", size: "standard", ground: "base" } as const;
 const data = (count = 3): ItemData[] => Array.from({ length: count }, (_, index) => ({
@@ -52,29 +53,29 @@ function legacyIdSlotHtml(name: string): string {
 describe("Item status", () => {
   it.each([
     ["Item/plain", "106c4515e4e5053ec6d4b0c6dd54288dc3f1ba268b2424a370215c550016d889"],
-    ["Item/plate", "858eadf71e1db60368d39313add1c3e762c67646c8c5467f28ca94047696e6d2"],
     ["Items/client/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
     ["Items/client/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
-    ["Items/client/rows/disclose", "c50ae8b29ee0c6154b258696714ddc54530e6905d0245eb4eb2df37c5a3f06d3"],
     ["Items/client/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
     ["Items/server/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
     ["Items/server/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
-    ["Items/server/rows/disclose", "53cb06fd4c7c74fcb97c638146de8bcc6e7e6560fd52a124d13409426da327e0"],
     ["Items/server/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
   ] as const)("preserves legacy useId-bearing slot HTML for %s", (name, expectedSha256) => {
     expect(createHash("sha256").update(legacyIdSlotHtml(name)).digest("hex")).toBe(expectedSha256);
   });
 
-  // Faq re-pinned: its heading region renders through SectionHeader since 0d04b4c23,
-  // which orders the same heading classes differently; no other byte changed.
-  it.each([
-    ["Faq/client", "509dd67d99db1d94b71885b8c7cba7775b3b2103d2b9142789ffe952c0853686"],
-    ["Faq/server", "6279de03fc3c5f75f9fd6ed677ea867a0e31dec7420c8d36c43283a4e24d2c8a"],
-    ["Items/client", "a01cc815a05f5b2395a0dbac62e649637c3ed040a644395071a80cf5b41500a9"],
-    ["Items/server", "b353fb23cc06d15a99b1b0b1f025be459dfbad8d43a376e1226e67b433fcb720"],
-  ] as const)("preserves byte-identical legacy HTML for %s without status", (consumer, expectedSha256) => {
-    expect(createHash("sha256").update(legacyDisclosureHtml(consumer)).digest("hex")).toBe(expectedSha256);
-  });
+  // Re-captured by planner:R2F-05 into a generated file (`vitest run -u`), never a hand-edited hash. These renders
+  // hold selected stock leaves: the plate is the stock Card (E4, P0 shadcn reset; ebd6753ac) and every disclosure
+  // row is the selected stock accordion (ebd6753ac, 78237484a), which owns the trigger, panel and disclosure
+  // styling and fixes its own h3 header. Diffed against the 90eedc80d capture, no other byte changed. Status
+  // must still leave these bytes untouched. The look is on the owner CREATIVE list.
+  it("preserves the stock-leaf legacy HTML captures without status", async () => {
+    const sha = (html: string) => createHash("sha256").update(html).digest("hex");
+    const hashes = {
+      ...Object.fromEntries((["Item/plate", "Items/client/rows/disclose", "Items/server/rows/disclose"] as const).map(name => [name, sha(legacyIdSlotHtml(name))])),
+      ...Object.fromEntries((["Faq/client", "Faq/server", "Items/client", "Items/server"] as const).map(consumer => [consumer, sha(legacyDisclosureHtml(consumer))])),
+    };
+    await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
+  }, 60_000);
 
   it("renders StatusMark with a visible label in the meta row", () => {
     const { container } = render(<Item {...single} eyebrow="Product" meta="Updated" status={{ tone: "success", label: "Available" }} />);

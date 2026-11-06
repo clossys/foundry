@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import type { TableFacet, TableFilter } from "../table-model/index.js";
 import { dateValue } from "../table-model/model.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
+import { StockSelect } from "../stock-select.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
-const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
 const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -79,13 +79,13 @@ export function FilterEditor({
   if (filter.op === "notEquals" || filter.op === "notIn") return null;
   if (filter.kind === "number" || filter.kind === "date") return <RangeEditor {...messages} filter={filter} label={label} change={change} />;
   if (filter.kind === "text") return <>
-    <Select label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} />
+    <StockSelect label={comparisonMessage(label)} selectedKey={filter.op} options={[{ id: "contains", label: containsLabel }, { id: "equals", label: equalsLabel }]} onSelectionChange={key => { if (key === "contains" || key === "equals") change({ ...filter, op: key }); }} />
     <TextField label={filterValueMessage(label)} value={filter.value} onChange={value => change({ ...filter, value })} />
   </>;
   if (filter.kind === "boolean") return <Checkbox isSelected={filter.value} onChange={value => change({ ...filter, value })}>{booleanFilterMessage(label)}</Checkbox>;
   const values = [...new Set([...facets.flatMap(facet => typeof facet.value === "string" ? [facet.value] : []), ...filter.values])];
   return <SemanticContent as="div" className="flex flex-col gap-sm">
-    {filter.kind === "tags" ? <Select label={matchingMessage(label)} selectedKey={filter.op} options={[{ id: "any", label: anyTagsLabel }, { id: "all", label: allTagsLabel }, { id: "none", label: noTagsLabel }]} onSelectionChange={key => { if (key === "any" || key === "all" || key === "none") change({ ...filter, op: key }); }} /> : null}
+    {filter.kind === "tags" ? <StockSelect label={matchingMessage(label)} selectedKey={filter.op} options={[{ id: "any", label: anyTagsLabel }, { id: "all", label: allTagsLabel }, { id: "none", label: noTagsLabel }]} onSelectionChange={key => { if (key === "any" || key === "all" || key === "none") change({ ...filter, op: key }); }} /> : null}
     {values.map(value => <Checkbox key={value} isSelected={filter.values.includes(value)} onChange={checked => change({ ...filter, values: checked ? [...filter.values, value] : filter.values.filter(item => item !== value) })}>{facetValueMessage(label, value)}</Checkbox>)}
     {!values.length ? <SemanticContent as="p" className="text-body-s text-ink-muted">{noFacetValuesLabel}</SemanticContent> : null}
   </SemanticContent>;

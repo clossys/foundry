@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type ComponentProps, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
 
 import { ArrowRight } from "../../icons/ArrowRight.js";
 import { ChevronUp } from "../../icons/ChevronUp.js";
@@ -12,7 +12,10 @@ import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const IconButton = componentLeaf<typeof import("../../components/IconButton.js").IconButton>("components.button", "IconButton");
+type StockButton = typeof import("../../components/preview-runtime/components/button/button.js").Button;
+/** Stock-bound button with the slot's shape axis: shape.icon-only maps to the stock icon size. */
+const IconButton = componentLeaf<(props: ComponentProps<StockButton> & { readonly shape: "icon-only" }) => ReactElement>("components.button");
+const Icon = componentLeaf<typeof import("../../components/index.js").Icon>("components.icon");
 const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -22,7 +25,7 @@ const SECTION_STAMP = dsAttrs("sections", "sections.chat", "foundry/sections.cha
 const PROGRESS_ROW_CLASSES = "flex flex-wrap items-center gap-sm text-body-s text-ink-secondary";
 
 function MessageAction({ label, icon, onPress }: { label: string; icon: IconNode; onPress: () => void }) {
-  return <IconButton label={label} icon={icon} size="sm" onPress={onPress} />;
+  return <IconButton variant="ghost" shape="icon-only" aria-label={label} onPress={onPress}><Icon glyph={icon} decorative /></IconButton>;
 }
 
 interface MessageActionsProps extends ChatLabels { message: ChatMessage; actions: ChatActions }

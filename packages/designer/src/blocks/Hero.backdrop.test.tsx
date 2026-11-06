@@ -24,8 +24,11 @@ describe("Hero checked still backdrop", () => {
     expect(checkBackdropElement(layer)).toMatchObject({ ok: true });
     expect(layer.querySelector('img')).toHaveAttribute('src', art.source.src);
     expect(layer.querySelector('img')).toHaveAttribute('loading', 'lazy');
-    expect(screen.getByRole('heading')).toHaveStyle({color:'var(--color-neutral-50)'});
-    expect(screen.getByText('Support')).toHaveStyle({color:'var(--color-neutral-50)'});
+    // Backdrop ink is the token class, never an inline colour (theme conformance).
+    for (const ink of [screen.getByRole('heading'), screen.getByText('Support')]) {
+      expect(ink).toHaveClass('text-neutral-50');
+      expect(ink.style.color).toBe('');
+    }
     expect(container.querySelector('section')).toHaveClass('relative', 'isolate', 'overflow-hidden');
   });
   it.each([false, true])("retains the same still resource when reduced motion is %s", reduced => {
@@ -66,13 +69,15 @@ describe('actual Hero scrim composition',()=>{
   it.each(['light','strong'] as const)('%s treatment protects heading and body in both themes and section grounds',scrim=>{
     for(const ground of ['base','inverse'] as const) {
       const {container,unmount}=render(<Hero heading="Heading" description="Support" ground={ground} backdrop={art} backdropScrim={scrim}/>);
-      expect(screen.getByRole('heading').style.color).toBe('var(--color-neutral-50)');
-      expect(screen.getByText('Support').style.color).toBe('var(--color-neutral-50)');
+      for (const ink of [screen.getByRole('heading'), screen.getByText('Support')]) {
+        expect(ink).toHaveClass('text-neutral-50');
+        expect(ink.style.color).toBe('');
+      }
       const gradient=container.querySelector('[data-hero-gradient]') as HTMLElement;
       expect(gradient.style.backgroundImage).toBe('linear-gradient(transparent, var(--color-overlay-scrim))');
       const layers=[...container.querySelectorAll<HTMLElement>('[data-hero-scrim]')];
       expect(layers).toHaveLength(scrim==='light'?4:5);
-      for(const layer of layers) expect(layer.style.backgroundColor).toBe('var(--color-overlay-scrim)');
+      for(const layer of layers) { expect(layer).toHaveClass('bg-overlay-scrim'); expect(layer.style.backgroundColor).toBe(''); }
       for(const declarations of [rootTokens,darkTokens]) {
         expect(declarations.get('--color-neutral-50')).toBeDefined();
         const alpha=colorAlpha(declarations.get('--color-overlay-scrim')!);

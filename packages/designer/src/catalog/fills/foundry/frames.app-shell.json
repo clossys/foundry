@@ -57,11 +57,15 @@
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "a9a814cdb5bfe434994fcb51526df8dc03a82e3f153040b0a1f5ea157db0181f"
+            "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
           },
           {
             "path": "packages/designer/src/blocks/ResizablePane.tsx",
             "sha256": "adc91e0cc0c92c625f710f5ab562d5c28a394e323bcb49be20ff1e57ced2eb27"
+          },
+          {
+            "path": "packages/designer/src/blocks/section-ground.ts",
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",
@@ -121,7 +125,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "421f9a3bcc956f89c38413ccaf63e8325196b81f010910c0f421673ce5f9522b"
+            "sha256": "3c48544dde2dae6a0152c39bfbcd6c01c6455284c47f55c5dd6cde7dedee32c4"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",

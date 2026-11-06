@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import { act, cleanup, render as renderBare, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { I18nProvider } from "react-aria-components";
 import * as blocks from "./index.js";
 import type { PageBarProps, PageBarPage } from "./PageBar.js";
 import { AppFrame } from "../frames/AppFrame.js";
@@ -138,8 +139,8 @@ describe("PageBar", () => {
     vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(function () {
       return { x: 16, y: 16, top: 16, left: 16, bottom: 16 + measuredHeight, right: 656, width: 640, height: measuredHeight, toJSON() {} };
     });
-    document.documentElement.dir = "rtl";
-    const onHeightChange = vi.fn(); const view = standalone({ page: page(), onHeightChange });
+    // Direction comes from the shared React Aria locale (e77112158), never from the document again.
+    const onHeightChange = vi.fn(); const view = render(<I18nProvider locale="ar-EG"><PageBar root={root} labels={labels} page={page()} onHeightChange={onHeightChange} /></I18nProvider>);
     expect(onHeightChange).toHaveBeenLastCalledWith(72);
     act(() => { measuredHeight = 96; resizeObservers.get(bar())!([], {} as ResizeObserver); });
     expect(onHeightChange).toHaveBeenLastCalledWith(96);

@@ -7,6 +7,7 @@ import type { ResolvedComponents } from "../catalog-core/resolve-components.js";
 import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import { ConsumerComponentProvider, type ConsumerComponentSelection } from "../runtime/component-leaf.client.js";
 import { defaultSourceModules } from "../components/preview-runtime/modules.js";
+import * as components from "../components/index.js";
 import { GROUP_A_SECTION_RENDERERS } from "../runtime/sections/group-a.js";
 import { groupASectionInput } from "../runtime/sections/group-a-dataset.js";
 import savedSelection from "../studio/default-component-preview-profile.json" with { type: "json" };
@@ -30,7 +31,7 @@ function selection(): ConsumerComponentSelection {
   return {
     profile: { components: profile }, selectionHash: profile.selectionHash,
     descriptors: Object.fromEntries(Object.entries(profile.components).map(([leaf, component]) => [leaf, componentDescriptorHash(component.descriptor)])),
-    modules: defaultSourceModules,
+    modules: { ...defaultSourceModules, "@clossys/designer/components": components },
   };
 }
 function host(children: ReactNode) {

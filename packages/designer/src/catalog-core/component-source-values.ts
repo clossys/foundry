@@ -1,5 +1,6 @@
 /** Finite source-value grammar; receipts and import closure are independent checks. */
 import { CatalogError } from "./api.js";
+import { componentSourceProof } from "./component-source-proofs.js";
 
 interface Token { text: string; quoted?: true }
 const refuse = (): never => { throw new CatalogError("components: unsupported secondary export source or inventory"); };
@@ -237,9 +238,26 @@ function componentNamespaceReads(source: string, namespaces: ReadonlyMap<string,
   return reads;
 }
 
+/**
+ * The namespace reads of these exact bytes. Stock sources carry a TypeScript
+ * AST proof keyed by path kind and sha256; the proof must agree with the
+ * caller's namespace inventory. Any other bytes, including every mutation of a
+ * stock source, have no proof and use the bounded lexical grammar.
+ */
+function provenNamespaceReads(source: string, namespaces: ReadonlyMap<string, { module: string; erased: boolean }>, path: string | undefined) {
+  const proof = path === undefined ? undefined : componentSourceProof(path, source);
+  if (!proof) return componentNamespaceReads(source, namespaces);
+  const proven = Object.entries(proof.namespaces);
+  if (proven.length !== namespaces.size || proven.some(([local, binding]) => {
+    const observed = namespaces.get(local);
+    return observed?.module !== binding.module || observed.erased !== binding.erased;
+  })) throw new CatalogError("components: unsupported namespace import syntax");
+  return proof.reads;
+}
+
 /** Runtime members and erased value queries both bind to actual module exports. */
-export function assertComponentNamespaceClosure(source: string, namespaces: ReadonlyMap<string, { module: string; erased: boolean }>, packageExports: Readonly<Record<string, readonly string[]>>): void {
-  for (const read of componentNamespaceReads(source, namespaces)) {
+export function assertComponentNamespaceClosure(source: string, namespaces: ReadonlyMap<string, { module: string; erased: boolean }>, packageExports: Readonly<Record<string, readonly string[]>>, path?: string): void {
+  for (const read of provenNamespaceReads(source, namespaces, path)) {
     if (read.erased && !read.typeQuery || !packageExports[read.module]?.includes(read.member)) throw new CatalogError(`components: unavailable namespace member ${read.member} from ${read.module}`);
   }
 }

@@ -10,7 +10,8 @@ const props = () => ({ ...columnMapperSample, onMappingChange: vi.fn() });
 describe("ColumnMapper", () => {
   it("renders the sample fieldset, named selects, required copy, samples, and missing-required error (MC4)", () => {
     render(<ColumnMapper {...props()} />);
-    expect(screen.getByRole("group", { name: "Match file columns to fields" }).tagName).toBe("FIELDSET");
+    // The selected stock Card is the section root (ebd6753ac), named by its heading; no Foundry fieldset.
+    expect(screen.getByRole("group", { name: "Match file columns to fields" })).toHaveAttribute("data-slot", "card");
     expect(screen.getAllByRole("button")).toHaveLength(4);
     for (const target of columnMapperSample.targets) expect(screen.getByRole("button", { name: new RegExp(target.label) })).toBeInTheDocument();
     expect(screen.getAllByText("Required")).toHaveLength(2);

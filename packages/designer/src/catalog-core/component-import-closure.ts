@@ -6,10 +6,13 @@
  */
 import type { ComponentFinding } from "./check-components.js";
 import type { ComponentCandidate, ComponentCatalog, ComponentFile } from "./resolve-components.js";
+import { emitsGlyphModule } from "./emit-components.js";
 
 const SPECIFIERS = /\b(?:import|export)\s+(?:type\s+)?(?:[\w$*\s{},]+?\s+from\s*)?["']([^"']+)["']/g;
 const LEAF_INDEX = /^components\/([a-z][a-z0-9-]*)\/index(?:\.(?:js|ts|tsx))?$/;
 const compare = (a: string, b: string): number => a < b ? -1 : a > b ? 1 : 0;
+/** The consumer glyph module `emitComponents` writes when a selected leaf reads an asset. */
+export const COMPONENT_GLYPH_MODULE_PATH = "adapters/glyphs.ts";
 
 /** Static module specifiers only; comments are stripped so documentation never counts as an import. */
 export function componentRelativeImports(code: string): string[] {
@@ -49,6 +52,10 @@ export interface ComponentImportClosureInput {
 /** K9 is the registry-dependency rule: a dependency that is neither materialized nor emitted. */
 export function componentImportClosureFindings(input: ComponentImportClosureInput): ComponentFinding[] {
   const paths = new Set(input.files.map(file => file.path));
+  // The glyph module is emitted, not materialized: a selection that reads an asset satisfies its import.
+  // A fill that declares no reads reads no asset.
+  const reads = [...input.fills.values()].map(fill => ({ slot: fill.slot, reads: { assets: fill.reads?.assets ?? [] } }));
+  if (emitsGlyphModule(reads)) paths.add(COMPONENT_GLYPH_MODULE_PATH);
   const findings: ComponentFinding[] = [];
   const add = (subject: string, message: string): void => { findings.push({ code: "K9", rule: "K9", subject, severity: "error", message }); };
   for (const [slot, fill] of [...input.fills].sort(([a], [b]) => compare(a, b))) {

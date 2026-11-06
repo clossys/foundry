@@ -118,6 +118,12 @@
         ]
       },
       "root": "rac:ProgressBar",
+      "secondaryExports": [
+        {
+          "export": "ProgressLabel",
+          "name": "ProgressLabel"
+        }
+      ],
       "slot": "components.progress-bar",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

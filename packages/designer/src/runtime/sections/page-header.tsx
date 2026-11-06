@@ -3,7 +3,13 @@ import { PageHeader } from "../../blocks/PageHeader.js";
 import { actionsOf, noop, recordsOf, refuseUnmapped, requiredText, slotValue, stringField, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Breadcrumb = componentLeaf<typeof import("../../components/Breadcrumb.js").Breadcrumb>("components.breadcrumbs");
+type StockBreadcrumb = typeof import("../../components/preview-runtime/components/breadcrumbs/breadcrumb.js");
+/** Stock anatomy (E2): the selected breadcrumb's own parts, never a Foundry `Breadcrumb.Item` compound. */
+const Breadcrumb = componentLeaf<StockBreadcrumb["Breadcrumb"]>("components.breadcrumbs");
+const BreadcrumbList = componentLeaf<StockBreadcrumb["BreadcrumbList"]>("components.breadcrumbs", "BreadcrumbList");
+const BreadcrumbItem = componentLeaf<StockBreadcrumb["BreadcrumbItem"]>("components.breadcrumbs", "BreadcrumbItem");
+const BreadcrumbLink = componentLeaf<StockBreadcrumb["BreadcrumbLink"]>("components.breadcrumbs", "BreadcrumbLink");
+const BreadcrumbPage = componentLeaf<StockBreadcrumb["BreadcrumbPage"]>("components.breadcrumbs", "BreadcrumbPage");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 
 const LEAF = "sections.page-header";
@@ -38,7 +44,11 @@ export const renderPageHeader: SectionRenderer = input => {
       description={textOf(slotValue(input, "description"))}
       breadcrumb={crumbs.length ? (
         <Breadcrumb aria-label={stringField(trail, "label")}>
-          {crumbs.map(crumb => <Breadcrumb.Item key={crumb.id} href={crumb.href}>{crumb.label}</Breadcrumb.Item>)}
+          <BreadcrumbList>
+            {crumbs.map((crumb, index) => <BreadcrumbItem key={crumb.id} id={crumb.id}>
+              {crumb.href && index < crumbs.length - 1 ? <BreadcrumbLink href={crumb.href}>{crumb.label}</BreadcrumbLink> : <BreadcrumbPage>{crumb.label}</BreadcrumbPage>}
+            </BreadcrumbItem>)}
+          </BreadcrumbList>
         </Breadcrumb>
       ) : undefined}
       actions={actions.length ? actions : undefined}

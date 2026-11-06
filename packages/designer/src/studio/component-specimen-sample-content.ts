@@ -22,6 +22,7 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./components#NumberField": d.numberField,
   "./components#ProgressBar": d.progress,
   "./components#ResizeHandle": d.resize,
+  "./components#RichText": d.richText,
   "./components#SearchField": d.searchField,
   "./components#Select": d.select,
   "./components#SemanticContent": d.semantic,

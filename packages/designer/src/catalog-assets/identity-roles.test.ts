@@ -20,7 +20,7 @@ const INK='#111111', ON_INVERSE='#ffffff';
 function base():LibraryData{
  let library:LibraryData={source:{id:'example',kind:'consumer',author:'consumer',license:'MIT',extends:'foundry'},fills:[],adoptedAt:'2026-10-23',rubricVersion:'test'};
  const token=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
- library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'themes.foreground',tokens:{primary:token(INK,ON_INVERSE),'on-inverse':token(ON_INVERSE),'on-accent':token(ON_INVERSE)}},{op:'author',slot:'themes.background',tokens:{base:token(ON_INVERSE,INK),inverse:token(INK)}},{op:'author',slot:'themes.primary',tokens:{default:token('#2255aa')}},{op:'author',slot:'themes.font-sans',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}}]});
+ library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[{op:'author',slot:'themes.foreground',tokens:{default:token(INK,ON_INVERSE)}},{op:'author',slot:'themes.background',tokens:{default:token(ON_INVERSE,INK)}},{op:'author',slot:'themes.primary',tokens:{default:token('#2255aa')}},{op:'author',slot:'themes.primary-foreground',tokens:{default:token(ON_INVERSE)}},{op:'author',slot:'themes.font-heading',tokens:{default:{$type:'fontFamily',$value:['sans-serif']}}}]});
  return library;
 }
 const spoke=(deg:number)=>`<rect x="-5.75" y="-32" width="11.5" height="32" transform="rotate(${deg})"/>`;
@@ -150,7 +150,9 @@ describe('identity roles derived from a group-painted two-tone mark',()=>{
  * tags, the star inheriting the inverse ink from its group, the plate in the primary ink, and a
  * lockup seed nesting that mark beside a live-text wordmark. Tokens are the product's own values.
  */
-const K={primary:'#0A0A0A',primaryDark:'#FAFAFA',onInverse:'#FAFAFA',base:'#F5F5F5',baseDark:'#0F0F0F',inverse:'#0A0A0A'};
+// Identity reads the shadcn theme leaves: the ink is themes.foreground and the inverse ink is
+// themes.background, so the kit's base ground is its on-inverse ink.
+const K={primary:'#0A0A0A',primaryDark:'#FAFAFA',onInverse:'#FAFAFA',base:'#FAFAFA',baseDark:'#0F0F0F',inverse:'#0A0A0A'};
 const KIT_BODY=`\n  <rect width="100" height="100" rx="21.875" fill="#0A0A0A"/>\n  <g transform="translate(50 50)" fill="#FAFAFA">${[0,72,144,216,288].map(d=>`<rect x="-5.75" y="-32" width="11.5" height="32" transform="rotate(${d.toFixed(1)})"/>`).join('')}</g>\n`;
 const KIT_MARK=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Example" data-clear-space="0.2">${KIT_BODY}</svg>\n`;
 const KIT_LOCKUP=`<svg aria-label="Example" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 48" data-clear-space="0.2"><svg x="0" y="0" width="48" height="48" viewBox="0 0 100 100">${KIT_BODY}</svg><text x="56" y="31" font-size="22" font-family="sans-serif" fill="#0A0A0A">Example</text></svg>`;
@@ -159,10 +161,11 @@ function kitLibrary():LibraryData{
  const color=(value:string,dark?:string):DtcgToken=>({$type:'color',$value:value,$extensions:{'com.clossys.css':{raw:value},...(dark?{'com.clossys.modes':{dark}}:{})}});
  const svg=(value:string):DtcgToken=>({$type:'svg',$value:value,$extensions:{'com.clossys.origin':{kind:'authored',license:'MIT',note:'Consumer identity seed'}}});
  library=applyLibraryChange(catalog,library,{baseHash:libraryHash(library),changes:[
-  {op:'author',slot:'themes.foreground',tokens:{primary:color(K.primary,K.primaryDark),'on-inverse':color(K.onInverse,K.inverse),'on-accent':color(K.onInverse)}},
-  {op:'author',slot:'themes.background',tokens:{base:color(K.base,K.baseDark),inverse:color(K.inverse,K.primaryDark)}},
+  {op:'author',slot:'themes.foreground',tokens:{default:color(K.primary,K.primaryDark)}},
+  {op:'author',slot:'themes.background',tokens:{default:color(K.base,K.baseDark)}},
   {op:'author',slot:'themes.primary',tokens:{default:color('#6E3FC7')}},
-  {op:'author',slot:'themes.font-sans',tokens:{display:{$type:'fontFamily',$value:['sans-serif']}}},
+  {op:'author',slot:'themes.primary-foreground',tokens:{default:color(K.onInverse)}},
+  {op:'author',slot:'themes.font-heading',tokens:{default:{$type:'fontFamily',$value:['sans-serif']}}},
   {op:'author',slot:'assets.mark',tokens:{positive:svg(KIT_MARK)}},
   {op:'author',slot:'assets.lockup',tokens:{positive:svg(KIT_LOCKUP)}},
  ]});

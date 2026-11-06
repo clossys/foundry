@@ -18,6 +18,8 @@ import{TreeView}from${modulePath("studio/TreeView.tsx")};
 import{ExplorerTree}from${modulePath("studio/rail/ExplorerTree.tsx")};
 import{StudioDataValue}from${modulePath("studio/data-value.tsx")};
 import{createRouteStudioLabels}from${modulePath("studio/route-labels.ts")};
+import{ConsumerComponentProvider}from${modulePath("runtime/component-leaf.client.tsx")};
+import{fixtureConsumerComponents}from${modulePath("catalog-core/__fixtures__/surface-consumer-components.ts")};
 const long='unbroken-candidate-and-helper-data-'.repeat(18);
 const copy={locale:'en',messages:new Proxy({},{get:(_,id)=>({id})}),resolver:ref=>({ref,text:'[['+ref.id+']]',servedLocale:'en',chain:['en']})};
 const labels={...createRouteStudioLabels(copy),howToChange:long};
@@ -25,7 +27,7 @@ function App(){useEffect(()=>{window.ready=true},[]);return <main>
 <aside data-panel='tree'><TreeView aria-label='Fixture tree' nodes={[{id:'root',label:long,children:[{id:'child',label:long}]}]} defaultExpandedIds={['root']}/></aside>
 <aside data-panel='values'><StudioDataValue kind='hash' value={'f'.repeat(128)}/><StudioDataValue kind='path' value={long}/></aside>
 <aside data-panel='zero'><ExplorerTree copy={copy} labels={labels} placements={[]} onNavigate={()=>{}}/></aside>
-</main>};createRoot(document.getElementById('root')).render(<App/>);
+</main>};createRoot(document.getElementById('root')).render(<ConsumerComponentProvider value={fixtureConsumerComponents()}><App/></ConsumerComponentProvider>);
 window.measure=()=>{const failures=[];for(const panel of document.querySelectorAll('[data-panel]')){const bounds=panel.getBoundingClientRect();const walker=document.createTreeWalker(panel,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){if(!node.textContent.trim())continue;const parent=node.parentElement;const style=getComputedStyle(parent);if(style.visibility==='hidden'||!parent.getClientRects().length)continue;if(style.textOverflow==='ellipsis'&&style.overflowX==='hidden'&&style.whiteSpace==='nowrap')continue;const range=document.createRange();range.selectNodeContents(node);for(const rect of range.getClientRects()){if(rect.width&& (rect.left<bounds.left-1||rect.right>bounds.right+1)){failures.push({panel:panel.dataset.panel,text:node.textContent.slice(0,80),left:rect.left,right:rect.right,bounds:bounds.right});break;}}}}return failures;};`;
   const bundled = await build({ stdin: { contents: fixture, loader: "jsx", resolveDir: pkg }, bundle: true, write: false, format: "esm", platform: "browser", jsx: "automatic", define: { "process.env.NODE_ENV": '"development"' } });
   const { css } = await generateCompiledCss({ stylesDir: join(pkg, "styles"), candidates: [...scanClassCandidates(join(pkg, "src")).candidates] });

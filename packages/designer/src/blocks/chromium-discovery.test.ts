@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import ts from "typescript";
 import { describe, expect, it } from "vitest";
-import { selectChromium } from "../__fixtures__/chromium-discovery.js";
+import { chromeChannelExecutables, selectChromium } from "../__fixtures__/chromium-discovery.js";
 
 const selectionHook = selectChromium;
 const harnesses = ["blocks/LogoCloud.test.tsx", "blocks/PeopleGrid.test.tsx", "shell/SiteFooter.test.tsx"];
@@ -53,6 +53,13 @@ describe("test-only Chromium executable discovery", () => {
     const calls: unknown[] = [];
     expect(discover(file, undefined, (name, args) => { calls.push([name, args]); return { status: name === "chromium-browser" ? 0 : null }; })).toBe("chromium-browser");
     expect(calls).toEqual(["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"].map(name => [name, ["--version"]]));
+  });
+  it("falls back to the installed Chrome channel the rendered checks launch, after the four PATH names", () => {
+    const calls: string[] = [], installed = ["/installed/Google Chrome"];
+    expect(selectChromium(undefined, name => { calls.push(name); return { status: name === installed[0] ? 0 : null }; }, installed)).toBe(installed[0]);
+    expect(calls).toEqual(["google-chrome", "google-chrome-stable", "chromium", "chromium-browser", installed[0]]);
+    expect(chromeChannelExecutables("darwin")).toEqual(["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"]);
+    expect(chromeChannelExecutables("linux")).toEqual(["/opt/google/chrome/chrome"]);
   });
   it.each(harnesses)("fails when every available browser probe fails in %s", file => {
     expect(() => discover(file, undefined, () => ({ status: null }))).toThrow(/require.*Chromium.*PATH/);

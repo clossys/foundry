@@ -39,11 +39,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/CallToAction.tsx",
-            "sha256": "20eab1311a3d7a644cd6f00d4106236d9aecbda9041c685712e75d8b58486325"
+            "sha256": "64d39c040fce5e00010f9b6c043c49d9485186acc008e716b29c129e12e91903"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

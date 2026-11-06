@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:268b8777c316ae0532f41313f437478460a7b281dbecd5ff6cbac0253de105cc",
+  "selectionHash": "sha256:3dfa62791596763afcf0ff24fff8195503d7873f7fec21717e1e3584ef5bf463",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -684,7 +684,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "a259ded26591e77cd280e04541001f4fc6023024be38b6ed878d8423965017f9",
+        "sha256": "7aa164fc1287018651674150aa0d238c766f76abbdc5e73ed38c01d5004cdce0",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -825,6 +825,24 @@
           }
         ],
         "blockers": [],
+        "secondaryExports": [
+          {
+            "name": "BreadcrumbList",
+            "export": "BreadcrumbList"
+          },
+          {
+            "name": "BreadcrumbItem",
+            "export": "BreadcrumbItem"
+          },
+          {
+            "name": "BreadcrumbLink",
+            "export": "BreadcrumbLink"
+          },
+          {
+            "name": "BreadcrumbPage",
+            "export": "BreadcrumbPage"
+          }
+        ],
         "rac": {
           "range": "^1.20.0",
           "peer": false,
@@ -853,7 +871,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "a259ded26591e77cd280e04541001f4fc6023024be38b6ed878d8423965017f9",
+          "sha256": "7aa164fc1287018651674150aa0d238c766f76abbdc5e73ed38c01d5004cdce0",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -3870,7 +3888,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "9ba22ea570157d677577f1df73ad7e42c566de58936125da69691bb02c1fb3f1",
+        "sha256": "0633f313f5a531b92926b4391f29dd418b48b87f1f6fe52823421d8c756e21f9",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
@@ -3916,7 +3934,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -4170,7 +4188,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -4238,7 +4256,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "9ba22ea570157d677577f1df73ad7e42c566de58936125da69691bb02c1fb3f1",
+          "sha256": "0633f313f5a531b92926b4391f29dd418b48b87f1f6fe52823421d8c756e21f9",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
@@ -4284,7 +4302,7 @@
             },
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -5130,13 +5148,13 @@
           ]
         },
         "license": "MIT",
-        "sha256": "f6657eb3ea0c2575e4f78311b81154b89baa2ffdac4479b672883029b6143668",
+        "sha256": "08f72c467614cee4549395459efb1a675f73bec992170af4a37d116a5a642d2d",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -5310,7 +5328,7 @@
         "outputSha256": [
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -5358,13 +5376,13 @@
             ]
           },
           "license": "MIT",
-          "sha256": "f6657eb3ea0c2575e4f78311b81154b89baa2ffdac4479b672883029b6143668",
+          "sha256": "08f72c467614cee4549395459efb1a675f73bec992170af4a37d116a5a642d2d",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -5413,13 +5431,13 @@
           ]
         },
         "license": "MIT",
-        "sha256": "3e36ad609681181aaebf65358bcc92f358fdd826a7b65249955d1e1489fed296",
+        "sha256": "ad643a9375b12a4834f0d5cee69e717e80d18a8c29fcc79187d89b0a6ae5dffc",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -5555,7 +5573,7 @@
         "outputSha256": [
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -5603,13 +5621,13 @@
             ]
           },
           "license": "MIT",
-          "sha256": "3e36ad609681181aaebf65358bcc92f358fdd826a7b65249955d1e1489fed296",
+          "sha256": "ad643a9375b12a4834f0d5cee69e717e80d18a8c29fcc79187d89b0a6ae5dffc",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -6300,7 +6318,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "779554d9aca0914108684595f22a6a8142318235570dbefb7a628e999a7a0b4a",
+        "sha256": "75e6743b27bb8e12e92e2fe9ec2d1f4a51cdb14242364bc4b49758262a531629",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
@@ -6314,7 +6332,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -6482,7 +6500,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -6534,7 +6552,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "779554d9aca0914108684595f22a6a8142318235570dbefb7a628e999a7a0b4a",
+          "sha256": "75e6743b27bb8e12e92e2fe9ec2d1f4a51cdb14242364bc4b49758262a531629",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
@@ -6548,7 +6566,7 @@
             },
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -8281,7 +8299,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "fe75d58c7ddeba82a2febe35200daa9bd0999f60aad9ad56a86d6b1df5d2836b",
+        "sha256": "8e49b6f941bf0d4d68c079f44fafe7d04cb0354bceaff1d057bbf21633d61c56",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -8412,6 +8430,12 @@
           }
         ],
         "blockers": [],
+        "secondaryExports": [
+          {
+            "name": "ProgressLabel",
+            "export": "ProgressLabel"
+          }
+        ],
         "rac": {
           "range": "^1.20.0",
           "peer": false,
@@ -8440,7 +8464,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "fe75d58c7ddeba82a2febe35200daa9bd0999f60aad9ad56a86d6b1df5d2836b",
+          "sha256": "8e49b6f941bf0d4d68c079f44fafe7d04cb0354bceaff1d057bbf21633d61c56",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -9010,13 +9034,13 @@
           ]
         },
         "license": "MIT",
-        "sha256": "1247f8a8fa80fee40b017db4a4d0959df5c95d5f764183ee869d1b6725dc0ecc",
+        "sha256": "f5d2cef94a23eda710f1ae0fc4228210d93d46cae76d4cbdad4635b3473578bd",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -9120,7 +9144,7 @@
         "outputSha256": [
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -9168,13 +9192,13 @@
             ]
           },
           "license": "MIT",
-          "sha256": "1247f8a8fa80fee40b017db4a4d0959df5c95d5f764183ee869d1b6725dc0ecc",
+          "sha256": "f5d2cef94a23eda710f1ae0fc4228210d93d46cae76d4cbdad4635b3473578bd",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -10108,7 +10132,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "3a3501fe0fed6b3fd4bcf700d1f880f41bce17b8cfb9645fdc15640b93d0b3b5",
+        "sha256": "ae15747a2f34e218690231a152b39fd5622085c58205dae80cf69c1419783bd7",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
@@ -10122,7 +10146,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -10308,7 +10332,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -10360,7 +10384,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "3a3501fe0fed6b3fd4bcf700d1f880f41bce17b8cfb9645fdc15640b93d0b3b5",
+          "sha256": "ae15747a2f34e218690231a152b39fd5622085c58205dae80cf69c1419783bd7",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
@@ -10374,7 +10398,7 @@
             },
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -10447,7 +10471,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "5a7976e7871ef98eff9536069d9f7d1467907ec16b12e4daab7db2e5f95a5818",
+        "sha256": "6cd62debb20a36cd69f9d3ee6cd27d6c30f217d12d58c4b9f78d4dffc41b0da5",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@2",
         "outputSha256": [
@@ -10497,7 +10521,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -10817,7 +10841,7 @@
           },
           {
             "path": "components/_parts/rail-utils/copy.ts",
-            "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+            "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
           },
           {
             "path": "components/_parts/rail-utils/index.ts",
@@ -10889,7 +10913,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "5a7976e7871ef98eff9536069d9f7d1467907ec16b12e4daab7db2e5f95a5818",
+          "sha256": "6cd62debb20a36cd69f9d3ee6cd27d6c30f217d12d58c4b9f78d4dffc41b0da5",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@2",
           "outputSha256": [
@@ -10939,7 +10963,7 @@
             },
             {
               "path": "components/_parts/rail-utils/copy.ts",
-              "sha256": "c9bc1359e38859ac1cf6ebb87bcb01d140bf07e2e95917124f8733ba688463cf"
+              "sha256": "1ce268902facc7873d686364e71e3bbb3f4f48359f732c7838fa6f2889b6c476"
             },
             {
               "path": "components/_parts/rail-utils/index.ts",
@@ -13823,7 +13847,7 @@
     },
     {
       "path": "components/_parts/rail-utils/copy.ts",
-      "content": "export const RAIL_COPY_REFS = {\n  \"command.title\": {\n    \"id\": \"st.vhdw8gz59s\"\n  },\n  \"command.description\": {\n    \"id\": \"st.tqaf5rvggj\"\n  },\n  \"command.search\": {\n    \"id\": \"st.er3g6ph4h3\"\n  },\n  \"sheet.close\": {\n    \"id\": \"st.9ehasbmw8z\"\n  },\n  \"sidebar.title\": {\n    \"id\": \"st.50we5a15ty\"\n  },\n  \"sidebar.description\": {\n    \"id\": \"st.etz9tsny9q\"\n  },\n  \"sidebar.toggle\": {\n    \"id\": \"st.qbaewx3e0y\"\n  }\n} as const\n"
+      "content": "export const RAIL_COPY_REFS = {\n  \"command.title\": {\n    \"id\": \"st.vhdw8gz59s\"\n  },\n  \"command.description\": {\n    \"id\": \"st.tqaf5rvggj\"\n  },\n  \"command.search\": {\n    \"id\": \"st.3avwye9tm9\"\n  },\n  \"sheet.close\": {\n    \"id\": \"st.9ehasbmw8z\"\n  },\n  \"sidebar.title\": {\n    \"id\": \"st.50we5a15ty\"\n  },\n  \"sidebar.description\": {\n    \"id\": \"st.etz9tsny9q\"\n  },\n  \"sidebar.toggle\": {\n    \"id\": \"st.qbaewx3e0y\"\n  }\n} as const\n"
     },
     {
       "path": "components/_parts/rail-utils/index.ts",

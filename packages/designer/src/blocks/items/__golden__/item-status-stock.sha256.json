@@ -1,0 +1,13 @@
+{
+  "$capture": "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05",
+  "hashes": {
+    "Faq/client": "f0bbf9178cf6f043160cdc5141196382417e827959a61da83e0944976d386af4",
+    "Faq/server": "a05d68ea58092fe30c9a830209378e40164a3f55595a31f3585dda386eff84c3",
+    "Item/plate": "e66da2a2b2ae3562138ba2591091695501ea1985324e1c48c6782dc5156a5479",
+    "Items/client": "ba66cde5a6e9b3a946425d9692841b36abf462c4ff4be15ee8eb6fe64c3e1e73",
+    "Items/client/rows/disclose": "ec7d36c2d300172e01676ef7bbe6c1c9f67837fde3a4b2943a176573f5575be4",
+    "Items/server": "340444021ac5a1f670768779630620717efea70e85508a63110fcf24529e45a2",
+    "Items/server/rows/disclose": "ec7d36c2d300172e01676ef7bbe6c1c9f67837fde3a4b2943a176573f5575be4"
+  }
+}
+

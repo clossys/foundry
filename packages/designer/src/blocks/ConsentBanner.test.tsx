@@ -9,6 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { ConsentBanner } from "./ConsentBanner.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { withoutDsAttrs } from "../catalog-core/provenance-attrs.js";
+import { stableStringify } from "../catalog-core/stable.js";
 
 function setup(overrides: Partial<Parameters<typeof ConsentBanner>[0]> = {}) {
   const onAccept = vi.fn();
@@ -383,13 +384,19 @@ function consentCardUtility(): string {
 }
 
 describe("CONSENT-1 card presentation", () => {
-  it("preserves the immutable-base banner HTML by default and by explicit opt-in", () => {
+  it("preserves the immutable-base banner HTML by default and by explicit opt-in", async () => {
+    const hashes: Record<string, string> = {};
     for (const presentation of [undefined, "banner"] as const) {
       const html = withoutDsAttrs(renderToStaticMarkup(<ConsentBanner title="Banner title" body="Banner body" acceptLabel="Accept label" rejectLabel="Reject label" onAccept={() => {}} onReject={() => {}} privacyLink={<a href="/privacy">Privacy link</a>} presentation={presentation} />))
         .replace(/\bid="[^"]+"/g, 'id="ID"').replace(/\baria-labelledby="[^"]+"/g, 'aria-labelledby="ID"');
-      // Re-pinned after the Foundry Button base and secondary edge changed (8909907f3, ad1a46c90): only the two choice buttons' classes differ.
-      expect(createHash("sha256").update(html).digest("hex")).toBe("a004cf6a1ef1fc0a87379a1a57f9d72981b0ef9a65e4fbed9eae9c2fb8de9b56");
+      hashes[presentation ?? "default"] = createHash("sha256").update(html).digest("hex");
     }
+    // Default and explicit banner stay one HTML. Re-captured by planner:R2F-05 into a generated file
+    // (`vitest run -u`), never a hand-edited hash: the two choice buttons are the selected stock Button
+    // (secondary; stock leaf routing ebd6753ac), and diffed against the 90eedc80d capture (a004cf6a…) no
+    // other byte changed. The look is on the owner CREATIVE list.
+    expect(hashes.default).toBe(hashes.banner);
+    await expect(stableStringify({ $capture: "stock Button choices (ebd6753ac); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/consent-banner.sha256.json");
   });
 
   it("keeps a named region, a visually hidden title, equal choices and a placement hook", () => {

@@ -102,7 +102,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/anatomy.tsx",
-            "sha256": "687f460f46f64902a99b5bef501d22b02e3001e039ace5f203e31d86486ffe44"
+            "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
           },
           {
             "path": "packages/designer/src/blocks/items/Item.tsx",
@@ -166,7 +166,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/static.tsx",
-            "sha256": "d1dec49e866e2c673e7d1222f9ee1af5ba7497893ea5ae78774427a8127b8431"
+            "sha256": "408c5a8ff4d0a15ec1ec2e5526160924976c63fff1cdb564c8baa3dd2adeb9b0"
           },
           {
             "path": "packages/designer/src/blocks/RecordLedger.tsx",
@@ -182,7 +182,7 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/blocks/specimen/parts.tsx",
@@ -218,7 +218,7 @@
           },
           {
             "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "b8ebd6d815a52769cd0e02ca091f4c81d81e31f9558e1df767bfcf07dcc5f2a6"
+            "sha256": "f6e3c5f3e91db9912c1c135cefb40f2049b26132220ad977bcbe78c1811309ae"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",

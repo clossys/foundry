@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState, type HTMLAttributes, type ReactNode } from "react";
+import { useId, useState, type ComponentProps, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 
 import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
 import { cx } from "../components/internal/cx.js";
@@ -9,11 +9,13 @@ import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { MenuItem, ShellMenu } from "./shell-menu.js";
 
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+type StockButton = typeof import("../components/preview-runtime/components/button/button.js").Button;
+/** Stock-bound button, plus the slot's own shape axis (shape.icon-only maps to the stock icon size). */
+const Button = componentLeaf<(props: ComponentProps<StockButton> & { readonly shape?: "text" | "icon-only" }) => ReactElement>("components.button");
 const GridList = componentLeaf<typeof import("../components/GridList.js").GridList>("components.grid-list");
-const IconButton = componentLeaf<typeof import("../components/IconButton.js").IconButton>("components.button", "IconButton");
-const Menu = componentLeaf<typeof import("../components/Menu.js").Menu>("components.menu");
+const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
 const Skeleton = componentLeaf<typeof import("../components/Skeleton.js").Skeleton>("components.skeleton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -68,24 +70,24 @@ function ResourceListActions({ item, label }: { item: ResourceListItem; label: s
   const reasonId = (action: ResourceListAction, index: number, slot: string) =>
     disabled(action) && action.disabledReason ? `${prefix}-${slot}-${index}` : undefined;
   const menuItems = (entries: readonly ResourceListAction[], slot: string) => entries.map((action, index) => (
-    <Menu.Item key={action.id} id={action.id} textValue={action.label} aria-label={action.label}
-      isDisabled={disabled(action)} isDestructive={action.isDestructive} onAction={action.onAction}
-      aria-describedby={reasonId(action, index, slot)}>
+    // The stock menu item names itself from its content; a disabled reason is read with the label.
+    <MenuItem key={action.id} id={action.id} textValue={action.label} aria-label={reasonId(action, index, slot) ? undefined : action.label}
+      isDisabled={disabled(action)} variant={action.isDestructive ? "destructive" : "default"} onAction={action.onAction}>
       {action.label}
       {reasonId(action, index, slot) && <SemanticContent as="span" id={reasonId(action, index, slot)} className="sr-only">{action.disabledReason}</SemanticContent>}
-    </Menu.Item>
+    </MenuItem>
   ));
   return <SemanticContent as="div" className="flex shrink-0 items-center gap-sm">
     <SemanticContent as="div" className="flex flex-wrap items-center gap-sm">
       {actions.slice(0, 2).map((action, index) => <SemanticContent as="span" key={action.id} className="inline-flex">
-        <Button variant="quiet" size="sm" trailingIcon={null} className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
+        <Button variant="ghost" size="sm" className="border-0 bg-transparent" isDisabled={disabled(action)} onPress={action.onAction}
           aria-describedby={reasonId(action, index, "inline")}>{action.label}</Button>
         {reasonId(action, index, "inline") && <SemanticContent as="span" id={reasonId(action, index, "inline")} className="sr-only">{action.disabledReason}</SemanticContent>}
       </SemanticContent>)}
     </SemanticContent>
-    {actions.length > 2 && <Menu trigger={<IconButton icon={ChevronDown} label={label} />}>
+    {actions.length > 2 && <ShellMenu label={label} trigger={<Button variant="ghost" shape="icon-only" aria-label={label}><Icon glyph={ChevronDown} decorative /></Button>}>
       {menuItems(actions.slice(2), "wide")}
-    </Menu>}
+    </ShellMenu>}
   </SemanticContent>;
 }
 

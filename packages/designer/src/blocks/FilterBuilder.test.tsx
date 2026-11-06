@@ -11,7 +11,8 @@ const props = (): FilterBuilderProps => ({ ...filterBuilderSample, onGroupsChang
 describe("FilterBuilder", () => {
   it("is a public blocks export rendering one labelled group per filter group with field, operator and value per condition", () => {
     render(<FilterBuilder {...props()} />);
-    expect(screen.getByRole("group", { name: "Filter records" }).tagName).toBe("FIELDSET");
+    // The selected stock Card is the section root (ebd6753ac), named by its heading; no Foundry fieldset.
+    expect(screen.getByRole("group", { name: "Filter records" })).toHaveAttribute("data-slot", "card");
     const groups = screen.getAllByRole("group", { name: /^Group \d/ });
     expect(groups).toHaveLength(2);
     expect(within(groups[0]!).getByRole("button", { name: "Status Field" })).toBeInTheDocument();

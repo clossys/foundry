@@ -11,9 +11,11 @@ interface HarnessState {
   pending: Promise<unknown>[];
   facade: boolean;
   selection?: ConsumerComponentSelection;
-  provided?: ReactModule.Context<boolean>;
+  provided?: ReactModule.Context<ExplicitSelection | undefined>;
   ambient?: ReactModule.Context<boolean>;
 }
+/** The nearest explicit provider: its selection and the client module instance that declared it. */
+interface ExplicitSelection { readonly owner: symbol; readonly selection: ConsumerComponentSelection }
 const KEY = Symbol.for("clossys.designer.vitest-harness");
 function state(): HarnessState {
   const scope = globalThis as unknown as Record<symbol, HarnessState | undefined>;
@@ -49,22 +51,29 @@ export function preloadingReact(actual: typeof ReactModule): typeof ReactModule 
 // frames and sections with (studio/marketing-component-selection) as the
 // ambient one. An explicit provider always wins, and SelectedComponentLeaf
 // used directly stays strict, so the bridge's own refusal tests still refuse.
+// Under Vitest a source tree and the built copies its `#designer-*` subpath
+// imports resolve to (SiteFrame's SkipLink, say) are two client module
+// instances with two contexts; production has one. A leaf of the other
+// instance renders the explicit provider's own selection, still strictly.
 async function markers() {
   const React = await import("react");
   const harness = state();
-  harness.provided ??= React.createContext(false);
+  harness.provided ??= React.createContext<ExplicitSelection | undefined>(undefined);
   harness.ambient ??= React.createContext(false);
   return { React, provided: harness.provided, ambient: harness.ambient };
 }
 
 export async function selectedClient(actual: ClientModule): Promise<ClientModule> {
   const { React, provided, ambient } = await markers();
+  const owner = Symbol("component-leaf client instance");
   function ConsumerComponentProvider(props: Parameters<ClientModule["ConsumerComponentProvider"]>[0]) {
-    return React.createElement(provided.Provider, { value: true }, React.createElement(actual.ConsumerComponentProvider, props));
+    return React.createElement(provided.Provider, { value: { owner, selection: props.value } }, React.createElement(actual.ConsumerComponentProvider, props));
   }
   function SelectedComponentLeaf(props: Parameters<ClientModule["SelectedComponentLeaf"]>[0]) {
-    const leaf = React.createElement(actual.SelectedComponentLeaf, props);
-    if (React.useContext(provided) || !React.useContext(ambient)) return leaf;
+    const leaf = React.createElement(actual.SelectedComponentLeaf, props), explicit = React.useContext(provided);
+    if (explicit?.owner === owner) return leaf;
+    if (explicit) return React.createElement(actual.ConsumerComponentProvider, { value: explicit.selection, children: leaf });
+    if (!React.useContext(ambient)) return leaf;
     const selection = state().selection;
     if (!selection) throw new Error("vitest harness: the ambient Studio component selection is not loaded");
     return React.createElement(actual.ConsumerComponentProvider, { value: selection, children: leaf });

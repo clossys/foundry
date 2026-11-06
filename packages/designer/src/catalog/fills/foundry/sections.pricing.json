@@ -39,11 +39,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PricingTable.tsx",
-            "sha256": "4fe3d3b5eb331ae0b696e032a777ab6ff0f11e2920e0f4f791785b6899ce0e15"
+            "sha256": "89fc202834d3f150066ee08c31457ca6bc210d42e470fc4abbb145de7de5b7c7"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

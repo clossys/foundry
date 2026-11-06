@@ -109,10 +109,13 @@ describe("stableStringify and libraryHash golden", () => {
     expect(stableStringify("top")).toBe(referenceStringify("top"));
   });
   it("pins example and completed-catalog library hashes", () => {
-    expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:1c49785731fe8224"`);
+    // Re-captured by planner:R2F-05 (`vitest run -u`, never hand-edited): the example fixture and catalog moved in the
+    // tokens->themes rename (736153e72) after this pin (33380d241); the reference hash below still agrees.
+    // example fnv1a64:1c49785731fe8224 -> facb9bcf5f390a59; completed fnv1a64:f8280f8901b7ec38 -> f5ab9f8a4be36a76, sha256 077cbbdc -> 33ffb43c.
+    expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:facb9bcf5f390a59"`);
     const completed = completedCatalogLibrary(loadCatalog(), { id: "golden-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
-    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:f8280f8901b7ec38"`);
-    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"077cbbdcee02910aabab13c8528b8cbbb3486b81c671f9645cf8eff7be533d07"`);
+    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:f5ab9f8a4be36a76"`);
+    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"33ffb43cbab1227b78df40146836d9142f1622a20c2990ffe2eaa85006da828d"`);
     expect(libraryHash(completed)).toBe(referenceLibraryHash(completed));
     expect(resolve({ catalog: loadCatalog(), library: completed }).selectionHash).toBe(libraryHash(completed));
   }, 120_000);
@@ -129,14 +132,17 @@ describe("real package-surface library golden", () => {
   let fixture: PackageSurfaceLibrary;
   beforeAll(async () => { fixture = await packageSurfaceLibrary(); }, 300_000);
   it("pins the composite, value, component and surface portion hashes", () => {
+    // Re-captured by planner:R2F-05 (`vitest run -u`): only the surface portion moved, from the rebuilt section barrels
+    // (stock-card inverse ground, hero scrim token classes, still-backdrop policy module); values and components unchanged.
+    // composite 8c20f0d1 -> 99f57293; surfaces 39c762aa -> ef442840; library sha256 cf6e28e8 -> 9d90ba33.
     const { library } = fixture;
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:8c20f0d11a2540f2f08dccdc146082653d3a0093d9486caddd24a71b48a537fd"`);
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:99f572931c2ef0b9ee026013a81eaad85c7acd71f18084e8b4be5ba46e4fd413"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:fc1a4750605f8c95"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:865bcf5fb1d919ce92d3df97e59b62086a627c7d59225c57fffce9c21131071b"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:39c762aa615e561a2f70a3f168f864c37d01a2082ea54f82a81aeef637574a69"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"cf6e28e81389c6536c1a2975e423dd29e9f633c7a590f626f2a1bc4f21f68084"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:ef442840fd12a62f28c75080c4cccb317e5e522790eb7d1905d9fb89a59d18b8"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"9d90ba333d5ecbc0d4ddca6a7a44cbc4fc1cb9bad0cee0af8cf3144e73b97313"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

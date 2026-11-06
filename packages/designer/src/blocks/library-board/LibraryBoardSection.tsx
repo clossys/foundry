@@ -23,7 +23,13 @@ import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Table = componentLeaf<typeof import("../../components/Table.js").Table>("components.table");
+type StockTable = typeof import("../../components/preview-runtime/components/table/table.js");
+const Table = componentLeaf<StockTable["Table"]>("components.table");
+const TableHeader = componentLeaf<StockTable["TableHeader"]>("components.table", "TableHeader");
+const TableHead = componentLeaf<StockTable["TableHead"]>("components.table", "TableHead");
+const TableBody = componentLeaf<StockTable["TableBody"]>("components.table", "TableBody");
+const TableRow = componentLeaf<StockTable["TableRow"]>("components.table", "TableRow");
+const TableCell = componentLeaf<StockTable["TableCell"]>("components.table", "TableCell");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /**
@@ -52,8 +58,8 @@ export function LibraryBoardSection({ records, labels, previews, workflow, onCom
   return <SemanticContent as="section" {...dsPassThrough(passthrough)} data-library-board={rows.boardId} data-board-mode="view" aria-labelledby={headingId} className={BOARD_SURFACE_CLASS}>
     <BoardHeader id={headingId} title={rows.label} />
     <Table aria-label={labels.matrix.label} className="w-max" onRowAction={reveal}>
-      <Table.Header><Table.Column id="leaf" isRowHeader>{labels.matrix.leaf}</Table.Column><Table.Column id="preview"><SemanticContent as="span" className="sr-only">{labels.stageLabel}</SemanticContent></Table.Column></Table.Header>
-      <Table.Body>{rows.items.map(row => <Table.Row key={row.id} id={row.id}><Table.Cell><LeafLabel id={row.id} label={row.label} /></Table.Cell><Table.Cell>{row.selectedSource ? cell(row.selectedPreview) : <LeafCell previewState="not-chosen" status={labels.board.notChosen} actions={<CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} />} />}</Table.Cell></Table.Row>)}</Table.Body>
+      <TableHeader><TableHead id="leaf" isRowHeader>{labels.matrix.leaf}</TableHead><TableHead id="preview"><SemanticContent as="span" className="sr-only">{labels.stageLabel}</SemanticContent></TableHead></TableHeader>
+      <TableBody>{rows.items.map(row => <TableRow key={row.id} id={row.id}><TableCell><LeafLabel id={row.id} label={row.label} /></TableCell><TableCell>{row.selectedSource ? cell(row.selectedPreview) : <LeafCell previewState="not-chosen" status={labels.board.notChosen} actions={<CandidatePromptDialog trigger={<Button variant="ghost" size="sm">{labels.board.askAgent}</Button>} data={row.prompt} labels={labels} workflow={workflow} />} />}</TableCell></TableRow>)}</TableBody>
     </Table>
   </SemanticContent>;
 }

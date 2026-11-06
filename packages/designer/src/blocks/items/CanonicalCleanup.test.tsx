@@ -84,8 +84,13 @@ describe("canonical ground and linked frame successors", () => {
         const { container } = render(<Item id="one" heading="Title" description="Body" icon={<svg data-testid="supplied-icon" />} href="/one" treatment={treatment} size="standard" ground={ground} />);
         const body = container.querySelector("[data-item]")!;
         if (treatment === "plate") {
-          expect(body).toHaveAttribute("data-variant", "plate");
-          expect(body).toHaveClass("rounded-panel", "p-lg", ground === "base" ? "bg-surface-sunken" : ground === "sunken" ? "bg-surface-raised" : "bg-surface-inverse-raised");
+          // The stock Card is the plate (E4, P0 shadcn reset); its look is on the owner CREATIVE list.
+          // Base and sunken keep the stock raised fill; inverse paints the card through token classes.
+          expect(body).toHaveAttribute("data-slot", "card");
+          expect(body).not.toHaveAttribute("variant");
+          expect(body).not.toHaveAttribute("ground");
+          expect(body).toHaveClass("rounded-(--radius-control)", ground === "inverse" ? "bg-surface-inverse-raised" : "bg-(--color-surface-raised)");
+          expect((body as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe("");
         }
 
         const link = screen.getByRole("link", { name: "Title" });

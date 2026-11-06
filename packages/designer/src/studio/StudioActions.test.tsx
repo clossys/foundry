@@ -29,7 +29,7 @@ it("launches only on activation using the latest selected context and remembers 
 it.each(["unavailable", "failed"] as const)("copies and submits a frame notice only when the configured launcher reports %s", async result => {
   const user = userEvent.setup(); const copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue();
   const { notice } = mount({ launch: () => result }); await user.click(screen.getByRole("button", { name: "Open in Claude Code" }));
-  await waitFor(() => expect(notice).toHaveBeenCalledWith({ kind: "copied", target: "Claude Code" })); expect(copy).toHaveBeenCalledTimes(1); expect(copy.mock.calls[0]![0]).toContain("Layer: tokens");
+  await waitFor(() => expect(notice).toHaveBeenCalledWith({ kind: "copied", target: "Claude Code" })); expect(copy).toHaveBeenCalledTimes(1); expect(copy.mock.calls[0]![0]).toContain("Layer: themes"); // The tokens layer is themes since 736153e72.
 });
 it("does not claim an unknown browser dispatch opened the app, and keeps explicit copy actions available", async () => {
   const user = userEvent.setup(), copy = vi.spyOn(navigator.clipboard, "writeText").mockResolvedValue(); const { notice } = mount();

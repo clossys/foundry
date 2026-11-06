@@ -47,7 +47,11 @@
           },
           {
             "path": "packages/designer/src/blocks/ResourceList.tsx",
-            "sha256": "ffecdc2257f75763dd530570de1bf9905114a50d068a6e2578d7338b1286b225"
+            "sha256": "5e6033b75019b63bffcd03744504539a3d1121ce06ba31af71d5140df97e6266"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

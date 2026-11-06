@@ -6,7 +6,7 @@ export const RAIL_COPY_REFS = {
     "id": "st.tqaf5rvggj"
   },
   "command.search": {
-    "id": "st.er3g6ph4h3"
+    "id": "st.3avwye9tm9"
   },
   "sheet.close": {
     "id": "st.9ehasbmw8z"

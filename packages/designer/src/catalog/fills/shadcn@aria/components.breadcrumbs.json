@@ -126,6 +126,24 @@
         ]
       },
       "root": "rac:Breadcrumbs",
+      "secondaryExports": [
+        {
+          "export": "BreadcrumbList",
+          "name": "BreadcrumbList"
+        },
+        {
+          "export": "BreadcrumbItem",
+          "name": "BreadcrumbItem"
+        },
+        {
+          "export": "BreadcrumbLink",
+          "name": "BreadcrumbLink"
+        },
+        {
+          "export": "BreadcrumbPage",
+          "name": "BreadcrumbPage"
+        }
+      ],
       "slot": "components.breadcrumbs",
       "source": "shadcn@aria",
       "transform": "shadcn-aria-rewrite@1"

@@ -11,6 +11,7 @@ import { checkTokenContrast } from "../tokens/contrast-gate.js";
 import { CONTRAST_PAIRS, contrastPairsForTheme } from "../tokens/contrast-pairs.js";
 import { CANONICAL_SECTION_BLOCK_REGISTRATIONS } from "../catalog/blocks.js";
 import { BLOCK_THEME_CONFORMANCE, NON_BLOCK_THEME_EXPORTS, type BlockThemeRegistration } from "./theme-conformance.js";
+import { marketingComponentSelection } from "../studio/marketing-component-selection.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
 const blocksRoot = resolve(packageRoot, "src/blocks");
@@ -88,6 +89,12 @@ function colorUtility(candidate: string): { token?: string; invalid?: string } {
   if (/^ring/.test(prefix) && /^(?:\d+|inset)$/.test(suffix)) return {};
   if (prefix === "stroke" && /^\d+$/.test(suffix)) return {};
   if (prefix === "shadow" && /^(?:xs|sm|md|lg|xl|2xl|inner)$/.test(suffix)) return {};
+  if (suffix.startsWith("(")) {
+    // Tailwind v4 variable shorthand: prefix-(--var), prefix-(color:--var), optional /opacity.
+    const variable = /^\((?:(color|length):)?(--[\w-]+)\)(?:\/\d+)?$/.exec(suffix);
+    if (variable?.[1] !== "length" && variable && variable[2]!.startsWith("--color-") && TOKENS[variable[2]!]) return { token: variable[2] };
+    if (variable?.[1] === "length" && /^(?:text|stroke|border(?:-[trblsexy])?|outline|ring(?:-offset)?)$/.test(prefix)) return {};
+  }
   if (suffix.startsWith("[")) {
     const value = suffix.slice(1, -1).replace(/^color:/, "");
     const variable = /^var\((--color-[\w-]+)\)$/.exec(value);
@@ -128,6 +135,9 @@ function sourceEvidence(file: string, source: string) {
     if (ts.isStringLiteralLike(node) || ts.isTemplateHead(node) || ts.isTemplateMiddle(node) || ts.isTemplateTail(node)) {
       // A CSS property key is technical syntax, not a utility class value.
       if (ts.isCallExpression(node.parent) && node.parent.arguments[0] === node && ts.isPropertyAccessExpression(node.parent.expression) && node.parent.expression.name.text === "setProperty" && /\.style$/.test(node.parent.expression.expression.getText(ast))) return;
+      // A CSS box keyword as the value of a box property (boxSizing: "border-box") is not a border-color utility.
+      if (/^(?:border|padding|content)-box$/.test(node.text) && ts.isPropertyAssignment(node.parent) && node.parent.initializer === node
+        && /^(?:boxSizing|backgroundClip|backgroundOrigin)$/.test(normalizeProperty(node.parent.name.getText(ast).replace(/["']/g, "")))) return;
       if (namedColor(node.text)) findings.push(`${file}: named color ${node.text}`);
       for (const candidate of node.text.split(/\s+/)) {
         const color = colorUtility(candidate);
@@ -149,6 +159,9 @@ function blockSources(directory = blocksRoot): Map<string, string> {
   const sources = new Map<string, string>();
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
+    // Test-code directories are not Block sources: the package files block never ships them, and no
+    // runtime module imports them (a Block that did would leave the owned graph and fail it).
+    if (entry.isDirectory() && /^__(?:fixtures|tests|mocks|snapshots)__$/.test(entry.name)) continue;
     if (entry.isDirectory()) for (const [file, source] of blockSources(path)) sources.set(file, source);
     else if (/\.tsx?$/.test(entry.name) && !/\.(?:test|check)\.tsx?$/.test(entry.name)) sources.set(relative(packageRoot, path), readFileSync(path, "utf8"));
   }
@@ -167,7 +180,7 @@ interface ConformanceInputs {
  * Block renders through the Foundry Toolbar (c866f93c5), so its first owned
  * class list is a plain region string rather than a cx() call.
  */
-const EXEMPT_CLASS_ANCHORS = [["Toolbar", 'className="'], ["Panel", 'className={cx("']] as const;
+const EXEMPT_CLASS_ANCHORS = [["Toolbar", 'className="']] as const;
 
 function realInputs(): ConformanceInputs {
   return {
@@ -218,6 +231,66 @@ function ownedDependency(file: string, module: string, sources: ReadonlyMap<stri
   throw new Error(`${file}: missing owned dependency ${module}`);
 }
 
+/*
+ * A Block reaches a component through componentLeaf("components.x"), resolved at
+ * render time by the consumer's selection. The graph follows that edge to the
+ * leaf the test harness actually selects (its ambient marketing selection), so a
+ * delegated foreground is read from the selected stock or Foundry source rather
+ * than assumed. A leaf outside the selection, or an unknown implementation kind,
+ * is refused; packages outside the owned Block/component graph end the edge, as a
+ * non-owned import does.
+ */
+type SelectedImpl = { kind: "source"; entry: string } | { kind: "package"; module: string; export: string };
+let selectedImpls: Readonly<Record<string, SelectedImpl>> | undefined;
+function selectedLeafSource(leaf: string, file: string, sources: ReadonlyMap<string, string>): string | undefined {
+  selectedImpls ??= Object.fromEntries(Object.entries((marketingComponentSelection().profile.components as unknown as { components: Record<string, { impl: SelectedImpl }> }).components).map(([id, chosen]) => [id, chosen.impl]));
+  const impl = selectedImpls[leaf];
+  if (!impl) throw new Error(`${file}: component leaf ${leaf} is not in the harness selection`);
+  if (impl.kind === "source") {
+    const path = posix.join("src/components/preview-runtime", impl.entry);
+    if (!sources.has(path)) throw new Error(`${file}: selected source for ${leaf} is missing: ${path}`);
+    return path;
+  }
+  if (impl.kind === "package") return impl.module === "@clossys/designer/components" ? ownedExportSource(impl.export, "src/components/index.ts", sources) : undefined;
+  throw new Error(`${file}: unsupported implementation for ${leaf}`);
+}
+
+/**
+ * The owned source that defines an imported or selected value export. Unlike the
+ * barrel's valueExports, it reads stock part files' local `export { A, B }` lists.
+ * A re-export from a package (e.g. react-aria-components) ends outside the owned graph.
+ */
+function ownedExportSource(name: string, file: string, sources: ReadonlyMap<string, string>, visited = new Set<string>()): string | undefined {
+  if (visited.has(file)) throw new Error(`export cycle for ${name}`);
+  visited.add(file);
+  const source = sources.get(file);
+  if (source === undefined) throw new Error(`missing source ${file}`);
+  const stars: string[] = [];
+  for (const node of astOf(file, source).statements) {
+    if (ts.isExportDeclaration(node)) {
+      if (node.isTypeOnly) continue;
+      const module = node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier) ? node.moduleSpecifier.text : undefined;
+      if (!node.exportClause) { if (module) stars.push(module); continue; }
+      if (!ts.isNamedExports(node.exportClause)) continue;
+      const item = node.exportClause.elements.find(element => !element.isTypeOnly && element.name.text === name);
+      if (!item) continue;
+      if (!module) return file;
+      const dependency = ownedDependency(file, module, sources);
+      return dependency ? ownedExportSource((item.propertyName ?? item.name).text, dependency, sources, visited) : undefined;
+    }
+    const modifiers = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
+    if (!modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue;
+    if (ts.isVariableStatement(node) && node.declarationList.declarations.some(declaration => ts.isIdentifier(declaration.name) && declaration.name.text === name)) return file;
+    if ((ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node) || ts.isEnumDeclaration(node)) && node.name?.text === name) return file;
+  }
+  for (const module of stars) {
+    const dependency = ownedDependency(file, module, sources);
+    if (!dependency) continue;
+    try { return ownedExportSource(name, dependency, sources, new Set(visited)); } catch { /* not exported there */ }
+  }
+  throw new Error(`${file}: no export ${name}`);
+}
+
 function sourceGraph(entry: string, sources: ReadonlyMap<string, string>): string[] {
   const visited = new Set<string>();
   function visit(file: string) {
@@ -232,6 +305,17 @@ function sourceGraph(entry: string, sources: ReadonlyMap<string, string>): strin
         const clause = node.importClause;
         if (clause?.isTypeOnly) continue;
         if (clause && !clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings) && clause.namedBindings.elements.every(item => item.isTypeOnly)) continue;
+        // Named value imports reach only the sources that define those names, so a
+        // part importing one helper from a barrel does not inherit the whole barrel.
+        if (clause && !clause.name && clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
+          const barrel = ownedDependency(file, node.moduleSpecifier.text, sources);
+          if (barrel) for (const item of clause.namedBindings.elements) {
+            if (item.isTypeOnly) continue;
+            const defining = ownedExportSource((item.propertyName ?? item.name).text, barrel, sources);
+            if (defining) visit(defining);
+          }
+          continue;
+        }
         module = node.moduleSpecifier.text;
       }
       if (ts.isExportDeclaration(node) && !node.isTypeOnly && node.moduleSpecifier && ts.isStringLiteralLike(node.moduleSpecifier)) {
@@ -242,6 +326,19 @@ function sourceGraph(entry: string, sources: ReadonlyMap<string, string>): strin
         const dependency = ownedDependency(file, module, sources);
         if (dependency) visit(dependency);
       }
+    }
+    const leaves = new Set<string>();
+    (function findLeaves(node: ts.Node) {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "componentLeaf") {
+        const leaf = node.arguments[0];
+        if (!leaf || !ts.isStringLiteralLike(leaf)) throw new Error(`${file}: componentLeaf needs a literal leaf id`);
+        leaves.add(leaf.text);
+      }
+      ts.forEachChild(node, findLeaves);
+    })(ast);
+    for (const leaf of leaves) {
+      const dependency = selectedLeafSource(leaf, file, sources);
+      if (dependency) visit(dependency);
     }
   }
   visit(entry);
@@ -275,9 +372,10 @@ function conformanceFindings(input: ConformanceInputs): string[] {
   for (const [name, reason] of Object.entries(NON_BLOCK_THEME_EXPORTS)) if (!reason.trim() || registered.includes(name)) findings.push(`invalid non-Block classification ${name}`);
 
   const exemptions = input.registrations.filter(entry => "exemptionReason" in entry);
-  if (exemptions.length > 2) findings.push("Block exemption count grew above 2");
+  // Panel left the list when the stock Card began painting its ink (E4); the list only shrinks.
+  if (exemptions.length > 1) findings.push("Block exemption count grew above 1");
   for (const entry of exemptions) {
-    if (!["Panel", "Toolbar"].includes(entry.exportName)) findings.push(`new Block exemption ${entry.exportName}`);
+    if (!["Toolbar"].includes(entry.exportName)) findings.push(`new Block exemption ${entry.exportName}`);
     if (!entry.exemptionReason?.trim()) findings.push(`exemption without reason ${entry.exportName}`);
     if (entry.contrastPairs.length) findings.push(`stale exemption with contrast coverage ${entry.exportName}`);
   }
@@ -346,6 +444,15 @@ function conformanceFindings(input: ConformanceInputs): string[] {
 }
 
 describe("Block theme conformance", () => {
+  it("scans every shipped Block source and no test-code directory", () => {
+    const files = [...blockSources().keys()];
+    expect(files).toContain("src/blocks/Hero.tsx");
+    expect(files).toContain("src/blocks/hero/StillBackdrop.tsx");
+    expect(files.filter(file => /\/__(?:fixtures|tests|mocks|snapshots)__\//.test(file))).toEqual([]);
+    const manifest = JSON.parse(readFileSync(resolve(packageRoot, "package.json"), "utf8")) as { files: string[] };
+    for (const directory of ["__fixtures__", "__tests__", "__mocks__", "__snapshots__"]) expect(manifest.files).toContain(`!src/**/${directory}/**`);
+  });
+
   it("every Block source uses token colors without inline color", () => {
     const findings = [...blockSources()].flatMap(([file, source]) => sourceEvidence(file, source).findings);
     expect(findings).toEqual([]);
@@ -391,7 +498,7 @@ describe("Block theme conformance", () => {
     for (const [name, dependency] of [
       ["Items", "src/blocks/items/render.tsx"], ["Specimen", "src/blocks/specimen/parts.tsx"],
       ["Tree", "src/blocks/tree/policies.ts"], ["ResizablePane", "src/components/ResizeHandle.tsx"],
-      ["Panel", "src/components/Card.tsx"],
+      ["Panel", "src/components/preview-runtime/components/card/card.tsx"],
     ]) {
       const entry = input.registrations.find(item => item.exportName === name)!;
       expect(sourceGraph(entry.source, input.sources), name).toContain(dependency);
@@ -406,6 +513,9 @@ describe("Block theme conformance", () => {
     for (const literal of ["red", "rebeccapurple", "Blue"]) expect(sourceEvidence("Example.tsx", `const paint = "${literal}";`).findings).toContain(`Example.tsx: named color ${literal}`);
     for (const utility of ["border-t-red", "bg-gray-500", "text-[#fff]", "[&_p]:text-rebeccapurple", "bg-[rgb(1,2,3)]"]) expect(sourceEvidence("Example.tsx", `const classes = "${utility}";`).findings.some(item => item.includes("color utility has no token"))).toBe(true);
     expect(sourceEvidence("Example.tsx", 'const paint = { color: "var(--color-ink-primary, currentColor)" };').findings).toContain("Example.tsx: inline color property color");
+    expect(sourceEvidence("Example.tsx", 'const box = { boxSizing: "border-box", "background-clip": "padding-box" };').findings).toEqual([]);
+    expect(sourceEvidence("Example.tsx", 'const classes = "border-box";').findings).toContain("Example.tsx: color utility has no token border-box");
+    expect(sourceEvidence("Example.tsx", 'const paint = { borderColor: "border-box" };').findings).toContain("Example.tsx: color utility has no token border-box");
   });
 
   it.each([
@@ -601,11 +711,11 @@ describe("Block theme conformance", () => {
 
   it("rejects an exemption without a reason and any growth or replacement", () => {
     const input = realInputs();
-    input.registrations = input.registrations.map(entry => entry.exportName === "Panel" ? { ...entry, exemptionReason: " " } : entry);
-    expect(conformanceFindings(input)).toContain("exemption without reason Panel");
+    input.registrations = input.registrations.map(entry => entry.exportName === "Toolbar" ? { ...entry, exemptionReason: " " } : entry);
+    expect(conformanceFindings(input)).toContain("exemption without reason Toolbar");
     input.registrations = input.registrations.map(entry => entry.exportName === "PageHeader" ? { ...entry, contrastPairs: [], exemptionReason: "Unjustified replacement" } : entry);
     const findings = conformanceFindings(input);
-    expect(findings).toContain("Block exemption count grew above 2");
+    expect(findings).toContain("Block exemption count grew above 1");
     expect(findings).toContain("new Block exemption PageHeader");
   });
 });

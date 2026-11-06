@@ -7,10 +7,11 @@ import { componentDescriptorHash } from "../catalog-core/resolve-components.js";
 import profileData from "./default-component-preview-profile.json" with { type: "json" };
 
 const profile = () => ({ selectionHash: profileData.selectionHash, components: structuredClone(profileData), values: { members: Object.fromEntries(Object.entries(glyphs).map(([slot, value]) => [slot, { slot, value: { light: value } }])) } }) as unknown as CompositeResolved;
-it("renders all 59 selected default component leaves with zero unavailable previews", () => {
+// 59 -> 67: ab36457b2 adopts the eight composed defaults (command, dropdown-menu, empty, item, rich-text, scroll-area, sheet, sidebar).
+it("renders all 67 selected default component leaves with zero unavailable previews", () => {
   const selected = profile();
   const leaves = Object.keys(selected.components.components);
-  expect(leaves).toHaveLength(59);
+  expect(leaves).toHaveLength(67);
   const failures: Record<string,string> = {};
   for (const leaf of leaves) {
     const node = defaultComponentPreviews.preview(leaf, selected);

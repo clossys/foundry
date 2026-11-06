@@ -246,7 +246,9 @@ describe("PeopleGrid measured in Chromium", () => {
     window.all = () => { const active = document.activeElement; const section = active.closest("section"); return { hoverMedia: matchMedia("(hover: hover)").matches,
       avatar: cards("avatar"), photo: cards("photo"), roomy: cards("roomy"), active: { section: section?.id ?? null, index: section ? [...section.querySelectorAll("a")].indexOf(active) : -1 } }; };
   `;
-  const page = `<!doctype html><meta charset="utf-8"><style>${css}body{margin:0}</style>${renderToStaticMarkup(<>
+  // Rendered in beforeAll, not while the suite is collected: the setup file loads the
+  // ambient component selection before hooks run, and a collection-time render precedes it.
+  const pageHtml = () => `<!doctype html><meta charset="utf-8"><style>${css}body{margin:0}</style>${renderToStaticMarkup(<>
     <section id="avatar"><PeopleGrid people={linked(4)} /></section>
     <section id="photo"><PeopleGrid people={linked(2)} media="photo" columns={2} /></section>
     <section id="roomy" style={{ "--ui-layout-tap-target": "96px" } as CSSProperties}><PeopleGrid people={linked(2)} /></section>
@@ -254,6 +256,7 @@ describe("PeopleGrid measured in Chromium", () => {
   let wide: Record<string, any>;
   let phone: Record<string, any>;
   beforeAll(() => {
+    const page = pageHtml();
     wide = runInChromium(page, [
       { viewport: 1280 },
       { eval: "all()", as: "rest" },

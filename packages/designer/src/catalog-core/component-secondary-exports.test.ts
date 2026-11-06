@@ -140,7 +140,9 @@ describe("SYNTHETIC authenticated leaf secondary exports; no real runtime claim"
       return () => componentSecondaryExports(input.candidate, [input.file]);
     };
     expect(proof('import * as React from "react"; function ButtonTrigger(props: React.ComponentProps<"div">) { return <div {...props}/>; } export { ButtonTrigger };')()).toEqual([{ name: "PublicPart", export: "ButtonTrigger" }]);
-    for (const source of ['import * as ButtonTrigger from "other"; export { ButtonTrigger };', 'import * as React from "react"; function Local() {} export { Local as ButtonTrigger };', 'import * React from "react"; function ButtonTrigger() {} export { ButtonTrigger };']) expect(proof(source)).toThrow(/secondary/);
+    // An exported namespace binding is refused by the source reader itself (escape), before any secondary proof is attempted.
+    expect(proof('import * as ButtonTrigger from "other"; export { ButtonTrigger };')).toThrow(/^components: unsupported namespace escape or access$/);
+    for (const source of ['import * as React from "react"; function Local() {} export { Local as ButtonTrigger };', 'import * React from "react"; function ButtonTrigger() {} export { ButtonTrigger };']) expect(proof(source)).toThrow(/secondary/);
   });
   it("G1-2 reads the normalized Select function grammar without adopting or measuring it", () => {
     const golden = JSON.parse(readFileSync(new URL("../importers/__fixtures__/shadcn-aria/select.golden.json", import.meta.url), "utf8")) as { files: { path: string; content: string }[] };

@@ -10,6 +10,7 @@ import { Items as ServerItems } from "./Items.server.js";
 import type { ItemData, ItemsProps } from "./types.js";
 import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
 import { TOKENS } from "../../tokens/tokens.js";
+import { stableStringify } from "../../catalog-core/stable.js";
 
 function IdSlot({ label }: { label: string }) {
   const id = useId();
@@ -35,14 +36,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "8aefa1010047e43649ceb65734ef84f7d24c9b72a1752863389b684392aa284b"
   ],
   [
-    "client:false:stacked:3:base:plate:ends",
-    "08a83abf9de138b6561e4b673c6b34d7a4a2fbd4693266f314513162ab6a4bd8"
-  ],
-  [
-    "client:false:stacked:3:base:plate:continues",
-    "4e75328919c25bb43839a204c0f30d4d230145837a826b30e20d23e0f54175c1"
-  ],
-  [
     "client:false:stacked:3:sunken:plain:ends",
     "88d53e2be8f4e85e6d6d0dcad72ba7bfb4deb902d5f91ba6a1e77cbf3da2bec8"
   ],
@@ -57,14 +50,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:stacked:3:sunken:rule:continues",
     "8aefa1010047e43649ceb65734ef84f7d24c9b72a1752863389b684392aa284b"
-  ],
-  [
-    "client:false:stacked:3:sunken:plate:ends",
-    "3886e29ae592672ee10d0277534d4b7145f882136e927557c0686eb0ac77e966"
-  ],
-  [
-    "client:false:stacked:3:sunken:plate:continues",
-    "c2587230f8fa442f433afee95a255d65a2da86d5be9c22e0d4722a09344b4d40"
   ],
   [
     "client:false:stacked:3:inverse:plain:ends",
@@ -83,14 +68,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "acec79b68b5fe080e65b4d419f2954d42d8373690dc0ef5c41d8608e74e795f3"
   ],
   [
-    "client:false:stacked:3:inverse:plate:ends",
-    "202c1f736bf94ac1c56fcc1fd9eedb475701fe6e129e6f1b0921ad576442900c"
-  ],
-  [
-    "client:false:stacked:3:inverse:plate:continues",
-    "f4c32d6e6657b26d2ea64b64a1dd83482a45c96ba23eb8f5d3109173e433af95"
-  ],
-  [
     "client:false:stacked:4:base:plain:ends",
     "e2ebf2b2dd2ea6bbc78f69b10b10b44a80a675bca12e2bfe4e6926eff845c15b"
   ],
@@ -105,14 +82,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:stacked:4:base:rule:continues",
     "96768aa8957ebe4f9031e7c57f3801d3276d04833cf3d384005a35eaff031edf"
-  ],
-  [
-    "client:false:stacked:4:base:plate:ends",
-    "d22115334f902aed4d8fd0a51f9341bb11fdb5eaabef1d1986fbabfc938be2a9"
-  ],
-  [
-    "client:false:stacked:4:base:plate:continues",
-    "b76ff208a0eb62ac14cd3706728729a65d1bad4a3c93fab617ce23ca8b3f4f34"
   ],
   [
     "client:false:stacked:4:sunken:plain:ends",
@@ -131,14 +100,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "96768aa8957ebe4f9031e7c57f3801d3276d04833cf3d384005a35eaff031edf"
   ],
   [
-    "client:false:stacked:4:sunken:plate:ends",
-    "10e6dafcf080ec35cebab7990e4b1ce2b634a454a9f53cc536e9c2210668245c"
-  ],
-  [
-    "client:false:stacked:4:sunken:plate:continues",
-    "6502c414aa023eae1a8bffe71a10e0bae84d98093bedb873bb7d84f476e114b0"
-  ],
-  [
     "client:false:stacked:4:inverse:plain:ends",
     "521ee4b5ae502f6d0070bbc66409261191fbba221f8beac96af3b47f18f8f18b"
   ],
@@ -153,14 +114,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:stacked:4:inverse:rule:continues",
     "32f0ea282df611c18b581c94c3237cc0e27fc0624a6effb3760c675c15d71bb1"
-  ],
-  [
-    "client:false:stacked:4:inverse:plate:ends",
-    "f1798dbb546319b38b7317f973fdfb9a81c02a4cb5346fedf0a4b5d21c829195"
-  ],
-  [
-    "client:false:stacked:4:inverse:plate:continues",
-    "5063dd50a27919612d922f2808352e0258e09f2e0ffbf61e92dd8115d5261fc3"
   ],
   [
     "client:false:stacked:5:base:plain:ends",
@@ -179,14 +132,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "6c10016f30492886bad78a067839ff48ebd8146044ee5a8127a86a17ba93d777"
   ],
   [
-    "client:false:stacked:5:base:plate:ends",
-    "4cd606c66cc5046019201cc35757284f5cf50cbcf100918834b632f076c135bd"
-  ],
-  [
-    "client:false:stacked:5:base:plate:continues",
-    "88e6bb4b8a9ae55a3d04bcf459f25c72f3c87a591677216e10cd80c8b230f771"
-  ],
-  [
     "client:false:stacked:5:sunken:plain:ends",
     "c230d70d26b6b353d9deb8ed6d0825b6f9bb32770557306789adbd4595d192e7"
   ],
@@ -201,14 +146,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:stacked:5:sunken:rule:continues",
     "6c10016f30492886bad78a067839ff48ebd8146044ee5a8127a86a17ba93d777"
-  ],
-  [
-    "client:false:stacked:5:sunken:plate:ends",
-    "d336c25325cec06e5f389483c24926717af2c40f4e9f5dcdc4a0a786131165d6"
-  ],
-  [
-    "client:false:stacked:5:sunken:plate:continues",
-    "c2e597ef1b6a2812f9c02ca6d3acb6f72fb480df2419892cb2b5dbf83b4c88a9"
   ],
   [
     "client:false:stacked:5:inverse:plain:ends",
@@ -227,14 +164,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "5cc684b0b335ace10198c8d4e98b7903b943a4a52ed6e9c8a250f4245a4340b4"
   ],
   [
-    "client:false:stacked:5:inverse:plate:ends",
-    "9497ca2524e2c6acaa7183f3e154576c2b31b802f9e1c85ae4750173a1081fe0"
-  ],
-  [
-    "client:false:stacked:5:inverse:plate:continues",
-    "485e710008c1bf65100055ec5eb663d573020e2827b5d51bd5a6eb51fcc3cef9"
-  ],
-  [
     "client:false:columns2:3:base:plain:ends",
     "32e2fc6524946588b610e7881bdbbff1b7a1a5a2964a0adf5a537cb30bf1141e"
   ],
@@ -249,14 +178,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns2:3:base:rule:continues",
     "1558f366b03ed3b744bec735fdccbc04b744a96c7d7db97c06eaead7cf253cf7"
-  ],
-  [
-    "client:false:columns2:3:base:plate:ends",
-    "499a849c5820644e8ad4435a41851d52ac9c9da72cbead59323363116dfb70f1"
-  ],
-  [
-    "client:false:columns2:3:base:plate:continues",
-    "fa0eebfd8aed6e6f10c0dce80b555c1e3bbbf195fc41d7aabdb9b16ef8abdaff"
   ],
   [
     "client:false:columns2:3:sunken:plain:ends",
@@ -275,14 +196,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "1558f366b03ed3b744bec735fdccbc04b744a96c7d7db97c06eaead7cf253cf7"
   ],
   [
-    "client:false:columns2:3:sunken:plate:ends",
-    "654b1bf6a7ff710e294a7bbefda6d92ce8b1eb72833bcd577add7f2d85038a68"
-  ],
-  [
-    "client:false:columns2:3:sunken:plate:continues",
-    "d3ce8f6c7c85f575adfa2e3161b13adc2974a9504fe3ad3a550c59e95ffb455c"
-  ],
-  [
     "client:false:columns2:3:inverse:plain:ends",
     "670002f22fe9d8354943c368bfa824b4f90ec69db1f8ce712166bb26311c2294"
   ],
@@ -297,14 +210,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns2:3:inverse:rule:continues",
     "a0059943c888dac4d480fdd7df242fc420f6c1f44698f5281ae996f49458dc24"
-  ],
-  [
-    "client:false:columns2:3:inverse:plate:ends",
-    "e430d182cfea9b34e1598f4400793541ad1d92eab51356da5dca71bb3d5f1f71"
-  ],
-  [
-    "client:false:columns2:3:inverse:plate:continues",
-    "cc5c65a72842f06bdb22a47c4951f3ffa6a27940e722a67d762f77fd3241fe4c"
   ],
   [
     "client:false:columns2:4:base:plain:ends",
@@ -323,14 +228,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "7fbf6e46b2f725875bc6020b1e0343c089b289b13e5c3a0834fb12448b1a39ec"
   ],
   [
-    "client:false:columns2:4:base:plate:ends",
-    "0892c68e31b805ba56f175b25b576953ea241a302fa1f5a57d808dcc7c61736f"
-  ],
-  [
-    "client:false:columns2:4:base:plate:continues",
-    "4dcb5544b5480e59ff0ac331b482e95c39aad4cf87cb9bc5695ab52af3e3e092"
-  ],
-  [
     "client:false:columns2:4:sunken:plain:ends",
     "a505d1fa2f5488b8594ae51fc2f6479499ce0702f4c78316136c96002e531a61"
   ],
@@ -345,14 +242,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns2:4:sunken:rule:continues",
     "7fbf6e46b2f725875bc6020b1e0343c089b289b13e5c3a0834fb12448b1a39ec"
-  ],
-  [
-    "client:false:columns2:4:sunken:plate:ends",
-    "9a6141487816c57f6b779e317456940e1bad0b399fd24d3dac03f2b4ae7de44a"
-  ],
-  [
-    "client:false:columns2:4:sunken:plate:continues",
-    "3dbd8b9fa13b144e63413c72dd6126b733ca5a5a71114852fb8da6f5328d91b1"
   ],
   [
     "client:false:columns2:4:inverse:plain:ends",
@@ -371,14 +260,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "432adba4c472b86905d236b28d796496f47bb53bffaee41bc988f687659d8050"
   ],
   [
-    "client:false:columns2:4:inverse:plate:ends",
-    "4943428e9498639e84f695535d44e74aec82ec3050669ab49d61b3bb79ecc64b"
-  ],
-  [
-    "client:false:columns2:4:inverse:plate:continues",
-    "97f34789e5c75d53de7dd30dd057a0650e01cb2e13b433d839fe4604c50d908a"
-  ],
-  [
     "client:false:columns2:5:base:plain:ends",
     "6cc77d7ca9893a38888ba0db856384d75876f4867ec0474b82f8feb1d59cc685"
   ],
@@ -393,14 +274,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns2:5:base:rule:continues",
     "9af72a5a3e39bdce5eb07d64df9eafa3702920b24d5b4bb2bf84156af479d7fc"
-  ],
-  [
-    "client:false:columns2:5:base:plate:ends",
-    "08db3e75d3863d6324bff029d1838bfa8cd496e35487d6768036c3d47d00fecf"
-  ],
-  [
-    "client:false:columns2:5:base:plate:continues",
-    "06a7acdf245cc102fe27ab5766bd078a323fc36c3beebdef8b7abe2a46d84ba1"
   ],
   [
     "client:false:columns2:5:sunken:plain:ends",
@@ -419,14 +292,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "9af72a5a3e39bdce5eb07d64df9eafa3702920b24d5b4bb2bf84156af479d7fc"
   ],
   [
-    "client:false:columns2:5:sunken:plate:ends",
-    "62860adc8edd36dbe72cc940f250ef776a024d73330ac2d6d6474c1392eab554"
-  ],
-  [
-    "client:false:columns2:5:sunken:plate:continues",
-    "6d7abcee8e5bc92836fc4e362adee20df88270ca87fd14c6178b4b54416c3060"
-  ],
-  [
     "client:false:columns2:5:inverse:plain:ends",
     "4d3d0716186a326aeed5c124b919af596b60188bc483dbbd0fce4d05eee2e859"
   ],
@@ -441,14 +306,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns2:5:inverse:rule:continues",
     "2fcb5717eda30f8d01c9b876024a43f20354318d2d06c3a035cc21193558af2e"
-  ],
-  [
-    "client:false:columns2:5:inverse:plate:ends",
-    "0d9130da6593ac87df3070dcdcabddf7e4c6565cbfd870ef5a40a2298aa43853"
-  ],
-  [
-    "client:false:columns2:5:inverse:plate:continues",
-    "e99c63e10576ee120a9fbc870800a0597402d2adf7b800c3fcc9f2f99cd3d386"
   ],
   [
     "client:false:columns3:3:base:plain:ends",
@@ -467,14 +324,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "5bfd3c00437992d00296a04322b99e068d045feab8ff94e4db81bbcdc5339c4a"
   ],
   [
-    "client:false:columns3:3:base:plate:ends",
-    "3535037dcc70cc6e4f7fb75e7ab536c02f4f8625286345db1626986951ceba35"
-  ],
-  [
-    "client:false:columns3:3:base:plate:continues",
-    "00ae0c31371dd55e0c3b22fc58d4359754fb45eb3e40401dc8a9d01e7fce9bed"
-  ],
-  [
     "client:false:columns3:3:sunken:plain:ends",
     "b9fe3fa783fe497f613ca193c3155cc0e25bd6cf8a1cbcde49a5d9385523fc86"
   ],
@@ -489,14 +338,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns3:3:sunken:rule:continues",
     "5bfd3c00437992d00296a04322b99e068d045feab8ff94e4db81bbcdc5339c4a"
-  ],
-  [
-    "client:false:columns3:3:sunken:plate:ends",
-    "d92c8686fadbb05e6338d4e4a10429acb90bf865b2a0b119c8a28b4cc5667e49"
-  ],
-  [
-    "client:false:columns3:3:sunken:plate:continues",
-    "d89e7ee5041daba411b9e76d35a05f0e1560f92a751442168c74594ef228d036"
   ],
   [
     "client:false:columns3:3:inverse:plain:ends",
@@ -515,14 +356,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "1c440b747e2d6c88800d6a208370496d42d389193b04bd422bc4827757559d9a"
   ],
   [
-    "client:false:columns3:3:inverse:plate:ends",
-    "5c176262c2a7aaf5e7fc987826a2fe534e3a5b1415bfd77ae463de7d3bb33f91"
-  ],
-  [
-    "client:false:columns3:3:inverse:plate:continues",
-    "9d669c467d5b7804428bda5d985b49eb94dd974b64ebf3f79fe3d44fab6a42e3"
-  ],
-  [
     "client:false:columns3:4:base:plain:ends",
     "dd5edf2d43a82f115a7fdb8ed797416952bf594bbcc09796e0fa80498bd61cbd"
   ],
@@ -537,14 +370,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns3:4:base:rule:continues",
     "8299a0430b7d9b78dd35d7d22d1c1fa56c0cc77433e662633b8b19f82c6bec18"
-  ],
-  [
-    "client:false:columns3:4:base:plate:ends",
-    "59c02845ef7c97c8797687cbb8d9fa6561589980a24ecac2e6c980bee5d17970"
-  ],
-  [
-    "client:false:columns3:4:base:plate:continues",
-    "2d807ea56b22f008bb2d9b7b5c9c0355ef1202a80a3fff09faf2b767594f8c5c"
   ],
   [
     "client:false:columns3:4:sunken:plain:ends",
@@ -563,14 +388,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "8299a0430b7d9b78dd35d7d22d1c1fa56c0cc77433e662633b8b19f82c6bec18"
   ],
   [
-    "client:false:columns3:4:sunken:plate:ends",
-    "d8dc3367611cb64b2eb41943a34c3723e89660af38a30613a5881de198cd518f"
-  ],
-  [
-    "client:false:columns3:4:sunken:plate:continues",
-    "39581f3b4b3eca63c883904dd6ed3194186ada8fec0d1e6b7cbf8f38906f7ade"
-  ],
-  [
     "client:false:columns3:4:inverse:plain:ends",
     "033af920ebc4e6bf8e2ba4860b14aeadf384abc33978c611faeb0748044d3ed3"
   ],
@@ -585,14 +402,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns3:4:inverse:rule:continues",
     "4904e2f6f74eb0b7f7a283352f5d8dacda717cd8d173b81b1f067d9280951901"
-  ],
-  [
-    "client:false:columns3:4:inverse:plate:ends",
-    "157654d29db613f043d31e7c017b3e21490b783b1ca7c133d82b2e9491c4e51d"
-  ],
-  [
-    "client:false:columns3:4:inverse:plate:continues",
-    "feed542600c16f0400c9fda86361fc4fca994245477e022c0ac2c0c26adf12f1"
   ],
   [
     "client:false:columns3:5:base:plain:ends",
@@ -611,14 +420,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "1b659165328471b30aef5d01f623fbda52cd0d572a56368cd94b0f74e2499bcd"
   ],
   [
-    "client:false:columns3:5:base:plate:ends",
-    "76a121008e41f168f17cdd65caf60a3726897039ff7a5f1531d49ec6df54673f"
-  ],
-  [
-    "client:false:columns3:5:base:plate:continues",
-    "ab2708a6e6714b8ffcb6a921cde67f685f5b998369f98c7fcc9de73c6ab897ad"
-  ],
-  [
     "client:false:columns3:5:sunken:plain:ends",
     "1cc1f42f2a4a2336251f57797791cd7ffc4b253a5b6408bd98ffaaa985a4060b"
   ],
@@ -633,14 +434,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:columns3:5:sunken:rule:continues",
     "1b659165328471b30aef5d01f623fbda52cd0d572a56368cd94b0f74e2499bcd"
-  ],
-  [
-    "client:false:columns3:5:sunken:plate:ends",
-    "a41256e30f6de94ad9fae2b9ebe28da0f7a421f755e05921bb2f2e4e195396db"
-  ],
-  [
-    "client:false:columns3:5:sunken:plate:continues",
-    "f9e43675bf015e7cf1f53a8b673ea6d5cf9da81ad92221cac56334409c71ca34"
   ],
   [
     "client:false:columns3:5:inverse:plain:ends",
@@ -659,14 +452,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "cf05cb469c1eb08d2a7513300ce018be0ea8c693561ed666f2b65fa153b2ceff"
   ],
   [
-    "client:false:columns3:5:inverse:plate:ends",
-    "f339a61f98340bde035937bd42d1186b2634c564ba926d95ba0d416129ca29af"
-  ],
-  [
-    "client:false:columns3:5:inverse:plate:continues",
-    "33215eb16feab4aa868bf50b8dd7ca53e70eb0efb770395334fef67623a545a2"
-  ],
-  [
     "client:true:stacked:3:base:plain:ends",
     "f80f3a106a224185611757c5b20982108ac067144eaf855ac8da7e5004733908"
   ],
@@ -681,14 +466,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:stacked:3:base:rule:continues",
     "9505fd1fc446dbbdce30b428000e594b5a0e2f7de9b6e291bf30fc78f89366fa"
-  ],
-  [
-    "client:true:stacked:3:base:plate:ends",
-    "85877c29a4ee88003c535dd2aa49bd3ec54d3dc8be1809f2b61f2f85fdb3d35b"
-  ],
-  [
-    "client:true:stacked:3:base:plate:continues",
-    "5b2ea8f2726d902389551e8056ae8bf16da3706803160181f9f70c5d89e50396"
   ],
   [
     "client:true:stacked:3:sunken:plain:ends",
@@ -707,14 +484,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "9505fd1fc446dbbdce30b428000e594b5a0e2f7de9b6e291bf30fc78f89366fa"
   ],
   [
-    "client:true:stacked:3:sunken:plate:ends",
-    "bc0226bfa245181601ca3a6de804bbbe38642768bb0720d9c23612516f933ba6"
-  ],
-  [
-    "client:true:stacked:3:sunken:plate:continues",
-    "5dc8206e1b2857780bca99bee2fd6eddad0b9caf2c955eac3af1822242be99d1"
-  ],
-  [
     "client:true:stacked:3:inverse:plain:ends",
     "b7aaf49df7809f0b45b383bc7804f1e4e3125f22c3ab26cf7d3024f1fc3a10e2"
   ],
@@ -729,14 +498,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:stacked:3:inverse:rule:continues",
     "8a5865e2763d2ef6c4f1fdda5bb0616bd6bfc2f83f0397c6a3d62b5da78645d0"
-  ],
-  [
-    "client:true:stacked:3:inverse:plate:ends",
-    "9d9296f299a842c99d6059854bf1e300ba30d3f64997a2017d71117763086462"
-  ],
-  [
-    "client:true:stacked:3:inverse:plate:continues",
-    "46e54129de4a2a40da4e064cc5729cea69da396d1f0f5af1302d8ecacfc73b42"
   ],
   [
     "client:true:stacked:4:base:plain:ends",
@@ -755,14 +516,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "cdcb29ef74980f25a18def8f0490b8704c2f4831ace58df1a18fa032d7b50993"
   ],
   [
-    "client:true:stacked:4:base:plate:ends",
-    "e4ce27d334eda87283ba49a1b3de695013358c103fb81b9ac5b77188062aeb54"
-  ],
-  [
-    "client:true:stacked:4:base:plate:continues",
-    "9795210ba00f236215d5f617fe42c9aeb4a7512862713921508c1722a42409eb"
-  ],
-  [
     "client:true:stacked:4:sunken:plain:ends",
     "3a7b05dd39f98e17964a2a6c6dfa371337e74576c4a43546e68a73e4f2dcdc10"
   ],
@@ -777,14 +530,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:stacked:4:sunken:rule:continues",
     "cdcb29ef74980f25a18def8f0490b8704c2f4831ace58df1a18fa032d7b50993"
-  ],
-  [
-    "client:true:stacked:4:sunken:plate:ends",
-    "f1a42165a9668865c0d9f474133de621b5c6cb8fb0acf3fafafdf6e2d22dbdb1"
-  ],
-  [
-    "client:true:stacked:4:sunken:plate:continues",
-    "8de666c6483340d5e6a18678bf93e621b75bf316c9e636584e015e3c361eda40"
   ],
   [
     "client:true:stacked:4:inverse:plain:ends",
@@ -803,14 +548,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "d457c0cd888288f1852cc2aeb3dc814f231593514eae246cc8b902f6b00f9126"
   ],
   [
-    "client:true:stacked:4:inverse:plate:ends",
-    "f897eb22c930a33554f1f2b03f0a8b366ff385b557475163925ec64c09b65a28"
-  ],
-  [
-    "client:true:stacked:4:inverse:plate:continues",
-    "449f56b2b1b84194e8ce9e7670d24a5f1997f308fe6470509feb5cb3c89be6ae"
-  ],
-  [
     "client:true:stacked:5:base:plain:ends",
     "b4b612621622a1288cac969597082862a5d979b701908d79de49fd466e9c359a"
   ],
@@ -825,14 +562,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:stacked:5:base:rule:continues",
     "b37327c92eb3d2390a5201d8c6d1d5a6d0a604b32c73584fa591e2dd1b7c715f"
-  ],
-  [
-    "client:true:stacked:5:base:plate:ends",
-    "2069496d4b0a35088ed0125d79f55faac1ce1ab6dbaa97945341c74ca4042f9e"
-  ],
-  [
-    "client:true:stacked:5:base:plate:continues",
-    "1d15762220b15a25b97708dba06b17fe62f18dc50e8313371d3889d16b3b3541"
   ],
   [
     "client:true:stacked:5:sunken:plain:ends",
@@ -851,14 +580,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b37327c92eb3d2390a5201d8c6d1d5a6d0a604b32c73584fa591e2dd1b7c715f"
   ],
   [
-    "client:true:stacked:5:sunken:plate:ends",
-    "03092dd0bf0ba4381473791b8610aa401e2cea0a263d434cf6cd59f0e78fcb00"
-  ],
-  [
-    "client:true:stacked:5:sunken:plate:continues",
-    "509776ab90a15c8e09bdf52ea16285e525af21fd6055e1dd037c2619f2c175ad"
-  ],
-  [
     "client:true:stacked:5:inverse:plain:ends",
     "ab406ce9c278cb90170dca7d800db09d2fde1b968ce1830e0f9925be2566d20d"
   ],
@@ -873,14 +594,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:stacked:5:inverse:rule:continues",
     "7150e5c1ff5760670b14f22e3baac4c4134903598ff748f7ca4cf9dc2530a02a"
-  ],
-  [
-    "client:true:stacked:5:inverse:plate:ends",
-    "76e0885529b747900a4ecbf8fea00da5345591766e761dab26c16fa9b375698d"
-  ],
-  [
-    "client:true:stacked:5:inverse:plate:continues",
-    "b62131df0b2f80bd448471cef72fed8bcfc985f7f161b87ca4fbbf5d8d6b7642"
   ],
   [
     "client:true:columns2:3:base:plain:ends",
@@ -899,14 +612,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "16bc178d1f35d897df87d9398b8735246a41b6fe8207ad969a5ad3a64fc313ab"
   ],
   [
-    "client:true:columns2:3:base:plate:ends",
-    "cb844b9138d28ed99d8d6f236bc311cc7c2b2946785d0353c16136db310a418d"
-  ],
-  [
-    "client:true:columns2:3:base:plate:continues",
-    "47223c6d6799c42f9f96000614ccd16cf41a2fee00af6f5afdf7dd6feaf07eb2"
-  ],
-  [
     "client:true:columns2:3:sunken:plain:ends",
     "43b60a70463edac325100e5625be6b34c615a26bb042321580ab3fb3602d3a9f"
   ],
@@ -921,14 +626,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns2:3:sunken:rule:continues",
     "16bc178d1f35d897df87d9398b8735246a41b6fe8207ad969a5ad3a64fc313ab"
-  ],
-  [
-    "client:true:columns2:3:sunken:plate:ends",
-    "a592ae02a05ee03137090c04c3651d2bd8fa27d65d98fa80b4b7943ff7d718e8"
-  ],
-  [
-    "client:true:columns2:3:sunken:plate:continues",
-    "503821c70adb788d81632af9404eaa2b03b90ceac24e05190dd53753c59f7fc7"
   ],
   [
     "client:true:columns2:3:inverse:plain:ends",
@@ -947,14 +644,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b3543737e6eae52b4572710e264c002f6f1a226c396c02e9ae288efe94bc092d"
   ],
   [
-    "client:true:columns2:3:inverse:plate:ends",
-    "32dde6de3f7a5441351f852897333fc2848d478fd1c98f5393feede64dc3b69a"
-  ],
-  [
-    "client:true:columns2:3:inverse:plate:continues",
-    "0fe43d1c57c7bb25461137ad65eacf4aa43016f60bc4498b1feb54b6c13e2231"
-  ],
-  [
     "client:true:columns2:4:base:plain:ends",
     "4ff1aa43f6107eca5f1c3989e64290074d00d4ce9f69784310e20cfd907dd1ac"
   ],
@@ -969,14 +658,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns2:4:base:rule:continues",
     "b276a4bcde8075929f1fe70ebbb615c1a84cb1f132c63d2b0be7353075b76b46"
-  ],
-  [
-    "client:true:columns2:4:base:plate:ends",
-    "e4fed44ce628e8f6b4e2acd6c033036f90de5a7fa343070d9e6f73e68669a08d"
-  ],
-  [
-    "client:true:columns2:4:base:plate:continues",
-    "ba2ca31c59176b6e17346d8ad4d1e5df3089c4ba81bfbb256f676806a57e0804"
   ],
   [
     "client:true:columns2:4:sunken:plain:ends",
@@ -995,14 +676,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b276a4bcde8075929f1fe70ebbb615c1a84cb1f132c63d2b0be7353075b76b46"
   ],
   [
-    "client:true:columns2:4:sunken:plate:ends",
-    "4e3587be8938b37694a99e740aeb472b2c84c3051ba572085d2dc234af03fbe9"
-  ],
-  [
-    "client:true:columns2:4:sunken:plate:continues",
-    "0ea8b5cfce614e9e218b467f59bb4dcf6cf90ffdd9f3931c8099317e16e03703"
-  ],
-  [
     "client:true:columns2:4:inverse:plain:ends",
     "706f1a149228de83ca46164636f859406a17b8c1310ed66766d3b42d64245e9d"
   ],
@@ -1017,14 +690,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns2:4:inverse:rule:continues",
     "f2eadbc7fe67153e2cb4b5361568a7f159f1c390164f02d8cbaaa2aeafb37fd7"
-  ],
-  [
-    "client:true:columns2:4:inverse:plate:ends",
-    "8ede944b70f6883c00d6209dfe7ecb78a7377713e42d71bb56d5e35c3e9fe798"
-  ],
-  [
-    "client:true:columns2:4:inverse:plate:continues",
-    "0d1748646a30fa4694dda687bcd8f963806cc05e27f59a12d4d90a387a5eec2c"
   ],
   [
     "client:true:columns2:5:base:plain:ends",
@@ -1043,14 +708,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b7c3f320ce238584a18508c68cb0ddc7e17125914fea30545e79949801eea01d"
   ],
   [
-    "client:true:columns2:5:base:plate:ends",
-    "be4ec05041551f2383f810072e65f22def1a5994d88d28bd3ff5a49055692ec2"
-  ],
-  [
-    "client:true:columns2:5:base:plate:continues",
-    "c9d3171a86a0da4f8e7f1d3f3cbb547d7f6db0caf97a09d2332ed3fad3c84942"
-  ],
-  [
     "client:true:columns2:5:sunken:plain:ends",
     "89958cb95c196863dfc3e3b1d77bf2d179b83660bd34fa013431730985977441"
   ],
@@ -1065,14 +722,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns2:5:sunken:rule:continues",
     "b7c3f320ce238584a18508c68cb0ddc7e17125914fea30545e79949801eea01d"
-  ],
-  [
-    "client:true:columns2:5:sunken:plate:ends",
-    "a83aad6c8b21c101d4162b3874e64903c779f0a761477b032b07a807e9cebe4a"
-  ],
-  [
-    "client:true:columns2:5:sunken:plate:continues",
-    "6d42cb4980ede082e2f01dbd101704a2757addbbc8805b9f62a29e2578438ae3"
   ],
   [
     "client:true:columns2:5:inverse:plain:ends",
@@ -1091,14 +740,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "a1ccf14effaf298b5148aa7916ff1395f3a611be49653c0efa441453049064ad"
   ],
   [
-    "client:true:columns2:5:inverse:plate:ends",
-    "f77651563ef931c7d08ac175b27be2bada5473d4e30083b394b3e2f35e4a0627"
-  ],
-  [
-    "client:true:columns2:5:inverse:plate:continues",
-    "7c26d14c85006e2972501de56de53740b9a3a3d69339387673e1b57f200fe949"
-  ],
-  [
     "client:true:columns3:3:base:plain:ends",
     "1cbba5b59405a9c53b87589d08f75cdf12f4fda0dd6b7fb6973f79fd8c3a75b4"
   ],
@@ -1113,14 +754,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns3:3:base:rule:continues",
     "853b79cc7bf2528ee6e2d8f7cdaa10280c21b717fa952ae1ec79ee6df1031d18"
-  ],
-  [
-    "client:true:columns3:3:base:plate:ends",
-    "d2726000f63d5bd29590c6b02816903ccb33321838a2cf467a1a10a8b381ee23"
-  ],
-  [
-    "client:true:columns3:3:base:plate:continues",
-    "2a89c3478c368f06640b13942b2cbb485b8e87d8b3b5a95df00fd4164aff84cd"
   ],
   [
     "client:true:columns3:3:sunken:plain:ends",
@@ -1139,14 +772,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "853b79cc7bf2528ee6e2d8f7cdaa10280c21b717fa952ae1ec79ee6df1031d18"
   ],
   [
-    "client:true:columns3:3:sunken:plate:ends",
-    "59cecde0c7f77c4f30f2c6cb378413ee3003c5def0044ee0e34429918153efdb"
-  ],
-  [
-    "client:true:columns3:3:sunken:plate:continues",
-    "62a4171b8f02445448a62e6a093f279cbef6bc4f1b1bd9608396125de8042063"
-  ],
-  [
     "client:true:columns3:3:inverse:plain:ends",
     "cf3804fb787520cf757f5f946d32fadf6c7551deafa63e3b6641a0732d5a509c"
   ],
@@ -1161,14 +786,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns3:3:inverse:rule:continues",
     "099b02be9feee34200a7ad644eef5ad01c976eab943fb8d22085922771e0ba93"
-  ],
-  [
-    "client:true:columns3:3:inverse:plate:ends",
-    "7b51888729e159f06553df7c1df699ebcd7d03590043e034a17fe5ccc2d242bc"
-  ],
-  [
-    "client:true:columns3:3:inverse:plate:continues",
-    "a283e3241839fbd0327f1b8f754ba8e8030663043208e0590cc5f46efd3c8fa2"
   ],
   [
     "client:true:columns3:4:base:plain:ends",
@@ -1187,14 +804,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "06fdfe4e50c5da3c6e8294382a7de575e51bd95ecab641ef8e0a09e920faeb9e"
   ],
   [
-    "client:true:columns3:4:base:plate:ends",
-    "ae8a3b23e2ae6db721e159a3cd792c9c325a13a9a3a1a38457bc9989589b1686"
-  ],
-  [
-    "client:true:columns3:4:base:plate:continues",
-    "a0806ec5e7e56702cc804fa0903229b02d8d1919da4fb0ac33dedde60b93ec5d"
-  ],
-  [
     "client:true:columns3:4:sunken:plain:ends",
     "b7e50376dc66c3c0f7dfece091ac94013e91bb43f8e34d3dded0696526aea799"
   ],
@@ -1209,14 +818,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns3:4:sunken:rule:continues",
     "06fdfe4e50c5da3c6e8294382a7de575e51bd95ecab641ef8e0a09e920faeb9e"
-  ],
-  [
-    "client:true:columns3:4:sunken:plate:ends",
-    "bd4e3195a01712771b6e26b7dff9a1d3c65199a7deccca8e1b482789b61446dd"
-  ],
-  [
-    "client:true:columns3:4:sunken:plate:continues",
-    "93789e60b98789a54c02241cb064dcc0be8afc219c84893f08e5dcb316f94ad6"
   ],
   [
     "client:true:columns3:4:inverse:plain:ends",
@@ -1235,14 +836,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "99582f0f177d3a7c941011b0ee9916601b5dcac7b8d9176ffb2e9a8799c9ade3"
   ],
   [
-    "client:true:columns3:4:inverse:plate:ends",
-    "138d5dee74005c607c1bde043fba9382794371fb3608d240a404932e6970be2d"
-  ],
-  [
-    "client:true:columns3:4:inverse:plate:continues",
-    "9bf6bbc6f10d8cbf321a95697eab85060730485dbca8906c667f5548717a62c0"
-  ],
-  [
     "client:true:columns3:5:base:plain:ends",
     "233737901219feb3e260cc5675305e6b621eeae3972cb6358342dfc1cd278dcb"
   ],
@@ -1257,14 +850,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns3:5:base:rule:continues",
     "f9dde00ca9ecbfb64b84087de769cf0046a9c321854bb3a60dc8c36caa5ec30e"
-  ],
-  [
-    "client:true:columns3:5:base:plate:ends",
-    "da4475018f4b43ca1b3751085beed24a451b4ddd7e200d4d53585b72c1af1efd"
-  ],
-  [
-    "client:true:columns3:5:base:plate:continues",
-    "0adeeeeab547fe202f0468b052768b11edf67d6624654ebefae44507200afe23"
   ],
   [
     "client:true:columns3:5:sunken:plain:ends",
@@ -1283,14 +868,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "f9dde00ca9ecbfb64b84087de769cf0046a9c321854bb3a60dc8c36caa5ec30e"
   ],
   [
-    "client:true:columns3:5:sunken:plate:ends",
-    "28642e5c9130ca9cb8dfecf6026a9c41ecfeb441737be7d17ba119a1c5897a3d"
-  ],
-  [
-    "client:true:columns3:5:sunken:plate:continues",
-    "c199fa7617b155c9f2b5d2898c8129ebb76372e3f51cbc456751e891331bc64a"
-  ],
-  [
     "client:true:columns3:5:inverse:plain:ends",
     "146ccbc226fe53c72bdb648a8a280b35a0637198d915b006fbf3f531918ec22f"
   ],
@@ -1305,14 +882,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:true:columns3:5:inverse:rule:continues",
     "8522b56fa748c1a3a678d71fbad4feb12e121cba835d470169f726c579d3e53c"
-  ],
-  [
-    "client:true:columns3:5:inverse:plate:ends",
-    "df09a2ee72060a8f738237d4ea7c62190a7d3f13f463865d8f088d04369ba62e"
-  ],
-  [
-    "client:true:columns3:5:inverse:plate:continues",
-    "32982e8ddca7cd4a563f5f1f1fe612c0b9ce10f9279c8427fc7404f91ff84503"
   ],
   [
     "server:false:stacked:3:base:plain:ends",
@@ -1331,14 +900,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "8aefa1010047e43649ceb65734ef84f7d24c9b72a1752863389b684392aa284b"
   ],
   [
-    "server:false:stacked:3:base:plate:ends",
-    "08a83abf9de138b6561e4b673c6b34d7a4a2fbd4693266f314513162ab6a4bd8"
-  ],
-  [
-    "server:false:stacked:3:base:plate:continues",
-    "4e75328919c25bb43839a204c0f30d4d230145837a826b30e20d23e0f54175c1"
-  ],
-  [
     "server:false:stacked:3:sunken:plain:ends",
     "88d53e2be8f4e85e6d6d0dcad72ba7bfb4deb902d5f91ba6a1e77cbf3da2bec8"
   ],
@@ -1353,14 +914,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:stacked:3:sunken:rule:continues",
     "8aefa1010047e43649ceb65734ef84f7d24c9b72a1752863389b684392aa284b"
-  ],
-  [
-    "server:false:stacked:3:sunken:plate:ends",
-    "3886e29ae592672ee10d0277534d4b7145f882136e927557c0686eb0ac77e966"
-  ],
-  [
-    "server:false:stacked:3:sunken:plate:continues",
-    "c2587230f8fa442f433afee95a255d65a2da86d5be9c22e0d4722a09344b4d40"
   ],
   [
     "server:false:stacked:3:inverse:plain:ends",
@@ -1379,14 +932,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "acec79b68b5fe080e65b4d419f2954d42d8373690dc0ef5c41d8608e74e795f3"
   ],
   [
-    "server:false:stacked:3:inverse:plate:ends",
-    "202c1f736bf94ac1c56fcc1fd9eedb475701fe6e129e6f1b0921ad576442900c"
-  ],
-  [
-    "server:false:stacked:3:inverse:plate:continues",
-    "f4c32d6e6657b26d2ea64b64a1dd83482a45c96ba23eb8f5d3109173e433af95"
-  ],
-  [
     "server:false:stacked:4:base:plain:ends",
     "e2ebf2b2dd2ea6bbc78f69b10b10b44a80a675bca12e2bfe4e6926eff845c15b"
   ],
@@ -1401,14 +946,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:stacked:4:base:rule:continues",
     "96768aa8957ebe4f9031e7c57f3801d3276d04833cf3d384005a35eaff031edf"
-  ],
-  [
-    "server:false:stacked:4:base:plate:ends",
-    "d22115334f902aed4d8fd0a51f9341bb11fdb5eaabef1d1986fbabfc938be2a9"
-  ],
-  [
-    "server:false:stacked:4:base:plate:continues",
-    "b76ff208a0eb62ac14cd3706728729a65d1bad4a3c93fab617ce23ca8b3f4f34"
   ],
   [
     "server:false:stacked:4:sunken:plain:ends",
@@ -1427,14 +964,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "96768aa8957ebe4f9031e7c57f3801d3276d04833cf3d384005a35eaff031edf"
   ],
   [
-    "server:false:stacked:4:sunken:plate:ends",
-    "10e6dafcf080ec35cebab7990e4b1ce2b634a454a9f53cc536e9c2210668245c"
-  ],
-  [
-    "server:false:stacked:4:sunken:plate:continues",
-    "6502c414aa023eae1a8bffe71a10e0bae84d98093bedb873bb7d84f476e114b0"
-  ],
-  [
     "server:false:stacked:4:inverse:plain:ends",
     "521ee4b5ae502f6d0070bbc66409261191fbba221f8beac96af3b47f18f8f18b"
   ],
@@ -1449,14 +978,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:stacked:4:inverse:rule:continues",
     "32f0ea282df611c18b581c94c3237cc0e27fc0624a6effb3760c675c15d71bb1"
-  ],
-  [
-    "server:false:stacked:4:inverse:plate:ends",
-    "f1798dbb546319b38b7317f973fdfb9a81c02a4cb5346fedf0a4b5d21c829195"
-  ],
-  [
-    "server:false:stacked:4:inverse:plate:continues",
-    "5063dd50a27919612d922f2808352e0258e09f2e0ffbf61e92dd8115d5261fc3"
   ],
   [
     "server:false:stacked:5:base:plain:ends",
@@ -1475,14 +996,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "6c10016f30492886bad78a067839ff48ebd8146044ee5a8127a86a17ba93d777"
   ],
   [
-    "server:false:stacked:5:base:plate:ends",
-    "4cd606c66cc5046019201cc35757284f5cf50cbcf100918834b632f076c135bd"
-  ],
-  [
-    "server:false:stacked:5:base:plate:continues",
-    "88e6bb4b8a9ae55a3d04bcf459f25c72f3c87a591677216e10cd80c8b230f771"
-  ],
-  [
     "server:false:stacked:5:sunken:plain:ends",
     "c230d70d26b6b353d9deb8ed6d0825b6f9bb32770557306789adbd4595d192e7"
   ],
@@ -1497,14 +1010,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:stacked:5:sunken:rule:continues",
     "6c10016f30492886bad78a067839ff48ebd8146044ee5a8127a86a17ba93d777"
-  ],
-  [
-    "server:false:stacked:5:sunken:plate:ends",
-    "d336c25325cec06e5f389483c24926717af2c40f4e9f5dcdc4a0a786131165d6"
-  ],
-  [
-    "server:false:stacked:5:sunken:plate:continues",
-    "c2e597ef1b6a2812f9c02ca6d3acb6f72fb480df2419892cb2b5dbf83b4c88a9"
   ],
   [
     "server:false:stacked:5:inverse:plain:ends",
@@ -1523,14 +1028,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "5cc684b0b335ace10198c8d4e98b7903b943a4a52ed6e9c8a250f4245a4340b4"
   ],
   [
-    "server:false:stacked:5:inverse:plate:ends",
-    "9497ca2524e2c6acaa7183f3e154576c2b31b802f9e1c85ae4750173a1081fe0"
-  ],
-  [
-    "server:false:stacked:5:inverse:plate:continues",
-    "485e710008c1bf65100055ec5eb663d573020e2827b5d51bd5a6eb51fcc3cef9"
-  ],
-  [
     "server:false:columns2:3:base:plain:ends",
     "32e2fc6524946588b610e7881bdbbff1b7a1a5a2964a0adf5a537cb30bf1141e"
   ],
@@ -1545,14 +1042,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns2:3:base:rule:continues",
     "1558f366b03ed3b744bec735fdccbc04b744a96c7d7db97c06eaead7cf253cf7"
-  ],
-  [
-    "server:false:columns2:3:base:plate:ends",
-    "499a849c5820644e8ad4435a41851d52ac9c9da72cbead59323363116dfb70f1"
-  ],
-  [
-    "server:false:columns2:3:base:plate:continues",
-    "fa0eebfd8aed6e6f10c0dce80b555c1e3bbbf195fc41d7aabdb9b16ef8abdaff"
   ],
   [
     "server:false:columns2:3:sunken:plain:ends",
@@ -1571,14 +1060,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "1558f366b03ed3b744bec735fdccbc04b744a96c7d7db97c06eaead7cf253cf7"
   ],
   [
-    "server:false:columns2:3:sunken:plate:ends",
-    "654b1bf6a7ff710e294a7bbefda6d92ce8b1eb72833bcd577add7f2d85038a68"
-  ],
-  [
-    "server:false:columns2:3:sunken:plate:continues",
-    "d3ce8f6c7c85f575adfa2e3161b13adc2974a9504fe3ad3a550c59e95ffb455c"
-  ],
-  [
     "server:false:columns2:3:inverse:plain:ends",
     "670002f22fe9d8354943c368bfa824b4f90ec69db1f8ce712166bb26311c2294"
   ],
@@ -1593,14 +1074,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns2:3:inverse:rule:continues",
     "a0059943c888dac4d480fdd7df242fc420f6c1f44698f5281ae996f49458dc24"
-  ],
-  [
-    "server:false:columns2:3:inverse:plate:ends",
-    "e430d182cfea9b34e1598f4400793541ad1d92eab51356da5dca71bb3d5f1f71"
-  ],
-  [
-    "server:false:columns2:3:inverse:plate:continues",
-    "cc5c65a72842f06bdb22a47c4951f3ffa6a27940e722a67d762f77fd3241fe4c"
   ],
   [
     "server:false:columns2:4:base:plain:ends",
@@ -1619,14 +1092,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "7fbf6e46b2f725875bc6020b1e0343c089b289b13e5c3a0834fb12448b1a39ec"
   ],
   [
-    "server:false:columns2:4:base:plate:ends",
-    "0892c68e31b805ba56f175b25b576953ea241a302fa1f5a57d808dcc7c61736f"
-  ],
-  [
-    "server:false:columns2:4:base:plate:continues",
-    "4dcb5544b5480e59ff0ac331b482e95c39aad4cf87cb9bc5695ab52af3e3e092"
-  ],
-  [
     "server:false:columns2:4:sunken:plain:ends",
     "a505d1fa2f5488b8594ae51fc2f6479499ce0702f4c78316136c96002e531a61"
   ],
@@ -1641,14 +1106,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns2:4:sunken:rule:continues",
     "7fbf6e46b2f725875bc6020b1e0343c089b289b13e5c3a0834fb12448b1a39ec"
-  ],
-  [
-    "server:false:columns2:4:sunken:plate:ends",
-    "9a6141487816c57f6b779e317456940e1bad0b399fd24d3dac03f2b4ae7de44a"
-  ],
-  [
-    "server:false:columns2:4:sunken:plate:continues",
-    "3dbd8b9fa13b144e63413c72dd6126b733ca5a5a71114852fb8da6f5328d91b1"
   ],
   [
     "server:false:columns2:4:inverse:plain:ends",
@@ -1667,14 +1124,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "432adba4c472b86905d236b28d796496f47bb53bffaee41bc988f687659d8050"
   ],
   [
-    "server:false:columns2:4:inverse:plate:ends",
-    "4943428e9498639e84f695535d44e74aec82ec3050669ab49d61b3bb79ecc64b"
-  ],
-  [
-    "server:false:columns2:4:inverse:plate:continues",
-    "97f34789e5c75d53de7dd30dd057a0650e01cb2e13b433d839fe4604c50d908a"
-  ],
-  [
     "server:false:columns2:5:base:plain:ends",
     "6cc77d7ca9893a38888ba0db856384d75876f4867ec0474b82f8feb1d59cc685"
   ],
@@ -1689,14 +1138,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns2:5:base:rule:continues",
     "9af72a5a3e39bdce5eb07d64df9eafa3702920b24d5b4bb2bf84156af479d7fc"
-  ],
-  [
-    "server:false:columns2:5:base:plate:ends",
-    "08db3e75d3863d6324bff029d1838bfa8cd496e35487d6768036c3d47d00fecf"
-  ],
-  [
-    "server:false:columns2:5:base:plate:continues",
-    "06a7acdf245cc102fe27ab5766bd078a323fc36c3beebdef8b7abe2a46d84ba1"
   ],
   [
     "server:false:columns2:5:sunken:plain:ends",
@@ -1715,14 +1156,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "9af72a5a3e39bdce5eb07d64df9eafa3702920b24d5b4bb2bf84156af479d7fc"
   ],
   [
-    "server:false:columns2:5:sunken:plate:ends",
-    "62860adc8edd36dbe72cc940f250ef776a024d73330ac2d6d6474c1392eab554"
-  ],
-  [
-    "server:false:columns2:5:sunken:plate:continues",
-    "6d7abcee8e5bc92836fc4e362adee20df88270ca87fd14c6178b4b54416c3060"
-  ],
-  [
     "server:false:columns2:5:inverse:plain:ends",
     "4d3d0716186a326aeed5c124b919af596b60188bc483dbbd0fce4d05eee2e859"
   ],
@@ -1737,14 +1170,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns2:5:inverse:rule:continues",
     "2fcb5717eda30f8d01c9b876024a43f20354318d2d06c3a035cc21193558af2e"
-  ],
-  [
-    "server:false:columns2:5:inverse:plate:ends",
-    "0d9130da6593ac87df3070dcdcabddf7e4c6565cbfd870ef5a40a2298aa43853"
-  ],
-  [
-    "server:false:columns2:5:inverse:plate:continues",
-    "e99c63e10576ee120a9fbc870800a0597402d2adf7b800c3fcc9f2f99cd3d386"
   ],
   [
     "server:false:columns3:3:base:plain:ends",
@@ -1763,14 +1188,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "5bfd3c00437992d00296a04322b99e068d045feab8ff94e4db81bbcdc5339c4a"
   ],
   [
-    "server:false:columns3:3:base:plate:ends",
-    "3535037dcc70cc6e4f7fb75e7ab536c02f4f8625286345db1626986951ceba35"
-  ],
-  [
-    "server:false:columns3:3:base:plate:continues",
-    "00ae0c31371dd55e0c3b22fc58d4359754fb45eb3e40401dc8a9d01e7fce9bed"
-  ],
-  [
     "server:false:columns3:3:sunken:plain:ends",
     "b9fe3fa783fe497f613ca193c3155cc0e25bd6cf8a1cbcde49a5d9385523fc86"
   ],
@@ -1785,14 +1202,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns3:3:sunken:rule:continues",
     "5bfd3c00437992d00296a04322b99e068d045feab8ff94e4db81bbcdc5339c4a"
-  ],
-  [
-    "server:false:columns3:3:sunken:plate:ends",
-    "d92c8686fadbb05e6338d4e4a10429acb90bf865b2a0b119c8a28b4cc5667e49"
-  ],
-  [
-    "server:false:columns3:3:sunken:plate:continues",
-    "d89e7ee5041daba411b9e76d35a05f0e1560f92a751442168c74594ef228d036"
   ],
   [
     "server:false:columns3:3:inverse:plain:ends",
@@ -1811,14 +1220,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "1c440b747e2d6c88800d6a208370496d42d389193b04bd422bc4827757559d9a"
   ],
   [
-    "server:false:columns3:3:inverse:plate:ends",
-    "5c176262c2a7aaf5e7fc987826a2fe534e3a5b1415bfd77ae463de7d3bb33f91"
-  ],
-  [
-    "server:false:columns3:3:inverse:plate:continues",
-    "9d669c467d5b7804428bda5d985b49eb94dd974b64ebf3f79fe3d44fab6a42e3"
-  ],
-  [
     "server:false:columns3:4:base:plain:ends",
     "dd5edf2d43a82f115a7fdb8ed797416952bf594bbcc09796e0fa80498bd61cbd"
   ],
@@ -1833,14 +1234,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns3:4:base:rule:continues",
     "8299a0430b7d9b78dd35d7d22d1c1fa56c0cc77433e662633b8b19f82c6bec18"
-  ],
-  [
-    "server:false:columns3:4:base:plate:ends",
-    "59c02845ef7c97c8797687cbb8d9fa6561589980a24ecac2e6c980bee5d17970"
-  ],
-  [
-    "server:false:columns3:4:base:plate:continues",
-    "2d807ea56b22f008bb2d9b7b5c9c0355ef1202a80a3fff09faf2b767594f8c5c"
   ],
   [
     "server:false:columns3:4:sunken:plain:ends",
@@ -1859,14 +1252,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "8299a0430b7d9b78dd35d7d22d1c1fa56c0cc77433e662633b8b19f82c6bec18"
   ],
   [
-    "server:false:columns3:4:sunken:plate:ends",
-    "d8dc3367611cb64b2eb41943a34c3723e89660af38a30613a5881de198cd518f"
-  ],
-  [
-    "server:false:columns3:4:sunken:plate:continues",
-    "39581f3b4b3eca63c883904dd6ed3194186ada8fec0d1e6b7cbf8f38906f7ade"
-  ],
-  [
     "server:false:columns3:4:inverse:plain:ends",
     "033af920ebc4e6bf8e2ba4860b14aeadf384abc33978c611faeb0748044d3ed3"
   ],
@@ -1881,14 +1266,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns3:4:inverse:rule:continues",
     "4904e2f6f74eb0b7f7a283352f5d8dacda717cd8d173b81b1f067d9280951901"
-  ],
-  [
-    "server:false:columns3:4:inverse:plate:ends",
-    "157654d29db613f043d31e7c017b3e21490b783b1ca7c133d82b2e9491c4e51d"
-  ],
-  [
-    "server:false:columns3:4:inverse:plate:continues",
-    "feed542600c16f0400c9fda86361fc4fca994245477e022c0ac2c0c26adf12f1"
   ],
   [
     "server:false:columns3:5:base:plain:ends",
@@ -1907,14 +1284,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "1b659165328471b30aef5d01f623fbda52cd0d572a56368cd94b0f74e2499bcd"
   ],
   [
-    "server:false:columns3:5:base:plate:ends",
-    "76a121008e41f168f17cdd65caf60a3726897039ff7a5f1531d49ec6df54673f"
-  ],
-  [
-    "server:false:columns3:5:base:plate:continues",
-    "ab2708a6e6714b8ffcb6a921cde67f685f5b998369f98c7fcc9de73c6ab897ad"
-  ],
-  [
     "server:false:columns3:5:sunken:plain:ends",
     "1cc1f42f2a4a2336251f57797791cd7ffc4b253a5b6408bd98ffaaa985a4060b"
   ],
@@ -1929,14 +1298,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:false:columns3:5:sunken:rule:continues",
     "1b659165328471b30aef5d01f623fbda52cd0d572a56368cd94b0f74e2499bcd"
-  ],
-  [
-    "server:false:columns3:5:sunken:plate:ends",
-    "a41256e30f6de94ad9fae2b9ebe28da0f7a421f755e05921bb2f2e4e195396db"
-  ],
-  [
-    "server:false:columns3:5:sunken:plate:continues",
-    "f9e43675bf015e7cf1f53a8b673ea6d5cf9da81ad92221cac56334409c71ca34"
   ],
   [
     "server:false:columns3:5:inverse:plain:ends",
@@ -1955,14 +1316,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "cf05cb469c1eb08d2a7513300ce018be0ea8c693561ed666f2b65fa153b2ceff"
   ],
   [
-    "server:false:columns3:5:inverse:plate:ends",
-    "f339a61f98340bde035937bd42d1186b2634c564ba926d95ba0d416129ca29af"
-  ],
-  [
-    "server:false:columns3:5:inverse:plate:continues",
-    "33215eb16feab4aa868bf50b8dd7ca53e70eb0efb770395334fef67623a545a2"
-  ],
-  [
     "server:true:stacked:3:base:plain:ends",
     "f80f3a106a224185611757c5b20982108ac067144eaf855ac8da7e5004733908"
   ],
@@ -1977,14 +1330,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:stacked:3:base:rule:continues",
     "9505fd1fc446dbbdce30b428000e594b5a0e2f7de9b6e291bf30fc78f89366fa"
-  ],
-  [
-    "server:true:stacked:3:base:plate:ends",
-    "85877c29a4ee88003c535dd2aa49bd3ec54d3dc8be1809f2b61f2f85fdb3d35b"
-  ],
-  [
-    "server:true:stacked:3:base:plate:continues",
-    "5b2ea8f2726d902389551e8056ae8bf16da3706803160181f9f70c5d89e50396"
   ],
   [
     "server:true:stacked:3:sunken:plain:ends",
@@ -2003,14 +1348,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "9505fd1fc446dbbdce30b428000e594b5a0e2f7de9b6e291bf30fc78f89366fa"
   ],
   [
-    "server:true:stacked:3:sunken:plate:ends",
-    "bc0226bfa245181601ca3a6de804bbbe38642768bb0720d9c23612516f933ba6"
-  ],
-  [
-    "server:true:stacked:3:sunken:plate:continues",
-    "5dc8206e1b2857780bca99bee2fd6eddad0b9caf2c955eac3af1822242be99d1"
-  ],
-  [
     "server:true:stacked:3:inverse:plain:ends",
     "b7aaf49df7809f0b45b383bc7804f1e4e3125f22c3ab26cf7d3024f1fc3a10e2"
   ],
@@ -2025,14 +1362,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:stacked:3:inverse:rule:continues",
     "8a5865e2763d2ef6c4f1fdda5bb0616bd6bfc2f83f0397c6a3d62b5da78645d0"
-  ],
-  [
-    "server:true:stacked:3:inverse:plate:ends",
-    "9d9296f299a842c99d6059854bf1e300ba30d3f64997a2017d71117763086462"
-  ],
-  [
-    "server:true:stacked:3:inverse:plate:continues",
-    "46e54129de4a2a40da4e064cc5729cea69da396d1f0f5af1302d8ecacfc73b42"
   ],
   [
     "server:true:stacked:4:base:plain:ends",
@@ -2051,14 +1380,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "cdcb29ef74980f25a18def8f0490b8704c2f4831ace58df1a18fa032d7b50993"
   ],
   [
-    "server:true:stacked:4:base:plate:ends",
-    "e4ce27d334eda87283ba49a1b3de695013358c103fb81b9ac5b77188062aeb54"
-  ],
-  [
-    "server:true:stacked:4:base:plate:continues",
-    "9795210ba00f236215d5f617fe42c9aeb4a7512862713921508c1722a42409eb"
-  ],
-  [
     "server:true:stacked:4:sunken:plain:ends",
     "3a7b05dd39f98e17964a2a6c6dfa371337e74576c4a43546e68a73e4f2dcdc10"
   ],
@@ -2073,14 +1394,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:stacked:4:sunken:rule:continues",
     "cdcb29ef74980f25a18def8f0490b8704c2f4831ace58df1a18fa032d7b50993"
-  ],
-  [
-    "server:true:stacked:4:sunken:plate:ends",
-    "f1a42165a9668865c0d9f474133de621b5c6cb8fb0acf3fafafdf6e2d22dbdb1"
-  ],
-  [
-    "server:true:stacked:4:sunken:plate:continues",
-    "8de666c6483340d5e6a18678bf93e621b75bf316c9e636584e015e3c361eda40"
   ],
   [
     "server:true:stacked:4:inverse:plain:ends",
@@ -2099,14 +1412,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "d457c0cd888288f1852cc2aeb3dc814f231593514eae246cc8b902f6b00f9126"
   ],
   [
-    "server:true:stacked:4:inverse:plate:ends",
-    "f897eb22c930a33554f1f2b03f0a8b366ff385b557475163925ec64c09b65a28"
-  ],
-  [
-    "server:true:stacked:4:inverse:plate:continues",
-    "449f56b2b1b84194e8ce9e7670d24a5f1997f308fe6470509feb5cb3c89be6ae"
-  ],
-  [
     "server:true:stacked:5:base:plain:ends",
     "b4b612621622a1288cac969597082862a5d979b701908d79de49fd466e9c359a"
   ],
@@ -2121,14 +1426,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:stacked:5:base:rule:continues",
     "b37327c92eb3d2390a5201d8c6d1d5a6d0a604b32c73584fa591e2dd1b7c715f"
-  ],
-  [
-    "server:true:stacked:5:base:plate:ends",
-    "2069496d4b0a35088ed0125d79f55faac1ce1ab6dbaa97945341c74ca4042f9e"
-  ],
-  [
-    "server:true:stacked:5:base:plate:continues",
-    "1d15762220b15a25b97708dba06b17fe62f18dc50e8313371d3889d16b3b3541"
   ],
   [
     "server:true:stacked:5:sunken:plain:ends",
@@ -2147,14 +1444,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b37327c92eb3d2390a5201d8c6d1d5a6d0a604b32c73584fa591e2dd1b7c715f"
   ],
   [
-    "server:true:stacked:5:sunken:plate:ends",
-    "03092dd0bf0ba4381473791b8610aa401e2cea0a263d434cf6cd59f0e78fcb00"
-  ],
-  [
-    "server:true:stacked:5:sunken:plate:continues",
-    "509776ab90a15c8e09bdf52ea16285e525af21fd6055e1dd037c2619f2c175ad"
-  ],
-  [
     "server:true:stacked:5:inverse:plain:ends",
     "ab406ce9c278cb90170dca7d800db09d2fde1b968ce1830e0f9925be2566d20d"
   ],
@@ -2169,14 +1458,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:stacked:5:inverse:rule:continues",
     "7150e5c1ff5760670b14f22e3baac4c4134903598ff748f7ca4cf9dc2530a02a"
-  ],
-  [
-    "server:true:stacked:5:inverse:plate:ends",
-    "76e0885529b747900a4ecbf8fea00da5345591766e761dab26c16fa9b375698d"
-  ],
-  [
-    "server:true:stacked:5:inverse:plate:continues",
-    "b62131df0b2f80bd448471cef72fed8bcfc985f7f161b87ca4fbbf5d8d6b7642"
   ],
   [
     "server:true:columns2:3:base:plain:ends",
@@ -2195,14 +1476,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "16bc178d1f35d897df87d9398b8735246a41b6fe8207ad969a5ad3a64fc313ab"
   ],
   [
-    "server:true:columns2:3:base:plate:ends",
-    "cb844b9138d28ed99d8d6f236bc311cc7c2b2946785d0353c16136db310a418d"
-  ],
-  [
-    "server:true:columns2:3:base:plate:continues",
-    "47223c6d6799c42f9f96000614ccd16cf41a2fee00af6f5afdf7dd6feaf07eb2"
-  ],
-  [
     "server:true:columns2:3:sunken:plain:ends",
     "43b60a70463edac325100e5625be6b34c615a26bb042321580ab3fb3602d3a9f"
   ],
@@ -2217,14 +1490,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns2:3:sunken:rule:continues",
     "16bc178d1f35d897df87d9398b8735246a41b6fe8207ad969a5ad3a64fc313ab"
-  ],
-  [
-    "server:true:columns2:3:sunken:plate:ends",
-    "a592ae02a05ee03137090c04c3651d2bd8fa27d65d98fa80b4b7943ff7d718e8"
-  ],
-  [
-    "server:true:columns2:3:sunken:plate:continues",
-    "503821c70adb788d81632af9404eaa2b03b90ceac24e05190dd53753c59f7fc7"
   ],
   [
     "server:true:columns2:3:inverse:plain:ends",
@@ -2243,14 +1508,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b3543737e6eae52b4572710e264c002f6f1a226c396c02e9ae288efe94bc092d"
   ],
   [
-    "server:true:columns2:3:inverse:plate:ends",
-    "32dde6de3f7a5441351f852897333fc2848d478fd1c98f5393feede64dc3b69a"
-  ],
-  [
-    "server:true:columns2:3:inverse:plate:continues",
-    "0fe43d1c57c7bb25461137ad65eacf4aa43016f60bc4498b1feb54b6c13e2231"
-  ],
-  [
     "server:true:columns2:4:base:plain:ends",
     "4ff1aa43f6107eca5f1c3989e64290074d00d4ce9f69784310e20cfd907dd1ac"
   ],
@@ -2265,14 +1522,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns2:4:base:rule:continues",
     "b276a4bcde8075929f1fe70ebbb615c1a84cb1f132c63d2b0be7353075b76b46"
-  ],
-  [
-    "server:true:columns2:4:base:plate:ends",
-    "e4fed44ce628e8f6b4e2acd6c033036f90de5a7fa343070d9e6f73e68669a08d"
-  ],
-  [
-    "server:true:columns2:4:base:plate:continues",
-    "ba2ca31c59176b6e17346d8ad4d1e5df3089c4ba81bfbb256f676806a57e0804"
   ],
   [
     "server:true:columns2:4:sunken:plain:ends",
@@ -2291,14 +1540,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b276a4bcde8075929f1fe70ebbb615c1a84cb1f132c63d2b0be7353075b76b46"
   ],
   [
-    "server:true:columns2:4:sunken:plate:ends",
-    "4e3587be8938b37694a99e740aeb472b2c84c3051ba572085d2dc234af03fbe9"
-  ],
-  [
-    "server:true:columns2:4:sunken:plate:continues",
-    "0ea8b5cfce614e9e218b467f59bb4dcf6cf90ffdd9f3931c8099317e16e03703"
-  ],
-  [
     "server:true:columns2:4:inverse:plain:ends",
     "706f1a149228de83ca46164636f859406a17b8c1310ed66766d3b42d64245e9d"
   ],
@@ -2313,14 +1554,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns2:4:inverse:rule:continues",
     "f2eadbc7fe67153e2cb4b5361568a7f159f1c390164f02d8cbaaa2aeafb37fd7"
-  ],
-  [
-    "server:true:columns2:4:inverse:plate:ends",
-    "8ede944b70f6883c00d6209dfe7ecb78a7377713e42d71bb56d5e35c3e9fe798"
-  ],
-  [
-    "server:true:columns2:4:inverse:plate:continues",
-    "0d1748646a30fa4694dda687bcd8f963806cc05e27f59a12d4d90a387a5eec2c"
   ],
   [
     "server:true:columns2:5:base:plain:ends",
@@ -2339,14 +1572,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "b7c3f320ce238584a18508c68cb0ddc7e17125914fea30545e79949801eea01d"
   ],
   [
-    "server:true:columns2:5:base:plate:ends",
-    "be4ec05041551f2383f810072e65f22def1a5994d88d28bd3ff5a49055692ec2"
-  ],
-  [
-    "server:true:columns2:5:base:plate:continues",
-    "c9d3171a86a0da4f8e7f1d3f3cbb547d7f6db0caf97a09d2332ed3fad3c84942"
-  ],
-  [
     "server:true:columns2:5:sunken:plain:ends",
     "89958cb95c196863dfc3e3b1d77bf2d179b83660bd34fa013431730985977441"
   ],
@@ -2361,14 +1586,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns2:5:sunken:rule:continues",
     "b7c3f320ce238584a18508c68cb0ddc7e17125914fea30545e79949801eea01d"
-  ],
-  [
-    "server:true:columns2:5:sunken:plate:ends",
-    "a83aad6c8b21c101d4162b3874e64903c779f0a761477b032b07a807e9cebe4a"
-  ],
-  [
-    "server:true:columns2:5:sunken:plate:continues",
-    "6d42cb4980ede082e2f01dbd101704a2757addbbc8805b9f62a29e2578438ae3"
   ],
   [
     "server:true:columns2:5:inverse:plain:ends",
@@ -2387,14 +1604,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "a1ccf14effaf298b5148aa7916ff1395f3a611be49653c0efa441453049064ad"
   ],
   [
-    "server:true:columns2:5:inverse:plate:ends",
-    "f77651563ef931c7d08ac175b27be2bada5473d4e30083b394b3e2f35e4a0627"
-  ],
-  [
-    "server:true:columns2:5:inverse:plate:continues",
-    "7c26d14c85006e2972501de56de53740b9a3a3d69339387673e1b57f200fe949"
-  ],
-  [
     "server:true:columns3:3:base:plain:ends",
     "1cbba5b59405a9c53b87589d08f75cdf12f4fda0dd6b7fb6973f79fd8c3a75b4"
   ],
@@ -2409,14 +1618,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns3:3:base:rule:continues",
     "853b79cc7bf2528ee6e2d8f7cdaa10280c21b717fa952ae1ec79ee6df1031d18"
-  ],
-  [
-    "server:true:columns3:3:base:plate:ends",
-    "d2726000f63d5bd29590c6b02816903ccb33321838a2cf467a1a10a8b381ee23"
-  ],
-  [
-    "server:true:columns3:3:base:plate:continues",
-    "2a89c3478c368f06640b13942b2cbb485b8e87d8b3b5a95df00fd4164aff84cd"
   ],
   [
     "server:true:columns3:3:sunken:plain:ends",
@@ -2435,14 +1636,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "853b79cc7bf2528ee6e2d8f7cdaa10280c21b717fa952ae1ec79ee6df1031d18"
   ],
   [
-    "server:true:columns3:3:sunken:plate:ends",
-    "59cecde0c7f77c4f30f2c6cb378413ee3003c5def0044ee0e34429918153efdb"
-  ],
-  [
-    "server:true:columns3:3:sunken:plate:continues",
-    "62a4171b8f02445448a62e6a093f279cbef6bc4f1b1bd9608396125de8042063"
-  ],
-  [
     "server:true:columns3:3:inverse:plain:ends",
     "cf3804fb787520cf757f5f946d32fadf6c7551deafa63e3b6641a0732d5a509c"
   ],
@@ -2457,14 +1650,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns3:3:inverse:rule:continues",
     "099b02be9feee34200a7ad644eef5ad01c976eab943fb8d22085922771e0ba93"
-  ],
-  [
-    "server:true:columns3:3:inverse:plate:ends",
-    "7b51888729e159f06553df7c1df699ebcd7d03590043e034a17fe5ccc2d242bc"
-  ],
-  [
-    "server:true:columns3:3:inverse:plate:continues",
-    "a283e3241839fbd0327f1b8f754ba8e8030663043208e0590cc5f46efd3c8fa2"
   ],
   [
     "server:true:columns3:4:base:plain:ends",
@@ -2483,14 +1668,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "06fdfe4e50c5da3c6e8294382a7de575e51bd95ecab641ef8e0a09e920faeb9e"
   ],
   [
-    "server:true:columns3:4:base:plate:ends",
-    "ae8a3b23e2ae6db721e159a3cd792c9c325a13a9a3a1a38457bc9989589b1686"
-  ],
-  [
-    "server:true:columns3:4:base:plate:continues",
-    "a0806ec5e7e56702cc804fa0903229b02d8d1919da4fb0ac33dedde60b93ec5d"
-  ],
-  [
     "server:true:columns3:4:sunken:plain:ends",
     "b7e50376dc66c3c0f7dfece091ac94013e91bb43f8e34d3dded0696526aea799"
   ],
@@ -2505,14 +1682,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns3:4:sunken:rule:continues",
     "06fdfe4e50c5da3c6e8294382a7de575e51bd95ecab641ef8e0a09e920faeb9e"
-  ],
-  [
-    "server:true:columns3:4:sunken:plate:ends",
-    "bd4e3195a01712771b6e26b7dff9a1d3c65199a7deccca8e1b482789b61446dd"
-  ],
-  [
-    "server:true:columns3:4:sunken:plate:continues",
-    "93789e60b98789a54c02241cb064dcc0be8afc219c84893f08e5dcb316f94ad6"
   ],
   [
     "server:true:columns3:4:inverse:plain:ends",
@@ -2531,14 +1700,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "99582f0f177d3a7c941011b0ee9916601b5dcac7b8d9176ffb2e9a8799c9ade3"
   ],
   [
-    "server:true:columns3:4:inverse:plate:ends",
-    "138d5dee74005c607c1bde043fba9382794371fb3608d240a404932e6970be2d"
-  ],
-  [
-    "server:true:columns3:4:inverse:plate:continues",
-    "9bf6bbc6f10d8cbf321a95697eab85060730485dbca8906c667f5548717a62c0"
-  ],
-  [
     "server:true:columns3:5:base:plain:ends",
     "233737901219feb3e260cc5675305e6b621eeae3972cb6358342dfc1cd278dcb"
   ],
@@ -2553,14 +1714,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns3:5:base:rule:continues",
     "f9dde00ca9ecbfb64b84087de769cf0046a9c321854bb3a60dc8c36caa5ec30e"
-  ],
-  [
-    "server:true:columns3:5:base:plate:ends",
-    "da4475018f4b43ca1b3751085beed24a451b4ddd7e200d4d53585b72c1af1efd"
-  ],
-  [
-    "server:true:columns3:5:base:plate:continues",
-    "0adeeeeab547fe202f0468b052768b11edf67d6624654ebefae44507200afe23"
   ],
   [
     "server:true:columns3:5:sunken:plain:ends",
@@ -2579,14 +1732,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "f9dde00ca9ecbfb64b84087de769cf0046a9c321854bb3a60dc8c36caa5ec30e"
   ],
   [
-    "server:true:columns3:5:sunken:plate:ends",
-    "28642e5c9130ca9cb8dfecf6026a9c41ecfeb441737be7d17ba119a1c5897a3d"
-  ],
-  [
-    "server:true:columns3:5:sunken:plate:continues",
-    "c199fa7617b155c9f2b5d2898c8129ebb76372e3f51cbc456751e891331bc64a"
-  ],
-  [
     "server:true:columns3:5:inverse:plain:ends",
     "146ccbc226fe53c72bdb648a8a280b35a0637198d915b006fbf3f531918ec22f"
   ],
@@ -2601,14 +1746,6 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "server:true:columns3:5:inverse:rule:continues",
     "8522b56fa748c1a3a678d71fbad4feb12e121cba835d470169f726c579d3e53c"
-  ],
-  [
-    "server:true:columns3:5:inverse:plate:ends",
-    "df09a2ee72060a8f738237d4ea7c62190a7d3f13f463865d8f088d04369ba62e"
-  ],
-  [
-    "server:true:columns3:5:inverse:plate:continues",
-    "32982e8ddca7cd4a563f5f1f1fe612c0b9ce10f9279c8427fc7404f91ff84503"
   ],
   [
     "assignment:client:false:stacked:3:aba",
@@ -3811,6 +2948,232 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "69c10c506087235a1c2f17bf537f09598ca6476f0605cdc26d21b849cd324f51"
   ]
 ];
+// The plate treatment is the selected stock Card (E4, P0 shadcn reset; stock leaf routing ebd6753ac), so its
+// 216 shapes left the immutable main capture above. Re-captured by planner:R2F-05: each shape differs from the
+// 99a6de763a capture only in the plate element (stock Card markup; inverse re-points the card tokens). The
+// golden file is written by `vitest run -u` from this render, never by hand. The look is on the owner CREATIVE list.
+const PLATE_GOLDEN_KEYS: readonly string[] = [
+  "client:false:stacked:3:base:plate:ends",
+  "client:false:stacked:3:base:plate:continues",
+  "client:false:stacked:3:sunken:plate:ends",
+  "client:false:stacked:3:sunken:plate:continues",
+  "client:false:stacked:3:inverse:plate:ends",
+  "client:false:stacked:3:inverse:plate:continues",
+  "client:false:stacked:4:base:plate:ends",
+  "client:false:stacked:4:base:plate:continues",
+  "client:false:stacked:4:sunken:plate:ends",
+  "client:false:stacked:4:sunken:plate:continues",
+  "client:false:stacked:4:inverse:plate:ends",
+  "client:false:stacked:4:inverse:plate:continues",
+  "client:false:stacked:5:base:plate:ends",
+  "client:false:stacked:5:base:plate:continues",
+  "client:false:stacked:5:sunken:plate:ends",
+  "client:false:stacked:5:sunken:plate:continues",
+  "client:false:stacked:5:inverse:plate:ends",
+  "client:false:stacked:5:inverse:plate:continues",
+  "client:false:columns2:3:base:plate:ends",
+  "client:false:columns2:3:base:plate:continues",
+  "client:false:columns2:3:sunken:plate:ends",
+  "client:false:columns2:3:sunken:plate:continues",
+  "client:false:columns2:3:inverse:plate:ends",
+  "client:false:columns2:3:inverse:plate:continues",
+  "client:false:columns2:4:base:plate:ends",
+  "client:false:columns2:4:base:plate:continues",
+  "client:false:columns2:4:sunken:plate:ends",
+  "client:false:columns2:4:sunken:plate:continues",
+  "client:false:columns2:4:inverse:plate:ends",
+  "client:false:columns2:4:inverse:plate:continues",
+  "client:false:columns2:5:base:plate:ends",
+  "client:false:columns2:5:base:plate:continues",
+  "client:false:columns2:5:sunken:plate:ends",
+  "client:false:columns2:5:sunken:plate:continues",
+  "client:false:columns2:5:inverse:plate:ends",
+  "client:false:columns2:5:inverse:plate:continues",
+  "client:false:columns3:3:base:plate:ends",
+  "client:false:columns3:3:base:plate:continues",
+  "client:false:columns3:3:sunken:plate:ends",
+  "client:false:columns3:3:sunken:plate:continues",
+  "client:false:columns3:3:inverse:plate:ends",
+  "client:false:columns3:3:inverse:plate:continues",
+  "client:false:columns3:4:base:plate:ends",
+  "client:false:columns3:4:base:plate:continues",
+  "client:false:columns3:4:sunken:plate:ends",
+  "client:false:columns3:4:sunken:plate:continues",
+  "client:false:columns3:4:inverse:plate:ends",
+  "client:false:columns3:4:inverse:plate:continues",
+  "client:false:columns3:5:base:plate:ends",
+  "client:false:columns3:5:base:plate:continues",
+  "client:false:columns3:5:sunken:plate:ends",
+  "client:false:columns3:5:sunken:plate:continues",
+  "client:false:columns3:5:inverse:plate:ends",
+  "client:false:columns3:5:inverse:plate:continues",
+  "client:true:stacked:3:base:plate:ends",
+  "client:true:stacked:3:base:plate:continues",
+  "client:true:stacked:3:sunken:plate:ends",
+  "client:true:stacked:3:sunken:plate:continues",
+  "client:true:stacked:3:inverse:plate:ends",
+  "client:true:stacked:3:inverse:plate:continues",
+  "client:true:stacked:4:base:plate:ends",
+  "client:true:stacked:4:base:plate:continues",
+  "client:true:stacked:4:sunken:plate:ends",
+  "client:true:stacked:4:sunken:plate:continues",
+  "client:true:stacked:4:inverse:plate:ends",
+  "client:true:stacked:4:inverse:plate:continues",
+  "client:true:stacked:5:base:plate:ends",
+  "client:true:stacked:5:base:plate:continues",
+  "client:true:stacked:5:sunken:plate:ends",
+  "client:true:stacked:5:sunken:plate:continues",
+  "client:true:stacked:5:inverse:plate:ends",
+  "client:true:stacked:5:inverse:plate:continues",
+  "client:true:columns2:3:base:plate:ends",
+  "client:true:columns2:3:base:plate:continues",
+  "client:true:columns2:3:sunken:plate:ends",
+  "client:true:columns2:3:sunken:plate:continues",
+  "client:true:columns2:3:inverse:plate:ends",
+  "client:true:columns2:3:inverse:plate:continues",
+  "client:true:columns2:4:base:plate:ends",
+  "client:true:columns2:4:base:plate:continues",
+  "client:true:columns2:4:sunken:plate:ends",
+  "client:true:columns2:4:sunken:plate:continues",
+  "client:true:columns2:4:inverse:plate:ends",
+  "client:true:columns2:4:inverse:plate:continues",
+  "client:true:columns2:5:base:plate:ends",
+  "client:true:columns2:5:base:plate:continues",
+  "client:true:columns2:5:sunken:plate:ends",
+  "client:true:columns2:5:sunken:plate:continues",
+  "client:true:columns2:5:inverse:plate:ends",
+  "client:true:columns2:5:inverse:plate:continues",
+  "client:true:columns3:3:base:plate:ends",
+  "client:true:columns3:3:base:plate:continues",
+  "client:true:columns3:3:sunken:plate:ends",
+  "client:true:columns3:3:sunken:plate:continues",
+  "client:true:columns3:3:inverse:plate:ends",
+  "client:true:columns3:3:inverse:plate:continues",
+  "client:true:columns3:4:base:plate:ends",
+  "client:true:columns3:4:base:plate:continues",
+  "client:true:columns3:4:sunken:plate:ends",
+  "client:true:columns3:4:sunken:plate:continues",
+  "client:true:columns3:4:inverse:plate:ends",
+  "client:true:columns3:4:inverse:plate:continues",
+  "client:true:columns3:5:base:plate:ends",
+  "client:true:columns3:5:base:plate:continues",
+  "client:true:columns3:5:sunken:plate:ends",
+  "client:true:columns3:5:sunken:plate:continues",
+  "client:true:columns3:5:inverse:plate:ends",
+  "client:true:columns3:5:inverse:plate:continues",
+  "server:false:stacked:3:base:plate:ends",
+  "server:false:stacked:3:base:plate:continues",
+  "server:false:stacked:3:sunken:plate:ends",
+  "server:false:stacked:3:sunken:plate:continues",
+  "server:false:stacked:3:inverse:plate:ends",
+  "server:false:stacked:3:inverse:plate:continues",
+  "server:false:stacked:4:base:plate:ends",
+  "server:false:stacked:4:base:plate:continues",
+  "server:false:stacked:4:sunken:plate:ends",
+  "server:false:stacked:4:sunken:plate:continues",
+  "server:false:stacked:4:inverse:plate:ends",
+  "server:false:stacked:4:inverse:plate:continues",
+  "server:false:stacked:5:base:plate:ends",
+  "server:false:stacked:5:base:plate:continues",
+  "server:false:stacked:5:sunken:plate:ends",
+  "server:false:stacked:5:sunken:plate:continues",
+  "server:false:stacked:5:inverse:plate:ends",
+  "server:false:stacked:5:inverse:plate:continues",
+  "server:false:columns2:3:base:plate:ends",
+  "server:false:columns2:3:base:plate:continues",
+  "server:false:columns2:3:sunken:plate:ends",
+  "server:false:columns2:3:sunken:plate:continues",
+  "server:false:columns2:3:inverse:plate:ends",
+  "server:false:columns2:3:inverse:plate:continues",
+  "server:false:columns2:4:base:plate:ends",
+  "server:false:columns2:4:base:plate:continues",
+  "server:false:columns2:4:sunken:plate:ends",
+  "server:false:columns2:4:sunken:plate:continues",
+  "server:false:columns2:4:inverse:plate:ends",
+  "server:false:columns2:4:inverse:plate:continues",
+  "server:false:columns2:5:base:plate:ends",
+  "server:false:columns2:5:base:plate:continues",
+  "server:false:columns2:5:sunken:plate:ends",
+  "server:false:columns2:5:sunken:plate:continues",
+  "server:false:columns2:5:inverse:plate:ends",
+  "server:false:columns2:5:inverse:plate:continues",
+  "server:false:columns3:3:base:plate:ends",
+  "server:false:columns3:3:base:plate:continues",
+  "server:false:columns3:3:sunken:plate:ends",
+  "server:false:columns3:3:sunken:plate:continues",
+  "server:false:columns3:3:inverse:plate:ends",
+  "server:false:columns3:3:inverse:plate:continues",
+  "server:false:columns3:4:base:plate:ends",
+  "server:false:columns3:4:base:plate:continues",
+  "server:false:columns3:4:sunken:plate:ends",
+  "server:false:columns3:4:sunken:plate:continues",
+  "server:false:columns3:4:inverse:plate:ends",
+  "server:false:columns3:4:inverse:plate:continues",
+  "server:false:columns3:5:base:plate:ends",
+  "server:false:columns3:5:base:plate:continues",
+  "server:false:columns3:5:sunken:plate:ends",
+  "server:false:columns3:5:sunken:plate:continues",
+  "server:false:columns3:5:inverse:plate:ends",
+  "server:false:columns3:5:inverse:plate:continues",
+  "server:true:stacked:3:base:plate:ends",
+  "server:true:stacked:3:base:plate:continues",
+  "server:true:stacked:3:sunken:plate:ends",
+  "server:true:stacked:3:sunken:plate:continues",
+  "server:true:stacked:3:inverse:plate:ends",
+  "server:true:stacked:3:inverse:plate:continues",
+  "server:true:stacked:4:base:plate:ends",
+  "server:true:stacked:4:base:plate:continues",
+  "server:true:stacked:4:sunken:plate:ends",
+  "server:true:stacked:4:sunken:plate:continues",
+  "server:true:stacked:4:inverse:plate:ends",
+  "server:true:stacked:4:inverse:plate:continues",
+  "server:true:stacked:5:base:plate:ends",
+  "server:true:stacked:5:base:plate:continues",
+  "server:true:stacked:5:sunken:plate:ends",
+  "server:true:stacked:5:sunken:plate:continues",
+  "server:true:stacked:5:inverse:plate:ends",
+  "server:true:stacked:5:inverse:plate:continues",
+  "server:true:columns2:3:base:plate:ends",
+  "server:true:columns2:3:base:plate:continues",
+  "server:true:columns2:3:sunken:plate:ends",
+  "server:true:columns2:3:sunken:plate:continues",
+  "server:true:columns2:3:inverse:plate:ends",
+  "server:true:columns2:3:inverse:plate:continues",
+  "server:true:columns2:4:base:plate:ends",
+  "server:true:columns2:4:base:plate:continues",
+  "server:true:columns2:4:sunken:plate:ends",
+  "server:true:columns2:4:sunken:plate:continues",
+  "server:true:columns2:4:inverse:plate:ends",
+  "server:true:columns2:4:inverse:plate:continues",
+  "server:true:columns2:5:base:plate:ends",
+  "server:true:columns2:5:base:plate:continues",
+  "server:true:columns2:5:sunken:plate:ends",
+  "server:true:columns2:5:sunken:plate:continues",
+  "server:true:columns2:5:inverse:plate:ends",
+  "server:true:columns2:5:inverse:plate:continues",
+  "server:true:columns3:3:base:plate:ends",
+  "server:true:columns3:3:base:plate:continues",
+  "server:true:columns3:3:sunken:plate:ends",
+  "server:true:columns3:3:sunken:plate:continues",
+  "server:true:columns3:3:inverse:plate:ends",
+  "server:true:columns3:3:inverse:plate:continues",
+  "server:true:columns3:4:base:plate:ends",
+  "server:true:columns3:4:base:plate:continues",
+  "server:true:columns3:4:sunken:plate:ends",
+  "server:true:columns3:4:sunken:plate:continues",
+  "server:true:columns3:4:inverse:plate:ends",
+  "server:true:columns3:4:inverse:plate:continues",
+  "server:true:columns3:5:base:plate:ends",
+  "server:true:columns3:5:base:plate:continues",
+  "server:true:columns3:5:sunken:plate:ends",
+  "server:true:columns3:5:sunken:plate:continues",
+  "server:true:columns3:5:inverse:plate:ends",
+  "server:true:columns3:5:inverse:plate:continues"
+];
+function goldenHash(key: string): string {
+  const { entry, props } = goldenProps(key);
+  return createHash("sha256").update(renderToStaticMarkup(entry === "client" ? <Items {...props} /> : <ServerItems {...props} />)).digest("hex");
+}
 function goldenProps(key: string): { entry: string; props: ItemsProps } {
   const parts = key.split(":");
   const assignment = parts[0] === "assignment";
@@ -3844,10 +3207,14 @@ describe("Items lanes", () => {
   });
 
   it.each(BASE_GOLDENS)("keeps every 2-lane shape byte-identical to the base golden: %s", (key, expected) => {
-    const { entry, props } = goldenProps(key);
-    const html = renderToStaticMarkup(entry === "client" ? <Items {...props} /> : <ServerItems {...props} />);
-    expect(createHash("sha256").update(html).digest("hex")).toBe(expected);
+    expect(goldenHash(key)).toBe(expected);
   });
+
+  it("keeps every 2-lane plate shape byte-identical to its stock Card capture", async () => {
+    expect(PLATE_GOLDEN_KEYS).toHaveLength(216);
+    const hashes = Object.fromEntries(PLATE_GOLDEN_KEYS.map(key => [key, goldenHash(key)]));
+    await expect(stableStringify({ $capture: "stock Card plate (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/lanes-plate.sha256.json");
+  }, 60_000);
 
   it.each(validShapes)("lays %s lanes and %s steps in a grid only from tablet-lg", (laneCount, count) => {
     const props = laneProps(laneCount, count);

@@ -12,6 +12,7 @@ import { DS_ATTR, dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentDescriptorHash, sortedComponentIds } from "../catalog-core/resolve-components.js";
 import type { ComponentCandidate, ComponentCandidateDocument, ComponentFile, ComponentRule, ResolvedComponent, ResolvedComponents } from "../catalog-core/resolve-components.js";
 import type { ComponentSlot } from "../catalog-core/types.js";
+import { analyzeComponentSource } from "../../scripts/lib/component-source-ast.mjs";
 
 /**
  * Pack check: plan/check never parses a propMap, so a fill can pass a DRY selection and still
@@ -25,7 +26,9 @@ const outputs = new Map(bundles.sourceCandidates.map(candidate => [candidate.fil
 const barrel = (subpath: string): string[] => [...readFileSync(resolve(import.meta.dirname, `../${subpath}/index.ts`), "utf8").matchAll(/export\s*\{([^}]+)\}/g)]
   .flatMap(match => match[1]!.split(",").map(binding => binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/).at(-1)!)).filter(Boolean);
 const designerExports = Object.fromEntries(["components", "charts", "shell"].map(subpath => [`@clossys/designer/${subpath}`, barrel(subpath)]));
-// Third-party named imports inside copied source are not what this check measures; they are admitted as written.
+// Third-party named imports and namespace member reads (`React.useState`) inside copied source are not what
+// this check measures; they are admitted as written. Namespace reads come from the same TypeScript AST reader
+// the source proofs are generated with (E1); a source that reader refuses admits nothing, so the emitter's own refusal surfaces.
 function thirdPartyExports(files: readonly ComponentFile[]): Record<string, string[]> {
   const exports: Record<string, Set<string>> = {};
   for (const file of files) for (const match of file.content.matchAll(/\bimport\s+(?:type\s+)?\{([^}]+)\}\s*from\s*["']([^"'.][^"']*)["']/g)) {
@@ -33,9 +36,16 @@ function thirdPartyExports(files: readonly ComponentFile[]): Record<string, stri
     const names = exports[match[2]!] ??= new Set();
     for (const binding of match[1]!.split(",")) { const name = binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]; if (name) names.add(name); }
   }
+  for (const file of files.filter(file => /\.tsx?$/.test(file.path))) {
+    let reads: readonly { module: string; member: string }[] = [];
+    try { reads = analyzeComponentSource(file.path, file.content).reads; } catch { continue; }
+    for (const read of reads) if (!read.module.startsWith(".") && !read.module.startsWith("@clossys/designer")) (exports[read.module] ??= new Set()).add(read.member);
+  }
   return Object.fromEntries(Object.entries(exports).map(([module, names]) => [module, [...names].sort()]));
 }
 function fillId(doc: ComponentCandidateDocument): string { return doc.$extensions["com.clossys.fill"].id; }
+/** Written by the shadcn@aria importer (pinned upstream, third-party): the only fills that carry an `unmapped` list. */
+function isImporterFill(doc: ComponentCandidateDocument): boolean { return doc.$extensions["com.clossys.fill"].author === "third-party"; }
 function persistOne(doc: ComponentCandidateDocument, owned?: readonly ComponentFile[]): ComponentFile[] {
   const descriptor = Object.values(doc.components)[0]!;
   if (descriptor.impl.kind === "composed") return [];
@@ -115,11 +125,13 @@ describe("pack check: every selectable component fill persists", () => {
   // Imported packs only: Foundry's own package map is checked by its importer and is not regenerated here.
   const imported = fills.filter(doc => doc.$extensions["com.clossys.fill"].source !== "foundry");
   it("emitComponents (persist path) refuses no imported pack fill's propMap", () => {
-    expect(imported.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria")).toHaveLength(33);
+    // 33 importer-written shadcn@aria fills, plus the one Foundry-authored engine exception the library lists (rich-text, 6463e7e59).
+    expect(imported.filter(isImporterFill).filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria")).toHaveLength(33);
+    expect(imported.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria" && !isImporterFill(doc)).map(doc => [fillId(doc), doc.$extensions["com.clossys.fill"].author, !!doc.$extensions["com.clossys.engine-exception"]])).toEqual([["shadcn@aria/components.rich-text", "foundry", true]]);
     expect(imported.length).toBeGreaterThanOrEqual(33);
     expect(persistThrows(imported).filter(message => PROPMAP_REFUSAL.test(message))).toEqual([]);
   });
-  it.each(bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria").map(doc => [Object.values(doc.components)[0]!.slot, doc] as const))("%s: every propMap value is a pointer and every other member is listed unmapped", (_slot, doc) => {
+  it.each(bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria").filter(isImporterFill).map(doc => [Object.values(doc.components)[0]!.slot, doc] as const))("%s: every propMap value is a pointer and every other member is listed unmapped", (_slot, doc) => {
     const descriptor = Object.values(doc.components)[0]!;
     const meta = doc.$extensions["com.clossys.fill"];
     const contract = slots.get(descriptor.slot)!.contract.members;
@@ -139,7 +151,8 @@ describe("pack check: every selectable component fill persists", () => {
 describe("pack check: shadcn@aria materialized sources persist through the real emitter", () => {
   // As a product persist does: shadcn@aria fills selected together, with the materializer's exact
   // output bytes, beside the package Icon leaf the rewritten sources compose.
-  const shadcn = bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria");
+  // Materialized sources only: the Foundry-authored rich-text engine exception is a package export with nothing materialized.
+  const shadcn = bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria" && Object.values(doc.components)[0]!.impl.kind === "source");
   const icon = bundles.componentFills.find(doc => doc.$extensions["com.clossys.fill"].id === "foundry/components.icon")!;
   const materialized = new Map(bundles.sourceBundles.map(bundle => [bundle.slot, bundle.files]));
   function resolved(doc: ComponentCandidateDocument): ResolvedComponent {
@@ -296,7 +309,8 @@ describe("pack check: the asset Icon adapter persists with no asset-reading leaf
 describe("pack check: every selectable fill from every source persists, except a shrinking known-refused list", () => {
   const bySource = (source: string) => everyFill.filter(fill => fill.source === source);
   it("covers every source: shadcn@aria, Foundry including charts, and every composition template", () => {
-    expect(bySource("shadcn@aria")).toHaveLength(33);
+    // 33 importer-written fills plus the Foundry-authored rich-text engine exception (6463e7e59).
+    expect(bySource("shadcn@aria")).toHaveLength(34);
     expect(bySource("foundry").length).toBeGreaterThanOrEqual(57);
     expect(bySource("foundry").filter(fill => fill.slot.startsWith("components.chart-")).length).toBeGreaterThanOrEqual(9);
     expect(bySource("compose").map(fill => fill.slot)).toContain("components.date-picker");

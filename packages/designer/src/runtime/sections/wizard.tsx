@@ -4,7 +4,10 @@ import type { FormWizardStep } from "../../blocks/FormWizard.js";
 import { actionsOf, isObject, noop, recordsOf, refuseUnmapped, requiredAnatomy, requireSlot, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const ProgressBar = componentLeaf<typeof import("../../components/ProgressBar.js").ProgressBar>("components.progress-bar");
+type StockProgress = typeof import("../../components/preview-runtime/components/progress-bar/progress.js");
+/** Stock anatomy (E2), as FormWizard: the selected Progress names itself with its own ProgressLabel part. */
+const ProgressBar = componentLeaf<StockProgress["Progress"]>("components.progress-bar");
+const ProgressLabel = componentLeaf<StockProgress["ProgressLabel"]>("components.progress-bar", "ProgressLabel");
 
 const LEAF = "sections.wizard";
 
@@ -43,7 +46,7 @@ export const renderWizard: SectionRenderer = input => {
       currentStep={currentStep}
       onNext={noop}
       onBack={back ? noop : undefined}
-      progress={template ? <ProgressBar label={progressText(position, steps.length)} value={position} minValue={0} maxValue={steps.length} /> : undefined}
+      progress={template ? <ProgressBar value={position} minValue={0} maxValue={steps.length}><ProgressLabel>{progressText(position, steps.length)}</ProgressLabel></ProgressBar> : undefined}
       review={stringField(review, "summary")}
       labels={{ steps: label, back: back?.label ?? "", next: next!.label, finish: finish ?? next!.label, review: stringField(review, "label") ?? "", progress: progressText }}
     />
