@@ -19,14 +19,13 @@ import { CandidateCell } from "./CandidateCell.js";
 import { boardRowLeaf } from "./canvas-boards.js";
 import type { CompositeStudioLabels, CompositeStudioSnapshot } from "./types.js";
 import { specimenDataset } from "./specimen-dataset.js";
-import { studioTestCopy } from "./__fixtures__/copy.js";
-import { draftEnvelopes } from "./__fixtures__/copy-hand-roll.js";
+import { studioHostCopy } from "./__fixtures__/copy-hand-roll.js";
 
 const wholeLabels: CompositeStudioLabels = { ...labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
 afterEach(cleanup);
 /** The host binds Writer cells to records exactly as the Writer envelope declares them (admin-studio bindings). */
-const hostCopy = { ...studioTestCopy, messages: Object.fromEntries(draftEnvelopes.flatMap(envelope => envelope.bindings ?? []).map(binding => [binding.cellId, { id: binding.recordId }])) };
+const hostCopy = studioHostCopy;
 
 /** The host's whole wiring: its own adapter, with `preview` built from the modules it already imports. */
 function hostStudio(preview: CompositeStudioSnapshot["preview"]) {

@@ -13,6 +13,7 @@ import { buildCandidates } from "./model.js";
 import { LibraryBoardSection } from "../blocks/library-board/LibraryBoardSection.js";
 import { valueLibraryBoardPreviews, valueLibraryBoardRecords, type PreparedLibraryBoardInput } from "./library-board-adapter.js";
 import { adopt, emptyLibrary, labels, smallCatalog } from "./__fixtures__/studio.js";
+import { studioHostCopy } from "./__fixtures__/copy-hand-roll.js";
 import type { CompositeStudioAdapter, CompositeStudioLabels } from "./types.js";
 
 afterEach(cleanup);
@@ -77,7 +78,7 @@ function fullStudio() {
 describe("one board and cell anatomy on every layer", () => {
   it("renders every board of the five layers with one header and one plate cell per leaf", async () => {
     const user = userEvent.setup();
-    render(<WholeStudioProvider adapter={fullStudio()} labels={wholeLabels}><Studio header="external" /></WholeStudioProvider>);
+    render(<WholeStudioProvider adapter={fullStudio()} labels={wholeLabels}><Studio header="external" copy={studioHostCopy} /></WholeStudioProvider>);
     await studioReady();
     const report: Record<string, { boards: number; nonconforming: number; header: number; cells: number; faults: string[] }> = {};
     let filled = 0, unchosen = 0;

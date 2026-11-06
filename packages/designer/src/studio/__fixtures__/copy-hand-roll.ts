@@ -2,12 +2,15 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect } from "vitest";
 import type { StudioCopyBinding, StudioCopyRef } from "../copy-binding.js";
+import { studioTestCopy } from "./copy.js";
 
 const relative = "packages/writer/src/catalog/records/admin-studio.r1.en.json";
 export const repositoryRoot = [process.cwd(), resolve(process.cwd(), "../..")].find(root => existsSync(resolve(root, relative)))!;
 export function catalogFixture<T>(path: string): T { return JSON.parse(readFileSync(resolve(repositoryRoot, path), "utf8")) as T; }
 export const draftEnvelopes = ["admin-voice.r1.en.json", "admin-studio.r1.en.json", "admin-meta.r1.en.json"].map(name =>
   catalogFixture<{ records: { id: string; status: string; text: string; args?: { name: string; type: string }[] }[]; bindings?: { cellId: string; recordId: string; kind: string; target: string }[]; reviews: { recordId: string; source: { path: string }; before: string; argumentMapping?: Record<string, string> }[] }>(`packages/writer/src/catalog/records/${name}`));
+/** A host Studio binding: the test copy, with every Writer cell bound to its record exactly as the envelopes declare (admin-studio bindings). */
+export const studioHostCopy = { ...studioTestCopy, messages: Object.fromEntries(draftEnvelopes.flatMap(envelope => envelope.bindings ?? []).map(binding => [binding.cellId, { id: binding.recordId }])) };
 // Shared labels were canonicalized into common-labels, whose external declarations resolve from their owners (sign-in, paging).
 const common = catalogFixture<{ records: { id: string }[]; externalRecords: { recordId: string }[] }>("packages/writer/src/catalog/records/common-labels.r1.en.json");
 const knownIds = new Set([...draftEnvelopes.flatMap(envelope => envelope.records.map(record => record.id)), ...common.records.map(record => record.id), ...common.externalRecords.map(row => row.recordId)]);

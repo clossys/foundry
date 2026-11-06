@@ -10,6 +10,7 @@ import { Studio } from "./index.js";
 import { StudioProvider, useStudioSession } from "./StudioProvider.js";
 import { canvasPreviewPort } from "./canvas-boards.js";
 import { smallCatalog, labels, emptyLibrary, adopt } from "./__fixtures__/studio.js";
+import { studioHostCopy } from "./__fixtures__/copy-hand-roll.js";
 import { Matrix as Comparison } from "../blocks/Matrix.js";
 import { valueLibraryBoardRecords, valueLibraryBoardPreviews, type PreparedLibraryBoardInput } from "./library-board-adapter.js";
 import { buildCandidates } from "./model.js";
@@ -44,7 +45,7 @@ it("renders every value-layer canvas board as the registered library-board Secti
   const declared = { boards: -1 };
   function Declared() { declared.boards = useStudioSession().boards.length; return null; }
   render(<StudioProvider catalog={smallCatalog} adapter={{ load: async () => ({ library }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels}>
-    <Declared /><Studio header="internal" />
+    <Declared /><Studio header="internal" copy={studioHostCopy} />
   </StudioProvider>);
   await findLayerSelect();
   for (const layer of ["Tokens", "Assets"]) {
@@ -106,7 +107,7 @@ it("a date segment inside a canvas board cell keeps ArrowUp/ArrowDown; the grid 
 });
 
 it("canvas shortcuts still work when the canvas itself has focus, and never from a focused date segment", async () => {
-  render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} />);
+  render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} copy={studioHostCopy} />);
   await findLayerSelect();
   // Let the boards mount and the camera finish its initial fit before measuring a pan.
   await waitFor(() => expect(document.querySelector("[data-studio-world] section[data-library-board]")).not.toBeNull());
