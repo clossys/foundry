@@ -223,9 +223,11 @@ describe("Matrix unchanged sides", () => {
     // sides modes must consume arrangement and match that raw HTML without ID normalization. Re-captured by
     // planner:R2F-05 into a generated file (`vitest run -u`), never a hand-edited hash: each side plate is the
     // selected stock Card (E4, P0 shadcn reset; ebd6753ac), and diffed against 25e371b42 no other byte changed.
-    // The look is on the owner CREATIVE list.
+    // The look is on the owner CREATIVE list. Re-captured again by planner:R2F-05: the inverse plates take their
+    // ground as token classes (bg-surface-inverse-raised text-ink-on-inverse) instead of an inline re-point (E4);
+    // only the inverse/* keys move.
     const hashes = Object.fromEntries(records.map(record => [record.key, createHash("sha256").update(record.html).digest("hex")]));
-    await expect(stableStringify({ $capture: "stock Card side plates (E4, ebd6753ac); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/matrix-sides.sha256.json");
+    await expect(stableStringify({ $capture: "stock Card side plates (E4, ebd6753ac); inverse ground as token classes (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/matrix-sides.sha256.json");
   }, 60_000);
 });
 
