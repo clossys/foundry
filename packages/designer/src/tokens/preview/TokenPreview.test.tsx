@@ -169,7 +169,7 @@ describe("exact-property TokenPreview", () => {
     for (const property of ["--color-ink-on-inverse", "--color-line-on-inverse", "--color-control-tonal-inverse", "--ui-ring-on-inverse"]) {
       expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-surface-inverse, oklch(0.2178 0 0));");
     }
-    expect(specimen("--color-ink-on-accent").querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-accent, oklch(0.4748 0 0));");
+    expect(specimen("--color-ink-on-accent").querySelector("figure")?.getAttribute("style")).toContain("background:var(--color-action, #0A0A0A);");
     for (const property of ["--color-surface-glass", "--color-overlay-scrim", "--ui-alpha-disabled"]) {
       expect(specimen(property).querySelector("figure")?.getAttribute("style")).toContain("background-image:repeating-conic-gradient(var(--color-surface-base, oklch(0.9702 0 0)) 0% 25%, var(--color-surface-inverse, oklch(0.2178 0 0)) 0% 50%);");
     }
@@ -243,7 +243,7 @@ describe("exact-property TokenPreview", () => {
       ["--radius-panel", "figure > div", "background:var(--color-surface-raised, oklch(1 0 0));"],
       ["--radius-panel", "figure > div", "color:var(--color-ink-primary, oklch(0.2178 0 0));"],
       ["--ui-border-rule", "figure > div", "border:2px solid var(--color-line-strong, oklch(0.7763 0 0));"],
-      ["--spacing-sm", "span", "background:var(--color-accent, oklch(0.4748 0 0))"],
+      ["--spacing-sm", "span", "background:var(--color-action, #0A0A0A)"],
       ["--blur-glass", "figure > div > div", "background:var(--color-surface-glass, oklch(1 0 0 / 0.6));"],
     ];
     for (const [property, selector, declaration] of cases) {

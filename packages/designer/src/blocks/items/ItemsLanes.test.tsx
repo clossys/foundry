@@ -18,7 +18,7 @@ function IdSlot({ label }: { label: string }) {
 const slot = (label: string, id: boolean) => id ? <IdSlot label={label} /> : label;
 // Immutable main 99a6de763a94d652de288c3562d6d6cf60f1cdc3, captured before implementation.
 // GATES-RED G4: 588 hashes re-taken after the legacy-colour migration; each differs from its
-// 99a6de763 markup only by the mapped class bg-accent-tint -> bg-accent (styles/legacy-color-map.json).
+// 99a6de763 markup only by the accent-tint utility mapped to bg-accent (styles/legacy-color-map.json).
 const BASE_GOLDENS: readonly (readonly [string, string])[] = [
   [
     "client:false:stacked:3:base:plain:ends",
