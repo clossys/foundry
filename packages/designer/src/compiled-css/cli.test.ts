@@ -18,6 +18,9 @@ beforeEach(() => {
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
   cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
   cpSync(join(packageRoot, "src", "tokens", "preview"), join(dir, "src", "tokens", "preview"), { recursive: true });
+  // The generated shadcn colour-key region is emitted from the themes layer.
+  mkdirSync(join(dir, "src", "catalog", "slots"), { recursive: true });
+  cpSync(join(packageRoot, "src", "catalog", "slots", "themes.json"), join(dir, "src", "catalog", "slots", "themes.json"));
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });

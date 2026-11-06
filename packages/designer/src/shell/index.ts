@@ -17,7 +17,10 @@
  * `charts`.
  */
 
+import { version as reactVersion } from "react";
 import { assertEnginePeers } from "../components/internal/engine-peers.js";
+import { assertPeerVersion } from "../internal/peer-version.js";
+import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 /**
  * `react` and `react-aria-components` are two of this package's optional
@@ -28,6 +31,7 @@ import { assertEnginePeers } from "../components/internal/engine-peers.js";
  * consumer who imports only `@clossys/designer/shell` (never
  * `@clossys/designer/components`) would otherwise get no signal at all.
  */
+assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 assertEnginePeers();
 
 export { Shell } from "./Shell.js";
