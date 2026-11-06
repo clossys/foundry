@@ -78,10 +78,14 @@ test("real npm cannot normalize later uppercase overrides back into the credenti
   const hostileGlobalNpmrc = join(root, "ambient-global.npmrc");
   const cache = join(root, "cache");
   await mkdir(cache);
-  await writeFile(npmrc, "registry=https://registry.npmjs.org/\n");
-  await writeFile(globalNpmrc, "");
-  await writeFile(hostileNpmrc, "registry=https://example.invalid/user/\n");
-  await writeFile(hostileGlobalNpmrc, "registry=https://example.invalid/global/\n");
+  // Each file carries a marker only it sets, so the value npm resolves names
+  // the file it actually loaded. npm 11 refuses `npm config get userconfig`
+  // and `globalconfig` ("protected"), so the files are proven by what npm
+  // read from them, not by echoing the path back.
+  await writeFile(npmrc, "registry=https://registry.npmjs.org/\ninit-author-name=isolated-user\n");
+  await writeFile(globalNpmrc, "init-license=isolated-global\n");
+  await writeFile(hostileNpmrc, "registry=https://example.invalid/user/\ninit-author-name=ambient-user\n");
+  await writeFile(hostileGlobalNpmrc, "registry=https://example.invalid/global/\ninit-license=ambient-global\n");
 
   const env = credentiallessEnv({
     PATH: process.env.PATH,
@@ -95,13 +99,20 @@ test("real npm cannot normalize later uppercase overrides back into the credenti
 
   for (const [key, expected] of [
     ["registry", "https://registry.npmjs.org/"],
-    ["userconfig", npmrc],
-    ["globalconfig", globalNpmrc],
+    ["init-author-name", "isolated-user"],
+    ["init-license", "isolated-global"],
   ]) {
     const result = await runProcess("npm", ["config", "get", key], { cwd: root, env });
     assert.equal(result.exitCode, 0, result.stderr);
     assert.equal(result.stdout.trim(), expected);
   }
+  // npm's own origin headers name the loaded user and global files. Matched
+  // by file name: npm masks id-shaped path segments (a session-id TMPDIR).
+  const listed = await runProcess("npm", ["config", "list"], { cwd: root, env });
+  assert.equal(listed.exitCode, 0, listed.stderr);
+  const origins = Object.fromEntries([...listed.stdout.matchAll(/^; "(user|global)" config from (.+)$/gm)].map((match) => [match[1], match[2].trim()]));
+  assert.ok(origins.user?.endsWith("/isolated.npmrc"), listed.stdout);
+  assert.ok(origins.global?.endsWith("/isolated-global.npmrc"), listed.stdout);
 });
 
 test("the CLI is closed and exposes no probe that can weaken a failure", () => {
