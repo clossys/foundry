@@ -29,7 +29,7 @@ import { specimenSubstrate } from "./specimen-substrate.js";
 import { SPECIMEN_FRAME_CSP, specimenFramePage, specimenWidth } from "./specimen-frame.js";
 import { resolveSampleCopy, specimenStateOf, type SpecimenState } from "./specimen-state.js";
 import { fixtureChildren, itemDependencies, moduleExports, pinnedWriterCopy, specimenTreeIssues } from "./specimen-tree.js";
-import { installAndBind, isBlocking, substrateDependencies, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
+import { bindPage, installPage, isBlocking, substrateDependencies, type BoundPage, type InstallFinding, type InstallPageRecord, type InstallPins } from "@clossys/publisher/install";
 import { slotInstallInputs } from "../specimen/slot-install-inputs.js";
 import { libraryRecordSource } from "../specimen/library-source.js";
 import { specimenPageSlotIds } from "../specimen/page-slot-ids.js";
@@ -215,7 +215,16 @@ async function buildPass(options: { library: string; substrate: string; pins: In
       continue;
     }
     const record: InstallPageRecord = { id: page, frame: slot, sections: [], ...(include.length ? { include } : {}), copy: copyFor(slot, records) };
-    const result = await installAndBind({ page: record, pins, source, substrate, runner, copy });
+    const installed = await installPage({ page: record, pins, source, substrate, runner });
+    let result: typeof installed & { page?: BoundPage } = installed;
+    if (!installed.findings.some(isBlocking)) {
+      // A specimen binds each copy slot explicitly to the Writer key its element previews it with
+      // (`previewCopy`); copy of a page record that already places the item wins. Binding itself
+      // never falls back to a preview key.
+      const bindings = Object.fromEntries(installed.slots.filter(row => row.mounted).map(row => [row.slot, { copy: { ...row.previewCopy, ...record.copy } }]));
+      const bound = bindPage({ page: { ...record, bindings }, slots: installed.slots, copy });
+      result = { ...installed, findings: bound.findings, ...(bound.page ? { page: bound.page } : {}) };
+    }
     const blocking = result.findings.filter(isBlocking);
     if (!result.page || blocking.length) { findings.push(...blocking); continue; }
     // A specimen frames one item: only a frame composes the (empty) section list as children.

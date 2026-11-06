@@ -58,7 +58,9 @@ in a candidate.
 
 1. **List the copy keys.** Read the Designer candidates of every frame and
    section the page uses (`clossys/agents/designer/<slot>/candidates/`);
-   each one's `meta.element.reads.copyKeys` lists the copy it renders. Work from
+   each one's `meta.element.reads.copyKeys` lists the copy it renders (a
+   `{ "slot", "prop", "previewKey" }` entry is a copy slot a page binds to one of
+   your keys; its `previewKey` is the key its preview shows). Work from
    the candidates; you do not wait for Designer pins. The Publisher page
    candidates (`clossys/agents/publisher/.../candidates/`) show which pages
    mount which sections.
@@ -99,7 +101,8 @@ in a candidate.
 ## Done when
 
 - Every `reads.copyKeys` entry of every frame and section candidate the page
-  mounts has a record with that key in a Writer candidate.
+  mounts has a record in a Writer candidate: the key itself, or for a copy-slot
+  entry its `previewKey` and the key the page binds to its `slot`.
 - `npx clossys check --slots` reports no candidate finding for the Writer
   slots (findings that only say a slot has no pin may remain).
 - Every claim cites a Director brief slot in `source.ref`; open facts show as

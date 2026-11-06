@@ -79,8 +79,12 @@ A page candidate (`clossys.page/1`):
    you do not wait for Designer pins. If no candidate fits, raise a Designer
    NEED naming the slot and stop.
 2. **List the copy keys.** Each chosen candidate's
-   `meta.element.reads.copyKeys` lists the copy it renders.
-3. **Map the copy.** For each copy key, find the Writer record that fills it in
+   `meta.element.reads.copyKeys` lists the copy it renders. A
+   `{ "slot", "prop", "previewKey" }` entry is a copy slot: the page binds it by
+   its `slot` name (`copy: { "<slot>": "<writer slot>#<id>" }`), and a slot the
+   page leaves unbound renders empty, never its `previewKey`. A bare key is copy
+   the element reads itself.
+3. **Map the copy.** For each copy slot or key, find the Writer record that fills it in
    the Writer candidates (`### ` records, metadata `id`) and write it as
    `<writer slot>#<id>`, the Writer slot that holds the record. If none exists, raise
    a Writer NEED naming the key and stop; never type copy into the page.

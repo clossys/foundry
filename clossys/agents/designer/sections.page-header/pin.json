@@ -1,7 +1,7 @@
 {
-  "candidate": "page-header-v5.json",
-  "sha256": "77902c883254e108c190806d2cb46679ec4b16b27c651b00eed44ca0b1383f93",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "page-header-v6.json",
+  "sha256": "887aac91a82fd5020af732023d4a55c9f25d1e45ecca7b5fdce28b6832af089a",
+  "decidedBy": "planner:COPY-SLOT-CONTRACT",
   "basis": "planner",
-  "at": "2026-11-05T11:46:42.245Z"
+  "at": "2026-11-05T18:27:00Z"
 }

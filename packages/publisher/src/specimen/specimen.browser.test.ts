@@ -106,7 +106,8 @@ describe.skipIf(!chrome)("specimen in Chrome", () => {
       probe: `window.__framed`,
     });
     expect(capture.consoleErrors).toEqual([]);
-    const framed = capture.probe as Record<string, any>[];
+    // The frame also posts size messages on their own channel (measured below); health is its own type.
+    const framed = (capture.probe as Record<string, any>[]).filter(message => message?.type === SPECIMEN_HEALTH_MESSAGE_TYPE);
     expect(framed.length).toBeGreaterThanOrEqual(1);
     expectHealthShape(framed[framed.length - 1], "sample-button");
     expect(framed[0]!.sequence).toBe(1);

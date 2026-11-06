@@ -1,7 +1,7 @@
 {
-  "candidate": "call-to-action-v4.json",
-  "sha256": "19aa8c4ef6094df91dac85f6a8b54559e2eb1e0be43bbed2de087296fa1ba3b7",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "call-to-action-v5.json",
+  "sha256": "a09de6c0fbde40ef446c56f9e4b957a8dd6f1cacbf5dc1f1d41feabc243c2db4",
+  "decidedBy": "planner:COPY-SLOT-CONTRACT",
   "basis": "planner",
-  "at": "2026-11-05T11:46:41.065Z"
+  "at": "2026-11-05T18:27:00Z"
 }

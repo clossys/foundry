@@ -127,9 +127,11 @@ function modelStores(root: string, writer: Map<string, string[]>): SlotStore[] {
             normalized.copyKeys = [...new Set(bound.flatMap(copy => Object.values(copy ?? {}) as string[]))];
           }
           else if (slot.kind === "element") {
+            // A copy slot `{ slot, prop, previewKey }` reads its preview key; a bare string is a key read through host data.
             const keys = doc.meta?.element?.reads?.copyKeys ?? [];
-            if (Array.isArray(keys) && keys.every(key => typeof key === "string")) normalized.copyKeys = keys;
-            else normalized.schemaIssues.push("Element copy keys must be a list of strings.");
+            const slotEntry = (key: any) => !!key && typeof key === "object" && !Array.isArray(key) && typeof key.slot === "string" && !!key.slot && typeof key.prop === "string" && !!key.prop && typeof key.previewKey === "string" && !!key.previewKey;
+            if (Array.isArray(keys) && keys.every(key => typeof key === "string" || slotEntry(key))) normalized.copyKeys = keys.map((key: any) => typeof key === "string" ? key : key.previewKey);
+            else normalized.schemaIssues.push("Element copy keys must list Writer keys or { slot, prop, previewKey } copy slots.");
           }
         } catch { normalized.schemaIssues.push("Candidate or slot document could not be read."); }
       }

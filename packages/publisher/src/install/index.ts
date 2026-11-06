@@ -9,9 +9,12 @@
  * array, no shell, cwd set to the substrate). An install is recorded with the sha256 of
  * every file it wrote, so a repeat install of the same pinned item is a no-op and an edited
  * file is a finding. Binding maps each section's copy slots to Writer keys and its asset
- * slots to consumer asset ids. A copy slot the page leaves unbound binds to the Writer key of
- * the same name when Writer has one; otherwise it renders empty and is an info finding. Every
- * other unresolved slot or key is a finding that stops the page; nothing falls back to sample copy.
+ * slots to consumer asset ids. An element that declares its copy slots (`preview.copySlots`, from
+ * `meta.element.reads.copyKeys` entries) has exactly those: a page binds each by its slot name and
+ * the text renders at the entry's prop. A copy slot the page leaves unbound renders empty and is
+ * an info finding; it never falls through to the entry's preview key or to a Writer key of the
+ * same name. Every other unresolved slot or key is a finding that stops the page; nothing falls
+ * back to sample copy.
  * A section slot listed more than once mounts once per listing: each listing is an instance with
  * its own key (`sectionInstances`) and its own copy binding.
  */
@@ -51,7 +54,7 @@ export type InstallPins = Readonly<Record<string, InstallPin>>;
 
 export type InstallFindingCode =
   | "invalid-page" | "unpinned-slot" | "unpinned-dependency" | "missing-record" | "not-a-registry-item" | "no-entry"
-  | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key"
+  | "install-failed" | "hash-mismatch" | "unbound-copy-slot" | "missing-copy-key" | "invalid-copy-slot"
   | "unbound-asset-slot" | "missing-asset" | "render-failed"
   // A page needs the consumer's component selection to mount inside the Publisher host (`./host.ts`).
   | "need-component-selection"
@@ -110,6 +113,12 @@ export interface ResolvedSlot {
   /** The props the element mounts with, from its preview fixtures. */
   readonly props: Readonly<Record<string, unknown>>;
   readonly copySlots: readonly string[];
+  /**
+   * Copy slot name to the Writer key the element's own preview reads: a declared entry's
+   * `previewKey`, else (an element that declares no copy slots) the `$copy` name itself. Only a
+   * specimen binds these, explicitly; a page never falls back to them.
+   */
+  readonly previewCopy: Readonly<Record<string, string>>;
   readonly assetSlots: readonly string[];
   /** The item's npm `dependencies`, as shadcn lists them (`name` or `name@range`). */
   readonly dependencies: readonly string[];
@@ -142,14 +151,52 @@ function mountOf(record: SpecimenRecord): { file?: string; export?: string; copy
   return { ...(record.preview.entry ? { file: record.preview.entry } : {}), ...(record.preview.export ? { export: record.preview.export } : {}), ...(record.preview.copyKeys ? { copyKeys: record.preview.copyKeys } : {}), props: { ...fixtures } };
 }
 
-/** Copy and asset slots an element reads: its preview copy keys plus every `{ "$copy" }` / `{ "$asset" }` in its props. */
-function slotsOf(record: SpecimenRecord, props: Record<string, unknown>): { copy: string[]; assets: string[] } {
-  const copy = new Set<string>(Object.keys(record.preview.copy ?? {})), assets = new Set<string>();
+/** The value at a dot path (`nav.items.0.label`) of a props object, and its parent and key. */
+function propAt(props: Record<string, unknown>, path: string): { parent: Record<string, unknown> | unknown[]; key: string } | undefined {
+  const parts = path.split(".");
+  let parent: unknown = props;
+  for (const part of parts.slice(0, -1)) {
+    parent = Array.isArray(parent) ? parent[Number(part)] : isRecord(parent) ? parent[part] : undefined;
+    if (!parent || typeof parent !== "object") return undefined;
+  }
+  const key = parts[parts.length - 1]!;
+  return Array.isArray(parent) ? (/^\d+$/.test(key) && Number(key) < parent.length ? { parent, key } : undefined)
+    : isRecord(parent) && Object.hasOwn(parent, key) ? { parent, key } : undefined;
+}
+
+/**
+ * Copy and asset slots an element reads. An element that declares copy slots has exactly those:
+ * each entry's prop must hold `{ "$copy": <previewKey> }` in the fixtures, and it becomes
+ * `{ "$copy": <slot> }`; a `$copy` the entries do not declare is an `invalid-copy-slot` finding.
+ * An element that declares none reads its preview copy keys plus every `{ "$copy" }` in its props.
+ * Asset slots are every `{ "$asset" }` in the props.
+ */
+function slotsOf(record: SpecimenRecord, props: Record<string, unknown>, where: string): { copy: string[]; previewCopy: Record<string, string>; assets: string[]; issues: string[] } {
+  const assets = new Set<string>(), issues: string[] = [];
+  const declared = record.preview.copySlots;
+  const copy = new Set<string>(declared ? [] : Object.keys(record.preview.copy ?? {})), previewCopy: Record<string, string> = {};
+  const rewritten = new Set<unknown>();
+  for (const entry of declared ?? []) {
+    const at = propAt(props, entry.prop);
+    const node = at ? (Array.isArray(at.parent) ? at.parent[Number(at.key)] : at.parent[at.key]) : undefined;
+    if (!isRecord(node) || node.$copy !== entry.previewKey || Object.keys(node).length !== 1) {
+      issues.push(`${where}: copy slot ${entry.slot} renders at prop ${entry.prop}, which does not hold { "$copy": ${JSON.stringify(entry.previewKey)} }`);
+      continue;
+    }
+    const next = { $copy: entry.slot };
+    if (Array.isArray(at!.parent)) at!.parent[Number(at!.key)] = next; else at!.parent[at!.key] = next;
+    rewritten.add(next);
+    copy.add(entry.slot); previewCopy[entry.slot] = entry.previewKey;
+  }
   eachNode(props, node => {
-    if (typeof node.$copy === "string") copy.add(node.$copy);
+    if (typeof node.$copy === "string") {
+      if (!declared) { copy.add(node.$copy); previewCopy[node.$copy] = node.$copy; }
+      else if (!rewritten.has(node)) issues.push(`${where}: fixture $copy ${node.$copy} is not a declared copy slot (meta.element.reads.copyKeys)`);
+    }
     if (typeof node.$asset === "string") assets.add(node.$asset);
   });
-  return { copy: [...copy].sort(), assets: [...assets].sort() };
+  if (!declared) for (const name of copy) previewCopy[name] ??= name;
+  return { copy: [...copy].sort(), previewCopy, assets: [...assets].sort(), issues };
 }
 
 /** The record's registry item: its payload, or the payload file that is one. */
@@ -235,6 +282,8 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
         await visit(candidates[0]!, "dependency", id);
       }
       const mount = mountOf(record);
+      // Declared copy slots rewrite props in place: the record's own fixtures stay untouched.
+      mount.props = structuredClone(mount.props);
       if (role === "frame") delete mount.props.children;
       const parts = new Set<string>();
       eachNode(mount.props, node => { if (typeof node.$element === "string") parts.add(node.$element); });
@@ -243,12 +292,13 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       const mounted = MOUNTED.has(role);
       if (mounted && entryIndex < 0) { findings.push({ code: "no-entry", slot, detail: `${id}: the registry item has no code file to mount` }); return; }
       const item = `${JSON.stringify({ ...found.item, files: registryFiles, registryDependencies: kept }, null, 2)}\n`;
-      const { copy, assets } = slotsOf(record, mount.props);
+      const { copy, previewCopy, assets, issues } = slotsOf(record, mount.props, id);
+      if (issues.length) { for (const detail of issues) findings.push({ code: "invalid-copy-slot", slot, detail }); return; }
       const resolved: ResolvedSlot = {
         slot, role, mounted, record, item, itemHash: sha256(item), files: files as string[],
         ...(entryIndex >= 0 ? { entry: { file: files[entryIndex]!, ...(mount.export ? { export: mount.export } : {}) } } : {}),
         ...(mount.copyKeys ? { copyKeys: mount.copyKeys } : {}),
-        props: mount.props, copySlots: copy, assetSlots: assets,
+        props: mount.props, copySlots: copy, previewCopy, assetSlots: assets,
         dependencies: (Array.isArray(found.item.dependencies) ? found.item.dependencies : []).filter((dependency: unknown): dependency is string => typeof dependency === "string" && !!dependency),
       };
       slots.push(resolved); done.set(slot, resolved);
@@ -434,9 +484,10 @@ function resolveProps(value: unknown, texts: Readonly<Record<string, string>>, v
 
 /**
  * Bind every copy and asset slot of every mounted slot, once per section instance. A copy slot
- * binds to the instance binding, then the slot binding, then the page-wide binding, then the
- * Writer key of the same name; a copy slot with none of these renders empty and is an `info`
- * finding. An unknown Writer key or an unbound asset is a blocking finding, and then no page is emitted.
+ * binds to the instance binding, then the slot binding, then the page-wide binding; a copy slot
+ * with none of these renders empty and is an `info` finding. It never falls through to a preview
+ * key or to a Writer key of the same name. An unknown Writer key or an unbound asset is a blocking
+ * finding, and then no page is emitted.
  */
 export function bindPage(options: BindOptions): { page?: BoundPage; findings: InstallFinding[] } {
   const findings: InstallFinding[] = [];
@@ -446,7 +497,7 @@ export function bindPage(options: BindOptions): { page?: BoundPage; findings: In
     const own = options.page.bindings?.[key], shared = key === slot.slot ? undefined : options.page.bindings?.[slot.slot];
     const copy: Record<string, string> = {}, assets: Record<string, string> = {}, texts: Record<string, string> = {}, values: Record<string, unknown> = {};
     for (const name of slot.copySlots) {
-      const writerKey = own?.copy?.[name] ?? shared?.copy?.[name] ?? options.page.copy?.[name] ?? (Object.hasOwn(options.copy, name) ? name : undefined);
+      const writerKey = own?.copy?.[name] ?? shared?.copy?.[name] ?? options.page.copy?.[name];
       if (!writerKey) { texts[name] = ""; findings.push({ code: "unbound-copy-slot", slot: key, severity: "info", detail: `${options.page.id}: ${slot.record.id} copy slot ${name} is bound to no Writer key; it renders empty` }); continue; }
       if (!Object.hasOwn(options.copy, writerKey)) { findings.push({ code: "missing-copy-key", slot: key, detail: `${options.page.id}: Writer has no key ${writerKey} (for ${slot.record.id} ${name})` }); continue; }
       copy[name] = writerKey; texts[name] = options.copy[writerKey]!;

@@ -8,8 +8,10 @@ import { agentModule, agentRoot } from "./cells.js";
 import { startProducerServer, type ProducerServer } from "./index.js";
 import { consumerApps } from "./publications.js";
 
-// Flat Publisher slots: agents/publisher/<slot-id>/{slot.json,candidates/,pin.json}.
+// Flat Publisher slots: agents/publisher/<slot-id>/{slot.json,candidates/,pin.json}. Publication tree
+// names are Writer keys (COPY-SLOT-CONTRACT D3), so the pinned Writer strings come with the slots.
 const fixture = fileURLToPath(new URL("../publish/__fixtures__/install-consumer/clossys/agents/publisher/", import.meta.url));
+const writerFixture = fileURLToPath(new URL("../publish/__fixtures__/install-consumer/clossys/agents/writer/", import.meta.url));
 let root: string;
 let server: ProducerServer | undefined;
 beforeEach(async () => { root = await realpath(await mkdtemp(join(tmpdir(), "producer-publications-"))); });
@@ -26,10 +28,14 @@ async function snapshot(directory: string): Promise<Record<string, string>> {
   await walk(directory); return files;
 }
 const slot = () => join(agentRoot(root, "publisher"), "publication.example-site");
-async function author() { await cp(fixture, agentRoot(root, "publisher"), { recursive: true }); }
+async function author() {
+  await cp(fixture, agentRoot(root, "publisher"), { recursive: true });
+  await cp(writerFixture, agentRoot(root, "writer"), { recursive: true });
+}
+const pinned = async () => JSON.parse(await readFile(join(slot(), "pin.json"), "utf8")).candidate as string;
 /** Rewrite the pinned publication candidate and re-pin its exact bytes. */
 async function repin(edit: (candidate: any) => unknown) {
-  const file = join(slot(), "candidates/publication-v1.json");
+  const file = join(slot(), "candidates", await pinned());
   const next = edit(JSON.parse(await readFile(file, "utf8")));
   const bytes = typeof next === "string" ? next : JSON.stringify(next, null, 2) + "\n";
   await writeFile(file, bytes);
@@ -39,7 +45,7 @@ async function repin(edit: (candidate: any) => unknown) {
 
 it("projects the pinned publication slot on each GET without compiling or writing the consumer", async () => {
   await author();
-  await repin(candidate => ({ ...candidate, meta: { ...candidate.meta, tree: { ...candidate.meta.tree, name: "Example site" } } }));
+  await repin(candidate => ({ ...candidate, meta: { ...candidate.meta, tree: { ...candidate.meta.tree, name: "site.publication" } } }));
   const childEntry = join(dirname(fileURLToPath(import.meta.url)), "__fixtures__/studio-child.mjs");
   server = await startProducerServer({ root, port: 0, studioEntry: childEntry, handleSignals: false });
   const before = await snapshot(root);
@@ -48,9 +54,9 @@ it("projects the pinned publication slot on each GET without compiling or writin
   const projections = await agentModule("publisher", "content-map/index.js");
   expect(first.publications[0].commands).toEqual(projections.projectCommands(first.publications[0].map));
   expect(await snapshot(root)).toEqual(before);
-  await repin(candidate => ({ ...candidate, meta: { ...candidate.meta, tree: { ...candidate.meta.tree, name: "Renamed site" } } }));
+  await repin(candidate => ({ ...candidate, meta: { ...candidate.meta, tree: { ...candidate.meta.tree, name: "site.name" } } }));
   const changed = await snapshot(root);
-  expect((await (await fetch(`${server.url}/api/apps`)).json() as any).publications[0].title).toBe("Renamed site");
+  expect((await (await fetch(`${server.url}/api/apps`)).json() as any).publications[0].title).toBe("Example Studio");
   expect(await snapshot(root)).toEqual(changed);
   await rm(join(slot(), "pin.json"));
   expect(await (await fetch(`${server.url}/api/apps`)).json()).toMatchObject({ state: "missing", publications: [] });
@@ -60,7 +66,7 @@ it("reports missing publications and fails closed for drifted, malformed and lin
   expect(await consumerApps(root)).toMatchObject({ state: "missing", publications: [] });
   await author();
   expect(await consumerApps(root)).toMatchObject({ state: "ready" });
-  const candidate = join(slot(), "candidates/publication-v1.json");
+  const candidate = join(slot(), "candidates", await pinned());
   await writeFile(candidate, (await readFile(candidate, "utf8")) + " ");
   expect(await consumerApps(root)).toMatchObject({ state: "error", publications: [] });
   await repin(() => "{}");
@@ -69,6 +75,18 @@ it("reports missing publications and fails closed for drifted, malformed and lin
   const outside = join(root, "outside"); await cp(fixture, outside, { recursive: true });
   await symlink(outside, agentRoot(root, "publisher"));
   expect(await consumerApps(root)).toMatchObject({ state: "error", publications: [] });
+});
+
+it("refuses a literal publication tree name: names are pinned Writer keys", async () => {
+  await author();
+  expect(await consumerApps(root)).toMatchObject({ state: "ready", publications: [{ id: "example-site", title: "Example site" }] });
+  const { readPinnedPublication, resolvePublicationTitles } = await import("../publish/pinned-publication.js");
+  for (const [name, refusal] of [["Example site", /tree node example-site name is a literal "Example site"/], ["site.unregistered", /no pinned Writer string registers/]] as const) {
+    await repin(candidate => ({ ...candidate, meta: { ...candidate.meta, tree: { ...candidate.meta.tree, name } } }));
+    expect(await consumerApps(root)).toMatchObject({ state: "error", publications: [] });
+    const publication = await readPinnedPublication(join(root, "clossys"), "example-site");
+    expect(() => resolvePublicationTitles(join(root, "clossys"), publication)).toThrow(refusal);
+  }
 });
 
 it("retains only declared app targets and refuses unavailable, escaping and aliased app mappings", async () => {

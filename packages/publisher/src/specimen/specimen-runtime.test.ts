@@ -14,7 +14,7 @@ const detail = slotDetail(workspace, 'designer', 'sections.studio.checks')!;
 const props = { checks: slotDetailInputs(detail, { gallery: agent => `/${agent}`, leaf: (agent, id) => `/${agent}/${id}`, label: () => undefined, back: { href: '/designer', label: 'Designer' } }, 'light').checks };
 const files: SpecimenFile[] = [
   // This helper precedes the entry and is executed by it. Props are the native detail projection.
-  { path: 'helpers.tsx', content: 'export const finding = checks => checks.find(row => !row.ok)?.label ?? checks[0].label;' },
+  { path: 'helpers.tsx', content: 'export const finding = ({ rows }) => rows.find(row => !row.ok)?.label ?? rows[0].label;' },
   { path: 'index.tsx', content: 'import { Button } from "@clossys/designer-ui"; import { finding } from "./helpers"; export default function Checks({ checks }) { return <Button>{finding(checks)}</Button>; }' },
   // A package-local @/components/ui/dialog must never capture this virtual record file.
   { path: 'components/ui/dialog.tsx', content: 'export const RecordOnlyDialog = () => <span>virtual-record-dialog</span>;' },
@@ -26,7 +26,8 @@ const record = (payload = files, preview: unknown = { fixtures: { file: 'index.t
 
 describe('specimen runtime source boundaries', () => {
   it('bundles a multi-file record while package-local aliases retain the real package resolution', async () => {
-    expect(props.checks).toEqual(expect.arrayContaining([expect.objectContaining({ label: 'Pin matches candidate bytes' })]));
+    expect(props.checks.rows).toEqual(expect.arrayContaining([expect.objectContaining({ label: 'Pin matches candidate bytes' })]));
+    expect(props.checks.copy).toBeDefined();
     const input = record();
     expect(specimenEntry(input)?.path).toBe('index.tsx');
     expect(input.preview).toEqual({ entry: 'index.tsx', export: 'default', fixtures: props });
@@ -56,7 +57,7 @@ describe('specimen runtime source boundaries', () => {
       files: [{ path: 'studio-checks.json', content: JSON.stringify(native) }], preview: native.meta.preview, contentHash: detail.pin!.sha256 });
     expect(input.preview).toMatchObject({ entry: 'index.tsx', export: 'default', fixtures: {} });
     expect(input.contentHash).toBe(detail.pin!.sha256);
-    expect(input.payload.files.find(file => file.path === 'index.tsx')!.content).toContain('checks: rows');
+    expect(input.payload.files.find(file => file.path === 'index.tsx')!.content).toContain('const { rows, copy } = checks;');
     expect(input.preview.fixtures).not.toHaveProperty('checks');
     // Source membership and normalization also hold for the helper-first canonical shell.
     const shell = slotDetail(workspace, 'designer', 'frames.studio-shell')!;

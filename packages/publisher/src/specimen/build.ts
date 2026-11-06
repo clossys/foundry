@@ -274,6 +274,9 @@ async function closure(record: SpecimenRecord, source: SpecimenRecordSource | un
       if (!sibling) { errors.push(`import @/${alias}: no file in the payload and no sibling record ${name}`); continue; }
       for (const file of sibling.payload.files) {
         const key = posix.normalize(file.path);
+        // The sibling's files answer the alias of their install path, as the record's own do.
+        const installed = installedPath(file);
+        if (installed && CODE.test(installed) && !aliases.has(stripExt(installed))) aliases.set(stripExt(installed), key);
         if (files.has(key)) continue;
         files.set(key, file.content);
         if (CODE.test(key)) pending.push(key);

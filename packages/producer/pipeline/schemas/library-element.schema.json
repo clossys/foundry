@@ -742,9 +742,37 @@
         "copyKeys": {
           "type": "array",
           "uniqueItems": true,
+          "description": "What the element reads from Writer. An entry { slot, prop, previewKey } is a copy slot: a page binds `slot`, the text renders at `prop` (a dot path into the mounted props) and the specimen previews it with Writer key `previewKey`. A bare string is a Writer key the element reads through host data.",
           "items": {
-            "type": "string",
-            "minLength": 1
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "object",
+                "required": [
+                  "slot",
+                  "prop",
+                  "previewKey"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "slot": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"
+                  },
+                  "prop": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z_$][\\w$-]*(?:\\.(?:\\d+|[A-Za-z_$][\\w$-]*))*$"
+                  },
+                  "previewKey": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            ]
           }
         },
         "themeVars": {

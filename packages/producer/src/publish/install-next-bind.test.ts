@@ -117,8 +117,10 @@ describe("clossys publish --install --next --bind", () => {
     const { root, site, app } = await consumer();
     expect(blocking(await install(root, app))).toEqual([]);
     const strings = join(root, "clossys", "agents", "writer", "strings.site", "candidates");
-    writeFileSync(join(strings, "site-v2.md"), readFileSync(join(strings, "site-v1.md"), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin"));
-    const pinned = await runPinCli(["writer/strings.site", "site-v2", "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
+    const current = JSON.parse(readFileSync(join(strings, "..", "pin.json"), "utf8")).candidate as string;
+    const next = `site-v${Number(/-v(\d+)\.md$/.exec(current)![1]) + 1}`;
+    writeFileSync(join(strings, `${next}.md`), readFileSync(join(strings, current), "utf8").replace("Pages assembled from records", "Pages reinstalled from a new pin"));
+    const pinned = await runPinCli(["writer/strings.site", next, "--by", "planner:SITE-TEMPLATE", "--at", "2026-11-04T00:00:00Z", "--root", root], root);
     expect(pinned.exitCode).toBe(0);
     // Until it is reinstalled, the installed page module is stale and the check run says so.
     expect((await install(root, app, true)).files.filter(file => file.state === "drift").map(file => file.file)).toContain("clossys/pages/home.tsx");

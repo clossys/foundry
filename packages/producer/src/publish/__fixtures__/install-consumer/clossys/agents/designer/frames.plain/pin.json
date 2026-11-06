@@ -1,7 +1,7 @@
 {
-  "candidate": "plain-frame-v2.json",
-  "sha256": "3e165401a923d874516f456c62e0a2d633ee3dc4e29da4fd8f0ee8549f1143ee",
-  "decidedBy": "planner:INTEGRATE-R2",
+  "candidate": "plain-frame-v3.json",
+  "sha256": "58da3c0d9bc80e881388aad56e161fe81a1c312ccc11cd2dac34feadf3693c87",
+  "decidedBy": "planner:COPY-SLOT-CONTRACT",
   "basis": "planner",
-  "at": "2026-11-05T16:39:13.238Z"
+  "at": "2026-11-05T18:26:59Z"
 }
