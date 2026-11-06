@@ -1,4 +1,4 @@
-import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, FieldGroup, LinkButton } from '@clossys/designer-ui';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, FieldContent, FieldGroup, LinkButton } from '@clossys/designer-ui';
 
 export type SlotTone = 'secondary' | 'outline' | 'destructive';
 
@@ -38,8 +38,17 @@ export interface SlotGroupsInput {
   groups: readonly SlotGroup[];
 }
 
-/** A gallery card's view-only frame height in CSS px. */
-const CARD_FRAME_HEIGHT = 480;
+/**
+ * Cards per gallery row: two side by side once the group is wide enough (stock responsive field row),
+ * one stacked below that. A short last row keeps an empty half so every card is the same width.
+ */
+const CARDS_PER_ROW = 2;
+
+function rows<T>(items: readonly T[]): T[][] {
+  const out: T[][] = [];
+  for (let at = 0; at < items.length; at += CARDS_PER_ROW) out.push(items.slice(at, at + CARDS_PER_ROW));
+  return out;
+}
 
 /** The two projected specimen route shapes: Producer's specimen frame and a Publisher page preview (a shape, not a route this section links to). */
 const PROJECTED_ROUTE = /^\/(?:__specimen$|preview\/)/;
@@ -55,9 +64,11 @@ function cardSource(src: string): string {
 function CardPreview({ preview }: { preview: SlotPreview }) {
   if (preview.kind === 'viewports') {
     const frame = [...preview.specimens].sort((a, b) => b.viewport - a.viewport)[0];
-    if (!frame) return <CardContent><Badge variant="outline" data-preview-status="empty">{preview.empty}</Badge></CardContent>;
-    return <CardContent data-specimen-viewport={frame.viewport}>
-      <iframe key={`${preview.name}:${frame.viewport}:card`} src={cardSource(frame.light)} title={frame.title} loading="lazy" inert width="100%" height={CARD_FRAME_HEIGHT} />
+    if (!frame) return <CardContent><CardDescription data-preview-status="empty">{preview.empty}</CardDescription></CardContent>;
+    // Fixed square host (shadcn carousel-example's card content); the specimen frame scales its page to the
+    // host width and, by data-specimen-fit, shrinks the host to the scaled content height under that square.
+    return <CardContent className="flex aspect-square items-center justify-center p-6" data-specimen-fit="content" data-specimen-viewport={frame.viewport}>
+      <iframe key={`${preview.name}:${frame.viewport}:card`} src={cardSource(frame.light)} title={frame.title} loading="lazy" inert width="100%" height="100%" />
     </CardContent>;
   }
   if (preview.lead?.length) return <CardContent data-specimen-lead>
@@ -67,26 +78,31 @@ function CardPreview({ preview }: { preview: SlotPreview }) {
     <Badge variant={preview.status.tone} data-preview-status="status">{preview.status.label}</Badge>
     <CardDescription>{preview.status.description}</CardDescription>
   </CardContent>;
-  return <CardContent><Badge variant="outline" data-preview-status="empty">{preview.empty}</Badge></CardContent>;
+  return <CardContent><CardDescription data-preview-status="empty">{preview.empty}</CardDescription></CardContent>;
 }
 
-/** `sections.studio.slot-groups`: the active tab's IA groups, stacked, each a run of stock shadcn slot cards. */
+/** `sections.studio.slot-groups`: the active tab's IA groups, stacked, each rows of stock shadcn slot cards. */
 export default function SlotGroupsSection({ groups, ...provenance }: { groups: SlotGroupsInput } & { [marker: `data-clossys-${string}`]: string }) {
   return <CardContent {...provenance}>
     {groups.groups.length ? groups.groups.map(group => <section key={group.id} id={group.id} aria-label={group.label}>
       <CardTitle role="heading" aria-level={2}>{group.label}</CardTitle>
       <FieldGroup>
-        {group.cards.map(card => <Card key={card.id} size="sm" data-slot-card={card.id}>
-          <CardHeader>
-            <CardTitle>
-              <LinkButton href={card.href} variant="link" size="sm">{card.name}</LinkButton>
-              {card.versionLabel ? <Badge variant="ghost">{card.versionLabel}</Badge> : null}
-              <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
-            </CardTitle>
-            <CardDescription>{card.id}</CardDescription>
-          </CardHeader>
-          <CardPreview preview={card.specimen} />
-        </Card>)}
+        {rows(group.cards).map(row => <Field key={row[0]!.id} orientation="responsive">
+          {row.map(card => <FieldContent key={card.id}>
+            <Card size="sm" data-slot-card={card.id}>
+              <CardHeader>
+                <CardTitle>
+                  <LinkButton href={card.href} variant="link" size="sm">{card.name}</LinkButton>
+                  {card.versionLabel ? <Badge variant="ghost">{card.versionLabel}</Badge> : null}
+                  <Badge variant={card.statusTone}>{card.statusLabel}</Badge>
+                </CardTitle>
+                <CardDescription>{card.id}</CardDescription>
+              </CardHeader>
+              <CardPreview preview={card.specimen} />
+            </Card>
+          </FieldContent>)}
+          {row.length < CARDS_PER_ROW ? <FieldContent aria-hidden /> : null}
+        </Field>)}
       </FieldGroup>
     </section>) : <CardDescription>{groups.empty}</CardDescription>}
   </CardContent>;

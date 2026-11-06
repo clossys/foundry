@@ -1,8 +1,8 @@
 {
   "frames.studio-shell": {
     "data-clossys-slot": "frames.studio-shell",
-    "data-clossys-candidate": "studio-shell-v18.json",
-    "data-clossys-hash": "sha256:00235cd5f35927858a4552918086af6de30749a4540965da5f3937fadcc9cce6"
+    "data-clossys-candidate": "studio-shell-v19.json",
+    "data-clossys-hash": "sha256:6ce3d823bf4055fc93fabb60a8369f6127fa3e5bd68687009fd69a6097b79db1"
   },
   "sections.studio.page-header": {
     "data-clossys-slot": "sections.studio.page-header",
@@ -46,8 +46,8 @@
   },
   "sections.studio.slot-groups": {
     "data-clossys-slot": "sections.studio.slot-groups",
-    "data-clossys-candidate": "studio-slot-groups-v9.json",
-    "data-clossys-hash": "sha256:8c75073385bc84cd3d43a69245c7feb0460cca03c78bc6b260de4efe5a34c4df"
+    "data-clossys-candidate": "studio-slot-groups-v10.json",
+    "data-clossys-hash": "sha256:eebd3323d7c1f3130dfbc24df20c0f2f9cc8c6f0dabd1ab7848abdc84d1dc0d2"
   },
   "sections.producer.system-empty": {
     "data-clossys-slot": "sections.producer.system-empty",

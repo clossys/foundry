@@ -1202,12 +1202,12 @@
       "sha256": "eb1a3d5dd46de7dd548d64d9217519eaa425ce67e9a6dd5c4b8ff7815fce708a"
     },
     {
-      "path": "clossys/agents/designer/components.sidebar/candidates/sidebar-v4.json",
-      "sha256": "37952b857c849fe2a6954a34401071fb61658ca5bc0b3c3401ab999125359463"
+      "path": "clossys/agents/designer/components.sidebar/candidates/sidebar-v2.json",
+      "sha256": "83ad2d6e01eeea45d2fcf9a4cec848d8f064115166e37b901b822c65824dd5a4"
     },
     {
       "path": "clossys/agents/designer/components.sidebar/pin.json",
-      "sha256": "700191e6440e760735cb78fd8999c2b49de17fe947af9d3638c87b241254027c"
+      "sha256": "be22437bd5445226dd395affac42ab1a119e74d84ad0caf1884753b58406f24f"
     },
     {
       "path": "clossys/agents/designer/components.sidebar/slot.json",
@@ -1610,16 +1610,16 @@
       "sha256": "3f4f3b2baa16de28242c9e964cf41590697d7c0ed8754c83a29db64fd1fb7f6b"
     },
     {
-      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v18.json",
-      "sha256": "00235cd5f35927858a4552918086af6de30749a4540965da5f3937fadcc9cce6"
+      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v19.json",
+      "sha256": "6ce3d823bf4055fc93fabb60a8369f6127fa3e5bd68687009fd69a6097b79db1"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/pin.json",
-      "sha256": "008953caa423ce19e6a1fee63b918baa626dc649fd416c98087cd2d58fa4b383"
+      "sha256": "eda325b369d67ee23445efe05860c8adbdbec591dcf2bf6ae8a4d4bfcf4fe6bb"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/slot.json",
-      "sha256": "457e5002fc8c96cb26f60df608f668d6672882e481190a013253a49dd80f946e"
+      "sha256": "470b979d5a6eb7570b1c343cadb141adaad069a0f8c7094c88fa4419e3ed0406"
     },
     {
       "path": "clossys/agents/designer/ia.json",
@@ -2450,12 +2450,12 @@
       "sha256": "c88eaad10013e987730dc4672fbb06be1db6f8234c1166094e2815ad07eb1f8a"
     },
     {
-      "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v9.json",
-      "sha256": "8c75073385bc84cd3d43a69245c7feb0460cca03c78bc6b260de4efe5a34c4df"
+      "path": "clossys/agents/designer/sections.studio.slot-groups/candidates/studio-slot-groups-v10.json",
+      "sha256": "eebd3323d7c1f3130dfbc24df20c0f2f9cc8c6f0dabd1ab7848abdc84d1dc0d2"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/pin.json",
-      "sha256": "ee8a3d5c0f9d541f1eda4874b6270063ea0d2a9c5f080a361c720bb6ec659bee"
+      "sha256": "f2e49d97afb939f4cbeb6ca64adbc7276d6fa128f0cc301449e52dc4ced61b06"
     },
     {
       "path": "clossys/agents/designer/sections.studio.slot-groups/slot.json",
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "a2e6d10b1a6dab00cac2702ea06b3fb3e9d83ea4e62f4347b63160a4b8eead4a"
+      "sha256": "07a9c88c8405510e24d6dccb85746de26b4c2252f4372150d230e27d19ba51be"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "8c978ff0f56de1c50fe401be3fea1040a46c8b39379ab483f9de85ed62f2864b"
+      "sha256": "329703aa062afe029b7d68c093af12eefb3d0467884890b3e50d02f201f25f46"
     }
   ]
 }

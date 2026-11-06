@@ -13,7 +13,8 @@ import { studioFrames, studioSections } from '../generated/assembly-bindings';
 import { studioHomeId, studioPages, type StudioAssemblySpec, type StudioPageRecord } from '../generated/studio-map';
 import '../styles/studio.css';
 import { StudioDocument } from './StudioProviders';
-import { PageNotice, type PageNoticeData, type PopoverSpec } from '../frames/studio-shell';
+import { PageNotice, type PageNoticeData } from '../frames/studio-shell';
+import { StudioShell, type PopoverSpec } from './StudioShell';
 import type { ChecksInput } from '../sections/studio-checks';
 import type { HistoryInput } from '../sections/studio-history';
 import type { HomeCensus, HomeCensusLabels, HomeInput } from '../sections/studio-home';
@@ -310,7 +311,7 @@ function Frame({ entry, page, spec, loaded = { state: 'loading' }, children, hea
   const copy = useMemo(() => studioShellCopy(), []);
   const popovers = useManifestPopovers(entry, spec, loaded);
   if (!Shell) return <PageNotice notice={{ title: studioCopy("studio.this-page-has-no-frame"), description: studioCopy("studio.nothing-is-pinned-for", { value0: String(page.frameId) }) }} />;
-  return <Shell {...projection} copy={copy} popovers={popovers} body={spec.body} head={head}>{children}</Shell>;
+  return <StudioShell frame={Shell} {...projection} copy={copy} popovers={popovers} body={spec.body} head={head}>{children}</StudioShell>;
 }
 
 function Body({ spec, loaded }: { spec: StudioAssemblySpec; loaded: Loaded }): { head?: ReactNode; children: ReactNode } {

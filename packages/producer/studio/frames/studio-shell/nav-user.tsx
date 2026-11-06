@@ -1,32 +1,30 @@
 "use client"
 
-import { Avatar, AvatarFallback, AvatarImage, SidebarMenu, SidebarMenuItem } from "@clossys/designer-ui"
-import { StaticSidebarRow } from "./stock-static-nav-rows"
+import { Avatar, AvatarFallback, AvatarImage, Item, ItemContent, ItemDescription, ItemMedia, ItemTitle, SidebarMenu, SidebarMenuItem } from "@clossys/designer-ui"
 
-/** sidebar-07 profile row; the existing local workspace has no account menu. */
-export function NavUser({
-  user,
-}: {
-  user: {
-    name: string
-    email: string
-    avatar: string
-    initials: string
-  }
-}) {
+/** The local user row's data. */
+export interface ShellUser { name: string; email: string; avatar?: string; initials: string }
+
+/** sidebar-07's sample avatar image; Producer serves every `/avatars/*` image as the workspace placeholder. */
+const SAMPLE_AVATAR = "/avatars/shadcn.jpg"
+
+/** sidebar-07 profile row on a static stock Item; the existing local workspace has no account menu. */
+export function NavUser({ user }: { user: ShellUser }) {
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <StaticSidebarRow>
-          <Avatar>
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.initials}</AvatarFallback>
-          </Avatar>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{user.name}</span>
-            <span className="truncate text-xs">{user.email}</span>
-          </div>
-        </StaticSidebarRow>
+        <Item size="sm" data-sidebar-static-row="user">
+          <ItemMedia>
+            <Avatar>
+              <AvatarImage src={user.avatar ?? SAMPLE_AVATAR} alt={user.name} />
+              <AvatarFallback>{user.initials}</AvatarFallback>
+            </Avatar>
+          </ItemMedia>
+          <ItemContent>
+            <ItemTitle>{user.name}</ItemTitle>
+            <ItemDescription>{user.email}</ItemDescription>
+          </ItemContent>
+        </Item>
       </SidebarMenuItem>
     </SidebarMenu>
   )

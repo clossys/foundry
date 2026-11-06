@@ -1,0 +1,102 @@
+{
+  "name": "studio-slot-groups",
+  "type": "registry:block",
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "index.tsx",
+      "type": "registry:file",
+      "content": "import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, FieldContent, FieldGroup, LinkButton } from '@clossys/designer-ui';\n\nexport type SlotTone = 'secondary' | 'outline' | 'destructive';\n\n/**\n * What a slot card previews of its pin: a view-only frame of the rendered output, the record's\n * lead lines, its status, or a note when it has none. The detail page's specimen renders the full record.\n */\nexport type SlotPreview = { name: string } & (\n  | { kind: 'viewports'; specimens: readonly { viewport: 375 | 768 | 1280; light: string; title: string }[]; empty: string }\n  | { kind: 'record'; lead?: readonly string[]; status?: { label: string; tone: SlotTone; description: string }; empty: string }\n);\n\n/** One slot card: the slot, its shown state and the route of its detail page. */\nexport interface SlotCard {\n  id: string;\n  name: string;\n  href: string;\n  statusLabel: string;\n  statusTone: SlotTone;\n  version?: number;\n  /** The shown version as displayed (Writer copy), when there is one. */\n  versionLabel?: string;\n  /** What the slot's pin produces at card size. */\n  specimen: SlotPreview;\n}\n\n/** One IA group of the active tab: its label and its slots, in IA order. */\nexport interface SlotGroup {\n  id: string;\n  label: string;\n  cards: readonly SlotCard[];\n}\n\n/** The `groups` input of `sections.studio.slot-groups`. */\nexport interface SlotGroupsInput {\n  empty: string;\n  groups: readonly SlotGroup[];\n}\n\n/**\n * Cards per gallery row: two side by side once the group is wide enough (stock responsive field row),\n * one stacked below that. A short last row keeps an empty half so every card is the same width.\n */\nconst CARDS_PER_ROW = 2;\n\nfunction rows<T>(items: readonly T[]): T[][] {\n  const out: T[][] = [];\n  for (let at = 0; at < items.length; at += CARDS_PER_ROW) out.push(items.slice(at, at + CARDS_PER_ROW));\n  return out;\n}\n\n/** The two projected specimen route shapes: Producer's specimen frame and a Publisher page preview (a shape, not a route this section links to). */\nconst PROJECTED_ROUTE = /^\\/(?:__specimen$|preview\\/)/;\n\n/** Only already-projected local specimen routes are framed; never arbitrary URLs. */\nfunction cardSource(src: string): string {\n  if (/[\\\\\\s\\u0000-\\u001f\\u007f]/.test(src) || !src.startsWith('/') || src.startsWith('//')) throw new Error('Expected a local specimen route');\n  const path = new URL(src, 'https://example.com').pathname;\n  if (!PROJECTED_ROUTE.test(path)) throw new Error('Expected a projected specimen route');\n  return src;\n}\n\nfunction CardPreview({ preview }: { preview: SlotPreview }) {\n  if (preview.kind === 'viewports') {\n    const frame = [...preview.specimens].sort((a, b) => b.viewport - a.viewport)[0];\n    if (!frame) return <CardContent><CardDescription data-preview-status=\"empty\">{preview.empty}</CardDescription></CardContent>;\n    // Fixed square host (shadcn carousel-example's card content); the specimen frame scales its page to the\n    // host width and, by data-specimen-fit, shrinks the host to the scaled content height under that square.\n    return <CardContent className=\"flex aspect-square items-center justify-center p-6\" data-specimen-fit=\"content\" data-specimen-viewport={frame.viewport}>\n      <iframe key={`${preview.name}:${frame.viewport}:card`} src={cardSource(frame.light)} title={frame.title} loading=\"lazy\" inert width=\"100%\" height=\"100%\" />\n    </CardContent>;\n  }\n  if (preview.lead?.length) return <CardContent data-specimen-lead>\n    {preview.lead.map((text, index) => <CardDescription key={index}>{text}</CardDescription>)}\n  </CardContent>;\n  if (preview.status) return <CardContent>\n    <Badge variant={preview.status.tone} data-preview-status=\"status\">{preview.status.label}</Badge>\n    <CardDescription>{preview.status.description}</CardDescription>\n  </CardContent>;\n  return <CardContent><CardDescription data-preview-status=\"empty\">{preview.empty}</CardDescription></CardContent>;\n}\n\n/** `sections.studio.slot-groups`: the active tab's IA groups, stacked, each rows of stock shadcn slot cards. */\nexport default function SlotGroupsSection({ groups, ...provenance }: { groups: SlotGroupsInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <CardContent {...provenance}>\n    {groups.groups.length ? groups.groups.map(group => <section key={group.id} id={group.id} aria-label={group.label}>\n      <CardTitle role=\"heading\" aria-level={2}>{group.label}</CardTitle>\n      <FieldGroup>\n        {rows(group.cards).map(row => <Field key={row[0]!.id} orientation=\"responsive\">\n          {row.map(card => <FieldContent key={card.id}>\n            <Card size=\"sm\" data-slot-card={card.id}>\n              <CardHeader>\n                <CardTitle>\n                  <LinkButton href={card.href} variant=\"link\" size=\"sm\">{card.name}</LinkButton>\n                  {card.versionLabel ? <Badge variant=\"ghost\">{card.versionLabel}</Badge> : null}\n                  <Badge variant={card.statusTone}>{card.statusLabel}</Badge>\n                </CardTitle>\n                <CardDescription>{card.id}</CardDescription>\n              </CardHeader>\n              <CardPreview preview={card.specimen} />\n            </Card>\n          </FieldContent>)}\n          {row.length < CARDS_PER_ROW ? <FieldContent aria-hidden /> : null}\n        </Field>)}\n      </FieldGroup>\n    </section>) : <CardDescription>{groups.empty}</CardDescription>}\n  </CardContent>;\n}\n"
+    },
+    {
+      "path": "registry-item.json",
+      "type": "registry:file",
+      "content": "{\n  \"$schema\": \"https://ui.shadcn.com/schema/registry-item.json\",\n  \"name\": \"studio-slot-groups\",\n  \"type\": \"registry:block\",\n  \"title\": \"Slot Groups\",\n  \"description\": \"The body of a Studio tab: its IA groups stacked, each rows of stock shadcn slot cards (two across when wide enough) linking to the slot's detail route.\",\n  \"author\": \"Clossys\",\n  \"dependencies\": [],\n  \"registryDependencies\": [\n    \"badge\",\n    \"button\",\n    \"card\",\n    \"field\"\n  ]\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "sections.studio.slot-groups",
+    "source": {
+      "kind": "composition",
+      "ref": [
+        "shadcn-aria/carousel-example@4.23.0"
+      ],
+      "parts": [
+        {
+          "slot": "components.badge",
+          "files": [
+            "registry/aria-nova/ui/badge.tsx"
+          ]
+        },
+        {
+          "slot": "components.button",
+          "files": [
+            "registry/aria-nova/ui/button.tsx"
+          ]
+        },
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        },
+        {
+          "slot": "components.field",
+          "files": [
+            "registry/aria-nova/ui/field.tsx",
+            "registry/aria-nova/ui/label.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:967e4548399c4a8d051d379a1b4b89e78017c09a17a54fe378d42424c1c1b3b4",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "studio-slot-groups",
+      "package": "producer",
+      "layer": "sections",
+      "slot": "sections.studio.slot-groups",
+      "kind": "registry:block",
+      "license": {
+        "spdx": "MIT",
+        "attribution": "shadcn/ui (shadcn-ui/ui), MIT",
+        "file": "LICENCE.md"
+      },
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "R2F-03b"
+      },
+      "reason": "R2F-03b: gallery rows of two stock cards (responsive field row), previews in a fixed square host that the specimen frame scales to fit, empty text wraps as a card description",
+      "createdAt": "2026-11-06T19:58:33.499Z",
+      "checks": [],
+      "deps": {
+        "npm": {},
+        "elements": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--card-foreground",
+          "--muted-foreground"
+        ]
+      }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "export": "default",
+        "file": "index.tsx",
+        "props": {}
+      },
+      "copy": {},
+      "container": "section-in-frame",
+      "theme": "light",
+      "width": 1280
+    }
+  }
+}

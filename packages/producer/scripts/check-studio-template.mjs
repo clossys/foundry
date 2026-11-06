@@ -142,7 +142,12 @@ const notes = [];
 /* inset */
 {
   const frames = read(`${STUDIO}/frames/studio-shell/index.tsx`) ?? '';
-  if (!/id="studio-main"[^>]*className="[^"]*\bp-\d/.test(frames)) fail('inset', 'frames/studio-shell', 'the frame body does not own the content inset');
+  // The inset is either a padding class on the body element itself, or a bare stock SidebarGroup wrapping it whose own
+  // vendored class list carries the padding (an overriding className or a SidebarGroup without padding does not count).
+  const group = /function SidebarGroup\([^]*?className=\{cn\("([^"]*)"/.exec(read('packages/designer/ui/src/components/ui/sidebar.tsx') ?? '')?.[1] ?? '';
+  const owned = /id="studio-main"[^>]*className="[^"]*\bp-\d/.test(frames)
+    || (/<SidebarGroup>\s*<\w+ id="studio-main"/.test(frames) && /(?:^|\s)p-[1-9]/.test(group));
+  if (!owned) fail('inset', 'frames/studio-shell', 'the frame body does not own the content inset');
   for (const section of list(`${STUDIO}/sections`)) {
     const file = `${STUDIO}/sections/${section}/index.tsx`;
     const source = read(file);

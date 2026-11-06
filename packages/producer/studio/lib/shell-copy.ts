@@ -31,10 +31,6 @@ export function studioShellCopy(): StudioShellCopy {
       title: chat,
       emptyTitle: studioCopy('studio.no-conversation-yet'),
       emptyDescription: studioCopy('studio.chat-empty-description', { agents: agentList() }),
-      sheets: {
-        left: { title: studioCopy('studio.sidebar'), description: studioCopy('studio.sidebar-sheet-description') },
-        chat: { title: chat, description: studioCopy('studio.chat-sheet-description') },
-      },
     },
     sidebar: {
       team: studioCopy('studio.workspace-name'),
