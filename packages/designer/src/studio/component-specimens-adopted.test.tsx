@@ -1,5 +1,8 @@
 import { createRequire } from "node:module";
 import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { expect, it, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import { cleanup, render, waitFor, within } from "@testing-library/react";
@@ -51,12 +54,19 @@ it("server-renders every adopted Foundry leaf from designer samples, though reso
 
 /** Compile one materialized source bundle (the vendored shadcn@aria rewrite) and return its entry module's exports. */
 function vendoredModule(files: readonly { path: string; content: string }[], entry: string, dependency: (leaf: string) => unknown): Record<string, unknown> {
-  // Compile in Node: jsdom's Uint8Array realm is incompatible with esbuild.
-  const bundled = execFileSync(process.execPath, ["--input-type=module", "-e", `
+  // Compile in Node: jsdom's Uint8Array realm is incompatible with esbuild. The payload goes through a temp file named
+  // in argv, never stdin: a child blocked in readFileSync(0) on an unclosed pipe hung the whole suite. stdin is ignored
+  // and a hard timeout turns any other stall into a failure.
+  const payloadDir = mkdtempSync(join(tmpdir(), "vendored-module-"));
+  const payload = join(payloadDir, "payload.json");
+  writeFileSync(payload, JSON.stringify({ files, entry }));
+  let bundled: string;
+  try {
+    bundled = execFileSync(process.execPath, ["--input-type=module", "-e", `
     import { readFileSync } from "node:fs";
     import { posix } from "node:path";
     import { build } from "esbuild";
-    const data = JSON.parse(readFileSync(0, "utf8"));
+    const data = JSON.parse(readFileSync(process.argv[1], "utf8"));
     const files = new Map(data.files.map(file => [file.path, file.content]));
     const find = path => [path, path.replace(/\\.js$/, ".ts"), path.replace(/\\.js$/, ".tsx"), path + ".ts", path + ".tsx", path + "/index.ts"].find(candidate => files.has(candidate));
     const result = await build({ entryPoints: [data.entry], bundle: true, write: false, format: "cjs", platform: "node", jsx: "automatic", packages: "external", logLevel: "silent", plugins: [{
@@ -74,7 +84,10 @@ function vendoredModule(files: readonly { path: string; content: string }[], ent
       },
     }] });
     process.stdout.write(result.outputFiles[0].text);
-  `], { input: JSON.stringify({ files, entry }), encoding: "utf8" });
+  `, payload], { stdio: ["ignore", "pipe", "pipe"], encoding: "utf8", timeout: 60_000, killSignal: "SIGKILL" });
+  } finally {
+    rmSync(payloadDir, { recursive: true, force: true });
+  }
   const module = { exports: {} as Record<string, unknown> };
   const host = createRequire(import.meta.url);
   // react-aria-components is a peer dependency: a consumer's bundle resolves its vendored files and Foundry to one instance.
