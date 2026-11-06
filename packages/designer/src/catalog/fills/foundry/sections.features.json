@@ -51,7 +51,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/anatomy.tsx",
-            "sha256": "ca69c26996dd75af2cd8046feb988efe7722305d45ba68a901913954c867670b"
+            "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
           },
           {
             "path": "packages/designer/src/blocks/items/compat-features.tsx",
@@ -59,7 +59,7 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",

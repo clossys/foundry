@@ -39,7 +39,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "ace0526516b469e70675c4cbfb41d95d71c668f33d6ddfb75b87afc34327c19f"
+            "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
           },
           {
             "path": "packages/designer/src/blocks/ResizablePane.tsx",
@@ -47,7 +47,7 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

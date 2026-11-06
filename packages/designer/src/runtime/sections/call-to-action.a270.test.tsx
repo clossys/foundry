@@ -12,6 +12,7 @@ import { Link } from "../../components/Link.client.js";
 import { Button } from "../../components/Button.js";
 import { CallToAction } from "../../blocks/CallToAction.js";
 import { componentDescriptorHash, type ResolvedComponents } from "../../catalog-core/resolve-components.js";
+import { defaultSourceModules } from "../../components/preview-runtime/modules.js";
 import { importShadcnAriaComponents, materializeShadcnComponent } from "../../importers/shadcn-aria-components.js";
 import { ConsumerComponentProvider, type ConsumerComponentSelection } from "../component-leaf.client.js";
 import { componentLeaf } from "../component-leaf.js";
@@ -65,7 +66,7 @@ beforeAll(async () => {
   if (!previous) throw new Error("NEED registered Card preview selection");
   profile.components = { ...profile.components, "components.card": { ...previous, descriptor, impl: descriptor.impl, propMap: descriptor.propMap } };
   profile.files = [...profile.files, ...files];
-  selection = { profile: { components: profile }, selectionHash: profile.selectionHash, descriptors: Object.fromEntries(Object.entries(profile.components).map(([leaf, chosen]) => [leaf, componentDescriptorHash(chosen.descriptor)])), modules: { "@clossys/designer/components": { SemanticContent, Link, Button }, [descriptor.impl.entry]: native } };
+  selection = { profile: { components: profile }, selectionHash: profile.selectionHash, descriptors: Object.fromEntries(Object.entries(profile.components).map(([leaf, chosen]) => [leaf, componentDescriptorHash(chosen.descriptor)])), modules: { "@clossys/designer/components": { SemanticContent, Link, Button }, "components/button/button.tsx": defaultSourceModules["components/button/button.tsx"], [descriptor.impl.entry]: native } };
 });
 function mount(node: React.ReactNode) {
   return render(<ConsumerComponentProvider value={selection}><Suspense>{node}</Suspense></ConsumerComponentProvider>);

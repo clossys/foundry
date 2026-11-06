@@ -37,6 +37,10 @@ describe("native marketing component selection", () => {
     const entry = button.impl.kind === "source" ? button.impl.entry : "";
     const changed = profile.files.map(file => file.path === entry ? { ...file, content: file.content + " " } : file);
     expect(() => verifyComponentOutput(button.descriptor, changed)).toThrow(/output/);
-    expect(() => componentSecondaryExports(button.descriptor, changed)).toThrow(/secondary/);
+    // Byte authentication is verifyComponentOutput's (above). The secondary-export proof re-derives exports from the
+    // bytes it is handed (d2515d2b6), so it must refuse bytes that no longer define the approved part.
+    const renamed = profile.files.map(file => file.path === entry ? { ...file, content: file.content.replaceAll("LinkButton", "RenamedButton") } : file);
+    expect(renamed.find(file => file.path === entry)!.content).not.toContain("LinkButton");
+    expect(() => componentSecondaryExports(button.descriptor, renamed)).toThrow(/secondary/);
   });
 });

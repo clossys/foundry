@@ -58,7 +58,7 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

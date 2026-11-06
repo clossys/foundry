@@ -83,7 +83,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
-            "sha256": "67f972ecbb3b75a5cff49982ff61f7a448ee2163111e577fcca02f5f86acd791"
+            "sha256": "b4d0b5d2514aeb2f3c6ecc1d348015d53df19c0569a7679b4fc288ae3cd38aae"
           },
           {
             "path": "packages/designer/src/blocks/matrix/choices.tsx",
@@ -99,7 +99,7 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",

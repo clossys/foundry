@@ -102,7 +102,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/anatomy.tsx",
-            "sha256": "ca69c26996dd75af2cd8046feb988efe7722305d45ba68a901913954c867670b"
+            "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
           },
           {
             "path": "packages/designer/src/blocks/items/Item.tsx",
@@ -166,7 +166,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/static.tsx",
-            "sha256": "5238712096db33469a44ae680bd2b2abd6a05c4eb33dc2f3d25d2c8df9dbfa8d"
+            "sha256": "408c5a8ff4d0a15ec1ec2e5526160924976c63fff1cdb564c8baa3dd2adeb9b0"
           },
           {
             "path": "packages/designer/src/blocks/RecordLedger.tsx",
@@ -182,7 +182,7 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+            "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
           },
           {
             "path": "packages/designer/src/blocks/specimen/parts.tsx",

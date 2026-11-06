@@ -112,7 +112,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "ace0526516b469e70675c4cbfb41d95d71c668f33d6ddfb75b87afc34327c19f"
+          "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
         },
         {
           "path": "packages/designer/src/blocks/ResizablePane.tsx",
@@ -120,7 +120,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/shell-menu.tsx",
@@ -352,11 +352,11 @@
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "ace0526516b469e70675c4cbfb41d95d71c668f33d6ddfb75b87afc34327c19f"
+          "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/tree-model.ts",
@@ -623,7 +623,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "ace0526516b469e70675c4cbfb41d95d71c668f33d6ddfb75b87afc34327c19f"
+          "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
         },
         {
           "path": "packages/designer/src/blocks/ResizablePane.tsx",
@@ -631,7 +631,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -703,11 +703,11 @@
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
-          "sha256": "ace0526516b469e70675c4cbfb41d95d71c668f33d6ddfb75b87afc34327c19f"
+          "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/components/internal/cx.ts",
@@ -1211,7 +1211,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ArticleBody.tsx",
-          "sha256": "b27e93d058450fa9d4f27f9869dc844e535e70b1cb20a0e621fcf5a9adb27ae1"
+          "sha256": "7b639ffc2fea21bcccfcb5395e634e5f079e65d9ac7103135c4682a65f15c7a2"
         },
         {
           "path": "packages/designer/src/blocks/ArticleReading.tsx",
@@ -1333,7 +1333,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/SectionFrame.tsx",
@@ -1447,11 +1447,11 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/CallToAction.tsx",
-          "sha256": "20eab1311a3d7a644cd6f00d4106236d9aecbda9041c685712e75d8b58486325"
+          "sha256": "64d39c040fce5e00010f9b6c043c49d9485186acc008e716b29c129e12e91903"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -1763,7 +1763,7 @@
         },
         {
           "path": "packages/designer/src/blocks/Matrix.tsx",
-          "sha256": "67f972ecbb3b75a5cff49982ff61f7a448ee2163111e577fcca02f5f86acd791"
+          "sha256": "b4d0b5d2514aeb2f3c6ecc1d348015d53df19c0569a7679b4fc288ae3cd38aae"
         },
         {
           "path": "packages/designer/src/blocks/matrix/choices.tsx",
@@ -1779,7 +1779,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/shell-menu.tsx",
@@ -1951,7 +1951,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/SectionIntro.tsx",
@@ -2491,7 +2491,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -2551,7 +2551,7 @@
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
-          "sha256": "ca69c26996dd75af2cd8046feb988efe7722305d45ba68a901913954c867670b"
+          "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
         },
         {
           "path": "packages/designer/src/blocks/items/compat-features.tsx",
@@ -2559,7 +2559,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
@@ -2806,8 +2806,12 @@
           "sha256": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8"
         },
         {
+          "path": "packages/designer/src/backdrop/still-backdrop-policy.ts",
+          "sha256": "fa4480c786198ee013a20fe7f711bbea7aaa1701ecd0b6961500b148e8c86c46"
+        },
+        {
           "path": "packages/designer/src/blocks/Hero.tsx",
-          "sha256": "fa74d5f5a243988ae56834af6d3830efce4275980ab2f2f3761d9c62db5a5b1c"
+          "sha256": "3521d1885b64c1e8803ebefc663321eefbe082efa0f8d365e19d3f3d88944363"
         },
         {
           "path": "packages/designer/src/blocks/hero/hero-backdrop.ts",
@@ -2815,11 +2819,11 @@
         },
         {
           "path": "packages/designer/src/blocks/hero/HeroIntro.tsx",
-          "sha256": "168d2703d891a585b18bce6d9eeb388bd50398cf24aa315c13bc425307c208b4"
+          "sha256": "6af51438fa42b3520400f7a24aee540f7a0145c2e36a73025c28868e732ae73f"
         },
         {
           "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-          "sha256": "2bb94d9fa8da1a9681fca6280fb681c72da71e605f3aaf5089cc6d76b53d56c1"
+          "sha256": "3552086cc372bba12b17cc8b8a3f5e92379c63791393b6414b481501de0537e8"
         },
         {
           "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -2827,7 +2831,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-assets/media.ts",
@@ -2881,9 +2885,9 @@
         },
         {
           "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ../../tokens/tokens.js#TOKENS",
-          "file": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-          "line": 6
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
+          "file": "packages/designer/src/backdrop/still-backdrop-policy.ts",
+          "line": 9
         },
         {
           "code": "DF2",
@@ -2984,7 +2988,7 @@
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
-          "sha256": "ca69c26996dd75af2cd8046feb988efe7722305d45ba68a901913954c867670b"
+          "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
         },
         {
           "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
@@ -3004,7 +3008,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
@@ -3080,7 +3084,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3186,7 +3190,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/SectionFrame.tsx",
@@ -3276,7 +3280,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-assets/media.ts",
@@ -3340,7 +3344,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3581,7 +3585,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
@@ -3657,7 +3661,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3851,7 +3855,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/SectionHeader.tsx",
@@ -3961,7 +3965,7 @@
         },
         {
           "path": "packages/designer/src/blocks/items/anatomy.tsx",
-          "sha256": "ca69c26996dd75af2cd8046feb988efe7722305d45ba68a901913954c867670b"
+          "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
         },
         {
           "path": "packages/designer/src/blocks/items/Item.tsx",
@@ -4025,7 +4029,7 @@
         },
         {
           "path": "packages/designer/src/blocks/matrix/static.tsx",
-          "sha256": "5238712096db33469a44ae680bd2b2abd6a05c4eb33dc2f3d25d2c8df9dbfa8d"
+          "sha256": "408c5a8ff4d0a15ec1ec2e5526160924976c63fff1cdb564c8baa3dd2adeb9b0"
         },
         {
           "path": "packages/designer/src/blocks/RecordLedger.tsx",
@@ -4041,7 +4045,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/specimen/parts.tsx",
@@ -4617,7 +4621,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/StatusList.tsx",
@@ -4681,7 +4685,7 @@
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -4815,7 +4819,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/stretched-link.tsx",
@@ -4895,7 +4899,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
-          "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          "sha256": "ebdb8cb4e374aacc923896a97fbc1d94f8fc73470b711c80be8fcf307c04be14"
         },
         {
           "path": "packages/designer/src/blocks/Testimonial.server.tsx",
