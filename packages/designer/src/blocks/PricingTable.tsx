@@ -268,7 +268,7 @@ export function PricingTable({
         {comparison.groups.map(group => {
           return <SemanticContent as="div" key={group.id} className="flex flex-col gap-md">
             <SemanticContent as={GroupHeading} className={cx("text-h3 font-display", colors.primary)}>{group.label}</SemanticContent>
-            <Table aria-label={typeof group.label === "string" ? group.label : undefined}>
+            <Table aria-label={typeof group.label === "string" ? group.label : undefined} className={colors.primary}>
               <TableHeader>
                 <TableHead id="feature" isRowHeader>{group.label}</TableHead>
                 {tiers.map(tier => <TableHead key={tier.id} id={tier.id}>{tier.name}{tier.id === featuredTier?.id ? comparison.featuredLabel : null}</TableHead>)}

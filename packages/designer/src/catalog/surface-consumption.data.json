@@ -3653,7 +3653,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/PricingTable.tsx",
-          "sha256": "4fe3d3b5eb331ae0b696e032a777ab6ff0f11e2920e0f4f791785b6899ce0e15"
+          "sha256": "89fc202834d3f150066ee08c31457ca6bc210d42e470fc4abbb145de7de5b7c7"
         },
         {
           "path": "packages/designer/src/blocks/section-ground.ts",
