@@ -1,7 +1,7 @@
 {
-  "candidate": "text-link-v2.json",
-  "sha256": "06e264b48ca3d9bce9b00738e3f6c142aa77b95f9a0db1bb227a6ad6b343a1db",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "text-link-v3.json",
+  "sha256": "658510f99ca0421cf9c92c6520763629666d77a933c8fa86a3db23d07399bfb6",
+  "decidedBy": "planner:R2F-03",
   "basis": "planner",
-  "at": "2026-11-05T11:33:32.302Z"
+  "at": "2026-11-06T17:16:55.882Z"
 }

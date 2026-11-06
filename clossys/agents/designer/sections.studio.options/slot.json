@@ -49,6 +49,8 @@
   "uses": [
     "components.badge",
     "components.card",
+    "components.field",
+    "components.scroll-area",
     "components.table"
   ]
 }

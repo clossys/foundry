@@ -1,25 +1,11 @@
-// Studio card grid: the shadcn dashboard-01 section-cards grid
-// (shadcn-aria dashboard-01@4.23.0, registry/aria-nova/blocks/dashboard-01/components/section-cards.tsx:16).
-// Data-fit: section padding and card decoration stay with the caller; specimen comparisons stop at two
-// columns. Container breakpoints follow the available main width.
-import type { ComponentProps } from "react"
-import { cn } from "../lib/utils"
+// Studio card grid: the stock shadcn field group (components.field). Cards stack in one column;
+// a specimen comparison sets its figures side by side in a responsive field row where the group is wide enough.
+import { Field, FieldGroup } from "@/components/ui/field"
 
-const CARD_GRID_DENSITY = {
-  cards: "grid-cols-1",
-  specimens: "grid-cols-1 @xl/main:grid-cols-2",
-} as const
-
-/** Stock dashboard grid pattern, shared by Studio's specimen and option sections. */
-function CardGrid({ density = "cards", className, ...props }: ComponentProps<"div"> & { density?: keyof typeof CARD_GRID_DENSITY }) {
-  return (
-    <div
-      data-slot="card-grid"
-      data-density={density}
-      className={cn("grid gap-4", CARD_GRID_DENSITY[density], className)}
-      {...props}
-    />
-  )
+/** Stock field-group flow, shared by Studio's specimen and option sections. */
+function CardGrid({ density = "cards", children, ...props }: React.ComponentProps<typeof FieldGroup> & { density?: "cards" | "specimens" }) {
+  if (density === "specimens") return <FieldGroup data-density={density} {...props}><Field orientation="responsive">{children}</Field></FieldGroup>
+  return <FieldGroup data-density={density} {...props}>{children}</FieldGroup>
 }
 
 export { CardGrid }

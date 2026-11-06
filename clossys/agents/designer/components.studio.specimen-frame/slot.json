@@ -29,10 +29,16 @@
         "themes.radius"
       ],
       "assets": [],
-      "components": []
+      "components": [
+        "components.card"
+      ]
     },
-    "composes": []
+    "composes": [
+      "components.card"
+    ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.card"
+  ]
 }

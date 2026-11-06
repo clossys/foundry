@@ -1,12 +1,11 @@
-import { Badge, Card, CardContent, CardDescription, CardGrid, CardHeader, CardTitle, LinkButton, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
-
-import { BlockViewerCardIframe, BlockViewerIframe } from './BlockViewerIframe';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, Field, FieldGroup, LinkButton, ScrollArea, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@clossys/designer-ui';
 
 export type SpecimenTone = 'secondary' | 'outline' | 'destructive';
+export type SpecimenViewport = 375 | 768 | 1280;
 
-/** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px and scales it to fit. */
+/** One viewport's specimen URLs; the frame renders the page at `viewport` CSS px. */
 export interface ViewportSpecimen {
-  viewport: 375 | 768 | 1280; light: string; dark?: string;
+  viewport: SpecimenViewport; light: string; dark?: string;
   /** The row's heading (Writer copy), and each frame's accessible title: the light frame, and the dark one when there is one. */
   heading: string; title: string; darkTitle?: string;
   /** False for a preview in a list (a gallery card): the frame is view-only so the page scrolls past it. */
@@ -39,26 +38,50 @@ export type SpecimenInput = { name: string; title: string; description: string }
     lead?: readonly string[]; status?: { label: string; tone: SpecimenTone; description: string }; empty: string }
 );
 
+/** A viewport's frame height in CSS px: a phone, a tablet and a laptop screen. */
+const FRAME_HEIGHT: Readonly<Record<SpecimenViewport, number>> = { 375: 667, 768: 1024, 1280: 800 };
+/** A gallery card's view-only frame height in CSS px. */
+const CARD_FRAME_HEIGHT = 480;
+
+/** The two projected specimen route shapes: Producer's specimen frame and a Publisher page preview (a shape, not a route this section links to). */
+const PROJECTED_ROUTE = /^\/(?:__specimen$|preview\/)/;
+
+/** Only already-projected, local specimen routes whose width matches the frame are framed; never arbitrary URLs. */
+export function specimenSource(src: string, viewport: SpecimenViewport): string {
+  if (/[\\\s\u0000-\u001f\u007f]/.test(src) || !src.startsWith('/') || src.startsWith('//')) throw new Error('Expected a local specimen route');
+  const url = new URL(src, 'https://example.com');
+  if (!PROJECTED_ROUTE.test(url.pathname)) throw new Error('Expected a projected specimen route');
+  const widths = url.searchParams.getAll('width');
+  // Producer's routes default to 1280 when width is absent.
+  if (widths.length > 1 || (widths.length ? widths[0] !== String(viewport) : viewport !== 1280)) throw new Error('Specimen viewport does not match its projected source');
+  return src;
+}
+
 /**
  * Every viewport in one vertical run, widest first, each a headed row of its light and dark frames
- * (no tabs). A single viewport, as a gallery card shows it, is the frame alone at full width.
- * The extracted stock iframe uses the projected viewport and bounded local content-size binding.
- * The surrounding light/dark comparison layout remains pending a verified stock composition.
+ * side by side where there is room; each frame is the page at its own CSS width in a stock scroll area.
+ * A single view-only viewport, as a gallery card shows it, is the frame alone at the card's width.
  */
-function Viewports({ name, specimens, empty, loading, unavailable }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string; loading?: string; unavailable?: string }) {
+function Viewports({ name, specimens, empty }: { name: string; specimens: readonly ViewportSpecimen[]; empty: string }) {
   if (!specimens.length) return <CardContent><Badge variant="outline" data-preview-status="empty">{empty}</Badge></CardContent>;
   const rows = [...specimens].sort((a, b) => b.viewport - a.viewport);
-  // A gallery card's single view-only frame: skeleton until sized, no body when it paints nothing.
   const card = rows.length === 1 && rows[0]!.interactive === false && !rows[0]!.dark ? rows[0]! : undefined;
-  if (card) return <BlockViewerCardIframe iframeKey={`${name}:${card.viewport}:card`} viewport={card.viewport} title={card.title} src={card.light}
-    loadingLabel={loading ?? name} failedLabel={unavailable} wrap={frame => <CardContent data-specimen-viewport={card.viewport}>{frame}</CardContent>} />;
+  if (card) return <CardContent data-specimen-viewport={card.viewport}>
+    <iframe key={`${name}:${card.viewport}:card`} src={specimenSource(card.light, card.viewport)} title={card.title} loading="lazy" inert width="100%" height={CARD_FRAME_HEIGHT} />
+  </CardContent>;
   return <CardContent>
     {rows.map(row => <CardContent key={row.viewport} data-specimen-viewport={row.viewport}>
       {rows.length > 1 && <CardDescription role="heading" aria-level={3}>{row.heading}</CardDescription>}
-      <CardGrid density={row.dark ? 'specimens' : undefined}>
-        <BlockViewerIframe iframeKey={`${name}:${row.viewport}:light`} viewport={row.viewport} interactive={row.interactive ?? true} title={row.title} src={row.light} />
-        {row.dark && <BlockViewerIframe iframeKey={`${name}:${row.viewport}:dark`} viewport={row.viewport} interactive={row.interactive ?? true} title={row.darkTitle ?? row.title} src={row.dark} />}
-      </CardGrid>
+      <FieldGroup>
+        <Field orientation="responsive">
+          <ScrollArea>
+            <iframe key={`${name}:${row.viewport}:light`} src={specimenSource(row.light, row.viewport)} title={row.title} loading="lazy" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />
+          </ScrollArea>
+          {row.dark && <ScrollArea>
+            <iframe key={`${name}:${row.viewport}:dark`} src={specimenSource(row.dark, row.viewport)} title={row.darkTitle ?? row.title} loading="lazy" inert={row.interactive === false} width={row.viewport} height={FRAME_HEIGHT[row.viewport]} />
+          </ScrollArea>}
+        </Field>
+      </FieldGroup>
     </CardContent>)}
   </CardContent>;
 }
@@ -82,9 +105,9 @@ function RecordTable({ name, table, titled }: { name: string; table: SpecimenTab
   </CardContent>;
 }
 
-/** The specimen body without its card: what the leaf produces. A gallery card places it under its own header. */
+/** The specimen body without its card: what the leaf produces. */
 export function SpecimenContent({ specimen }: { specimen: SpecimenInput }) {
-  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} loading={specimen.loading} unavailable={specimen.unavailable} />;
+  if (specimen.kind === 'viewports') return <Viewports name={specimen.name} specimens={specimen.specimens} empty={specimen.empty} />;
   if (specimen.lead?.length) return <CardContent data-specimen-lead>
     {specimen.lead.map((text, index) => <CardDescription key={index}>{text}</CardDescription>)}
   </CardContent>;

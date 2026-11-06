@@ -1,7 +1,7 @@
 {
-  "candidate": "studio-slot-groups-v8.json",
-  "sha256": "0045920111b2ed2d6d4001c164e831cf283ac05211abee6daf70c38fcb825c06",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "studio-slot-groups-v11.json",
+  "sha256": "03a2e3827993bef896b1d58479991ba2e76e233cb3b462a514f9c2016bfc02ba",
+  "decidedBy": "planner:R2F-03b",
   "basis": "planner",
-  "at": "2026-11-05T12:26:53.158Z"
+  "at": "2026-11-06T20:41:14.890Z"
 }

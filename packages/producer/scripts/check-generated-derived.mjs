@@ -219,14 +219,24 @@ export function deriveUses(clossysRoot, root = repo) {
   const pins = new Map();
   for (const agent of AGENTS) for (const slot of slotIds(clossysRoot, agent)) pins.set(`${agent}/${slot}`, pinned(clossysRoot, agent, slot));
   // Lucide icon name -> pinned icon slot; pinned element name -> slot (sibling section imports).
-  const lucide = new Map(), elements = new Map();
+  const lucide = new Map(), elements = new Map(), stems = new Map();
   for (const [key, entry] of pins) {
     if (!entry?.item || !key.startsWith('designer/')) continue;
     const ref = (entry.item.meta?.source?.ref ?? []).find(value => typeof value === 'string' && value.startsWith('lucide/'));
     const name = ref ? /^lucide\/([a-z0-9-]+)@/.exec(ref)?.[1] : undefined;
     if (name && entry.slot.startsWith('assets.icon-') && !lucide.has(name)) lucide.set(name, entry.slot);
     if (typeof entry.item.name === 'string' && !elements.has(entry.item.name)) elements.set(entry.item.name, entry.slot);
+    // A component layer file stem -> the stock components.* slots whose pin vendors that file (breadcrumb.tsx -> components.breadcrumbs).
+    const kind = entry.item.meta?.source?.kind;
+    if ((kind === 'registry' || kind === 'npm') && entry.slot.startsWith('components.')) for (const file of entry.item.files ?? []) {
+      const stem = /(?:^|\/)([a-z0-9-]+)\.tsx?$/.exec(String(file?.path ?? ''))?.[1];
+      if (stem) stems.set(stem, new Set([...(stems.get(stem) ?? []), entry.slot]));
+    }
   }
+  // `components.<stem>`; in a composition (whose uses ref-verbatim holds equal to its declared stock parts) a stem
+  // with no such slot resolves to the one stock slot vendoring `<stem>.tsx`, and an ambiguous stem adds nothing.
+  const component = (stem, composed) => known.has(`components.${stem}`) ? `components.${stem}`
+    : composed && stems.get(stem)?.size === 1 ? [...stems.get(stem)][0] : undefined;
   const uses = new Map();
   for (const [key, entry] of pins) {
     const [agent, slot] = key.split('/');
@@ -234,6 +244,7 @@ export function deriveUses(clossysRoot, root = repo) {
     const add = id => { if (id && id !== slot && known.has(id)) out.add(id); };
     if (entry?.item && agent === 'designer') {
       const item = entry.item;
+      const composed = item.meta?.source?.kind === 'composition';
       for (const ref of strings(item.registryDependencies ?? [])) add(toSlotId(ref, known));
       for (const ref of strings([item.meta?.element?.deps?.registry ?? [], item.meta?.element?.deps?.elements ?? []])) add(toSlotId(ref, known));
       for (const file of item.files ?? []) {
@@ -245,8 +256,8 @@ export function deriveUses(clossysRoot, root = repo) {
         if (!/\.(?:tsx?|jsx?|mjs)$/.test(String(file.path))) continue;
         for (const { spec, names } of importsOf(file.content)) {
           const ui1 = /^@\/(?:registry\/[^/]+\/)?components\/ui\/([a-z0-9-]+)$/.exec(spec)?.[1];
-          if (ui1) add(`components.${ui1}`);
-          else if (spec === '@clossys/designer-ui') for (const name of names) { const stem = ui.get(name); if (stem) add(`components.${stem}`); }
+          if (ui1) add(component(ui1, composed));
+          else if (spec === '@clossys/designer-ui') for (const name of names) { const stem = ui.get(name); if (stem) add(component(stem, composed)); }
           else if (spec === 'lucide-react') for (const name of names) add(lucide.get(kebab(name)));
           else if (/^\.\.\/[a-z0-9-]+$/.test(spec)) add(elements.get(spec.slice(3)));
         }

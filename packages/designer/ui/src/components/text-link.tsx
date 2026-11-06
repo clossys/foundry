@@ -1,11 +1,9 @@
-// Studio text link: the underlined text link of shadcn login-03
-// (shadcn login-03@4.23.0, components/login-form.tsx: `underline underline-offset-4`).
-import type { ComponentProps } from "react"
-import { cn } from "../lib/utils"
+// Studio text link: the stock shadcn link button (components.button, LinkButton in its link variant).
+import { LinkButton } from "@/components/ui/button"
 
-/** The stock underlined text link of the shadcn card example (apps/v4 card-example.tsx), for a link inside a heading or prose. */
-function TextLink({ className, ...props }: ComponentProps<"a">) {
-  return <a className={cn("underline underline-offset-4", className)} {...props} />
+/** A link inside a heading or prose: the stock LinkButton in its link variant. */
+function TextLink(props: React.ComponentProps<typeof LinkButton>) {
+  return <LinkButton variant="link" {...props} />
 }
 
 export { TextLink }

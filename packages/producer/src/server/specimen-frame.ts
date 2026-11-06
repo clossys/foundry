@@ -6,8 +6,8 @@
  * specimen's own viewport. It also measures the page's natural height and reports it:
  *   - a `clossys:specimen-size` message to the parent (same origin only), and
  *   - when the host wrapper (`frameElement.parentElement`) opts in with
- *     `data-specimen-fit="content"`, the wrapper's height is set to the scaled content height,
- *     capped at the wrapper's own aspect-ratio height. Short items (a logo, a toast) no longer sit
+ *     `data-specimen-fit="content"`, the wrapper's height is set to the scaled content height plus
+ *     the wrapper's own padding, capped at the wrapper's aspect-ratio height. Short items (a logo, a toast) no longer sit
  *     in a tall empty box; long pages keep the viewport crop.
  *
  * The script is static (the width rides on a data attribute), so its CSP hash is constant and
@@ -37,7 +37,9 @@ const SCRIPT = [
   "f.style.height=keep;return Math.ceil(Math.max(h,fixed));}",
   "function measure(){fit();var h=natural();if(!h||Math.abs(h-last)<2)return;last=h;var s=scale();",
   "try{parent.postMessage({type:'" + SPECIMEN_SIZE_MESSAGE + "',width:w,height:h},location.origin);}catch(e){}",
-  "if(box){var edge=box.offsetHeight-box.clientHeight,want=h*s,max=cap?box.clientWidth*cap:want;",
+  // The host is border-box: its height carries its own padding, so short content keeps a visible frame.
+  "if(box){var bs=getComputedStyle(box),pad=(parseFloat(bs.paddingTop)||0)+(parseFloat(bs.paddingBottom)||0),",
+  "edge=box.offsetHeight-box.clientHeight,want=h*s+pad,max=cap?box.clientWidth*cap:want;",
   "box.style.aspectRatio='auto';box.style.height=Math.ceil(Math.min(want,max)+edge)+'px';fit();}}",
   "var timer=0;function soon(){clearTimeout(timer);timer=setTimeout(measure,30);}",
   "function loaded(){last=-1;soon();[100,500,1500,3000].forEach(function(t){setTimeout(measure,t);});",

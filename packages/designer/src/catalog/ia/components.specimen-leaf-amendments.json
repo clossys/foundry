@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "layer": "components",
+  "baseSignedHead": "581e4fd70589fe072d9ce38fa159306d473c1754",
+  "status": "owner-signed",
+  "source": "owner 2026-11-05: specimen previews get new Foundry leaves (DESIGNER-READOPT)",
+  "prefix": "components.specimen-",
+  "addedLeafIds": [
+    "components.specimen-swatch",
+    "components.specimen-ladder",
+    "components.specimen-player",
+    "components.specimen-grid",
+    "components.specimen-matrix",
+    "components.specimen-viewport",
+    "components.specimen-passage",
+    "components.specimen-copy-in-context"
+  ]
+}

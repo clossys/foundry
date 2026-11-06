@@ -1,37 +1,26 @@
 "use client"
 
-import type { ReactNode } from "react"
-import { SidebarMenu, SidebarMenuItem } from "@clossys/designer-ui"
-import { StaticSidebarRow } from "./stock-static-nav-rows"
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle, SidebarMenu, SidebarMenuItem } from "@clossys/designer-ui"
 
-/** sidebar-07 workspace row; Studio supplies one workspace, so no switch menu is rendered. */
-export function TeamSwitcher({
-  teams,
-}: {
-  teams: {
-    name: string
-    logo: ReactNode
-    itemLogo: ReactNode
-    plan: string
-  }[]
-}) {
-  const team = teams[0]
-  if (!team) {
-    return null
-  }
+/** The one workspace row's data: its name, plan line and mark. */
+export interface ShellTeam { name: string; plan: string; logo?: React.ReactNode }
+
+/**
+ * sidebar-07 workspace row; Studio supplies one workspace, so no switch menu is rendered. The
+ * block's logo tile and two-line label are the stock Item image media, title and description, on a static stock Item (no button, ref or press handler).
+ */
+export function TeamSwitcher({ team }: { team?: ShellTeam }) {
+  if (!team) return null
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <StaticSidebarRow
-        >
-          <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            {team.logo}
-          </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-medium">{team.name}</span>
-            <span className="truncate text-xs">{team.plan}</span>
-          </div>
-        </StaticSidebarRow>
+        <Item size="sm" data-sidebar-static-row="team">
+          <ItemMedia variant="image">{team.logo}</ItemMedia>
+          <ItemContent>
+            <ItemTitle>{team.name}</ItemTitle>
+            <ItemDescription>{team.plan}</ItemDescription>
+          </ItemContent>
+        </Item>
       </SidebarMenuItem>
     </SidebarMenu>
   )

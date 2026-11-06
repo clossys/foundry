@@ -34,19 +34,22 @@
       "components": [
         "components.badge",
         "components.button",
-        "components.card"
+        "components.card",
+        "components.field"
       ]
     },
     "composes": [
       "components.badge",
       "components.button",
-      "components.card"
+      "components.card",
+      "components.field"
     ]
   },
   "inputs": [],
   "uses": [
     "components.badge",
     "components.button",
-    "components.card"
+    "components.card",
+    "components.field"
   ]
 }

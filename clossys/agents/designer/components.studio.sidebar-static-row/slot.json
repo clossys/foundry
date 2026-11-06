@@ -31,15 +31,15 @@
       ],
       "assets": [],
       "components": [
-        "components.sidebar"
+        "components.item"
       ]
     },
     "composes": [
-      "components.sidebar"
+      "components.item"
     ]
   },
   "inputs": [],
   "uses": [
-    "components.sidebar"
+    "components.item"
   ]
 }

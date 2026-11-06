@@ -38,6 +38,11 @@ export function StudioDocument({ head, children }: { head?: ReactNode; children:
   </html>;
 }
 
+function framedPage(): boolean {
+  // A frame whose top the browser will not compare is treated as framed.
+  try { return window.self !== window.top; } catch { return true; }
+}
+
 function storedMode(): ThemeMode {
   // No stored choice means the system mode; storage the browser denies is reported, then treated as no choice.
   let value: string | null = null;
@@ -80,6 +85,10 @@ export function StudioProviders({ children, seed }: { children: ReactNode; seed?
   }, []);
 
   useEffect(() => {
+    // Only the top page holds the live change stream. A framed Studio page (a Publisher preview in a
+    // gallery card) is a snapshot: a stream per card would hold the browser's six connections per
+    // host open for good, so the gallery's own requests would queue behind them and never load.
+    if (framedPage()) return;
     const events = new EventSource('/api/events');
     events.addEventListener('change', event => {
       try { if (studioCellChange(JSON.parse((event as MessageEvent<string>).data))) setRevision(value => value + 1); }

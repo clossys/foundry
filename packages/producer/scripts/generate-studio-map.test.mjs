@@ -121,8 +121,8 @@ async function writerCallerFixture(t) {
   await writeFile(join(writer, 'ia.json'), JSON.stringify(ia));
   const previewItems = await pinnedBindings(options.clossysRoot, STUDIO_SLOTS);
   assert.equal(previewItems.length, 14);
-  // Draft binds what the slot model pins: the owner-approved options v5 and specimen v9.
-  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 5], ['sections.studio.specimen', 9]]);
+  // Draft binds what the slot model pins: options v8 and specimen v12 (stock re-adoption, planner:R2F-03).
+  assert.deepEqual(previewItems.filter(row => /studio\.(options|specimen)$/.test(row.slot)).map(row => [row.slot, row.version]), [['sections.studio.options', 8], ['sections.studio.specimen', 12]]);
   async function candidate(text, version, pin = false) {
     const name = `studio-v${version}.md`;
     const bytes = `---\nslot: "strings.common"\nlocales: ["en"]\nsource: {"kind":"original","ref":[]}\n---\n\n## en\n\n### studio.greeting\n<!-- {"id":"studio.greeting","bindings":["test"]} -->\n${text}\n`;
@@ -411,6 +411,18 @@ test('a slot with no pin, a tampered candidate, or an item with no trusted refer
   await assert.rejects(run(options), /not pinned with registry \(stock\) lineage/);
   await rm(join(slot.dir, 'pin.json'));
   await assert.rejects(run(options), /no pin/);
+});
+
+test('an installed component slot shares the trust rule: stock compositions install, anything else fails closed', async t => {
+  const options = await fixture(t);
+  // This case needs a run that reaches component installs, so it carries the pinned Writer store too.
+  await cp(join(clossys, 'agents', 'writer'), join(options.clossysRoot, 'agents', 'writer'), { recursive: true });
+  await editCandidate(options, 'components.studio.card-grid', item => { item.meta.source = { kind: 'original', ref: [] }; });
+  await assert.rejects(run(options), /components\.studio\.card-grid must come from a trusted reference/);
+  await editCandidate(options, 'components.studio.card-grid', item => { item.meta.source = { kind: 'composition', ref: [], parts: [] }; });
+  await assert.rejects(run(options), /components\.studio\.card-grid composition must declare its stock parts/);
+  await editCandidate(options, 'components.studio.card-grid', item => { item.meta.source = { kind: 'composition', ref: [], parts: [{ slot: 'components.studio.text-link', files: ['text-link.tsx'] }] }; });
+  await assert.rejects(run(options), /components\.studio\.card-grid composes components\.studio\.text-link, which is not pinned with registry or npm \(stock\) lineage/);
 });
 
 test('Draft assembly requires an explicit preview target and complete native bindings', async t => {

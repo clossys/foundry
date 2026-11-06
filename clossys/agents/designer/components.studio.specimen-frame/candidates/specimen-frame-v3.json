@@ -1,0 +1,62 @@
+{
+  "name": "specimen-frame",
+  "type": "registry:component",
+  "dependencies": [],
+  "registryDependencies": [],
+  "files": [
+    {
+      "path": "LICENCE.md",
+      "type": "registry:file",
+      "content": "MIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "path": "specimen-frame.tsx",
+      "type": "registry:component",
+      "content": "// Studio specimen frame: a stock shadcn card (components.card) holding the specimen page in an unstyled iframe.\n// The frame fills the card's width; its height is the ratio's fixed CSS-pixel height.\nimport { Card } from \"@/components/ui/card\"\n\nconst SPECIMEN_HEIGHT = { thumbnail: 240, mobile: 667, tablet: 1024, desktop: 800 } as const\n\nexport type SpecimenRatio = keyof typeof SPECIMEN_HEIGHT\n\n/** A specimen window: the framed page at the card's width and the ratio's height. */\nfunction SpecimenFrame({ src, title, ratio = \"thumbnail\", interactive = false, ...props }: Omit<React.ComponentProps<typeof Card>, \"children\"> & {\n  src: string\n  title: string\n  ratio?: SpecimenRatio\n  /** Thumbnails are inert so the card link owns every pointer and focus event. */\n  interactive?: boolean\n}) {\n  return (\n    <Card size=\"sm\" data-specimen-ratio={ratio} {...props}>\n      <iframe title={title} src={src} loading=\"lazy\" inert={!interactive} width=\"100%\" height={SPECIMEN_HEIGHT[ratio]} />\n    </Card>\n  )\n}\n\nexport { SpecimenFrame }\n"
+    }
+  ],
+  "meta": {
+    "slot": "components.studio.specimen-frame",
+    "source": {
+      "kind": "composition",
+      "ref": [],
+      "parts": [
+        {
+          "slot": "components.card",
+          "files": [
+            "registry/aria-nova/ui/card.tsx"
+          ]
+        }
+      ],
+      "hash": "sha256:444911ca375c5595c2104960790890b66458519017958be99ecaf7ddd4222838",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "specimen-frame",
+      "package": "designer",
+      "layer": "components",
+      "slot": "components.studio.specimen-frame",
+      "kind": "registry:component",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "R2F-03"
+      },
+      "reason": "R2F-03: re-adopted as a hookless composition of stock shadcn parts",
+      "createdAt": "2026-11-06T17:16:44.926Z",
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": [
+          "--border",
+          "--background",
+          "--radius"
+        ]
+      }
+    }
+  }
+}

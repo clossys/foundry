@@ -1,7 +1,7 @@
 {
-  "candidate": "card-stack-v2.json",
-  "sha256": "f32b351602dd17fe7ace9c9c4b66b7ca1f7268f4fed09d6238a0ce12fa66452e",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "card-stack-v3.json",
+  "sha256": "240142c3c8554e92beeb1b5ac4bacb5f38b402e07916aa3a46ee5af6a48687d4",
+  "decidedBy": "planner:R2F-03",
   "basis": "planner",
-  "at": "2026-11-05T11:33:30.056Z"
+  "at": "2026-11-06T17:16:59.162Z"
 }

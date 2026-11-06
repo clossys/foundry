@@ -12,7 +12,7 @@ const { buildSync } = require('esbuild');
 const studio = path.resolve(__dirname, '..');
 
 /** Bundle Studio source as CommonJS; `mocks` swaps named imports of the source for runtime ports. */
-function compile(file, mocks = {}) {
+function compile(file, mocks = {}, extra = '') {
   const scratch = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'studio-frame-test-')));
   try {
     const source = fs.readFileSync(file, 'utf8').replace(/from ('[^']+')/g, (match, quoted) => {
@@ -21,7 +21,7 @@ function compile(file, mocks = {}) {
       const port = path.join(scratch, `${Object.keys(mocks).indexOf(name)}.js`);
       fs.writeFileSync(port, mocks[name]);
       return `from ${JSON.stringify(port)}`;
-    });
+    }) + extra;
     const output = buildSync({ stdin: { contents: source, resolveDir: path.dirname(file), loader: 'tsx' }, bundle: true, platform: 'node', format: 'cjs', external: ['react', 'react-dom', 'react/*', 'react-dom/*'], loader: { '.css': 'empty' }, jsx: 'automatic', write: false, logLevel: 'silent' }).outputFiles[0].text;
     const compiled = new Module(path.join(studio, 'checks/frame-test.cjs'), module);
     compiled.filename = path.join(studio, 'checks/frame-test.cjs');
@@ -31,10 +31,11 @@ function compile(file, mocks = {}) {
   } finally { fs.rmSync(scratch, { recursive: true, force: true }); }
 }
 
-const { default: Frame } = compile(path.join(studio, 'frames/studio-shell/index.tsx'), {
+// The served shell: the Studio renderer giving the pinned frame its resolved inputs and the shell's Writer copy, in one bundle.
+const shell = compile(path.join(studio, 'components/StudioShell.tsx'), {
   'next/navigation': `export const usePathname=()=>globalThis.__studioPath ?? '/'; export const useRouter=()=>({push(){}});`,
-  '../../components/StudioProviders': `export const useStudioData=()=>({reports:[],brand:{name:'Fixture'}}); export const useThemeMode=()=>({mode:'light',setMode(){}});`,
-});
+  './StudioProviders': `export const useStudioData=()=>({reports:[],brand:{state:'ready',value:{name:'Fixture'}}}); export const useThemeMode=()=>({mode:'light',resolved:'light',setMode(){}});`,
+}, "\nexport { default as Frame } from '../frames/studio-shell';\nexport { studioShellCopy } from '../lib/shell-copy';\n");
 const routes = compile(path.join(studio, 'lib/studio-route-map.ts'));
 const { studioPages, studioLeaves } = compile(path.join(studio, 'generated/studio-map.ts'));
 
@@ -50,7 +51,7 @@ function render(entry) {
   globalThis.__studioPath = entry.path;
   try {
     const projection = routes.studioShellProjection(map, entry.id);
-    return { projection, html: renderToStaticMarkup(React.createElement(Frame, { ...projection }, 'Content')) };
+    return { projection, html: renderToStaticMarkup(React.createElement(shell.StudioShell, { frame: shell.Frame, ...projection, copy: shell.studioShellCopy() }, 'Content')) };
   } finally { delete globalThis.__studioPath; }
 }
 const hrefs = html => [...html.matchAll(/<a\b[^>]*?\shref="([^"]*)"/g)].map(match => match[1].replace(/&amp;/g, '&'));

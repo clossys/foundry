@@ -57,6 +57,6 @@
     "components.badge",
     "components.button",
     "components.card",
-    "sections.studio.specimen"
+    "components.field"
   ]
 }

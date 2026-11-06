@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "state": "unqualified-source-adoption",
+  "state": "superseded",
   "upstream": {
     "repository": "shadcn-ui/ui",
     "commit": "b8d7baa15b1dca5716f13153e63795fc3d741f6b",
@@ -123,12 +123,11 @@
     ]
   },
   "nativeQualification": {
-    "state": "unqualified",
-    "candidate": "none",
-    "pinChanged": false,
-    "reason": "Exact multi-source parts are not represented by the existing single registry-item source checker. Source proof does not grant native pin clearance.",
-    "finding": "REF-NO-SOURCE: customized lineage without lineage.source",
-    "measured": "checkRegistryItem(clossys, sections.studio.home, actual Home + DS part draft, {strict:true}); exit 1"
+    "state": "qualified",
+    "candidate": "home-grid-v3.json",
+    "pinChanged": true,
+    "reason": "R2F-03: components.studio.home-grid re-adopted as a composition of stock parts (components.badge, button, card, field); the ref-verbatim composition check qualifies the pin natively, so these exact-range snapshots remain only as the vendored reference record.",
+    "by": "planner:R2F-03"
   },
   "containerDependency": "Studio frame must provide @container/main; source is present at implementation base; browser measurement remains owed"
 }

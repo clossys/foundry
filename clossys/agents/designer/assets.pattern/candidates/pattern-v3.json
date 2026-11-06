@@ -1,0 +1,52 @@
+{
+  "name": "pattern",
+  "type": "registry:item",
+  "files": [
+    {
+      "path": "clossys/assets.pattern.json",
+      "type": "registry:file",
+      "content": "{\n  \"assets\": {\n    \"pattern\": {\n      \"dots\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"ink\": \"--color-line-strong\",\n          \"shape\": \"dots\",\n          \"tile\": \"--spacing-xl\",\n          \"weight\": \"--ui-border-hairline\"\n        }\n      },\n      \"grain\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"ink\": \"--color-line-strong\",\n          \"shape\": \"grain\",\n          \"tile\": \"--spacing-xl\",\n          \"weight\": \"--ui-border-hairline\"\n        }\n      },\n      \"grid\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"ink\": \"--color-line-strong\",\n          \"shape\": \"grid\",\n          \"tile\": \"--spacing-xl\",\n          \"weight\": \"--ui-border-hairline\"\n        }\n      },\n      \"lines\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"ink\": \"--color-line-strong\",\n          \"shape\": \"lines\",\n          \"tile\": \"--spacing-xl\",\n          \"weight\": \"--ui-border-hairline\"\n        }\n      },\n      \"noise\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"ink\": \"--color-line-strong\",\n          \"shape\": \"noise\",\n          \"tile\": \"--spacing-xl\",\n          \"weight\": \"--ui-border-hairline\"\n        }\n      },\n      \"topo\": {\n        \"$type\": \"rules\",\n        \"$value\": {\n          \"ink\": \"--color-line-strong\",\n          \"shape\": \"topo\",\n          \"tile\": \"--spacing-xl\",\n          \"weight\": \"--ui-border-hairline\"\n        }\n      }\n    }\n  }\n}\n"
+    }
+  ],
+  "meta": {
+    "slot": "assets.pattern",
+    "source": {
+      "kind": "derived",
+      "ref": [
+        "magicui/grid-pattern@efe76fc"
+      ],
+      "hash": "sha256:f3d2d48daec643d659ff9a287a4dc52b4d2ad870b166da5c699ef00a85702a9e",
+      "license": "MIT"
+    },
+    "element": {
+      "id": "pattern",
+      "package": "designer",
+      "layer": "assets",
+      "slot": "assets.pattern",
+      "kind": "registry:item",
+      "license": "MIT",
+      "creator": {
+        "agent": "claude",
+        "model": "claude-opus-5-5",
+        "by": "planner:SPECIMEN-RENDER"
+      },
+      "reason": "SPECIMEN-RENDER P2: the pattern payload of pattern-v2, unchanged; lineage cites only magicui/grid-pattern@efe76fc, the vendored reference-manifest row that v1 was adopted from (v2 cited v1's candidate path, which is not a manifest row id). Pin history keeps v1 and v2.",
+      "createdAt": "2026-11-05T17:12:31.617Z",
+      "checks": [
+        {
+          "check": "ref-verbatim",
+          "status": "n/a",
+          "note": "non-code asset payload"
+        }
+      ],
+      "deps": {
+        "npm": {},
+        "registry": []
+      },
+      "reads": {
+        "copyKeys": [],
+        "themeVars": []
+      }
+    }
+  }
+}

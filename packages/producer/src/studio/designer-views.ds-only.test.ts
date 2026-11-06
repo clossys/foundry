@@ -384,8 +384,8 @@ describe('Studio sections are ds-only', () => {
     expect(lineageReferences(['shadcn-aria/sidebar-15@4.23.0', 'shadcn-aria/no-such-item@9.9.9', 'shadcn-app/sidebar-15@4.23.0'], manifest))
       .toEqual([{ registry: 'shadcn-aria', item: 'sidebar-15', version: '4.23.0', hash: `sha256:${'c'.repeat(64)}` }]);
     expect(frameBlockMarkup('studio-shell').size).toBeGreaterThan(0);
-    // studio-slot-groups places studio-specimen, declared by its engine-derived pin (derive-element-deps); the probe re-pin below is the positive case for another section.
-    expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual(['studio-slot-groups -> ../studio-specimen']);
+    // No Studio section places a sibling section (R2F-03: studio-slot-groups renders its own card preview); the probe re-pin below is the positive case.
+    expect(FOLDERS.flatMap(folder => [...declaredSections(folder)].map(dep => `${folder} -> ${dep}`))).toEqual([]);
     const probe = realpathSync(mkdtempSync(join(tmpdir(), 'ds-only-canonical-')));
     try {
       // Only the records this probe reads and rewrites: copying the whole store dominated the test's time.
@@ -473,16 +473,19 @@ describe('Studio sections are ds-only', () => {
       // section's own styled div is still refused, and so is reaching the installed file directly.
       writeFileSync(join(probe, 'Probe.tsx'), "import { CardGrid, TextLink } from '@clossys/designer-ui';\nimport { SpecimenFrame } from '@clossys/designer-ui/src/components/specimen-frame';\nexport const A = () => <CardGrid density=\"specimens\"><div className=\"grid gap-4\"><TextLink href=\"#\">x</TextLink></div><SpecimenFrame /></CardGrid>;\n");
       expect(dsOnlyViolations(probe).map(line => line.split(': ').at(-1))).toEqual(['imports @clossys/designer-ui/src/components/specimen-frame', '<div className>']);
-      // The installed component bodies hold their stock classes in src/components, outside every Studio scan root.
-      for (const file of ['card-grid.tsx', 'card-stack.tsx', 'specimen-frame.tsx', 'specimen-figure.tsx', 'text-link.tsx', 'sidebar-static-row.tsx', 'block-viewer-iframe.tsx', 'studio-home-stock.tsx'])
-        expect(readFileSync(join(UI_SRC, 'components', file), 'utf8'), file).toMatch(/className/);
+      // The installed component bodies are compositions of stock parts (R2F-03): no class of their own, only stock ui imports.
+      for (const file of ['card-grid.tsx', 'card-stack.tsx', 'specimen-frame.tsx', 'specimen-figure.tsx', 'text-link.tsx', 'sidebar-static-row.tsx', 'block-viewer-iframe.tsx', 'studio-home-stock.tsx']) {
+        const body = readFileSync(join(UI_SRC, 'components', file), 'utf8');
+        expect(body, file).not.toMatch(/className|style=/);
+        expect([...body.matchAll(/from "([^"]+)"/g)].map(match => match[1]).every(path => path.startsWith('@/components/ui/')), file).toBe(true);
+      }
       // Each Foundry extension the slots replaced is now an import-only consumer.
       for (const file of ['foundry/layout.tsx', 'foundry/sidebar-static.tsx', 'foundry/block-viewer-iframe.tsx', 'foundry/studio-home-stock.tsx'])
         expect(readFileSync(join(UI_SRC, file), 'utf8').split('\n').filter(line => line.trim() && !line.startsWith('//')).every(line => /^export \* from "\.\.\/components\/[a-z-]+"$/.test(line)), file).toBe(true);
     } finally { rmSync(probe, { recursive: true, force: true }); }
   });
   it('covers every Studio renderer and every Studio frame in the component layer', () => {
-    expect(RENDERER_FILES).toEqual(['components/StudioInstalledPage.tsx', 'components/StudioPage.tsx', 'components/StudioProviders.tsx', 'components/StudioRouteMap.tsx',
+    expect(RENDERER_FILES).toEqual(['components/StudioInstalledPage.tsx', 'components/StudioPage.tsx', 'components/StudioProviders.tsx', 'components/StudioRouteMap.tsx', 'components/StudioShell.tsx',
       'lib/agents.ts', 'lib/cell-events.ts', 'lib/checks-copy.ts', 'lib/contract-copy.ts', 'lib/options-copy.ts', 'lib/pipeline-flow.ts', 'lib/producer-url.ts', 'lib/publisher-preview.ts',
       'lib/references-copy.ts', 'lib/shell-copy.ts', 'lib/slot-census-load.ts', 'lib/slot-census.ts', 'lib/slot-detail.ts', 'lib/studio-copy.ts', 'lib/studio-icons.tsx', 'lib/studio-report.ts',
       'lib/studio-route-map.ts', 'lib/studio-seed.ts']);

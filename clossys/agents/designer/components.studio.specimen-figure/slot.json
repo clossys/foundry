@@ -28,10 +28,16 @@
         "themes.spacing"
       ],
       "assets": [],
-      "components": []
+      "components": [
+        "components.field"
+      ]
     },
-    "composes": []
+    "composes": [
+      "components.field"
+    ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.field"
+  ]
 }

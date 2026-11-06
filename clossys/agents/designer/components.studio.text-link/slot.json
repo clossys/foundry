@@ -25,10 +25,16 @@
     "allowedReads": {
       "themes": [],
       "assets": [],
-      "components": []
+      "components": [
+        "components.button"
+      ]
     },
-    "composes": []
+    "composes": [
+      "components.button"
+    ]
   },
   "inputs": [],
-  "uses": []
+  "uses": [
+    "components.button"
+  ]
 }

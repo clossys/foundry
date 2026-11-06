@@ -92,19 +92,18 @@
     "identity.visual.style"
   ],
   "uses": [
-    "assets.icon-chevron-right",
-    "assets.icon-theme-dark",
-    "assets.icon-theme-light",
     "components.avatar",
+    "components.breadcrumbs",
     "components.button",
     "components.card",
     "components.command",
-    "components.dropdown-menu",
+    "components.disclosure",
     "components.empty",
+    "components.field",
+    "components.item",
     "components.popover",
     "components.scroll-area",
     "components.separator",
-    "components.sheet",
     "components.sidebar",
     "components.skeleton",
     "components.tooltip"

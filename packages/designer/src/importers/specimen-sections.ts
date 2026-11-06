@@ -9,14 +9,20 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-swatch",
     "name": "SpecimenSwatch",
+    "leaf": "components.specimen-swatch",
+    "variant": "swatch",
     "components": [
+      "components.specimen-swatch",
       "components.semantic-content"
     ]
   },
   {
     "id": "sections.specimen-color-ramp",
     "name": "SpecimenColorRamp",
+    "leaf": "components.specimen-swatch",
+    "variant": "color-ramp",
     "components": [
+      "components.specimen-swatch",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure"
@@ -25,7 +31,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-type-ladder",
     "name": "SpecimenTypeLadder",
+    "leaf": "components.specimen-ladder",
+    "variant": "type",
     "components": [
+      "components.specimen-ladder",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure"
@@ -34,7 +43,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-spacing-ladder",
     "name": "SpecimenSpacingLadder",
+    "leaf": "components.specimen-ladder",
+    "variant": "spacing",
     "components": [
+      "components.specimen-ladder",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure"
@@ -43,7 +55,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-radius-ladder",
     "name": "SpecimenRadiusLadder",
+    "leaf": "components.specimen-ladder",
+    "variant": "radius",
     "components": [
+      "components.specimen-ladder",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure"
@@ -52,7 +67,9 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-motion-player",
     "name": "SpecimenMotionPlayer",
+    "leaf": "components.specimen-player",
     "components": [
+      "components.specimen-player",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure",
@@ -62,7 +79,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-asset-grid",
     "name": "SpecimenAssetGrid",
+    "leaf": "components.specimen-grid",
+    "variant": "asset",
     "components": [
+      "components.specimen-grid",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure",
@@ -72,7 +92,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-icon-grid",
     "name": "SpecimenIconGrid",
+    "leaf": "components.specimen-grid",
+    "variant": "icon",
     "components": [
+      "components.specimen-grid",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure",
@@ -82,7 +105,9 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-variant-matrix",
     "name": "SpecimenVariantMatrix",
+    "leaf": "components.specimen-matrix",
     "components": [
+      "components.specimen-matrix",
       "components.semantic-content",
       "components.grid-list",
       "components.table",
@@ -93,7 +118,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-section-viewports",
     "name": "SpecimenSectionViewports",
+    "leaf": "components.specimen-viewport",
+    "variant": "section",
     "components": [
+      "components.specimen-viewport",
       "components.semantic-content",
       "components.grid-list",
       "components.table",
@@ -103,7 +131,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-frame-viewports",
     "name": "SpecimenFrameViewports",
+    "leaf": "components.specimen-viewport",
+    "variant": "frame",
     "components": [
+      "components.specimen-viewport",
       "components.semantic-content",
       "components.grid-list",
       "components.table",
@@ -113,7 +144,9 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-rich-passage",
     "name": "SpecimenRichPassage",
+    "leaf": "components.specimen-passage",
     "components": [
+      "components.specimen-passage",
       "components.semantic-content",
       "components.grid-list",
       "components.disclosure",
@@ -123,7 +156,9 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-copy-in-context",
     "name": "SpecimenCopyInContext",
+    "leaf": "components.specimen-copy-in-context",
     "components": [
+      "components.specimen-copy-in-context",
       "components.semantic-content",
       "components.grid-list",
       "components.table",
@@ -136,7 +171,10 @@ export const SPECIMEN_SECTION_EXPORTS = [
   {
     "id": "sections.specimen-page-viewports",
     "name": "SpecimenPageViewports",
+    "leaf": "components.specimen-viewport",
+    "variant": "page",
     "components": [
+      "components.specimen-viewport",
       "components.semantic-content",
       "components.grid-list",
       "components.table",
@@ -161,17 +199,20 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
   for (const registration of SPECIMEN_SECTION_EXPORTS) {
     const entry = registration.id.replace(".", "/") + "/" + registration.name + ".tsx";
     const components = [...new Set([...registration.components, "components.grid-list", "components.disclosure"])] as `components.${string}`[];
-    const ports = components.map(id => ({ id, name: publicName(id) }));
+    // The registered specimen leaf renders the section; its local name never shadows the section export.
+    const ports = components.map(id => ({ id, name: publicName(id), local: id === registration.leaf ? `${publicName(id)}Leaf` : publicName(id) }));
+    const leafPort = ports.find(port => port.id === registration.leaf)!;
+    const variant = "variant" in registration ? ` variant=${JSON.stringify(registration.variant)}` : "";
     const parts: string[] = Object.hasOwn(SPECIMEN_RENDER_PARTS, registration.id) ? [...SPECIMEN_RENDER_PARTS[registration.id as keyof typeof SPECIMEN_RENDER_PARTS]] : [];
     if (registration.id === "sections.specimen-swatch" || registration.id === "sections.specimen-color-ramp") parts.push("studio.specimen-swatch", "studio.specimen-contrast");
     const code = [
       '"use client";',
-      `import { ${registration.name} as RenderSpecimen, bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";`,
-      ...ports.map(port => `import { ${port.name} } from "../../components/${port.id.slice(11)}/index.js";`),
+      'import { bindNativeSpecimenContext, studioSpecimenLeaves, type SpecimenLeafProps } from "@clossys/designer/studio";',
+      ...ports.map(port => `import { ${port.name === port.local ? port.name : `${port.name} as ${port.local}`} } from "../../components/${port.id.slice(11)}/index.js";`),
       `export function ${registration.name}(props: SpecimenLeafProps) {`,
-      `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name).join(", ")} });`,
+      `  const context = bindNativeSpecimenContext(props.context, { ${ports.map(port => port.name === port.local ? port.name : `${port.name}: ${port.local}`).join(", ")} });`,
       '  if ("reason" in context) return props.need(context);',
-      '  return <RenderSpecimen items={props.items} axes={props.axes} context={context} need={props.need} expanded={props.expanded} labels={props.labels} renderParts={props.renderParts} />;',
+      `  return <${leafPort.local}${variant} items={props.items} axes={props.axes} context={context} need={props.need} expanded={props.expanded} labels={props.labels} renderParts={props.renderParts} />;`,
       '}',
       'export function SpecimenLeaf() {',
       `  const definition = studioSpecimenLeaves.find(leaf => leaf.id === ${JSON.stringify(registration.id)});`,
@@ -187,7 +228,7 @@ export function specimenSectionSourceCatalog(packages: readonly SurfacePackageEv
       kind: "section", slot: registration.id, source: "foundry", impl: { kind: "source", entry, export: registration.name },
       rendering: "client", members: [], states: ["default"], reads: { themes: ["themes.spacing"], assets: [] },
       composes: components, parts, api: { version: 1, exports: [{ name: registration.name, export: registration.name }, { name: "SpecimenLeaf", export: "SpecimenLeaf" }] },
-      bindings: ports.map(port => ({ file: entry, module: `../../components/${port.id.slice(11)}/index.js`, name: port.name, local: port.name, slot: port.id })),
+      bindings: ports.map(port => ({ file: entry, module: `../../components/${port.id.slice(11)}/index.js`, name: port.name, local: port.local, slot: port.id })),
       dependencies, license: "MIT", pin, notice: `notices/surfaces/n-${sha256(notice)}.txt`,
       outputSha256: surfaceManifest([{ path: entry, content: code }, { path: `notices/surfaces/n-${sha256(notice)}.txt`, content: notice }]),
       blockers: [], slotMap: Object.fromEntries(["items", "axes", "context", "labels", ...(parts.length ? ["renderParts"] : [])].map(name => [name, { export: registration.name, path: [name] }])), propMap: {}, configs: {},

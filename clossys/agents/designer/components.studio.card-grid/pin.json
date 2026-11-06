@@ -1,7 +1,7 @@
 {
-  "candidate": "card-grid-v2.json",
-  "sha256": "ef4d17dd54dceb861569c41a56b1c37480a4f3c158cdfd30ec1c2d39edc88af2",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "card-grid-v3.json",
+  "sha256": "ff1c56990edf2243fb92fe1aca46e8ecb79f87554fc1d18e336aa9ec3d4e4560",
+  "decidedBy": "planner:R2F-03",
   "basis": "planner",
-  "at": "2026-11-05T11:33:29.678Z"
+  "at": "2026-11-06T17:16:57.457Z"
 }

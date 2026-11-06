@@ -245,3 +245,7 @@ export { RichText } from "./RichText.js";
 export type { RichTextProps, RichTextValue } from "./RichText.js";
 
 export { MediaPlayer, type MediaPlayerProps, type MediaPlayerPassage } from "./media-player/index.js";
+
+// Registered components.specimen-* leaves (DESIGNER-READOPT): the visual unit of each Studio specimen section.
+export { SpecimenSwatch, SpecimenLadder, SpecimenPlayer, SpecimenGrid, SpecimenMatrix, SpecimenViewport, SpecimenPassage, SpecimenCopyInContext } from "./specimen/index.js";
+export type { SpecimenLeafComponentProps, SpecimenSwatchVariant, SpecimenLadderVariant, SpecimenGridVariant, SpecimenViewportVariant } from "./specimen/index.js";

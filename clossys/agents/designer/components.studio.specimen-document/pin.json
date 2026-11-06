@@ -1,7 +1,7 @@
 {
-  "candidate": "specimen-document-v3.json",
-  "sha256": "e5ac2e063b21c7e1e997f9c9d83bad1af1781ba06e0c922256f72035df4d2415",
-  "decidedBy": "planner:DS-COMPLETE",
+  "candidate": "specimen-document-v4.json",
+  "sha256": "79ee8be0369c528b5f6fdf7eef81c24f3bedf8b4a0418f205ad16c18cabc6493",
+  "decidedBy": "planner:R2F-03",
   "basis": "planner",
-  "at": "2026-11-05T11:42:22.369Z"
+  "at": "2026-11-06T17:17:07.907Z"
 }

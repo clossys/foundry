@@ -1,0 +1,110 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.badge",
+        "components.disclosure",
+        "components.grid-list",
+        "components.semantic-content",
+        "components.table"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "foundry/components.specimen-viewport",
+      "license": "MIT",
+      "mode": "implementation",
+      "pin": {
+        "export": "./components#SpecimenViewport",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "relation": "same-contract",
+      "slot": "components.specimen-viewport",
+      "source": "foundry",
+      "sourceAddress": "./components#SpecimenViewport",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "specimen-viewport": {
+      "composes": [
+        "components.badge",
+        "components.disclosure",
+        "components.grid-list",
+        "components.semantic-content",
+        "components.table"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "^3.7.0"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.19.0"
+        }
+      ],
+      "impl": {
+        "export": "SpecimenViewport",
+        "kind": "package",
+        "module": "@clossys/designer/components"
+      },
+      "license": "MIT",
+      "members": [
+        "variant.frame",
+        "variant.page",
+        "variant.section"
+      ],
+      "pin": {
+        "export": "./components#SpecimenViewport",
+        "package": "@clossys/designer",
+        "version": "0.12.0"
+      },
+      "propMap": {
+        "variant.frame": "./components#SpecimenViewport.variant=frame",
+        "variant.page": "./components#SpecimenViewport.variant=page",
+        "variant.section": "./components#SpecimenViewport.variant=section"
+      },
+      "props": [
+        "axes",
+        "context",
+        "expanded",
+        "items",
+        "labels",
+        "need",
+        "renderParts",
+        "variant"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": true,
+        "range": "^1.19.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.badge",
+          "components.disclosure",
+          "components.grid-list",
+          "components.semantic-content",
+          "components.table"
+        ],
+        "themes": [
+          "themes.spacing"
+        ]
+      },
+      "root": "presentational",
+      "slot": "components.specimen-viewport",
+      "source": "foundry"
+    }
+  }
+}
