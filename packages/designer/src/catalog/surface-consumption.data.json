@@ -2,10 +2,26 @@
   "frames.app-header": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.dialog",
+        "components.icon",
+        "components.link",
+        "components.popover",
+        "components.semantic-content",
+        "components.toggle-button"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.dialog",
+          "components.icon",
+          "components.link",
+          "components.popover",
+          "components.semantic-content",
+          "components.toggle-button"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -87,6 +103,19 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.banner",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.link",
+        "components.logo",
+        "components.menu",
+        "components.popover",
+        "components.resize-handle",
+        "components.semantic-content",
+        "components.tabs",
+        "components.toggle-button",
         "frames.app-header",
         "frames.app-sidebar",
         "frames.command",
@@ -94,7 +123,21 @@
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.banner",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.link",
+          "components.logo",
+          "components.menu",
+          "components.popover",
+          "components.resize-handle",
+          "components.semantic-content",
+          "components.tabs",
+          "components.toggle-button"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -326,11 +369,24 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
+        "components.card",
+        "components.icon",
+        "components.link",
+        "components.navigation-tree",
+        "components.semantic-content",
         "frames.sheet"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.card",
+          "components.icon",
+          "components.link",
+          "components.navigation-tree",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -465,10 +521,16 @@
   "frames.auth-shell": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -529,10 +591,22 @@
   "frames.command": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.command",
+        "components.dialog",
+        "components.icon",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.command",
+          "components.dialog",
+          "components.icon",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -613,11 +687,20 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
+        "components.card",
+        "components.resize-handle",
+        "components.semantic-content",
         "frames.sheet"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.card",
+          "components.resize-handle",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -690,10 +773,24 @@
   "frames.sheet": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.semantic-content",
+        "components.sheet"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.semantic-content",
+          "components.sheet"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -765,6 +862,7 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
         "components.icon",
         "components.logo",
         "components.semantic-content"
@@ -772,6 +870,7 @@
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.button",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -843,11 +942,13 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
         "components.icon"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.button",
           "components.icon"
         ],
         "themes": []
@@ -986,10 +1087,20 @@
   "sections.access-matrix": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.checkbox",
+        "components.icon",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.checkbox",
+          "components.icon",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1059,11 +1170,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1121,11 +1235,18 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.avatar",
+        "components.icon",
+        "components.semantic-content",
         "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.avatar",
+          "components.icon",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1200,10 +1321,18 @@
   "sections.article": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.card",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.card",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": [
           "themes.font-mono"
         ]
@@ -1260,10 +1389,14 @@
   "sections.audit-log": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1320,10 +1453,14 @@
   "sections.band": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1383,11 +1520,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1438,10 +1578,16 @@
   "sections.call-to-action": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.card",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.card",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1496,12 +1642,22 @@
   "sections.cards": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.badge",
+        "components.card",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [
           "assets.image"
         ],
-        "components": [],
+        "components": [
+          "components.badge",
+          "components.card",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1560,10 +1716,24 @@
   "sections.chat": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.avatar",
+        "components.button",
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
+        "components.text-field"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.avatar",
+          "components.button",
+          "components.icon",
+          "components.link",
+          "components.semantic-content",
+          "components.text-field"
+        ],
         "themes": [
           "themes.font-mono"
         ]
@@ -1644,10 +1814,18 @@
   "sections.column-mapper": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.card",
+        "components.select",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.card",
+          "components.select",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1715,11 +1893,30 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.radio-group",
+        "components.semantic-content",
+        "components.status-mark",
+        "components.table",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.badge",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.radio-group",
+          "components.semantic-content",
+          "components.status-mark",
+          "components.table"
+        ],
         "themes": [
           "themes.font-mono"
         ]
@@ -1870,10 +2067,18 @@
   "sections.consent": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.icon",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.icon",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -1934,10 +2139,16 @@
   "sections.content": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.card",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.card",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2005,6 +2216,17 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
+        "components.checkbox",
+        "components.dialog",
+        "components.icon",
+        "components.popover",
+        "components.select",
+        "components.semantic-content",
+        "components.sheet",
+        "components.table",
+        "components.tag-group",
+        "components.text-field",
         "sections.section-header"
       ],
       "scannedReads": {
@@ -2012,7 +2234,19 @@
           "assets.icon-chevron-down",
           "assets.icon-chevron-right"
         ],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.checkbox",
+          "components.dialog",
+          "components.icon",
+          "components.popover",
+          "components.select",
+          "components.semantic-content",
+          "components.sheet",
+          "components.table",
+          "components.tag-group",
+          "components.text-field"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2134,6 +2368,17 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
+        "components.checkbox",
+        "components.dialog",
+        "components.icon",
+        "components.popover",
+        "components.select",
+        "components.semantic-content",
+        "components.sheet",
+        "components.table",
+        "components.tag-group",
+        "components.text-field",
         "sections.section-header"
       ],
       "scannedReads": {
@@ -2141,7 +2386,19 @@
           "assets.icon-chevron-down",
           "assets.icon-chevron-right"
         ],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.checkbox",
+          "components.dialog",
+          "components.icon",
+          "components.popover",
+          "components.select",
+          "components.semantic-content",
+          "components.sheet",
+          "components.table",
+          "components.tag-group",
+          "components.text-field"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2263,11 +2520,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2319,11 +2579,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2374,10 +2637,20 @@
   "sections.explorer": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.icon",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.icon",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2469,11 +2742,16 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.disclosure",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.disclosure",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2537,11 +2815,18 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.icon",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2618,10 +2903,22 @@
   "sections.filter-builder": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.card",
+        "components.select",
+        "components.semantic-content",
+        "components.text-field"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.card",
+          "components.select",
+          "components.semantic-content",
+          "components.text-field"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2676,10 +2973,18 @@
   "sections.form": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.form",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.form",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2788,12 +3093,18 @@
   "sections.hero": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.media-player",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [
           "assets.pattern"
         ],
-        "components": [],
+        "components": [
+          "components.media-player",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2919,12 +3230,15 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.article",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -2975,10 +3289,26 @@
   "sections.link-index": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
+        "components.status-mark"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.badge",
+          "components.button",
+          "components.card",
+          "components.icon",
+          "components.link",
+          "components.semantic-content",
+          "components.status-mark"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3071,10 +3401,18 @@
   "sections.logo-cloud": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.item",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.item",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3133,10 +3471,16 @@
   "sections.logo-hero": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.logo",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.logo",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3177,10 +3521,14 @@
   "sections.logo-mark": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3393,10 +3741,16 @@
   "sections.notices": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.banner",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.banner",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3497,13 +3851,23 @@
   "sections.pagination": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.icon",
+        "components.select",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [
           "assets.icon-chevron-left",
           "assets.icon-chevron-right"
         ],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.icon",
+          "components.select",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3572,10 +3936,18 @@
   "sections.people": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.icon",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.icon",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3648,10 +4020,20 @@
   "sections.pricing": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.badge",
+        "components.card",
+        "components.semantic-content",
+        "components.table"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.badge",
+          "components.card",
+          "components.semantic-content",
+          "components.table"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3707,11 +4089,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3769,11 +4154,28 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.button",
+        "components.dialog",
+        "components.grid-list",
+        "components.icon",
+        "components.menu",
+        "components.popover",
+        "components.semantic-content",
+        "components.skeleton",
         "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.dialog",
+          "components.grid-list",
+          "components.icon",
+          "components.menu",
+          "components.popover",
+          "components.semantic-content",
+          "components.skeleton"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3846,10 +4248,14 @@
   "sections.section-header": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -3908,7 +4314,9 @@
         "components.avatar",
         "components.badge",
         "components.card",
+        "components.disclosure",
         "components.icon",
+        "components.link",
         "components.semantic-content",
         "components.status-mark",
         "sections.content",
@@ -3922,7 +4330,9 @@
           "components.avatar",
           "components.badge",
           "components.card",
+          "components.disclosure",
           "components.icon",
+          "components.link",
           "components.semantic-content",
           "components.status-mark"
         ],
@@ -4416,10 +4826,14 @@
   "sections.settings": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4474,10 +4888,18 @@
   "sections.sign-in-form": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.form",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.form",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4536,10 +4958,16 @@
   "sections.stats": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.card",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.card",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4611,11 +5039,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4671,11 +5102,14 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.semantic-content",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4730,10 +5164,18 @@
   "sections.table-of-contents": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.disclosure",
+        "components.link",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.disclosure",
+          "components.link",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4809,11 +5251,22 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.icon",
+        "components.link",
+        "components.meter",
+        "components.semantic-content",
+        "components.status-mark",
         "sections.section-header"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.icon",
+          "components.link",
+          "components.meter",
+          "components.semantic-content",
+          "components.status-mark"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -4887,11 +5340,13 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.card",
         "components.semantic-content"
       ],
       "scannedReads": {
         "assets": [],
         "components": [
+          "components.card",
           "components.semantic-content"
         ],
         "themes": []
@@ -4952,10 +5407,16 @@
   "sections.timeline": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.card",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.card",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -5007,11 +5468,18 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
+        "components.meter",
+        "components.semantic-content",
+        "components.status-mark",
         "sections.empty-state"
       ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.meter",
+          "components.semantic-content",
+          "components.status-mark"
+        ],
         "themes": []
       },
       "sourceFiles": [
@@ -5066,10 +5534,18 @@
   "sections.wizard": {
     "consumption": {
       "scanStatus": "lower-bound",
-      "scannedComposes": [],
+      "scannedComposes": [
+        "components.button",
+        "components.progress-bar",
+        "components.semantic-content"
+      ],
       "scannedReads": {
         "assets": [],
-        "components": [],
+        "components": [
+          "components.button",
+          "components.progress-bar",
+          "components.semantic-content"
+        ],
         "themes": []
       },
       "sourceFiles": [

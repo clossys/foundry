@@ -26,14 +26,20 @@
   },
   "sections": {
     "settings": {
-      "composes": [],
+      "composes": [
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

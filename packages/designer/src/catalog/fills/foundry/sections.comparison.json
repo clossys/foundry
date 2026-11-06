@@ -27,6 +27,15 @@
   "sections": {
     "comparison": {
       "composes": [
+        "components.badge",
+        "components.button",
+        "components.card",
+        "components.dialog",
+        "components.icon",
+        "components.radio-group",
+        "components.semantic-content",
+        "components.status-mark",
+        "components.table",
         "sections.section-header"
       ],
       "configs": {
@@ -35,11 +44,30 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.badge",
+          "components.button",
+          "components.card",
+          "components.dialog",
+          "components.icon",
+          "components.radio-group",
+          "components.semantic-content",
+          "components.status-mark",
+          "components.table",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.badge",
+            "components.button",
+            "components.card",
+            "components.dialog",
+            "components.icon",
+            "components.radio-group",
+            "components.semantic-content",
+            "components.status-mark",
+            "components.table"
+          ],
           "themes": [
             "themes.font-mono"
           ]

@@ -24,16 +24,29 @@
   "frames": {
     "inspector": {
       "composes": [
+        "components.button",
+        "components.card",
+        "components.resize-handle",
+        "components.semantic-content",
         "frames.sheet"
       ],
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.resize-handle",
+          "components.semantic-content",
           "frames.sheet"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.resize-handle",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

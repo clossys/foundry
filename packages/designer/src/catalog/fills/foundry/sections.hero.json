@@ -26,16 +26,25 @@
   },
   "sections": {
     "hero": {
-      "composes": [],
+      "composes": [
+        "components.media-player",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.media-player",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [
             "assets.pattern"
           ],
-          "components": [],
+          "components": [
+            "components.media-player",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

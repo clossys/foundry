@@ -27,17 +27,42 @@
   "sections": {
     "resource-list": {
       "composes": [
+        "components.button",
+        "components.dialog",
+        "components.grid-list",
+        "components.icon",
+        "components.menu",
+        "components.popover",
+        "components.semantic-content",
+        "components.skeleton",
         "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
+          "components.dialog",
+          "components.grid-list",
+          "components.icon",
+          "components.menu",
+          "components.popover",
+          "components.semantic-content",
+          "components.skeleton",
           "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.dialog",
+            "components.grid-list",
+            "components.icon",
+            "components.menu",
+            "components.popover",
+            "components.semantic-content",
+            "components.skeleton"
+          ],
           "themes": []
         },
         "sourceFiles": [

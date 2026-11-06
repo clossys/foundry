@@ -29,14 +29,23 @@
   },
   "sections": {
     "notices": {
-      "composes": [],
+      "composes": [
+        "components.banner",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.banner",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.banner",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

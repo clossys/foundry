@@ -27,6 +27,7 @@ function fixture() {
   write("src/components/Button.tsx", 'export function Button() { return <button/>; }');
   write("src/blocks/index.ts", 'export { Example } from "./Example.js";');
   write("src/blocks/Example.tsx", 'import { Button as Action } from "../components/index.js"; export function Example() { return <section className="text-ink"><Action/></section>; }');
+  write("src/runtime/component-leaf.tsx", "export function componentLeaf(leaf, part) { return leaf; }");
   write("styles/theme.css", "@theme { --color-ink: var(--color-ink); }");
   write("styles/theme-keys.css", "");
   return { root, write, json, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
@@ -46,6 +47,31 @@ it("generates measured package facts from reachable source, stopping at the regi
     expect(changed.scannedReads).toEqual({ themes: [], assets: [], components: [] });
     expect(changed.scannedComposes).toEqual([]);
     expect(changed.sourceFiles[0].sha256).not.toBe(row.consumption.sourceFiles[0].sha256);
+  } finally { test.cleanup(); }
+});
+
+it("measures a component leaf composed only through the registered componentLeaf factory, and loses it with the use", () => {
+  const test = fixture();
+  try {
+    test.write("src/blocks/Example.tsx", 'import { componentLeaf } from "../runtime/component-leaf.js"; const Action = componentLeaf("components.button"); export function Example() { return <section><Action/></section>; }');
+    const row = measureFoundrySurfaces(test.root, buildSurfaceConsumption).measurements["sections.example"].consumption;
+    expect(row.scannedComposes).toEqual(["components.button"]);
+    expect(row.scannedReads.components).toEqual(["components.button"]);
+    expect(row.unresolved ?? []).toEqual([]);
+    test.write("src/blocks/Example.tsx", 'import { componentLeaf } from "../runtime/component-leaf.js"; const Action = componentLeaf("components.button"); export function Example() { return <section/>; }');
+    expect(measureFoundrySurfaces(test.root, buildSurfaceConsumption).measurements["sections.example"].consumption.scannedComposes).toEqual([]);
+    test.write("src/blocks/Example.tsx", 'import { componentLeaf } from "../runtime/component-leaf.js"; const id = "components.button"; const Action = componentLeaf(id); export function Example() { return <section><Action/></section>; }');
+    const dynamic = measureFoundrySurfaces(test.root, buildSurfaceConsumption).measurements["sections.example"].consumption;
+    expect(dynamic.scannedComposes).toEqual([]);
+    expect(dynamic.unresolved.some((row: { evidence: string }) => row.evidence.includes("leaf id or part is not a literal"))).toBe(true);
+  } finally { test.cleanup(); }
+});
+
+it("refuses to measure when the component leaf factory source is unavailable", () => {
+  const test = fixture();
+  try {
+    rmSync(join(test.root, "src/runtime/component-leaf.tsx"));
+    expect(() => measureFoundrySurfaces(test.root, buildSurfaceConsumption)).toThrow("Component leaf factory source unavailable");
   } finally { test.cleanup(); }
 });
 

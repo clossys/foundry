@@ -28,16 +28,35 @@
   "frames": {
     "app-sidebar": {
       "composes": [
+        "components.button",
+        "components.card",
+        "components.icon",
+        "components.link",
+        "components.navigation-tree",
+        "components.semantic-content",
         "frames.sheet"
       ],
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
+          "components.card",
+          "components.icon",
+          "components.link",
+          "components.navigation-tree",
+          "components.semantic-content",
           "frames.sheet"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.card",
+            "components.icon",
+            "components.link",
+            "components.navigation-tree",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

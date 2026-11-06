@@ -23,13 +23,22 @@
   },
   "frames": {
     "auth-shell": {
-      "composes": [],
+      "composes": [
+        "components.link",
+        "components.semantic-content"
+      ],
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.link",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.link",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

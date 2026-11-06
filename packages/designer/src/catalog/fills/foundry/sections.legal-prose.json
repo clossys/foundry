@@ -31,6 +31,7 @@
   "sections": {
     "legal-prose": {
       "composes": [
+        "components.semantic-content",
         "sections.article",
         "sections.section-header"
       ],
@@ -38,12 +39,15 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.semantic-content",
           "sections.article",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

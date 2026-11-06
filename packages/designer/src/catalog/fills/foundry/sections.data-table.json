@@ -27,12 +27,34 @@
   "sections": {
     "data-table": {
       "composes": [
+        "components.button",
+        "components.checkbox",
+        "components.dialog",
+        "components.icon",
+        "components.popover",
+        "components.select",
+        "components.semantic-content",
+        "components.sheet",
+        "components.table",
+        "components.tag-group",
+        "components.text-field",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
+          "components.checkbox",
+          "components.dialog",
+          "components.icon",
+          "components.popover",
+          "components.select",
+          "components.semantic-content",
+          "components.sheet",
+          "components.table",
+          "components.tag-group",
+          "components.text-field",
           "sections.section-header"
         ],
         "scannedReads": {
@@ -40,7 +62,19 @@
             "assets.icon-chevron-down",
             "assets.icon-chevron-right"
           ],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.checkbox",
+            "components.dialog",
+            "components.icon",
+            "components.popover",
+            "components.select",
+            "components.semantic-content",
+            "components.sheet",
+            "components.table",
+            "components.tag-group",
+            "components.text-field"
+          ],
           "themes": []
         },
         "sourceFiles": [

@@ -30,17 +30,24 @@
   "sections": {
     "faq": {
       "composes": [
+        "components.disclosure",
+        "components.semantic-content",
         "sections.section-header"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.disclosure",
+          "components.semantic-content",
           "sections.section-header"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.disclosure",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

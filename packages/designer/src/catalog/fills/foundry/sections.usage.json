@@ -27,17 +27,27 @@
   "sections": {
     "usage": {
       "composes": [
+        "components.meter",
+        "components.semantic-content",
+        "components.status-mark",
         "sections.empty-state"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.meter",
+          "components.semantic-content",
+          "components.status-mark",
           "sections.empty-state"
         ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.meter",
+            "components.semantic-content",
+            "components.status-mark"
+          ],
           "themes": []
         },
         "sourceFiles": [

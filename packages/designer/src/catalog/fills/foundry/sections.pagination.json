@@ -30,17 +30,32 @@
   },
   "sections": {
     "pagination": {
-      "composes": [],
+      "composes": [
+        "components.button",
+        "components.icon",
+        "components.select",
+        "components.semantic-content"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.button",
+          "components.icon",
+          "components.select",
+          "components.semantic-content"
+        ],
         "scannedReads": {
           "assets": [
             "assets.icon-chevron-left",
             "assets.icon-chevron-right"
           ],
-          "components": [],
+          "components": [
+            "components.button",
+            "components.icon",
+            "components.select",
+            "components.semantic-content"
+          ],
           "themes": []
         },
         "sourceFiles": [

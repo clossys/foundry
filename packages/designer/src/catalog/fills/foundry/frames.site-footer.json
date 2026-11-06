@@ -31,6 +31,7 @@
   "frames": {
     "site-footer": {
       "composes": [
+        "components.button",
         "components.icon",
         "components.logo",
         "components.semantic-content"
@@ -38,6 +39,7 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.button",
           "components.icon",
           "components.logo",
           "components.semantic-content"
@@ -45,6 +47,7 @@
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.button",
             "components.icon",
             "components.logo",
             "components.semantic-content"

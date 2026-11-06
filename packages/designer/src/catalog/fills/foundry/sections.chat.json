@@ -31,14 +31,35 @@
   },
   "sections": {
     "chat": {
-      "composes": [],
+      "composes": [
+        "components.avatar",
+        "components.button",
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
+        "components.text-field"
+      ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
-        "scannedComposes": [],
+        "scannedComposes": [
+          "components.avatar",
+          "components.button",
+          "components.icon",
+          "components.link",
+          "components.semantic-content",
+          "components.text-field"
+        ],
         "scannedReads": {
           "assets": [],
-          "components": [],
+          "components": [
+            "components.avatar",
+            "components.button",
+            "components.icon",
+            "components.link",
+            "components.semantic-content",
+            "components.text-field"
+          ],
           "themes": [
             "themes.font-mono"
           ]
