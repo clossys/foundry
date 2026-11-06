@@ -23,7 +23,8 @@ beforeAll(() => { measured = measureFoundrySurfaces(root, buildSurfaceConsumptio
 
 it("measures the real ResourceList EmptyState import as its native section, with a separate header boundary", () => {
   const row = measured.measurements["sections.resource-list"].consumption;
-  expect(row.scannedComposes).toEqual(["components.button", "components.grid-list", "components.menu", "components.skeleton", "sections.empty-state"]);
+  // ResourceList renders SemanticContent through componentLeaf("components.semantic-content"); the scanner measures that call.
+  expect(row.scannedComposes).toEqual(["components.button", "components.grid-list", "components.menu", "components.semantic-content", "components.skeleton", "sections.empty-state"]);
   const scan = measured.input.sourceScans.find((scan: { fill: string }) => scan.fill === "foundry/sections.resource-list")!;
   expect(scan.resolvedImports["packages/designer/src/blocks/ResourceList.tsx:./EmptyState.js#EmptyState"]).toBe("sections.empty-state");
   expect(row.sourceFiles.map((file: { path: string }) => file.path)).not.toContain("packages/designer/src/blocks/EmptyState.tsx");
@@ -111,6 +112,7 @@ function collisionFixture() {
   const native = 'import { dsAttrs } from "../catalog-core/provenance-attrs.js"; const SECTION_STAMP = dsAttrs("sections", "sections.empty-state", "foundry/sections.empty-state"); export function EmptyState() { return <div {...SECTION_STAMP}/>; }';
   write("src/blocks/EmptyState.tsx", native);
   write("src/catalog-core/provenance-attrs.ts", 'export function dsAttrs(layer, slot, fill) { return { "data-ds-slot": slot }; }');
+  write("src/runtime/component-leaf.tsx", "export function componentLeaf(leaf, part) { return leaf; }");
   write("styles/theme.css", ""); write("styles/theme-keys.css", "");
   const row = () => measureFoundrySurfaces(root, buildSurfaceConsumption).measurements["sections.resource-list"].consumption;
   return { write, doc, native, row, cleanup: () => rmSync(repo, { recursive: true, force: true }) };
