@@ -20,7 +20,7 @@ const TITLE_CLASSES = "m-0 text-body-l font-medium text-ink-primary text-balance
 const META_CLASSES = "m-0 text-body-s text-ink-secondary tabular-nums";
 /** The assignee's initials: a decorative disc (`aria-hidden`); the name beside it is the text. */
 const INITIALS_CLASSES =
-  "inline-flex size-2xl shrink-0 items-center justify-center rounded-pill bg-accent-tint text-body-s font-medium text-accent-text";
+  "inline-flex size-2xl shrink-0 items-center justify-center rounded-pill bg-accent text-body-s font-medium text-accent-text";
 
 const HAIRLINE_BLOCK_START: CSSProperties = { borderBlockStartWidth: UI_BORDER_HAIRLINE };
 /** Lifted off its ground: the outline hairline plus the floating elevation, so the panel reads as product UI on a stage, not a box drawn on the page. */

@@ -63,9 +63,9 @@ for (const mode of ["server", "client"] as const) {
     for (const variant of ["mark", "lockup"] as const) {
       const variantBrand = variant === "mark" ? { assetId: "mark", label: ref("Example home"), size: "md", variant } : brand;
       const shell = { ...base, brand: { ...variantBrand, tone: "inverse" } } as SiteShellInput;
-      expect(output(frame(shell), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-on-inverse", "focus-visible:outline-ink-on-inverse");
+      expect(output(frame(shell), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-background", "focus-visible:outline-background");
       const auto = { ...defaults.inverse, brand: { ...variantBrand, tone: "auto" } } as SiteShellInput;
-      expect(output(frame(auto), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-primary", "focus-visible:outline-accent");
+      expect(output(frame(auto), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-ink-primary", "focus-visible:outline-primary");
       expect(output(frame({ ...defaults.inverse, brand: variantBrand } as SiteShellInput), mode).querySelector('header a[aria-label="Example home"]')).toHaveClass("text-inherit");
     }
   });
@@ -73,8 +73,9 @@ for (const mode of ["server", "client"] as const) {
   it(`forwards only the transparent footer top rule: ${mode}`, () => {
     const shell = { ...base, footer: { ground: "transparent", rule: "top", legal } } as SiteShellInput;
     const footer = output(frame(shell), mode).querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-line-base");
-    expect(footer.querySelector(".border-t")).toBeNull();
+    // GATES-RED G5: the footer rule is the named hairline-t utility, not border-t plus an inline width (WL4).
+    expect(footer).toHaveClass("hairline-t", "border-border");
+    expect(footer.querySelector(".hairline-t")).toBeNull();
     for (const ground of ["base", "inverse"] as const) {
       const ordinary = output(frame({ ...base, footer: { ground, legal } }), mode).querySelector("footer")!.outerHTML;
       expect(output(frame({ ...base, footer: { ground, rule: "top", legal } } as SiteShellInput), mode).querySelector("footer")!.outerHTML).toBe(ordinary);
@@ -84,7 +85,7 @@ for (const mode of ["server", "client"] as const) {
   it(`inherits the header ink for icon navigation: ${mode}`, () => {
     for (const surface of ["solid", "transparent", "glass"] as const) {
       const root = output(frame({ ...base, header: { surface, tone: "inverse" }, nav }), mode);
-      expect(root.querySelector("header")).toHaveClass("text-ink-on-inverse");
+      expect(root.querySelector("header")).toHaveClass("text-background");
       expect(root.querySelector("header button")).not.toHaveAttribute("data-tone");
       expect(root.querySelector("header button")).toHaveAttribute("aria-label", "Menu");
       expect(root.querySelector("header button .nav-disclosure-icon")).toHaveAttribute("aria-hidden", "true");
@@ -106,7 +107,7 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector(".site-header-nav-links")).toBeNull();
     // The header logomark is the brand asset painted in the accent token by default.
     expect(root.querySelector("header img")).toBeNull();
-    expect(root.querySelector("header [data-brand-mark].bg-accent")!.getAttribute("style")).toMatch(/mask-image: ?url\("\/mark\.svg"\)/);
+    expect(root.querySelector("header [data-brand-mark].bg-primary")!.getAttribute("style")).toMatch(/mask-image: ?url\("\/mark\.svg"\)/);
     expect(root.querySelector('header a[aria-label="Example home"]')).toHaveTextContent("Example");
     const actions = root.querySelectorAll('header a[href="/start"]');
     expect(actions).toHaveLength(2);
@@ -114,14 +115,16 @@ for (const mode of ["server", "client"] as const) {
     expect(root.querySelector("h1")).toHaveClass("tablet-lg:text-display-xl");
     expect(root.querySelector("h1")!.parentElement).toHaveStyle({ maxWidth: "none" });
     const eyebrow = [...root.querySelectorAll("p")].find(p => p.textContent === "Eyebrow")!;
+    // GATES-RED G5: the eyebrow ink comes from the Sections layer (section-ground.ts), outside the frame inverse map.
     expect(eyebrow).toHaveClass("text-ink-on-inverse-muted");
     const description = [...root.querySelectorAll("p")].find(p => p.textContent === "Supporting words.")!;
     expect(description.style.maxWidth).toBe("var(--ui-width-hero-wide, 64rem)");
     const footer = root.querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-line-base");
-    expect(footer).not.toHaveClass("bg-surface-base", "bg-surface-inverse");
+    // GATES-RED G5: the footer rule is the named hairline-t utility, not border-t plus an inline width (WL4).
+    expect(footer).toHaveClass("hairline-t", "border-border");
+    expect(footer).not.toHaveClass("bg-surface-base", "bg-foreground");
     expect([...footer.querySelectorAll("a")].map(a => a.getAttribute("aria-label") ?? a.textContent)).toEqual(["Privacy", "Terms", "Example home"]);
-    expect(footer.querySelector(".border-t")).toBeNull();
+    expect(footer.querySelector(".hairline-t")).toBeNull();
     expect(root.querySelector("[data-frame-footer-overlay]")).toBeNull();
   });
 }

@@ -173,7 +173,7 @@ function TokenMember({ id, member, values, context, need, semantic }: MemberProp
   else if (member.$type === "dimension" && /(?:body|heading|display|caption)-size$/.test(member.slot)) style = { fontSize: css };
   else if (member.slot === "themes.tracking-tight") style = { letterSpacing: css };
   else if (member.$type === "dimension" && member.slot.includes("radius")) return <><Content as="div" role="img" aria-label={id} className="size-3xl border border-line-strong bg-surface-raised" style={{ borderRadius: css }} /><Content as="span">{css}</Content></>;
-  else if (member.$type === "dimension" && /spacing|size|width|breakpoint/.test(member.slot)) return <><Content as="div" role="img" aria-label={id} className="block h-sm max-w-full bg-accent" style={{ inlineSize: css }} /><Content as="span">{css}</Content></>;
+  else if (member.$type === "dimension" && /spacing|size|width|breakpoint/.test(member.slot)) return <><Content as="div" role="img" aria-label={id} className="block h-sm max-w-full bg-primary" style={{ inlineSize: css }} /><Content as="span">{css}</Content></>;
   else if (member.$type === "shadow") return <Content as="div" className="size-3xl bg-surface-raised" style={{ boxShadow: css }} aria-label={id} />;
   if (!style) return need({ leaf: member.slot, reason: `No value-applied specimen for ${id}.` });
   return <Content as="p" data-type-sample={id} style={style}>{specimenDataset.tokens.sampleText}</Content>;
@@ -201,7 +201,7 @@ function MotionMember({ semantic, button, duration, easing, id }: { semantic: Co
     running.current = target.current?.animate?.([{ transform: "translateX(0)" }, { transform: "translateX(4rem)" }, { transform: "translateX(0)" }], { duration: milliseconds, easing });
   };
   return <Content as="div" className="flex flex-col gap-sm" data-motion-specimen={id}>
-    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-accent" />
+    <Content as="div" ref={target} role="img" aria-label={id} className="size-lg bg-primary" />
     <Button data-ds-leaf="components.button" onPress={play}>Play motion</Button>
     {reduced ? <Content as="p" role="status">Reduced motion is enabled.</Content> : null}
   </Content>;

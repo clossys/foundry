@@ -9,12 +9,14 @@ import { build } from "esbuild";
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { importFoundryComponents } from "../importers/foundry-components.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { packageBarrelExports, readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 import { specimenDataset } from "../studio/specimen-dataset.js";
+import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy-resolver.js";
 import { completedCatalogLibrary } from "./__fixtures__/completed-catalog-library.js";
+import { componentAdoptions, selectedComponentClosure, selectedComponentFills } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { loadCatalogBundles } from "../catalog-bundles.js";
 import { applyLibraryChange, emit, libraryHash, resolve } from "./api.js";
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, loadSectionRegistry } from "./index.js";
 import { deriveIdentity } from "../catalog-assets/identity.js";
@@ -23,19 +25,20 @@ import type { CompositeEngineInput, CompositeEmitFile, FrameSlot } from "./types
 import type { SurfaceCandidateDocument } from "./surface-types.js";
 
 const SECTION = "sections.call-to-action", FRAME = "frames.app-shell", GLYPH = "assets.icon-chevron-right";
-// Adoption validates each change immediately: install the dependency before its parent.
-const COMPONENTS = ["components.icon", "components.button", "components.logo"];
 // The installed jsdom peer ships no declarations; keep this test's parser port explicit.
 const { JSDOM } = createRequire(import.meta.url)("jsdom") as { JSDOM: new (html: string) => { window: { document: Document } } };
-let selected: CompositeEngineInput, temporary: string, sequence = 0;
+let selected: CompositeEngineInput, temporary: string, sequence = 0, COMPONENTS: string[] = [];
 
 beforeAll(async () => {
   temporary = await mkdtemp(join(import.meta.dirname, ".selected-chain-"));
-  const components = loadComponentRegistry().slots.filter(slot => COMPONENTS.includes(slot.id));
   const surfaces = [...importFoundrySections().fills, ...importFoundryFrames().fills]
     .filter(doc => [SECTION, FRAME].includes(doc.$extensions["com.clossys.fill"].slot)) as unknown as SurfaceCandidateDocument[];
+  // The selected components are the measured closure of the adopted Section and Frame, installed dependency first.
+  const surfaceSlots = [...loadSectionRegistry().slots.filter(slot => slot.id === SECTION), ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames" && slot.id === FRAME)];
+  COMPONENTS = selectedComponentClosure({ values: loadCatalog(), components: { slots: [], fills: selectedComponentFills() }, surfaces: { slots: surfaceSlots, fills: surfaces, rules: [], transforms: [], materializations: [] } });
+  const components = loadComponentRegistry().slots.filter(slot => COMPONENTS.includes(slot.id));
   const catalog = {
-    values: loadCatalog(), components: { slots: components, fills: importFoundryComponents().fills.filter(doc => COMPONENTS.includes(doc.$extensions["com.clossys.fill"].slot)) },
+    values: loadCatalog(), components: { slots: components, fills: selectedComponentFills().filter(doc => COMPONENTS.includes(doc.$extensions["com.clossys.fill"].slot)) },
     surfaces: { slots: [...loadSectionRegistry().slots.filter(slot => slot.id === SECTION), ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames" && slot.id === FRAME)], fills: surfaces, rules: [], transforms: [], materializations: [] },
   };
   const values = completedCatalogLibrary(catalog.values, { id: "selected-chain", kind: "consumer", author: "consumer", license: "MIT" }, "2026-10-27");
@@ -48,9 +51,9 @@ beforeAll(async () => {
   const empty = { source, adoptedAt, values: portion, components: { fills: [], files: [] }, surfaces: { version: 1 as const, fills: [], files: [] } };
   const library = applyLibraryChange(catalog, empty, {
     baseHash: libraryHash(empty), changes: [
-      ...COMPONENTS.map(slot => ({ portion: "components" as const, change: { op: "adopt" as const, slot, source: "foundry" } })),
+      ...componentAdoptions(catalog, COMPONENTS),
       ...[SECTION, FRAME].map(slot => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: slot as `sections.${string}`, source: "foundry" } })),
-    ],
+    ], bundles: loadCatalogBundles().sourceBundles,
   }, { componentOptions, surfaceOptions });
   selected = { catalog, library, componentOptions, surfaceOptions };
 }, 120_000);
@@ -107,7 +110,7 @@ async function draw(input: CompositeEngineInput, changeOutput: (files: Composite
   const node = module.page({ mark: markUrl, heading: app.heading, action: app.body,
     frame: { brand: { markSrc: markUrl, navigationMark: { label: app.workspace } }, navigation: { tree: app.navigation, label: app.navigationLabel, activeId: app.activeId },
       account: { actor: app.actor, signedOutLabel: app.signedOutLabel, sections: [] }, commands: { ...app.commands, shortcutEnabled: false },
-      theme: { preference: "light" }, themeControl: null, skipLabel: app.skipLabel } });
+      theme: { preference: "light" }, themeControl: null, skipLabel: app.skipLabel, copyResolver: shellCopyFixtureResolver } });
   const css = files.filter(file => file.path.endsWith(".css")).map(file => file.contents).join("\n");
   const html = renderToStaticMarkup(createElement("html", null, createElement("head", null, createElement("style", { "data-selected-library": profile.selectionHash }, css)), createElement("body", null, node)));
   const document = new JSDOM(html).window.document;

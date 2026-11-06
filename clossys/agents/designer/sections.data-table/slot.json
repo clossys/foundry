@@ -72,7 +72,9 @@
       "components.status-mark",
       "components.tooltip",
       "components.link",
-      "components.skeleton"
+      "components.skeleton",
+      "components.semantic-content",
+      "components.tag-group"
     ],
     "parts": [
       "sections.band",

@@ -33,9 +33,42 @@
 }
 
 @theme inline {
+  /* BEGIN GENERATED shadcn colour keys: emitted from src/catalog/slots/themes.json by src/compiled-css/shadcn-theme-keys.ts (npm run generate:compiled-css). Do not edit. */
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-background: var(--background);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-destructive: var(--destructive);
+  --color-foreground: var(--foreground);
+  --color-input: var(--input);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-ring: var(--ring);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-ring: var(--sidebar-ring);
+  /* END GENERATED shadcn colour keys */
   --default-transition-duration: var(--ui-duration-fast, 120ms);
   --default-transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
-  --color-focus-ring: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+  --color-focus-ring: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)));
   --color-focus-ring-on-inverse: var(--color-focus-ring-on-inverse, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
   --radius-overlay: var(--ui-radius-overlay, var(--radius-control, 6px));
 
@@ -73,7 +106,6 @@
   --color-action-on-inverse: var(--color-action-on-inverse, #FAFAFA);
   --color-action-on-inverse-hover: var(--color-action-on-inverse-hover, #E5E5E5);
   --color-ink-on-action: var(--color-ink-on-action, var(--color-ink-on-inverse, oklch(0.9702 0 0)));
-  --color-accent:                 var(--color-accent, oklch(0.4748 0 0));
   --color-accent-text:            var(--color-accent-text, oklch(0.36 0 0));
   --color-accent-hover:           var(--color-accent-hover, oklch(0.36 0 0));
   --color-accent-tint:            var(--color-accent-tint, oklch(0.4748 0 0 / 0.1));
@@ -295,6 +327,30 @@
   transition-timing-function: var(--ease-default, cubic-bezier(.2, 0, 0, 1));
   @media (prefers-reduced-motion: reduce) {
     transition-duration: 0s;
+  }
+}
+
+/*
+ * Global reduced-motion floor. Stock shadcn files stay unmodified, so their
+ * `transition-*` / `animate-*` utilities carry no `motion-reduce:` variant of
+ * their own; this one rule neutralises every animation and transition under
+ * `prefers-reduced-motion: reduce` instead. Durations collapse to 0.01ms
+ * (not `none`) so `transitionend` / `animationend` still fire for exit logic
+ * that waits on them, and looping animations run once. `!important` is what
+ * lets a universal selector outrank class utilities in any layer. Rendered
+ * proof: `src/reduced-motion.browser.test.ts`.
+ */
+@layer foundry-ui-compiled {
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after,
+    ::backdrop {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
@@ -1147,7 +1203,7 @@
 @utility focus-ring {
   outline: var(--ui-border-focus, 2px) solid transparent;
   outline-offset: var(--ui-focus-offset, 2px);
-  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0))); }
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0))); }
   @media (forced-colors: active) {
     &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
   }
@@ -1155,7 +1211,7 @@
 @utility focus-ring-inset {
   outline: var(--ui-border-focus, 2px) solid transparent;
   outline-offset: calc(-1 * var(--ui-focus-offset, 2px));
-  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0))); }
+  &:focus-visible, &[data-focus-visible] { outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0))); }
   @media (forced-colors: active) {
     &:focus-visible, &[data-focus-visible] { outline-color: Highlight; }
   }
@@ -1243,7 +1299,7 @@
   border-block-end-style: solid;
   border-block-end-width: var(--ui-border-rule, 2px);
   border-block-end-color: transparent;
-  &[data-selected] { border-block-end-color: var(--color-accent, currentColor); }
+  &[data-selected] { border-block-end-color: var(--primary, currentColor); }
 }
 
 /* A theme switch flips every colour at once, not through each control's transition. */
@@ -1285,7 +1341,7 @@
 @utility scene-wire { fill: none; stroke: var(--color-line-strong, oklch(0.7763 0 0)); stroke-width: var(--ui-border-hairline, 1px); vector-effect: non-scaling-stroke; }
 @utility scene-wire-subject { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
 @utility scene-subject-outline { stroke: var(--color-ink-primary, oklch(0.2178 0 0)); stroke-width: var(--ui-border-rule, 2px); }
-@utility scene-accent { fill: none; stroke: var(--color-accent, oklch(0.4748 0 0)); stroke-width: var(--ui-border-rule, 2px); vector-effect: non-scaling-stroke; }
+@utility scene-accent { fill: none; stroke: var(--primary, oklch(0.4748 0 0)); stroke-width: var(--ui-border-rule, 2px); vector-effect: non-scaling-stroke; }
 @utility scene-terminal { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-ink-muted, oklch(0.54 0 0)); stroke-width: var(--ui-border-hairline, 1px); }
 @utility scene-terminal-subject { fill: var(--color-ink-primary, oklch(0.2178 0 0)); stroke: var(--color-ink-primary, oklch(0.2178 0 0)); }
 @utility scene-panel { fill: var(--color-surface-raised, oklch(1 0 0)); stroke: var(--color-line-panel, var(--color-line-base, oklch(0.8761 0 0))); stroke-width: var(--ui-border-panel, var(--ui-border-hairline, 1px)); rx: var(--radius-panel, var(--radius-surface, var(--radius-default, 3px))); }
@@ -1316,7 +1372,7 @@
 @utility scene-linear-status { padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
 @utility scene-linear-person { display: flex; align-items: center; gap: var(--spacing-md, 12px); padding-block: var(--spacing-md, 12px); border-block-start: var(--ui-border-hairline, 1px) solid var(--color-line-base, oklch(0.8761 0 0)); }
 @utility scene-linear-disc { display: inline-grid; place-items: center; flex: none; inline-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); block-size: var(--ui-icon-lg, var(--spacing-2xl, 32px)); border-radius: var(--radius-pill, 999px); background: var(--color-surface-sunken, oklch(0.9401 0 0)); color: var(--color-ink-primary, oklch(0.2178 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); font-family: var(--font-mono, ui-monospace, monospace); font-size: var(--text-caption, 12px); }
-@utility scene-linear-mark { outline: var(--ui-border-rule, 2px) solid var(--color-accent, oklch(0.4748 0 0)); outline-offset: var(--spacing-xs, 4px); }
+@utility scene-linear-mark { outline: var(--ui-border-rule, 2px) solid var(--primary, oklch(0.4748 0 0)); outline-offset: var(--spacing-xs, 4px); }
 @utility scene-linear-findings { display: flex; flex-direction: column; gap: var(--spacing-sm, 8px); padding: 0; margin: 0; list-style: none; }
 @utility scene-linear-finding { display: flex; flex-direction: column; gap: var(--spacing-xs, 4px); padding: var(--spacing-md, 12px) var(--spacing-lg, 16px); background: var(--color-surface-raised, oklch(1 0 0)); border: var(--ui-border-hairline, 1px) solid var(--color-line-strong, oklch(0.7763 0 0)); border-radius: var(--radius-default, 3px); }
 @utility scene-linear-subject { border-color: var(--color-ink-primary, oklch(0.2178 0 0)); border-width: var(--ui-border-rule, 2px); }
@@ -1406,6 +1462,75 @@
   &:is(:where(.group)[data-placement="left"] *) { rotate: -90deg; }
   &:is(:where(.group)[data-placement="right"] *) { rotate: 90deg; }
 }
+
+/* Frame layout geometry. The frame layer names a region, a measure, a stacking layer or an edge;
+   the theme layer owns the value, read from the --ui-* layout token with its tokens.css default,
+   so no frame source carries a length, a z-index or a token read of its own. */
+@utility shell-grid {
+  display: grid;
+  min-block-size: 100dvh;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas: "header header header" "sidenav main rail" "footer footer footer";
+}
+@utility shell-area-header { grid-area: header; }
+@utility shell-area-sidenav { grid-area: sidenav; }
+@utility shell-area-main { grid-area: main; }
+@utility shell-area-rail { grid-area: rail; }
+@utility shell-area-footer { grid-area: footer; }
+@utility shell-sidenav-width {
+  inline-size: var(--ui-layout-sidebar-rail-w, 64px);
+  @media (width >= 768px) { inline-size: var(--ui-layout-sidebar-w, 256px); }
+}
+@utility shell-rail-width { inline-size: var(--ui-layout-aside-w, 320px); }
+@utility measure-content { max-inline-size: var(--ui-width-content-max, 64rem); }
+@utility measure-form { max-inline-size: var(--ui-width-form-max, 38rem); }
+@utility page-inset-x { padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)); }
+@utility layer-sticky { z-index: var(--ui-z-sticky, 10); }
+@utility layer-shell { z-index: var(--ui-z-shell, 20); }
+@utility layer-aside { z-index: var(--ui-z-aside, 30); }
+@utility layer-progress { z-index: var(--ui-z-progress, 90); }
+@utility layer-skip-link { z-index: var(--ui-z-skip-link, 100); }
+@utility hairline-t { border-block-start-width: var(--ui-border-hairline, 1px); border-block-start-style: solid; }
+@utility hairline-b { border-block-end-width: var(--ui-border-hairline, 1px); border-block-end-style: solid; }
+@utility hairline-s { border-inline-start-width: var(--ui-border-hairline, 1px); border-inline-start-style: solid; }
+@utility hairline-e { border-inline-end-width: var(--ui-border-hairline, 1px); border-inline-end-style: solid; }
+@utility progress-hairline { block-size: var(--ui-border-hairline, 1px); }
+@utility min-size-tap { min-block-size: var(--ui-layout-tap-target, 44px); min-inline-size: var(--ui-layout-tap-target, 44px); }
+@utility min-h-tap { min-block-size: var(--ui-layout-tap-target, 44px); }
+@utility current-mark { box-shadow: inset 0 calc(-2 * var(--ui-border-hairline, 1px)) 0 currentColor; }
+@utility frame-brand-row { min-block-size: var(--ui-layout-tap-target, 44px); margin-block-end: var(--spacing-md, 12px); }
+@utility frame-brand-row-overlay { padding-inline-start: calc(var(--ui-layout-tap-target, 44px) + var(--spacing-sm, 8px)); }
+@utility scroll-anchor-auto { overflow-anchor: auto; }
+@utility auth-main { gap: var(--spacing-lg, 16px); padding-block: var(--spacing-lg, 16px); }
+@utility py-dock-compact { padding-block: var(--spacing-xs, 4px); }
+@utility dock-notice-row { gap: var(--spacing-sm, 8px); }
+@utility dock-strip-row { gap: var(--spacing-xs, 4px); padding-inline: var(--spacing-sm, 8px); }
+@utility dock-strip-slot { gap: var(--spacing-xs, 4px); }
+@utility frame-stage-flow { gap: var(--spacing-md, 12px); }
+@utility site-nav-gap { gap: var(--spacing-sm, 8px); }
+@utility site-nav-link-inset { padding-inline: var(--spacing-xs, 4px); }
+@utility px-hero-scene { padding-inline: var(--spacing-md, 12px); }
+@utility px-hero-scene-wide { padding-inline: var(--spacing-xl, 24px); }
+@utility py-hero-scene { padding-block: var(--spacing-3xl, 48px); }
+@utility skip-link-inset { inset-inline-start: var(--spacing-sm, 8px); top: var(--spacing-sm, 8px); padding-inline: var(--spacing-md, 12px); padding-block: var(--spacing-sm, 8px); }
+@utility py-shell-chrome { padding-block: var(--spacing-sm, 8px); }
+@utility py-shell-region { padding-block: var(--spacing-lg, 16px); }
+@utility nav-shell-row { gap: var(--spacing-md, 12px); }
+@utility nav-shell-list { gap: var(--spacing-sm, 8px); }
+@utility w-nav-drawer { width: var(--ui-layout-drawer-w, min(20rem, 85vw)); }
+@utility gap-nav-drawer { gap: var(--spacing-lg, 16px); }
+@utility footer-stack { gap: var(--spacing-lg, 16px); }
+@utility footer-secondary-gap { gap: var(--spacing-sm, 8px); }
+@utility footer-rule-gap { padding-block-start: var(--spacing-lg, 16px); }
+@utility footer-column { gap: var(--spacing-sm, 8px); }
+@utility footer-column-links { gap: var(--spacing-xs, 4px); }
+@utility footer-link-gap { gap: var(--spacing-sm, 8px); }
+@utility footer-row-gap { column-gap: var(--spacing-sm, 8px); }
+@utility frame-panel-stack { gap: var(--spacing-md, 12px); padding: var(--spacing-md, 12px); }
+@utility frame-page-stack { gap: var(--spacing-lg, 16px); padding: var(--spacing-lg, 16px); }
+@utility frame-heading-stack { gap: var(--spacing-sm, 8px); }
+@utility frame-sidebar-measure { inline-size: var(--ui-layout-sidebar-w, 256px); }
 
 /* Frames own region motion. Content stays mounted through open and closed states.
    Navigation never animates a layout property: it snaps between its media-ruled widths,

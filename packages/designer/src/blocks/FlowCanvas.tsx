@@ -47,7 +47,7 @@ function isRtl(element: Element) {
   catch { return element.closest("[dir]")?.getAttribute("dir")?.toLowerCase() === "rtl"; }
 }
 
-const PLATE = "box-border flex h-full w-full min-w-0 flex-col items-start justify-start gap-xs overflow-hidden rounded-panel border-solid p-sm text-start font-body forced-colors:border-current focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-accent";
+const PLATE = "box-border flex h-full w-full min-w-0 flex-col items-start justify-start gap-xs overflow-hidden rounded-panel border-solid p-sm text-start font-body forced-colors:border-current focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary";
 
 /**
  * A node-and-edge diagram: boxes in layers joined by arrowed edges, laid out
@@ -162,12 +162,12 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
                     d={edge.path}
                     fill="none"
                     vectorEffect="non-scaling-stroke"
-                    className={cx(highlighted ? "stroke-accent" : "stroke-ink-muted", "forced-colors:stroke-current")}
+                    className={cx(highlighted ? "stroke-primary" : "stroke-ink-muted", "forced-colors:stroke-current")}
                     style={{ strokeWidth: highlighted ? UI_BORDER_RULE : UI_BORDER_HAIRLINE }}
                     data-flowchart-edge={i}
                     data-selected={highlighted ? "" : undefined}
                   />
-                  <path d={edge.arrow} className={cx(highlighted ? "fill-accent" : "fill-ink-muted", "forced-colors:fill-current")} data-flowchart-arrow={i} />
+                  <path d={edge.arrow} className={cx(highlighted ? "fill-primary" : "fill-ink-muted", "forced-colors:fill-current")} data-flowchart-arrow={i} />
                 </g>
               );
             })}
@@ -207,7 +207,7 @@ export function FlowCanvas({ nodes, edges, label, emptyMessage, outgoingLabel, o
                     aria-labelledby={labelId}
                     aria-describedby={describedBy || undefined}
                     aria-current={isSelected ? "true" : undefined}
-                    className={cx(PLATE, isSelected ? cx("border-accent bg-surface-selected", SELECTED_FORCED) : "border-line-panel bg-surface-raised hover:bg-surface-sunken")}
+                    className={cx(PLATE, isSelected ? cx("border-primary bg-surface-selected", SELECTED_FORCED) : "border-line-panel bg-surface-raised hover:bg-surface-sunken")}
                     style={{ borderWidth: isSelected ? UI_BORDER_RULE : UI_BORDER_HAIRLINE }}
                     onFocus={() => setFocusedId(placed.id)}
                     onClick={() => onSelect?.(placed.id)}

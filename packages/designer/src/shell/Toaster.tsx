@@ -5,7 +5,7 @@ import { Button } from "../components/Button.js";
 import { Toast, ToastContent, ToastRegion, ToastText, type ToastPlacement } from "../components/Toast.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_ELEVATION_FLOATING } from "../components/internal/ui-vars.js";
-import { UI_Z_TOAST } from "./internal/shell-vars.js";
+import { UI_Z_TOAST } from "../components/internal/ui-vars.js";
 import { toastQueue, type ToastRecord, type ToastVariant } from "./internal/toast-queue.js";
 
 export {

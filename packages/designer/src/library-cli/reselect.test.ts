@@ -16,9 +16,11 @@ it("dry-runs reselect without changing any library byte", async () => {
 it("writes exactly one explicit reselect stamp and keeps receipt verification green", async () => {
   const receipt = () => fs.readFile(join(root, "designer-receipt.json"), "utf8").then(JSON.parse);
   const before = await receipt();
-  expect(await main(["reselect", "--root", root, "--leaf", "themes.animate-marquee", "--source", "foundry", "--write"])).toBe(0);
+  // The fixture authors themes.radius, so adopting its shadcn@aria candidate changes bytes; a reselect to the
+  // already-adopted source is a no-op and nextReceipt stamps no unchanged write.
+  expect(await main(["reselect", "--root", root, "--leaf", "themes.radius", "--source", "shadcn@aria", "--write"])).toBe(0);
   const after = await receipt(); expect(after.writes).toHaveLength(before.writes.length + 1);
-  expect(after.writes.at(-1)).toMatchObject({ command: "designer-library reselect", inputs: { leaf: "themes.animate-marquee", source: "foundry" } });
+  expect(after.writes.at(-1)).toMatchObject({ command: "designer-library reselect", inputs: { leaf: "themes.radius", source: "shadcn@aria" } });
   expect(await main(["receipt", "--root", root])).toBe(0);
   await fs.appendFile(join(root, "brand.css"), "\n"); expect(await main(["receipt", "--root", root])).toBe(1);
 });

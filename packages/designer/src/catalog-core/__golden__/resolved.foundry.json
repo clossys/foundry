@@ -57,6 +57,9 @@
       "dark": "oklch(0.704 0.191 22.216)",
       "light": "oklch(0.577 0.245 27.325)"
     },
+    "--duration": {
+      "light": "40s"
+    },
     "--font-heading": {
       "light": "var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', 'Noto Sans', Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji')"
     },
@@ -287,6 +290,30 @@
       "source": "example",
       "value": {
         "light": "marquee var(--duration) infinite linear"
+      },
+      "via": "adopted"
+    },
+    "themes.animate-marquee.duration": {
+      "$type": "duration",
+      "alias": {},
+      "css": {
+        "light": "40s"
+      },
+      "emit": "--duration",
+      "fill": "example/themes.animate-marquee",
+      "origin": {
+        "adoptedAt": "2026-10-23",
+        "fill": "foundry/themes.animate-marquee",
+        "kind": "adopted",
+        "license": "MIT",
+        "member": "themes.animate-marquee.duration",
+        "sha256": "2fe190f7241b0d76b374fa74a8a29606ccae169154f8a8a7d94a13c52568ab0a",
+        "source": "foundry"
+      },
+      "slot": "themes.animate-marquee",
+      "source": "example",
+      "value": {
+        "light": "40s"
       },
       "via": "adopted"
     },
@@ -1723,6 +1750,6 @@
     }
   },
   "notices": [],
-  "selectionHash": "fnv1a64:7f933c96ee3ea64c",
+  "selectionHash": "fnv1a64:682598a635e315e3",
   "version": 1
 }

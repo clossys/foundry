@@ -415,6 +415,11 @@ const GATE_SCRIPT_SUBPATHS = ["./ref-verbatim"] as const;
 const CSS_SUBPATHS = ["./tokens.css", "./theme.css", "./theme-keys.css", "./utilities.css", "./compiled.css", "./brand-template.css", "./specimen-frame.css"] as const;
 const COMPONENT_DIRS = ["components", "blocks", "charts", "shell", "theme"] as const;
 
+/** Source text with block and line comments blanked: comments render nothing, so they carry no utilities. */
+function withoutComments(source: string): string {
+  return source.replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " ")).replace(/(^|[^:"'`\\])\/\/[^\n]*/g, "$1");
+}
+
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry);
@@ -459,24 +464,26 @@ describe("public UI contract", () => {
   });
 
   it("keeps token-only use free of component runtime installation", () => {
-    // Declared runtime dependencies of shipped previews and Studio surfaces (clsx 013ff0ed4, recharts 4910f6d3a,
-    // tiptap 6463e7e59, @internationalized/date 811bee603); token-only use still needs none of the optional peers.
+    // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), clsx and @internationalized/date
+    // are optional peers, so a token-only install pulls none of them; a consumer of RichText, the charts or the
+    // date components installs them. class-variance-authority still depends on clsx, so clsx can arrive transitively.
     expect(packageJson.dependencies).toEqual({
-      "@internationalized/date": "^3.12.3",
-      "@tiptap/extension-table": "^3.32.1",
-      "@tiptap/markdown": "^3.32.1",
-      "@tiptap/react": "^3.32.1",
-      "@tiptap/starter-kit": "^3.32.1",
       "class-variance-authority": "0.7.1",
-      clsx: "2.1.1",
       "css-tree": "3.2.1",
-      recharts: "3.8.0",
       "@clossys/director": "0.6.0",
     });
 
-    for (const dependency of ["@internationalized/date", "react", "react-dom", "react-aria-components", "tailwind-merge", "tailwindcss"]) {
-      expect(packageJson.peerDependencies[dependency]).toBeDefined();
-      expect(packageJson.peerDependenciesMeta[dependency]?.optional).toBe(true);
+    const optionalPeers = [
+      "@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit",
+      "clsx", "react", "react-dom", "react-aria-components", "recharts", "tailwind-merge", "tailwindcss",
+    ];
+    for (const dependency of optionalPeers) {
+      expect(packageJson.peerDependencies[dependency], dependency).toBeDefined();
+      expect(packageJson.peerDependenciesMeta[dependency]?.optional, dependency).toBe(true);
+      expect(packageJson.dependencies[dependency], `${dependency} must not be a runtime dependency`).toBeUndefined();
+    }
+    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "clsx", "recharts"]) {
+      expect(packageJson.devDependencies[dependency], `${dependency} stays installed for Designer's own build and tests`).toBe(packageJson.peerDependencies[dependency]);
     }
   });
 
@@ -507,24 +514,14 @@ describe("public UI contract", () => {
   });
 
   it("honors reduced-motion preferences for every shipped animation or transition", () => {
-    // Scanned, not hand-listed: a hand-written file list can't notice a new
-    // motion site (see the package README and #907 — this is that
-    // mechanism). Every source file under the component layer directories
-    // is checked for a Tailwind `animate-*`/`transition-*` class literal;
-    // any file that has one must also carry a `motion-reduce:` override.
-    const MOTION_CLASS_RE = /\b(?:animate|transition)-[a-zA-Z[\]-]+/;
-
-    const motionFiles = [...COMPONENT_DIRS, "tokens/preview"].flatMap((dir) =>
-      sourceFiles(join(packageRoot, "src", dir))
-        .filter((file) => MOTION_CLASS_RE.test(readFileSync(file, "utf8")))
-        .map((file) => file.slice(packageRoot.length + 1)),
-    );
-
-    expect(motionFiles.length).toBeGreaterThan(0);
-
-    for (const file of motionFiles) {
-      const source = readFileSync(join(packageRoot, file), "utf8");
-      expect(source, `${file} must include a motion-reduce override`).toContain("motion-reduce:");
+    // Stock shadcn files stay unmodified, so the guarantee is one global
+    // rule every CSS path ships (theme-keys.css, inlined into theme.css and
+    // compiled.css). src/reduced-motion.browser.test.ts renders every moving
+    // utility of every scanned motion file in Chromium under the preference;
+    // this fast check only pins that the rule ships on each path.
+    const rule = /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\*,\s*::before,\s*::after,\s*::backdrop\s*\{\s*animation-duration: 0\.01ms !important;\s*animation-iteration-count: 1 !important;\s*transition-duration: 0\.01ms !important;/;
+    for (const sheet of ["styles/theme-keys.css", "styles/compiled.css"]) {
+      expect(readFileSync(join(packageRoot, sheet), "utf8"), `${sheet} ships the global reduced-motion rule`).toMatch(rule);
     }
   });
 
@@ -559,7 +556,10 @@ describe("public UI contract", () => {
       "(?:^|[\\s\"'`:])(" +
         [
           "(?:scroll-)?[mp][lr]-[a-z0-9[\\]./%-]+", // ml-auto, pr-2xl, scroll-pl-md
-          "(?:left|right)-[a-z0-9[\\]./%-]+", // left-0, right-md
+          // left-0, right-md, left-1/2, left-[3px], right-(--x): Tailwind's inset value grammar
+          // (number, fraction, px/full/auto, arbitrary, or a rung of the fixed spacing scale),
+          // so prose such as "right-to-left" and ids such as "left-sidebar" are not utilities.
+          "(?:left|right)-(?:[0-9][0-9./]*|px|full|auto|\\[[^\\]\\s]+\\]|\\([^)\\s]+\\)|[0-9]*x?s|sm|md|lg|[0-9]*x?l)(?![a-z0-9-])",
           "border-[lr](?![a-z])(?:-[0-9[][a-z0-9[\\]./%-]*)?", // border-l, border-r-2 — never border-line-base
           "text-(?:left|right)(?![a-z-])",
           "float-(?:left|right)(?![a-z-])",
@@ -583,11 +583,18 @@ describe("public UI contract", () => {
      */
     const KNOWN_PHYSICAL_INLINE: string[] = [];
 
+    // The scanner itself: real physical utilities still match; comments and non-utility ids do not.
+    const hits = (text: string) => [...withoutComments(text).matchAll(PHYSICAL_INLINE_RE)].map((match) => match[1]);
+    expect(hits('className="left-0 focus:left-sm right-md left-1/2 left-[3px] right-(--x) ml-auto border-r rounded-l-md"')).toEqual(
+      ["left-0", "left-sm", "right-md", "left-1/2", "left-[3px]", "right-(--x)", "ml-auto", "border-r", "rounded-l-md"],
+    );
+    expect(hits('/** mirrored for right-to-left locales; ml-2 */\n// pr-4 in a comment\nconst ids = ["left-sidebar", "right-panel"];')).toEqual([]);
+
     const found = new Set<string>();
     for (const dir of COMPONENT_DIRS) {
       for (const file of sourceFiles(join(packageRoot, "src", dir))) {
         const relative = file.slice(packageRoot.length + 1);
-        for (const match of readFileSync(file, "utf8").matchAll(PHYSICAL_INLINE_RE)) {
+        for (const match of withoutComments(readFileSync(file, "utf8")).matchAll(PHYSICAL_INLINE_RE)) {
           found.add(`${relative} :: ${match[1]}`);
         }
       }
@@ -1214,10 +1221,10 @@ describe("compiled wiring public contract", () => {
         const rows = api.foundryWiringExceptions(), count = (Array.isArray(rows) ? rows : rows.exceptions).length;
         const unavailable = result.findings.filter(row => row.code === "WL9" && /file unavailable/.test(row.evidence)).length;
         process.stdout.write(JSON.stringify({ types: ["checkWiring","readWiringExceptions","wiringScope","foundryWiringExceptions"].map(name => typeof api[name]), codes: result.findings.map(row => row.code), count, unavailable, reasons: api.WIRING_REASON_CODES }));`;
-      // The probe supplies one synthetic source, so every committed Foundry exception names a file the input lacks:
-      // each is a WL9 "file unavailable" row after the one WL3 headless import.
+      // The committed Foundry exception list is empty (no layout read above Components is excepted), so the
+      // probe reports exactly the one WL3 headless import and no WL9 row.
       const out = JSON.parse(execFileSync(process.execPath, ["--input-type=module", "-e", script], { encoding: "utf8", cwd: packageRoot }));
-      expect(out.count, entry).toBeGreaterThan(0);
+      expect(out.count, entry).toBe(0);
       expect(out, entry).toEqual({ types: Array(4).fill("function"), codes: ["WL3", ...Array(out.count).fill("WL9")], count: out.count, unavailable: out.count, reasons: ["layout-geometry", "surface-ground", "document-head", "motion-orchestration"] });
     }
   }, 30_000);

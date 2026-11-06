@@ -70,7 +70,7 @@ function describeError(error: unknown): string {
 /** Count current and legacy primary controls while existing consumers migrate their token. */
 function primaryActions(scope: ParentNode): Element[] {
   return [...scope.querySelectorAll('button, a, [role="button"]')].filter((element) =>
-    element.classList.contains(PRIMARY_ACTION_CLASS) || element.classList.contains("bg-accent"),
+    element.classList.contains(PRIMARY_ACTION_CLASS) || element.classList.contains("bg-primary"),
   );
 }
 

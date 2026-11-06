@@ -2,14 +2,13 @@
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { NativeAction, SemanticContent, Icon } from "@clossys/designer/components/server";
-import { DialogContext, ModalContext, useLocale } from "react-aria-components";
 import { Sheet, SheetClose, SheetTitle } from "../../components/sheet/index.js";
+import { DialogTarget, useOverlayLocale } from "../../components/Dialog.js";
 import { X } from "../../icons/index.js";
 import { FrameRegion } from "./FrameRegion.js";
 import { TOKENS } from "../../tokens/tokens.js";
-import { buttonLinkClassName } from "../../components/button-classes.js";
+import { DISCLOSURE_COLLAPSE_SLACK, disclosureToggleClassName } from "../../components/button-classes.js";
 import { cx } from "../../components/internal/cx.js";
-import { UI_LAYOUT_TAP_TARGET } from "../../shell/internal/shell-vars.js";
 import { SECTION_REVEAL_ATTRIBUTE, SectionRevealStyle } from "../../styles/section-reveal.js";
 
 export interface NavDisclosureProps {
@@ -29,16 +28,6 @@ export interface NavDisclosureProps {
   className?: string;
 }
 
-// Borrow the small ghost button's look and focus outline, without its colour
-// transition: only the panel and the decorative bars move, through CSS tokens.
-const TOGGLE_CLASSES = buttonLinkClassName("ghost", "sm")
-  .split(" ")
-  .filter(token => !token.includes("transition-"))
-  .join(" ") + " bg-transparent active:bg-surface-sunken transition-none";
-
-// A collapsed header expands only with this much width to spare.
-const HYSTERESIS = parseFloat(TOKENS["--spacing-sm"]!.value);
-
 // Panel motion must land before paint, but a server render has no layout.
 const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -48,12 +37,9 @@ const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffe
  * The inline tree remains available to server rendering and no-script layouts.
  */
 export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerLabel, closeLabel, trigger = "label", tone, className }: NavDisclosureProps) {
-  // Select a complete look before cx: tailwind-merge is an optional peer.
-  const inverse = tone === "inverse";
-  const look = inverse
-    ? TOGGLE_CLASSES.split(" ").filter(token => !["text-ink-primary", "hover:bg-surface-sunken", "focus-visible:outline-accent"].includes(token)).join(" ")
-    : TOGGLE_CLASSES;
-  const { locale, direction } = useLocale();
+  // The Components-owned toggle look; on the inverse plate it carries the inverse control ink.
+  const look = disclosureToggleClassName(tone === "inverse" ? "inverse" : "base");
+  const { locale, direction } = useOverlayLocale();
   const panelId = useId();
   const sheetId = `${panelId}-sheet`;
   const toggle = useRef<HTMLButtonElement>(null);
@@ -98,7 +84,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
         const required = 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
         // Hysteresis: a collapsed header expands only with one small spacing
         // step to spare, so widths at the fit edge cannot flap between layouts.
-        const slack = settled && wasMobile ? HYSTERESIS : 0;
+        const slack = settled && wasMobile ? DISCLOSURE_COLLAPSE_SLACK : 0;
         settled = true;
         narrow ||= width < required + slack;
         header.removeAttribute("data-measuring");
@@ -200,8 +186,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
           aria-controls={sheetId}
           aria-haspopup="dialog"
           data-tone={tone}
-          className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
-          style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
+          className={cx(look, "nav-disclosure-toggle")}
           onClick={() => (expanded ? close() : setExpanded(true))}
         >
           <><SemanticContent as="span" className="nav-disclosure-icon" data-open={expanded ? "" : undefined} aria-hidden="true"><SemanticContent as="span" /><SemanticContent as="span" /></SemanticContent></>
@@ -214,8 +199,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
           aria-controls={sheetId}
           aria-haspopup="dialog"
           data-tone={tone}
-          className={cx(look, "nav-disclosure-toggle", inverse ? "text-ink-on-inverse hover:text-ink-on-inverse aria-expanded:text-ink-on-inverse focus-visible:text-ink-on-inverse hover:bg-control-tonal-inverse-hover focus-visible:outline-ink-on-inverse" : undefined)}
-          style={{ minHeight: UI_LAYOUT_TAP_TARGET, minWidth: UI_LAYOUT_TAP_TARGET }}
+          className={cx(look, "nav-disclosure-toggle")}
           onClick={() => (expanded ? close() : setExpanded(true))}
         >
           {triggerLabel}
@@ -231,8 +215,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
       >
         {children}
       </SemanticContent>
-      <ModalContext.Provider value={{ dir: direction, lang: locale }}>
-      <DialogContext.Provider value={{ id: sheetId }}>
+      <DialogTarget id={sheetId} dir={direction} lang={locale}>
       <Sheet
         isOpen={mobile && expanded}
         onOpenChange={setExpanded}
@@ -253,8 +236,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
           </FrameRegion>
         </SemanticContent>
       </Sheet>
-      </DialogContext.Provider>
-      </ModalContext.Provider>
+      </DialogTarget>
     </FrameRegion>
   );
 }

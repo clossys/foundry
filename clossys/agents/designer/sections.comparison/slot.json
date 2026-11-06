@@ -55,7 +55,8 @@
       "components.button",
       "components.dialog",
       "components.menu",
-      "components.link"
+      "components.link",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

@@ -1,12 +1,11 @@
 /** @vitest-environment node */
 import { beforeAll, expect, it } from "vitest";
-import { importFoundryComponents } from "../importers/foundry-components.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 import { applyLibraryChange, libraryHash, resolve } from "./api.js";
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, loadFoundrySurfaceHistory, loadSectionRegistry } from "./index.js";
-import { selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedComponentFills, selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import { isSurfacePackageEntry, surfaceEntryOf, surfacePackageDescriptorHash } from "./surface-library.js";
 import { runtimeHash, runtimeSnapshot } from "./runtime-ports.js";
 import { migrateReads } from "./themes-migration.js";
@@ -22,7 +21,7 @@ const historicalHolds = [
 beforeAll(async () => {
   const frames = importFoundryFrames().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell");
   const sections = importFoundrySections().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "sections.pagination");
-  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: {
+  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: selectedComponentFills() }, surfaces: {
     slots: [...loadSectionRegistry().slots.filter(slot => slot.id === "sections.pagination"), ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames" && slot.id === "frames.app-shell")],
     fills: [...frames, ...sections], transforms: [], rules: [], materializations: [],
   } };
@@ -56,7 +55,7 @@ it("accepts real package Frame and Section with their selected component and des
   expect(isSurfacePackageEntry(frame)).toBe(true);
   expect(frame.composes).toContain("components.avatar");
   expect(frame.composes).toContain("frames.sheet");
-  expect(frame.reads?.themes).toContain("themes.spacing");
+  expect(frame.reads?.themes).toEqual(frame.consumption?.scannedReads.themes);
   expect(frame.consumption?.scannedComposes).toEqual(frame.composes);
   expect(profile.components.components["components.avatar"]?.origin.kind).toBe("adopted");
   expect(profile.values.members["themes.spacing"]).toBeUndefined();
@@ -89,11 +88,17 @@ it("refuses a real package Section when a measured composed component is not sel
 });
 
 it("refuses measured token reads when the selected consumer has no member of that slot", () => {
-  // The sidebar border is a real Frame read with no selected component dependency, so the
-  // component resolver does not refuse before the surface gate can inspect it.
-  const profile = withoutValue("themes.sidebar-border");
-  expect(Object.keys(profile.values.members).some(id => id === "themes.sidebar-border" || id.startsWith("themes.sidebar-border."))).toBe(false);
-  expect(profile.surfaces!.check.findings).toContainEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: "consumer read missing themes.sidebar-border" });
+  // Every themes read the scanner measures in the selected Frame, never a hand-picked one: with that
+  // slot's value gone from the selected library the consumer cannot hold it, and the chain refuses: at the
+  // Components gate when a selected composed component reads the same token, otherwise at the surface gate.
+  const measured = surfaceEntryOf(resolve(selected).surfaces!.fills["frames.app-shell"]!.document).consumption!.scannedReads.themes;
+  expect(measured.length).toBeGreaterThan(0);
+  for (const read of measured) {
+    let profile;
+    try { profile = withoutValue(read); } catch (error) { expect(String(error)).toContain(`components: unresolved token ${read}`); continue; }
+    expect(Object.keys(profile.values.members).some(id => id === read || id.startsWith(`${read}.`)), read).toBe(false);
+    expect(profile.surfaces!.check.findings).toContainEqual({ code: "S5", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: `consumer read missing ${read}` });
+  }
 });
 
 it("refuses measured asset reads even when the catalog still offers the missing consumer value", () => {

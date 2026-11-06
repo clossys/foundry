@@ -67,7 +67,9 @@
       "components.banner",
       "components.checkbox",
       "components.combo-box",
-      "components.select"
+      "components.select",
+      "components.link",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

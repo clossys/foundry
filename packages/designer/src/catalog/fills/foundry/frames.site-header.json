@@ -39,7 +39,15 @@
             "components.button",
             "components.icon"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
         },
         "sourceFiles": [
           {
@@ -51,8 +59,12 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -60,15 +72,11 @@
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
-            "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
-          },
-          {
-            "path": "packages/designer/src/shell/internal/shell-vars.ts",
-            "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+            "sha256": "f67e64001fa17b1712c00e0656bf2ff04834e7b88212d61c9039b1fc8820dcd3"
           },
           {
             "path": "packages/designer/src/shell/SiteHeader.tsx",
-            "sha256": "2812237c178b75d2b9be9d04a8a830cda4de0c7a05b1e3d675b298574254cd7e"
+            "sha256": "a832ce507d185b96baf7b2614e85819904cdb094695c96cd8de6cfd39e8fa935"
           }
         ],
         "unresolved": [
@@ -121,7 +129,15 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
       },
       "slot": "frames.site-header",
       "slots": {

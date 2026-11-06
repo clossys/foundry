@@ -46,7 +46,7 @@ describe("exported AppFrame specimen", () => {
     }} />);
     await user.click(screen.getByRole("button", { name: "Host launcher" }));
     expect(await screen.findByRole("dialog", { name: "Host commands" })).toBeInTheDocument();
-    await user.type(screen.getByRole("combobox", { name: "Host query" }), "Run host");
+    await user.type(screen.getByRole("searchbox", { name: "Host query" }), "Run host");
     await user.keyboard("{Enter}");
     expect(run).toHaveBeenCalledOnce();
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
@@ -101,7 +101,7 @@ describe("exported AppFrame specimen", () => {
     expect(screen.getByRole("region", { name: "Example context" })).toHaveTextContent("HOST task ready");
     await user.click(screen.getByRole("button", { name: "HOST search" }));
     expect(await screen.findByRole("dialog", { name: "HOST commands" })).toBeInTheDocument();
-    await user.type(screen.getByRole("combobox", { name: "HOST query" }), "HOST tasks");
+    await user.type(screen.getByRole("searchbox", { name: "HOST query" }), "HOST tasks");
     await user.keyboard("{Enter}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(main.getByRole("status")).toHaveTextContent("Tasks HOST opened");
@@ -154,7 +154,7 @@ describe("exported AppFrame specimen", () => {
     render(<AppFrameSpecimen />);
     const opener = screen.getByRole("button", { name: "Search Example commands" });
     await user.click(opener);
-    const search = await screen.findByRole("combobox", { name: "Find a command" });
+    const search = await screen.findByRole("searchbox", { name: "Find a command" });
     await user.type(search, "task");
     expect(screen.queryByRole("option", { name: "Open overview" })).not.toBeInTheDocument();
     await user.keyboard("{Enter}");

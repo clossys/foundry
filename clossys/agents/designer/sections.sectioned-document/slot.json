@@ -29,10 +29,25 @@
         "landmark.none"
       ]
     },
-    "allowedComposes": [],
+    "allowedComposes": [
+      "components.avatar",
+      "components.badge",
+      "components.card",
+      "components.disclosure",
+      "components.icon",
+      "components.link",
+      "components.semantic-content",
+      "components.status-mark"
+    ],
     "parts": [],
     "allowedReads": {
-      "themes": [],
+      "themes": [
+        "themes.accent",
+        "themes.background",
+        "themes.font-mono",
+        "themes.primary",
+        "themes.primary-foreground"
+      ],
       "assets": []
     },
     "data": "host-injected",
@@ -41,7 +56,13 @@
     "copy": {
       "sourceLocale": "en",
       "fields": []
-    }
+    },
+    "composes": [
+      "sections.content",
+      "sections.media",
+      "sections.pricing",
+      "sections.section-header"
+    ]
   },
   "inputs": [
     "advantage.proposition.promise",

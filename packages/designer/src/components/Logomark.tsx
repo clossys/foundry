@@ -5,7 +5,7 @@ import { cx } from "./internal/cx.js";
 
 export type LogomarkSize = "sm" | "md" | "lg";
 export type LogomarkTone = "auto" | "inverse";
-export type LogomarkPlate = "shared" | "self";
+export type LogomarkPlate = "shared" | "self" | "page";
 
 // The normalizer's MarkBox contract, defined once here until that unit merges.
 // Replace this declaration with its type-only import at that integration.
@@ -18,7 +18,11 @@ export interface LogomarkProps {
   size: LogomarkSize;
   /** Shared plate ink; supply artwork that contrasts with the selected plate. */
   tone?: LogomarkTone;
-  /** Whether the artwork supplies its own plate. @default "self" */
+  /**
+   * Whether the artwork supplies its own plate. `page` sets self-plated
+   * artwork on a page-ground plate, inset by the shared plate's shares, so a
+   * page-ground mark reads on an inverse ground. @default "self"
+   */
   plate?: LogomarkPlate;
   /** Optional native image title. The glyph remains decorative. */
   title?: string;
@@ -61,13 +65,13 @@ export function Logomark({ src, size, tone = "auto", plate = "self", title, pres
       const artwork = <span data-brand-mark="" aria-hidden={title ? true : undefined} title={title}
         className="relative inline-block shrink-0" style={{ width: artWidth, height: artHeight, overflow: "hidden" }}>
         {silhouette
-          ? <span className="bg-accent" style={{ ...sourceStyle, maskImage: mask, WebkitMaskImage: mask,
+          ? <span className="bg-primary" style={{ ...sourceStyle, maskImage: mask, WebkitMaskImage: mask,
               maskSize: "100% 100%", WebkitMaskSize: "100% 100%", maskRepeat: "no-repeat", WebkitMaskRepeat: "no-repeat" }} />
           : <img src={src} alt="" style={sourceStyle} />}
       </span>;
       if (plate !== "shared") return artwork;
       return <span aria-hidden className={cx("inline-flex shrink-0 items-center justify-center",
-        inverse ? "bg-ink-on-inverse" : "bg-ink-primary")} style={{
+        inverse ? "bg-background" : "bg-ink-primary")} style={{
         height: plateSide, width: plateSide,
         borderRadius: `calc(${plateSide} * ${BADGE_RADIUS_SHARE})`,
       }}>{artwork}</span>;
@@ -76,13 +80,22 @@ export function Logomark({ src, size, tone = "auto", plate = "self", title, pres
       ? <span className="inline-flex"><span className="hidden desktop:block">{artworkFor(false)}</span><span className="inline-flex desktop:hidden">{artworkFor(true)}</span></span>
       : artworkFor(presentation === "mobile");
   }
+  if (plate === "page") {
+    const share = 1 - 2 * BADGE_INSET_SHARE;
+    return (
+      <span aria-hidden data-logomark-plate="page" className="inline-flex items-center justify-center bg-background"
+        style={{ padding: `calc(${height} * ${BADGE_INSET_SHARE / share})`, borderRadius: `calc(${height} * ${BADGE_RADIUS_SHARE / share})` }}>
+        <img src={src} alt="" style={{ height, width: "auto" }} title={title} />
+      </span>
+    );
+  }
   if (plate !== "shared") return <img src={src} alt="" aria-hidden={title ? true : undefined} style={{ height, width: "auto" }} title={title} />;
   const imageSide = `calc(${height} * ${1 - 2 * BADGE_INSET_SHARE})`;
   return (
     <span
       aria-hidden
       className={cx(inverse
-        ? "inline-flex shrink-0 items-center justify-center bg-ink-on-inverse"
+        ? "inline-flex shrink-0 items-center justify-center bg-background"
         : "inline-flex shrink-0 items-center justify-center bg-ink-primary")}
       style={{ height, width: height, borderRadius: `calc(${height} * ${BADGE_RADIUS_SHARE})` }}
     >

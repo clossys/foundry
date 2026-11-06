@@ -96,7 +96,7 @@ describe("canonical ground and linked frame successors", () => {
         const link = screen.getByRole("link", { name: "Title" });
         expect(body).toHaveClass("relative", "isolate");
         expect((body as HTMLElement).style.minBlockSize).toBe(UI_LAYOUT_TAP_TARGET);
-        expect(link).toHaveClass("after:absolute", "after:rounded-panel", "focus-visible:after:outline-2", "focus-visible:after:outline-offset-2", ground === "inverse" ? "focus-visible:after:outline-accent-on-inverse" : "focus-visible:after:outline-accent");
+        expect(link).toHaveClass("after:absolute", "after:rounded-panel", "focus-visible:after:outline-2", "focus-visible:after:outline-offset-2", ground === "inverse" ? "focus-visible:after:outline-accent-on-inverse" : "focus-visible:after:outline-primary");
         expect(link.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
         expect(link.parentElement).toHaveClass(ground === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
         const icon = screen.getByTestId("supplied-icon");

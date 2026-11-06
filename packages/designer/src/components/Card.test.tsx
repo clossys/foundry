@@ -53,7 +53,7 @@ describe("Card variants", () => {
     expect(card.className).not.toContain("bg-surface-sunken");
     rerender(<Card variant="plate" ground="inverse">Content</Card>);
     card = screen.getByText("Content");
-    expect(card.className).toContain("bg-surface-inverse-raised");
+    expect(card.className).toContain("bg-card-foreground");
   });
 
   it("gives a plate the panel radius, no stroke and no shadow", () => {
@@ -79,8 +79,8 @@ describe("Card variants", () => {
   it("switches an outline's edge and fill to the inverse pair on an inverse ground", () => {
     render(<Card variant="outline" ground="inverse">Content</Card>);
     const card = screen.getByText("Content");
-    expect(card.className).toContain("border-line-on-inverse");
-    expect(card.className).toContain("bg-surface-inverse-raised");
+    expect(card.className).toContain("border-background/14");
+    expect(card.className).toContain("bg-card-foreground");
     expect(card.className).not.toContain("border-line-panel");
   });
 

@@ -26,7 +26,7 @@ const SITE_HEADER_CLEARANCE =
 const Z_STICKY = "var(--ui-z-sticky, 10)";
 
 const BOX_CLASSES = "rounded-panel border border-line-base p-md";
-const FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+const FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 function fail(message: string): never {
   throw new TypeError("TableOfContents: " + message);
@@ -73,7 +73,7 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
                 "flex items-center border-s-2 pe-sm text-body-s",
                 item.level === 4 ? "ps-2xl" : item.level === 3 ? "ps-xl" : "ps-md",
                 isCurrent
-                  ? "border-accent font-medium text-ink-primary forced-colors:border-current"
+                  ? "border-primary font-medium text-ink-primary forced-colors:border-current"
                   : "border-transparent text-ink-secondary hover:text-ink-primary",
                 FOCUS_CLASSES,
               )}

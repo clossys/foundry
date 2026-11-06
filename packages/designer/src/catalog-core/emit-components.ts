@@ -265,7 +265,8 @@ export function emitComponents(profile: ResolvedComponents, targets: readonly Co
     const assets = sortedComponentIds(components.flatMap(component => component.reads.assets));
     if (emitsGlyphModule(components)) {
       const glyphs = options.glyphModule;
-      if (!glyphs || assets.some(asset => !(asset in glyphs.glyphs))) throw new CatalogError("components: glyph module is unavailable");
+      // Only icon assets are glyphs; media assets (assets.image, assets.video) reach a leaf through its props.
+      if (!glyphs || assets.some(asset => asset.startsWith("assets.icon-") && !(asset in glyphs.glyphs))) throw new CatalogError("components: glyph module is unavailable");
       assertComponentPath(glyphs.path, true);
       const glyphData = Object.fromEntries(Object.entries(glyphs.glyphs).sort(([a], [b]) => a < b ? -1 : 1).map(([asset, data]) => {
         if (!/^assets\.icon-[a-z0-9-]+$/.test(asset)) throw new CatalogError("components: invalid glyph asset id");

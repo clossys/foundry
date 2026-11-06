@@ -18,6 +18,9 @@ beforeEach(() => {
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
   cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
   cpSync(join(packageRoot, "src", "tokens", "preview"), join(dir, "src", "tokens", "preview"), { recursive: true });
+  // The generated shadcn colour-key region is emitted from the themes layer.
+  mkdirSync(join(dir, "src", "catalog", "slots"), { recursive: true });
+  cpSync(join(packageRoot, "src", "catalog", "slots", "themes.json"), join(dir, "src", "catalog", "slots", "themes.json"));
   vi.spyOn(console, "log").mockImplementation(() => {});
   vi.spyOn(console, "error").mockImplementation(() => {});
 });
@@ -48,7 +51,7 @@ describe("main --write", () => {
     expect(code).toBe(0);
     const written = readFileSync(join(dir, "styles", "compiled.css"), "utf8");
     expect(written).toContain("@layer foundry-ui-compiled");
-    expect(written).toContain(".bg-accent {");
+    expect(written).toContain(".bg-primary {");
   });
 
   it("returns 2 when every compiled-css source dir is empty", async () => {

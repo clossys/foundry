@@ -52,6 +52,11 @@
           "kind": "tailwind",
           "target": "--animate-marquee",
           "status": "live"
+        },
+        "duration": {
+          "kind": "tailwind",
+          "target": "--duration",
+          "status": "live"
         }
       }
     },

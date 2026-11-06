@@ -25,7 +25,7 @@ it("keeps commands, changesets, capture keys and history invariant under L2 regr
     const captureOne = async () => { expect((await capture({ root: captureRoot, driver, out: output })).ok).toBe(true); return JSON.parse(await fs.readFile(join(output, "index.json"), "utf8")); };
     const initialIndex = await captureOne();
     const record = () => ({ command: changeCommandFor(leaf), path: thumbnailPath(output, component), history: designerWriteHistory(receipt, leaf) });
-    const input = { root, catalog: { values: catalog, components: { slots: [], fills: [] } }, leaf, source: "foundry", write: false };
+    const input = { root, catalog: { values: catalog, components: { slots: [], fills: [] } }, leaf, source: "shadcn@aria", write: false };
     const before = record(), beforeChange = (await reselect(input)).changeset;
     for (const layer of ["themes", "components"]) {
       const placement = placements.find(row => row.layer === layer)!;

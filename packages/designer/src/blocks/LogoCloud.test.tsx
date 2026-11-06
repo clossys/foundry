@@ -168,7 +168,7 @@ describe("LogoCloud", () => {
       expect(link).not.toHaveAttribute("title");
       expect(within(link).getByText(item.name)).toHaveClass("sr-only");
       expect(link.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link).toHaveClass("focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-accent");
+      expect(link).toHaveClass("focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
     }
   });
 

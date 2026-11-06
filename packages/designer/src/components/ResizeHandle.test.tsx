@@ -141,7 +141,7 @@ describe("ResizeHandle", () => {
     fireEvent.focus(handle);
     fireEvent.keyDown(handle, { key: "ArrowRight" });
     // jsdom does not implement browser input-modality painting; pin the native CSS contract.
-    expect(handle).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-accent");
+    expect(handle).toHaveClass("focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-primary");
     expect(handle).not.toHaveClass("outline-none");
     expect(handle.style.boxShadow).toBe("");
   });

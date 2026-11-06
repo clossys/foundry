@@ -29,7 +29,7 @@ describe("Logomark: decorative glyph and plate", () => {
       geometry={{ viewBox: { x: 0, y: 0, width: 100, height: 100 }, paintedBounds: { x: 25, y: 25, width: 50, height: 50 } }} />);
     expect(container.querySelector(".desktop\\:block")).not.toBeNull();
     expect(container.querySelector(".desktop\\:hidden")).not.toBeNull();
-    expect(container.querySelector(".bg-accent")).not.toBeNull();
+    expect(container.querySelector(".bg-primary")).not.toBeNull();
     expect(container.querySelectorAll("a")).toHaveLength(0);
   });
   it("keeps the shared plate square around a wide normalized glyph without shrinking the art", () => {

@@ -210,7 +210,11 @@
       "components.logo",
       "components.resize-handle",
       "components.tabs",
-      "components.tooltip"
+      "components.tooltip",
+      "components.dialog",
+      "components.link",
+      "components.popover",
+      "components.semantic-content"
     ],
     "skipTarget": "main-content",
     "stage": {

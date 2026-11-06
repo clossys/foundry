@@ -39,7 +39,7 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
 
   it("reports drift when compiled.css is hand-edited after the fact", async () => {
     const compiledPath = join(dir, "styles", "compiled.css");
-    writeFileSync(compiledPath, "/* hand-edited, no longer matches source */\n.bg-accent { background: red; }\n");
+    writeFileSync(compiledPath, "/* hand-edited, no longer matches source */\n.bg-primary { background: red; }\n");
     const result = await checkCompiledCssFreshness({ packageRoot: dir });
     expect(result.inSync).toBe(false);
     expect(result.diffSummary).toBeDefined();
@@ -57,7 +57,7 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
     const original = readFileSync(buttonPath, "utf8");
     // A real Tailwind utility not used anywhere else in this fixture's
     // components/ — guaranteed to change the generated output, unlike editing
-    // an already-widely-used class (e.g. "bg-accent" appears in several
+    // an already-widely-used class (e.g. "bg-primary" appears in several
     // components; removing one occurrence wouldn't change the compiled OUTPUT
     // at all, since the candidate set — and so the generated CSS — would
     // stay identical).

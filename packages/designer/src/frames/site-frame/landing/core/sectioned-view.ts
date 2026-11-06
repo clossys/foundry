@@ -1124,18 +1124,17 @@ const CONTENT_ACTIONS_MAX = 2;
 const CONTENT_LAYOUTS = SECTIONED_VIEW_CONTENT_CONTRACT.layouts;
 const CARD_SPAN_UNITS = SECTIONED_VIEW_CONTENT_CONTRACT.spans;
 const CARD_ROW_UNITS = SECTIONED_VIEW_CONTENT_CONTRACT.counts.rowUnits;
+/** Specimen bounds: field choices, table fields and panel parts, from the shared content contract. */
+const SPECIMEN_COUNTS = SECTIONED_VIEW_CONTENT_CONTRACT.counts;
 const SPECIMEN_TONES = SECTIONED_VIEW_CONTENT_CONTRACT.tones;
 const SPECIMEN_PART_TYPES: readonly SectionedViewSpecimenPartType[] = ["fields", "status-rows", "meter", "table", "schedule", "shares", "files"];
-const FIELDS_COLUMNS = [1, 2, 4] as const;
 const METER_DIRECTIONS = ["max", "min"] as const;
 const CONTENT_LINKED_ITEMS_MAX = SECTIONED_VIEW_CONTENT_CONTRACT.counts.linked;
 /** Item eyebrow copy remains short enough to scan above its heading. */
 export const CONTENT_ITEM_EYEBROW_MAX_CHARACTERS = 32;
 const PART_MAX_ROWS = 6;
 const CARD_VISUAL_MAX_ROWS = 5;
-const TABLE_MAX_COLUMNS = 4;
 const TABLE_MAX_ROWS = 5;
-const PANEL_MAX_PARTS = 3;
 
 interface CountBounds {
   min: number;
@@ -1627,7 +1626,7 @@ function validateSpecimenPanel(value: unknown, path: string, findings: ComposeFi
   validateOptionalCopyFields(value, ["meta"], path, findings);
   validateOptionalStatus(value, path, findings);
   if (validateDenseArray(value.parts, `${path}.parts`, findings, "sectioned-view-items-shape", `${path}.parts must be a non-empty array.`)) {
-    if (value.parts.length > PANEL_MAX_PARTS) findings.push(countFinding(`${path}.parts`, { min: 1, max: PANEL_MAX_PARTS }, value.parts.length, "parts"));
+    if (value.parts.length > SPECIMEN_COUNTS.specimenPanelParts) findings.push(countFinding(`${path}.parts`, { min: 1, max: SPECIMEN_COUNTS.specimenPanelParts }, value.parts.length, "parts"));
     validateItemIds(value.parts, `${path}.parts`, findings);
     value.parts.forEach((part, index) => validateSpecimenPart(part, `${path}.parts.${index}`, findings, PART_MAX_ROWS));
   }
@@ -1667,7 +1666,7 @@ function validateSpecimenPart(value: unknown, path: string, findings: ComposeFin
     case "fields":
       validatePartKeys(value, ["label", "columns", "items"], ["items"], path, findings);
       validateOptionalCopyFields(value, ["label"], path, findings);
-      validateEnumField(value, "columns", FIELDS_COLUMNS, "sectioned-view-specimen-part-option", path, findings);
+      validateEnumField(value, "columns", SPECIMEN_COUNTS.specimenFields, "sectioned-view-specimen-part-option", path, findings);
       validateRecords(value.items, `${path}.items`, findings, rows, ["id", "label", "value"], ["label", "value"], (field, fieldPath) => {
         validateCopy(field.label, `${fieldPath}.label`, findings);
         validateCopy(field.value, `${fieldPath}.value`, findings);
@@ -1702,7 +1701,7 @@ function validateSpecimenPart(value: unknown, path: string, findings: ComposeFin
       validatePartKeys(value, ["label", "caption", "columns", "rows"], ["caption", "columns", "rows"], path, findings);
       validateOptionalCopyFields(value, ["label"], path, findings);
       validateCopy(value.caption, `${path}.caption`, findings);
-      const columns = validateRecords(value.columns, `${path}.columns`, findings, { min: 1, max: TABLE_MAX_COLUMNS }, ["id", "label"], ["label"], (column, columnPath) => validateCopy(column.label, `${columnPath}.label`, findings));
+      const columns = validateRecords(value.columns, `${path}.columns`, findings, { min: 1, max: SPECIMEN_COUNTS.specimenTableFields }, ["id", "label"], ["label"], (column, columnPath) => validateCopy(column.label, `${columnPath}.label`, findings));
       const columnCount = Array.isArray(value.columns) && columns.length === value.columns.length ? columns.length : undefined;
       validateRecords(value.rows, `${path}.rows`, findings, { min: 1, max: Math.min(TABLE_MAX_ROWS, maxRows) }, ["id", "cells"], ["cells"], (row, rowPath) => {
         if (!validateDenseArray(row.cells, `${rowPath}.cells`, findings, "sectioned-view-items-shape", `${rowPath}.cells must be a non-empty array.`)) return;

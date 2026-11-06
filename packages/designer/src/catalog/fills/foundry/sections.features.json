@@ -52,7 +52,9 @@
             "components.link",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -73,7 +75,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+            "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -81,7 +83,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/icons/ChevronRight.ts",
@@ -146,7 +148,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.features",
       "slotMap": {

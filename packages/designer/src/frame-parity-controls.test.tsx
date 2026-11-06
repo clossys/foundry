@@ -15,18 +15,18 @@ import { NavDisclosure } from "./shell/NavDisclosure.js";
 // Captured on unchanged main before the controls existed. Kept in this excluded test file.
 const DEFAULT_OUTPUT: Record<"server" | "client", Record<string, string>> = {
   "server": {
-    "brand": "<link rel=\"preload\" as=\"image\" href=\"/mark.svg\"><a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap:var(--ui-brandmark-gap-md, 6px)\"><img src=\"/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333)\">Example</span></a>",
+    "brand": "<link rel=\"preload\" as=\"image\" href=\"/mark.svg\"><a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary\" style=\"gap:var(--ui-brandmark-gap-md, 6px)\"><img src=\"/mark.svg\" alt=\"\" style=\"height:var(--ui-brandmark-height-md, 36px);width:auto\"><span class=\"font-display leading-none\" style=\"font-size:calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333)\">Example</span></a>",
     "footer": "<footer data-footer-root=\"\" class=\"site-footer-dark text-ink-primary py-lg\" style=\"position:relative;z-index:var(--ui-z-shell, 20)\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline:var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px))\"><div class=\"site-footer-columns\"><p>Links</p></div><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\">Legal</div></div></footer>",
     "hero": "<section class=\"flex flex-col gap-xl\"><div data-section-intro=\"display\" class=\"flex w-full flex-col items-start\" style=\"max-width:var(--ui-width-prose-max, 48rem)\"><p class=\"text-body-s font-medium uppercase tracking-label text-accent-text\">Topic</p><h1 class=\"text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm\">Opening</h1><p class=\"text-body-l text-pretty text-ink-secondary mt-2xl\">Supporting copy</p></div></section>",
     "intro": "<div data-section-intro=\"section\" class=\"flex w-full flex-col items-start\" style=\"max-width:var(--ui-width-prose-max, 48rem)\"><p class=\"text-body-s font-medium uppercase tracking-label text-accent-text\">Topic</p><h2 class=\"text-h1 tablet:text-h0 tablet-lg:text-display-m font-display leading-heading text-balance text-ink-primary mt-sm\">Opening</h2><p class=\"text-body-l text-pretty text-ink-secondary mt-xl\">Supporting copy</p></div>",
-    "nav": "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"stable-id\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent nav-disclosure-toggle\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Menu</button><div id=\"stable-id\" class=\"nav-disclosure-panel\"><a href=\"/about\">About</a></div></nav>"
+    "nav": "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"stable-id\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary nav-disclosure-toggle\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Menu</button><div id=\"stable-id\" class=\"nav-disclosure-panel\"><a href=\"/about\">About</a></div></nav>"
   },
   "client": {
-    "brand": "<a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent\" style=\"gap: var(--ui-brandmark-gap-md, 6px);\"><img alt=\"\" style=\"height: var(--ui-brandmark-height-md, 36px); width: auto;\" src=\"/mark.svg\"><span class=\"font-display leading-none\" style=\"font-size: calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333);\">Example</span></a>",
+    "brand": "<a href=\"/\" aria-label=\"Example home\" class=\"inline-flex items-center no-underline text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary\" style=\"gap: var(--ui-brandmark-gap-md, 6px);\"><img alt=\"\" style=\"height: var(--ui-brandmark-height-md, 36px); width: auto;\" src=\"/mark.svg\"><span class=\"font-display leading-none\" style=\"font-size: calc(var(--ui-brandmark-height-md, 36px) * 0.4583333333333333);\">Example</span></a>",
     "footer": "<footer data-footer-root=\"\" class=\"site-footer-dark text-ink-primary py-lg\" style=\"position: relative; z-index: var(--ui-z-shell, 20);\"><div class=\"mx-auto flex w-full flex-col gap-lg\" style=\"padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px));\"><div class=\"site-footer-columns\"><p>Links</p></div><div class=\"flex flex-col gap-sm text-body-s text-ink-secondary tablet:flex-row tablet:items-center tablet:justify-between\">Legal</div></div></footer>",
     "hero": "<section class=\"flex flex-col gap-xl\"><div data-section-intro=\"display\" class=\"flex w-full flex-col items-start\" style=\"max-width: var(--ui-width-prose-max, 48rem);\"><p class=\"text-body-s font-medium uppercase tracking-label text-accent-text\">Topic</p><h1 class=\"text-display-m tablet:text-display-l font-display leading-display text-balance text-ink-primary mt-sm\">Opening</h1><p class=\"text-body-l text-pretty text-ink-secondary mt-2xl\">Supporting copy</p></div></section>",
     "intro": "<div data-section-intro=\"section\" class=\"flex w-full flex-col items-start\" style=\"max-width: var(--ui-width-prose-max, 48rem);\"><p class=\"text-body-s font-medium uppercase tracking-label text-accent-text\">Topic</p><h2 class=\"text-h1 tablet:text-h0 tablet-lg:text-display-m font-display leading-heading text-balance text-ink-primary mt-sm\">Opening</h2><p class=\"text-body-l text-pretty text-ink-secondary mt-xl\">Supporting copy</p></div>",
-    "nav": "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"stable-id\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent nav-disclosure-toggle\" style=\"min-height: var(--ui-layout-tap-target, 44px); min-width: var(--ui-layout-tap-target, 44px);\">Menu</button><div id=\"stable-id\" class=\"nav-disclosure-panel\"><a href=\"/about\">About</a></div></nav>"
+    "nav": "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"stable-id\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary nav-disclosure-toggle\" style=\"min-height: var(--ui-layout-tap-target, 44px); min-width: var(--ui-layout-tap-target, 44px);\">Menu</button><div id=\"stable-id\" class=\"nav-disclosure-panel\"><a href=\"/about\">About</a></div></nav>"
   }
 };
 
@@ -69,7 +69,7 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
 
   it("renders inverse brand ink and inherits header tone unless explicitly overridden", () => {
     const direct = output(<Brandmark {...brand} {...options({ tone: "inverse" })} />, mode);
-    expect(direct.querySelector("a")).toHaveClass("text-ink-on-inverse");
+    expect(direct.querySelector("a")).toHaveClass("text-background");
     for (const navPlacement of ["leading", "centered"] as const) {
       const inherited = output(<SiteHeader surface="glass" tone="inverse" navPlacement={navPlacement} brand={<Brandmark {...brand} />} />, mode);
       expect(inherited.querySelector("a")).toHaveClass("text-inherit");
@@ -81,7 +81,7 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
   it("applies header tone to the solid surface", () => {
     const header = output(<SiteHeader tone="inverse" brand={<Brandmark {...brand} />} />, mode);
     expect(header.querySelector("header")).toHaveAttribute("data-surface", "solid");
-    expect(header.querySelector("header")).toHaveClass("text-ink-on-inverse");
+    expect(header.querySelector("header")).toHaveClass("text-background");
     expect(header.querySelector("a")).toHaveClass("text-inherit");
   });
 
@@ -89,11 +89,11 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
     const variants = [brand, { variant: "mark", size: "md", label: "Example home", markSrc: "/mark.svg" }] as const;
     for (const props of variants) {
       const inverse = output(<Brandmark {...props} tone="inverse" />, mode).querySelector("a")!;
-      expect(inverse).toHaveClass("focus-visible:outline-ink-on-inverse");
-      expect(inverse).not.toHaveClass("focus-visible:outline-accent");
+      expect(inverse).toHaveClass("focus-visible:outline-background");
+      expect(inverse).not.toHaveClass("focus-visible:outline-primary");
       const auto = output(<Brandmark {...props} tone="auto" />, mode).querySelector("a")!;
-      expect(auto).toHaveClass("focus-visible:outline-accent");
-      expect(auto).not.toHaveClass("focus-visible:outline-ink-on-inverse");
+      expect(auto).toHaveClass("focus-visible:outline-primary");
+      expect(auto).not.toHaveClass("focus-visible:outline-background");
       expect(output(<Brandmark {...props} />, mode).querySelector("a")?.outerHTML).toBe(auto.outerHTML);
     }
   });
@@ -103,7 +103,7 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
       for (const ground of ["base", "sunken", "inverse"] as const) {
         const root = output(<Component {...copy} ground={ground} {...options({ eyebrowTone: "muted" })} />, mode);
         expect(root.querySelector("p")).toHaveClass(ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");
-        expect(root.querySelector("p")?.className).not.toMatch(/text-accent/);
+        expect(root.querySelector("p")?.className).not.toMatch(/text-primary/);
       }
     });
     it(`${Component.name} gives only the wide body a 64rem cap`, () => {
@@ -122,9 +122,10 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
   it("draws only the requested transparent footer top rule and no inner divider", () => {
     const root = output(<SiteFooter ground="transparent" {...options({ rule: "top" })} columns={<p>Links</p>} secondary="Legal" />, mode);
     const footer = root.querySelector("footer")!;
-    expect(footer).toHaveClass("border-t", "border-line-base");
-    expect(footer.style.borderTopWidth).toBe("var(--ui-border-hairline, 1px)");
-    expect(footer.querySelector(".border-t")).toBeNull();
+    // The rule is the hairline-t utility (--ui-border-hairline) in the page-ground border colour.
+    expect(footer).toHaveClass("hairline-t", "border-border");
+    expect(footer.style.borderTopWidth).toBe("");
+    expect(footer.querySelector(".hairline-t, .border-t")).toBeNull();
     for (const ground of ["base", "inverse", "transparent-inverse"] as const) {
       const original = output(<SiteFooter ground={ground} secondary="Legal" />, mode).innerHTML;
       expect(output(<SiteFooter ground={ground} {...options({ rule: "top" })} secondary="Legal" />, mode).innerHTML).toBe(original);
@@ -134,13 +135,14 @@ for (const mode of modes) describe(`frame parity controls: ${mode}`, () => {
   it("keeps inverse navigation ink through hover, expanded and focus states", () => {
     const root = output(<NavDisclosure {...options({ tone: "inverse" })}><a href="/about">About</a></NavDisclosure>, mode);
     const trigger = root.querySelector("button")!;
-    expect(trigger).toHaveClass("text-ink-on-inverse", "hover:text-ink-on-inverse", "aria-expanded:text-ink-on-inverse", "focus-visible:text-ink-on-inverse", "focus-visible:outline-ink-on-inverse");
-    expect(trigger).not.toHaveClass("text-ink-primary", "hover:bg-surface-sunken");
+    expect(trigger).toHaveClass("text-background", "hover:text-background", "aria-expanded:text-background", "focus-visible:text-background", "focus-visible:outline-background");
+    expect(trigger).not.toHaveClass("text-ink-primary");
+    expect(trigger).not.toHaveClass("hover:bg-surface-sunken");
     expect(trigger).toHaveAttribute("data-tone", "inverse");
     if (mode === "client") {
       fireEvent.click(trigger);
       expect(trigger).toHaveAttribute("aria-expanded", "true");
-      expect(trigger).toHaveClass("text-ink-on-inverse");
+      expect(trigger).toHaveClass("text-background");
       trigger.focus();
       expect(trigger).toHaveFocus();
     }

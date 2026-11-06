@@ -1495,7 +1495,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-header/slot.json",
-      "sha256": "8f696752bead6cc4f1393bbe803cd00da830a754ae7efc6f5c8be8789edc126e"
+      "sha256": "2a544e83b02a5cfc17145a77e7b798f4524eca20218ae7b4bd301a070ae22442"
     },
     {
       "path": "clossys/agents/designer/frames.app-shell/candidates/app-shell-v1.json",
@@ -1507,7 +1507,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-shell/slot.json",
-      "sha256": "7c1d0bb5bec5110ed29ee04ed280f4a7393a54304f35a8e317b4cd4225290335"
+      "sha256": "81680be7400d57279223a818cfbc23eecb8120ed00064e9d915867844ae4ca0b"
     },
     {
       "path": "clossys/agents/designer/frames.app-sidebar/candidates/app-sidebar-v1.json",
@@ -1519,7 +1519,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-sidebar/slot.json",
-      "sha256": "248231942d2a1a8227609a274c2d92758ce863d590984d004c0bc48d7daa1ef5"
+      "sha256": "82cb0ffa75937ee1dafd17d402782c1a0e47dac44c0660105179ecf931c5860d"
     },
     {
       "path": "clossys/agents/designer/frames.auth-shell/candidates/auth-shell-v1.json",
@@ -1531,7 +1531,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.auth-shell/slot.json",
-      "sha256": "ad961097df33858639e8ae4df31f3de1ae5faadce4e82016394c21b44614e06b"
+      "sha256": "913e8f2e2f3e423e7e67cb6699d3ad3ce7ca1a4942766a999c778b4c215d4a2d"
     },
     {
       "path": "clossys/agents/designer/frames.command/candidates/command-v3.json",
@@ -1543,7 +1543,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.command/slot.json",
-      "sha256": "6e6a674a85aac299d8cb7ae6d38047f40761fd840697fe6aae3bb0520bbf66f3"
+      "sha256": "e1bdb8f6c02bea1ceb581145020fd7f8bb7005bdac056f4c6fc6d592f26e4267"
     },
     {
       "path": "clossys/agents/designer/frames.document/slot.json",
@@ -1559,7 +1559,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.inspector/slot.json",
-      "sha256": "23bd1d6d2528902d56d71264fa8ef0e2df341d38ac2377ebd51c30861f975259"
+      "sha256": "dbd7c925bf9f3a3c281c9df819657bfec701b52e5ee93e3a3a4656e7369ef514"
     },
     {
       "path": "clossys/agents/designer/frames.sheet/candidates/sheet-v3.json",
@@ -1571,7 +1571,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.sheet/slot.json",
-      "sha256": "73032f9436319314b5c982a139f2ae08ddf4fa7235c6a96ceba2e6f6bbd750e1"
+      "sha256": "d909e362ce33930269a0961d3c535cbb68686809ee51a815f977b12dce9c39cb"
     },
     {
       "path": "clossys/agents/designer/frames.site-footer/candidates/site-footer-v1.json",
@@ -1583,7 +1583,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.site-footer/slot.json",
-      "sha256": "08ba7e90aa82d3d269ad2c3c3ea7e7ada0171abfd3a3e698335e2ad2e6911c39"
+      "sha256": "08108e5bbc2134fc7594d0bae831b07b3ba4e1f04758408720863e71cad637b8"
     },
     {
       "path": "clossys/agents/designer/frames.site-header/candidates/site-header-v5.json",
@@ -1635,7 +1635,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.access-matrix/slot.json",
-      "sha256": "eeaa054b916dfc7e7b520b090b91b88eac658d67d94c1d665ae7e7df9ceede39"
+      "sha256": "c69f3b6c9616bdbae2537e6a944d67838f000ab2a9e0de59d5aac90864f33ccb"
     },
     {
       "path": "clossys/agents/designer/sections.account-summary/slot.json",
@@ -1651,7 +1651,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.activity-feed/slot.json",
-      "sha256": "7c1ec9fa736f5472dfe372889fd65437a2f74e38435c680c3f029bedc4947842"
+      "sha256": "e5e01a5590526079d1685359ccecc405bc38bfccd2bee7053fd756e344cd5e6b"
     },
     {
       "path": "clossys/agents/designer/sections.article/candidates/article-v1.json",
@@ -1675,7 +1675,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.audit-log/slot.json",
-      "sha256": "9e9c2c77a2a4969d79ea6a67ba18f585debda78847a8d3ec509da247bd6e4be3"
+      "sha256": "1d8df71070cc4d4ac951278a6776d0e6e489cd550c043e625235f9c7477a5738"
     },
     {
       "path": "clossys/agents/designer/sections.band/candidates/band-v3.json",
@@ -1711,7 +1711,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.call-to-action/slot.json",
-      "sha256": "ad6271ccd4178b947eada3da76379ed96bdc24f76ac60084537111781e3ac0f8"
+      "sha256": "6b692871acf44ab1fcf02d48480df9a79a5a9aedf3054060a8ee82cd5a9ab70b"
     },
     {
       "path": "clossys/agents/designer/sections.cards/slot.json",
@@ -1727,11 +1727,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.chat/slot.json",
-      "sha256": "30088ce88e5d1a1c5e37955f41ba967db9a5fd57dae630c5a53a141c6387c7d0"
+      "sha256": "38c6938ddfde831999e1d356c42e96dc4fa69dfd722e8c568e10f9bd2e397a40"
     },
     {
       "path": "clossys/agents/designer/sections.column-mapper/slot.json",
-      "sha256": "967b633b57ff7d3301cd3b5f97940cb71423e8cd127a4228af283ef6038a6f67"
+      "sha256": "03796acf9be3e8e6b32da58af395e37d05a79624dd27cbee46167bc0b05d375e"
     },
     {
       "path": "clossys/agents/designer/sections.comparison/candidates/comparison-v1.json",
@@ -1743,7 +1743,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.comparison/slot.json",
-      "sha256": "5ca7f432b98b9d17024de9a453bbccdb2e5aa736ec8770b8586c7b8759847e2a"
+      "sha256": "bc7e9373eacf06c9d94045218c0eafdd83ada9ee67e12322d74cf5eeac6fae5f"
     },
     {
       "path": "clossys/agents/designer/sections.consent/slot.json",
@@ -1759,7 +1759,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.content/slot.json",
-      "sha256": "5723f3809121bba92b80df32d8ce6defb00e896d8203fa6167b7e919019bb192"
+      "sha256": "517c38b9022e5efa08b22fa757c9efd1c155f334ed27e35a8441481b76d45c52"
     },
     {
       "path": "clossys/agents/designer/sections.data-grid/candidates/data-grid-v3.json",
@@ -1771,7 +1771,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-grid/slot.json",
-      "sha256": "169298958dfbb9ca14e171c9cafece3827b637e554d5b00d517b97d65edfb0d6"
+      "sha256": "aba492eb185459d7275124bcf2f1caa601ec76b0077e2f616bc0ac07419b51aa"
     },
     {
       "path": "clossys/agents/designer/sections.data-table/candidates/data-table-v3.json",
@@ -1783,7 +1783,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-table/slot.json",
-      "sha256": "7bdd3fce5e72d08da8dddbfb4079ae95a8a5f9a2f98cd6b44b1ec7dc89501efd"
+      "sha256": "84143556e3347b7a426b84ea50f30aae075ae0fce41a083600ed8fec382157ad"
     },
     {
       "path": "clossys/agents/designer/sections.empty-state/candidates/empty-state-v3.json",
@@ -1811,7 +1811,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.explorer/slot.json",
-      "sha256": "7be657a55306a4143abde6eec943e5a56f14f5ff388b4c039aa76adeece64a6a"
+      "sha256": "31f09ecfce37088abaa74656b37a03e7b49302f8a3bf954da66e2ec086ac085d"
     },
     {
       "path": "clossys/agents/designer/sections.faq/candidates/faq-v1.json",
@@ -1823,7 +1823,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.faq/slot.json",
-      "sha256": "4b7245b4f4ccc4fc8c57814dbea92fa2bf2862c5fe035f3b2c3710e91281ae03"
+      "sha256": "9dfda7055247a62e155889dda2f4df054a0e9bb52521dc1f1309eaebbab0c930"
     },
     {
       "path": "clossys/agents/designer/sections.features/candidates/features-v2.json",
@@ -1839,7 +1839,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.filter-builder/slot.json",
-      "sha256": "9e42249386af20b16072a53775d5a5de4255a4780a21c2971f646d1be343ab14"
+      "sha256": "4840c3d2d5f44d3baf4571fcb5a7f917fda5502e7a01361b2ab5958db7d825f6"
     },
     {
       "path": "clossys/agents/designer/sections.form/candidates/form-v1.json",
@@ -1851,7 +1851,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.form/slot.json",
-      "sha256": "755a42e6ee357fc9d6c5728d55a839b1d40c215710adfb926c5f5e90412ea54f"
+      "sha256": "5641eb4d0290cf732fa7658a33866865d43a51f2009eb189ae71e8a4a7125d4c"
     },
     {
       "path": "clossys/agents/designer/sections.gallery/candidates/gallery-v1.json",
@@ -1875,7 +1875,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.hero/slot.json",
-      "sha256": "13932a44e1814930ed8504c5a36aeb457d6407ad0d7d91232d8aec90b2a5ca0e"
+      "sha256": "44cbc526b3c66b782a14e4c3424e86f2b6948572d1a3c556578d16053f65c683"
     },
     {
       "path": "clossys/agents/designer/sections.legal-prose/candidates/legal-prose-v1.json",
@@ -1915,7 +1915,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.logo-hero/slot.json",
-      "sha256": "008d271c3a823dbb2f0c0153a5148219c983c030e0058457bd11c272d69f98ba"
+      "sha256": "ac3fb1e6091d48e4c5469afd5f97490349cb37dcb39d0f4f7f48c2129c9fc80e"
     },
     {
       "path": "clossys/agents/designer/sections.logo-mark/slot.json",
@@ -2071,7 +2071,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.record-detail/slot.json",
-      "sha256": "c534e8cc2898eaeea9c399084dfd80a7c6a377b4e15e8447fc07167c860e42bb"
+      "sha256": "d58e8a925f22bbd0a15ae25d719b0602d0ed1f98dc6a471f81114e0b69b6b53c"
     },
     {
       "path": "clossys/agents/designer/sections.resource-list/candidates/resource-list-v3.json",
@@ -2083,7 +2083,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.resource-list/slot.json",
-      "sha256": "69d1e54be1f5320a925ed47a0a689608deacc480dfbcb39f2e4955359f3e605d"
+      "sha256": "8d1e6743c5e4f5a58d91580310cc6b906322d7bc60830de08a0860c9aae7054e"
     },
     {
       "path": "clossys/agents/designer/sections.section-header/candidates/section-header-v6.json",
@@ -2107,7 +2107,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.sectioned-document/slot.json",
-      "sha256": "d84ab6cea1cdd3ca8dadb8b8f755825f4b1256f4072895b009bcd7a6169252c2"
+      "sha256": "257d52d9f6675eac477a7ec3fdd316fc86620681d84eb25fbf41d6dc77903448"
     },
     {
       "path": "clossys/agents/designer/sections.settings/candidates/settings-v1.json",
@@ -2119,7 +2119,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.settings/slot.json",
-      "sha256": "971834b517aad804f84a264fd7a0ce79909d58160ce8740eca17c2c64b233862"
+      "sha256": "f9ca4a3b9d97d035cfdf5fc4140d317eb9cc94415bb8910bb6e0e9702e6c807b"
     },
     {
       "path": "clossys/agents/designer/sections.sign-in-form/candidates/sign-in-form-v1.json",
@@ -2131,7 +2131,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.sign-in-form/slot.json",
-      "sha256": "50375aa0103d76f1013e0b74fc199a72f25fe7b8c4c6b53e1b51e98f0b70638d"
+      "sha256": "85f343cce968e82c6c2aa69a6f43c97d476a8f5ae66ae2071c3297a5db2bb1cd"
     },
     {
       "path": "clossys/agents/designer/sections.specimen-asset-grid/candidates/specimen-asset-grid-v3.json",
@@ -2311,7 +2311,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.stats/slot.json",
-      "sha256": "2fcb453b6bae9b73f58a0c3ffd192ccc75def9bd7e9607f0c04e15c7e376efcf"
+      "sha256": "7f98acc89f1210ea14f913cad2a58ce577cbd0215b78d2a177d51b2423070079"
     },
     {
       "path": "clossys/agents/designer/sections.status-list/candidates/status-list-v3.json",
@@ -2487,7 +2487,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.task-list/slot.json",
-      "sha256": "c832081b40c084ccab8631ea4cd578b14adcfb83ba5256a04142f32ff2b12edc"
+      "sha256": "afc92c39a8306f5972d7043cda6d4d03032b2761a71311c55eece04b42b8847e"
     },
     {
       "path": "clossys/agents/designer/sections.testimonials/candidates/testimonials-v1.json",
@@ -2503,7 +2503,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.timeline/slot.json",
-      "sha256": "b1ee33c1523edbb4cafe0b0a023ad27dad3c8b0e851b0b34fd069653519a7733"
+      "sha256": "3eb7ba045a69260f0749e35eba78615e3850f24d246e09bb283aa08f822b993f"
     },
     {
       "path": "clossys/agents/designer/sections.usage/candidates/usage-v3.json",
@@ -2515,11 +2515,11 @@
     },
     {
       "path": "clossys/agents/designer/sections.usage/slot.json",
-      "sha256": "19caeccf3a2af3d6eb272813d897dcc063bab11655b5628a1d6b9d97717a4771"
+      "sha256": "d1ed5571bb53bbc3a563d9a24298227ea6f7535e6e9309cb3389686429ffff74"
     },
     {
       "path": "clossys/agents/designer/sections.wizard/slot.json",
-      "sha256": "8e6aaecb8b4cc31972dc14f492d5772430a6a35c64f19147f38e29ed7a0320ef"
+      "sha256": "aac170e14d1edb378e57881b443dd30f6e0797a82e4741a16103c05f936d411b"
     },
     {
       "path": "clossys/agents/designer/themes.accent-foreground/candidates/accent-foreground-v1.json",
@@ -2551,7 +2551,7 @@
     },
     {
       "path": "clossys/agents/designer/themes.animate-marquee/slot.json",
-      "sha256": "4afb86e68cf30e6667a794d3e59df3c189f306a1f5ee299002b69692cd94a01f"
+      "sha256": "baaf0514ef494a26e5d3b30fe6313db94c026f6ae12f61a764c62778472e9f48"
     },
     {
       "path": "clossys/agents/designer/themes.animate-shiny-text/slot.json",

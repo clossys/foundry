@@ -169,11 +169,15 @@ describe("SYNTHETIC component code generation; no shipped conformance claims", (
       'const text = "R.missing R[key]"; const template = `R.missing R[key]`; function Part() { return <div title="R.missing">R.missing</div>; }',
       'const Part = (props: R.ComponentProps<"div">) => props;',
       'function Part<T extends R.ElementType = R.ElementType>(props: R.ComponentProps<T>) { return null; }',
+      // An indexed access type (stock shadcn command.tsx) is still a type.
+      'function Part({ dir }: R.ComponentProps<"div"> & { dir?: R.HTMLAttributes<HTMLDivElement>["dir"] }) { return dir; }',
+      'type Dir = R.HTMLAttributes<HTMLDivElement>["dir"][];',
     ]) expect(() => assertComponentImportClosure(file(content), { react: [] })).not.toThrow();
     for (const content of [
       'type Props = R.ComponentProps<"div">; const value: Props = R.missing();',
       'function Part(props: R.ComponentProps<"div"> = R.missing()) { return props; }',
       'function Part(props: R.ComponentProps<"div">) { return R.Missing; }',
+      'function Part({ dir }: { dir?: R.HTMLAttributes<HTMLDivElement>["dir"] }) { return R.Missing; }',
       'type Value = typeof R.Missing;',
       'const data = { value: R.Missing };',
       'const text = "/*"; R.missing(); const end = "*/";',

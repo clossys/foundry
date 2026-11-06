@@ -20,7 +20,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 | --- | --- | ---: |
 | Actions | Buttons, Menus, Toolbars | 7 |
 | Inputs | Form, Text, Choice, Tags, Number, Date, Color, Files | 18 |
-| Display | Data, Labels, Media, Assets, Core charts, Compact charts, Analytic charts, Content | 20 |
+| Display | Data, Labels, Media, Assets, Core charts, Compact charts, Analytic charts, Content | 22 |
 | Feedback | Messages, Indicators, Progress | 7 |
 | Navigation | Links, Panels, Trees | 5 |
 | Containment | Structure, Overlays | 9 |
@@ -1034,7 +1034,7 @@ Web implementation: `@clossys/designer/components` → `ProgressBar`. Source: `s
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-accent` (transitive): `styles/theme-keys.css`: `--color-accent:`; consumed via `src/components/ProgressBar.tsx`: `bg-accent`.
+- `--color-surface-sunken` (transitive): `styles/theme-keys.css`: `--color-surface-sunken:`; consumed via `src/components/ProgressBar.tsx`: `bg-surface-sunken`.
 
 ##### `inform.skeleton` — Skeleton
 
@@ -1227,7 +1227,6 @@ Web implementation: `@clossys/designer/components` → `ResizeHandle`. Source: `
 Token dependency coverage: partial. Representative consumed target, edge and native focus-color tokens; not an exhaustive generated utility inventory.
 - `--ui-layout-tap-target` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-layout-tap-target, 44px)`; consumed via `src/components/ResizeHandle.tsx`: `minWidth: UI_LAYOUT_TAP_TARGET`.
 - `--ui-border-hairline` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-border-hairline, 1px)`; consumed via `src/components/ResizeHandle.tsx`: `borderWidth: UI_BORDER_HAIRLINE`.
-- `--color-accent` (transitive): `styles/theme-keys.css`: `--color-accent:`; consumed via `src/components/ResizeHandle.tsx`: `focus-visible:outline-accent`.
 
 ##### `group.card` — Card
 

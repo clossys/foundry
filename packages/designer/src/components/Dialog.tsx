@@ -1,7 +1,11 @@
 import type { CSSProperties, ReactNode } from "react";
 import {
   Dialog as AriaDialog,
+  DialogContext,
   DialogTrigger,
+  ModalContext,
+  PopoverContext,
+  useLocale,
   Heading as AriaHeading,
   Modal,
   ModalOverlay,
@@ -200,3 +204,25 @@ function DialogHeading({ children, className, level = 2, ...rest }: DialogHeadin
 }
 
 export const Dialog = Object.assign(DialogRoot, { Heading: DialogHeading });
+
+/** The locale and reading direction the engine resolves for this subtree, for a frame that stamps them on its root. */
+export function useOverlayLocale(): { readonly locale: string; readonly direction: "ltr" | "rtl" } {
+  return useLocale();
+}
+
+/**
+ * Hands a frame's reading direction to every modal and popover it opens: overlays
+ * portal outside the frame root, so they would otherwise miss the root's `dir`.
+ */
+export function OverlayDirection({ dir, children }: { readonly dir: "ltr" | "rtl"; readonly children: ReactNode }) {
+  return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>{children}</PopoverContext.Provider></ModalContext.Provider>;
+}
+
+/**
+ * Names the next dialog and gives its modal the page direction and language: a
+ * disclosure that controls a sheet points `aria-controls` at this id before the
+ * sheet mounts.
+ */
+export function DialogTarget({ id, dir, lang, children }: { readonly id: string; readonly dir: "ltr" | "rtl"; readonly lang: string; readonly children: ReactNode }) {
+  return <ModalContext.Provider value={{ dir, lang }}><DialogContext.Provider value={{ id }}>{children}</DialogContext.Provider></ModalContext.Provider>;
+}

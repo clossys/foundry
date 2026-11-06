@@ -3,6 +3,7 @@ import { INSPECTOR_DOCK_QUERY } from "./right-panel-config.js";
 import { cx } from "../components/internal/cx.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
+import { GROUND_PAINT } from "../components/Card.js";
 
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
@@ -70,6 +71,6 @@ export function InspectorFrame({ label, handleLabel, closeLabel, openLabel, pres
     trigger={<Button variant="secondary" size="sm" aria-expanded={open}>{openLabel}</Button>}>{children}</Drawer>;
   return <SemanticContent as="aside" {...FRAME_STAMP} aria-label={label} hidden={isCollapsed} data-collapsed={isCollapsed} className={cx("hidden h-full min-h-0 shrink-0 tablet:block", className)}>
     {isCollapsed ? null : <ResizablePane min={min} max={max} defaultValue={defaultValue} value={value} step={step} label={label} handleLabel={handleLabel}
-      handleEdge="start" onChange={onChange} className="h-full min-h-0 rounded-none border-0 border-s border-line-base p-sm">{children}</ResizablePane>}
+      handleEdge="start" onChange={onChange} className={"h-full min-h-0 rounded-none border-0 border-s p-frame-panel " + GROUND_PAINT.page.border}>{children}</ResizablePane>}
   </SemanticContent>;
 }

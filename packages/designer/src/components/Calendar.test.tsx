@@ -81,7 +81,7 @@ describe("Foundry Calendar", () => {
     const cell = screen.getAllByRole("button").find(el => el.getAttribute("data-today") === "true");
     expect(cell).toBeDefined();
     expect(cell).toHaveTextContent(String(now.day));
-    expect(classes(cell!)).toEqual(expect.arrayContaining(["text-accent", "font-semibold"]));
+    expect(classes(cell!)).toEqual(expect.arrayContaining(["text-primary", "font-semibold"]));
   });
 
   it("disabled days (outside minValue/maxValue) are dimmed and cannot be selected", async () => {

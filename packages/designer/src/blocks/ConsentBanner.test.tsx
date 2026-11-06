@@ -506,11 +506,12 @@ describe("CONSENT-1 card geometry matches the signed-off reference", () => {
     const card = consentCardUtility();
     expect(cardDeclaration(card, "position")).toBe("fixed");
     expect(cardDeclaration(card, "z-index")).toBe("var(--ui-z-notice, 40)");
-    const shell = readFileSync(resolve(import.meta.dirname, "..", "shell", "internal", "shell-vars.ts"), "utf8");
-    expect(shell).toContain('export const UI_Z_SHELL = "var(--ui-z-shell, 20)"');
+    // The shell chrome stacks through the layer-shell theme-keys utility over --ui-z-shell.
+    const keys = readFileSync(resolve(import.meta.dirname, "..", "..", "styles", "theme-keys.css"), "utf8");
+    expect(keys).toContain("@utility layer-shell { z-index: var(--ui-z-shell, 20); }");
     for (const shellFile of ["SiteFooter.tsx", "SiteHeader.tsx"]) {
       const source = readFileSync(resolve(import.meta.dirname, "..", "shell", shellFile), "utf8");
-      expect(source, shellFile).toMatch(/zIndex: UI_Z_SHELL/);
+      expect(source, shellFile).toMatch(/"[^"]*\blayer-shell\b[^"]*"/);
     }
     expect(tokenValue("--ui-z-notice")).toBeGreaterThan(tokenValue("--ui-z-shell"));
     expect(tokenValue("--ui-z-notice")).toBeGreaterThan(tokenValue("--ui-z-sticky"));

@@ -10,10 +10,22 @@ type CrossReference = { node: string; leaves: string[] };
 type WithReferences = Placement & { crossReferences?: CrossReference[] };
 
 const fixtures = [tokens, assets, components, sections, frames];
-const counts = { themes: [6, 11, 42], assets: [4, 10, 49], components: [6, 27, 66], sections: [6, 23, 51], frames: [3, 9, 11] };
+// G6 (GATES-RED round 4): the restore checks compare against the owner-signed tree, not a stale
+// literal. The owner re-sign of 2026-11-02 (leaf-freeze.test.ts) signs 236 canonical leaves;
+// the build catalog measured before any mutation must be that tree, and every guarded
+// mutation below must leave it exactly as loaded.
+const OWNER_SIGNED_LEAVES = 236;
+const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
+// Group/family/leaf counts of the committed IA trees (components and sections re-measured in GATES-RED round 4;
+// both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too).
+const counts = { themes: [6, 11, 42], assets: [4, 10, 49], components: [6, 27, 68], sections: [7, 24, 66], frames: [3, 9, 11] };
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {
+  it("loads the owner-signed build catalog", () => {
+    expect(BUILD_SLOTS).toHaveLength(OWNER_SIGNED_LEAVES);
+    expect(new Set(BUILD_SLOTS).size).toBe(OWNER_SIGNED_LEAVES);
+  });
   for (const input of fixtures) {
     const placement = input as unknown as Placement;
     const layer = placement.layer;
@@ -54,7 +66,7 @@ describe("IA1 exact three levels and IA2 unmixed nodes", () => {
         expect(() => loadBuildCatalog()).toThrow("IA1");
         if (layer === "themes" || layer === "assets") expect(() => loadCatalog()).toThrow("IA1");
       } finally { Object.assign(input, { nodes: original }); }
-      expect(loadBuildCatalog().slots).toHaveLength(233);
+      expect(loadBuildCatalog().slots.map(slot => slot.id)).toEqual(BUILD_SLOTS);
     });
   }
 
@@ -130,6 +142,6 @@ describe("owner-signed IA moves (ledger #44, 2026-10-26)", () => {
       if (had) Object.assign(assets, { crossReferences: original });
       else delete (assets as WithReferences).crossReferences;
     }
-    expect(loadBuildCatalog().slots).toHaveLength(233);
+    expect(loadBuildCatalog().slots.map(slot => slot.id)).toEqual(BUILD_SLOTS);
   });
 });

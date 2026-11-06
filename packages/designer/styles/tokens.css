@@ -570,7 +570,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   /* ════════════════════════════════════════════════════════════════
    * UI · RING (2 · focus + on-inverse rings — no Tailwind namespace)
    * ════════════════════════════════════════════════════════════════ */
-  --ui-ring-focus:                0 0 0 2px var(--color-accent, oklch(0.4748 0 0));
+  --ui-ring-focus:                0 0 0 2px var(--color-action, #0A0A0A);
   --ui-ring-on-inverse:           0 0 0 2px var(--color-focus-ring-on-inverse, oklch(0.9702 0 0));
 
   /* ════════════════════════════════════════════════════════════════
@@ -636,7 +636,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
   --ui-control-switch-thumb: 14px;
   --ui-border-focus: 2px;
   --ui-focus-offset: 2px;
-  --color-focus-ring: var(--color-accent, oklch(0.4748 0 0));
+  --color-focus-ring: var(--color-action, #0A0A0A);
   --color-focus-ring-on-inverse: var(--color-ink-on-inverse, oklch(0.9702 0 0));
   --ui-z-skip-link: 100;
   --ui-motion-shift: 4px;
@@ -873,7 +873,7 @@ html:not([data-brand-bound]):not([data-suppress-brand-banner])::before {
  * never visible. Lets `assertTokenStylesLoaded`
  * (`@clossys/designer/tokens`) tell, at runtime, whether THIS file was
  * actually imported: without it, every class this package's components
- * render (`bg-accent`, `text-ink-primary`, ...) is a Tailwind utility
+ * render (`bg-primary`, `text-ink-primary`, ...) is a Tailwind utility
  * that resolves to nothing, and every component renders unstyled with no
  * error anywhere to explain why — see the README's Setup section, and
  * this package's own README line this issue (#182) quotes verbatim.

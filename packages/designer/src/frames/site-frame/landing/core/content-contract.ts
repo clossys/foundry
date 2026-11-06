@@ -17,7 +17,7 @@ export const SECTIONED_VIEW_CONTENT_CONTRACT = Object.freeze({
   columnOptions: Object.freeze([2, 3] as const),
   rowColumnOptions: Object.freeze([1, 2] as const),
   prose: Object.freeze({ paragraphs: 8, linksPerParagraph: 6, spansPerParagraph: 24, charactersPerParagraph: 1200 }),
-  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12 }),
+  counts: Object.freeze({ columns: Object.freeze([2, 6] as const), groups: Object.freeze([2, 4] as const), groupItems: Object.freeze([2, 4] as const), laneDefinitions: 2, columns2: Object.freeze([2, 4, 6]), columns3: Object.freeze([3, 6]), rows: Object.freeze([2, 8] as const), bento: Object.freeze([2, 6] as const), stacked: Object.freeze([2, 4] as const), connected: Object.freeze([3, 5] as const), disclose: Object.freeze([4, 6] as const), matrix: 2, points: Object.freeze([2, 4] as const), linked: 6, rowUnits: 12, specimenFields: Object.freeze([1, 2, 4] as const), specimenTableFields: 4, specimenPanelParts: 3 }),
 });
 export type FrameSize = typeof SECTIONED_VIEW_CONTENT_CONTRACT.sizes[number];
 export type FrameLayout = typeof SECTIONED_VIEW_CONTENT_CONTRACT.layouts[number];

@@ -77,10 +77,10 @@ export function resolveSurfaces(input: CompositeEngineInput, profile: CompositeR
             const slot = provenance.registration.contract;
             if (!slot)
                 add("S1", entry.slot, "authored contract missing");
-            else
-                for (const message of contractFindings(slot, entry as Parameters<typeof contractFindings>[1], origin.pin))
-                    add(/^S[1-8]/.test(message) ? message.slice(0, 2) as SurfaceFinding["code"] : "S5", entry.slot, message.replace(/^S[1-8] /, ""));
             const evidence = options.packages.filter(row => row.module === entry.impl.module && row.version === origin.pin.version && row.values.includes(entry.impl.export));
+            if (slot)
+                for (const message of contractFindings(slot, entry as Parameters<typeof contractFindings>[1], origin.pin, evidence.length === 1 ? evidence[0]!.consumption?.[entry.impl.export] : undefined))
+                    add(/^S[1-8]/.test(message) ? message.slice(0, 2) as SurfaceFinding["code"] : "S5", entry.slot, message.replace(/^S[1-8] /, ""));
             if (evidence.length !== 1)
                 add("S4", entry.slot, "package export evidence missing or differs");
             else

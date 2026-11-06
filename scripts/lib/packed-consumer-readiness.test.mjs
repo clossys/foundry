@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readdir, readFile, realpath, rm, symlink, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, posix, relative } from "node:path";
 import test from "node:test";
+import { pathToFileURL } from "node:url";
 
 import {
   BY_DESIGN_REFUSALS,
@@ -77,10 +78,14 @@ test("real npm cannot normalize later uppercase overrides back into the credenti
   const hostileGlobalNpmrc = join(root, "ambient-global.npmrc");
   const cache = join(root, "cache");
   await mkdir(cache);
-  await writeFile(npmrc, "registry=https://registry.npmjs.org/\n");
-  await writeFile(globalNpmrc, "");
-  await writeFile(hostileNpmrc, "registry=https://example.invalid/user/\n");
-  await writeFile(hostileGlobalNpmrc, "registry=https://example.invalid/global/\n");
+  // Each file carries a marker only it sets, so the value npm resolves names
+  // the file it actually loaded. npm 11 refuses `npm config get userconfig`
+  // and `globalconfig` ("protected"), so the files are proven by what npm
+  // read from them, not by echoing the path back.
+  await writeFile(npmrc, "registry=https://registry.npmjs.org/\ninit-author-name=isolated-user\n");
+  await writeFile(globalNpmrc, "init-license=isolated-global\n");
+  await writeFile(hostileNpmrc, "registry=https://example.invalid/user/\ninit-author-name=ambient-user\n");
+  await writeFile(hostileGlobalNpmrc, "registry=https://example.invalid/global/\ninit-license=ambient-global\n");
 
   const env = credentiallessEnv({
     PATH: process.env.PATH,
@@ -94,13 +99,20 @@ test("real npm cannot normalize later uppercase overrides back into the credenti
 
   for (const [key, expected] of [
     ["registry", "https://registry.npmjs.org/"],
-    ["userconfig", npmrc],
-    ["globalconfig", globalNpmrc],
+    ["init-author-name", "isolated-user"],
+    ["init-license", "isolated-global"],
   ]) {
     const result = await runProcess("npm", ["config", "get", key], { cwd: root, env });
     assert.equal(result.exitCode, 0, result.stderr);
     assert.equal(result.stdout.trim(), expected);
   }
+  // npm's own origin headers name the loaded user and global files. Matched
+  // by file name: npm masks id-shaped path segments (a session-id TMPDIR).
+  const listed = await runProcess("npm", ["config", "list"], { cwd: root, env });
+  assert.equal(listed.exitCode, 0, listed.stderr);
+  const origins = Object.fromEntries([...listed.stdout.matchAll(/^; "(user|global)" config from (.+)$/gm)].map((match) => [match[1], match[2].trim()]));
+  assert.ok(origins.user?.endsWith("/isolated.npmrc"), listed.stdout);
+  assert.ok(origins.global?.endsWith("/isolated-global.npmrc"), listed.stdout);
 });
 
 test("the CLI is closed and exposes no probe that can weaken a failure", () => {
@@ -363,9 +375,14 @@ test("actual shipped ref-verbatim source imports without any optional UI peer", 
   const packageRoot = join(root, "node_modules", manifest.name);
   // Exact shipped source bytes, with no dist build or packed-artifact claim.
   // Importing this entry does not invoke the verifier's lazy TypeScript API.
-  const sources = ["scripts/check-ref-verbatim.mjs", ...[
-    "normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only", "flavor",
-  ].map((name) => `scripts/ref-verbatim/${name}.mjs`)];
+  // The copied set is the entry's static relative-import graph, and every
+  // file in it must be shipped by `files`: a hand list once missed
+  // scripts/slot-pins.mjs, which the published tarball then lacked.
+  const sources = await relativeImportGraph(sourceRoot, exported.import.replace(/^\.\//, ""));
+  assert.ok(sources.includes("scripts/slot-pins.mjs"));
+  for (const source of sources) assert.ok(shippedByFiles(manifest.files, source), `${source} is imported by ${specifier} but not shipped by files`);
+  // Every module the hand list named must still be in the shipped graph.
+  for (const name of ["normalize", "data-fit", "adaptations", "diff", "typescript", "ds-only", "flavor"]) assert.ok(sources.includes(`scripts/ref-verbatim/${name}.mjs`), name);
   for (const source of sources) {
     await mkdir(dirname(join(packageRoot, source)), { recursive: true });
     await writeFile(join(packageRoot, source), await readFile(join(sourceRoot, source)));
@@ -387,7 +404,47 @@ test("actual shipped ref-verbatim source imports without any optional UI peer", 
   assert.equal(result.timedOut, false);
   assert.equal(result.launchError, undefined);
   for (const peer of peers) assert.equal(OPTIONAL_PEER_POLICY[manifest.name][peer][specifier], "imports", peer);
+  // Pin reading needs the Producer slot reader; without it, it fails by name, not at import.
+  const pins = await runProcess(process.execPath, ["--input-type=module", "--eval", `
+    const { designerSlotRecords } = await import(${JSON.stringify(pathToFileURL(join(packageRoot, "scripts/slot-pins.mjs")).href)});
+    try { designerSlotRecords(process.cwd()); process.exit(1); }
+    catch (error) { if (!error.message.includes("install @clossys/producer")) throw error; }
+  `], { cwd: root, env });
+  assert.equal(pins.exitCode, 0, pins.stderr);
 });
+
+test("the ref-verbatim import graph check catches a file files does not ship", () => {
+  assert.equal(shippedByFiles(["scripts/ref-verbatim", "scripts/check-ref-verbatim.mjs"], "scripts/ref-verbatim/diff.mjs"), true);
+  assert.equal(shippedByFiles(["scripts/ref-verbatim", "scripts/check-ref-verbatim.mjs"], "scripts/slot-pins.mjs"), false);
+  assert.equal(shippedByFiles(["scripts/ref-verbatim", "!scripts/**/*.test.*"], "scripts/ref-verbatim/diff.test.mjs"), false);
+  assert.equal(shippedByFiles(["scripts"], "../producer/dist/records/slots.js"), false);
+});
+
+const RELATIVE_IMPORT = /(?:^|[\s;])(?:import|export)\s[^'"]*?from\s*["'](\.{1,2}\/[^"']+)["']|(?:^|[\s;])import\s*["'](\.{1,2}\/[^"']+)["']/g;
+async function relativeImportGraph(packageRoot, entry) {
+  const seen = new Set();
+  const queue = [entry];
+  while (queue.length) {
+    const file = queue.shift();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    const text = await readFile(join(packageRoot, file), "utf8");
+    for (const match of text.matchAll(RELATIVE_IMPORT)) {
+      const target = posix.normalize(posix.join(posix.dirname(file), match[1] ?? match[2]));
+      // A specifier that leaves the package can never be shipped; record it so the files check refuses it.
+      queue.push(target);
+    }
+  }
+  return [...seen].sort();
+}
+
+function shippedByFiles(files, path) {
+  if (path.startsWith("../") || relative(".", path).startsWith("..")) return false;
+  const negated = files.filter((entry) => entry.startsWith("!")).map((entry) => entry.slice(1));
+  const testGlob = (glob) => new RegExp(`^${glob.split("**/").map((part) => part.split("*").map((piece) => piece.replace(/[.+?^${}()|[\]\\]/g, "\\$&")).join("[^/]*")).join("(?:.*/)?")}$`);
+  if (negated.some((glob) => testGlob(glob).test(path))) return false;
+  return files.filter((entry) => !entry.startsWith("!")).some((entry) => path === entry || path.startsWith(`${entry}/`));
+}
 
 test("registered-route-check requires distinct browser/default outcomes and a browser marker", async () => {
   const packages = await discoverPublishablePackages(process.cwd());

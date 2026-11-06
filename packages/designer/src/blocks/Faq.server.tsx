@@ -42,7 +42,7 @@ export const FAQ_ROW_CLASSES = {
   list: "flex flex-col border-t",
   item: "group/faq block border-b",
   trigger:
-    "flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent summary-marker-none",
+    "flex w-full cursor-pointer items-center justify-between gap-lg rounded-default py-lg text-start text-body-l font-medium tablet:py-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary summary-marker-none",
   details: "details-motion",
   panel: "disclosure-panel-motion",
   chevron: "shrink-0 disclosure-icon-motion",

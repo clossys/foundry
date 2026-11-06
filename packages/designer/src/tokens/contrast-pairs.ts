@@ -67,7 +67,7 @@
  *   - `--color-skeleton-fill` — a loading placeholder's shimmer; by
  *     definition nothing is there yet to read.
  *   - `--ui-ring-focus` / `--ui-ring-on-inverse` — each is a COMPOSITE
- *     `box-shadow`-shaped value (`"0 0 0 2px var(--color-accent, ...)"`),
+ *     `box-shadow`-shaped value (`"0 0 0 2px var(--primary, ...)"`),
  *     not a bare parseable color `color.ts` can score on its own (see
  *     `internal/resolve-token-value.ts`'s "WHAT COUNTS AS A WHOLE-VALUE
  *     ALIAS" for why this walker does not reach into a value like that).

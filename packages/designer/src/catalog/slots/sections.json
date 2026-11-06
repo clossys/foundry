@@ -1062,7 +1062,8 @@
         "components.checkbox",
         "components.tooltip",
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -1437,7 +1438,8 @@
         "components.avatar",
         "components.badge",
         "components.link",
-        "components.icon"
+        "components.icon",
+        "components.semantic-content"
       ],
       "composes": [
         "sections.empty-state"
@@ -1886,7 +1888,8 @@
       "allowedComposes": [
         "components.table",
         "components.search-field",
-        "components.date-picker"
+        "components.date-picker",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -2359,7 +2362,8 @@
       "allowedComposes": [
         "components.button",
         "components.link",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.card"
       ],
       "parts": [
         "sections.band",
@@ -2787,7 +2791,9 @@
         "components.avatar",
         "components.spinner",
         "components.link",
-        "components.tooltip"
+        "components.tooltip",
+        "components.semantic-content",
+        "components.icon"
       ],
       "parts": [
         "sections.band",
@@ -2945,7 +2951,9 @@
       "allowedComposes": [
         "components.select",
         "components.table",
-        "components.badge"
+        "components.badge",
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -3120,7 +3128,8 @@
         "components.button",
         "components.dialog",
         "components.menu",
-        "components.link"
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -3711,7 +3720,9 @@
         "components.checkbox",
         "components.dialog",
         "components.icon",
-        "components.popover"
+        "components.popover",
+        "components.semantic-content",
+        "components.tag-group"
       ],
       "parts": [
         "sections.band",
@@ -3966,7 +3977,9 @@
         "components.status-mark",
         "components.tooltip",
         "components.link",
-        "components.skeleton"
+        "components.skeleton",
+        "components.semantic-content",
+        "components.tag-group"
       ],
       "parts": [
         "sections.band",
@@ -4532,7 +4545,9 @@
         "components.breadcrumbs",
         "components.resize-handle",
         "components.button",
-        "components.icon"
+        "components.icon",
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4687,7 +4702,8 @@
         ]
       },
       "allowedComposes": [
-        "components.disclosure"
+        "components.disclosure",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -4966,7 +4982,9 @@
         "components.date-picker",
         "components.button",
         "components.tag-group",
-        "components.text-field"
+        "components.text-field",
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -5193,7 +5211,9 @@
         "components.banner",
         "components.checkbox",
         "components.combo-box",
-        "components.select"
+        "components.select",
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -5570,7 +5590,8 @@
       "allowedComposes": [
         "components.button",
         "components.link",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.media-player"
       ],
       "parts": [
         "sections.band",
@@ -5612,7 +5633,8 @@
         ],
         "assets": [
           "assets.image-ratio",
-          "assets.image"
+          "assets.image",
+          "assets.pattern"
         ]
       },
       "data": "host-injected",
@@ -6126,7 +6148,8 @@
         ]
       },
       "allowedComposes": [
-        "components.logo"
+        "components.logo",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band"
@@ -7437,7 +7460,8 @@
         "components.skeleton",
         "components.button",
         "components.link",
-        "components.disclosure"
+        "components.disclosure",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -7674,7 +7698,9 @@
         "components.menu",
         "components.checkbox",
         "components.button",
-        "components.skeleton"
+        "components.skeleton",
+        "components.semantic-content",
+        "components.icon"
       ],
       "composes": [
         "sections.empty-state"
@@ -8056,10 +8082,25 @@
           "landmark.none"
         ]
       },
-      "allowedComposes": [],
+      "allowedComposes": [
+        "components.avatar",
+        "components.badge",
+        "components.card",
+        "components.disclosure",
+        "components.icon",
+        "components.link",
+        "components.semantic-content",
+        "components.status-mark"
+      ],
       "parts": [],
       "allowedReads": {
-        "themes": [],
+        "themes": [
+          "themes.accent",
+          "themes.background",
+          "themes.font-mono",
+          "themes.primary",
+          "themes.primary-foreground"
+        ],
         "assets": []
       },
       "data": "host-injected",
@@ -8068,7 +8109,13 @@
       "copy": {
         "sourceLocale": "en",
         "fields": []
-      }
+      },
+      "composes": [
+        "sections.content",
+        "sections.media",
+        "sections.pricing",
+        "sections.section-header"
+      ]
     },
     "requires": [],
     "status": "draft"
@@ -8109,7 +8156,8 @@
         "components.switch",
         "components.select",
         "components.button",
-        "components.toast"
+        "components.toast",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -8517,7 +8565,10 @@
       },
       "allowedComposes": [
         "components.text-field",
-        "components.button"
+        "components.button",
+        "components.form",
+        "components.link",
+        "components.semantic-content"
       ],
       "parts": [],
       "allowedReads": {
@@ -8585,7 +8636,9 @@
       },
       "allowedComposes": [
         "components.chart-sparkline",
-        "components.meter"
+        "components.meter",
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -9293,7 +9346,10 @@
         "components.avatar",
         "components.badge",
         "components.icon",
-        "components.status-mark"
+        "components.status-mark",
+        "components.link",
+        "components.meter",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -9672,7 +9728,9 @@
         "names": []
       },
       "allowedComposes": [
-        "components.separator"
+        "components.separator",
+        "components.card",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",
@@ -9803,7 +9861,8 @@
       "allowedComposes": [
         "components.meter",
         "components.progress-bar",
-        "components.status-mark"
+        "components.status-mark",
+        "components.semantic-content"
       ],
       "composes": [
         "sections.empty-state"
@@ -10048,7 +10107,8 @@
       "allowedComposes": [
         "components.form",
         "components.progress-bar",
-        "components.button"
+        "components.button",
+        "components.semantic-content"
       ],
       "parts": [
         "sections.band",

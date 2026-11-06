@@ -30,9 +30,16 @@ it("renders AppFrame and FrameDock chrome with only pseudo-resolved words", () =
   expect(within(dock as HTMLElement).getByRole("button", { name: "[[st.322g37gnhz]]" })).toBeTruthy();
 });
 it("binds exactly the packet's 25 existing records without importing Writer at runtime or changing draft state", () => {
-  const packet = JSON.parse(readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), "../../../writer/src/catalog/records/admin-voice.r1.en.json"), "utf8"));
+  const records = resolve(dirname(fileURLToPath(import.meta.url)), "../../../writer/src/catalog/records");
+  const read = (name: string) => JSON.parse(readFileSync(resolve(records, name), "utf8"));
+  const packet = read("admin-voice.r1.en.json");
+  // A record the packet declares external is owned by its named Writer source packet; follow it there.
+  const record = (id: string) => {
+    const external = packet.externalRecords.find((entry: { recordId: string }) => entry.recordId === id);
+    return (external ? read(external.source) : packet).records.find((entry: { id: string }) => entry.id === id);
+  };
   const refs = Object.values(SHELL_COPY_REFS).flatMap(group => Object.values(group)) as ShellCopyRef[];
   expect(new Set(refs.map(ref => ref.id)).size).toBe(25);
-  for (const ref of refs) expect(packet.records.find((record: { id: string }) => record.id === ref.id)).toMatchObject({ status: "draft" });
+  for (const ref of refs) expect(record(ref.id)).toMatchObject({ status: "draft" });
   expect(packet.activation).toBe("none");
 });

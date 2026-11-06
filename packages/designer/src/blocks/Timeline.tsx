@@ -42,7 +42,7 @@ export function Timeline({ events, headingLevel = 3, className, ...rest }: Timel
         return (
           <SemanticContent as="li" key={event.id} data-timeline-rail={rail ? "" : undefined} className={cx("relative flex gap-md", rail ? "pb-lg" : undefined)}>
             <SemanticContent as="span" aria-hidden="true" className="flex shrink-0 flex-col items-center">
-              <SemanticContent as="span" className="mt-xs size-2 shrink-0 rounded-pill bg-accent forced-colors:bg-current" />
+              <SemanticContent as="span" className="mt-xs size-2 shrink-0 rounded-pill bg-primary forced-colors:bg-current" />
               {rail ? <SemanticContent as="span" className="mt-xs w-px flex-1 bg-line-base" /> : null}
             </SemanticContent>
             <Card className="min-w-0 flex-1">

@@ -57,7 +57,9 @@
             "components.navigation-tree",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -70,7 +72,7 @@
           },
           {
             "path": "packages/designer/src/blocks/AppNavigation.tsx",
-            "sha256": "ccd50822fa369c2679d5b0a28101a1b3b5e23365dcf880b6bb55a50378cfc474"
+            "sha256": "3f925a05fe32cf6b0833c75b23169c475decff5b54480435dde79153917a0b73"
           },
           {
             "path": "packages/designer/src/blocks/frame-navigation.ts",
@@ -94,11 +96,11 @@
           },
           {
             "path": "packages/designer/src/components/Banner.copy.ts",
-            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -199,7 +201,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "frames.app-sidebar",
       "slots": {

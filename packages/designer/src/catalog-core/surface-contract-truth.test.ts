@@ -6,10 +6,9 @@ import { expect, it } from "vitest";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { importFoundrySections } from "../importers/foundry-sections.js";
-import { importFoundryComponents } from "../importers/foundry-components.js";
 import { readSurfacePackageEvidence } from "../library-cli/surface-package-evidence.js";
 import { loadCatalog, loadComponentRegistry } from "./index.js";
-import { selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedComponentFills, selectedPackageClosure } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import { contractFindings, type SurfaceDefaultDescriptor } from "./surface-defaults.js";
 import { buildSurfaceConsumption } from "./surface-consumption.js";
 import { applyLibraryChange, libraryHash, resolve } from "./api.js";
@@ -40,8 +39,13 @@ it("refuses actual package reads outside the contract even when declared fields 
   const slot = app(), fill = descriptor();
   slot.contract.allowedReads.themes = [];
   Object.assign(fill, { reads: { themes: [], assets: [] }, composes: [], consumption: measured(true) });
-  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported themes:") && row.includes("themes.spacing"))).toBe(true);
-  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported themes:") && row.includes("themes.spacing"))).toBe(true);
+  // Actual use is the independent measurement of the pinned package, never the descriptor's snapshot: the stock
+  // app shell reads semantic shadcn themes (it stopped reading themes.spacing in the shadcn reset).
+  const read = measuredSurfaceConsumption("frames.app-shell", importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell")!.$extensions["com.clossys.fill"].pin!).reads.themes[0]!;
+  expect(read).toMatch(/^themes\./);
+  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 unsupported themes:") && row.includes(read))).toBe(true);
+  expect(contractFindings(slot, fill).some(row => row.startsWith("S5 underreported themes:") && row.includes(read))).toBe(true);
+  expect(contractFindings(slot, fill).join(" ")).not.toContain("themes.spacing");
 });
 
 it("does not mistake an absent package consumption measurement for an empty successful scan", () => {
@@ -124,7 +128,7 @@ it("source resolution refuses undeclared actual composition through the selected
 async function packageInput(underreport: boolean | "measurement" = false) {
   const slot = app();
   const doc = structuredClone(importFoundryFrames().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot.id)!);
-  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: { slots: [slot], fills: [doc], transforms: [], rules: [], materializations: [] } };
+  const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: selectedComponentFills() }, surfaces: { slots: [slot], fills: [doc], transforms: [], rules: [], materializations: [] } };
   const { library, componentOptions } = selectedPackageClosure(catalog);
   const input = { catalog, library, componentOptions, surfaceOptions: { packages: await readSurfacePackageEvidence([doc]), measurements: [] } };
   const fill = doc.frames["app-shell"]!;
@@ -174,5 +178,6 @@ it("refuses missing or mismatched package measurement identities", () => {
 
 it("recalculates all current descriptor measurements and canonical importer output from actual source", () => {
   const output = execFileSync(process.execPath, ["scripts/generate-surface-consumption.mjs", "--check"], { cwd: fileURLToPath(new URL("../../", import.meta.url)), encoding: "utf8", timeout: 60_000 });
-  expect(JSON.parse(output)).toMatchObject({ descriptors: 62, measured: 62, measurement: "source-only lower-bound", runtime: "unmeasured" });
+  // 63 since sections.sectioned-document joined the surface catalog (e14e4471b, #2554).
+  expect(JSON.parse(output)).toMatchObject({ descriptors: 63, measured: 63, measurement: "source-only lower-bound", runtime: "unmeasured" });
 }, 65_000);

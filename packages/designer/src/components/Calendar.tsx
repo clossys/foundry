@@ -54,7 +54,7 @@ function cellClassName(state: CalendarCellRenderProps, range: boolean): string {
     state.isOutsideMonth && "invisible",
     filled ? "bg-action text-ink-on-action" : state.isSelected ? "bg-surface-sunken text-ink-primary" : "text-ink-primary",
     !state.isSelected && state.isHovered && !state.isDisabled && !state.isUnavailable && "bg-surface-sunken",
-    !state.isSelected && state.isToday && "text-accent font-semibold",
+    !state.isSelected && state.isToday && "text-primary font-semibold",
     state.isUnavailable && "line-through text-ink-muted",
   );
 }

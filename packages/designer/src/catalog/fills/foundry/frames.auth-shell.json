@@ -39,7 +39,17 @@
             "components.link",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.primary",
+            "themes.primary-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
         },
         "sourceFiles": [
           {
@@ -47,12 +57,20 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
           },
           {
             "path": "packages/designer/src/frames/AuthFrame.tsx",
-            "sha256": "c1b37b67981225166fc2862982beea16e55d6ef17663b92e6eb7d588ce23c341"
+            "sha256": "29e156a6a1f5741aee0c23ea7d80c025534bb761bf87d91a2c18de8021bc4dde"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -60,7 +78,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+            "sha256": "3f0a2f786c0c6fffc04c37711e69be5258954427e41544ccce532455ac812a87"
           }
         ],
         "unresolved": [
@@ -81,12 +99,6 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
             "line": 4
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
-            "file": "packages/designer/src/shell/SkipLink.tsx",
-            "line": 3
           }
         ]
       },
@@ -99,7 +111,17 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.primary",
+          "themes.primary-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
       },
       "slot": "frames.auth-shell",
       "slots": {

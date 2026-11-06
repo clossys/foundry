@@ -7,7 +7,11 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Menu = componentLeaf<typeof import("../../components/Menu.js").Menu>("components.menu");
+// GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
+type StockMenu = typeof import("../../components/preview-runtime/components/menu/dropdown-menu.js");
+const MenuTrigger = componentLeaf<StockMenu["DropdownMenuTrigger"]>("components.menu", "DropdownMenuTrigger");
+const PopupMenu = componentLeaf<StockMenu["DropdownMenu"]>("components.menu");
+const MenuItem = componentLeaf<StockMenu["DropdownMenuItem"]>("components.menu", "MenuItem");
 
 /**
  * sections.record-detail: fields render as DetailView's description list, actions as Buttons (at most two,
@@ -24,9 +28,9 @@ export function renderRecordDetail(input: SectionRenderInput) {
     title={status === undefined ? copy.title : <>{copy.title} <Badge>{status}</Badge></>}
     fields={copy.fields}
     actions={actions.length ? <>{actions.slice(0, 2).map((action, index) => <ActionPart key={action.id ?? index} content={action} />)}</> : undefined}
-    compactActions={actions.length ? <Menu trigger={<Button variant="secondary" size="md">{copy.actionsLabel}</Button>}>
-      {actions.slice(0, 2).map((action, index) => <Menu.Item key={action.id ?? index} id={action.id ?? String(index)}>{action.label}</Menu.Item>)}
-    </Menu> : undefined}
+    compactActions={actions.length ? <MenuTrigger><Button variant="secondary" size="md">{copy.actionsLabel}</Button>
+      <PopupMenu>{actions.slice(0, 2).map((action, index) => <MenuItem key={action.id ?? index} id={action.id ?? String(index)}>{action.label}</MenuItem>)}</PopupMenu>
+    </MenuTrigger> : undefined}
   />;
 }
 

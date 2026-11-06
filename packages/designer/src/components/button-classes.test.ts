@@ -21,12 +21,12 @@ const LADDER_GROUND_CLASSES: Record<"tonal" | "quiet", Record<ControlGround, rea
   tonal: {
     base: ["bg-control-tonal", "text-ink-primary", "hover:bg-control-tonal-hover"],
     sunken: ["bg-control-tonal", "text-ink-primary", "hover:bg-control-tonal-hover"],
-    inverse: ["bg-control-tonal-inverse", "text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover"],
+    inverse: ["bg-background/12", "text-background", "hover:bg-background/16"],
   },
   quiet: {
     base: ["text-control-quiet"],
     sunken: ["text-control-quiet"],
-    inverse: ["text-ink-on-inverse"],
+    inverse: ["text-background"],
   },
 };
 
@@ -68,7 +68,7 @@ describe("buttonClassName: variant x size x ground", () => {
               expect(classes).not.toContain(foreign);
             }
           } else if (variant === "primary" && ground === "inverse") {
-            expect(classes).toEqual(expect.arrayContaining(["bg-action-on-inverse", "text-ink-primary", "hover:bg-action-on-inverse-hover"]));
+            expect(classes).toEqual(expect.arrayContaining(["bg-primary-foreground", "text-ink-primary", "hover:bg-primary-foreground/90"]));
             expect(classes).not.toContain("bg-action");
           } else {
             // Remaining variants read the same on every ground.
@@ -113,7 +113,7 @@ describe("iconButtonClassName: size x shape x ground", () => {
   const REST: Record<ControlGround, readonly string[]> = {
     base: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover"],
     sunken: ["bg-surface-raised", "text-ink-primary", "border-line-base", "hover:bg-control-tonal-hover"],
-    inverse: ["bg-surface-inverse-raised", "text-ink-on-inverse", "border-line-on-inverse", "hover:bg-surface-inverse"],
+    inverse: ["bg-card-foreground", "text-background", "border-background/14", "hover:bg-foreground"],
   };
 
   for (const size of ICON_SIZES) {
@@ -126,7 +126,7 @@ describe("iconButtonClassName: size x shape x ground", () => {
           expect(classes).not.toContain(size === "md" ? "icon-control-sm" : "icon-control-md");
           expect(classes).toContain(shape === "circle" ? "rounded-pill" : "rounded-control");
           expect(classes).toEqual(expect.arrayContaining(["border", ...REST[ground]]));
-          expect(classes).toEqual(expect.arrayContaining(["aria-pressed:bg-surface-" + (ground === "inverse" ? "raised" : "inverse")]));
+          expect(classes).toEqual(expect.arrayContaining([ground === "inverse" ? "aria-pressed:bg-surface-raised" : "aria-pressed:bg-foreground"]));
           expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-focus-ring", "motion-reduce:transition-none"]));
           expect(classes).not.toContain("outline-none");
         });

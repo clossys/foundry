@@ -15,7 +15,7 @@ export const VARIANT_CLASSES: Record<BannerVariant, string> = {
 
 /** The dismiss control's classes, shared by the server and client `Banner`. */
 export const BANNER_DISMISS_CLASSES =
-  "shrink-0 rounded-default px-xs py-xs text-body-s hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent";
+  "shrink-0 rounded-default px-xs py-xs text-body-s hover:bg-surface-selected focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary";
 
 const DENSITY_CLASSES: Record<BannerDensity, string> = {
   default: "gap-sm p-md",

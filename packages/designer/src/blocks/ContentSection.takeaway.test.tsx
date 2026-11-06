@@ -127,7 +127,7 @@ describe("ContentSection takeaway and source", () => {
     const { container } = render(view(layouts[0]!, { ground, takeaway: "Takeaway", source: "Source", dir: "rtl" }));
     const takeaway = container.querySelector("[data-content-section-takeaway]") as HTMLElement;
     const source = container.querySelector("[data-content-section-source]") as HTMLElement;
-    expect(takeaway).toHaveClass("text-body-l", "font-semibold", "border-s", "ps-lg", ground === "inverse" ? "border-s-accent-on-inverse" : "border-s-accent");
+    expect(takeaway).toHaveClass("text-body-l", "font-semibold", "border-s", "ps-lg", ground === "inverse" ? "border-s-accent-on-inverse" : "border-s-primary");
     expect(takeaway.style.borderInlineStartWidth).toBe("var(--ui-border-hairline, 1px)");
     expect(takeaway.style.borderLeftWidth).toBe("");
     expect(source).toHaveClass("text-caption", ground === "inverse" ? "text-ink-on-inverse-muted" : "text-ink-secondary");

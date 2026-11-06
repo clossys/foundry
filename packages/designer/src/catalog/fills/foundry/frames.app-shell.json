@@ -24,6 +24,7 @@
   "frames": {
     "app-shell": {
       "composes": [
+        "components.avatar",
         "components.banner",
         "components.button",
         "components.card",
@@ -45,6 +46,7 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.avatar",
           "components.banner",
           "components.button",
           "components.card",
@@ -66,6 +68,7 @@
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.avatar",
             "components.banner",
             "components.button",
             "components.card",
@@ -80,7 +83,17 @@
             "components.tabs",
             "components.toggle-button"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.primary",
+            "themes.primary-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
         },
         "sourceFiles": [
           {
@@ -109,7 +122,7 @@
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",
-            "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
+            "sha256": "197bac43869c2b09cce8393d7e8e72bd4c2a4cf38ebb2d2852ba5b358b7b89c0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -125,15 +138,27 @@
           },
           {
             "path": "packages/designer/src/components/Banner.copy.ts",
-            "sha256": "9a37518f0d4ab5d04c55cfd4706daaecaad2a490b9a36d83db9108215d48e658"
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
+          },
+          {
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
+          },
+          {
+            "path": "packages/designer/src/components/Dialog.tsx",
+            "sha256": "5c7fb1bf15e48b0061e6e603d2697fee58306b6d21685101677fe6a7d07f9de7"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/Link.styles.ts",
+            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
           },
           {
             "path": "packages/designer/src/frames/app-frame-layout.ts",
-            "sha256": "fec6d45d03384483481d50b6eee8629da2799c66f5b70438f36eb7504f055a5e"
+            "sha256": "79cc6d9dbcfb09ce19f781d0bf7fe0495f13807c54e086ae1653e618993e03af"
           },
           {
             "path": "packages/designer/src/frames/app-frame-size-classes.ts",
@@ -141,7 +166,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "2e681bf48e0e1dd67724c5e5b09451eeb83044f992742cebe716650f25879a99"
+            "sha256": "6f6bad23f63db6fac564ed57a7443139a5d3d20c8104630bf8de6900b1b0a869"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -165,7 +190,7 @@
           },
           {
             "path": "packages/designer/src/frames/FrameDock.tsx",
-            "sha256": "3c48544dde2dae6a0152c39bfbcd6c01c6455284c47f55c5dd6cde7dedee32c4"
+            "sha256": "923dc7bd5c712359d8d07d9aeb3fe0017cb823cbb34d56b400c9d2b3821eb84e"
           },
           {
             "path": "packages/designer/src/icons/ChevronDown.ts",
@@ -205,11 +230,11 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "8d46afb50775a3692938663a50ec56f39da8d45c527cc94d22586e0c796945c9"
+            "sha256": "3f0a2f786c0c6fffc04c37711e69be5258954427e41544ccce532455ac812a87"
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
-            "sha256": "ec61ccf36fc75352f3668080b542344caf204a16bace2d49a2564949c0934f2d"
+            "sha256": "8e33cb3918934124ff1a12db003df30d0dbf1c7e086606d5333df0c77d0d83f7"
           },
           {
             "path": "packages/designer/src/theme/internal/theme-core.ts",
@@ -249,13 +274,13 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/index.js#List",
             "file": "packages/designer/src/frames/AppFrame.tsx",
-            "line": 7
+            "line": 8
           },
           {
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/index.js#Search",
             "file": "packages/designer/src/frames/AppFrame.tsx",
-            "line": 7
+            "line": 8
           },
           {
             "code": "DF5",
@@ -292,12 +317,6 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
             "line": 4
-          },
-          {
-            "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ./internal/shell-vars.js#UI_Z_SKIP_LINK",
-            "file": "packages/designer/src/shell/SkipLink.tsx",
-            "line": 3
           }
         ]
       },
@@ -326,7 +345,17 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.primary",
+          "themes.primary-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
       },
       "slot": "frames.app-shell",
       "slots": {

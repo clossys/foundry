@@ -538,7 +538,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
             onSelectionChange(event.ctrlKey || event.metaKey ? toggleSelection(selection, item.id) : selectSingle(item.id));
           }
         }}
-        className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary aria-pressed:border-accent focus-ring"
+        className="absolute rounded-control border border-line-base bg-surface-raised text-body-s text-ink-primary aria-pressed:border-primary focus-ring"
         style={{ left: item.rect.x, top: item.rect.y, width: item.rect.width, height: item.rect.height, borderWidth: UI_BORDER_HAIRLINE }}>
         {renderItem ? renderItem(item) : item.label}
       </Button>)}
@@ -570,7 +570,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         <SemanticContent as="div" id={contentId} hidden={!panel.isOpen} inert={!panel.isOpen}>{panel.content}</SemanticContent>
       </SemanticContent>;
     })}
-    {marquee && <SemanticContent as="div" aria-hidden="true" data-canvas-marquee="" className="pointer-events-none absolute border border-accent bg-accent-tint"
+    {marquee && <SemanticContent as="div" aria-hidden="true" data-canvas-marquee="" className="pointer-events-none absolute border border-primary bg-accent"
       style={{ left: marquee.x, top: marquee.y, width: marquee.width, height: marquee.height, borderWidth: UI_BORDER_HAIRLINE }} />}
     {minimap && !flowing && <Button type="button" variant="ghost" data-canvas-minimap="" aria-label={recenterLabel} hidden={collapsedMap} inert={collapsedMap}
       className={cx("absolute overflow-hidden rounded-control border border-line-base bg-surface-sunken focus-ring-inset", itemInteraction === "content" ? "bottom-md start-md" : "bottom-sm start-sm h-24 w-40")}
@@ -584,7 +584,7 @@ export function CanvasSurface(props: CanvasSurfaceProps) {
         requestViewport({ x: size.width / 2 - (worldBounds.x + worldBounds.width * x) * viewport.zoom,
           y: size.height / 2 - (worldBounds.y + worldBounds.height * y) * viewport.zoom, zoom: viewport.zoom });
       }}>
-      <SemanticContent as="span" aria-hidden="true" className="pointer-events-none absolute border border-accent bg-accent-tint"
+      <SemanticContent as="span" aria-hidden="true" className="pointer-events-none absolute border border-primary bg-accent"
         style={{ left: `${map.visible.x * 100}%`, top: `${map.visible.y * 100}%`, width: `${map.visible.width * 100}%`, height: `${map.visible.height * 100}%`, borderWidth: UI_BORDER_HAIRLINE }} />
     </Button>}
     {zoomControls && !flowing && <SemanticContent as="div" data-canvas-controls="" role="group" aria-label={zoomGroupLabel} className={cx("absolute flex max-w-full flex-wrap items-center gap-xs rounded-control bg-surface-raised p-xs", itemInteraction === "content" ? "bottom-md end-md" : "bottom-sm end-sm")} style={itemInteraction === "content" ? { insetInlineEnd: endInset, insetBlockEnd: bottomInset, maxInlineSize: `calc(100% - ${startInset} - ${endInset})`, zIndex: "var(--ui-z-sticky)" } : { zIndex: "var(--ui-z-sticky)" }}>

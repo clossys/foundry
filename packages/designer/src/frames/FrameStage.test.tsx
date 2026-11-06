@@ -123,7 +123,7 @@ it('registers real map and zoom in the AppFrame dock and hides both in container
   vi.stubGlobal('matchMedia', vi.fn((media: string) => ({ matches: media === '(prefers-reduced-motion: reduce)' || media.includes('min-width'), media, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })));
   const value = props();
   const view = render(<AppFrame brand={{ markSrc: '/mark.svg', wordmark: 'Example', label: 'Example' }} navigation={{ tree: [], label: 'Navigation' }} account={{ signedOutLabel: 'Account', sections: [] }} commands={{ heading: 'Commands', searchLabel: 'Search', closeLabel: 'Close', emptyMessage: 'Empty', triggerLabel: 'Commands', groups: [] }}>
-    <FrameStage {...value} modules={{ map: { id: 'stage-map', label: 'Stage map' }, zoom: { id: 'stage-zoom', labels: { group: 'Stage zoom', in: 'Zoom in', out: 'Zoom out', fit: 'Fit boards', percent: 'Zoom percent' } } }} />
+    <FrameStage {...value} modules={{ map: { id: 'stage-map', label: 'Stage map' }, zoom: { id: 'stage-zoom', labels: { group: 'Stage zoom', in: 'Zoom in', out: 'Zoom out', fit: 'Fit boards', percent: 'Zoom percent' }, formatValue: percent => `${Math.round(percent)} percent` } }} />
   </AppFrame>);
   const dock = view.container.querySelector('[data-application-frame-region="dock"]')!;
   expect(dock).toContainElement(screen.getByRole('toolbar', { name: 'Stage zoom' }));
@@ -222,9 +222,12 @@ it('keeps flow region and document scrolling in the Stage and refuses unmeasured
   expect(f.renderLayout).not.toHaveBeenCalled();
   expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveAttribute('aria-busy', 'true');
   width = f.threshold; act(() => resize());
-  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveStyle({ overflow: 'auto', height: '100%' });
+  // GATES-RED G5: the scroll answer is a stock Tailwind class pair, not an inline style (WL4).
+  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveClass('h-full', 'overflow-auto');
+  expect(screen.getByRole('region', { name: 'Flow stage' }).getAttribute('style')).toBeNull();
   view.rerender(<FrameStage {...f.value} contract={{ accepts: ['flow', 'canvas'], scroll: 'document' }} />);
-  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveStyle({ overflow: 'visible', height: 'auto' });
+  expect(screen.getByRole('region', { name: 'Flow stage' })).toHaveClass('h-auto', 'overflow-visible');
+  expect(screen.getByRole('region', { name: 'Flow stage' })).not.toHaveClass('overflow-auto');
   expect(screen.queryByRole('toolbar')).toBeNull();
 });
 it('refuses missing canonical flow nodes and a Frame that does not accept flow', () => {

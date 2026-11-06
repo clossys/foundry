@@ -161,7 +161,7 @@ function MotionPlayer({ id, animation }: { id: string; animation: string }): Rea
   };
   // The member's own shorthand plays on the sample; reduced motion keeps the sample static.
   return <Content as="section" data-motion-specimen={id}>
-    <Content as="div" key={run} role="img" aria-label={id} className="size-lg bg-accent" style={{ animation: run && !reduced ? animation : undefined }} data-playing={run && !reduced ? "" : undefined} data-reduced-motion={reduced ? "static-final" : undefined} />
+    <Content as="div" key={run} role="img" aria-label={id} className="size-lg bg-primary" style={{ animation: run && !reduced ? animation : undefined }} data-playing={run && !reduced ? "" : undefined} data-reduced-motion={reduced ? "static-final" : undefined} />
     <Button onPress={play}>Play motion</Button>
     {reduced ? <Content as="p" role="status">Reduced motion is enabled.</Content> : null}
   </Content>;
@@ -177,7 +177,7 @@ function renderItem(mode: Mode, item: SpecimenItem, props: SpecimenLeafProps): R
   if (!member || !id) return props.need({ leaf: item.id, reason: "No selected specimen value." });
   if (mode === "swatch") return <Swatch id={id} member={member} context={props.context} renderParts={props.renderParts!} />;
   if (mode === "type-ladder") return <Content as="p" data-type-sample={id} style={typeStyle(member)}>{specimenDataset.tokens.sampleText}</Content>;
-  if (mode === "spacing-ladder") return <Content as="div" role="img" aria-label={id} className="h-sm max-w-full bg-accent border-s border-e border-line-strong" style={{ inlineSize: member.css.light }} />;
+  if (mode === "spacing-ladder") return <Content as="div" role="img" aria-label={id} className="h-sm max-w-full bg-primary border-s border-e border-line-strong" style={{ inlineSize: member.css.light }} />;
   if (mode === "radius-ladder") return <Content as="div" role="img" aria-label={id} className="size-3xl border border-line-strong bg-surface-raised" style={{ borderRadius: member.css.light }} />;
   if (mode === "motion-player") {
     const button = selected(props.context, "components.button"), shorthand = animation(member);

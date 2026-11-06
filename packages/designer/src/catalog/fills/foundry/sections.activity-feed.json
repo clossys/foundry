@@ -48,7 +48,9 @@
             "components.icon",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
@@ -57,7 +59,7 @@
           },
           {
             "path": "packages/designer/src/blocks/EventItem.tsx",
-            "sha256": "1539ac734b51b1e87dc41121ac6cb7d9e4929bcd1ae00e93bb6a893ba001c536"
+            "sha256": "6515e6512cf30f11116b24879362a0e6ec7ff4420adacb9b2a540b6c8ea4833e"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -65,7 +67,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/icons/ArrowRight.ts",
@@ -132,7 +134,9 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.activity-feed",
       "slotMap": {

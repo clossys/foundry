@@ -45,7 +45,9 @@
       "components.checkbox",
       "components.dialog",
       "components.icon",
-      "components.popover"
+      "components.popover",
+      "components.semantic-content",
+      "components.tag-group"
     ],
     "parts": [
       "sections.band",

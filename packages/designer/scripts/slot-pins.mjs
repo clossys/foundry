@@ -2,15 +2,39 @@
  * Designer pins through the one slot-model reader (packages/producer/src/records/slots.ts).
  * Designer checks never read pin.json, slot.json or candidate files by hand, and never read a
  * legacy selection store: a pin is what `listSlots` lists, its bytes are what `readCandidate` returns.
+ *
+ * The reader ships in @clossys/producer (`@clossys/producer/records/slots`), which depends on this
+ * package, so it is resolved by its public specifier and only when a pin is read: importing a
+ * shipped Designer check (`@clossys/designer/ref-verbatim`) needs no Producer, and reading pins
+ * without one throws a named error instead of a module-not-found at import time.
  */
 import { join } from "node:path";
-import { hasPinFile, isModelDir, listModelDir, listSlots, readCandidate, readSlot, readSlotRecordText } from "../../producer/dist/records/slots.js";
+
+const READER = "@clossys/producer/records/slots";
+let reader;
+let readerMissing;
+let resolved;
+// Only an unresolvable reader specifier means Producer is absent; once it resolves, any load error
+// (a missing build, a broken dependency) is real and is thrown as is.
+try { resolved = import.meta.resolve(READER); }
+catch (error) {
+  if (error?.code !== "ERR_MODULE_NOT_FOUND" && error?.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") throw error;
+  readerMissing = error;
+}
+if (resolved) reader = await import(resolved);
+
+/** The slot-model reader, or a named error when @clossys/producer is not installed beside this package. */
+export function slotReader() {
+  if (reader) return reader;
+  throw new Error(`Designer pin checks read slots through ${READER}; install @clossys/producer (it could not be resolved: ${readerMissing?.message})`, { cause: readerMissing });
+}
 
 /**
  * Every Designer slot of a consumer root, by slot id: { dir, slotDoc, pinned }, where `pinned` is
  * { pin, item } for a pin whose sha256 matches its candidate bytes, else { error } saying why not.
  */
 export function designerSlotRecords(root) {
+  const { hasPinFile, isModelDir, listModelDir, listSlots, readCandidate, readSlot, readSlotRecordText } = slotReader();
   const records = new Map();
   for (const entry of listSlots(root, "designer")) {
     let slotDoc;
@@ -44,6 +68,7 @@ export function designerSlotRecords(root) {
  * `error` names why the pinned candidate or slot record could not be read (item is then null).
  */
 export function designerPins(root, { all = false } = {}) {
+  const { listSlots, readCandidate, readSlot } = slotReader();
   const out = [];
   for (const entry of listSlots(root, "designer")) {
     const names = all ? entry.candidates : entry.pin ? [entry.pin.candidate] : [];

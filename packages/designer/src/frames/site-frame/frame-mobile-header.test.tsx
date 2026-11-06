@@ -43,7 +43,7 @@ function expectAccentMark(anchor: Element | null) {
   expect(anchor!.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("data-brand-mark", "");
   expect(mark).toHaveAttribute("aria-hidden", "true");
-  expect(mark).toHaveClass("bg-accent");
+  expect(mark).toHaveClass("bg-primary");
   expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
 }
 function output(shell: SiteShellInput, server = false) {
@@ -73,8 +73,10 @@ it.each([false, true])("renders the mobile header-bar primary as a ghost icon ac
   const container = output(shell, server);
   const action = within(container.querySelector(".site-header-actions") as HTMLElement).getByRole("link", { name: "Start now" });
   expect(action).toHaveAttribute("data-header-primary");
-  expect(action).not.toHaveClass("bg-action");
-  expect(action).toHaveClass("text-ink-primary", "hover:bg-control-tonal-hover");
+  // GATES-RED G5: the Components-supplied (pinned shadcn LinkButton) variant classes replace the retired Foundry names.
+  expect(action).not.toHaveClass("bg-(--color-action)");
+  expect(action).toHaveAttribute("data-variant", "ghost");
+  expect(action).toHaveClass("hover:bg-(--color-surface-sunken)");
   expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   expect(action.querySelector("svg path")).toHaveAttribute("d", "M4 12h16");
   expect(action.querySelector("span")).toHaveClass("sr-only", "tablet:not-sr-only");
@@ -153,7 +155,9 @@ it.each(["front-door", "admin", "demo"] as const)("keeps the %s brand leading an
     expect(brand).toHaveAttribute("href", "https://example.com/");
     const link = within(header).getByRole("link", { name: kind });
     expect(link).toHaveAttribute("aria-current", "page");
-    expect(link).toHaveClass("hover:bg-control-tonal-hover");
+    // GATES-RED G5: the Components-supplied (pinned shadcn LinkButton) variant classes replace the retired Foundry names.
+    expect(link).toHaveAttribute("data-variant", "ghost");
+    expect(link).toHaveClass("hover:bg-(--color-surface-sunken)");
     expect(link.querySelector("svg")).not.toBeNull();
     expect(header.querySelectorAll("a")).toHaveLength(2);
   }
@@ -186,7 +190,7 @@ it.each([undefined, "auto", "inverse"] as const)("retains overlay brand tone %s 
   const shell: SiteShellInput = { ...base, brand: { ...base.brand, tone }, header: { surface: "glass", tone: "inverse" } };
   expect(renderToString(tree(shell))).toBe(renderToString(tree(shell, true)));
   const brand = within(output(shell).querySelector("header")!).getByRole("link", { name: "Example home" });
-  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
+  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-background");
 });
 
 it.each([false, true])("names a mark-only brand from its label and renders no wordmark (server=%s)", server => {
@@ -209,9 +213,9 @@ it.each([undefined, "auto", "inverse"] as const)("paints an accent mark in the a
   expect(mark).toHaveAttribute("data-brand-mark", "");
   expect(brand.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("aria-hidden", "true");
-  expect(mark).toHaveClass("bg-accent");
+  expect(mark).toHaveClass("bg-primary");
   expect(mark.getAttribute("style")).toContain('mask-image:url("/mark.svg")');
-  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-ink-on-inverse");
+  expect(brand).toHaveClass(tone === undefined ? "text-inherit" : tone === "auto" ? "text-ink-primary" : "text-background");
   expect(brand.children[1]).toHaveTextContent("Example");
   expect(brand.children[1]!.className).not.toMatch(/\b(?:text|bg)-/);
 });
@@ -231,7 +235,7 @@ it.each(INK_CASES)("paints the %s header logomark in the accent token when markI
   const mark = anchor.firstElementChild as HTMLElement;
   expect(anchor.querySelector("img")).toBeNull();
   expect(mark).toHaveAttribute("data-brand-mark", "");
-  expect(mark.matches(".bg-accent") || mark.querySelector(".bg-accent") !== null).toBe(true);
+  expect(mark.matches(".bg-primary") || mark.querySelector(".bg-primary") !== null).toBe(true);
   expect(anchor.innerHTML).toContain('mask-image:url(&quot;/mark.svg&quot;)');
   // The wordmark keeps the surface ink; only the mark carries the accent.
   if (anchor.children[1]) expect(anchor.children[1].className).not.toMatch(/\b(?:text|bg)-/);
@@ -242,7 +246,7 @@ it.each(INK_CASES)("keeps the %s header logomark as the image when markInk is im
   const anchor = within(output(shell, server).querySelector("header")!).getByRole("link", { name: "Example home" });
   expect(anchor.querySelector("img")).toHaveAttribute("src", "/mark.svg");
   expect(anchor.querySelector("[data-brand-mark]")).toBeNull();
-  expect(anchor.querySelector(".bg-accent")).toBeNull();
+  expect(anchor.querySelector(".bg-primary")).toBeNull();
 });
 
 it.each([false, true])("puts every full-label action in defined panel order in every frame layout (server=%s)", server => {
@@ -253,8 +257,9 @@ it.each([false, true])("puts every full-label action in defined panel order in e
   const mobileActions = panel.querySelector(".site-header-desktop-actions")!;
   expect(mobileActions).not.toBeNull();
   expect([...mobileActions.querySelectorAll("a")].map(link => [link.getAttribute("href"), link.textContent])).toEqual([["/contact", "Contact"], ["/sign-in", "Sign in"], ["/start", "Start now"]]);
-  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-action");
-  expect(mobileActions.querySelectorAll("a")[0]).not.toHaveClass("bg-action");
+  // GATES-RED G5: the Components-supplied (pinned shadcn LinkButton) variant classes replace the retired Foundry names.
+  expect(mobileActions.querySelectorAll("a")[2]).toHaveClass("bg-(--color-action)");
+  expect(mobileActions.querySelectorAll("a")[0]).not.toHaveClass("bg-(--color-action)");
   expect(mobileActions.querySelectorAll("a")).toHaveLength(3);
   expect(mobileActions).toHaveTextContent("ContactSign inStart now");
   // Optional action icons remain decorative and labels remain accessible.
@@ -352,12 +357,12 @@ it.each([false, true])("gives the ghost mobile action the toggle's inverse ink o
   const header = output(shell, server).querySelector("header")!;
   const action = header.querySelector<HTMLAnchorElement>("[data-header-primary]")!;
   const toggle = header.querySelector("button")!;
-  for (const token of ["text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse"]) {
+  for (const token of ["text-background", "hover:bg-background/16", "focus-visible:outline-background"]) {
     expect(toggle).not.toHaveAttribute("data-tone");
     expect(header).toHaveAttribute("data-tone", "inverse");
     expect(action).toHaveClass(token);
   }
   expect(action).not.toHaveClass("text-ink-primary");
-  expect(action).not.toHaveClass("hover:bg-control-tonal-hover");
-  expect(action).not.toHaveClass("focus-visible:outline-accent");
+  expect(action).not.toHaveClass("hover:bg-(--color-surface-sunken)");
+  expect(action).not.toHaveClass("focus-visible:outline-primary");
 });

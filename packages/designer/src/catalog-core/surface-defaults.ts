@@ -106,8 +106,12 @@ export function surfaceConsumptionFindings(slot: SectionSlot | FrameSlot, fill: 
   return findings;
 }
 
-/** Shared mapping eligibility and package source-consumption truth. */
-export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, packagePin?: unknown): string[] {
+/**
+ * Shared mapping eligibility and package source-consumption truth. Actual use is an independent measurement:
+ * Foundry's generated measurement of the same pin, else the installed artifact's measured evidence. The
+ * descriptor's own snapshot must be present and equal it; it never supplies actual use itself.
+ */
+export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDefaultDescriptor, packagePin?: unknown, measuredEvidence?: SurfaceConsumptionMeasurement): string[] {
   const contract = slot.contract;
   const mapping: string[] = [], frame: string[] = [], other: string[] = [];
   if (fill.slot !== slot.id) other.push(`S1 descriptor slot ${fill.slot} differs`);
@@ -130,7 +134,7 @@ export function contractFindings(slot: SectionSlot | FrameSlot, fill: SurfaceDef
   }
   for (const blocker of fill.blockers ?? []) other.push(`S5 ${blocker.code}: ${blocker.message}`);
   if (fill.impl?.kind === "package") {
-    const actual = canonicalSurfaceConsumption(fill.slot, fill.impl, packagePin);
+    const actual = canonicalSurfaceConsumption(fill.slot, fill.impl, packagePin) ?? (measuredEvidence && structuredClone(measuredEvidence));
     if (!fill.consumption || !actual) other.push("S8 surface consumption measurement unavailable");
     if (actual) {
       if (fill.consumption && stableStringify(fill.consumption) !== stableStringify(actual)) other.push("S8 package consumption snapshot differs from canonical measurement");

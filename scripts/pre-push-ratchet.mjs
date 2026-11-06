@@ -97,7 +97,7 @@ export const HOOK_CHECKS = Object.freeze([
 export const PENDING_HOOK_CHECKS = Object.freeze(["producer check:copy-source"]);
 /** check:rules finding kinds about the checks themselves, not about debt in the tree. */
 export const INTEGRITY = /^(?:shape|unknown-check|unreachable|fixture-.+|exemption-.+)$/;
-const RULES_ENTRY = { dir: ".", script: "check:rules" };
+export const RULES_ENTRY = Object.freeze({ dir: ".", script: "check:rules" });
 
 function readJson(tree, rel) {
   try { return JSON.parse(readFileSync(join(tree, rel), "utf8")); } catch (error) { throw new Error(`the base's ${rel} is unreadable (${error.message})`); }

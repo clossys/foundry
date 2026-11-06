@@ -53,12 +53,19 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/catalog-assets/media.ts",
             "sha256": "518af66b317c4dcca79c99e33098a942430522f024c2c6416cb9ca817aa49313"
+          },
+          {
+            "path": "packages/designer/src/components/button-classes.ts",
+            "sha256": "aef6bea4ebc8dc1a6eda398f44e4f2d6d4415dfe2a16193c76f46e16139d3437"
           },
           {
             "path": "packages/designer/src/frames/site-frame/internal/resolveShell.ts",
@@ -74,11 +81,11 @@
           },
           {
             "path": "packages/designer/src/frames/site-frame/site-frame-contract.ts",
-            "sha256": "2ab7ee65d528d172ea5e96c96b37d492ec9bc2e08263c33d841baa736516367b"
+            "sha256": "fd321d28a676e7a2f7cf09c7e6b9ac97ad99f9a85c8580ecddc066fd80d5c0ae"
           },
           {
             "path": "packages/designer/src/frames/site-frame/SiteFrame.tsx",
-            "sha256": "cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c"
+            "sha256": "7a2914c7113a3f20295f7adb727ba7778ef4b49c117c93e25854b4aed93b5199"
           },
           {
             "path": "packages/designer/src/frames/site-frame/types.ts",
@@ -119,7 +126,10 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.primary"
+        ]
       },
       "slot": "frames.site-shell",
       "slots": {

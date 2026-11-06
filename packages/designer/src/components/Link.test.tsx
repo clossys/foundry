@@ -207,5 +207,5 @@ it("keeps inline links on accent ink and inverse button links on the action pale
   const { rerender } = render(<Link href="/x">Open</Link>);
   expect(screen.getByRole("link").className.split(" ")).toContain("text-accent-text");
   rerender(<Link href="/x" buttonVariant="primary" ground="inverse">Open</Link>);
-  expect(screen.getByRole("link").className.split(" ")).toEqual(expect.arrayContaining(["bg-action-on-inverse", "text-ink-primary"]));
+  expect(screen.getByRole("link").className.split(" ")).toEqual(expect.arrayContaining(["bg-primary-foreground", "text-ink-primary"]));
 });

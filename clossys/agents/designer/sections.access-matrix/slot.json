@@ -37,7 +37,8 @@
       "components.checkbox",
       "components.tooltip",
       "components.button",
-      "components.icon"
+      "components.icon",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

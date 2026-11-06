@@ -32,7 +32,10 @@
       "components.avatar",
       "components.badge",
       "components.icon",
-      "components.status-mark"
+      "components.status-mark",
+      "components.link",
+      "components.meter",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

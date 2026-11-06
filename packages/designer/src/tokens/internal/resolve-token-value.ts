@@ -63,7 +63,7 @@
  * `--color-chart-axis`, `--color-chart-axis-label`, `--color-chart-
  * diverging-*`). A COMPOSITE value that merely CONTAINS a `var(...)`
  * somewhere inside a larger value — `--ui-ring-focus`'s
- * `"0 0 0 2px var(--color-accent, oklch(0.4748 0 0))"`, or
+ * `"0 0 0 2px var(--primary, oklch(0.4748 0 0))"`, or
  * `--ui-elevation-raised`'s `"0 1px 0 var(--color-line-base, ...)"` — is
  * NOT walked through: it is returned as-is, as this walker's terminal
  * value, because it is not itself a color value `color.ts` could parse

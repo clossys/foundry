@@ -70,7 +70,11 @@
             "components.status-mark"
           ],
           "themes": [
-            "themes.font-mono"
+            "themes.accent",
+            "themes.background",
+            "themes.font-mono",
+            "themes.primary",
+            "themes.primary-foreground"
           ]
         },
         "sourceFiles": [
@@ -80,7 +84,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Faq.server.tsx",
-            "sha256": "ac11eeb6bc4559f788be6bc9f7d6c938935acd86c0c6804446534dd4ff5e6e73"
+            "sha256": "118303fe0fc3de43066fc6a37ad5315821834db2b17db4f9f2cbc930bef30644"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -132,7 +136,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/order.tsx",
-            "sha256": "cabd33aadfedeb0ecd83c25aa57d6bf9d641279bc8dbe89d2c2e970071cbf311"
+            "sha256": "e6e5c9cda897845ead4539a1ec4b564e67a357e3ead493778ece8826a3efb991"
           },
           {
             "path": "packages/designer/src/blocks/items/policies.ts",
@@ -156,7 +160,7 @@
           },
           {
             "path": "packages/designer/src/blocks/ledger-rows.tsx",
-            "sha256": "5087cab37037ab0a0e1c02bea3c44a12a73b35fded8581e77dc70d4912bd9e3e"
+            "sha256": "92c54874012bc8fd01eab44e054edb6fd8e0493f8471dabba1ec31660899568e"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.server.tsx",
@@ -172,7 +176,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/static.tsx",
-            "sha256": "408c5a8ff4d0a15ec1ec2e5526160924976c63fff1cdb564c8baa3dd2adeb9b0"
+            "sha256": "f32cc7be9af41fdbc3bfb9b142fad3a832735b5b7bb9105754f45a94d04a2238"
           },
           {
             "path": "packages/designer/src/blocks/RecordLedger.tsx",
@@ -200,7 +204,7 @@
           },
           {
             "path": "packages/designer/src/blocks/specimen/SpecimenPanel.tsx",
-            "sha256": "8795d666a4cb51bbafef153895c7249c806261f53980986da2326b2771f2feb7"
+            "sha256": "014bf0ed3ef0ed0d994151d345ec2fbe85dce824a1578cd83a95a0ade3f9a092"
           },
           {
             "path": "packages/designer/src/blocks/Stat.tsx",
@@ -208,7 +212,7 @@
           },
           {
             "path": "packages/designer/src/blocks/stretched-link.tsx",
-            "sha256": "d9edaa310f261df3c1845d8b989385ce560260b5c63d13c0abd1a7f46142b3cd"
+            "sha256": "5902fdcbe411003387d7d4d58b3bd7047a00eee529211ea15d6cd16be3e33d29"
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
@@ -224,19 +228,19 @@
           },
           {
             "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "f6e3c5f3e91db9912c1c135cefb40f2049b26132220ad977bcbe78c1811309ae"
+            "sha256": "aef6bea4ebc8dc1a6eda398f44e4f2d6d4415dfe2a16193c76f46e16139d3437"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
           },
           {
             "path": "packages/designer/src/components/Meter.server.tsx",
-            "sha256": "47b0f78c3f1478addaaf06ae71728a6c3bfd1dd3c8485d081837e4bcf0bdb905"
+            "sha256": "6722cde47d126ee4de73605604d041277089293991b1551be3f76a46e150234c"
           },
           {
             "path": "packages/designer/src/icons/ArrowRight.ts",
@@ -388,7 +392,7 @@
           },
           {
             "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
-            "sha256": "4feddbfeb9c813033488f664e30e79dec5dd8bc61381174c355260913a35f5a2"
+            "sha256": "f084f29902e4439720050ec0d9e0aa603d6275f4416533381fa005b81a805964"
           }
         ],
         "unresolved": [
@@ -574,7 +578,11 @@
       "reads": {
         "assets": [],
         "themes": [
-          "themes.font-mono"
+          "themes.accent",
+          "themes.background",
+          "themes.font-mono",
+          "themes.primary",
+          "themes.primary-foreground"
         ]
       },
       "slot": "sections.sectioned-document",

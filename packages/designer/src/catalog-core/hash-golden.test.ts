@@ -112,10 +112,12 @@ describe("stableStringify and libraryHash golden", () => {
     // Re-captured by planner:R2F-05 (`vitest run -u`, never hand-edited): the example fixture and catalog moved in the
     // tokens->themes rename (736153e72) after this pin (33380d241); the reference hash below still agrees.
     // example fnv1a64:1c49785731fe8224 -> facb9bcf5f390a59; completed fnv1a64:f8280f8901b7ec38 -> f5ab9f8a4be36a76, sha256 077cbbdc -> 33ffb43c.
+    // Re-captured by R2F-06 integration (`vitest run -u`): the merged catalog carries GATES-RED's declared composes and
+    // contracts as well; completed f5ab9f8a4be36a76 -> 1a9b7c0a42800e14 (GATES-RED's own value), sha256 33ffb43c -> f0296341.
     expect(libraryHash(EXAMPLE_LIBRARY)).toMatchInlineSnapshot(`"fnv1a64:facb9bcf5f390a59"`);
     const completed = completedCatalogLibrary(loadCatalog(), { id: "golden-consumer", kind: "consumer", author: "consumer", license: "UNLICENSED" }, "2026-10-26");
-    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:f5ab9f8a4be36a76"`);
-    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"33ffb43cbab1227b78df40146836d9142f1622a20c2990ffe2eaa85006da828d"`);
+    expect(libraryHash(completed)).toMatchInlineSnapshot(`"fnv1a64:1a9b7c0a42800e14"`);
+    expect(nodeSha256(stableStringify(completed))).toMatchInlineSnapshot(`"f029634196b374689ec7fafa75264c52a4b865d0db0552065703637ee4b0216d"`);
     expect(libraryHash(completed)).toBe(referenceLibraryHash(completed));
     expect(resolve({ catalog: loadCatalog(), library: completed }).selectionHash).toBe(libraryHash(completed));
   }, 120_000);
@@ -136,13 +138,15 @@ describe("real package-surface library golden", () => {
     // (stock-card inverse ground, hero scrim token classes, still-backdrop policy module); values and components unchanged.
     // composite 8c20f0d1 -> 99f57293; surfaces 39c762aa -> ef442840; library sha256 cf6e28e8 -> 9d90ba33.
     const { library } = fixture;
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:99f572931c2ef0b9ee026013a81eaad85c7acd71f18084e8b4be5ba46e4fd413"`);
+    // Re-captured by R2F-06 integration (`vitest run -u`): the surface fixture unions R2F-05/R2F-20 fills with GATES-RED's
+    // contracts, so composite 99f57293 -> 50ddc6b7, component 865bcf5f -> 9f5690b4, surface ef442840 -> f80ff291, whole 9d90ba33 -> abac3d51.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:50ddc6b71c425ad5437540d119c0d81450d2b3f926784946ed84f0f132ae4758"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
-    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:fc1a4750605f8c95"`);
+    expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
-    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:865bcf5fb1d919ce92d3df97e59b62086a627c7d59225c57fffce9c21131071b"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:ef442840fd12a62f28c75080c4cccb317e5e522790eb7d1905d9fb89a59d18b8"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"9d90ba333d5ecbc0d4ddca6a7a44cbc4fc1cb9bad0cee0af8cf3144e73b97313"`);
+    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:9f5690b4e3a3b7b5029caabb8f0bbd4f82f913cf3f9af046486016f65924250b"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:f80ff2915654ec8bc20cc6d457248804a3a3335900d516d8023e2c4b945bc350"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"abac3d51d76687b6443761912898e8a123646cb8477175dfd0c17ce5dcaf753c"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

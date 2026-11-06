@@ -48,7 +48,7 @@ describe("GridList", () => {
     await user.click(checkbox);
     expect(checkbox).toBeChecked();
     expect(screen.getByRole("row")).toHaveAttribute("data-selected");
-    expect(screen.getByRole("row")).toHaveClass("bg-accent-tint", "border-s-accent");
+    expect(screen.getByRole("row")).toHaveClass("bg-accent", "border-s-primary");
   });
 
   it("retains selected paint on hover and forced-colour focus before selection", async () => {
@@ -66,7 +66,7 @@ describe("GridList", () => {
     await user.hover(rows[1]!);
     await user.keyboard(" ");
     expect(rows[1]).toHaveAttribute("aria-selected", "true");
-    expect(rows[1]).toHaveClass("bg-accent-tint", "border-s-accent");
+    expect(rows[1]).toHaveClass("bg-accent", "border-s-primary");
     expect(rows[1]).not.toHaveClass("hover:bg-control-tonal-hover");
     expect(rows[1]).toHaveClass("forced-colors:outline-2");
     await user.keyboard("{ArrowUp}");

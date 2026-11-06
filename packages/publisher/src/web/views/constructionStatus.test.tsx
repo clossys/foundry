@@ -85,7 +85,7 @@ describe("constructionStatusProps", () => {
     expect(links).toHaveLength(1);
     expect(links[0]?.getAttribute("href")).toBe("/");
     expect(links[0]?.getAttribute("data-action-emphasis")).toBe("primary");
-    expect(links[0]?.className).toContain("bg-accent");
+    expect(links[0]?.className).toContain("bg-primary");
     expect(doc.body.textContent).toBe("CareersThis page is not available yet.Back to home");
     expect(doc.querySelector("main")).toBeNull();
     expect(Object.keys(web.constructionStatusProps(input(), resolver())).sort()).toEqual(["action", "status", "subtitle"]);

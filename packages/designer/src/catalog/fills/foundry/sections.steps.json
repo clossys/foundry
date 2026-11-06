@@ -42,12 +42,14 @@
           "components": [
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.accent"
+          ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/OrderedStepSequence.tsx",
-            "sha256": "781475d5b202ae176c42b630d88c38b3afa70c03746a21e7de0db5179f7ec74d"
+            "sha256": "a21143487383a6b91ddd938f922555878a453e9332bd0ca2e283bce9c670bcba"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -59,7 +61,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -106,7 +108,9 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.accent"
+        ]
       },
       "slot": "sections.steps",
       "slotMap": {

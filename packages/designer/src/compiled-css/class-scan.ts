@@ -31,7 +31,7 @@
  *
  * `style-scan.ts` extracts VALUE literals (`#3b82f6`, `13px`, an
  * `ident-[...]` arbitrary-value class) — a completely different value
- * shape than a plain Tailwind class token (`bg-accent`, `hover:bg-accent-
+ * shape than a plain Tailwind class token (`bg-primary`, `hover:bg-accent-
  * hover`). Bolting class-name extraction onto that file would mean a second,
  * unrelated regex family and a second meaning for its exported types. This
  * file is intentionally small and single-purpose instead — it shares only

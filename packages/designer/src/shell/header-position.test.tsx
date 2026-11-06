@@ -31,31 +31,44 @@ describe("header position members", () => {
     expect(flow.reads).toEqual([]);
   });
 
-  it.each([app, site])("renders sticky positioning and its token, with a solid hairline", render => {
-    const html = render({ position: "sticky", surface: "solid" });
+  // The app header (PageBar) positions inline; the site header positions through named theme-keys utilities
+  // (sticky top-0 / static / fixed / relative, layer-sticky / layer-shell, hairline-b), never inline style.
+  const siteClasses = (html: string) => html.match(/<header[^>]*class="([^"]*)"/)![1]!.split(/\s+/);
+  it("renders sticky positioning and its token, with a solid hairline", () => {
+    const html = app({ position: "sticky", surface: "solid" });
     expect(html).toContain("position:sticky");
     expect(html).toContain("var(--ui-z-sticky");
     expect(html).toContain("border-bottom-width:var(--ui-border-hairline");
     expect(html).not.toContain("rounded-control border border-line-base");
+    const header = site({ position: "sticky", surface: "solid" });
+    expect(siteClasses(header)).toEqual(expect.arrayContaining(["sticky", "top-0", "layer-sticky", "hairline-b"]));
+    expect(siteClasses(header)).not.toContain("layer-shell");
+    expect(header).not.toContain("style=");
+    expect(header).not.toContain("rounded-control border border-line-base");
   });
 
-  it.each([app, site])("static headers emit neither sticky positioning nor the sticky token", render => {
-    const html = render({ position: "static" });
+  it("static headers emit neither sticky positioning nor the sticky token", () => {
+    const html = app({ position: "static" });
     expect(html).toContain("position:static");
     expect(html).not.toContain("position:sticky");
     expect(html).not.toContain("--ui-z-sticky");
+    const header = siteClasses(site({ position: "static" }));
+    expect(header).toContain("static");
+    for (const absent of ["sticky", "layer-sticky", "layer-shell"]) expect(header).not.toContain(absent);
   });
 
-  it.each([app, site])("keeps glass fixed and rejects glass with static", render => {
-    expect(render({ surface: "glass", position: "sticky" })).toContain("position:fixed");
-    expect(() => render({ surface: "glass", position: "static" })).toThrow(/glass.*static/);
+  it("keeps glass fixed and rejects glass with static", () => {
+    expect(app({ surface: "glass", position: "sticky" })).toContain("position:fixed");
+    expect(() => app({ surface: "glass", position: "static" })).toThrow(/glass.*static/);
+    expect(siteClasses(site({ surface: "glass", position: "sticky" }))).toEqual(expect.arrayContaining(["fixed", "top-0", "inset-x-0", "layer-shell"]));
+    expect(() => site({ surface: "glass", position: "static" })).toThrow(/glass.*static/);
   });
 
   it("preserves omitted package behavior", () => {
     expect(app()).toContain("position:sticky");
     expect(app()).toContain("rounded-control border border-line-base");
-    expect(site()).toContain("position:relative");
-    expect(site({ surface: "glass" })).toContain("position:fixed");
+    expect(siteClasses(site())).toEqual(expect.arrayContaining(["relative", "layer-shell"]));
+    expect(siteClasses(site({ surface: "glass" }))).toContain("fixed");
   });
 
   it("does not resolve the app sticky token for static instances", () => {

@@ -60,7 +60,7 @@ export function EventItem({ event, labels, className, ...rest }: EventItemProps)
       ) : <Avatar size="sm" alt={event.actor.name} src={event.actor.avatarSrc} />}
       <SemanticContent as="div" className="min-w-0 break-words">
         <SemanticContent as="p" className={cx("text-body text-ink-primary", event.unread ? "font-semibold" : undefined)}>
-          {event.unread ? <><SemanticContent as="span" aria-hidden="true" className="me-xs inline-block size-2 rounded-pill bg-accent forced-colors:bg-current forced-colors:[forced-color-adjust:preserve-parent-color]" /><SemanticContent as="span" className="sr-only">{labels.unread}</SemanticContent>{" "}</> : null}
+          {event.unread ? <><SemanticContent as="span" aria-hidden="true" className="me-xs inline-block size-2 rounded-pill bg-primary forced-colors:bg-current forced-colors:[forced-color-adjust:preserve-parent-color]" /><SemanticContent as="span" className="sr-only">{labels.unread}</SemanticContent>{" "}</> : null}
           {event.summary}
         </SemanticContent>
         <SemanticContent as="time" dateTime={event.at} className="text-caption text-ink-muted">{event.timeText}</SemanticContent>

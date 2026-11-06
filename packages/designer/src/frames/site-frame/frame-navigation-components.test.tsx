@@ -31,7 +31,8 @@ it("uses the registered Sheet with a named dialog, a close control and backgroun
   expect(inline).toHaveAttribute("inert");
   expect(within(dialog).getAllByRole("link").map(link => link.textContent)).toEqual(["Products", "Pricing", "Help", "Start now"]);
   expect(within(dialog).getByRole("link", { name: "Products" })).toHaveAttribute("aria-current", "page");
-  expect(within(dialog).getByRole("link", { name: "Start now" })).toHaveClass("bg-action");
+  // GATES-RED G5: the Components-supplied (pinned shadcn LinkButton) variant classes replace the retired Foundry names.
+  expect(within(dialog).getByRole("link", { name: "Start now" })).toHaveClass("bg-(--color-action)");
   expect(screen.queryByRole("link", { name: "Outside" })).not.toBeInTheDocument();
   await user.click(within(dialog).getByRole("button", { name: "Close navigation" }));
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

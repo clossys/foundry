@@ -146,7 +146,8 @@ function componentNamespaceReads(source: string, namespaces: ReadonlyMap<string,
           index++; type(); while (text(index) === ",") { index++; type(); } take(">");
         }
       }
-      while (text(index) === "[") { index++; take("]"); }
+      // `T[]` is an array type; `T["key"]` / `T[K]` is an indexed access type.
+      while (text(index) === "[") { index++; if (text(index) !== "]") type(); take("]"); }
     };
     type(); return { end: index, roots, queries };
   };

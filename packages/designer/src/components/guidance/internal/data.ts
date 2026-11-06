@@ -2682,7 +2682,6 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
     tokens: { coverage: "partial", reason: "Representative consumed target, edge and native focus-color tokens; not an exhaustive generated utility inventory.", dependencies: [
       { property: "--ui-layout-tap-target", kind: "transitive", source: "src/components/internal/ui-vars.ts", evidence: "var(--ui-layout-tap-target, 44px)", via: [{ source: "src/components/ResizeHandle.tsx", evidence: "minWidth: UI_LAYOUT_TAP_TARGET" }] },
       { property: "--ui-border-hairline", kind: "transitive", source: "src/components/internal/ui-vars.ts", evidence: "var(--ui-border-hairline, 1px)", via: [{ source: "src/components/ResizeHandle.tsx", evidence: "borderWidth: UI_BORDER_HAIRLINE" }] },
-      { property: "--color-accent", kind: "transitive", source: "styles/theme-keys.css", evidence: "--color-accent:", via: [{ source: "src/components/ResizeHandle.tsx", evidence: "focus-visible:outline-accent" }] },
     ] },
   },
   "act.button": {
@@ -3871,14 +3870,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-accent",
+          "property": "--color-surface-sunken",
           "kind": "transitive",
           "source": "styles/theme-keys.css",
-          "evidence": "--color-accent:",
+          "evidence": "--color-surface-sunken:",
           "via": [
             {
               "source": "src/components/ProgressBar.tsx",
-              "evidence": "bg-accent"
+              "evidence": "bg-surface-sunken"
             }
           ]
         }

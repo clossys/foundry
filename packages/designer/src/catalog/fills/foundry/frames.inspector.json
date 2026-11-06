@@ -47,7 +47,15 @@
             "components.resize-handle",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
         },
         "sourceFiles": [
           {
@@ -67,12 +75,16 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
+          },
+          {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/frames/InspectorFrame.tsx",
-            "sha256": "37d1be126da5b3c63159eafc3c6b798cca9de4ac1715f35d3bdd005073eeb1e7"
+            "sha256": "24bd71cd60576867a47b8dc455d58564c32b61b76e76b99434973884d1b3dedc"
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",
@@ -127,7 +139,15 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
       },
       "slot": "frames.inspector",
       "slots": {

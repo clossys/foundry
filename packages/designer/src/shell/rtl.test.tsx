@@ -21,8 +21,9 @@ describe("shell RTL logical-direction utilities", () => {
     const links = container.querySelectorAll("a");
     expect(links).toHaveLength(2);
     for (const link of links) {
-      expect(link.style.zIndex).toBe("var(--ui-z-skip-link, 100)");
-      expect(link.style.zIndex).not.toContain("tooltip");
+      // The dedicated skip-link layer utility (--ui-z-skip-link), never the tooltip layer.
+      expect(link).toHaveClass("layer-skip-link");
+      expect(link.className).not.toContain("tooltip");
     }
   });
 
@@ -36,10 +37,10 @@ describe("shell RTL logical-direction utilities", () => {
     );
     const nav = screen.getByRole("navigation");
     const rail = screen.getByRole("complementary");
-    expect(nav.className).toContain("border-e");
-    expect(nav.style.borderInlineEndWidth).toBeTruthy();
-    expect(rail.className).toContain("border-s");
-    expect(rail.style.borderInlineStartWidth).toBeTruthy();
+    expect(nav.className.split(" ")).toContain("hairline-e");
+    expect(nav.className.split(" ")).not.toContain("hairline-s");
+    expect(rail.className.split(" ")).toContain("hairline-s");
+    expect(rail.className.split(" ")).not.toContain("hairline-e");
   });
 
   it("anchors the drawer at inline-start and places its divider at inline-end", async () => {
@@ -75,7 +76,7 @@ describe("shell RTL logical-direction utilities", () => {
       </>,
     );
     for (const link of container.querySelectorAll("a")) {
-      expect(link.className).toContain("focus:start-sm");
+      expect(link.className).toContain("focus:skip-link-inset");
       expect(link.className).not.toContain("focus:left-sm");
     }
   });

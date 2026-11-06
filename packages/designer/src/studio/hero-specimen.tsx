@@ -36,7 +36,7 @@ export const HERO_SPECIMEN_BACKDROP = {
   slot: "backdrop", purpose: "decorative", alt: "", width: 1600, height: 900,
   aspect: "16:9", fit: "cover", loading: "lazy", bytes: 128,
   backgroundToken: "--color-surface-base",
-  source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: "--color-accent" }] },
+  source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: "--color-action" }] },
 } as const satisfies StillBackdropArt;
 let graphicValues: Resolved | undefined;
 export function heroGraphicSpecimenValues(): Resolved {

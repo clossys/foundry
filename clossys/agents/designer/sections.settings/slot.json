@@ -42,7 +42,8 @@
       "components.switch",
       "components.select",
       "components.button",
-      "components.toast"
+      "components.toast",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

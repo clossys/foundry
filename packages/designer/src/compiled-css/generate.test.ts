@@ -11,7 +11,7 @@ describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
   });
 
   it("stays silent when the real, installed tailwindcss satisfies the declared range (present, in range)", async () => {
-    await expect(generateCompiledCss({ stylesDir, candidates: ["bg-accent"] })).resolves.toBeDefined();
+    await expect(generateCompiledCss({ stylesDir, candidates: ["bg-primary"] })).resolves.toBeDefined();
   });
 
   it("throws naming tailwindcss when it cannot be resolved at all (absent), before ever attempting the real compile", async () => {
@@ -19,7 +19,7 @@ describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
       resolveInstalledPeerVersion: () => undefined,
     }));
     const { generateCompiledCss: generateWithMock } = await import("./generate.js");
-    await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).rejects.toThrow(
+    await expect(generateWithMock({ stylesDir, candidates: ["bg-primary"] })).rejects.toThrow(
       /tailwindcss is required for this import but is not installed/,
     );
   });
@@ -29,7 +29,7 @@ describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
       resolveInstalledPeerVersion: () => "3.4.0",
     }));
     const { generateCompiledCss: generateWithMock } = await import("./generate.js");
-    await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).rejects.toThrow(
+    await expect(generateWithMock({ stylesDir, candidates: ["bg-primary"] })).rejects.toThrow(
       /tailwindcss@3\.4\.0 is installed, but this package requires tailwindcss@"\^4\.0\.0"/,
     );
   });
@@ -45,7 +45,7 @@ describe("generateCompiledCss's #182 tailwindcss peer-version guard", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     try {
       const { generateCompiledCss: generateWithMock } = await import("./generate.js");
-      await expect(generateWithMock({ stylesDir, candidates: ["bg-accent"] })).resolves.toBeDefined();
+      await expect(generateWithMock({ stylesDir, candidates: ["bg-primary"] })).resolves.toBeDefined();
       expect(warn).toHaveBeenCalledTimes(1);
       expect(warn.mock.calls[0]?.[0]).toMatch(/prerelease identifier/);
     } finally {
@@ -58,10 +58,10 @@ describe("generateCompiledCss", () => {
   it("produces a real Tailwind compile scoped to the requested candidates", async () => {
     const result = await generateCompiledCss({
       stylesDir,
-      candidates: ["bg-accent", "text-ink-on-accent", "rounded-control", "px-md", "hover:bg-accent-hover"],
+      candidates: ["bg-primary", "text-ink-on-accent", "rounded-control", "px-md", "hover:bg-accent-hover"],
     });
-    expect(result.css).toContain(".bg-accent {");
-    expect(result.css).toContain("background-color: var(--color-accent, oklch(0.4748 0 0));");
+    expect(result.css).toContain(".bg-primary {");
+    expect(result.css).toContain("background-color: var(--primary);");
     expect(result.css).toContain(".rounded-control {");
     expect(result.css).toContain("hover\\:bg-accent-hover");
     expect(result.classCount).toBeGreaterThan(0);
@@ -69,12 +69,12 @@ describe("generateCompiledCss", () => {
   });
 
   it("wraps every generated utility in the foundry-ui-compiled named layer", async () => {
-    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent", "px-md"] });
+    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary", "px-md"] });
     expect(result.css).toContain("@layer foundry-ui-compiled {");
   });
 
   it("never emits Tailwind's preflight, only the narrow foundry-ui-base box-sizing rule", async () => {
-    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent", "border", "flex"] });
+    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary", "border", "flex"] });
     const occurrences = result.css.split("box-sizing: border-box").length - 1;
     expect(occurrences).toBe(1);
     const baseStart = result.css.indexOf("@layer foundry-ui-base {");
@@ -89,12 +89,12 @@ describe("generateCompiledCss", () => {
   });
 
   it("never emits the redundant, unlayered :root, :host theme-reflection block", async () => {
-    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent"] });
+    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary"] });
     expect(result.css).not.toContain(":root, :host {");
   });
 
   it("never re-declares tokens.css's own content (no dev-mode badge, no sentinel)", async () => {
-    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent"] });
+    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary"] });
     expect(result.css).not.toContain("No brand binding");
     expect(result.css).not.toContain("--ui-tokens-loaded");
   });
@@ -102,25 +102,26 @@ describe("generateCompiledCss", () => {
   it("is harmless when given non-Tailwind candidates mixed in (over-inclusive input, precise output)", async () => {
     const result = await generateCompiledCss({
       stylesDir,
-      candidates: ["bg-accent", "this", "share", "totally-not-a-real-utility-name"],
+      candidates: ["bg-primary", "this", "share", "totally-not-a-real-utility-name"],
     });
-    expect(result.css).toContain(".bg-accent {");
+    expect(result.css).toContain(".bg-primary {");
     expect(result.css).not.toContain(".this {");
     expect(result.css).not.toContain(".share {");
   });
 
   it("includes a generated-file header warning against hand-editing", async () => {
-    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent"] });
+    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary"] });
     expect(result.css).toContain("GENERATED FILE");
     expect(result.css).toContain("do not hand-edit");
   });
 
   it("carries a live var() reference (not a baked-in literal) so brand overrides are picked up", async () => {
-    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-accent"] });
-    // The declaration must read the custom property, with the token's own
-    // default as fallback — never a bare literal that could never respond
-    // to a later :root[data-brand-bound] override.
-    expect(result.css).toMatch(/background-color:\s*var\(--color-accent,\s*oklch\(0\.4748 0 0\)\);/);
+    const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary"] });
+    // The declaration must read the theme variable live (the generated shadcn
+    // key, valued by the selected theme) — never a bare literal that could
+    // never respond to a later theme or brand override.
+    expect(result.css).toMatch(/background-color:\s*var\(--primary\);/);
+    expect(result.css).not.toMatch(/background-color:\s*oklch\(/);
   });
 });
 

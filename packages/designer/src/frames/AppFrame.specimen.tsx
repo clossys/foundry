@@ -2,11 +2,15 @@
 
 import { useId, useState, type MouseEvent } from "react";
 import { Button } from "../components/index.js";
+import { GROUND_PAINT } from "../components/Card.js";
 import type { AccountMenuSection, AppNavigationNode } from "../blocks/index.js";
 import { AppFrame } from "./AppFrame.js";
 import { APP_FRAME_SPECIMEN_COMMAND_IDS } from "./app-frame-layout.js";
 import type { AppFrameProps } from "./app-frame-types.js";
 import { APP_FRAME_RIGHT_PANEL_CONFIG } from "./right-panel-config.js";
+
+const RAISED = GROUND_PAINT.raised;
+const MUTED = RAISED.secondary;
 
 const EXAMPLE_MARK = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='currentColor' d='M4 4h24v6H10v3h15v6H10v3h18v6H4z'/%3E%3C/svg%3E";
 const PAGES = {
@@ -180,32 +184,32 @@ export function AppFrameSpecimen({
       commands={commands}
       theme={{ storageKey: "example-app-theme", defaultPreference: "system" }}
       rightPanel={{ label: contextLabel, handleLabel: resizeContextLabel, ...APP_FRAME_RIGHT_PANEL_CONFIG,
-        children: <div className="flex flex-col gap-md p-md">
+        children: <div className="flex flex-col frame-panel-stack">
           <h2 className="m-0 text-body font-semibold">{contextHeading}</h2>
-          <p className="m-0 text-body-s text-ink-secondary">{currentDestinationPrefix}{destination.title}</p>
-          {taskComplete && <p className="m-0 text-body-s text-ink-secondary">{taskCompletedMessage}</p>}
-          {!taskComplete && <p className="m-0 text-body-s text-ink-secondary">{taskReadyMessage}</p>}
+          <p className={"m-0 text-body-s " + MUTED}>{currentDestinationPrefix}{destination.title}</p>
+          {taskComplete && <p className={"m-0 text-body-s " + MUTED}>{taskCompletedMessage}</p>}
+          {!taskComplete && <p className={"m-0 text-body-s " + MUTED}>{taskReadyMessage}</p>}
         </div>,
       }}
     >
-      <div className="flex min-w-0 flex-col gap-lg p-lg">
-        <div className="flex flex-col gap-sm">
-          <p className="m-0 text-caption text-ink-muted">{workspaceLabel}</p>
-          <p className="m-0 text-body text-ink-secondary">{destination.description}</p>
+      <div className="flex min-w-0 flex-col frame-page-stack">
+        <div className="flex flex-col frame-heading-stack">
+          <p className={"m-0 text-caption " + MUTED}>{workspaceLabel}</p>
+          <p className={"m-0 text-body " + MUTED}>{destination.description}</p>
         </div>
-        {page === "signed-out" ? <p className="m-0 text-body text-ink-secondary">{noAccountMessage}</p> :
-          <section aria-labelledby={workHeadingId} className="flex flex-col gap-md rounded-control border border-line-base bg-surface-raised p-md">
+        {page === "signed-out" ? <p className={"m-0 text-body " + MUTED}>{noAccountMessage}</p> :
+          <section aria-labelledby={workHeadingId} className={"flex flex-col frame-panel-stack rounded-control border " + RAISED.border + " " + RAISED.surface}>
             {page === "profile" && <>
               <h2 id={workHeadingId} className="m-0 text-body font-semibold">{accountName}</h2>
-              <p className="m-0 text-body-s text-ink-secondary">{profileDescription}</p>
+              <p className={"m-0 text-body-s " + MUTED}>{profileDescription}</p>
             </>}
             {page === "preferences" && <>
               <h2 id={workHeadingId} className="m-0 text-body font-semibold">{preferencesHeading}</h2>
-              <p className="m-0 text-body-s text-ink-secondary">{preferencesDescription}</p>
+              <p className={"m-0 text-body-s " + MUTED}>{preferencesDescription}</p>
             </>}
             {page !== "profile" && page !== "preferences" && <>
               <h2 id={workHeadingId} className="m-0 text-body font-semibold">{milestoneHeading}</h2>
-              <p className="m-0 text-body-s text-ink-secondary">{milestoneDescription}</p>
+              <p className={"m-0 text-body-s " + MUTED}>{milestoneDescription}</p>
             </>}
             {(page === "overview" || page === "projects" || page === "tasks") && <div>
               <Button variant="secondary" onPress={() => {
@@ -214,7 +218,7 @@ export function AppFrameSpecimen({
               }}>{taskComplete && <>{reopenTaskLabel}</>}{!taskComplete && <>{completeTaskLabel}</>}</Button>
             </div>}
           </section>}
-        <p role="status" aria-live="polite" className="m-0 text-body-s text-ink-muted">
+        <p role="status" aria-live="polite" className={"m-0 text-body-s " + MUTED}>
           {activity.kind === "initial" && <>{initialActivityMessage}</>}
           {activity.kind === "route" && <><span>{destination.title}</span>{" "}<span>{routeOpenedLabel}</span></>}
           {activity.kind === "complete" && <>{taskCompletedMessage}</>}

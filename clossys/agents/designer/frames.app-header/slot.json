@@ -88,7 +88,9 @@
       "components.toggle-button",
       "components.status-mark",
       "components.icon",
-      "components.tooltip"
+      "components.tooltip",
+      "components.semantic-content",
+      "components.dialog"
     ]
   },
   "inputs": [

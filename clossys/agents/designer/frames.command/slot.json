@@ -90,7 +90,9 @@
       "components.keyboard",
       "components.tooltip",
       "components.button",
-      "components.icon"
+      "components.icon",
+      "components.command",
+      "components.semantic-content"
     ]
   },
   "inputs": [

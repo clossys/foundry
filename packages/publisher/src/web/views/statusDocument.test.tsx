@@ -50,8 +50,8 @@ const head = {
   icon: { href: "/icon.svg", type: "image/svg+xml" },
 };
 
-const globalError: GlobalErrorDocumentFramedProps = { ...head, shell, resolveCopy, resolveAsset, status: "500", action: <button type="button" className="bg-accent">Try again</button> };
-const notFound: NotFoundDocumentProps = { ...head, shell, resolveCopy, resolveAsset, status: "404", action: <a href="/" className="bg-accent">Back to home</a> };
+const globalError: GlobalErrorDocumentFramedProps = { ...head, shell, resolveCopy, resolveAsset, status: "500", action: <button type="button" className="bg-primary">Try again</button> };
+const notFound: NotFoundDocumentProps = { ...head, shell, resolveCopy, resolveAsset, status: "404", action: <a href="/" className="bg-primary">Back to home</a> };
 const legacy: GlobalErrorDocumentErrorViewProps = { ...head, status: 500, title: "Something went wrong", description: "Try again later." };
 
 const documents: ReadonlyArray<{ name: string; render: (stylesheets?: readonly string[]) => ReactElement }> = [

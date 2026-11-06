@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import React, { useEffect, useState } from "react";
 import "@testing-library/jest-dom/vitest";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -122,7 +124,7 @@ describe("AppFrame acceptance", () => {
     const trigger = screen.getByRole("button", { name: "Find a command" }); trigger.focus();
     const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
     await user.keyboard(apple ? "{Meta>}k{/Meta}" : "{Control>}k{/Control}");
-    const search = await screen.findByRole("combobox", { name: "Search commands" });
+    const search = await screen.findByRole("searchbox", { name: "Search commands" });
     await user.type(search, "Open p");
     expect(screen.getAllByRole("option")).toHaveLength(1);
     expect(screen.getByRole("option", { name: "Open projects" })).toHaveAttribute("href", "#projects");
@@ -328,7 +330,9 @@ describe("AppFrame floating stage", () => {
     expect(header.firstElementChild).toContainElement(screen.getByRole("button", { name: "Find a command" }));
     // The brand row takes the token-sized corner row before search.
     const brand = header.querySelector<HTMLElement>('[data-application-frame-slot="brand"]')!;
-    expect(brand.style.minBlockSize).toContain("--ui-layout-tap-target"); expect(brand.style.marginBlockEnd).toContain("--spacing-md");
+    // GATES-RED G5: the corner row is the named frame-brand-row utility, not an inline style (WL4).
+    expect(brand).toHaveClass("frame-brand-row");
+    expect(readFileSync(resolve(import.meta.dirname, "../../styles/theme-keys.css"), "utf8")).toContain("@utility frame-brand-row { min-block-size: var(--ui-layout-tap-target, 44px); margin-block-end: var(--spacing-md, 12px); }");
     expect(brand.compareDocumentPosition(screen.getByRole("button", { name: "Find a command" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -426,7 +430,7 @@ describe("AppFrame floating stage", () => {
   it.each(["ltr", "rtl"] as const)("f: preserves the explicit %s direction in the portaled information surface", async dir => {
     const user = userEvent.setup(); render(<AppFrame {...stageFixture()} dir={dir} />);
     await user.click(screen.getByRole("button", { name: "Page information" }));
-    expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: dir });
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveStyle({ direction: dir });
   });
 
   it("f: resolves page locale direction for the portaled information despite opposite document direction", async () => {
@@ -434,14 +438,15 @@ describe("AppFrame floating stage", () => {
     try {
       const user = userEvent.setup(); render(<AppFrame {...stageFixture()} locale="ar" />);
       await user.click(screen.getByRole("button", { name: "Page information" }));
-      expect(region("page-info").parentElement?.parentElement).toHaveStyle({ direction: "rtl" });
+      expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveStyle({ direction: "rtl" });
     } finally { document.documentElement.dir = previous; }
   });
 
   it("f: retains token typography and foreground outside the frame portal", async () => {
     const user = userEvent.setup(); render(<AppFrame {...stageFixture()} />);
     await user.click(screen.getByRole("button", { name: "Page information" }));
-    expect(region("page-info").parentElement?.parentElement).toHaveClass("text-body", "text-ink-primary");
+    // GATES-RED G5: typography is the pinned Popover's own size key; the frame keeps only its foreground.
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveClass("text-(length:--text-sm)", "text-ink-primary");
   });
 
   it("g: presents only the first requested primary action as primary", () => {
@@ -458,7 +463,7 @@ describe("AppFrame floating stage", () => {
     const trigger = screen.getByRole("button", { name: "Page information" });
     expect(trigger).toHaveAttribute("aria-expanded", "false"); await user.click(trigger);
     expect(trigger).toHaveAttribute("aria-expanded", "true"); expect(screen.getByText("Current project details")).toBeInTheDocument();
-    expect(region("page-info").parentElement?.parentElement).toHaveStyle({ position: "absolute" });
+    expect(region("page-info").closest('[data-slot="popover-content"]')).toHaveStyle({ position: "absolute" });
     await user.keyboard("{Escape}"); await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false")); await waitFor(() => expect(trigger).toHaveFocus());
     await user.click(trigger); await user.click(screen.getByText("Route action"));
     await waitFor(() => expect(trigger).toHaveAttribute("aria-expanded", "false"));

@@ -46,12 +46,14 @@
             "components.link",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/LogoCloud.tsx",
-            "sha256": "0271d696418eacc0d3e8e57767119a96ab71b3eeac9ab7bbb50e90288439a1dd"
+            "sha256": "5966c3128d689374b9b380b282b1125d7dd385152741406bd1c044e60e09c349"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -63,11 +65,11 @@
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
-            "sha256": "8455ed770c61ec15597b5ead597563135ed088b609dc11b2cd7ed8b873371701"
+            "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -122,7 +124,9 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.logo-cloud",
       "slotMap": {

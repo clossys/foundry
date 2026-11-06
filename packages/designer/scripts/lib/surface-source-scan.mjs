@@ -146,6 +146,10 @@ export function createSurfaceSourceScanner({ read, packages }) {
           if (/\/icons\//.test(resolved.file)) issue(target.file, imported.statement, `unregistered asset import ${imported.specifier}#${name}`, "DF5");
           if (/\/(?:tokens\/tokens|components\/glyph-context)\.ts$/.test(resolved.file)) { issue(target.file, imported.statement, `unresolved injected runtime inventory ${imported.specifier}#${name}`); continue; }
           visit(resolved);
+          // An imported facade composes the leaf only when its own declaration resolved
+          // through the registered factory above (literal id, module-level const, unshadowed).
+          const facade = `${resolved.file}:${resolved.name}`;
+          if (Object.hasOwn(resolvedLeaves, facade)) resolvedImports[`${target.file}:${imported.specifier}#${name}`] = resolvedLeaves[facade];
         }
       }
     }

@@ -116,7 +116,7 @@ function TabsTab({ children, className, style, ...rest }: TabsTabProps) {
     >
       {({ isSelected }) => <>
         {children}
-        {isSelected ? <span data-tab-indicator="" aria-hidden="true" className="absolute bg-accent"
+        {isSelected ? <span data-tab-indicator="" aria-hidden="true" className="absolute bg-primary"
           style={vertical
             ? { insetInlineStart: 0, insetBlock: 0, inlineSize: "var(--ui-border-rule)" }
             : { insetInline: 0, insetBlockEnd: 0, blockSize: "var(--ui-border-rule)" }} /> : null}

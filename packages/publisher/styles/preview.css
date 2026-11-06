@@ -3099,8 +3099,8 @@
       border-color: color-mix(in oklab, var(--color-line-strong) 30%, transparent);
     }
   }
-  .border-accent {
-    border-color: var(--color-accent, oklch(0.4748 0 0));
+  .border-primary {
+    border-color: var(--primary, oklch(0.4748 0 0));
   }
   .border-action {
     border-color: var(--color-action, #0A0A0A);
@@ -3150,8 +3150,8 @@
   .border-transparent {
     border-color: transparent;
   }
-  .border-s-accent {
-    border-inline-start-color: var(--color-accent, oklch(0.4748 0 0));
+  .border-s-primary {
+    border-inline-start-color: var(--primary, oklch(0.4748 0 0));
   }
   .border-s-accent-on-inverse {
     border-inline-start-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
@@ -3159,8 +3159,8 @@
   .border-s-transparent {
     border-inline-start-color: transparent;
   }
-  .border-t-accent {
-    border-top-color: var(--color-accent, oklch(0.4748 0 0));
+  .border-t-primary {
+    border-top-color: var(--primary, oklch(0.4748 0 0));
   }
   .border-t-accent-on-inverse {
     border-top-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
@@ -3244,11 +3244,11 @@
   .bg-\(--studio-swatch\) {
     background-color: var(--studio-swatch);
   }
-  .bg-accent {
-    background-color: var(--color-accent, oklch(0.4748 0 0));
+  .bg-primary {
+    background-color: var(--primary, oklch(0.4748 0 0));
   }
-  .bg-accent-tint {
-    background-color: var(--color-accent-tint, oklch(0.4748 0 0 / 0.1));
+  .bg-accent {
+    background-color: var(--accent, oklch(0.4748 0 0 / 0.1));
   }
   .bg-action {
     background-color: var(--color-action, #0A0A0A);
@@ -3363,7 +3363,7 @@
   }
   .scene-accent {
     fill: none;
-    stroke: var(--color-accent, oklch(0.4748 0 0));
+    stroke: var(--primary, oklch(0.4748 0 0));
     stroke-width: var(--ui-border-rule, 2px);
     vector-effect: non-scaling-stroke;
   }
@@ -3502,11 +3502,11 @@
   .fill-\(--color-ink-primary\) {
     fill: var(--color-ink-primary);
   }
-  .fill-accent {
-    fill: var(--color-accent, oklch(0.4748 0 0));
+  .fill-primary {
+    fill: var(--primary, oklch(0.4748 0 0));
   }
-  .fill-accent-tint {
-    fill: var(--color-accent-tint, oklch(0.4748 0 0 / 0.1));
+  .fill-accent {
+    fill: var(--accent, oklch(0.4748 0 0 / 0.1));
   }
   .fill-current {
     fill: currentcolor;
@@ -3571,8 +3571,8 @@
     stroke: var(--color-ink-primary, oklch(0.2178 0 0));
     stroke-width: var(--ui-border-rule, 2px);
   }
-  .stroke-accent {
-    stroke: var(--color-accent, oklch(0.4748 0 0));
+  .stroke-primary {
+    stroke: var(--primary, oklch(0.4748 0 0));
   }
   .stroke-current {
     stroke: currentcolor;
@@ -4077,8 +4077,8 @@
   .text-\(--color-surface-base\) {
     color: var(--color-surface-base);
   }
-  .text-accent {
-    color: var(--color-accent, oklch(0.4748 0 0));
+  .text-primary {
+    color: var(--primary, oklch(0.4748 0 0));
   }
   .text-accent-on-inverse {
     color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
@@ -4287,7 +4287,7 @@
     outline: var(--ui-border-focus, 2px) solid transparent;
     outline-offset: var(--ui-focus-offset, 2px);
     &:focus-visible, &[data-focus-visible] {
-      outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+      outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)));
     }
     @media (forced-colors: active) {
       &:focus-visible, &[data-focus-visible] {
@@ -4299,7 +4299,7 @@
     outline: var(--ui-border-focus, 2px) solid transparent;
     outline-offset: calc(-1 * var(--ui-focus-offset, 2px));
     &:focus-visible, &[data-focus-visible] {
-      outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+      outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)));
     }
     @media (forced-colors: active) {
       &:focus-visible, &[data-focus-visible] {
@@ -4328,7 +4328,7 @@
     }
   }
   .scene-linear-mark {
-    outline: var(--ui-border-rule, 2px) solid var(--color-accent, oklch(0.4748 0 0));
+    outline: var(--ui-border-rule, 2px) solid var(--primary, oklch(0.4748 0 0));
     outline-offset: var(--spacing-xs, 4px);
   }
   .outline {
@@ -4357,7 +4357,7 @@
     outline-color: var(--color-focus-ring);
   }
   .outline-focus-ring {
-    outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+    outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)));
   }
   .blur {
     --tw-blur: blur(8px);
@@ -4659,8 +4659,8 @@
   .group-data-empty\/select-list\:flex:is(:where(.group\/select-list)[data-empty] *) {
     display: flex;
   }
-  .group-data-focus-visible\:bg-accent:is(:where(.group)[data-focus-visible] *) {
-    background-color: var(--color-accent, oklch(0.4748 0 0));
+  .group-data-focus-visible\:bg-primary:is(:where(.group)[data-focus-visible] *) {
+    background-color: var(--primary, oklch(0.4748 0 0));
   }
   .group-data-focused\/command-item\:text-\(--color-ink-primary\):is(:where(.group\/command-item)[data-focused] *) {
     color: var(--color-ink-primary);
@@ -4671,11 +4671,11 @@
   .group-data-horizontal\/tabs\:h-\(--spacing-2xl\,calc\(var\(--spacing\)\*8\)\):is(:where(.group\/tabs)[data-horizontal] *) {
     height: var(--spacing-2xl,calc(var(--spacing) * 8));
   }
-  .group-data-hovered\:bg-accent:is(:where(.group)[data-hovered] *) {
-    background-color: var(--color-accent, oklch(0.4748 0 0));
+  .group-data-hovered\:bg-primary:is(:where(.group)[data-hovered] *) {
+    background-color: var(--primary, oklch(0.4748 0 0));
   }
-  .group-data-resizing\:bg-accent:is(:where(.group)[data-resizing] *) {
-    background-color: var(--color-accent, oklch(0.4748 0 0));
+  .group-data-resizing\:bg-primary:is(:where(.group)[data-resizing] *) {
+    background-color: var(--primary, oklch(0.4748 0 0));
   }
   .group-data-selected\/command-item\:text-\(--color-ink-primary\):is(:where(.group\/command-item)[data-selected] *) {
     color: var(--color-ink-primary);
@@ -5228,8 +5228,8 @@
   .focus\:bg-\(--color-surface-selected\):focus {
     background-color: var(--color-surface-selected);
   }
-  .focus\:bg-accent:focus {
-    background-color: var(--color-accent, oklch(0.4748 0 0));
+  .focus\:bg-primary:focus {
+    background-color: var(--primary, oklch(0.4748 0 0));
   }
   .focus\:px-md:focus {
     padding-inline: var(--spacing-md, 12px);
@@ -5316,14 +5316,14 @@
   .focus-visible\:outline-\(--color-focus-ring\):focus-visible {
     outline-color: var(--color-focus-ring);
   }
-  .focus-visible\:outline-accent:focus-visible {
-    outline-color: var(--color-accent, oklch(0.4748 0 0));
+  .focus-visible\:outline-primary:focus-visible {
+    outline-color: var(--primary, oklch(0.4748 0 0));
   }
   .focus-visible\:outline-accent-on-inverse:focus-visible {
     outline-color: var(--color-accent-on-inverse, oklch(0.7763 0 0));
   }
   .focus-visible\:outline-focus-ring:focus-visible {
-    outline-color: var(--color-focus-ring, var(--color-accent, oklch(0.4748 0 0)));
+    outline-color: var(--color-focus-ring, var(--primary, oklch(0.4748 0 0)));
   }
   .focus-visible\:outline-ink-on-inverse:focus-visible {
     outline-color: var(--color-ink-on-inverse, oklch(0.9702 0 0));
@@ -5349,9 +5349,9 @@
     content: var(--tw-content, "");
     outline-offset: 2px;
   }
-  .focus-visible\:after\:outline-accent:focus-visible::after {
+  .focus-visible\:after\:outline-primary:focus-visible::after {
     content: var(--tw-content, "");
-    outline-color: var(--color-accent, oklch(0.4748 0 0));
+    outline-color: var(--primary, oklch(0.4748 0 0));
   }
   .focus-visible\:after\:outline-accent-on-inverse:focus-visible::after {
     content: var(--tw-content, "");
@@ -5720,8 +5720,8 @@
   .aria-invalid\:aria-checked\:border-\(--color-action\)[aria-invalid="true"][aria-checked="true"] {
     border-color: var(--color-action);
   }
-  .aria-pressed\:border-accent[aria-pressed="true"] {
-    border-color: var(--color-accent, oklch(0.4748 0 0));
+  .aria-pressed\:border-primary[aria-pressed="true"] {
+    border-color: var(--primary, oklch(0.4748 0 0));
   }
   .aria-pressed\:border-surface-inverse[aria-pressed="true"] {
     border-color: var(--color-surface-inverse, oklch(0.2178 0 0));
@@ -5868,8 +5868,8 @@
   .data-focus-visible\:outline-\(--color-focus-ring\)[data-focus-visible] {
     outline-color: var(--color-focus-ring);
   }
-  .data-focus-visible\:outline-accent[data-focus-visible] {
-    outline-color: var(--color-accent, oklch(0.4748 0 0));
+  .data-focus-visible\:outline-primary[data-focus-visible] {
+    outline-color: var(--primary, oklch(0.4748 0 0));
   }
   .data-focus-visible\:outline-solid[data-focus-visible] {
     --tw-outline-style: solid;
@@ -6105,15 +6105,15 @@
   .data-\[range-start\=true\]\:text-\(--color-ink-on-action\)[data-range-start="true"] {
     color: var(--color-ink-on-action);
   }
-  .data-\[selected\]\:border-accent[data-selected] {
-    border-color: var(--color-accent, oklch(0.4748 0 0));
+  .data-\[selected\]\:border-primary[data-selected] {
+    border-color: var(--primary, oklch(0.4748 0 0));
   }
   .data-\[selected\]\:ring-2[data-selected] {
     --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(2px + var(--tw-ring-offset-width, 0px)) var(--tw-ring-color, currentcolor);
     box-shadow: var(--tw-inset-shadow, 0 0 #0000), var(--tw-inset-ring-shadow, 0 0 #0000), var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow, 0 0 #0000);
   }
-  .data-\[selected\]\:ring-accent[data-selected] {
-    --tw-ring-color: var(--color-accent, oklch(0.4748 0 0));
+  .data-\[selected\]\:ring-primary[data-selected] {
+    --tw-ring-color: var(--primary, oklch(0.4748 0 0));
   }
   .data-\[selected-single\=true\]\:bg-\(--color-action\)[data-selected-single="true"] {
     background-color: var(--color-action);

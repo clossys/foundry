@@ -17,20 +17,10 @@ export function appFrameMainId(authored: string | undefined, generated: string):
 }
 
 
-const variable = (name: keyof typeof TOKENS) => `var(${name})`;
 /** Technical layout values, sourced from the existing token registry rather than message defaults. */
 export const APP_FRAME_LAYOUT = {
   minimum: Number.parseFloat(TOKENS["--breakpoint-mobile-lg"]!.value),
   sidebarDefault: Number.parseFloat(TOKENS["--ui-layout-sidebar-w"]!.value),
-  sidebar: variable("--ui-layout-sidebar-w"),
-  tap: variable("--ui-layout-tap-target"),
-  gutter: variable("--spacing-md"),
-  gap: variable("--spacing-sm"),
-  raised: variable("--color-surface-raised"),
-  glass: variable("--color-surface-glass"),
-  blur: `blur(${variable("--blur-glass")})`,
-  barLayer: variable("--ui-z-sticky"),
-  controlLayer: variable("--ui-z-shell"),
 } as const;
 
 export { APP_FRAME_NAVIGATION_SIZE, APP_FRAME_PANEL_SIZE, APP_FRAME_PANEL_WIDTH_VAR } from "./app-frame-size-classes.js";

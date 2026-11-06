@@ -344,7 +344,7 @@
     },
     {
       "path": "catalog/fills/foundry/themes.animate-marquee.json",
-      "sha256": "7acc550aa8d0fd06f784388fa26f8d39c281b2c011b063e8e02b7e55e00ad47e",
+      "sha256": "66be7264784aa68858817c54d295cbcc971677188be963ef813f6cae9d6c873d",
       "document": {
         "$extensions": {
           "com.clossys.fill": {
@@ -385,6 +385,15 @@
               },
               "$type": "duration",
               "$value": "marquee var(--duration) infinite linear"
+            },
+            "duration": {
+              "$extensions": {
+                "com.clossys.css": {
+                  "raw": "40s"
+                }
+              },
+              "$type": "duration",
+              "$value": "40s"
             }
           }
         }

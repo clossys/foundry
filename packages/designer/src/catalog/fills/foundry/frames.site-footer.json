@@ -52,7 +52,15 @@
             "components.logo",
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.background",
+            "themes.border",
+            "themes.card",
+            "themes.foreground",
+            "themes.muted-foreground",
+            "themes.ring",
+            "themes.sidebar"
+          ]
         },
         "sourceFiles": [
           {
@@ -64,12 +72,12 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "path": "packages/designer/src/components/Card.tsx",
+            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
           },
           {
-            "path": "packages/designer/src/internal/brandmark.ts",
-            "sha256": "8373e807f383bdf12d9f325223df75316b99ea60fa3d2e020991b283eb24c16a"
+            "path": "packages/designer/src/components/internal/cx.ts",
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -77,15 +85,11 @@
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
-            "sha256": "e04a3d0244d866b417cf3feebe8cc8a7d2815f54652f0feeacab07b9b4762be2"
-          },
-          {
-            "path": "packages/designer/src/shell/internal/shell-vars.ts",
-            "sha256": "662ffc7e288f722504186d2fcb01fc4c20f3a4e4186971c29f3901be84b4513b"
+            "sha256": "f67e64001fa17b1712c00e0656bf2ff04834e7b88212d61c9039b1fc8820dcd3"
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "b3f161c6c3d6d51521b0ad1574d56a070a8dba2f0c3c83f3b59d8656f9518781"
+            "sha256": "013dacd352981ed40e999b7ceda9417c62174d6e0c9243e462379b112b32a4d4"
           }
         ],
         "unresolved": [
@@ -128,7 +132,15 @@
       },
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.background",
+          "themes.border",
+          "themes.card",
+          "themes.foreground",
+          "themes.muted-foreground",
+          "themes.ring",
+          "themes.sidebar"
+        ]
       },
       "slot": "frames.site-footer",
       "slots": {

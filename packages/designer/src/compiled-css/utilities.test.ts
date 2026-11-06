@@ -11,8 +11,8 @@ const packageRoot = resolve(import.meta.dirname, "..", "..");
 
 describe("generateUtilitiesCss", () => {
   it("emits single-line @source inline directives with sorted, de-duplicated, quote-safe candidates", () => {
-    const css = generateUtilitiesCss(["px-md", "bg-accent", "px-md", 'bad"one', "has space"]);
-    expect(css).toContain('@source inline("bg-accent px-md");');
+    const css = generateUtilitiesCss(["px-md", "bg-primary", "px-md", 'bad"one', "has space"]);
+    expect(css).toContain('@source inline("bg-primary px-md");');
     expect(css).not.toContain("bad");
   });
 
@@ -66,7 +66,7 @@ describe("generateUtilitiesCss", () => {
       },
     );
     const out = compiler.build([]);
-    expect(out).toMatch(/\.bg-accent\s*\{/);
+    expect(out).toMatch(/\.bg-primary\s*\{/);
     expect(out).toMatch(/\.rounded-pill\s*\{/);
   });
 });

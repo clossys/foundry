@@ -55,8 +55,8 @@ const HIT_AREA_CLASSES: Record<CardLinkFrame, string> = {
 
 /** The keyboard ring on the `::after`: the package-standard outline, in the on-inverse accent on an inverse band. */
 const RING_CLASSES: Record<SectionGround, string> = {
-  base: "focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent",
-  sunken: "focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent",
+  base: "focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary",
+  sunken: "focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-primary",
   inverse: "focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-accent-on-inverse",
 };
 

@@ -54,14 +54,16 @@ describe("catalog theme bindings", () => {
   it("reports a shipped property without a binding", () => {
     expect(bindingFindings([fixtureSlot("themes.spacing", {}), fixtureSlot("themes.shadow", {})], ["--x"])).toEqual(["binding: shipped theme variable --x is not bound"]);
   });
-  it("pins 42 slots, one default binding each and the seven shadow steps", () => {
+  it("pins 42 slots, one default binding each, the seven shadow steps and the marquee duration", () => {
     expect(slots).toHaveLength(42);
     for (const slot of slots) {
       const emit = slot.contract.emit ?? {};
       if (slot.id === "themes.shadow") expect(Object.entries(emit).toSorted(([a], [b]) => compare(a, b))).toEqual(SHADOWS.map(step => [step, `--shadow-${step}`]));
+      // magicui marquee reads `var(--duration)`; the marquee slot owns that alias (GATES-RED).
+      else if (slot.id === "themes.animate-marquee") expect(emit).toEqual({ default: "--animate-marquee", duration: "--duration" });
       else expect(emit).toEqual({ default: "--" + slot.id.slice("themes.".length) });
     }
-    expect(slots.flatMap(slot => Object.values(slot.contract.emit ?? {}))).toHaveLength(48);
+    expect(slots.flatMap(slot => Object.values(slot.contract.emit ?? {}))).toHaveLength(49);
   });
   it("uses valid members, closed names, modes and clause defaults", () => {
     for (const slot of slots) {

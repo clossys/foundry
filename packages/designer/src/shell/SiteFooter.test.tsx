@@ -8,7 +8,6 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 import { render, screen, within } from "@testing-library/react";
 import { SITE_FOOTER_LIMITS, SiteFooter, SiteFooterContractError, type SiteFooterLegalProps } from "./SiteFooter.js";
-import { UI_LAYOUT_TAP_TARGET } from "./internal/shell-vars.js";
 
 describe("SiteFooter", () => {
   it("renders grouped link columns and a secondary row", () => {
@@ -361,8 +360,8 @@ describe("SiteFooter.Legal", () => {
       const link = screen.getByRole("link", { name: label });
       expect(link.tagName).toBe("A");
       expect(link).toHaveAttribute("href", href);
-      expect(link.style.minHeight).toBe(UI_LAYOUT_TAP_TARGET);
-      expect(link.style.minWidth).toBe(UI_LAYOUT_TAP_TARGET);
+      expect(link).toHaveClass("min-size-tap");
+      expect(link.style.minHeight).toBe("");
       expect(link.className).not.toContain("min-h-[");
       expect(link.className).not.toContain("min-w-[");
       expect(link.className).toContain("focus-visible:outline-2");
@@ -548,10 +547,12 @@ describe("SiteFooter mandatory dark composition", () => {
     const home = screen.getByRole("link", { name: "Example home" });
     const plate = home.querySelector("[data-footer-home-plate]")!;
     expect(plate).not.toBeNull();
-    expect(plate).toHaveClass("bg-surface-base");
     expect(plate).toHaveAttribute("aria-hidden", "true");
-    expect(plate.querySelector("img")).toHaveAttribute("src", "/dark-mark.svg");
-    expect(plate.getAttribute("style")).toContain("var(--ui-brandmark-height-sm");
+    // The page-ground plate is the Components Logomark's own page plate, inset from the small brandmark height.
+    const pagePlate = plate.querySelector('[data-logomark-plate="page"]')!;
+    expect(pagePlate).toHaveClass("bg-background");
+    expect(pagePlate.getAttribute("style")).toContain("var(--ui-brandmark-height-sm");
+    expect(pagePlate.querySelector("img")).toHaveAttribute("src", "/dark-mark.svg");
     expect(container.querySelectorAll("[data-footer-home-plate]")).toHaveLength(1);
   });
   it("selects dark brand roles separately for light, explicit dark and OS dark themes", () => {

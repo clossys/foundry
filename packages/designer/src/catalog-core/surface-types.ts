@@ -260,6 +260,12 @@ export interface SurfacePackageEvidence {
     artifactSha256: string;
     values: readonly string[];
     types: readonly string[];
+    /**
+     * Source consumption of each exported value, measured from this artifact by the same scanner that produces
+     * Foundry's generated measurements (buildSurfaceConsumption). A package without a Foundry measurement is
+     * checked against this; a descriptor's own snapshot never supplies actual use.
+     */
+    consumption?: Readonly<Record<string, SurfaceConsumptionMeasurement>>;
 }
 export interface SurfaceCommandReceipt {
     argv: readonly string[];

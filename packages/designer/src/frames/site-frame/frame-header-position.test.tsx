@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import type { CopyResolver } from "@clossys/writer";
@@ -24,6 +26,11 @@ const app: AppFrameProps = {
   navigation: { tree: [], label: "Navigation" }, account: { signedOutLabel: "Signed out", sections: [] },
   commands: { heading: "Commands", triggerLabel: "Find commands", searchLabel: "Search commands", closeLabel: "Close commands", emptyMessage: "No commands", groups: [] }, children: <p>View</p>,
 };
+// GATES-RED G5: the site header's position and layer are named classes, not inline styles (WL4).
+const themeKeys = readFileSync(resolve(import.meta.dirname, "../../../styles/theme-keys.css"), "utf8");
+function headerClasses(html: string): string[] {
+  return (html.match(/<header\b[^>]*>/)?.[0].match(/\sclass="([^"]*)"/)?.[1] ?? "").split(/\s+/);
+}
 function bar(props: Partial<AppFrameProps> = {}) {
   return renderToStaticMarkup(<AppFrame {...app} {...props} />).match(/<header\b[^>]*data-application-frame-region="bar"[^>]*>/)?.[0] ?? "";
 }
@@ -31,21 +38,24 @@ function bar(props: Partial<AppFrameProps> = {}) {
 describe("Publisher frame header member forwarding", () => {
   it("preserves omitted site position and does not synthesize a member", () => {
     expect(normalizeSiteFrameConfig()).not.toHaveProperty("headerPosition");
-    expect(site().match(/<header\b[^>]*>/)?.[0]).toContain("position:relative");
+    expect(headerClasses(site())).toContain("relative");
+    expect(site().match(/<header\b[^>]*>/)?.[0]).not.toContain("style=");
   });
   it("forwards sticky and gives instance static precedence over inherited sticky", () => {
-    expect(site({ position: "sticky" })).toContain("z-index:var(--ui-z-sticky, 10)");
-    const header = site({ position: "sticky" }, { headerPosition: "static" }).match(/<header\b[^>]*>/)?.[0];
-    expect(header).toContain("position:static");
-    expect(header).not.toContain("--ui-z-sticky");
-    expect(site({ position: "static" }, { headerPosition: "sticky" })).toContain("z-index:var(--ui-z-sticky, 10)");
+    expect(headerClasses(site({ position: "sticky" }))).toEqual(expect.arrayContaining(["sticky", "top-0", "layer-sticky"]));
+    expect(themeKeys).toContain("@utility layer-sticky { z-index: var(--ui-z-sticky, 10); }");
+    const header = headerClasses(site({ position: "sticky" }, { headerPosition: "static" }));
+    expect(header).toContain("static");
+    expect(header).not.toContain("layer-sticky");
+    expect(header).not.toContain("sticky");
+    expect(headerClasses(site({ position: "static" }, { headerPosition: "sticky" }))).toEqual(expect.arrayContaining(["sticky", "layer-sticky"]));
   });
   it("merges position independently of inherited surface and tone", () => {
     expect(resolveShell({ ...shell, header: { surface: "transparent", tone: "inverse", position: "sticky" } }, copy, asset, { headerPosition: "static" }).header)
       .toEqual({ surface: "transparent", tone: "inverse", position: "static" });
   });
   it("keeps glass fixed and rejects static glass across both input layers", () => {
-    expect(site({ surface: "glass", position: "sticky" })).toContain("position:fixed");
+    expect(headerClasses(site({ surface: "glass", position: "sticky" }))).toEqual(expect.arrayContaining(["fixed", "top-0", "inset-x-0"]));
     expect(() => site({ surface: "glass", position: "static" })).toThrow();
     expect(() => site({ surface: "glass" }, { headerPosition: "static" })).toThrow();
     expect(() => site({ position: "static" }, { headerSurface: "glass" })).toThrow();

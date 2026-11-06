@@ -80,7 +80,7 @@ describe("TaskList", () => {
     expect(link).toHaveAttribute("href", "/settings/sources");
     expect(rows[1].querySelectorAll("a[href]")).toHaveLength(1);
     expect(link).toHaveAttribute("data-card-link", "");
-    expect(link).toHaveClass("focus-visible:after:outline-accent");
+    expect(link).toHaveClass("focus-visible:after:outline-primary");
     expect(rows[1]).toHaveClass("relative", "isolate");
     expect(rows[1].closest("section")).toHaveClass("px-sm", "tablet:px-md");
     expect((rows[1] as HTMLElement).style.minBlockSize).toBe(UI_LAYOUT_TAP_TARGET);

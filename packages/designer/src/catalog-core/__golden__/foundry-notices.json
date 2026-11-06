@@ -55,6 +55,16 @@
     },
     {
       "adoptedAt": "2026-10-23",
+      "consumerMember": "themes.animate-marquee.duration",
+      "fill": "foundry/themes.animate-marquee",
+      "kind": "adopted",
+      "license": "MIT",
+      "member": "themes.animate-marquee.duration",
+      "sha256": "2fe190f7241b0d76b374fa74a8a29606ccae169154f8a8a7d94a13c52568ab0a",
+      "source": "foundry"
+    },
+    {
+      "adoptedAt": "2026-10-23",
       "consumerMember": "themes.animate-shiny-text.default",
       "fill": "foundry/themes.animate-shiny-text",
       "kind": "adopted",

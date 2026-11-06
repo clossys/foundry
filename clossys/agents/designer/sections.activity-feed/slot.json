@@ -41,7 +41,8 @@
       "components.avatar",
       "components.badge",
       "components.link",
-      "components.icon"
+      "components.icon",
+      "components.semantic-content"
     ],
     "composes": [
       "sections.empty-state"

@@ -41,9 +41,9 @@ const REPLACEMENTS: readonly Replacement[] = [
 
 /** Plain Tailwind variants that replace bracketed ones: the bare `data-*` form is scanner-visible. */
 const VARIANT_REPLACEMENTS = [
-  { name: "group-data-hovered:bg-accent", source: "src/components/Table.tsx", retired: "group-data-[hovered]:bg-accent" },
-  { name: "group-data-resizing:bg-accent", source: "src/components/Table.tsx", retired: "group-data-[resizing]:bg-accent" },
-  { name: "group-data-focus-visible:bg-accent", source: "src/components/Table.tsx", retired: "group-data-[focus-visible]:bg-accent" },
+  { name: "group-data-hovered:bg-primary", source: "src/components/Table.tsx", retired: "group-data-[hovered]:bg-primary" },
+  { name: "group-data-resizing:bg-primary", source: "src/components/Table.tsx", retired: "group-data-[resizing]:bg-primary" },
+  { name: "group-data-focus-visible:bg-primary", source: "src/components/Table.tsx", retired: "group-data-[focus-visible]:bg-primary" },
 ];
 
 function utilityBlock(themeKeys: string, name: string): string {

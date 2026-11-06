@@ -13,7 +13,7 @@
  * calls its own compiler. The declarations this produces are BYTE-FOR-BYTE
  * what Tailwind itself would generate for the same candidates against the
  * same theme — this is not a second, hand-maintained approximation of what
- * `bg-accent` means, it is Tailwind's own answer, precompiled instead of
+ * `bg-primary` means, it is Tailwind's own answer, precompiled instead of
  * compiled at a consumer's own build time. That is what makes this
  * boundary smaller than it looks: it is the SAME first (Tailwind-native)
  * path, not a second styling system with its own semantics to keep in sync
@@ -60,7 +60,7 @@
  * module reads `theme.css` from disk UNCHANGED (stripping only its own
  * `@import "./tokens.css"` line — see below) specifically so that
  * liveness survives the precompile step too: `compiled.css`'s generated
- * `.bg-accent` rule reads `var(--color-accent, oklch(...))` exactly like
+ * `.bg-primary` rule reads `var(--primary, oklch(...))` exactly like
  * the Tailwind-native path's own generated CSS would, so a brand override
  * applied to the SAME `--color-accent` custom property `tokens.css`
  * declares is picked up identically on both paths — this is not a

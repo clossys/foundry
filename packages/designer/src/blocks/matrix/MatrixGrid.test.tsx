@@ -105,7 +105,7 @@ describe("Matrix grid", () => {
     expect(badge).toHaveClass("rounded-4xl", "text-(length:--text-xs)");
     expect(badge).toHaveClass("whitespace-nowrap", "shrink-0");
     expect(header).toHaveClass("text-end", "tabular-nums");
-    expect(header.className).not.toContain("border-t-accent");
+    expect(header.className).not.toContain("border-t-primary");
     expect(header.style.borderBlockStartWidth).toBe("");
     expect(() => html({ ...props, featuredLabel: undefined })).toThrow(/featuredLabel/);
   });
@@ -114,7 +114,7 @@ describe("Matrix grid", () => {
     const { container } = render(<Matrix {...grid()} featured={{ row: "row-1" }} featuredLabel="Selected row" headingLevel={5} />);
     const selected = screen.getByRole("rowheader", { name: /Previous record/ });
     expect(within(selected).getByText("Selected row")).toHaveClass("rounded-4xl");
-    expect(selected.className).not.toContain("border-s-accent");
+    expect(selected.className).not.toContain("border-s-primary");
     expect(selected.style.borderInlineStartWidth).toBe("");
     expect([...container.querySelectorAll("tbody th h5")].map(node => node.textContent)).toEqual(["Current record", "Previous record"]);
     expect(screen.getAllByRole("columnheader").map(node => node.textContent)).toEqual(["Column 1", "Column 2", "Column 3"]);
@@ -139,7 +139,7 @@ describe("Matrix grid", () => {
 
   it.each(["base", "sunken", "inverse"] as const)("uses grounded tokens and checked status/delta backings (%s)", ground => {
     render(<Matrix {...grid()} ground={ground} featured={{ column: "column-1" }} featuredLabel="Selected" />);
-    expect(screen.getByRole("columnheader", { name: /Column 2/ }).className).not.toMatch(/border-t-accent/);
+    expect(screen.getByRole("columnheader", { name: /Column 2/ }).className).not.toMatch(/border-t-primary/);
     expect(screen.getByRole("columnheader", { name: /Column 2/ }).style.borderBlockStartWidth).toBe("");
     const delta = screen.getByText("+12%");
     const status = screen.getByText("Reviewed").closest("[data-tone]");
@@ -225,9 +225,10 @@ describe("Matrix unchanged sides", () => {
     // selected stock Card (E4, P0 shadcn reset; ebd6753ac), and diffed against 25e371b42 no other byte changed.
     // The look is on the owner CREATIVE list. Re-captured again by planner:R2F-05: the inverse plates take their
     // ground as token classes (bg-surface-inverse-raised text-ink-on-inverse) instead of an inline re-point (E4);
-    // only the inverse/* keys move.
+    // only the inverse/* keys move. Re-captured by R2F-06 integration (`vitest run -u`): GATES-RED r3 (931102357) moved the
+    // base/sunken featured accent onto the stock semantic primary (border-t-primary, text-primary); only base/* and sunken/* keys move.
     const hashes = Object.fromEntries(records.map(record => [record.key, createHash("sha256").update(record.html).digest("hex")]));
-    await expect(stableStringify({ $capture: "stock Card side plates (E4, ebd6753ac); inverse ground as token classes (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/matrix-sides.sha256.json");
+    await expect(stableStringify({ $capture: "stock Card side plates (E4, ebd6753ac); inverse ground as token classes (E4); planner:R2F-05; semantic primary accent (GATES-RED r3); R2F-06", hashes }) + "\n").toMatchFileSnapshot("__golden__/matrix-sides.sha256.json");
   }, 60_000);
 });
 

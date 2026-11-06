@@ -40,7 +40,7 @@ export interface ToggleButtonProps extends AriaToggleButtonProps {
 
 const SELECTED: Record<"base" | "inverse", string> = {
   base: "bg-action text-ink-on-action border-action hover:bg-action-hover",
-  inverse: "bg-action-on-inverse text-ink-primary border-transparent hover:bg-action-on-inverse-hover",
+  inverse: "bg-primary-foreground text-ink-primary border-transparent hover:bg-primary-foreground/90",
 };
 
 function selectedClassName(variant: ButtonVariant, ground: ControlGround): string {

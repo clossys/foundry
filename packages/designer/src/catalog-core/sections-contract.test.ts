@@ -33,17 +33,18 @@ const changedPlacement = (mutate: (leaves: string[]) => string[]): SectionRegist
   return { ...registry, placement: { layer: "sections", nodes: [{ id: "test", label: "Test", children: [{ id: "test-family", label: "Family", leaves: mutate(leaves(registry.placement.nodes)) }] }] } };
 };
 
+// GATES-RED G3: each list is the S2-1 reconciliation plus the composes the slot records declare from their measured source.
 const reconciledComposes: Record<string, readonly string[]> = {
-  "access-matrix": ["table", "checkbox", "tooltip", "button", "icon"],
-  chat: ["text-field", "button", "file-trigger", "avatar", "spinner", "link", "tooltip"],
-  comparison: ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link"],
-  form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select"],
-  "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure"],
-  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton"],
+  "access-matrix": ["table", "checkbox", "tooltip", "button", "icon", "semantic-content"],
+  chat: ["text-field", "button", "file-trigger", "avatar", "spinner", "link", "tooltip", "semantic-content", "icon"],
+  comparison: ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link", "semantic-content"],
+  form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select", "link", "semantic-content"],
+  "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure", "semantic-content"],
+  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group"],
   "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
   newsletter: ["text-field", "button", "icon"],
-  "table-of-contents": ["link", "disclosure"],
-  "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark"],
+  "table-of-contents": ["link", "disclosure", "semantic-content"],
+  "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark", "link", "meter", "semantic-content"],
 };
 
 describe("S2-1 bounded section composition reconciliation", () => {

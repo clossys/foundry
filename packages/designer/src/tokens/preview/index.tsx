@@ -49,7 +49,7 @@ export function TokenValuePreview({ id, member, sampleText, lightLabel, darkLabe
   if (member.$type === "fontFamily") return <span data-token-value-preview={id} data-preview-kind="font" style={{ fontFamily: light }}>{sampleText}</span>;
   if (member.slot === "themes.font-heading" && name === "optical-size") return <SemanticContent as="span" data-token-value-preview={id} data-preview-kind="font" data-specimen-target="" className="text-body-l"
     style={{ "--studio-specimen-value": light, fontVariationSettings: '"opsz" var(--studio-specimen-value)' } as CSSProperties}>{sampleText}</SemanticContent>;
-  if (member.$type === "dimension") return <span data-token-value-preview={id} className="grid gap-xs"><span aria-hidden="true" data-preview-kind="ruler" className="block max-w-full bg-accent" style={{ blockSize: "var(--spacing-sm)", inlineSize: light }} /><code>{light}</code></span>;
+  if (member.$type === "dimension") return <span data-token-value-preview={id} className="grid gap-xs"><span aria-hidden="true" data-preview-kind="ruler" className="block max-w-full bg-primary" style={{ blockSize: "var(--spacing-sm)", inlineSize: light }} /><code>{light}</code></span>;
   return <code data-token-value-preview={id} data-preview-kind="text">{light}</code>;
 }
 
@@ -93,7 +93,7 @@ const translucent = new Set([
 ]);
 const checker = `repeating-conic-gradient(${tokenReference("--color-surface-base")} 0% 25%, ${tokenReference("--color-surface-inverse")} 0% 50%)`;
 const panel: CSSProperties = { padding: 16, minBlockSize: 48, background: tokenReference("--color-surface-raised"), color: tokenReference("--color-ink-primary") };
-const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: tokenReference("--color-accent") };
+const tile: CSSProperties = { inlineSize: 24, blockSize: 24, background: tokenReference("--color-action") };
 
 function MotionPreview({ property, cssProperty, authoredValueLabel, replayLabel, reducedMotionMessage }:
   { property: string; cssProperty: string } & Pick<TokenPreviewProps, "authoredValueLabel" | "replayLabel" | "reducedMotionMessage">) {
@@ -235,7 +235,7 @@ export function TokenPreview({
   if (application.cssProperty === "transform") style.transform = `scaleX(${value})`;
   if (application.cssProperty === "backdrop-filter") style.backdropFilter = `blur(${value})`;
   const backing = inverse.has(property) ? tokenReference("--color-surface-inverse")
-    : property === "--color-ink-on-accent" ? tokenReference("--color-accent") : tokenReference("--color-surface-base");
+    : property === "--color-ink-on-accent" ? tokenReference("--color-action") : tokenReference("--color-surface-base");
   const neutralForeground = TOKENS[property]!.family === "neutral"
     ? tokenReference(Number(property.slice("--color-neutral-".length)) >= 600 ? "--color-neutral-50" : "--color-neutral-900")
     : undefined;
@@ -280,7 +280,7 @@ export function TokenPreview({
     radius: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     shadow: <div style={{ ...plate, ...style }}>{sampleText}</div>,
     blur: (
-      <div style={{ background: `repeating-linear-gradient(45deg, ${tokenReference("--color-accent")} 0 8px, ${tokenReference("--color-surface-base")} 8px 16px)` }}>
+      <div style={{ background: `repeating-linear-gradient(45deg, ${tokenReference("--color-action")} 0 8px, ${tokenReference("--color-surface-base")} 8px 16px)` }}>
         <div style={{ ...plate, background: tokenReference("--color-surface-glass"), ...style }}>{sampleText}</div>
       </div>
     ),

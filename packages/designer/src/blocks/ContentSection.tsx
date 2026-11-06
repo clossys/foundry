@@ -139,8 +139,8 @@ export type ContentSectionProps = ContentSectionStackedProps | ContentSectionSpl
 const MODULE_GAP = "gap-2xl tablet-lg:gap-3xl";
 
 const TAKEAWAY_RULE_CLASSES: Record<SectionGround, string> = {
-  base: "border-s-accent",
-  sunken: "border-s-accent",
+  base: "border-s-primary",
+  sunken: "border-s-primary",
   inverse: "border-s-accent-on-inverse",
 };
 

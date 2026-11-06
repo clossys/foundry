@@ -21,7 +21,7 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
   if (hasInteractiveContent([item.description])) {
     assertNoNestedInteractive("NavGrid", item.id, [item.icon, item.title]);
     return <div data-nav-grid-card="" className={CARD_BASE}>
-      <ItemRenderer item={{ id: item.id, heading: <a href={item.href} className="inline-flex items-center text-inherit underline underline-offset-4 rounded-control focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, minInlineSize: UI_LAYOUT_TAP_TARGET }}>{item.title}</a>, description: item.description, icon: item.icon }} treatment="plain" size="standard" ground="base" navigation="control" />
+      <ItemRenderer item={{ id: item.id, heading: <a href={item.href} className="inline-flex items-center text-inherit underline underline-offset-4 rounded-control focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, minInlineSize: UI_LAYOUT_TAP_TARGET }}>{item.title}</a>, description: item.description, icon: item.icon }} treatment="plain" size="standard" ground="base" navigation="control" />
     </div>;
   }
   assertNoNestedInteractive("NavGrid", item.id, [item.icon, item.title, item.description]);

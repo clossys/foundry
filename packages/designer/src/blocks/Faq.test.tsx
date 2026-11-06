@@ -113,7 +113,7 @@ describe("Faq", () => {
   it("makes the whole row the hit area with the question at body-l and the focus-visible outline", () => {
     render(<Faq items={ITEMS} />);
     const trigger = screen.getByRole("button", { name: "Question one text" });
-    expect(trigger).toHaveClass("w-full", "py-lg", "tablet:py-xl", "text-body-l", "focus-visible:outline-2", "focus-visible:outline-accent");
+    expect(trigger).toHaveClass("w-full", "py-lg", "tablet:py-xl", "text-body-l", "focus-visible:outline-2", "focus-visible:outline-primary");
     expect(trigger).not.toHaveClass("outline-none");
   });
 

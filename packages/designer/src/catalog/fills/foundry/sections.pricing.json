@@ -49,12 +49,14 @@
             "components.semantic-content",
             "components.table"
           ],
-          "themes": []
+          "themes": [
+            "themes.primary"
+          ]
         },
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PricingTable.tsx",
-            "sha256": "89fc202834d3f150066ee08c31457ca6bc210d42e470fc4abbb145de7de5b7c7"
+            "sha256": "4749ab8b9be4a83e81d83a3a5af2c649ccf3e1099d855a7e6350d23de1ee9178"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -66,7 +68,7 @@
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
-            "sha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3"
+            "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -113,7 +115,9 @@
       "propMap": {},
       "reads": {
         "assets": [],
-        "themes": []
+        "themes": [
+          "themes.primary"
+        ]
       },
       "slot": "sections.pricing",
       "slotMap": {

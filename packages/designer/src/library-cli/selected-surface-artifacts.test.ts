@@ -242,7 +242,12 @@ describe("selected surface artifact reader", () => {
 
   it("reads a selected source leaf in a library that also holds an adopted package pointer", async () => {
     const f = await fixture();
-    const pkg = (importFoundrySections().fills as unknown as SurfaceCandidateDocument[]).find(doc => isSurfacePackageEntry(surfaceEntryOf(doc)))!;
+    // Any package pointer whose measured component composes the fixture library already selects.
+    const held = new Set(f.engine.library.components.fills.map(doc => doc.$extensions["com.clossys.fill"].slot));
+    const pkg = (importFoundrySections().fills as unknown as SurfaceCandidateDocument[]).find(doc => {
+      const entry = surfaceEntryOf(doc);
+      return isSurfacePackageEntry(entry) && (entry.composes ?? []).every(id => !id.startsWith("components.") || held.has(id));
+    })!;
     const meta = pkg.$extensions["com.clossys.fill"];
     const surfaces = f.engine.catalog.surfaces!;
     f.engine.catalog = { ...f.engine.catalog, surfaces: { ...surfaces, slots: [...loadSectionRegistry().slots.filter(slot => slot.id === meta.slot), ...surfaces.slots], fills: [pkg] } };

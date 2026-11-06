@@ -1,8 +1,9 @@
 "use client";
 import { ShellI18nProvider } from "#designer-frame-i18n";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
-import { ModalContext, PopoverContext, useLocale } from "react-aria-components";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { OverlayDirection, useOverlayLocale } from "../components/Dialog.js";
+import { GROUND_PAINT } from "../components/Card.js";
 
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
@@ -42,7 +43,7 @@ const HEADER_ROW = "frame-header-container relative flex min-w-0 shrink-0 items-
 const ROOT_FILL: Record<NonNullable<AppFrameProps["fill"]>, string> = { host: "h-full", viewport: "h-dvh" };
 const STAGE_INSET = "frame-main-inset";
 const MAIN = "flex h-full min-h-0 min-w-0 flex-col frame-main-gap frame-main-bleed overflow-auto ";
-const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body text-ink-primary focus-ring forced-colors:border-current";
+const CONTROL = "control-h-md inline-flex shrink-0 items-center justify-center rounded-control border-0 bg-transparent px-frame-control text-body focus-ring forced-colors:border-current";
 /** The two edge toggles share one glyph, each facing its own edge: the panel toggle is the navigation toggle's mirror in either direction. */
 const NAVIGATION_GLYPH = "rtl:-scale-x-100";
 const PANEL_GLYPH = "-scale-x-100 rtl:scale-x-100";
@@ -79,7 +80,7 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const main = suppliedMain === undefined ? children : suppliedMain;
   const { resolvedTheme } = useTheme();
   const markSrc = resolvedTheme === "dark" ? brand.reversedMarkSrc ?? brand.markSrc : brand.markSrc;
-  const { direction: contextDirection, locale } = useLocale();
+  const { direction: contextDirection, locale } = useOverlayLocale();
   const dir = suppliedDir ?? contextDirection;
   const copy = useShellCopy();
   const skipLabel = suppliedSkipLabel ?? copy(SHELL_COPY_REFS.frame.skip);
@@ -139,6 +140,15 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const layout = appFramePanels(available, wide, sidebarWidth, currentPanelWidth, !navCollapsed, Boolean(rightPanel) && !collapsed);
   const navigationDocked = !layout.navigationOverlay && !navCollapsed;
   const panelDocked = Boolean(rightPanel) && !narrow && !collapsed;
+  const panelRegion = useRef<HTMLElement>(null);
+  // The docked panel's width is the reader's dragged value, runtime state rather than a token, so the
+  // frame writes it to the panel's custom property before paint instead of styling it inline.
+  useLayoutEffect(() => {
+    const region = panelRegion.current;
+    if (!region) return;
+    if (panelDocked) region.style.setProperty(APP_FRAME_PANEL_WIDTH_VAR, `${currentPanelWidth}px`);
+    else region.style.removeProperty(APP_FRAME_PANEL_WIDTH_VAR);
+  }, [panelDocked, currentPanelWidth]);
   const syncResponsive = useRef<() => void>(() => {});
   const panelFocus = useRef<EventTarget | null>(null);
   const panelState = useRef({ narrow, panelOpen });
@@ -244,12 +254,12 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
   const footer = !showAccount ? undefined : <SemanticContent as="div" data-application-frame-footer={footerLayout} className="w-full min-w-0">
     <SemanticContent as="div" data-application-frame-slot="account" className="w-full min-w-0">{accountControl}</SemanticContent>
   </SemanticContent>;
-    const panelTrigger = rightPanel && (narrow ? <SemanticContent as="div" className="contents" onFocusCapture={capturePanelFocus}><ModalContext.Provider value={{ style: { direction: dir } }}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
+    const panelTrigger = rightPanel && (narrow ? <SemanticContent as="div" className="contents" onFocusCapture={capturePanelFocus}><OverlayDirection dir={dir}><Drawer fullViewport wide="sheet" placement="end" dismissAt={APP_FRAME_WIDE_QUERY}
     heading={rightPanel.label} closeLabel={closeLabel} closeButtonStyle={panelCloseButtonStyle} navigationKey={navigation.navigationKey}
     isOpen={panelOpen} onOpenChange={next => { setPanelOpen(next); if (next) { setNavDrawerOpen(false); navigation.onDrawerOpenChange?.(false); } }}
     trigger={<Button variant="ghost" className={CONTROL} aria-label={openLabel} aria-expanded={panelOpen} data-application-frame-panel="trigger"><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>}>
     <FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet>
-  </Drawer></ModalContext.Provider></SemanticContent> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
+  </Drawer></OverlayDirection></SemanticContent> : <Button variant="ghost" className={CONTROL} aria-controls={generated + "-panel"} aria-expanded={!collapsed} aria-label={collapsed ? openLabel : closeLabel} data-application-frame-panel="trigger"
     onPress={() => changeCollapsed(!collapsed)}><Icon glyph={List} decorative className={PANEL_GLYPH} /></Button>);
   const navOpen = layout.navigationOverlay ? navigation.drawerOpen ?? navDrawerOpen : !navCollapsed;
   const changeNav = () => {
@@ -260,9 +270,8 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     data-application-frame-navigation="trigger"
     aria-controls={generated + "-navigation"} aria-label={navOpen ? navigationCloseLabel : navigationOpenLabel} aria-expanded={navOpen} onPress={changeNav}><Icon glyph={List} decorative className={NAVIGATION_GLYPH} /></Button>;
   // The navigation top reserves one tap-sized corner row (the drawer close control sits at its start); a brand row takes that row instead of bare padding.
-  const navigationBrand = <SemanticContent as="div" data-application-frame-slot="brand" className="flex min-w-0 items-center frame-brand-gap"
-    style={{ minBlockSize: APP_FRAME_LAYOUT.tap, marginBlockEnd: APP_FRAME_LAYOUT.gutter, paddingInlineStart: layout.navigationOverlay ? `calc(${APP_FRAME_LAYOUT.tap} + ${APP_FRAME_LAYOUT.gap})` : undefined }}>
-    <Logomark src={markSrc} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="min-w-0 truncate text-body text-ink-primary">{brand.navigationMark.label}</SemanticContent>}
+  const navigationBrand = <SemanticContent as="div" data-application-frame-slot="brand" className={"flex min-w-0 items-center frame-brand-gap frame-brand-row" + (layout.navigationOverlay ? " frame-brand-row-overlay" : "")}>
+    <Logomark src={markSrc} size="sm" />{brand.navigationMark && <SemanticContent as="span" className="min-w-0 truncate text-body">{brand.navigationMark.label}</SemanticContent>}
   </SemanticContent>;
   const commandTrigger = <SemanticContent as="div">{navigationBrand}<Button variant="ghost" className={CONTROL + " w-full justify-start"} onPress={openCommands}><Icon glyph={Search} decorative /><SemanticContent as="span" className="min-w-0 truncate">{triggerLabel}</SemanticContent></Button></SemanticContent>;
   const moduleToggle = pageModule != null && pageModuleLabel ? <ToggleButton aria-label={pageModuleLabel} isSelected={moduleOpen} onChange={setModuleOpen}><Icon glyph={List} decorative /></ToggleButton> : null;
@@ -278,11 +287,11 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     end={<>{leasedActions}{moduleToggle}{rightPanel ? panelTrigger : <SemanticContent as="span" aria-hidden="true" className="icon-control-md shrink-0" />}</>}
     labels={{ breadcrumb: breadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.breadcrumb), collapsedBreadcrumb: collapsedBreadcrumbLabel ?? copy(SHELL_COPY_REFS.frame.collapsedBreadcrumb), pageInfo: pageInfoLabel ?? copy(SHELL_COPY_REFS.frame.pageInfo),
       pageActions: pageActionsLabel ?? copy(SHELL_COPY_REFS.frame.pageActions) }} />;
-  return <ModalContext.Provider value={{ style: { direction: dir } }}><PopoverContext.Provider value={{ style: { direction: dir } }}>
-    <SemanticContent as="div" ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden bg-surface-base text-body text-ink-primary " + ROOT_FILL[fill]}>
-      {state?.navigating && progress ? <SemanticContent as="div" data-application-frame-region="progress" style={{ position: "absolute", insetBlockStart: 0, insetInline: 0, blockSize: "var(--ui-border-hairline)", overflow: "hidden", pointerEvents: "none", zIndex: "var(--ui-z-progress)" }}>{progress}</SemanticContent> : null}
+  return <OverlayDirection dir={dir}>
+    <SemanticContent as="div" ref={frame} lang={locale} dir={dir} data-application-frame="" data-application-frame-layout={shellLayout} data-application-frame-stage={stageInset} data-application-frame-fill={fill} {...FRAME_STAMP} className={"relative flex min-h-0 min-w-0 flex-col overflow-hidden text-body " + GROUND_PAINT.page.surface + " " + GROUND_PAINT.page.primary + " " + ROOT_FILL[fill]}>
+      {state?.navigating && progress ? <SemanticContent as="div" data-application-frame-region="progress" className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden progress-hairline layer-progress">{progress}</SemanticContent> : null}
       <SkipLink targetId={target}>{skipLabel}</SkipLink>
-      <SemanticContent as="span" aria-hidden="true" className="absolute size-0 overflow-hidden"><SemanticContent as="span" ref={sidebarProbe} className="block" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }} /></SemanticContent>
+      <SemanticContent as="span" aria-hidden="true" className="absolute size-0 overflow-hidden"><SemanticContent as="span" ref={sidebarProbe} className="block frame-sidebar-measure" /></SemanticContent>
       <SemanticContent as="div" className="flex min-h-0 min-w-0 flex-1">
         <SemanticContent as="div" id={generated + "-navigation"} data-application-frame-region="navigation" data-open={navigationDocked} aria-hidden={!navigationDocked} inert={!navigationDocked && !layout.navigationOverlay} className={"frame-docked-navigation min-h-0 shrink-0 overflow-hidden " + APP_FRAME_NAVIGATION_SIZE[navigationDocked ? "docked" : "closed"]}>
           <FrameSlotOutlet slot="left-sidebar"><AppNavigation {...navigation} fullViewport retainMounted onNavigate={onNavigate} dismissAt={layout.navigationOverlay ? APP_FRAME_ALWAYS_NARROW : APP_FRAME_ALWAYS_WIDE}
@@ -296,23 +305,23 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
           </SemanticContent>
           <SemanticContent as="div" ref={stage} data-application-frame-region="stage" data-stage-navigation={layout.navigationOverlay ? "overlay" : "docked"} data-stage-panel={narrow ? "overlay" : "docked"}
             className={"relative isolate flex min-h-0 min-w-0 flex-1 overflow-hidden" + (stageInset === "full" ? "" : " " + STAGE_INSET)}>
-            <SemanticContent as="main" id={target} tabIndex={-1} className={MAIN + "focus-ring-inset"} aria-busy={mainState === "loading" || undefined} style={{ flex: "1 1 0%", overflowAnchor: "auto" }}>{displayedMain}</SemanticContent>
-            {pageModule != null && moduleOpen ? <SemanticContent as="aside" data-application-frame-region="page-module" aria-label={pageModuleLabel} className="min-h-0 shrink-0 overflow-auto" style={{ inlineSize: APP_FRAME_LAYOUT.sidebar }}>{pageModule}</SemanticContent> : null}
+            <SemanticContent as="main" id={target} tabIndex={-1} className={MAIN + "focus-ring-inset flex-1 scroll-anchor-auto"} aria-busy={mainState === "loading" || undefined}>{displayedMain}</SemanticContent>
+            {pageModule != null && moduleOpen ? <SemanticContent as="aside" data-application-frame-region="page-module" aria-label={pageModuleLabel} className="min-h-0 shrink-0 overflow-auto frame-sidebar-measure">{pageModule}</SemanticContent> : null}
           </SemanticContent>
           <FrameDock notices={notices} dock={dock} sheet={!wide} />
         </SemanticContent>
-        {rightPanel && <SemanticContent as="aside" id={generated + "-panel"} aria-label={rightPanel.label} data-open={panelDocked} aria-hidden={!panelDocked} inert={!panelDocked}
-          className={"frame-docked-panel h-full min-h-0 shrink-0 overflow-hidden " + APP_FRAME_PANEL_SIZE[panelDocked ? "docked" : "closed"]} style={panelDocked ? { [APP_FRAME_PANEL_WIDTH_VAR]: `${currentPanelWidth}px` } as CSSProperties : undefined}>
+        {rightPanel && <SemanticContent as="aside" ref={panelRegion} id={generated + "-panel"} aria-label={rightPanel.label} data-open={panelDocked} aria-hidden={!panelDocked} inert={!panelDocked}
+          className={"frame-docked-panel h-full min-h-0 shrink-0 overflow-hidden " + APP_FRAME_PANEL_SIZE[panelDocked ? "docked" : "closed"]}>
           {!narrow && <ResizablePane min={rightPanel.min} max={rightPanel.max} defaultValue={rightPanel.defaultValue}
             value={rightPanel.value ?? width} step={rightPanel.step} label={rightPanel.label} handleLabel={rightPanel.handleLabel}
             onChange={next => { setWidth(next); rightPanel.onChange?.(next); }} onFocusCapture={capturePanelFocus} data-application-frame-panel="pane"
-            className="h-full min-h-0 shrink-0 rounded-none border-0 border-s border-line-base p-frame-panel"><FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet></ResizablePane>}
+            className={"h-full min-h-0 shrink-0 rounded-none border-0 border-s p-frame-panel " + GROUND_PAINT.page.border}><FrameSlotOutlet slot="right-panel">{rightPanel.children}</FrameSlotOutlet></ResizablePane>}
         </SemanticContent>}
       </SemanticContent>
       <CommandMenu {...commandProps} dir={dir} isOpen={commandOpen} onOpenChange={setCommandOpen} query={query} onQueryChange={value => { setQuery(value); queryChange?.(value); }} />
       {hasToasts ? <ToasterFrameInsetProvider value={toastInset}>{toasts}</ToasterFrameInsetProvider> : null}
     </SemanticContent>
-  </PopoverContext.Provider></ModalContext.Provider>;
+  </OverlayDirection>;
 
 }
 

@@ -83,7 +83,7 @@ function GridListItem({ className, render, ...rest }: GridListItemProps) {
     }}
     className={({ isSelected, isFocusVisible }) => cx(
       "flex min-w-0 items-center gap-md px-md py-sm border-b border-s-2 border-line-base last:border-b-0 outline-none",
-      isSelected ? "bg-accent-tint border-s-accent" : "border-s-transparent hover:bg-control-tonal-hover",
+      isSelected ? "bg-accent border-s-primary" : "border-s-transparent hover:bg-control-tonal-hover",
       isSelected || isFocusVisible ? "forced-colors:outline forced-colors:outline-solid" : "",
       isFocusVisible ? "forced-colors:outline-2 forced-colors:-outline-offset-2" : "",
       className,

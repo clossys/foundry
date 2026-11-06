@@ -76,7 +76,7 @@ describe("Matrix", () => {
     expect([...plates].filter(plate => plate.getAttribute("data-featured") === "true")).toHaveLength(1);
     const plate = container.querySelector(`[data-matrix-side="${featured}"] > div`) as HTMLElement;
     expect(plate).toHaveAttribute("data-featured", "true");
-    expect(plate).toHaveClass("border-t", "border-t-accent");
+    expect(plate).toHaveClass("border-t", "border-t-primary");
     expect(plate.style.borderBlockStartWidth).toBe("var(--ui-border-hairline, 1px)");
     expect([...container.querySelectorAll("[data-matrix-side]")].map(side => side.getAttribute("data-matrix-side"))).toEqual(["first", "second"]);
   });
@@ -159,7 +159,7 @@ describe("Matrix", () => {
       } else expect(plate).toHaveClass("bg-(--color-surface-raised)");
       expect((plate as HTMLElement).style.getPropertyValue("--color-surface-raised")).toBe("");
     }
-    expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-accent");
+    expect(container.querySelector('[data-featured="true"]')).toHaveClass(ground === "inverse" ? "border-t-accent-on-inverse" : "border-t-primary");
     expect(screen.getByRole("heading", { name: "A shared record" }).tagName).toBe("H4");
     expect(screen.getByLabelText("Options")).toHaveAttribute("id", "options");
     expect(screen.getByLabelText("Options")).toHaveStyle({ inlineSize: "100%" });

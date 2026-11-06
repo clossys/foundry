@@ -38,7 +38,8 @@
       "components.link",
       "components.semantic-content",
       "components.badge",
-      "components.empty"
+      "components.empty",
+      "components.card"
     ],
     "parts": [
       "sections.band",

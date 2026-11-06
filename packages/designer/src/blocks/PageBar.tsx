@@ -130,7 +130,7 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
         ? <SemanticContent as="li" className="shrink-0"><MenuTrigger>
             <Button variant="ghost" className={CONTROL} style={TAP} aria-label={collapsedBreadcrumbLabel}><SemanticContent as="span" aria-hidden="true">...</SemanticContent></Button>
             <PopupMenu>
-              {ancestors.map(item => <MenuGroup key={item.id} id={item.id}>
+              {ancestors.map(item => <MenuGroup key={item.id} id={item.id} aria-label={item.label}>
                 <MenuLabel>{item.label}</MenuLabel>
                 <MenuItem id={JSON.stringify([item.id])} href={item.href}>{item.label}</MenuItem>
                 {item.siblings?.map(sibling => <MenuItem key={sibling.id} id={JSON.stringify([item.id, sibling.id])} href={sibling.href}>{sibling.label}</MenuItem>)}
@@ -223,7 +223,7 @@ export function PageBar({ root, context, page, workspaces, header, onNavigate, l
     {page && <PageTrail root={root} title={page.title} breadcrumb={page.breadcrumb} workspaces={workspaces} narrow={narrow} labels={labels} />}
     {information && <DialogTrigger isOpen={infoOpen} onOpenChange={setInfoOpen}>
       <Button variant="ghost" className={CONTROL} style={TAP} aria-label={pageInfoLabel}><Icon glyph={ChevronDown} decorative className={infoOpen ? "rotate-180" : undefined} /></Button>
-      <Popover triggerRef={bar} className="text-body text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0}
+      <Popover triggerRef={bar} className="text-ink-primary" aria-label={pageInfoLabel} placement="bottom start" offset={0}
         style={{ direction, inlineSize: barWidth, maxInlineSize: `calc(100vw - 2 * ${PAGE_BAR_LAYOUT.gutter})` }}>
         <SemanticContent as="div" data-application-frame-region="page-info" className="flex flex-wrap items-start gap-sm">
           <SemanticContent as="div">{page?.status}</SemanticContent><SemanticContent as="div">{page?.description}</SemanticContent><SemanticContent as="div">{page?.updatedAt}</SemanticContent><SemanticContent as="div">{page?.meta}</SemanticContent><SemanticContent as="div">{page?.scope}</SemanticContent>
@@ -313,7 +313,7 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
       {header.nav?.items.map(item => {
         const selected = item.id === header.nav?.activeId;
         return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} buttonVariant="ghost"
-          className={"whitespace-nowrap border-b-2 " + (selected ? "border-accent text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
+          className={"whitespace-nowrap border-b-2 " + (selected ? "border-primary text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
       })}
     </nav>
     <SemanticContent as="div" ref={actions} style={embedded ? { gridColumn: "-2 / -1", gridRow: 1 } : undefined} className="flex min-w-0 items-center justify-self-end" data-frame-header-actions="">{header.actions?.render({ compact: overflow.compactActions })}</SemanticContent>

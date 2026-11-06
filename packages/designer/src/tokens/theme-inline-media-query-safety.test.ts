@@ -16,7 +16,7 @@ const themeInline = parseDeclarationsForSelector(themeKeysCss, "@theme inline");
  * the file's own header comment), so a consumer's brand.css override of the
  * plain custom property is still picked up by the generated Tailwind
  * utility. That pattern is correct and load-bearing for an ordinary
- * PROPERTY VALUE — `background-color: var(--color-accent, oklch(...))` is
+ * PROPERTY VALUE — `background-color: var(--primary, oklch(...))` is
  * valid CSS and resolves at paint time either way.
  *
  * It is fatal for exactly two Tailwind `@theme` namespaces: `--breakpoint-*`

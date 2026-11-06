@@ -32,7 +32,7 @@ const FRAME_CRITICAL_CSS = [
   "[data-frame-root]{display:flex;flex-direction:column;min-height:100dvh}",
   `#${SITE_MAIN_ID}{display:flex;flex:1;flex-direction:column;width:100%}`,
   `a[href="#${SITE_MAIN_ID}"]:not(:focus){position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border-width:0}`,
-  '[data-frame-root] header span.bg-accent[aria-hidden="true"]{display:inline-block;flex-shrink:0;background-color:var(--color-accent,currentColor)}',
+  '[data-frame-root] header span.bg-primary[aria-hidden="true"]{display:inline-block;flex-shrink:0;background-color:var(--primary,currentColor)}',
   "}",
 ].join("");
 

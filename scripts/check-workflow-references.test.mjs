@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { readFileSync, readdirSync } from "node:fs";
+import { mkdtempSync, readFileSync, readdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
@@ -8,6 +9,8 @@ import { discoverGateTestFiles, GATE_TEST_EXCLUSIONS } from "./lib/gate-test-set
 import { classifyPath } from "./classify-change-tier.mjs";
 import { GATED_SCRIPT_PROSE_INPUTS, OPAQUE_NPM_SCRIPTS } from "./lib/gated-script-prose-inputs.mjs";
 import { parseSteps } from "./run-check-steps.mjs";
+import { reachable } from "./check-orphan-checks.mjs";
+import { RULES_ENTRY } from "./pre-push-ratchet.mjs";
 
 // check-workflow-references — a future `check:*` script added only to the
 // local `npm run check` aggregate, and to no workflow, is exactly issue
@@ -91,6 +94,25 @@ export function reachesCI(scriptName, scriptValue, workflowText) {
   return files.length > 0 && files.every((token) => workflowText.includes(token));
 }
 
+/**
+ * The official gate (owner, low-CI rule): the root `check` aggregate
+ * (scripts/run-check-steps.mjs) plus the pre-push hook, which runs the root
+ * `check:rules` (scripts/pre-push-ratchet.mjs). A `check:*` script is wired
+ * when that gate reaches it, traced statically by check:orphan-checks'
+ * `reachable`, or when a workflow reaches it (`reachesCI`). A script reached
+ * by none of them is a gate that never runs.
+ */
+export const OFFICIAL_GATE_ENTRIES = Object.freeze([{ dir: ".", script: "check" }, RULES_ENTRY]);
+
+export async function unwiredCheckScripts(root, workflowText) {
+  const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+  const { scripts } = await reachable(root, { entries: OFFICIAL_GATE_ENTRIES });
+  return Object.entries(manifest.scripts ?? {})
+    .filter(([name]) => name.startsWith("check:"))
+    .filter(([name, value]) => !scripts.has(`.#${name}`) && !reachesCI(name, value, workflowText))
+    .map(([name]) => name);
+}
+
 function workflowJob(workflowText, name) {
   const start = workflowText.indexOf(`  ${name}:\n`);
   assert.notEqual(start, -1, `workflow is missing ${name} job`);
@@ -136,7 +158,7 @@ export function candidateQualificationCiFailures(workflowText) {
   return failures;
 }
 
-test("every check:* script in the root manifest is referenced by at least one workflow", () => {
+test("every check:* script in the root manifest is reached by the root check, the pre-push hook or a workflow", async () => {
   const rootManifest = JSON.parse(readFileSync(join(repoRoot, "package.json"), "utf8"));
   const checkScripts = Object.entries(rootManifest.scripts ?? {}).filter(([name]) => name.startsWith("check:"));
   assert.ok(checkScripts.length > 0, "expected at least one check:* script in the root manifest — fixture drift?");
@@ -145,15 +167,46 @@ test("every check:* script in the root manifest is referenced by at least one wo
   assert.ok(workflowFiles.length > 0, "expected at least one workflow file under .github/workflows");
   const workflowText = workflowFiles.map((file) => readFileSync(join(workflowsDir, file), "utf8")).join("\n");
 
-  const unreferenced = checkScripts.filter(([name, value]) => !reachesCI(name, value, workflowText)).map(([name]) => name);
+  const unwired = await unwiredCheckScripts(repoRoot, workflowText);
 
   assert.deepEqual(
-    unreferenced,
+    unwired,
     [],
-    `check:* script(s) in package.json with no workflow reference (npm run name, scripts/*.mjs, or packages/*/dist/*.js all absent from every .github/workflows/*.yml): ${unreferenced.join(", ")}. ` +
-      "A script that is only ever in the local `npm run check` aggregate and never a workflow is a gate that never runs in CI (#414) — wire it into a workflow, or if it genuinely cannot run there, keep it out of `check:*` and document why. " +
+    `check:* script(s) in package.json that nothing runs: ${unwired.join(", ")}. ` +
+      "The official gate is the root `npm run check` (scripts/run-check-steps.mjs) plus the pre-push hook; a workflow reference also counts. " +
+      "A script reached by none of them is a gate that never runs (#414) — add it to the root `check` steps, or keep it out of `check:*` and document why. " +
       "A COMPOUND script needs every file it runs referenced, or one `npm run <name>` invocation that runs all of them: one wired command does not vouch for its siblings (#472).",
   );
+});
+
+test("a check:* script reached by neither the root check, the pre-push hook nor a workflow is unwired", async () => {
+  const root = mkdtempSync(join(realpathSync(tmpdir()), "workflow-references-"));
+  try {
+    writeFileSync(join(root, "package.json"), JSON.stringify({
+      name: "fixture-root",
+      private: true,
+      scripts: {
+        check: "node scripts/run-check-steps.mjs check:stepped typecheck",
+        "check:stepped": "node scripts/check-stepped.mjs",
+        "check:rules": "node scripts/check-rules.mjs",
+        "check:in-ci": "node scripts/check-in-ci.mjs",
+        "check:new-unreached": "node scripts/check-new-unreached.mjs",
+        typecheck: "tsc --noEmit",
+      },
+    }));
+    const workflow = "      - run: npm run check:in-ci\n";
+    assert.deepEqual(await unwiredCheckScripts(root, workflow), ["check:new-unreached"]);
+    // Each path is load-bearing: drop the step, the hook entry's script, or the workflow line and it is unwired.
+    assert.deepEqual(await unwiredCheckScripts(root, ""), ["check:in-ci", "check:new-unreached"]);
+    const manifest = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+    manifest.scripts.check = "node scripts/run-check-steps.mjs typecheck";
+    delete manifest.scripts["check:rules"];
+    manifest.scripts["check:rules-renamed"] = "node scripts/check-rules.mjs";
+    writeFileSync(join(root, "package.json"), JSON.stringify(manifest));
+    assert.deepEqual(await unwiredCheckScripts(root, workflow), ["check:stepped", "check:new-unreached", "check:rules-renamed"]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("the required build context fails closed on candidate qualification records with full history", () => {

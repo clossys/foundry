@@ -10,7 +10,7 @@ import type { ItemData, ItemsProps } from "./types.js";
 type OrderStyle = CSSProperties & { [key: `--items-${string}`]: string | number };
 const M = "var(--spacing-2xl, 32px)";
 const LINE = { base: "bg-line-strong", sunken: "bg-line-strong", inverse: "bg-line-on-inverse" } as const;
-const DISC = { base: "bg-accent-tint text-accent-text", sunken: "bg-accent-tint text-accent-text", inverse: "border border-line-on-inverse text-ink-on-inverse" } as const;
+const DISC = { base: "bg-accent text-accent-text", sunken: "bg-accent text-accent-text", inverse: "border border-line-on-inverse text-ink-on-inverse" } as const;
 export function orderLayout(props: ItemsProps): { className: string; style: OrderStyle } {
   const columns = props.arrangement === "columns";
   const wide = columns ? ORDER_LAYOUT_CLASSES.columns : props.lanes ? props.items.length === 3 ? ORDER_LAYOUT_CLASSES.lanes3 : props.items.length === 4 ? ORDER_LAYOUT_CLASSES.lanes4 : ORDER_LAYOUT_CLASSES.lanes5 : undefined;

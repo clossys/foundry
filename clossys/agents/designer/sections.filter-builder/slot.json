@@ -43,7 +43,9 @@
       "components.date-picker",
       "components.button",
       "components.tag-group",
-      "components.text-field"
+      "components.text-field",
+      "components.card",
+      "components.semantic-content"
     ],
     "parts": [
       "sections.band",

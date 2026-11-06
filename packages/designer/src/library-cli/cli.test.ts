@@ -38,7 +38,10 @@ describe("designer-library CLI", () => {
     expect(good.code).toBe(0);
     expect(JSON.parse(good.out).findings).toEqual([]);
     const css = await fs.readFile(join(root, "theme.css"), "utf8");
-    await fs.writeFile(join(root, "theme.css"), css.replace(/(--radius:) [^;]+;/, "$1 999px;"));
+    // theme.css carries only the Tailwind-kind outputs; the mutation must hit one it really emits.
+    const mutated = css.replace(/(--animate-shiny-text:) [^;]+;/, "$1 999px;");
+    expect(mutated).not.toBe(css);
+    await fs.writeFile(join(root, "theme.css"), mutated);
     const stale = await call();
     expect(stale.code).toBe(1);
     expect(JSON.parse(stale.out).findings.some((row: { code: string; evidence: string }) => row.code === "DF2" && row.evidence.includes("value mismatch"))).toBe(true);

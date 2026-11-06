@@ -6,7 +6,6 @@ import { describe, expect, it } from "vitest";
 import frameSlots from "../catalog/slots/frames.json" with { type: "json" };
 import { importFoundrySections } from "../importers/foundry-sections.js";
 import { importFoundryFrames } from "../importers/foundry-frames.js";
-import { importFoundryComponents } from "../importers/foundry-components.js";
 import { loadSectionRegistry } from "./sections-contract.js";
 import { loadCatalog } from "./index.js";
 import { loadComponentRegistry } from "./component-registry.js";
@@ -16,8 +15,9 @@ import { emitSurfaces } from "./surface-emit.js";
 import { sha256 } from "./digest.js";
 import { planSurfaceDefaults, type SurfaceDefaultCandidateDocument } from "./surface-defaults.js";
 import { surfaceEntryOf, surfaceSelection } from "./surface-library.js";
-import { selectedPackageClosure, selectedPackageComponentOptions } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { selectedComponentFills, selectedPackageClosure, selectedPackageComponentOptions } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import type { SurfaceCandidateDocument, SurfacePackageEvidence } from "./surface-types.js";
+import { SURFACE_DEFAULTS } from "./__fixtures__/surface-engine/catalog-surface-counts.js";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "./types.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -39,7 +39,7 @@ function setup(edit?: (doc: SurfaceDefaultCandidateDocument) => void) {
   const slots = [...loadSectionRegistry().slots, ...structuredClone(frameSlots) as unknown as FrameSlot[]];
   const fills = structuredClone([...importFoundrySections().fills, ...importFoundryFrames().fills]) as unknown as SurfaceDefaultCandidateDocument[];
   const registry = loadComponentRegistry();
-  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: registry.slots, fills: importFoundryComponents().fills }, surfaces: { slots, fills: fills as unknown as SurfaceCandidateDocument[], transforms: [], rules: [], materializations: [] } };
+  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: registry.slots, fills: selectedComponentFills() }, surfaces: { slots, fills: fills as unknown as SurfaceCandidateDocument[], transforms: [], rules: [], materializations: [] } };
   const { library: empty } = selectedPackageClosure(catalog);
   if (edit) fills.forEach(edit);
   const plan = planSurfaceDefaults({ catalog: { slots, fills }, slots: slots.map(slot => slot.id), preference: ["foundry"] });
@@ -58,12 +58,12 @@ const surfaceErrors = (library: CompositeLibraryData, catalog: CompositeCatalogD
 };
 
 describe("package-pointer surface origin", () => {
-  // FINDING perf: Real 62-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
+  // FINDING perf: Real full-catalog surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
   it("adopts every planned Section and Frame default without a bundle, from the real catalog", () => {
     const { catalog, plan, empty } = setup();
-    expect(plan.decisions).toHaveLength(62);
+    expect(plan.decisions).toHaveLength(SURFACE_DEFAULTS.length);
     const library = adopt(catalog, empty, plan.decisions);
-    expect(library.surfaces!.fills).toHaveLength(62);
+    expect(library.surfaces!.fills).toHaveLength(SURFACE_DEFAULTS.length);
     expect(library.surfaces!.files).toEqual([]);
     const selection = surfaceSelection(library);
     expect(selection.slots.map(row => row.slot)).toEqual(plan.decisions.map(row => row.slot).sort());
@@ -72,19 +72,19 @@ describe("package-pointer surface origin", () => {
     expect(faq.origin).toMatchObject({ kind: "package", source: "foundry", fill: "foundry/sections.faq", pin: { package: "@clossys/designer", version: "0.12.0", export: "./blocks#Faq" }, license: "MIT", adoptedAt: "2026-10-26" });
   }, 20000);
 
-  // FINDING perf: Real 62-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
-  it("emits all 62 package surfaces with proven private site-shell imports", () => {
+  // FINDING perf: Real full-catalog surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
+  it("emits every defaulted package surface with proven private site-shell imports", () => {
     const { catalog, plan, empty } = setup();
     const all = adopt(catalog, empty, plan.decisions);
     const allProfile = resolveComposite({ catalog, library: all, ...options() });
-    expect(Object.keys(allProfile.surfaces!.fills)).toHaveLength(62);
+    expect(Object.keys(allProfile.surfaces!.fills)).toHaveLength(SURFACE_DEFAULTS.length);
     expect(surfaceErrors(all, catalog)).toEqual([]);
     expect(allProfile.check.findings.filter(row => row.severity === "error")).toEqual([]);
     const compositeFiles = emitComposite(allProfile, ["surface-index"]);
     expect(compositeFiles.find(row => row.path === "frames/site-shell/index.ts")?.contents).toBe('export { SiteFrame as SiteShell } from "@clossys/designer/frames";\n');
-    expect(compositeFiles.find(row => row.path === "surface-index.ts")!.contents.split("\n").filter(Boolean)).toHaveLength(62);
+    expect(compositeFiles.find(row => row.path === "surface-index.ts")!.contents.split("\n").filter(Boolean)).toHaveLength(SURFACE_DEFAULTS.length);
     const allReport = emitComposite(allProfile, ["surfaces-consumption"]);
-    expect(JSON.parse(allReport.find(row => row.path === "surfaces-consumption.json")!.contents).fills).toHaveLength(62);
+    expect(JSON.parse(allReport.find(row => row.path === "surfaces-consumption.json")!.contents).fills).toHaveLength(SURFACE_DEFAULTS.length);
     const profile = allProfile;
     // This checks the surface emitter against the real resolved surface profile;
     // component runtime qualification remains a separate set of findings.
@@ -102,12 +102,12 @@ describe("package-pointer surface origin", () => {
     expect(file("sections/stats/index.ts")).toBe('export { StatGroup as Stats } from "@clossys/designer/blocks";\n');
     expect(file("sections/consent/index.ts")).toBe('export { ConsentBanner as Consent } from "@clossys/designer/blocks";\n');
     expect(file("surface-index.ts")).toContain('export { Faq } from "./sections/faq/index.js";\n');
-    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(62);
-    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(62);
+    expect(file("surface-index.ts")!.split("\n").filter(Boolean)).toHaveLength(SURFACE_DEFAULTS.length);
+    expect(JSON.parse(file("surfaces-consumption.json")!).fills).toHaveLength(SURFACE_DEFAULTS.length);
   }, 20000);
 
   it("emits a satisfiable genuine package selection through the public composite engine", () => {
-    const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: importFoundryComponents().fills }, surfaces: {
+    const catalog = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: selectedComponentFills() }, surfaces: {
       slots: loadSectionRegistry().slots.filter(slot => slot.id === "sections.call-to-action"),
       fills: importFoundrySections().fills.filter(doc => doc.$extensions["com.clossys.fill"].slot === "sections.call-to-action"),
       transforms: [], rules: [], materializations: [],
@@ -119,7 +119,7 @@ describe("package-pointer surface origin", () => {
     expect(emitComposite(profile, ["surface-index"]).find(row => row.path === "sections/call-to-action/index.ts")?.contents).toBe('export { CallToAction } from "@clossys/designer/blocks";\n');
   });
 
-  // FINDING perf: Real 62-surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
+  // FINDING perf: Real full-catalog surface adoption exceeds 5s; allow completion before deferred snapshot-copy optimization.
   it("refuses a missing or differing package export, version or module in the evidence", () => {
     const { catalog, plan, empty } = setup();
     const library = adopt(catalog, empty, plan.decisions);

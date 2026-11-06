@@ -2,15 +2,16 @@
 import { describe, expect, it } from "vitest";
 import { applyCompositeLibraryChange, compositeLibraryHash, resolveComposite } from "./library-components.js";
 import { loadCatalog } from "./index.js";
+import { exampleSurfaceKitEvidence, measuredReaderFields } from "./__fixtures__/surface-engine/example-surface-kit.js";
 import { surfaceEntryOf, surfacePackageDescriptorHash } from "./surface-library.js";
 import type { CompositeCatalogData, CompositeLibraryData, FrameSlot } from "./types.js";
 import type { SurfaceCatalog, SurfacePackageDocument, SurfacePackageEntry, SurfacePackageOrigin } from "./surface-types.js";
 
-const options = { surfaceOptions: { packages: [{ module: "@example/surface-kit/frames", version: "1.0.0", artifactSha256: "a".repeat(64), values: ["Reader"], types: [] }], measurements: [] } };
+const options = { surfaceOptions: { packages: [exampleSurfaceKitEvidence()], measurements: [] } };
 const pointer = (library: CompositeLibraryData, slot = "frames.reader") => surfaceEntryOf(library.surfaces!.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === slot)!) as SurfacePackageEntry & { origin: SurfacePackageOrigin };
 function fixture() {
   const contract: FrameSlot = { id: "frames.reader", layer: "frames", status: "draft", requires: [], contract: { kind: "frame", root: "div", landmarks: [], slots: [{ id: "main", required: true, accepts: "host-node" }], members: { mode: "closed", names: [] }, statePorts: [], rendering: "server", breakpoints: [], allowedReads: { themes: [], assets: [] } } };
-  const candidate: SurfacePackageDocument = { $extensions: { "com.clossys.fill": { id: "foundry/frames.reader", slot: "frames.reader", source: "foundry", mode: "implementation", sourceAddress: "./frames#Reader", relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", status: "draft", pin: { package: "@example/surface-kit", version: "1.0.0", export: "./frames#Reader" } } }, frames: { reader: { slot: "frames.reader", members: [], propMap: {}, slots: { main: "children" }, statePorts: {}, impl: { kind: "package", module: "@example/surface-kit/frames", export: "Reader" } } } };
+  const candidate: SurfacePackageDocument = { $extensions: { "com.clossys.fill": { id: "foundry/frames.reader", slot: "frames.reader", source: "foundry", mode: "implementation", sourceAddress: "./frames#Reader", relation: "same-contract", builtOn: [], conforms: [], evidence: [], author: "foundry", trust: "foundry", license: "MIT", status: "draft", pin: { package: "@example/surface-kit", version: "1.0.0", export: "./frames#Reader" } } }, frames: { reader: { slot: "frames.reader", members: [], propMap: {}, slots: { main: "children" }, statePorts: {}, impl: { kind: "package", module: "@example/surface-kit/frames", export: "Reader" }, ...measuredReaderFields() } } };
   const oldHash = surfacePackageDescriptorHash(candidate.frames!.reader!);
   const registration = { document: structuredClone(candidate), contract: structuredClone(contract) };
   const surfaces: SurfaceCatalog & { packageHistory: Record<string, typeof registration[]> } = { slots: [contract], fills: [candidate as never], transforms: [], rules: [], materializations: [], packageHistory: { [oldHash]: [registration] } };

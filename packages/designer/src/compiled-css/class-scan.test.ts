@@ -18,12 +18,12 @@ describe("scanClassCandidates", () => {
   it("extracts class-shaped tokens from string literals", () => {
     writeFileSync(
       join(dir, "Widget.tsx"),
-      `const BASE = "inline-flex items-center rounded-control bg-accent hover:bg-accent-hover";\n` +
+      `const BASE = "inline-flex items-center rounded-control bg-primary hover:bg-accent-hover";\n` +
         `const SIZE = { sm: "px-sm py-xs", md: "px-md py-sm" };\n`,
     );
     const result = scanClassCandidates(dir);
     expect(result.filesScanned).toBe(1);
-    expect(result.candidates).toContain("bg-accent");
+    expect(result.candidates).toContain("bg-primary");
     expect(result.candidates).toContain("hover:bg-accent-hover");
     expect(result.candidates).toContain("rounded-control");
     expect(result.candidates).toContain("px-sm");
@@ -37,10 +37,10 @@ describe("scanClassCandidates", () => {
   });
 
   it("returns a sorted, deduplicated list", () => {
-    writeFileSync(join(dir, "A.tsx"), `"bg-accent bg-accent"`);
-    writeFileSync(join(dir, "B.tsx"), `"bg-accent"`);
+    writeFileSync(join(dir, "A.tsx"), `"bg-primary bg-primary"`);
+    writeFileSync(join(dir, "B.tsx"), `"bg-primary"`);
     const result = scanClassCandidates(dir);
-    const occurrences = result.candidates.filter((c) => c === "bg-accent");
+    const occurrences = result.candidates.filter((c) => c === "bg-primary");
     expect(occurrences.length).toBe(1);
     expect(result.candidates).toEqual([...result.candidates].sort());
   });
@@ -59,14 +59,14 @@ describe("scanClassCandidates", () => {
   });
 
   it("skips test, spec, check, and declaration files", () => {
-    writeFileSync(join(dir, "Widget.test.tsx"), `"bg-accent"`);
-    writeFileSync(join(dir, "Widget.check.tsx"), `"bg-accent"`);
-    writeFileSync(join(dir, "Widget.d.ts"), `"bg-accent"`);
+    writeFileSync(join(dir, "Widget.test.tsx"), `"bg-primary"`);
+    writeFileSync(join(dir, "Widget.check.tsx"), `"bg-primary"`);
+    writeFileSync(join(dir, "Widget.d.ts"), `"bg-primary"`);
     writeFileSync(join(dir, "Real.tsx"), `"text-body"`);
     const result = scanClassCandidates(dir);
     expect(result.filesScanned).toBe(1);
     expect(result.skippedByDesign.map((s) => s.file).sort()).toEqual(["Widget.check.tsx", "Widget.d.ts", "Widget.test.tsx"]);
-    expect(result.candidates).not.toContain("bg-accent");
+    expect(result.candidates).not.toContain("bg-primary");
   });
 
   it("skips an `internal/` subdirectory by default", () => {
@@ -79,7 +79,7 @@ describe("scanClassCandidates", () => {
   });
 
   it("ignores non-matching extensions", () => {
-    writeFileSync(join(dir, "data.json"), `{"class": "bg-accent"}`);
+    writeFileSync(join(dir, "data.json"), `{"class": "bg-primary"}`);
     const result = scanClassCandidates(dir);
     expect(result.filesScanned).toBe(0);
     expect(result.candidates).toEqual([]);

@@ -16,7 +16,8 @@ describe("the single SiteHeader surface contract", () => {
     for (const surface of surfaces) {
       rerender(<SiteHeader brand="Example" surface={surface} />);
       expect(header).toHaveAttribute("data-surface", surface);
-      expect(header.style.position).toBe(surface === "glass" ? "fixed" : "relative");
+      expect(header).toHaveClass(surface === "glass" ? "fixed" : "relative");
+      expect(header.style.position).toBe("");
       if (surface === "glass") expect(header).toHaveAttribute("data-placement", "overlay");
       else expect(header).not.toHaveAttribute("data-placement");
     }
@@ -27,10 +28,10 @@ describe("the single SiteHeader surface contract", () => {
       render(<SiteHeader brand="Example" surface={surface} tone={tone} />);
       const header = screen.getByRole("banner");
       expect(header).toHaveAttribute("data-tone", tone);
-      expect(header).toHaveClass(tone === "inverse" ? "text-ink-on-inverse" : "text-ink-primary");
+      expect(header).toHaveClass(tone === "inverse" ? "text-background" : "text-foreground");
       if (surface === "solid") {
-        expect(header).toHaveClass(tone === "inverse" ? "bg-surface-inverse" : "bg-surface-raised");
-        expect(header).toHaveClass("border-b");
+        expect(header).toHaveClass(tone === "inverse" ? "bg-foreground" : "bg-card");
+        expect(header).toHaveClass("hairline-b");
       } else if (surface === "transparent") {
         expect(header.className).not.toMatch(/\bbg-|\bborder-b\b|site-header-overlay/);
         expect(header.style.borderBottomWidth).toBe("");

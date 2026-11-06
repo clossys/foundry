@@ -106,7 +106,8 @@
       "components.icon",
       "components.logo",
       "components.separator",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.button"
     ]
   },
   "inputs": [

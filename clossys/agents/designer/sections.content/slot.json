@@ -48,7 +48,8 @@
     },
     "allowedComposes": [
       "components.link",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.card"
     ],
     "parts": [
       "sections.band",

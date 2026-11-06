@@ -264,7 +264,7 @@ function ChartTooltip({ plot, x, y, text, children }: {
     </text>
   </g>;
   return children === undefined ? tooltip : <g data-chart-tooltip-trigger="" tabIndex={0} role="img" aria-label={text}
-    className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+    className="focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
     {children}{tooltip}
   </g>;
 }
