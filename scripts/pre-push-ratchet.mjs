@@ -39,7 +39,16 @@
  *     means nothing was measured: it blocks as `build-failed` and nothing else runs;
  *   - a sub-check that is red on the head because it could not load a module (`loadError`) even after
  *     that build: the check never measured the head, so it fails closed as `setup-error` whatever the
- *     base did, never as unchanged debt.
+ *     base did, never as unchanged debt;
+ *   - anything a check absent at base finds (`absentAtBase`, decided on the pristine base): when the
+ *     base's root package.json defines no check:rules, or the base has no package.json in a sub-check's
+ *     cwd, no check:studio manifest, or a manifest that does not list the sub-check, there is no
+ *     baseline, so that entry is not run on the base and the head is measured ABSOLUTELY: check:rules
+ *     must exit 0 with no finding, the sub-check must exit 0 (`absent-red` blocks, `absent-green`
+ *     passes, a head usage or load error is a `setup-error`). Absent is never unchanged and never
+ *     skipped. The scripts of a package the base lacks are not carried onto it (`uncarried`, reported).
+ *     Every other base failure still fails closed: an unreadable base root package.json or manifest
+ *     is an error (exit 2), as is check:rules failing on a base that defines it.
  * Unchanged debt and fixed debt pass. Either revision failing to run check:rules is a setup error
  * (exit 2) and blocks too: the ratchet fails closed. The delta is printed either way.
  *
@@ -89,6 +98,43 @@ export const PENDING_HOOK_CHECKS = Object.freeze(["producer check:copy-source"])
 /** check:rules finding kinds about the checks themselves, not about debt in the tree. */
 export const INTEGRITY = /^(?:shape|unknown-check|unreachable|fixture-.+|exemption-.+)$/;
 const RULES_ENTRY = { dir: ".", script: "check:rules" };
+
+function readJson(tree, rel) {
+  try { return JSON.parse(readFileSync(join(tree, rel), "utf8")); } catch (error) { throw new Error(`the base's ${rel} is unreadable (${error.message})`); }
+}
+
+/**
+ * What the pristine base (before any build or overlay) does not have, so it cannot be a baseline:
+ *   - `rules`: the base's root package.json defines no `check:rules` script;
+ *   - `checks`: per sub-check id, the base has no package.json in the check's cwd (the package is absent),
+ *     no check:studio manifest, or a manifest that does not list the id (the check is absent).
+ * Each is a reason string. An absent entry is measured ABSOLUTELY on the head: check:rules must exit 0
+ * with no finding and the sub-check must exit 0; it is never read as unchanged debt and never skipped.
+ * Anything else that goes wrong on the base fails closed: a root package.json that is missing or not
+ * JSON, or a manifest that is not JSON or has no checks list, throws here (the run exits 2), and a
+ * present entry that cannot run on the base is a setup error as before.
+ */
+export function absentAtBase(baseTree, checks) {
+  if (!existsSync(join(baseTree, "package.json"))) throw new Error("the base has no root package.json");
+  const root = readJson(baseTree, "package.json");
+  const rules = typeof root?.scripts?.[RULES_ENTRY.script] === "string" ? undefined : `the base's root package.json defines no ${RULES_ENTRY.script} script`;
+  let listed;
+  if (existsSync(join(baseTree, STUDIO_MANIFEST))) {
+    const doc = readJson(baseTree, STUDIO_MANIFEST);
+    if (!Array.isArray(doc?.checks)) throw new Error(`the base's ${STUDIO_MANIFEST} has no checks list`);
+    listed = new Set(doc.checks.map(entry => entry?.id));
+  }
+  const absent = new Map();
+  for (const check of checks) {
+    const cwd = check.cwd ?? ".";
+    const reason = !existsSync(join(baseTree, cwd, "package.json")) ? `the base has no ${cwd}/package.json`
+      : !listed ? `the base has no ${STUDIO_MANIFEST}`
+      : !listed.has(check.id) ? "the base's check:studio manifest does not list it"
+      : undefined;
+    if (reason) absent.set(check.id, reason);
+  }
+  return { rules, checks: absent };
+}
 
 function sh(command, args, cwd, tree) {
   return new Promise(accept => {
@@ -154,7 +200,9 @@ function beyondMasked(after, before) {
 export function delta(base, head) {
   const build = [["base", base], ["head", head]].flatMap(([side, revision]) => revision.build ? [{ side, ...revision.build }] : []);
   const loosened = head.loosened ?? [];
-  const headKeys = head.rules.map(key), baseKeys = base.rules.map(key);
+  // check:rules absent at base: no baseline, so every head finding is new and the head must exit 0.
+  const rulesAbsent = base.rulesAbsent;
+  const headKeys = head.rules.map(key), baseKeys = rulesAbsent ? [] : base.rules.map(key);
   const integrity = head.rules.filter(finding => INTEGRITY.test(finding.rule));
   const added = head.rules.filter(finding => !INTEGRITY.test(finding.rule));
   const newFindings = beyond(added.map(key), baseKeys).map(k => head.rules.find(finding => key(finding) === k));
@@ -163,9 +211,17 @@ export function delta(base, head) {
     integrity,
     fixed: beyond(baseKeys, headKeys),
     unchanged: headKeys.length - beyond(headKeys, baseKeys).length,
+    ...(rulesAbsent ? { absent: rulesAbsent, headExit: head.rulesExit ?? 0 } : {}),
   };
   const checks = head.checks.map(check => {
-    const before = base.checks.find(other => other.id === check.id) ?? { exit: 0, lines: [] };
+    // A sub-check the base has no measurement of is absent there: the head is measured absolutely.
+    const before = base.checks.find(other => other.id === check.id) ?? { absent: "the base has no measurement of it" };
+    if (before.absent) {
+      const at = { id: check.id, base: "absent", head: check.exit, absent: before.absent };
+      if (check.exit !== 0 && check.load) return { ...at, state: "setup-error", lines: [check.load] };
+      if (check.exit !== 0 && check.exit !== FINDING_EXIT) return { ...at, state: "setup-error", lines: [`the head exit ${check.exit} is a usage, read or run error, not a verdict`] };
+      return { ...at, state: check.exit === 0 ? "absent-green" : "absent-red", lines: check.exit === 0 ? [] : check.lines };
+    }
     if (check.exit !== 0 && check.load) return { id: check.id, base: before.exit, head: check.exit, state: "setup-error", lines: [check.load] };
     if (check.exit !== 0 && check.exit !== FINDING_EXIT) return { id: check.id, base: before.exit, head: check.exit, state: "setup-error", lines: [`the head exit ${check.exit} is a usage, read or run error, not a verdict`] };
     if (check.exit !== 0 && before.exit !== 0 && before.exit !== FINDING_EXIT) return { id: check.id, base: before.exit, head: check.exit, state: "setup-error", lines: [`the base exit ${before.exit} is a usage, read or run error: the head's red has nothing to compare with`] };
@@ -173,7 +229,8 @@ export function delta(base, head) {
     const state = check.exit === 0 ? (before.exit === 0 ? "green" : "fixed") : before.exit === 0 ? "new-red" : lines.length ? "new-lines" : "unchanged-red";
     return { id: check.id, base: before.exit, head: check.exit, state, lines };
   });
-  const block = build.length > 0 || loosened.length > 0 || rules.new.length > 0 || rules.integrity.length > 0 || checks.some(check => check.state === "new-red" || check.state === "new-lines" || check.state === "setup-error");
+  const block = build.length > 0 || loosened.length > 0 || rules.new.length > 0 || rules.integrity.length > 0 || (rulesAbsent !== undefined && rules.headExit !== 0)
+    || checks.some(check => check.state === "new-red" || check.state === "new-lines" || check.state === "setup-error" || check.state === "absent-red");
   return { block, build, loosened, rules, checks };
 }
 
@@ -187,13 +244,17 @@ export function report(result) {
     for (const line of failure.lines.slice(0, 20)) out.push(`  BUILD ${line}`);
   }
   if (build.length) { out.push("BLOCKED: nothing was measured, because a build failed"); return out.join("\n"); }
-  out.push(`check:rules: base ${result.baseRules} finding(s), head ${result.headRules}; ${rules.new.length} new, ${rules.integrity.length} check-integrity, ${rules.fixed.length} fixed, ${rules.unchanged} unchanged`);
+  if (rules.absent) out.push(`check:rules: base absent (${rules.absent}), measured absolutely: head exit ${rules.headExit}, ${result.headRules} finding(s); ${rules.new.length} new, ${rules.integrity.length} check-integrity`);
+  else out.push(`check:rules: base ${result.baseRules} finding(s), head ${result.headRules}; ${rules.new.length} new, ${rules.integrity.length} check-integrity, ${rules.fixed.length} fixed, ${rules.unchanged} unchanged`);
   for (const finding of rules.new) out.push(`  NEW ${finding.rule}\t${finding.id}\t${finding.message}`);
   for (const finding of rules.integrity) out.push(`  INTEGRITY ${finding.rule}\t${finding.id}\t${finding.message}`);
   for (const fixed of rules.fixed) out.push(`  fixed ${fixed}`);
   for (const id of result.skipped ?? []) out.push(`${"skipped".padEnd(13)} ${id}: not in the head's check:studio manifest yet`);
+  for (const id of result.uncarried ?? []) out.push(`${"uncarried".padEnd(13)} ${id}: the base has no package.json for it, so it is not carried onto the base`);
   for (const check of checks) {
-    out.push(`${check.state.padEnd(13)} ${check.id}: base exit ${check.base}, head exit ${check.head}`);
+    out.push(check.absent
+      ? `${check.state.padEnd(13)} ${check.id}: base absent (${check.absent}), head exit ${check.head}, measured absolutely`
+      : `${check.state.padEnd(13)} ${check.id}: base exit ${check.base}, head exit ${check.head}`);
     for (const line of check.lines.slice(0, 20)) out.push(`  ${check.state === "setup-error" ? "LOAD" : "NEW"} ${line}`);
     if (check.lines.length > 20) out.push(`  ... ${check.lines.length - 20} more new line(s)`);
   }
@@ -255,24 +316,28 @@ async function measure({ repo, baseSha, headSha, ids, cache, work }) {
     if (PENDING_HOOK_CHECKS.includes(id)) { skipped.push(id); return []; }
     throw new Error(`no check:studio sub-check ${JSON.stringify(id)} at head`);
   });
+  // Decided on the pristine base, before the overlay gives it the head's scripts and check code.
+  const absent = absentAtBase(baseTree, checks);
   const entries = [RULES_ENTRY, ...checks.map(check => ({ cwd: check.cwd ?? ".", run: check.run }))];
-  const { overlaid, builds, loosened } = await prepareTrees({ repo, baseSha, headSha, baseTree, headTree, entries, work, cache });
+  const { overlaid, builds, loosened, uncarried } = await prepareTrees({ repo, baseSha, headSha, baseTree, headTree, entries, work, cache, absentPackages: true });
+  const absentNote = { rules: absent.rules, checks: Object.fromEntries(absent.checks) };
   if (builds.base.failure || builds.head.failure) {
     const result = delta({ rules: [], checks: [], build: builds.base.failure }, { rules: [], checks: [], build: builds.head.failure, loosened });
-    return { base: baseSha, head: headSha, overlaid, builds, skipped, baseRules: 0, headRules: 0, delta: result };
+    return { base: baseSha, head: headSha, overlaid, uncarried, absent: absentNote, builds, skipped, baseRules: 0, headRules: 0, delta: result };
   }
-  const [baseRules, headRules] = await Promise.all([rulesOf(baseTree), rulesOf(headTree)]);
+  const [baseRules, headRules] = await Promise.all([absent.rules ? { exit: undefined, findings: [] } : rulesOf(baseTree), rulesOf(headTree)]);
   for (const [name, side] of [["base", baseRules], ["head", headRules]]) {
     if (side.error) throw new Error(`check:rules could not run on the ${name} (${name === "base" ? baseSha : headSha}): ${side.error}`);
   }
   const measured = { base: [], head: [] };
   for (const check of checks) {
-    const [b, h] = await Promise.all([subCheck(baseTree, check), subCheck(headTree, check)]);
+    const reason = absent.checks.get(check.id);
+    const [b, h] = await Promise.all([reason ? { absent: reason } : subCheck(baseTree, check), subCheck(headTree, check)]);
     measured.base.push({ id: check.id, ...b });
     measured.head.push({ id: check.id, ...h });
   }
-  const result = delta({ rules: baseRules.findings, checks: measured.base }, { rules: headRules.findings, checks: measured.head, loosened });
-  return { base: baseSha, head: headSha, overlaid, builds, skipped, baseRules: baseRules.findings.length, headRules: headRules.findings.length, delta: result };
+  const result = delta({ rules: baseRules.findings, rulesAbsent: absent.rules, checks: measured.base }, { rules: headRules.findings, rulesExit: headRules.exit, checks: measured.head, loosened });
+  return { base: baseSha, head: headSha, overlaid, uncarried, absent: absentNote, builds, skipped, baseRules: baseRules.findings.length, headRules: headRules.findings.length, delta: result };
 }
 
 if (resolve(process.argv[1] ?? "") === fileURLToPath(import.meta.url)) {
