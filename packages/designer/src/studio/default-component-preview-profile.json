@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:bad67abc641327fc1ea74ddb75e04933e86c1bbbaa1b57b7d9390b6e436938ea",
+  "selectionHash": "sha256:3dfa62791596763afcf0ff24fff8195503d7873f7fec21717e1e3584ef5bf463",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -684,7 +684,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "a259ded26591e77cd280e04541001f4fc6023024be38b6ed878d8423965017f9",
+        "sha256": "7aa164fc1287018651674150aa0d238c766f76abbdc5e73ed38c01d5004cdce0",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -825,6 +825,24 @@
           }
         ],
         "blockers": [],
+        "secondaryExports": [
+          {
+            "name": "BreadcrumbList",
+            "export": "BreadcrumbList"
+          },
+          {
+            "name": "BreadcrumbItem",
+            "export": "BreadcrumbItem"
+          },
+          {
+            "name": "BreadcrumbLink",
+            "export": "BreadcrumbLink"
+          },
+          {
+            "name": "BreadcrumbPage",
+            "export": "BreadcrumbPage"
+          }
+        ],
         "rac": {
           "range": "^1.20.0",
           "peer": false,
@@ -853,7 +871,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "a259ded26591e77cd280e04541001f4fc6023024be38b6ed878d8423965017f9",
+          "sha256": "7aa164fc1287018651674150aa0d238c766f76abbdc5e73ed38c01d5004cdce0",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -8281,7 +8299,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "fe75d58c7ddeba82a2febe35200daa9bd0999f60aad9ad56a86d6b1df5d2836b",
+        "sha256": "8e49b6f941bf0d4d68c079f44fafe7d04cb0354bceaff1d057bbf21633d61c56",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -8412,6 +8430,12 @@
           }
         ],
         "blockers": [],
+        "secondaryExports": [
+          {
+            "name": "ProgressLabel",
+            "export": "ProgressLabel"
+          }
+        ],
         "rac": {
           "range": "^1.20.0",
           "peer": false,
@@ -8440,7 +8464,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "fe75d58c7ddeba82a2febe35200daa9bd0999f60aad9ad56a86d6b1df5d2836b",
+          "sha256": "8e49b6f941bf0d4d68c079f44fafe7d04cb0354bceaff1d057bbf21633d61c56",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [

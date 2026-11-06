@@ -67,11 +67,11 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "7c65867867830fb3f75e4320c5a0696eb33a6be458d36ef662f9a4f1d58d260a"
+            "sha256": "0af139694315cb42d87c19f0d95ab526ac67b61e0e864fec6e6c1a42c1565302"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
-            "sha256": "2d313b684c96034d7b33cc2e0521055a806e6a164cf2a41adc211b8138e437b5"
+            "sha256": "4eaa7b6defd82fbb0cb001edb07bdd6b66bd6f977d290e57b02c6df6399f242e"
           },
           {
             "path": "packages/designer/src/blocks/library-board/model.ts",
@@ -79,11 +79,11 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "sha256": "38f242e651591a9dfeb638fbac237781b931a60f4f4c94caeb4f1e3e09a324d3"
+            "sha256": "4f36b4fdd9b614f741d371b6e4e2cf9723b7efd03c31b94391b7eef8d77c5ddd"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
-            "sha256": "bf403bd0882fe25b9a7a8cfc6ef3343448a3a19a494e8cfb65afbc5b2487329d"
+            "sha256": "67f972ecbb3b75a5cff49982ff61f7a448ee2163111e577fcca02f5f86acd791"
           },
           {
             "path": "packages/designer/src/blocks/matrix/choices.tsx",
@@ -99,7 +99,11 @@
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
-            "sha256": "a519649f96cb339f1128fc385e68d67b6af063ed492ac2c285f09c1740c98679"
+            "sha256": "05db00b073efa8ab9d1c6a319c4cc9d23c49c43a2a1fe66fe788d775b34d6ba9"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

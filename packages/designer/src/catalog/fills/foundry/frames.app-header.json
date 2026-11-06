@@ -47,7 +47,11 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "3509338db32d1fe369e025cf74a05838fdc801d52392a7db8909b67366b409f1"
+            "sha256": "e84268d206cd3bf4f35cbaec1f0cff33167d7076566f0a25bb7743644afda2c4"
+          },
+          {
+            "path": "packages/designer/src/blocks/shell-menu.tsx",
+            "sha256": "0a7c3824501c8ad4682af17ca2f28b1ca12484f1ea78832fe2c3d928ff3e221b"
           },
           {
             "path": "packages/designer/src/catalog-core/frame-header-options.ts",

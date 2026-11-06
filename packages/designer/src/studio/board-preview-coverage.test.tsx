@@ -31,7 +31,8 @@ it("accounts for real specimen coverage across every board layer, with zero unav
     counts[leaf.startsWith("sections.") ? "sections" : "frames"]++;
   }
   needs.push(...surfaces.unrenderable.map(row => ({ leaf: row.slot, reason: row.reason })));
-  expect(counts.components).toBe(59);
+  // 59 -> 67: ab36457b2 adopts the eight composed defaults (command, dropdown-menu, empty, item, rich-text, scroll-area, sheet, sidebar).
+  expect(counts.components).toBe(67);
 });
 
 const catalog = loadCatalog();

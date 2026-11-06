@@ -50,7 +50,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-            "sha256": "358323f41873984a9f7af00a7a8989fef65915c01a3b6e1a42b1db3971cff688"
+            "sha256": "f4b0d722e5d42aa3c5c65276dc79ad138db584f98cd45b548769dc94b8a04cc4"
           },
           {
             "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
@@ -82,11 +82,15 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/ViewOptions.tsx",
-            "sha256": "037d972207096c89567e6ab8ad7f937b659d3a64e0817fe008ddb8492dc0135d"
+            "sha256": "48e3fe71a8b38be633c85ce8cb66b00b2b86112a1d60b61941d180624029e064"
           },
           {
             "path": "packages/designer/src/blocks/DataTable.tsx",
             "sha256": "0c426159b76924e7cce49cdda833353f60932d94798805cc351d54610be88cc1"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-select.tsx",
+            "sha256": "316ad54080647abe4c8d4c8d8b224c13424261675eca3f1326064326afb72514"
           },
           {
             "path": "packages/designer/src/blocks/table-model/index.ts",

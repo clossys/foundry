@@ -308,7 +308,8 @@ const exportNames: Record<string, string> = { toggle: "Toggle", "dropdown-menu":
  * item's own authenticated entry (proved again by componentSecondaryExports at resolve/emit); nothing else
  * in an entry's export list becomes public. A243.2 admits existing Menu, Dialog, disclosure and
  * table anatomy for surface consumers; A244.4 admits the five Card anatomy exports; T14 admits the Avatar image and fallback
- * anatomy the shell account trigger composes.
+ * anatomy the shell account trigger composes; R2F-05 (T4/E2) admits the Progress label the form wizard names
+ * itself with and the Breadcrumb list/item/link/page anatomy the page header composes.
  * Every target remains a concrete function of its own entry.
  */
 const secondaryExportApprovals: Readonly<Record<string, readonly { name: string; export: string }[]>> = {
@@ -322,6 +323,8 @@ const secondaryExportApprovals: Readonly<Record<string, readonly { name: string;
   table: ["TableBody", "TableCaption", "TableCell", "TableFooter", "TableHead", "TableHeader", "TableRow"].map(name => ({ name, export: name })),
   card: ["CardHeader", "CardTitle", "CardAction", "CardContent", "CardFooter"].map(name => ({ name, export: name })),
   avatar: ["AvatarImage", "AvatarFallback"].map(name => ({ name, export: name })),
+  progress: [{ name: "ProgressLabel", export: "ProgressLabel" }],
+  breadcrumb: ["BreadcrumbList", "BreadcrumbItem", "BreadcrumbLink", "BreadcrumbPage"].map(name => ({ name, export: name })),
 };
 const partExports: Readonly<Record<string, readonly string[]>> = { "input-group": ["InputGroup", "InputGroupAddon", "InputGroupButton", "InputGroupText", "InputGroupInput", "InputGroupTextarea"] };
 const utils = 'import { clsx, type ClassValue } from "clsx"\nimport { twMerge } from "tailwind-merge"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n';

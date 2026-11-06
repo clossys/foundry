@@ -39,7 +39,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FilterBuilder.tsx",
-            "sha256": "b7aeb50a703ba244f2a19fb6662e94927c374d8a11b4d6e444b4b6e233b6d0ca"
+            "sha256": "a887a743f1606016ff7e97b27014476eb8085a5b85099982b7f0dd4c4966890a"
+          },
+          {
+            "path": "packages/designer/src/blocks/stock-select.tsx",
+            "sha256": "316ad54080647abe4c8d4c8d8b224c13424261675eca3f1326064326afb72514"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

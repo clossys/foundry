@@ -48,6 +48,8 @@ const COMPONENT_MODULE: Record<string, string> = {
   "combo-box": "ComboBox", disclosure: "Disclosure", field: "Field", "file-trigger": "FileTrigger", form: "Form", icon: "Icon", link: "Link",
   "progress-bar": "ProgressBar", select: "Select", spinner: "Spinner", "status-mark": "StatusMark", switch: "Switch", tabs: "Tabs",
   "text-field": "TextField", menu: "Menu", toast: "Toast", tooltip: "Tooltip",
+  // Contracts compose the selected semantic-content leaf for bare text (shadcn reset, 70ab7ad6e).
+  "semantic-content": "SemanticContent",
 };
 const VISUAL_MODULE = /(?:^|\/)(?:components|blocks|sections|frames|shell|icons|charts)(?:\/|\.|$)/;
 
@@ -126,9 +128,12 @@ const S = specimenDataset.sections;
 /** Real component roles each leaf must render from dataset content: each leaf's `specimenDataset.sections` record. */
 const ROLES: Record<GroupCLeaf, (root: HTMLElement) => void> = {
   cards: root => {
-    const list = within(root).getByRole("list");
-    expect(within(list).getAllByRole("listitem")).toHaveLength(S.recordCards.records.length);
-    expect(within(list).getAllByRole("link").map(link => link.textContent)).toEqual(S.recordCards.records.map(record => record.title));
+    // The stamped section list; each card's editorial metadata carries its own nested tag list (78237484a).
+    const list = root.querySelector<HTMLElement>('[data-ds-leaf="sections.cards"]')!;
+    expect(list).toHaveAttribute("role", "list");
+    const items = [...list.children] as HTMLElement[];
+    expect(items.map(item => item.tagName)).toEqual(S.recordCards.records.map(() => "LI"));
+    expect(items.map(item => within(within(item).getByRole("heading")).getByRole("link").textContent)).toEqual(S.recordCards.records.map(record => record.title));
   },
   chat: root => {
     expect(within(root).getByRole("log")).toBeTruthy();
@@ -268,9 +273,10 @@ describe("group-c members, refusals and optional slots", () => {
   });
 
   it("form: an error-summary region renders the block's error summary", () => {
-    const content = { ...sectionDatasetC.form(specimenDataset), "error-summary": { errors: [{ fieldId: "name", message: "Enter a name" }], message: "Fix 1 field" } };
+    const content = { ...sectionDatasetC.form(specimenDataset), "error-summary": { items: [{ fieldId: "name", message: "Enter a name" }], heading: "Fix 1 field" } }; // sections.json copy keys error-summary.heading / .items[].message
     const { container } = render(<div>{renderLeaf("form", inputFor("form", content))}</div>);
     expect(within(container).getByText("Enter a name")).toBeTruthy();
+    expect(within(container).getByText("Fix 1 field")).toBeTruthy();
   });
 
   it("refuses a missing required slot, an unmapped slot or member, and two members on one axis", () => {

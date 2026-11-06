@@ -39,7 +39,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FormWizard.tsx",
-            "sha256": "c22ae0dd2031ead7b9b014b9ed7a68edfbd9679d8d69a8fa03fa1a5934b72c76"
+            "sha256": "3bb2d1003ad20db6519269aa0fad575066fcf4e048036564078358ef1a1ed131"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

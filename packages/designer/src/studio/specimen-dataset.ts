@@ -653,6 +653,8 @@ export const specimenDataset = {
   skeleton: { shape: "text", "aria-label": "Loading order" } satisfies SkeletonProps,
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
+  /** A short read-only document: heading, paragraph and list, so the rich-text surface draws its own prose styles. */
+  richText: { value: "### Release notes\n\nThe dashboard now shows order status at a glance.\n\n- Faster search\n- Clearer empty states", readOnly: true },
   semanticMedia: {
     image: { src: `data:image/svg+xml,${encodeURIComponent(brandMark)}`, alt: brandName, width: 32, height: 32 },
     source: { srcSet: `data:image/svg+xml,${encodeURIComponent(brandMark)} 32w`, type: "image/svg+xml" },
