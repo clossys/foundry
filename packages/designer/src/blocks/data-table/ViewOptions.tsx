@@ -3,14 +3,22 @@ import { useState, useSyncExternalStore, type ReactNode } from "react";
 
 import type { TableColumn, TableDimension, TableFilter, TableFilterNode, TableFilterResult, TableModel } from "../table-model/index.js";
 import { FilterEditor } from "./FilterEditor.js";
+import { StockSelect } from "../stock-select.js";
 import { editView, type DataTableViewModel } from "./view-model.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
-const Dialog = componentLeaf<typeof import("../../components/Dialog.js").Dialog>("components.dialog");
-const Popover = componentLeaf<typeof import("../../components/Popover.js").Popover>("components.popover");
-const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
+type StockDialog = typeof import("../../components/preview-runtime/components/dialog/dialog.js");
+type StockPopover = typeof import("../../components/preview-runtime/components/popover/popover.js");
+type StockSheet = typeof import("../../components/preview-runtime/components/sheet/sheet.js");
+/** Stock anatomy (E2): narrow = the selected Sheet from the bottom edge; wide = the selected Popover opened by the selected DialogTrigger. */
+const DialogTrigger = componentLeaf<StockDialog["DialogTrigger"]>("components.dialog", "DialogTrigger");
+const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
+const Sheet = componentLeaf<StockSheet["Sheet"]>("components.sheet");
+const SheetTrigger = componentLeaf<StockSheet["SheetTrigger"]>("components.sheet", "SheetTrigger");
+const SheetTitle = componentLeaf<StockSheet["SheetTitle"]>("components.sheet", "SheetTitle");
+const SheetClose = componentLeaf<StockSheet["SheetClose"]>("components.sheet", "SheetClose");
 const TagGroup = componentLeaf<typeof import("../../components/TagGroup.js").TagGroup>("components.tag-group");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -134,7 +142,7 @@ export function ViewOptions({
       /** @default "asc" */
       order = "asc", ...value
     }, index) => <SemanticContent as="div" key={value.column} className="flex flex-wrap items-end gap-sm">
-      <Select label={pivotOrderMessage(rowAxis, label(value.column))} selectedKey={order} options={[{ id: "asc", label: ascendingLabel }, { id: "desc", label: descendingLabel }]} onSelectionChange={key => { if (key === "asc" || key === "desc") update(values.map((item, i) => i === index ? { ...item, order: key } : item)); }} />
+      <StockSelect label={pivotOrderMessage(rowAxis, label(value.column))} selectedKey={order} options={[{ id: "asc", label: ascendingLabel }, { id: "desc", label: descendingLabel }]} onSelectionChange={key => { if (key === "asc" || key === "desc") update(values.map((item, i) => i === index ? { ...item, order: key } : item)); }} />
       <Button variant="ghost" isDisabled={index === 0} onPress={() => update(moveUp(values, index))}>{movePivotMessage(rowAxis, label(value.column))}</Button>
     </SemanticContent>)}
   </SemanticContent>;
@@ -146,13 +154,13 @@ export function ViewOptions({
         /** @default "asc" */
         order = "asc", ...group
       }, index) => <SemanticContent as="div" key={group.column} className="flex flex-wrap items-end gap-sm">
-        <Select label={groupOrderMessage(label(group.column))} selectedKey={order} options={[{ id: "asc", label: ascendingLabel }, { id: "desc", label: descendingLabel }]} onSelectionChange={key => { if (key === "asc" || key === "desc") tableChange({ groupBy: groups.map((item, i) => i === index ? { ...item, order: key } : item) }); }} />
+        <StockSelect label={groupOrderMessage(label(group.column))} selectedKey={order} options={[{ id: "asc", label: ascendingLabel }, { id: "desc", label: descendingLabel }]} onSelectionChange={key => { if (key === "asc" || key === "desc") tableChange({ groupBy: groups.map((item, i) => i === index ? { ...item, order: key } : item) }); }} />
         <Button variant="ghost" isDisabled={index === 0} onPress={() => tableChange({ groupBy: moveUp(groups, index) })}>{moveGroupMessage(label(group.column))}</Button>
       </SemanticContent>)}
     </Section>
     <Section title={sortSectionLabel}>
       {model.sort.map((rule, index) => <SemanticContent as="div" key={rule.column} className="flex flex-wrap items-end gap-sm">
-        <Select label={sortDirectionMessage(label(rule.column))} selectedKey={rule.direction} options={[{ id: "ascending", label: ascendingLabel }, { id: "descending", label: descendingLabel }]} onSelectionChange={key => { if (key === "ascending" || key === "descending") change(editView(model, { sort: model.sort.map((item, i) => i === index ? { ...item, direction: key } : item) })); }} />
+        <StockSelect label={sortDirectionMessage(label(rule.column))} selectedKey={rule.direction} options={[{ id: "ascending", label: ascendingLabel }, { id: "descending", label: descendingLabel }]} onSelectionChange={key => { if (key === "ascending" || key === "descending") change(editView(model, { sort: model.sort.map((item, i) => i === index ? { ...item, direction: key } : item) })); }} />
         <Button variant="ghost" isDisabled={index === 0} onPress={() => change(editView(model, { sort: moveUp(model.sort, index) }))}>{moveSortMessage(label(rule.column))}</Button>
         <Button variant="ghost" onPress={() => change(editView(model, { sort: without(model.sort, index) }))}>{removeSortMessage(label(rule.column))}</Button>
       </SemanticContent>)}
@@ -180,16 +188,22 @@ export function ViewOptions({
   const trigger = <Button key="view-options" variant="secondary">{viewOptionsLabel}</Button>;
   return <>
     <SemanticContent as="div" className="flex flex-wrap items-end gap-sm">
-      <Select label={viewModeLabel} selectedKey={model.mode} options={[{ id: "flat", label: flatModeLabel }, { id: "grouped", label: groupedModeLabel }, { id: "pivot", label: pivotModeLabel, isDisabled: !hasDimensions || !model.table.measures?.length }]} onSelectionChange={key => { if (key === "flat" || key === "grouped" || key === "pivot") change(editView(model, { mode: key, ...(key === "pivot" && !model.table.pivot ? { table: { ...model.table, pivot } } : {}) })); }} />
-      <Select label={densityLabel} selectedKey={model.density} options={[{ id: "comfortable", label: comfortableDensityLabel }, { id: "compact", label: compactDensityLabel }]} onSelectionChange={key => { if (key === "comfortable" || key === "compact") change(editView(model, { density: key })); }} />
-      {narrow ? <Dialog trigger={trigger} isOpen={isOpen} onOpenChange={setIsOpen} overlayClassName="items-end p-0" modalClassName="max-w-none">{({ close }) => <>
-        <SemanticContent as="div" className="flex items-start justify-between gap-md">
-          <Dialog.Heading>{viewOptionsLabel}</Dialog.Heading>
-          <Button variant="ghost" aria-label={closeViewOptionsLabel} onPress={close}>{closeViewOptionsLabel}</Button>
-        </SemanticContent>
-        {controls}
-      </>}</Dialog>
-        : <Popover trigger={trigger} isOpen={isOpen} onOpenChange={setIsOpen} className="max-w-full overflow-auto"><Dialog.Heading>{viewOptionsLabel}</Dialog.Heading>{controls}</Popover>}
+      <StockSelect label={viewModeLabel} selectedKey={model.mode} options={[{ id: "flat", label: flatModeLabel }, { id: "grouped", label: groupedModeLabel }, { id: "pivot", label: pivotModeLabel, isDisabled: !hasDimensions || !model.table.measures?.length }]} onSelectionChange={key => { if (key === "flat" || key === "grouped" || key === "pivot") change(editView(model, { mode: key, ...(key === "pivot" && !model.table.pivot ? { table: { ...model.table, pivot } } : {}) })); }} />
+      <StockSelect label={densityLabel} selectedKey={model.density} options={[{ id: "comfortable", label: comfortableDensityLabel }, { id: "compact", label: compactDensityLabel }]} onSelectionChange={key => { if (key === "comfortable" || key === "compact") change(editView(model, { density: key })); }} />
+      {narrow ? <SheetTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
+        {trigger}
+        <Sheet side="bottom" showCloseButton={false} className="max-h-full overflow-auto">
+          <SemanticContent as="div" className="flex items-start justify-between gap-md">
+            <SheetTitle level={2}>{viewOptionsLabel}</SheetTitle>
+            <SheetClose variant="ghost" aria-label={closeViewOptionsLabel}>{closeViewOptionsLabel}</SheetClose>
+          </SemanticContent>
+          {controls}
+        </Sheet>
+      </SheetTrigger>
+        : <DialogTrigger isOpen={isOpen} onOpenChange={setIsOpen}>
+          {trigger}
+          <Popover aria-label={viewOptionsLabel} placement="bottom start" className="max-w-full overflow-auto"><SemanticContent as="h2" className="text-body font-medium text-ink-primary">{viewOptionsLabel}</SemanticContent>{controls}</Popover>
+        </DialogTrigger>}
     </SemanticContent>
     {groups.length || model.sort.length || filters.length ? <TagGroup label={activeRulesLabel} selectionMode="none" onRemove={keys => change(editView(model, {
       table: { ...model.table,

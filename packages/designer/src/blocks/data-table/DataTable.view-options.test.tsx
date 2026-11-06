@@ -200,8 +200,10 @@ describe("DataTable View options", () => {
   it("S2-3 uses a named bottom-aligned full-width modal with contained focus and both dismissal paths", async () => {
     media(false); const user = userEvent.setup(); render(<Harness />); const trigger = screen.getByRole("button", { name: "View options" });
     const dialog = await open(user);
-    expect(dialog.parentElement).toHaveClass("w-full", "max-w-none");
-    expect(dialog.parentElement!.parentElement).toHaveClass("items-end", "p-0");
+    // The selected stock Sheet owns the narrow geometry (E2): a full-width panel on the bottom edge.
+    expect(dialog.parentElement).toHaveAttribute("data-slot", "sheet-content");
+    expect(dialog.parentElement).toHaveAttribute("data-side", "bottom");
+    expect(dialog.parentElement).toHaveClass("data-[side=bottom]:inset-x-0");
     expect(within(dialog).getByRole("heading", { name: "View options", level: 2 })).toBeInTheDocument();
     expect(dialog).toHaveAccessibleName("View options");
     for (let index = 0; index < 18; index++) {
@@ -304,7 +306,8 @@ describe("DataTable view edge cases", () => {
     const rendered = render(<DataTable {...props} model={view({ table: filtered })} emptyStateTitle="Nothing here" />);
     expect(screen.getByText("Nothing here")).toBeInTheDocument();
     rendered.rerender(<DataTable {...props} model={view({ table: filtered, mode: "pivot" })} isLoading loadingRowCount={2} />);
-    expect(screen.getAllByRole("row")).toHaveLength(3);
+    // Count the table's rows only: the active-rule chips are rows of the selected TagGroup grid (ebd6753ac).
+    expect(within(screen.getByRole("grid", { name: "Records" })).getAllByRole("row")).toHaveLength(3);
     expect(screen.queryByText("Alpha")).not.toBeInTheDocument();
     expect(screen.queryByText("Nothing here")).not.toBeInTheDocument();
     rendered.rerender(<DataTable {...props} model={view({ mode: "pivot" })} messages={{ pivotEmptyLabel: "Choose pivot fields" }} />);

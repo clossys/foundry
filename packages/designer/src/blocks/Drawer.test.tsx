@@ -27,6 +27,14 @@ beforeEach(() => {
 });
 afterEach(() => vi.unstubAllGlobals());
 
+/**
+ * The selected stock Sheet owns overlay geometry and motion (E2, ebd6753ac): its sides are logical
+ * (`start-0`/`end-0`) and every transition or animation utility is gated by motion-safe or reset by
+ * motion-reduce, so a reduced-motion user gets none. Returns the ungated motion utilities (must be empty).
+ */
+const ungatedMotion = (element: Element) => element.className.split(/\s+/).filter(token => /transition|animate/.test(token) && !/^motion-(safe|reduce):/.test(token));
+const STOCK_SIDE = { start: "left", end: "right", bottom: "bottom" } as const;
+
 function heldHost() {
   const changed = vi.fn();
   function Held({ navigationKey = "first" }: { navigationKey?: string }) {
@@ -82,7 +90,9 @@ describe("Drawer", () => {
     const trigger = screen.getByRole("button", { name: "Open tools" });
     await userEvent.click(trigger);
     const close = await screen.findByRole("button", { name: "Close tools" });
-    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-2", "focus-visible:outline-accent");
+    // The stock SheetClose (rail Button) draws keyboard focus with its own outline utilities (E2).
+    expect(close).toHaveAttribute("data-slot", "sheet-close");
+    expect(close).toHaveClass("icon-control-md", "border-0", "bg-transparent", "p-0", "focus-visible:outline-solid", "focus-visible:outline-(length:--ui-border-focus)", "focus-visible:outline-(--color-focus-ring)");
     expect(close).toHaveAccessibleName("Close tools");
     const glyph = close.querySelector("svg");
     expect(glyph).not.toBeNull();
@@ -91,8 +101,6 @@ describe("Drawer", () => {
     expect(close.textContent?.trim()).toBe("");
     await userEvent.tab();
     expect(close).toHaveFocus();
-    // The Foundry Button draws keyboard focus as the package outline, not a box-shadow ring, since 0d04b4c23 (bound in d14cc4b3b).
-    expect(close.style.outline).toContain("var(--color-focus-ring)");
     await userEvent.keyboard(key === "Enter" ? "{Enter}" : " ");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     await waitFor(() => expect(trigger).toHaveFocus());
@@ -112,14 +120,13 @@ describe("Drawer", () => {
     const panel = dialog.querySelector("[data-panel]")!;
     expect(panel).toHaveAttribute("data-drawer-placement", placement);
     expect(panel.querySelector('[data-panel-region="footer"]')).toHaveTextContent("Footer");
-    expect(dialog.parentElement?.style.width).toBe(placement === "bottom" ? "100%" : "var(--ui-layout-drawer-w, min(20rem, 85vw))");
-    if (placement === "bottom") {
-      expect(dialog.parentElement?.style.height).toBe("85vh");
-      expect(dialog.parentElement?.style.maxHeight).toBe("85vh");
-      expect(dialog.className).toContain("max-h-[85vh]");
-      expect(panel.querySelector('[data-panel-region="content"]')?.className).toContain("overflow-auto");
-    }
-    expect(dialog.parentElement?.className).not.toMatch(/transition|animate|forced-color-adjust-none/);
+    const surface = dialog.parentElement!;
+    expect(surface).toHaveAttribute("data-slot", "sheet-content");
+    expect(surface).toHaveAttribute("data-side", STOCK_SIDE[placement as keyof typeof STOCK_SIDE]);
+    expect(surface).toHaveClass(placement === "bottom" ? "data-[side=bottom]:inset-x-0" : `data-[side=${STOCK_SIDE[placement as "start" | "end"]}]:w-3/4`);
+    if (placement === "bottom") expect(panel.querySelector('[data-panel-region="content"]')?.className).toContain("overflow-auto");
+    expect(ungatedMotion(surface)).toEqual([]);
+    expect(surface.className).not.toMatch(/forced-color-adjust-none/);
   });
 
   it("retains logical start placement in an RTL document", async () => {
@@ -129,8 +136,9 @@ describe("Drawer", () => {
       render(<Drawer {...supplied} placement="start">Content</Drawer>);
       await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
       const dialog = await screen.findByRole("dialog");
-      expect(dialog.parentElement?.parentElement?.className).toContain("justify-start");
-      expect(dialog.parentElement?.parentElement?.className).not.toMatch(/(?:^| )left-|(?:^| )right-/);
+      expect(dialog.parentElement).toHaveAttribute("data-side", "left");
+      expect(dialog.parentElement).toHaveClass("data-[side=left]:start-0");
+      for (const layer of [dialog.parentElement!, dialog.parentElement!.parentElement!]) expect(layer.className).not.toMatch(/(?:^| )left-|(?:^| )right-/);
     } finally { document.documentElement.dir = previous; }
   });
 
@@ -232,7 +240,7 @@ describe("Drawer", () => {
     }
     await userEvent.tab({ shift: true });
     expect(dialog).toContainElement(document.activeElement as HTMLElement);
-    expect(dialog.parentElement?.className).not.toMatch(/transition|animate/);
+    expect(ungatedMotion(dialog.parentElement!)).toEqual([]);
     await userEvent.keyboard("{Escape}");
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
     expect(changed).toHaveBeenLastCalledWith(false);
@@ -245,8 +253,8 @@ describe("Drawer", () => {
     await userEvent.click(screen.getByRole("button", { name: "Open tools" }));
     const dialog = await screen.findByRole("dialog", { name: "Workspace tools" });
     expect(dialog.querySelector("[data-panel]")).toHaveAttribute("data-drawer-placement", "start");
-    expect(dialog.parentElement?.parentElement).toHaveClass("justify-start");
-    expect(dialog.parentElement?.style.width).toBe("var(--ui-layout-drawer-w, min(20rem, 85vw))");
+    expect(dialog.parentElement).toHaveAttribute("data-side", "left");
+    expect(dialog.parentElement).toHaveClass("data-[side=left]:start-0", "data-[side=left]:w-3/4");
   });
 
   it("keeps a wide sheet free of motion when the reduced-motion query matches", async () => {
@@ -257,7 +265,7 @@ describe("Drawer", () => {
     const dialog = await screen.findByRole("dialog", { name: "Workspace tools" });
     const panel = dialog.querySelector("[data-panel]")!;
     for (const layer of [dialog.parentElement!.parentElement!, dialog.parentElement!, dialog, panel]) {
-      expect(layer.className).not.toMatch(/transition|animate/);
+      expect(ungatedMotion(layer)).toEqual([]);
       expect((layer as HTMLElement).style.animation).toBe("");
       expect((layer as HTMLElement).style.transition).toBe("");
     }

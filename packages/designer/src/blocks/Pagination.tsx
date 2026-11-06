@@ -6,9 +6,9 @@ import { useGlyph } from "../components/glyph-context.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { StockSelect } from "./stock-select.js";
 
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
-const Select = componentLeaf<typeof import("../components/Select.js").Select>("components.select");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -219,7 +219,7 @@ export function Pagination({
         </Button>
       </SemanticContent>
       {showPageSizeSelector ? (
-        <Select
+        <StockSelect
           label={copyText(pageSizeLabel ?? copy(PAGINATION_COPY_REFS.pageSizeLabel), "pageSizeLabel")}
           className="w-auto"
           options={(pageSizeOptions ?? []).map((size) => ({ id: String(size), label: String(size) }))}

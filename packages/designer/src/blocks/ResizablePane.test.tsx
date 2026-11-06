@@ -16,7 +16,10 @@ const props = { min: 100, max: 300, defaultValue: 180, step: 20, label: "Tools",
 describe("ResizablePane", () => {
   it("uses the on-inverse focus outline against its inverse raised Panel", () => {
     const { rerender } = render(<ResizablePane {...props} ground="inverse">Content</ResizablePane>);
-    expect(screen.getByRole("region", { name: "Tools" })).toHaveClass("bg-surface-inverse-raised");
+    // The Panel is the stock Card (E2): the inverse ground reaches it as re-pointed surface tokens.
+    const region = screen.getByRole("region", { name: "Tools" });
+    expect(region).toHaveClass("bg-(--color-surface-raised)");
+    expect(region.style.getPropertyValue("--color-surface-raised")).toBe("var(--color-surface-inverse-raised)");
     expect(screen.getByRole("separator")).toHaveClass("focus-visible:outline-accent-on-inverse");
     rerender(<ResizablePane {...props} ground="base">Content</ResizablePane>);
     expect(screen.getByRole("separator")).not.toHaveClass("focus-visible:outline-accent-on-inverse");

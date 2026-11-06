@@ -152,18 +152,11 @@ function violations(uses: readonly Use[]): Record<string, string[]> {
 }
 
 const BASELINE: Readonly<Record<string, readonly string[]>> = {
-  "blocks/ColumnMapper.tsx": ["components.select -> description,errorMessage,label,options"],
   "blocks/Drawer.tsx": ["components.dialog -> overlayClassName,trigger", "components.dialog.Heading undeclared part"],
   "blocks/EventItem.tsx": ["components.avatar -> alt,src"],
-  "blocks/FilterBuilder.tsx": ["components.select -> label,options"],
   "blocks/FormWizard.tsx": ["components.progress-bar -> label"],
   "blocks/NoticeList.tsx": ["components.banner -> dismissLabel,onDismiss"],
-  "blocks/PageBar.tsx": ["components.menu -> trigger", "components.menu.Item undeclared part", "components.menu.Section undeclared part", "components.popover -> anchorRef", "components.toggle-button -> shape"],
-  "blocks/Pagination.tsx": ["components.select -> label,options"],
   "blocks/chat/Chat.tsx": ["components.avatar -> alt"],
-  "blocks/data-table/FilterEditor.tsx": ["components.select -> label,options"],
-  "blocks/data-table/ViewOptions.tsx": ["components.dialog -> modalClassName,overlayClassName,trigger", "components.dialog.Heading undeclared part", "components.select -> label,options"],
-  "blocks/library-board/OpenWithActions.tsx": ["components.menu -> trigger", "components.menu.Item undeclared part", "components.menu.Separator undeclared part"],
   "blocks/matrix/choices.tsx": ["components.radio-group -> label"],
   "frames/FrameDock.tsx": ["components.banner -> onDismiss"],
   "shell/SiteHeader.tsx": ["components.button.LinkButton -> aria-current"],
