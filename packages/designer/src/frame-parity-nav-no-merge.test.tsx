@@ -11,8 +11,9 @@ describe("inverse trigger without the optional class merger", () => {
     const container = mode === "client" ? render(element).container : document.createElement("div");
     if (mode === "server") container.innerHTML = renderToStaticMarkup(element);
     const trigger = container.querySelector("button")!;
-    expect(trigger).toHaveClass("text-ink-on-inverse", "hover:bg-control-tonal-inverse-hover", "focus-visible:outline-ink-on-inverse");
+    expect(trigger).toHaveClass("text-background", "hover:bg-background/16", "focus-visible:outline-background");
     expect(trigger).not.toHaveClass("text-ink-primary");
+    expect(trigger).not.toHaveClass("hover:bg-control-tonal-hover");
     expect(trigger).not.toHaveClass("hover:bg-surface-sunken");
     expect(trigger).not.toHaveClass("focus-visible:outline-primary");
   });

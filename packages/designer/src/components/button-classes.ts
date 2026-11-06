@@ -131,7 +131,7 @@ export const INVERSE_CONTROL_INK = "text-background hover:text-background focus-
  * The navigation disclosure toggle look for a native button: the small ghost
  * link look without its colour transition (only the panel and its bars move),
  * a native pressed fill and the tap-target minimum. On the inverse plate it
- * drops the ghost ink, keeps the inverse ink when expanded and takes
+ * drops the ghost ink and hover fill, keeps the inverse ink when expanded and takes
  * `INVERSE_CONTROL_INK`. `pressFill: false` keeps the ghost look's own fill
  * and drops the native pressed fill.
  */
@@ -140,7 +140,7 @@ export function disclosureToggleClassName(ground: "base" | "inverse" = "base", {
   const look = [...ghost.filter((token) => !token.includes("transition-")), ...(pressFill ? ["bg-transparent", "active:bg-muted", "transition-none"] : []), "min-size-tap"];
   if (ground === "base") return look.join(" ");
   const outline = buttonLinkClassName("outline", "sm").split(" ");
-  const ghostInk = ghost.filter((token) => token.startsWith("text-") && !outline.includes(token));
+  const ghostInk = ghost.filter((token) => (token.startsWith("text-") || token.startsWith("hover:bg-")) && !outline.includes(token));
   return [...look.filter((token) => !ghostInk.includes(token)), INVERSE_CONTROL_INK, "aria-expanded:text-background"].join(" ");
 }
 

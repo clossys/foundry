@@ -33,8 +33,9 @@ describe("NavDisclosure", () => {
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(panel).toBe(screen.getByRole("link", { name: "About" }).parentElement);
     expect(panel).not.toHaveAttribute("data-expanded");
-    expect(toggle.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
-    expect(toggle.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+    // Both tap-target dimensions come from the Components toggle's min-size-tap utility, not inline style.
+    expect(toggle).toHaveClass("min-size-tap");
+    expect(toggle.getAttribute("style")).toBeNull();
     expect(toggle.className).toContain("nav-disclosure-toggle");
     expect(toggle.className).not.toMatch(/transition|duration|delay|animate/);
     toggle.focus();

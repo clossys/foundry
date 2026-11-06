@@ -71,8 +71,9 @@ describe("NavDisclosure trigger", () => {
     const panel = link.parentElement!;
     expect(toggle).toHaveAttribute("aria-controls", panel.id);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(toggle.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
-    expect(toggle.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+    // Both tap-target dimensions come from the Components toggle's min-size-tap utility, not inline style.
+    expect(toggle).toHaveClass("min-size-tap");
+    expect(toggle.getAttribute("style")).toBeNull();
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(panel).toHaveAttribute("data-expanded");

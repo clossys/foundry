@@ -166,17 +166,16 @@ describe("SiteHeader", () => {
     it("overlay fixes the header to the top of the viewport, out of flow, over the shell z-index", () => {
       render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       const banner = screen.getByRole("banner");
-      expect(banner.style.position).toBe("fixed");
-      expect(banner.style.insetBlockStart).toBe("0");
-      expect(banner.style.insetInline).toBe("0");
-      expect(banner.style.zIndex).toBe("var(--ui-z-shell, 20)");
+      // Named utilities: fixed, block-start 0, both inline edges 0, and the shell layer (--ui-z-shell).
+      expect(banner).toHaveClass("fixed", "top-0", "inset-x-0", "layer-shell");
+      expect(banner.getAttribute("style")).toBeNull();
       expect(banner).toHaveAttribute("data-placement", "overlay");
     });
 
     it("overlay paints through the site-header-overlay utility, with no ground plate or border classes", () => {
       render(<SiteHeader brand={<span>Acme</span>} surface="glass" />);
       const classes = screen.getByRole("banner").className.split(" ");
-      expect(classes).toEqual(expect.arrayContaining(["site-header-overlay", "site-header-ink", "text-ink-primary", "py-sm", "site-header-contract"]));
+      expect(classes).toEqual(expect.arrayContaining(["site-header-overlay", "site-header-ink", "text-foreground", "py-shell-chrome", "site-header-contract"]));
       expect(classes).not.toEqual(expect.arrayContaining(["bg-surface-raised", "border-b"]));
       expect(screen.getByRole("banner").style.borderBottomWidth).toBe("");
     });
@@ -205,7 +204,7 @@ describe("SiteHeader", () => {
         <ServerSiteHeader brand={<span>Acme</span>} surface="glass" className="my-header" style={{ zIndex: 5 }} />,
       );
       expect(html).toMatch(/class="[^"]*site-header-overlay[^"]*my-header"/);
-      expect(html).toContain("position:fixed");
+      expect(html).toMatch(/class="[^"]*\bfixed\b[^"]*"/);
       expect(html).toContain("z-index:5");
       expect(html).toContain('data-surface="glass"');
     });
@@ -263,8 +262,9 @@ describe("SiteHeader", () => {
       const admin = screen.getByRole("link", { name: "Admin" });
       expect(admin).toHaveAttribute("aria-current", "page");
       expect(app).not.toHaveAttribute("aria-current");
-      expect(admin.style.boxShadow).toContain("inset");
-      expect(app.style.boxShadow).toBe("");
+      // The non-colour cue is the current-mark utility (an inset block-end rule in currentColor).
+      expect(admin).toHaveClass("current-mark");
+      expect(app).not.toHaveClass("current-mark");
     });
 
     it("renders no aria-current when no link is current", () => {
@@ -275,8 +275,8 @@ describe("SiteHeader", () => {
     it("reaches the tap-target token in both dimensions", () => {
       renderEnvironments();
       const app = screen.getByRole("link", { name: "App" });
-      expect(app.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(app.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+      expect(app).toHaveClass("min-size-tap");
+      expect(app.style.minHeight).toBe("");
     });
 
     it("borrows the small button look without the outline-none that would hide its focus outline", () => {
