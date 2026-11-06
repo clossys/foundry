@@ -144,19 +144,18 @@ export function HeroIntro({
       style={{ maxWidth: measure === "wide" ? "none" : SECTION_MEASURE_MAX.prose, ...style }}
     >
       {hasEyebrow ? (
-        <SemanticContent as="p" style={backdropInk ? { color: "var(--color-neutral-50)" } : undefined} className={backdropInk ? "text-body-s font-medium uppercase tracking-label" : eyebrowTone === "muted" ? cx("text-body-s font-medium uppercase tracking-label", colors.secondary) : EYEBROW_CLASSES[ground]}>
+        <SemanticContent as="p" className={backdropInk ? "text-body-s font-medium uppercase tracking-label text-neutral-50" : eyebrowTone === "muted" ? cx("text-body-s font-medium uppercase tracking-label", colors.secondary) : EYEBROW_CLASSES[ground]}>
           {eyebrow}
         </SemanticContent>
       ) : null}
       {hasHeading ? (
         <SemanticContent as={HeadingTag}
           id={headingId}
-          style={backdropInk ? { color: "var(--color-neutral-50)" } : undefined}
           className={cx(
             displayHeading
               ? "text-display-m tablet:text-display-l tablet-lg:text-display-xl font-display leading-display text-balance"
               : HEADING_CLASSES[emphasis],
-            backdropInk ? undefined : colors.primary,
+            backdropInk ? "text-neutral-50" : colors.primary,
             hasEyebrow ? rhythm.heading : undefined,
           )}
         >
@@ -165,8 +164,8 @@ export function HeroIntro({
       ) : null}
       {hasDescription ? (
         <SemanticContent as="p"
-          className={cx("text-body-l text-pretty", backdropInk ? undefined : colors.secondary, hasEyebrow || hasHeading ? rhythm.description : undefined)}
-          style={backdropInk || measure === "wide" ? { ...(measure === "wide" ? { maxWidth: UI_WIDTH_HERO_WIDE } : {}), ...(backdropInk ? { color: "var(--color-neutral-50)" } : {}) } : undefined}
+          className={cx("text-body-l text-pretty", backdropInk ? "text-neutral-50" : colors.secondary, hasEyebrow || hasHeading ? rhythm.description : undefined)}
+          style={measure === "wide" ? { maxWidth: UI_WIDTH_HERO_WIDE } : undefined}
         >
           {description}
         </SemanticContent>
@@ -174,10 +173,9 @@ export function HeroIntro({
       {actions ? (
         <SemanticContent as="div"
           data-section-intro-actions=""
-          style={backdropInk ? { color: "var(--color-neutral-50)" } : undefined}
           className={cx(
             "flex flex-wrap items-center gap-x-lg gap-y-sm",
-            backdropInk ? undefined : colors.primary,
+            backdropInk ? "text-neutral-50" : colors.primary,
             centred ? "justify-center" : undefined,
             hasEyebrow || hasHeading || hasDescription ? rhythm.actions : undefined,
           )}

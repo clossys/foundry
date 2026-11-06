@@ -62,7 +62,7 @@ const ARTICLE_TOC_CLASSES = {
 
 /** Editorial layout and typography; consumer-selected component leaves own all visible content. */
 function ArticleBodyRoot({ children, toc, dropCap = false, className, style, ...rest }: ArticleBodyProps) {
-  const initial = dropCap ? "[&>p:first-of-type::first-letter]:float-start [&>p:first-of-type::first-letter]:font-display [&>p:first-of-type::first-letter]:text-display [&>p:first-of-type::first-letter]:pe-xs" : undefined;
+  const initial = dropCap ? "[&>p:first-of-type::first-letter]:float-start [&>p:first-of-type::first-letter]:font-display [&>p:first-of-type::first-letter]:text-display-m [&>p:first-of-type::first-letter]:pe-xs" : undefined;
   if (toc !== undefined && toc !== null && toc !== false) {
     return (
       <SemanticContent as="article" {...SECTION_STAMP} {...rest} data-article-reading="" className={cx(ARTICLE_TOC_CLASSES.root, className)} data-designer-requires-section-frame="" style={style}>

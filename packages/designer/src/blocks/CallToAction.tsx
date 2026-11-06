@@ -41,9 +41,9 @@ export function CallToAction({ title, eyebrow, description, primaryAction, secon
     >
       <Card className="items-center gap-lg px-lg py-3xl text-center">
         <SemanticContent as="div" className="flex min-w-0 w-full max-w-prose flex-col items-center gap-sm">
-          {eyebrow ? <SemanticContent as="p" className="text-caption uppercase tracking-label text-muted-foreground">{eyebrow}</SemanticContent> : null}
+          {eyebrow ? <SemanticContent as="p" className="text-caption uppercase tracking-label text-ink-muted">{eyebrow}</SemanticContent> : null}
           <SemanticContent as={heading} id={titleId} className="text-h2 font-display text-balance">{title}</SemanticContent>
-          {description ? <SemanticContent as="p" id={descriptionId} className="text-body text-pretty text-muted-foreground">{description}</SemanticContent> : null}
+          {description ? <SemanticContent as="p" id={descriptionId} className="text-body text-pretty text-ink-muted">{description}</SemanticContent> : null}
         </SemanticContent>
         <SemanticContent as="div" className="flex w-full min-w-0 flex-col items-stretch justify-center gap-sm tablet:w-auto tablet:flex-row tablet:flex-wrap tablet:items-center">
           {primaryAction}
