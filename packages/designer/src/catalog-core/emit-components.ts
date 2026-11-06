@@ -60,7 +60,7 @@ export function assertComponentImportClosure(files: readonly ComponentFile[], pa
       namespaces.set(local, { module: specifier, erased: !!erased });
       return "";
     });
-    assertComponentNamespaceClosure(file.content, namespaces, packageExports);
+    assertComponentNamespaceClosure(file.content, namespaces, packageExports, file.path);
     if (/\b(?:import|require)\s*\(/.test(code) || /\bimport\s+(?!type\s*\{|\{)[^;\n]*\bfrom\b/.test(code) || /\bimport\s*["']/.test(code)) throw new CatalogError(`components: unsupported import syntax in ${file.path}`);
     for (const match of code.matchAll(/\b(?:import|export)\s+(type\s+)?\{([^}]+)\}\s*from\s*["']([^"']+)["']/g)) {
       const specifier = match[3]!, typeOnlyStatement = match[1] !== undefined;

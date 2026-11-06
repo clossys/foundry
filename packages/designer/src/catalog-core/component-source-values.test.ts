@@ -7,6 +7,9 @@ import { componentSecondaryExports } from "./component-secondary-exports.js";
 import { secondaryFixture } from "./__fixtures__/component-engine/secondary-exports.js";
 import { sha256 } from "./digest.js";
 import { assertComponentImportClosure } from "./emit-components.js";
+import { assertComponentNamespaceClosure } from "./component-source-values.js";
+import { loadCatalogBundles } from "../catalog-bundles.js";
+import * as ReactRuntime from "react";
 import { verifyComponentOutput, componentLibraryHash } from "./resolve-components.js";
 import { applyComponentLibraryChange, materializeSourceFill } from "./changeset-components.js";
 import { checkComponentProfile, componentSourceHash } from "./check-components.js";
@@ -181,5 +184,41 @@ describe("real pinned upstream source-value admission", () => {
     };
     expect(findings(button)).toEqual([]);
     expect(findings(mutant)).toContainEqual(expect.objectContaining({ code: "K4", message: "Utility bg-red-500 has no bound consumer token" }));
+  });
+});
+
+// E1: real stock sources are read by the TypeScript AST through a byte-keyed proof;
+// every mutation of those bytes loses the proof and is refused by the bounded grammar.
+describe("stock namespace closure reads stock source with the TypeScript AST", () => {
+  const stockFiles = loadCatalogBundles().sourceBundles.flatMap(bundle => bundle.files);
+  const stock = (path: string) => stockFiles.find(file => file.path === path)!.content;
+  const observed = { react: Object.keys(ReactRuntime).sort() };
+  const namespacesOf = (content: string) => new Map([...content.matchAll(/\bimport\s+(type\s+)?\*\s+as\s+([A-Za-z_$][\w$]*)\s+from\s*["']([^"']+)["']/g)].map(match => [match[2]!, { module: match[3]!, erased: !!match[1] }]));
+  const close = (path: string, content: string, namespaces = namespacesOf(content)) => assertComponentNamespaceClosure(content, namespaces, observed, path);
+  const paths = ["components/command/command.tsx", "components/toggle-group/toggle-group.tsx", "components/combo-box/combobox.tsx", "components/_parts/rail-use-mobile/index.ts"];
+  it.each(paths)("admits the unmodified stock %s (indexed types, generic annotations, regex literals)", path => {
+    expect(() => close(path, stock(path))).not.toThrow();
+  });
+  it.each(paths)("refuses any byte change to stock %s, even one the compiler reads unchanged", path => {
+    const content = stock(path);
+    for (const mutant of [`${content}\n`, ` ${content}`, `${content}\nexport function Extra() { return React.Missing() }\n`]) {
+      expect(mutant).not.toBe(content);
+      expect(() => close(path, mutant)).toThrow(/components:/);
+    }
+  });
+  it("refuses stock bytes whose caller inventory disagrees with the proof", () => {
+    const path = "components/command/command.tsx", content = stock(path);
+    expect(() => close(path, content, new Map())).toThrow(/namespace import syntax/);
+    expect(() => close(path, content, new Map([["React", { module: "react", erased: true }]]))).toThrow(/namespace import syntax/);
+    expect(() => close(path, content, new Map([["React", { module: "other", erased: false }]]))).toThrow(/namespace import syntax/);
+  });
+  it("binds a proof to its script kind: stock .tsx bytes read as .ts have no proof", () => {
+    const path = "components/command/command.tsx", content = stock(path);
+    expect(() => close(path.replace(/\.tsx$/, ".ts"), content)).toThrow(/components:/);
+    expect(() => assertComponentNamespaceClosure(content, namespacesOf(content), observed)).toThrow(/components:/);
+  });
+  it("still refuses a proven runtime read the module does not export", () => {
+    const path = "components/_parts/rail-use-mobile/index.ts", content = stock(path);
+    expect(() => assertComponentNamespaceClosure(content, namespacesOf(content), { react: ["useState"] }, path)).toThrow(/namespace member useEffect/);
   });
 });
