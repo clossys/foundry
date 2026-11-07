@@ -1,4 +1,4 @@
-import { TOKENS } from "../tokens/index.js";
+import { TOKENS } from "../tokens/tokens.js";
 
 /** The inspector docks from the existing tablet (md) breakpoint upward. */
 export const INSPECTOR_DOCK_QUERY = "(min-width: " + TOKENS["--breakpoint-tablet"]!.value + ")";

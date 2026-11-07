@@ -143,13 +143,13 @@ describe("real package-surface library golden", () => {
     // Re-captured by planner:R2C-designer (`vitest run -u`): R2F-11 parks the charts in components IA data and moves features'
     // sections.media into `composes`; R2F-20 residuals add the measured sheet/dialog/popover composes. Values unchanged:
     // composite 50ddc6b7 -> e6de19f5, component 9f5690b4 -> 3dda4793, surface f80ff291 -> fd4c1310, whole abac3d51 -> e7e52d3f.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:e6de19f535ec82bc960cd5360750984a046d5776eb773173aef9459f945c9b39"`);
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:43f7fb11a7051e63740429965075485895a73a844c977479392ff202e7637009"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
     expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:3dda4793c1b323776c7cfda6b737a43d04e6d0b490429d01317ffcf583a8848e"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:fd4c1310a82e4d9f04fcb6b3307b97596ec9b9096841f6fa49d7d09160f743d1"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"e7e52d3f659978ea320b82c5dafc203574839dfd2b6d3a78d3d57bfde26062f6"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:f5388d9a150eaa51b42c6746eeeb9ed152ab6670c7f7bb25f732659d485bb585"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"1ce9818205448b93a360aa97539cc6aa6e0e7c54a6bc2775ba753ab7a2f577bd"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });

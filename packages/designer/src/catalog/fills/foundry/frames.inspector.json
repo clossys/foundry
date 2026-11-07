@@ -88,7 +88,7 @@
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",
-            "sha256": "6ec16fdd02b06c1285e72b71adacb7567558f9c7c49fd17ab31308a5144e1fe9"
+            "sha256": "61e568622459344a0fd1fc8737d8b3a11af155f929f18c743cc8b3bfc836570b"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -110,7 +110,7 @@
           },
           {
             "code": "DF2",
-            "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+            "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
             "file": "packages/designer/src/frames/right-panel-config.ts",
             "line": 1
           },
