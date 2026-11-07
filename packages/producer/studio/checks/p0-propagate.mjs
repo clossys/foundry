@@ -3,7 +3,9 @@ import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { createServer } from 'node:net';
 import { fileURLToPath } from 'node:url';
+import { studioOrigin } from './studio-origin.mjs';
 
 const repoRoot = fileURLToPath(new URL('../../../../', import.meta.url));
 const excluded = new Set(['app', 'node_modules', 'dist', 'build', '.next', '.git', 'generated', '__fixtures__', '__golden__']);
@@ -162,7 +164,7 @@ async function browserDriver() {
 }
 
 /** Source restoration and a restoration build execute on every post-write exit. */
-export async function runPropagation({ root = repoRoot, adapter, baseURL = 'http://127.0.0.1:4300', driver, execute = runCommand, signal, artifactDir } = {}) {
+export async function runPropagation({ root = repoRoot, adapter, baseURL = studioOrigin(), driver, execute = runCommand, signal, artifactDir } = {}) {
   adapter = await validateAdapter(root, adapter ?? await discoverAdapter(root));
   const url = new URL(adapter.route, baseURL);
   if (url.origin !== new URL(baseURL).origin) throw new Error('Propagation route escaped the Studio origin.');
@@ -187,7 +189,7 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = 'http
     await build(false);
     if (signal?.aborted) throw new Error('Propagation was cancelled during source build.');
     const after = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
-    if (after.primary === before.primary || after.background === before.background || after.background !== after.resolvedPrimary) throw new Error(`The mutated ${adapter.cssVariable} did not reach the rendered primary button. Rebuild/restart the process serving port 4300 through the adapter buildCommands.`);
+    if (after.primary === before.primary || after.background === before.background || after.background !== after.resolvedPrimary) throw new Error(`The mutated ${adapter.cssVariable} did not reach the rendered primary button. Rebuild/restart the process serving ${new URL(baseURL).origin} through the adapter buildCommands (or pass --own-studio).`);
     if (Math.abs(after.radius - mutation.nextRadius) > 0.1) throw new Error('The actual shadcn button class mutation did not reach the rendered button.');
     outcome = { status: 'passed', url: url.href, primarySource: adapter.primarySource, buttonSource: adapter.buttonSource, cssVariable: adapter.cssVariable, buttonSelector: adapter.buttonSelector, originalClass: mutation.originalClass, before, after, sourceRestored: false };
   } catch (error) { failure = error; }
@@ -211,22 +213,26 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = 'http
   return outcome;
 }
 
-const usage = 'Usage: studio:propagate [--config relative-adapter.json] [--base-url URL] [--css-source FILE --component-source FILE --css-variable --primary --selector SELECTOR --route PATH --build-command JSON_ARRAY]';
+const usage = 'Usage: studio:propagate [--config relative-adapter.json] [--base-url URL | --own-studio] [--evidence-dir DIR] [--css-source FILE --component-source FILE --css-variable --primary --selector SELECTOR --route PATH --build-command JSON_ARRAY]';
 
 /** Build commands stay argument arrays; CLI values never become shell commands. */
 export function parseArgs(args) {
-  const parsed = { baseURL: 'http://127.0.0.1:4300', overrides: {} };
+  const parsed = { baseURL: studioOrigin(), overrides: {} };
   const seen = new Set();
   const fields = { '--css-source': 'primarySource', '--component-source': 'buttonSource', '--css-variable': 'cssVariable', '--selector': 'buttonSelector', '--route': 'route' };
   for (let index = 0; index < args.length; index++) {
-    const flag = args[index], value = args[++index];
+    const flag = args[index];
+    // --own-studio takes no value: this run starts, restarts after each rebuild and stops its own Studio.
+    if (flag === '--own-studio') { if (seen.has(flag) || seen.has('--base-url')) throw new Error(usage); seen.add(flag); parsed.ownStudio = true; continue; }
+    const value = args[++index];
     const field = Object.hasOwn(fields, flag) ? fields[flag] : undefined;
-    if (!value || (!field && !['--config', '--base-url', '--build-command', '--primary-occurrence'].includes(flag))) throw new Error(usage);
+    if (!value || (!field && !['--config', '--base-url', '--build-command', '--primary-occurrence', '--evidence-dir'].includes(flag)) || (flag === '--base-url' && parsed.ownStudio)) throw new Error(usage);
     if (flag !== '--build-command' && seen.has(flag)) throw new Error(usage);
     seen.add(flag);
     if (field) parsed.overrides[field] = value;
     else if (flag === '--config') parsed.config = value;
     else if (flag === '--base-url') parsed.baseURL = value;
+    else if (flag === '--evidence-dir') parsed.artifactDir = resolve(value);
     else if (flag === '--primary-occurrence') parsed.overrides.primaryOccurrence = Number(value);
     else {
       let command;
@@ -238,13 +244,44 @@ export function parseArgs(args) {
   return parsed;
 }
 
+async function freePort() {
+  const server = createServer();
+  await new Promise((accept, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', accept); });
+  const { port } = server.address();
+  await new Promise(accept => server.close(accept));
+  return port;
+}
+
+/**
+ * --own-studio: the propagation proof needs the serving process to load each rebuild, and a running
+ * Studio holds its build in memory. So this run starts its own Studio on a free local port (the
+ * check:studio starter, which builds dist/studio first), stops it before every adapter build command
+ * and starts it again from the fresh build, and stops it at the end.
+ */
+async function ownStudioRun(adapter, signal, artifactDir) {
+  const { startStudio } = await import('../../scripts/check-studio.mjs');
+  const port = await freePort(), log = line => console.error(line);
+  let studio = await startStudio({ port, log });
+  const execute = async (command, root, buildSignal) => {
+    await studio?.stop(); studio = undefined;
+    await runCommand(command, root, buildSignal);
+    studio = await startStudio({ port, log, build: false });
+  };
+  try { return await runPropagation({ adapter, baseURL: studio.origin, execute, signal, artifactDir }); }
+  finally { await studio?.stop(); }
+}
+
 async function main(args) {
-  const { config, baseURL, overrides } = parseArgs(args);
+  const { config, baseURL, overrides, ownStudio, artifactDir } = parseArgs(args);
   const controller = new AbortController();
   const cancel = () => controller.abort();
   process.on('SIGINT', cancel);
   process.on('SIGTERM', cancel);
-  try { console.log(JSON.stringify(await runPropagation({ adapter: await discoverAdapter(repoRoot, config, overrides), baseURL, signal: controller.signal }), null, 2)); }
+  try {
+    const adapter = await discoverAdapter(repoRoot, config, overrides);
+    const outcome = ownStudio ? await ownStudioRun(adapter, controller.signal, artifactDir) : await runPropagation({ adapter, baseURL, signal: controller.signal, artifactDir });
+    console.log(JSON.stringify(outcome, null, 2));
+  }
   finally { process.removeListener('SIGINT', cancel); process.removeListener('SIGTERM', cancel); }
 }
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

@@ -1,9 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
+import { studioOrigin } from './studio-origin.mjs';
 
 const artifacts = fileURLToPath(new URL('../../../../tmp/p0b-resume/propagation/', import.meta.url));
 let sequence = 0;
@@ -158,11 +159,22 @@ test('CSS variable, component source, rendered selector and rebuild seam are con
   assert.throws(() => createMutations(customCSS, originalButton, 6, 0, '--other'), /no matching --other/);
 });
 
+test('the CLI defaults to the single Studio origin and can own its Studio and evidence directory', () => {
+  assert.equal(parseArgs([]).baseURL, studioOrigin(), 'the default is $STUDIO_ORIGIN, else the single preview port');
+  const owned = parseArgs(['--own-studio', '--evidence-dir', 'out/propagation']);
+  assert.equal(owned.ownStudio, true);
+  assert.equal(owned.artifactDir, resolve('out/propagation'));
+  assert.deepEqual(owned.overrides, {});
+});
+
 test('CLI rejects ambiguous or shell-shaped build commands and invalid CSS property names', async () => {
   assert.throws(() => parseArgs(['--build-command', 'npm run build']), /JSON executable/);
   assert.throws(() => parseArgs(['--build-command', '"npm run build"']), /JSON executable/);
   assert.throws(() => parseArgs(['--route', '/', '--route', '/other']), /Usage/);
   assert.throws(() => parseArgs(['--unknown', 'value']), /Usage/);
+  assert.throws(() => parseArgs(['--own-studio', '--base-url', 'http://127.0.0.1:4503']), /Usage/);
+  assert.throws(() => parseArgs(['--base-url', 'http://127.0.0.1:4503', '--own-studio']), /Usage/);
+  assert.throws(() => parseArgs(['--own-studio', '--own-studio']), /Usage/);
   const f = await fixture();
   await assert.rejects(validateAdapter(f.root, { ...f.adapter, cssVariable: '--primary);color:red' }), /CSS custom property name/);
   const adapter = await validateAdapter(f.root, { ...f.adapter, buttonSelector: undefined });

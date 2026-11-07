@@ -80,15 +80,18 @@ export async function checkTimeoutMs(check, timeoutMs) {
 }
 
 /**
- * Build dist/studio from the current source and start `produce` on STUDIO_PORT. Resolves to
- * { origin, stop } once /api/health reports the Studio ready; rejects with the reason otherwise.
+ * Build dist/studio from the current source (unless `build: false`) and start `produce` on `port`
+ * (STUDIO_PORT by default). Resolves to { origin, stop } once /api/health reports the Studio ready;
+ * rejects with the reason otherwise.
  */
-export async function startStudio({ log = console.log, port = STUDIO_PORT, readyMs = 300_000 } = {}) {
+export async function startStudio({ log = console.log, port = STUDIO_PORT, readyMs = 300_000, build: rebuild = true } = {}) {
   const cli = join(producer, "dist/cli/index.js");
   if (!existsSync(cli)) throw new Error("dist/cli/index.js is missing: run the root `npm run build` first");
-  log(`check:studio: building dist/studio from the current source for the live sub-checks`);
-  const build = spawnSync(process.execPath, [join(here, "build-studio.mjs")], { cwd: producer, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
-  if (build.status !== 0) throw new Error(`scripts/build-studio.mjs exited ${build.status}: ${`${build.stdout}\n${build.stderr}`.trim().split("\n").slice(-10).join(" / ")}`);
+  if (rebuild) {
+    log(`check:studio: building dist/studio from the current source for the live sub-checks`);
+    const build = spawnSync(process.execPath, [join(here, "build-studio.mjs")], { cwd: producer, encoding: "utf8", maxBuffer: 64 * 1024 * 1024, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });
+    if (build.status !== 0) throw new Error(`scripts/build-studio.mjs exited ${build.status}: ${`${build.stdout}\n${build.stderr}`.trim().split("\n").slice(-10).join(" / ")}`);
+  }
   const origin = `http://127.0.0.1:${port}`;
   try { await fetch(`${origin}/api/health`); throw new Error(`port ${port} is already serving; stop it or set STUDIO_ORIGIN to use it`); } catch (error) { if (/already serving/.test(error.message)) throw error; }
   const child = spawn(process.execPath, [cli, "produce", "--root", repository, "--port", String(port), "--no-open"], { cwd: producer, stdio: ["ignore", "pipe", "pipe"], detached: true, env: { ...process.env, FORCE_COLOR: "0", NO_COLOR: "1" } });

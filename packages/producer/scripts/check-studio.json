@@ -602,6 +602,12 @@
       "cwd": "packages/designer",
       "run": "npx vitest run --config vitest.ui.config.ts",
       "kind": "test"
+    },
+    {
+      "id": "producer p0-propagate (own Studio)",
+      "cwd": "packages/producer",
+      "run": "node studio/checks/p0-propagate.mjs --own-studio --evidence-dir \"$STUDIO_CHECK_OUT/propagation\"",
+      "kind": "browser"
     }
   ]
 }
