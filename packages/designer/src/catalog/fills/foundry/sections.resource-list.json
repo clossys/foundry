@@ -72,7 +72,7 @@
           },
           {
             "path": "packages/designer/src/blocks/ResourceList.tsx",
-            "sha256": "5e6033b75019b63bffcd03744504539a3d1121ce06ba31af71d5140df97e6266"
+            "sha256": "5a39927bad3fe136534dff27ce9ba602cb7fbdff4307a3692f712b42158b395f"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",
@@ -91,6 +91,10 @@
             "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
           },
           {
+            "path": "packages/designer/src/components/surface-tones.ts",
+            "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
+          },
+          {
             "path": "packages/designer/src/icons/ChevronDown.ts",
             "sha256": "a0d467a8eb0067662f31c16000987a0dfbc2d2b71fbe5b99d0dd5586dd823294"
           },
@@ -104,7 +108,7 @@
             "code": "DF5",
             "evidence": "unregistered asset import ../icons/ChevronDown.js#ChevronDown",
             "file": "packages/designer/src/blocks/ResourceList.tsx",
-            "line": 8
+            "line": 9
           },
           {
             "code": "DF2",

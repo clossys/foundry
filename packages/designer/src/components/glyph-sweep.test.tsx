@@ -12,14 +12,13 @@ import { Checkbox } from "./Checkbox.js";
 import { Switch } from "./Switch.js";
 import { Select } from "./Select.js";
 import { ComboBox } from "./ComboBox.js";
-import { Banner } from "./Banner.js";
 import { Chip } from "./Chip.js";
 import { SearchField } from "./SearchField.js";
 import { StatusMark } from "./StatusMark.js";
 import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
 const render = hostedRender(renderBare);
 
-const consumers = ["Select", "ComboBox", "Banner", "Chip", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
+const consumers = ["Select", "ComboBox", "Chip", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
 const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), `${name}.tsx`), "utf8");
 // Consumer files may render Icon, but glyph artwork belongs in data bindings.
 function inlineGlyphs(text: string) {
@@ -42,13 +41,12 @@ describe("control glyph bindings", () => {
       <Button variant="quiet">Continue</Button>
       <Checkbox defaultSelected>Selected</Checkbox>
       <Checkbox isIndeterminate>Mixed</Checkbox>
-      <Banner onDismiss={() => {}}>Message</Banner>
       <Chip onRemove={() => {}} removeLabel="Remove tag">Tag</Chip>
       <SearchField label="Query" defaultValue="Find" />
       <Select label="Choice" options={[{ id: "a", label: "Alpha" }]} defaultSelectedKey="a" />
       <ComboBox label="Suggestion" options={[{ id: "a", label: "Alpha" }]} defaultSelectedKey="a" />
     </GlyphProvider>);
-    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(8);
+    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(7);
     await user.click(screen.getByRole("button", { name: /Choice/ }));
     expect(screen.getByRole("option", { name: "Alpha" }).querySelector('[data-test-glyph="consumer"]')).not.toBeNull();
     await user.keyboard("{Escape}");

@@ -1,7 +1,7 @@
 "use client";
 import { createPublisherValueNames, publisherValueRef } from "./value-names.js";
 import { publisherCopy, PUBLISHER_COPY_REFS, PUBLISHER_PAGE_DESCRIPTION_REF, type PublisherCopyResolver, type PublisherCopyRef } from "./copy.js";
-import { Badge, Button, LinkButton as Link, Select } from "@clossys/designer/components";
+import { BADGE_TONE, Badge, Button, LinkButton as Link, Select } from "@clossys/designer/components";
 import { DataTable, DetailView, EmptyState, NoticeList, PageHeader, ResourceList, StatGroup } from "@clossys/designer/blocks";
 import { SlotModule, PageHeaderModule } from "@clossys/designer/shell";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -256,7 +256,7 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
         <StatGroup aria-label={name("publisher.planHeader", "currentMilestoneLabel")} items={PUBLISHER_MILESTONES.map(milestone => ({ id: milestone.id, label: nameText("publisher.milestone", milestone.id), value: active.items.filter(row => row.milestone === milestone.id).length }))} />
         <NoticeList label={copy("workspace")} notices={[{ id: "alignment-state", message: aligned ? <>{messages?.alignedVersionLabel ?? copyText("alignedVersion")} {aligned.version}</> : copyText("proposedDescription") }]} />
         <ResourceList aria-label={name("publisher.channel", active.id)} items={visibleItems.map(item => ({ id: item.id, textValue: label(item.row), title: <span data-publisher-item-title="">{text(labelRef(item.row))}</span>,
-          status: <Badge role="status">{stateText(item.state)}</Badge>, meta: item.path,
+          status: <Badge {...BADGE_TONE.neutral} role="status">{stateText(item.state)}</Badge>, meta: item.path,
           description: <Button variant="link" size="sm" type="button" aria-label={messages?.openItemLabel?.(label(item.row), stateName(item.state))} onPress={() => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setSelection(item.id); setShowFormats(false); }}>{messages?.openItemLabel?.(label(item.row), stateName(item.state)) ?? nameText("publisher.stage", item.column)}</Button>,
         }))} onAction={itemId => { opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null; setSelection(itemId); }} emptyState={{ title: messages?.emptyLabel ?? copyText("emptyTitle"), description: copyText("emptyDescription") }}
           toolbar={active.items.some(row => row.facets.includes("commerce")) ? <Button variant="secondary" type="button" aria-pressed={commerceOnly} onPress={() => setCommerceOnly(value => !value)}>{copyText("commerce")}</Button> : undefined} />

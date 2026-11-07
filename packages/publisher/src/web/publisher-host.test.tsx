@@ -2,12 +2,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import * as selectedComponents from "@clossys/designer/components";
-import { Banner } from "@clossys/designer/components";
+import { NoticeList } from "@clossys/designer/blocks";
 import { SHELL_COPY_REFS } from "@clossys/designer/frames";
 import { COPY_FINGERPRINT_ALGORITHM, computeCopyFingerprint } from "@clossys/writer";
 import { ContentRouteHost, ContentRoutePage, requireContentRoutePublishing } from "./content-route.js";
 import { PublisherHost, PublisherHostNeedError } from "./publisher-host.js";
 import type { ContentRouteInput } from "./content-route-types.js";
+import { marketingComponentSelection } from "../../../designer/dist/studio/marketing-component-selection.js";
 import { CONTENT_ROUTE_COMPONENT_MODULE, contentRouteComponentSelectionData } from "./__fixtures__/content-route-components.js";
 import { contentRouteFixture, withApprovedRouteCopy } from "./__fixtures__/content-route.js";
 
@@ -24,7 +25,19 @@ function servedRoute(): ContentRouteInput {
   const shell = { id: SHELL_COPY_REFS.banner.dismiss.id, text: DISMISS, context: "Banner dismiss control", placeholders: [], status: "approved" as const,
     approval: { approvedBy: "owner", approvedAt: approved.raisedAt, textFingerprint: computeCopyFingerprint(DISMISS), fingerprintAlgorithm: COPY_FINGERPRINT_ALGORITHM } };
   return { ...approved, writer: { ...approved.writer!, registry: { ...registry, entries: [...registry.entries, shell] } },
-    components: { ...contentRouteComponentSelectionData(), modules: { [CONTENT_ROUTE_COMPONENT_MODULE]: selectedComponents } } };
+    components: withStockLeaves({ ...contentRouteComponentSelectionData(), modules: { [CONTENT_ROUTE_COMPONENT_MODULE]: selectedComponents } }) };
+}
+
+/** NoticeList draws the stock Alert and Button leaves, so the consumer selection carries those source picks and their output files too. */
+function withStockLeaves<T extends ReturnType<typeof contentRouteComponentSelectionData> & { modules: Record<string, unknown> }>(selection: T): T {
+  const studio = marketingComponentSelection(), leaves = ["components.banner", "components.button"];
+  const chosen = Object.fromEntries(leaves.map(leaf => [leaf, studio.profile.components.components[leaf]!]));
+  const entries = Object.values(chosen).flatMap(pick => pick.impl.kind === "source" ? [pick.impl.entry] : []);
+  const outputs = new Set(Object.values(chosen).flatMap(pick => (pick.descriptor.outputSha256 ?? []).map(receipt => receipt.path)));
+  const files = [...selection.profile.components.files, ...studio.profile.components.files.filter(file => outputs.has(file.path))];
+  return { ...selection, profile: { components: { ...selection.profile.components, files, components: { ...selection.profile.components.components, ...chosen } } },
+    descriptors: { ...selection.descriptors, ...Object.fromEntries(leaves.map(leaf => [leaf, studio.descriptors[leaf]!])) },
+    modules: { ...selection.modules, ...Object.fromEntries(entries.map(entry => [entry, studio.modules[entry]])) } };
 }
 
 describe("Publisher host", () => {
@@ -32,7 +45,7 @@ describe("Publisher host", () => {
     const input = requireContentRoutePublishing(servedRoute());
     const html = renderToStaticMarkup(<ContentRouteHost input={input}>
       <ContentRoutePage input={input} />
-      <Banner title="Notice" onDismiss={() => undefined}>Body</Banner>
+      <NoticeList label="Notices" notices={[{ id: "notice", title: "Notice", message: "Body" }]} onDismiss={() => undefined} />
     </ContentRouteHost>);
     expect(html).toContain('data-ds-leaf="frames.auth-shell"'); expect(html).toContain('data-ds-leaf="sections.empty-state"');
     expect(html).toContain("Sign in to continue");

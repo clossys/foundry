@@ -3,7 +3,7 @@ import { cx } from "../components/internal/cx.js";
 import { MAIN_CONTENT_ID } from "./internal/main-content-id.js";
 import { SkipLink } from "./SkipLink.js";
 import { SHELL_GROUND_CLASSES, type ShellGround } from "./internal/shell-ground.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 
 export interface ShellProps extends HTMLAttributes<HTMLDivElement> {
   /**

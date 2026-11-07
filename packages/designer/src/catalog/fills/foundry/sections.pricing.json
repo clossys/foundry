@@ -56,7 +56,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PricingTable.tsx",
-            "sha256": "4749ab8b9be4a83e81d83a3a5af2c649ccf3e1099d855a7e6350d23de1ee9178"
+            "sha256": "ffecb7c100055bd24aa60ff374e8ddae3ae7e649471f2013d4e6063c4eb43b07"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

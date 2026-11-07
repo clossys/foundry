@@ -1,6 +1,7 @@
 "use client";
 import { useId, useMemo, useState, type ReactNode } from "react";
-import { Badge } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE } from "../../components/surface-tones.js";
 import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { Switch } from "../../components/Switch.js";
 import type { CatalogBrowserReference } from "../../blocks/catalog-browser/types.js";
@@ -84,8 +85,8 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
     return <li key={entry.id} data-usage-row={entry.id} className="flex flex-wrap items-baseline gap-sm">
       {navigable ? <Button variant="link" size="sm" onPress={() => navigation.select(target.entryId)}><StudioDataValue kind="identifier" value={target.label} /></Button> : <span className={DETAIL}><StudioDataValue kind="identifier" value={target.label} /></span>}
       {entry.fill ? <span className={DETAIL}><StudioDataValue kind="source" value={entry.fill.source} /></span> : null}
-      {entry.kinds?.map(kind => <Badge key={kind}>{labels.kind[kind]}</Badge>)}
-      {entry.evidence?.map(evidence => <Badge key={evidence} variant="info">{labels.evidence[evidence]}</Badge>)}
+      {entry.kinds?.map(kind => <Badge key={kind} {...BADGE_TONE.neutral}>{labels.kind[kind]}</Badge>)}
+      {entry.evidence?.map(evidence => <Badge key={evidence} {...BADGE_TONE.info}>{labels.evidence[evidence]}</Badge>)}
       {entry.count !== undefined ? <span className={DETAIL}>{labels.count(entry.count)}</span> : null}
     </li>;
   })}</ul> : undefined;
@@ -93,7 +94,7 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
     <h5 className={DETAIL}>{labels.layer[group.layer]}</h5>{rows(group.rows)}
   </section>)}</> : undefined;
   const exceptionRows = (list: readonly WiringException[]) => list.length ? <ul className="flex flex-col gap-xs">{list.map(exception => <li key={`${exception.file}\u0000${exception.elementId}\u0000${exception.name}`} data-usage-exception={exception.name} className="flex flex-wrap items-baseline gap-sm">
-    <StudioDataValue kind="identifier" value={exception.name} /><Badge variant="warning"><StudioDataValue kind="value" value={exception.reasonCode} /></Badge><span className={DETAIL}><StudioDataValue kind="identifier" value={exception.owner} /></span><span className={DETAIL}><StudioDataValue kind="value" value={exception.expiry} /></span><Badge><StudioDataValue kind="status" value={exception.status} /></Badge>
+    <StudioDataValue kind="identifier" value={exception.name} /><Badge {...BADGE_TONE.warning}><StudioDataValue kind="value" value={exception.reasonCode} /></Badge><span className={DETAIL}><StudioDataValue kind="identifier" value={exception.owner} /></span><span className={DETAIL}><StudioDataValue kind="value" value={exception.expiry} /></span><Badge {...BADGE_TONE.neutral}><StudioDataValue kind="status" value={exception.status} /></Badge>
   </li>)}</ul> : undefined;
   return <section data-studio-usage={id} aria-label={labels.title} className="flex flex-col gap-sm">
     <div className="flex flex-wrap items-center gap-sm">
@@ -102,9 +103,9 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
       <Switch isSelected={transitive} onChange={setTransitive}>{labels.transitive}</Switch>
     </div>
     {!model ? <p role="status" className={DETAIL}>{labels.loading}</p> : <>
-      {model.usedNowhere ? <p data-usage-used-nowhere=""><Badge variant="warning">{labels.usedNowhere}</Badge></p> : null}
+      {model.usedNowhere ? <p data-usage-used-nowhere=""><Badge {...BADGE_TONE.warning}>{labels.usedNowhere}</Badge></p> : null}
       {model.notLinked.map(finding => <p key={`${finding.code}\u0000${finding.subject}\u0000${finding.message}`} data-usage-not-linked={finding.code} className="flex flex-wrap items-baseline gap-sm">
-        <Badge variant="danger">{labels.notLinked}</Badge><StudioDataValue kind="identifier" value={finding.code} /><span className={DETAIL}><StudioDataValue kind="identifier" value={finding.subject} /></span><span className={DETAIL}>{readStudioFinding(copy, finding, `studio.usage.finding.${finding.code}`)}</span>
+        <Badge {...BADGE_TONE.danger}>{labels.notLinked}</Badge><StudioDataValue kind="identifier" value={finding.code} /><span className={DETAIL}><StudioDataValue kind="identifier" value={finding.subject} /></span><span className={DETAIL}>{readStudioFinding(copy, finding, `studio.usage.finding.${finding.code}`)}</span>
       </p>)}
       <List title={labels.using} none={labels.none}>{groups(model.using)}</List>
       <List title={labels.usedWhere} none={labels.none}>{groups(model.usedWhere)}</List>

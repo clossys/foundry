@@ -63,7 +63,7 @@
           },
           {
             "path": "packages/designer/src/blocks/ColumnMapper.tsx",
-            "sha256": "f006d53a33362daca8f44911f27ae2b46b7cab75444b2c032c435c69a411eb55"
+            "sha256": "63abab6fb0ee7f77a2b807c5c7c33d780090a7d246c18218edd8d3a642978556"
           },
           {
             "path": "packages/designer/src/blocks/stock-select.tsx",

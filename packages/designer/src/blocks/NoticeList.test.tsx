@@ -69,9 +69,9 @@ describe("NoticeList", () => {
     expect(screen.queryByRole("status")).toBeNull();
   });
 
-  it("declares neutral content through SemanticContent and retains Banner severity behavior", () => {
+  it("declares neutral content through SemanticContent and retains Alert severity behavior", () => {
     const source = readFileSync(join(import.meta.dirname, "NoticeList.tsx"), "utf8");
-    expect(source).toContain("<Banner");
+    expect(source).toContain("<Alert");
     expect(source).toContain("<SemanticContent");
     const parsed = ts.createSourceFile("NoticeList.tsx", source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
     const nativeTags: string[] = [];

@@ -1751,9 +1751,6 @@
   .h-8 {
     height: calc(var(--spacing, 0.25rem) * 8);
   }
-  .h-10 {
-    height: calc(var(--spacing, 0.25rem) * 10);
-  }
   .h-24 {
     height: calc(var(--spacing, 0.25rem) * 24);
   }
@@ -1865,12 +1862,6 @@
   }
   .w-6 {
     width: calc(var(--spacing, 0.25rem) * 6);
-  }
-  .w-8 {
-    width: calc(var(--spacing, 0.25rem) * 8);
-  }
-  .w-10 {
-    width: calc(var(--spacing, 0.25rem) * 10);
   }
   .w-\[calc\(var\(--spacing-6xl\)\*2\)\] {
     width: calc(var(--spacing-6xl) * 2);
@@ -3068,9 +3059,6 @@
   }
   .bg-sidebar {
     background-color: var(--sidebar);
-  }
-  .bg-skeleton-fill {
-    background-color: var(--color-skeleton-fill, oklch(0.9401 0 0));
   }
   .bg-status-danger {
     background-color: var(--color-status-danger, oklch(0.285 0 0));
@@ -4880,9 +4868,6 @@
     }
     .hover\:bg-surface-raised:hover {
       background-color: var(--color-surface-raised, oklch(1 0 0));
-    }
-    .hover\:bg-surface-selected:hover {
-      background-color: var(--color-surface-selected, oklch(0.4748 0 0 / 0.1));
     }
     .hover\:bg-surface-sunken:hover {
       background-color: var(--color-surface-sunken, oklch(0.9401 0 0));

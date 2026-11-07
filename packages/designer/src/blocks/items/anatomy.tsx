@@ -5,7 +5,7 @@ import { CardLinkTitle, type CardLinkFrame } from "../stretched-link.js";
 import { stockCardGroundClass, type SectionGround } from "../section-ground.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Card = componentLeaf<typeof import("../../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").Card>("components.card");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Shared title and single-anchor anatomy. Each private policy owns its exact historical tags/classes. */

@@ -7,6 +7,7 @@ import { assertItemAxes, assertItemData, hasContent } from "./policies.js";
 import { renderItemStatus } from "./render.js";
 import type { ItemData } from "./types.js";
 
+import { BADGE_TONE } from "../../components/surface-tones.js";
 type Stock = typeof import("../../components/item/item.js");
 const ItemRoot = componentLeaf<Stock["Item"]>("components.item");
 const ItemHeader = componentLeaf<Stock["ItemHeader"]>("components.item", "ItemHeader");
@@ -15,7 +16,7 @@ const ItemContent = componentLeaf<Stock["ItemContent"]>("components.item", "Item
 const ItemTitle = componentLeaf<Stock["ItemTitle"]>("components.item", "ItemTitle");
 const ItemDescription = componentLeaf<Stock["ItemDescription"]>("components.item", "ItemDescription");
 const ItemFooter = componentLeaf<Stock["ItemFooter"]>("components.item", "ItemFooter");
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface StockItemProps extends ItemData {
@@ -35,7 +36,7 @@ export function StockItem({ ground = "base", headingLevel, ...item }: StockItemP
   assertItemAxes("plain", "standard", ground);
   assertItemData(item);
   const colors = SECTION_GROUND_CLASSES[ground];
-  const badge = item.badge === undefined ? null : <Badge variant={item.badge.tone}>{item.badge.label}</Badge>;
+  const badge = item.badge === undefined ? null : <Badge {...BADGE_TONE[item.badge.tone ?? "neutral"]}>{item.badge.label}</Badge>;
   // Status tint/text pairs are checked on base, so they keep that opaque backing on every ground.
   const tinted = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
   const meta = hasContent(item.eyebrow) || hasContent(item.meta) || item.badge !== undefined || item.status !== undefined

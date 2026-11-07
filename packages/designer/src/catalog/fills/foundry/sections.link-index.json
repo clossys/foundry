@@ -73,7 +73,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/anatomy.tsx",
-            "sha256": "d5c6d8b80291251ef75a565becb7d3a550ddc66e5d9fa976747424c53cfd8bc7"
+            "sha256": "8ca317930c5ff082b03ea9b016b5acd590921a2241edcaa8166ebce644b0965f"
           },
           {
             "path": "packages/designer/src/blocks/items/ItemsStatic.tsx",
@@ -85,7 +85,7 @@
           },
           {
             "path": "packages/designer/src/blocks/items/render.tsx",
-            "sha256": "ecf9c180fdc864f9fe3cbc0729c289ab85a264638290da5732fa1c425802aeb4"
+            "sha256": "17b25a4de0142df0be62b7bebdd7f2405f97f9f59fb1b7ed14fd849f36d44b63"
           },
           {
             "path": "packages/designer/src/blocks/NavGrid.tsx",
@@ -110,6 +110,10 @@
           {
             "path": "packages/designer/src/components/internal/ui-vars.ts",
             "sha256": "47bd0dd11e0a08d90819227edd45bfc68a5a5df7d24d3ce7ab9f2395fb1851a0"
+          },
+          {
+            "path": "packages/designer/src/components/surface-tones.ts",
+            "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
           },
           {
             "path": "packages/designer/src/icons/ChevronRight.ts",

@@ -1,6 +1,7 @@
 import { useId, type Key, type ReactNode } from "react";
-import { Card } from "../components/Card.js";
+import { Card } from "../components/preview-runtime/components/card/card.js";
 import { cx } from "../components/internal/cx.js";
+import { CARD_SURFACE } from "../components/surface-tones.js";
 
 export interface GroupedTableColumn<Row> {
   /** Unique within its group; the row-header ID has its own namespace. */
@@ -47,7 +48,7 @@ export function GroupedTable<Row>({ caption, rowHeader, groups, rows, rowKey, em
   const columnId = (group: number, column: number) => prefix + "-" + group + "-" + column;
   const columnCount = 1 + groups.reduce((count, group) => count + group.columns.length, 0);
   return (
-    <Card variant="outline" className={cx("p-0 overflow-hidden", className)}>
+    <Card className={cx(CARD_SURFACE.outline, "p-0 overflow-hidden", className)}>
       <div role="region" aria-labelledby={captionId} tabIndex={0} className="overflow-x-auto focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-primary focus-visible:-outline-offset-2">
         <table className="w-full border-collapse text-body-s text-ink-primary">
           <caption id={captionId} className="p-md text-start font-medium">{caption}</caption>

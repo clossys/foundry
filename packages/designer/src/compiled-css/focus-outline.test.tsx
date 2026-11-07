@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Banner } from "../components/Banner.js";
+import { NoticeList } from "../blocks/NoticeList.js";
 import { Faq } from "../blocks/Faq.server.js";
 import { Home } from "../icons/index.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
@@ -32,10 +32,10 @@ function resolvedFocusOutlineStyle(className: string): string {
 }
 
 describe("compiled focus-outline cascade", () => {
-  it("resolves a paintable outline for Banner dismiss, server-native FAQ controls and SiteHeader.ActionLink", () => {
+  it("resolves a paintable outline for NoticeList dismiss, server-native FAQ controls and SiteHeader.ActionLink", () => {
     const { container } = render(
       <>
-        <Banner onDismiss={() => {}}>Notice</Banner>
+        <NoticeList label="Notices" notices={[{ id: "n", message: "Notice" }]} onDismiss={() => {}} dismissLabel="Dismiss" />
         <Faq items={[{ id: "one", question: "Question", answer: "Answer" }]} />
         <SiteHeader.ActionLink href="/" label="Home" icon={Home} />
       </>,

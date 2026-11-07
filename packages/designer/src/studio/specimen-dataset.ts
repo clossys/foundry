@@ -1,12 +1,11 @@
 import { CalendarDate } from "@internationalized/date";
-import type { AvatarProps } from "../components/Avatar.js";
-import type { BannerProps } from "../components/Banner.js";
+import type { AlertProps, AvatarProps, SkeletonProps } from "../components/index.js";
+import { ALERT_TONE, SKELETON_SHAPE } from "../components/surface-tones.js";
 import type { ComboBoxOption } from "../components/ComboBox.js";
 import type { LogomarkProps } from "../components/Logomark.js";
 import type { MeterProps } from "../components/Meter.js";
 import type { ProgressBarProps } from "../components/ProgressBar.js";
 import type { SelectOption } from "../components/Select.js";
-import type { SkeletonProps } from "../components/Skeleton.js";
 import type { SpinnerProps } from "../components/Spinner.js";
 import type { StatusMarkTone } from "../components/StatusMark.js";
 import type { IconNode } from "../icons/types.js";
@@ -559,8 +558,8 @@ export const specimenDataset = {
     picker: { label: "Due date", triggerLabel: "Choose date", defaultValue: SPECIMEN_ANCHOR_DATE.add({ days: 14 }) },
   },
   people,
-  avatar: { alt: people[0].name } satisfies AvatarProps,
-  avatars: people.slice(0, 3).map(person => ({ alt: person.name }) satisfies AvatarProps),
+  avatar: { role: "img", "aria-label": people[0].name } satisfies AvatarProps,
+  avatars: people.slice(0, 3).map(person => ({ role: "img", "aria-label": person.name }) satisfies AvatarProps),
   /** Assets addressed by their registered asset slot and member. */
   assets: {
     mark: { slot: "assets.mark", member: "positive", name: brandName, svg: brandMark, src: `data:image/svg+xml,${encodeURIComponent(brandMark)}` },
@@ -639,7 +638,7 @@ export const specimenDataset = {
     paragraph: "Plans and notes stay together.",
     draft: "Save draft",
   },
-  banner: { variant: "info" } satisfies Pick<BannerProps, "variant">,
+  banner: ALERT_TONE.info satisfies Pick<AlertProps, "variant" | "role">,
   statusMark: { tone: "success" as StatusMarkTone },
   textField: { label: "Project name", placeholder: "Untitled project", description: "Shown on the dashboard." },
   searchField: { label: "Search orders", placeholder: "Order or customer" },
@@ -650,7 +649,7 @@ export const specimenDataset = {
   meter: { label: "Storage used", value: 3, scaleMax: 5, valueText: "3 of 5 GB", tone: "info" } satisfies Partial<MeterProps>,
   resize: { label: "Resize panel", min: 160, max: 480, value: 280, resetValue: 280 },
   spinner: { label: "Loading orders" } satisfies SpinnerProps,
-  skeleton: { shape: "text", "aria-label": "Loading order" } satisfies SkeletonProps,
+  skeleton: { className: SKELETON_SHAPE.text, role: "status", "aria-busy": true, "aria-label": "Loading order" } satisfies SkeletonProps,
   separator: { orientation: "horizontal" as const },
   semantic: { as: "p" as const },
   /** A short read-only document: heading, paragraph and list, so the rich-text surface draws its own prose styles. */

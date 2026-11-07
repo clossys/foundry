@@ -72,8 +72,8 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/Card.tsx",
-            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
+            "path": "packages/designer/src/components/ground-paint.ts",
+            "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -85,11 +85,11 @@
           },
           {
             "path": "packages/designer/src/shell/internal/shell-ground.ts",
-            "sha256": "f67e64001fa17b1712c00e0656bf2ff04834e7b88212d61c9039b1fc8820dcd3"
+            "sha256": "cd78412977639b42fcf4bc1046b7a3e3c36a10398006bb0b529677667ab3a6b3"
           },
           {
             "path": "packages/designer/src/shell/SiteFooter.tsx",
-            "sha256": "013dacd352981ed40e999b7ceda9417c62174d6e0c9243e462379b112b32a4d4"
+            "sha256": "1f2fff1acf21658b33da9377d0044e85a40fd8ed1bb58c341d9fd23fcfb05b16"
           }
         ],
         "unresolved": [

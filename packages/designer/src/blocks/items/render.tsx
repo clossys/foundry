@@ -9,8 +9,9 @@ import { ItemDescription, ItemHeading, ItemIcon, ItemPlate } from "./anatomy.js"
 import { hasContent } from "./policies.js";
 import type { ItemData, ItemSize, ItemTreatment } from "./types.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
+import { BADGE_TONE } from "../../components/surface-tones.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -53,7 +54,7 @@ export function ItemRenderer({ item, treatment, size, ground, headingLevel, stat
   const scaleClasses = explain ? EXPLAIN_SCALE_CLASSES : SCALE_CLASSES;
   const scaleClassName = index ? "text-body font-body font-medium leading-heading" : statement ? scaleClasses.statement : scaleClasses[size];
   const figureTrend = item.figure?.trend ?? "neutral";
-  const badge = item.badge !== undefined ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null;
+  const badge = item.badge !== undefined ? <Badge {...BADGE_TONE[item.badge.tone ?? "neutral"]}>{item.badge.label}</Badge> : null;
   // Status tint/text pairs are checked on base, so give them that opaque backing on every ground.
   const statusBadge = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
   const legacy = navigation !== undefined;

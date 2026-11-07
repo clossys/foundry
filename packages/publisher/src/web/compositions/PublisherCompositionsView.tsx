@@ -1,13 +1,13 @@
 "use client";
 import { LinkButton as Link } from "@clossys/designer/components";
-import { Button, Card, Select } from "@clossys/designer/components";
+import { Button, CARD_SURFACE, Card, Select } from "@clossys/designer/components";
 
 import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
 import { useId, useState } from "react";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding } from "../../core/instance-binding.js";
 import { getEffectiveLayoutContract, getLayoutLeaf, LAYOUT_IA, LAYOUT_LEAVES } from "../../layouts/index.js";
 import type { LayoutId } from "../../layouts/index.js";
-import { Badge } from "@clossys/designer/components/server";
+import { BADGE_TONE, Badge } from "@clossys/designer/components/server";
 import { CompositionSkeletonFrame } from "./SkeletonFrame.js";
 import type { BreakpointValues } from "../../core/flow-stage.js";
 
@@ -56,7 +56,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
       <p>Read-only layout contracts. Previews contain slot placeholders only.</p>
     </div>
     <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)_var(--ui-layout-aside-w)]">
-      <Card variant="outline"><nav aria-label="Composition arrangements">
+      <Card className={CARD_SURFACE.outline}><nav aria-label="Composition arrangements">
         <ul className="grid gap-lg">
           {LAYOUT_IA.nodes.filter(node => allowedLayoutIds === undefined || node.children.some(family => family.leaves.some(id => offered.some(leaf => leaf.id === id)))).map(node => <li key={node.id}>
             {node.id !== "page" ? <Button variant="secondary" type="button" isDisabled>{node.label} · concept only</Button> : <>
@@ -83,7 +83,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
         <p>Contract preview · no consumer sections rendered</p>
         {([320, 1280] as const).flatMap(width => (["light", "dark"] as const).map(theme => <figure key={`${width}-${theme}`} className="min-w-0 grid gap-sm">
           <figcaption>{width} px · {theme}</figcaption>
-          <Card variant="outline" role="region" aria-label={`${width} px ${theme} skeleton`} tabIndex={0} className="min-w-0 overflow-x-auto">
+          <Card role="region" aria-label={`${width} px ${theme} skeleton`} tabIndex={0} className={`${CARD_SURFACE.outline} min-w-0 overflow-x-auto`}>
             <CompositionSkeletonFrame leaf={leaf.id} config={selection.config} width={width} theme={theme} breakpointValues={breakpointValues} />
           </Card>
         </figure>))}
@@ -91,9 +91,9 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
       <Panel><aside aria-labelledby={`${id}-contract`} className="grid content-start gap-lg">
         <SectionHeader id={`${id}-contract`} level={3} title={`${label(leaf.id)} contract`} />
         <div className="flex flex-wrap gap-sm" aria-label="Composition evidence">
-          <Badge>{leaf.status}</Badge><Badge>Foundry offer</Badge>
-          <Badge>{adopted ? `adopted into ${library.id}` : "not adopted"}</Badge>
-          <Badge>used by {uses} {uses === 1 ? "instance" : "instances"} · selected config</Badge>
+          <Badge {...BADGE_TONE.neutral}>{leaf.status}</Badge><Badge {...BADGE_TONE.neutral}>Foundry offer</Badge>
+          <Badge {...BADGE_TONE.neutral}>{adopted ? `adopted into ${library.id}` : "not adopted"}</Badge>
+          <Badge {...BADGE_TONE.neutral}>used by {uses} {uses === 1 ? "instance" : "instances"} · selected config</Badge>
         </div>
         {!adopted && <p>No consumer fill for this config. <Link variant="link" href={designerHref}>Adopt in Designer</Link></p>}
         <Select label="Config" selectedKey={selection.config} onSelectionChange={key => {

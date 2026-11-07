@@ -21,7 +21,8 @@ import { marketingComponentSelection } from "../studio/marketing-component-selec
 const src = join(dirname(fileURLToPath(import.meta.url)), "..");
 const COMPOSITION_DIRS = ["blocks", "frames", "sections", "shell"];
 /** Compositions rewritten onto stock anatomy; they may never regress. */
-const CLEAN = ["blocks/AccountMenu.tsx", "blocks/CommandMenu.tsx", "blocks/shell-menu.tsx", "frames/AppFrame.tsx", "frames/AppFrameBrandTheme.tsx"];
+// R2F-29: the stock avatar and alert callers left the baseline; they stay clean.
+const CLEAN = ["blocks/AccountMenu.tsx", "blocks/CommandMenu.tsx", "blocks/EventItem.tsx", "blocks/NoticeList.tsx", "blocks/chat/Chat.tsx", "blocks/shell-menu.tsx", "frames/AppFrame.tsx", "frames/AppFrameBrandTheme.tsx", "frames/FrameDock.tsx"];
 
 interface Use { readonly file: string; readonly leaf: string; readonly part?: string; readonly attrs: readonly string[] }
 interface Bound { readonly leaf: string; readonly part?: string }
@@ -153,11 +154,7 @@ function violations(uses: readonly Use[]): Record<string, string[]> {
 
 const BASELINE: Readonly<Record<string, readonly string[]>> = {
   "blocks/Drawer.tsx": ["components.dialog -> overlayClassName,trigger", "components.dialog.Heading undeclared part"],
-  "blocks/EventItem.tsx": ["components.avatar -> alt,src"],
-  "blocks/NoticeList.tsx": ["components.banner -> dismissLabel,onDismiss"],
-  "blocks/chat/Chat.tsx": ["components.avatar -> alt"],
   "blocks/matrix/choices.tsx": ["components.radio-group -> label"],
-  "frames/FrameDock.tsx": ["components.banner -> onDismiss"],
   "shell/SiteHeader.tsx": ["components.button.LinkButton -> aria-current"],
 };
 

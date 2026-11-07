@@ -1,8 +1,9 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
-import { Badge } from "../components/Badge.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE } from "../components/surface-tones.js";
 import { SearchField } from "../components/SearchField.js";
 import { Select } from "../components/Select.js";
-import { Skeleton } from "../components/Skeleton.js";
+import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { Switch } from "../components/Switch.js";
 import { Tabs } from "../components/Tabs.js";
 import { cx } from "../components/internal/cx.js";
@@ -121,7 +122,7 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
       onSelectionChange={kind => { fromTree.current = null; select({ catalog: String(kind), entryId: null }); }}>
       <Tabs.List aria-label={labels.catalogs}>
         {catalogs.map(item => <Tabs.Tab key={item.kind} id={item.kind}>
-          <span className="inline-flex items-center gap-xs">{own(kinds, item.kind)!.label} <Badge>{item.entries.length}</Badge></span>
+          <span className="inline-flex items-center gap-xs">{own(kinds, item.kind)!.label} <Badge {...BADGE_TONE.neutral}>{item.entries.length}</Badge></span>
         </Tabs.Tab>)}
       </Tabs.List>
       {catalogs.map(item => <Tabs.Panel key={item.kind} id={item.kind} className="flex min-h-0 flex-1 flex-col">{item.kind === active.kind ? body : null}</Tabs.Panel>)}

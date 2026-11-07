@@ -2,7 +2,7 @@
 
 import { useId, useState, type MouseEvent } from "react";
 import { Button } from "../components/index.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 import type { AccountMenuSection, AppNavigationNode } from "../blocks/index.js";
 import { AppFrame } from "./AppFrame.js";
 import { APP_FRAME_SPECIMEN_COMMAND_IDS } from "./app-frame-layout.js";

@@ -5,7 +5,7 @@ import type { StatusMarkTone } from "../../components/StatusMark.js";
 import { actionsOf, memberOf, noop, refuseUnmapped, requiredText, recordsOf, stringField, isObject, slotValue, textOf, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 // GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
 type StockMenu = typeof import("../../components/preview-runtime/components/menu/dropdown-menu.js");

@@ -59,11 +59,15 @@
           },
           {
             "path": "packages/designer/src/blocks/EventItem.tsx",
-            "sha256": "6515e6512cf30f11116b24879362a0e6ec7ff4420adacb9b2a540b6c8ea4833e"
+            "sha256": "7bd2d34b2027827380c92c423db3fc910c0a6504c4d31619655149f205866d88"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/avatar-initials.ts",
+            "sha256": "df6c2becd0a3196515d10f976c6dbabb17e103bd5a7cb9a9dd526e8fdf493f27"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",

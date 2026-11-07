@@ -1,6 +1,7 @@
 import { createElement, Fragment, type ReactNode } from "react";
 import type { JSONContent } from "@tiptap/react";
-import { Badge } from "../Badge.js";
+import { Badge } from "../preview-runtime/components/badge/badge.js";
+import { BADGE_TONE } from "../surface-tones.js";
 import { LinkButton as Link } from "../preview-runtime/components/button/button.js";
 import { SemanticContent } from "../SemanticContent.js";
 import { Table } from "../Table.js";
@@ -49,7 +50,7 @@ export function renderRichTextNode(node: JSONContent): ReactNode {
         case "strike": result = createElement("s", null, result); break;
         case "underline": result = createElement("u", null, result); break;
         case "code": result = <RichTextCode>{result}</RichTextCode>; break;
-        case "badge": result = <Badge data-slot="rich-text-badge">{result}</Badge>; break;
+        case "badge": result = <Badge data-slot="rich-text-badge" {...BADGE_TONE.neutral}>{result}</Badge>; break;
         case "link": {
           const href = safeHref(mark.attrs?.href);
           if (href) result = <Link variant="link" href={href}>{result}</Link>;

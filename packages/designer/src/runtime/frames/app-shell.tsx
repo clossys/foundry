@@ -18,9 +18,10 @@ import { plainJson } from "../sections/dataset-json.js";
 import { frameContent, guardedNavigate, type FrameHost as Host, type FrameJson as Json } from "./frame-content.js";
 
 import { componentLeaf } from "../../runtime/component-leaf.js";
+import { SKELETON_SHAPE } from "../../components/surface-tones.js";
 
 const ProgressBar = componentLeaf<typeof import("../../components/ProgressBar.js").ProgressBar>("components.progress-bar");
-const Skeleton = componentLeaf<typeof import("../../components/Skeleton.js").Skeleton>("components.skeleton");
+const Skeleton = componentLeaf<typeof import("../../components/preview-runtime/components/skeleton/skeleton.js").Skeleton>("components.skeleton");
 
 export { guardedNavigate } from "./frame-content.js";
 const { text, required, record: runtimeRecordOf, records, number, only, navigationTree, commandGroups } = frameContent("frames.app-shell");
@@ -62,7 +63,7 @@ export function appShellProps(input: Pick<RuntimeRenderInput<ReactNode>, "conten
     if (!copy) throw new TypeError(`frames.app-shell: state.${state.main} copy is required`);
     const heading = required(copy.heading, `state.${state.main}.heading`);
     stateViews[state.main] = state.main === "loading"
-      ? <Skeleton shape="block" aria-label={heading} />
+      ? <Skeleton className={SKELETON_SHAPE.block} role="status" aria-busy aria-label={heading} />
       : <ErrorState kind={state.main === "error" ? "failure" : state.main} title={heading} description={text(copy.description)} code={text(copy.code)} />;
   }
   if (state?.navigating && !progressCopy) throw new TypeError("frames.app-shell: progress copy is required while navigating");

@@ -1,14 +1,14 @@
 import type { ReactNode } from "react";
-import type { CardProps } from "../components/Card.js";
+import type { CardProps } from "../components/index.js";
 import { cx } from "../components/internal/cx.js";
 import { stockCardGroundClass, type SectionGround } from "./section-ground.js";
 
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
 
-export interface PanelProps extends Omit<CardProps, "header" | "children" | "variant" | "ground"> {
+export interface PanelProps extends Omit<CardProps, "header" | "children"> {
   /** The ground the panel sits on. The stock Card reads it as tokens only (inverse re-points its surface and ink). @default "base" */
   ground?: SectionGround;
   /** Optional leading controls or heading, inside the panel surface. */

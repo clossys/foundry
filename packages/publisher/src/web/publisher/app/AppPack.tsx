@@ -1,5 +1,5 @@
 "use client";
-import { Badge, Button, Card } from "@clossys/designer/components";
+import { BADGE_TONE, Badge, Button, CARD_SURFACE, Card } from "@clossys/designer/components";
 import { Fragment, useEffect, useId, useRef, useState } from "react";
 import type { PublisherRequirementMessages } from "../../../planning/configuration.js";
 import type { PublisherPlanItem } from "../../../planning/plan.js";
@@ -33,7 +33,7 @@ function StageStrip({ stages, configured, toDoLabel = "to do", waitingLabel = "w
   return <ol aria-label="Full App publish stages" className="flex flex-wrap gap-xs">{stages.map(stage => {
     /** @default The derived stage status, or "to do"/"waiting" before configuration. */
     const statusLabel = !configured ? stage.name === "Configure" ? toDoLabel : waitingLabel : stage.status;
-    return <li key={stage.name}><Badge variant={stage.status === "failed" ? "danger" : stage.status === "passed" ? "success" : "warning"} title={stage.reasons.join(" · ")}>{stage.name}: {statusLabel}</Badge></li>;
+    return <li key={stage.name}><Badge {...BADGE_TONE[stage.status === "failed" ? "danger" : stage.status === "passed" ? "success" : "warning"]} title={stage.reasons.join(" · ")}>{stage.name}: {statusLabel}</Badge></li>;
   })}</ol>;
 }
 interface PlanningDescriptionProps {
@@ -231,7 +231,7 @@ export function AppPack({ inventory, pageBindings, subrowBindings, library, comp
       <p>{stageDescription}</p>
       <p>{missingDecisions.length} {decisionsSummary}</p>
     </header>
-    <Card variant="outline" role="region" aria-label="Scrollable App lane matrix" tabIndex={0} className="min-w-0 overflow-x-auto">
+    <Card role="region" aria-label="Scrollable App lane matrix" tabIndex={0} className={`${CARD_SURFACE.outline} min-w-0 overflow-x-auto`}>
       <table aria-label="App publish stages" className="w-full min-w-[calc(var(--ui-layout-aside-w)*4)] border-collapse"><thead className="bg-surface-sunken"><tr><th scope="col" className={cell}>Lane</th>{APP_STAGES.map(stage => <th scope="col" className={cell} key={stage}>{stage}</th>)}</tr></thead>
         <tbody>{APP_LANES.map(lane => {
           const items = pages.filter(route => route.lane === lane), decisions = missingDecisions.filter(row => row.lane === lane), isExpanded = expanded.has(lane);

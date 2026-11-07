@@ -1,5 +1,6 @@
 import { UI_BORDER_HAIRLINE } from "../../components/internal/ui-vars.js";
-import { Badge } from "../../components/Badge.js";
+import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
+import { BADGE_TONE } from "../../components/surface-tones.js";
 import { cx } from "../../components/internal/cx.js";
 import { FAQ_ANSWER_STYLE, FAQ_ROW_CLASSES } from "../Faq.server.js";
 import type { DisclosureRowOptions } from "../internal/disclosure-row-types.js";
@@ -16,7 +17,7 @@ export function itemDisclosureOptions(item: ItemData, props: ItemsProps): Disclo
   const withStatus = item.status !== undefined;
   const rule = treatment === "rule" ? "border-t" : undefined;
   const status = item.badge?.tone !== undefined && item.badge.tone !== "neutral";
-  const badge = item.badge ? <Badge variant={item.badge.tone}>{item.badge.label}</Badge> : null;
+  const badge = item.badge ? <Badge {...BADGE_TONE[item.badge.tone ?? "neutral"]}>{item.badge.label}</Badge> : null;
   const icon = hasContent(item.icon) ? <span aria-hidden="true" className={cx("inline-flex", index ? "shrink-0" : undefined, colors.secondary)}>{item.icon}</span> : null;
   const copy = <>
     {hasContent(item.eyebrow) || hasContent(item.meta) || item.badge ? <span data-item-meta="" className={cx("flex flex-wrap items-center gap-sm", withStatus ? "tablet:w-full" : undefined)}>

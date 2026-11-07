@@ -3,9 +3,10 @@ import type { FormError, FormProps } from "../../blocks/Form.js";
 
 import { actionsOf, anatomyOf, isObject, recordsOf, refuseUnmapped, requireSlot, slotValue, stringField, textOf, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
+import { ALERT_TONE } from "../../components/surface-tones.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Banner = componentLeaf<typeof import("../../components/Banner.js").Banner>("components.banner");
+const Alert = componentLeaf<typeof import("../../components/preview-runtime/components/banner/alert.js").Alert>("components.banner");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
 const ComboBox = componentLeaf<typeof import("../../components/ComboBox.js").ComboBox>("components.combo-box");
 const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
@@ -81,8 +82,8 @@ export const renderForm: SectionRenderer = input => {
       composition={contact ? "contact" : undefined}
       onSubmit={contact ? host!.onSubmit as FormProps["onSubmit"] : undefined}
       onSubmitError={contact ? host?.onSubmitError as FormProps["onSubmitError"] : undefined}
-      submitSuccess={contact ? <Banner variant="success">{success}</Banner> : undefined}
-      submitError={contact ? <Banner variant="danger">{error}</Banner> : undefined}
+      submitSuccess={contact ? <Alert {...ALERT_TONE.success}>{success}</Alert> : undefined}
+      submitError={contact ? <Alert {...ALERT_TONE.danger}>{error}</Alert> : undefined}
       honeypot={contact ? host?.honeypot as FormProps["honeypot"] : undefined}
       turnstile={contact ? host?.turnstile as FormProps["turnstile"] : undefined}
       heading={heading}

@@ -3,7 +3,7 @@ import { INSPECTOR_DOCK_QUERY } from "./right-panel-config.js";
 import { cx } from "../components/internal/cx.js";
 import { Drawer } from "../blocks/Drawer.js";
 import { ResizablePane } from "../blocks/ResizablePane.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 

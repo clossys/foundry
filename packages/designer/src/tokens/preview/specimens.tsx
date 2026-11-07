@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
-import { Card } from "../../components/Card.js";
+import { Card } from "../../components/preview-runtime/components/card/card.js";
+import { cx } from "../../components/internal/cx.js";
+import { CARD_SURFACE } from "../../components/surface-tones.js";
 import { Icon, type IconSize } from "../../components/Icon.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Toggle } from "../../components/toggle-button/index.js";
@@ -246,10 +248,10 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
     case "ruler": return <RulerSpecimen css={css} leaf={member.slot} />;
     case "layer-fan": return <LayerFanSpecimen css={css} property={member.emit} />;
     case "radius": return frame(kind, css, <span aria-hidden="true" data-specimen-target="" className="block size-3xl border-2 border-line-strong bg-surface-sunken rounded-(--studio-specimen-value)" />);
-    case "shadow": return frame(kind, css, <Card variant="plate" className="flex p-lg">
+    case "shadow": return frame(kind, css, <Card className={cx(CARD_SURFACE.plate, "flex p-lg")}>
       <span aria-hidden="true" data-specimen-target="" className="block h-2xl w-3xl rounded-control bg-surface-raised shadow-(--studio-specimen-value)" />
     </Card>);
-    case "blur": return frame(kind, css, <Card variant="plate" className="relative flex items-center gap-xs p-md">
+    case "blur": return frame(kind, css, <Card className={cx(CARD_SURFACE.plate, "relative flex items-center gap-xs p-md")}>
       <span aria-hidden="true" className="block size-lg shrink-0 rounded-pill bg-primary" />
       <SemanticContent as="span" aria-hidden="true" className="text-body-l font-semibold text-ink-primary">{SAMPLES.glyphs}</SemanticContent>
       <span aria-hidden="true" data-specimen-target="" className="absolute inset-y-0 end-0 block w-1/2 border-s border-line-base bg-surface-glass backdrop-blur-(--studio-specimen-value)" />
@@ -269,7 +271,7 @@ export function TokenLeafSpecimen({ id, member, sampleText = SAMPLES.sampleText,
         <Icon decorative glyph={specimenDataset.icon.glyph} size={step} />
       </span>, "p-sm", target ? { [target]: css } : undefined);
     }
-    case "opacity": return frame(kind, css, <Card variant="plate" className="flex items-center gap-xs p-md">
+    case "opacity": return frame(kind, css, <Card className={cx(CARD_SURFACE.plate, "flex items-center gap-xs p-md")}>
       <span aria-hidden="true" className="block size-lg rounded-control bg-primary" />
       <span aria-hidden="true" data-specimen-target="" className="block size-lg rounded-control bg-primary opacity-(--studio-specimen-value)" />
     </Card>);

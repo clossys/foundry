@@ -69,7 +69,7 @@ describe("BoundaryView", () => {
     expect(title).toHaveClass("text-h2", "font-display", "text-ink-primary");
     expect(title.nextElementSibling).toHaveTextContent("Please try again.");
     expect(headerBlock.querySelectorAll("h1, h2")).toHaveLength(2);
-    expect(card).toHaveClass("rounded-control");
+    expect(card).toHaveAttribute("data-slot", "card");
     expect(card).toContainElement(screen.getByRole("button", { name: "Try again" }));
     expect(card.children).toHaveLength(1);
     expect(notes).toContainElement(screen.getByRole("link", { name: "Contact support" }));
@@ -97,7 +97,7 @@ describe("BoundaryView", () => {
     const { container } = renderBoundary({ action: undefined });
     const main = container.querySelector("main") as HTMLElement;
     expect(main.children).toHaveLength(1);
-    expect(main.querySelector(".rounded-control")).toBeNull();
+    expect(main.querySelector("[data-slot=\"card\"]")).toBeNull();
   });
 
   it("omits the notes block when notes are empty: an empty list, an empty string or a boolean", () => {

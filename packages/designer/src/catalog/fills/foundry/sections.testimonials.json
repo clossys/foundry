@@ -52,11 +52,11 @@
           },
           {
             "path": "packages/designer/src/blocks/Testimonial.server.tsx",
-            "sha256": "b781ec297f690e3d0cfc482d0815bdd6bd248800ce3bfc740669cbaf619e0d07"
+            "sha256": "4efdf7396f032cdb0f1bed7da15b9ae65371b148721a46798878c8db079f4e5f"
           },
           {
             "path": "packages/designer/src/blocks/TestimonialSet.tsx",
-            "sha256": "282164efecbd1b6424354fd7bc83eb49cc8b33c6469e041d1d1f88ac6fb73ca3"
+            "sha256": "0871bc178ba56c93ffccd768f85c40e39df3b245990725c599ec5705cc90f789"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

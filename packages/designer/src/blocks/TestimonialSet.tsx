@@ -52,7 +52,7 @@ export function TestimonialSet({ items, ground = "base", className, style, ...re
       {items.map((item, index) => {
         const span = items.length === 3 && index === 2 ? "tablet:col-span-2 desktop:col-span-1" : undefined;
         return <SemanticContent as="li" key={item.id} className={cx("min-w-0", span)}>
-          <Card className={cx("h-full min-w-0", ground === "inverse" ? "bg-surface-inverse-raised" : undefined)}>
+          <Card className={cx("h-full min-w-0", ground === "inverse" ? "bg-surface-inverse-raised" : "bg-surface-raised")}>
             <CardContent className="text-body-l" style={QUOTE_STYLE}>
               <TestimonialSetFigure item={item} ground={ground} />
             </CardContent>

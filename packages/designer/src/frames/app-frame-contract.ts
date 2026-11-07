@@ -117,7 +117,7 @@ export const APP_FRAME_CONTRACT = freeze({
     { owner: "@clossys/designer", subpath: "components", export: "Popover" },
     { owner: "@clossys/designer", subpath: "components", export: "Avatar" },
     { owner: "@clossys/designer", subpath: "components", export: "Logomark" },
-    { owner: "@clossys/designer", subpath: "components", export: "Banner" },
+    { owner: "@clossys/designer", subpath: "components", export: "Alert" },
     { owner: "@clossys/designer", subpath: "components", export: "Tooltip" },
     { owner: "@clossys/designer", subpath: "shell", export: "FrameSlotProvider" },
     { owner: "@clossys/designer", subpath: "blocks", export: "AppNavigation" },

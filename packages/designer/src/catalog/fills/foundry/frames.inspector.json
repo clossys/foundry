@@ -60,7 +60,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
+            "sha256": "2e53e8b3ccec984228fe9221674caf627d37c4a8b025cb2bb88f1368b8abb455"
           },
           {
             "path": "packages/designer/src/blocks/ResizablePane.tsx",
@@ -75,8 +75,8 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/Card.tsx",
-            "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
+            "path": "packages/designer/src/components/ground-paint.ts",
+            "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -84,7 +84,7 @@
           },
           {
             "path": "packages/designer/src/frames/InspectorFrame.tsx",
-            "sha256": "b004fcd093a6514b3a8dc2012f9ccdf906b4522cc21bf317e0dbc2373ca5d5de"
+            "sha256": "473370994ae457d2410eef5fc9259ab7a3cd830d8b7e52b22fe1b65d2be40526"
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",

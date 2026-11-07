@@ -4,8 +4,11 @@ import { cx } from "../components/internal/cx.js";
 import { ArrowRight } from "../icons/ArrowRight.js";
 import { Settings } from "../icons/Settings.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
+import { avatarInitials } from "../components/avatar-initials.js";
 
-const Avatar = componentLeaf<typeof import("../components/Avatar.server.js").Avatar>("components.avatar");
+const Avatar = componentLeaf<typeof import("../components/preview-runtime/components/avatar/avatar.js").Avatar>("components.avatar");
+const AvatarImage = componentLeaf<typeof import("../components/preview-runtime/components/avatar/avatar.js").AvatarImage>("components.avatar", "AvatarImage");
+const AvatarFallback = componentLeaf<typeof import("../components/preview-runtime/components/avatar/avatar.js").AvatarFallback>("components.avatar", "AvatarFallback");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -57,7 +60,7 @@ export function EventItem({ event, labels, className, ...rest }: EventItemProps)
         <SemanticContent as="span" aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-pill bg-surface-sunken text-ink-secondary">
           <Icon glyph={Settings} decorative size="sm" />
         </SemanticContent>
-      ) : <Avatar size="sm" alt={event.actor.name} src={event.actor.avatarSrc} />}
+      ) : <Avatar role="img" aria-label={event.actor.name} size="sm">{event.actor.avatarSrc ? <AvatarImage src={event.actor.avatarSrc} alt="" /> : null}<AvatarFallback aria-hidden="true">{avatarInitials(event.actor.name)}</AvatarFallback></Avatar>}
       <SemanticContent as="div" className="min-w-0 break-words">
         <SemanticContent as="p" className={cx("text-body text-ink-primary", event.unread ? "font-semibold" : undefined)}>
           {event.unread ? <><SemanticContent as="span" aria-hidden="true" className="me-xs inline-block size-2 rounded-pill bg-primary forced-colors:bg-current forced-colors:[forced-color-adjust:preserve-parent-color]" /><SemanticContent as="span" className="sr-only">{labels.unread}</SemanticContent>{" "}</> : null}

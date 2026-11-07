@@ -4,6 +4,7 @@ import { useId, useState, type ComponentProps, type HTMLAttributes, type ReactEl
 
 import { SECTION_CONTENT_STYLE } from "./internal/section-content-gutter.js";
 import { cx } from "../components/internal/cx.js";
+import { SKELETON_SHAPE } from "../components/surface-tones.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { EmptyState, type EmptyStateProps } from "./EmptyState.js";
@@ -16,7 +17,7 @@ type StockButton = typeof import("../components/preview-runtime/components/butto
 const Button = componentLeaf<(props: ComponentProps<StockButton> & { readonly shape?: "text" | "icon-only" }) => ReactElement>("components.button");
 const GridList = componentLeaf<typeof import("../components/GridList.js").GridList>("components.grid-list");
 const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
-const Skeleton = componentLeaf<typeof import("../components/Skeleton.js").Skeleton>("components.skeleton");
+const Skeleton = componentLeaf<typeof import("../components/preview-runtime/components/skeleton/skeleton.js").Skeleton>("components.skeleton");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -124,7 +125,7 @@ export function ResourceList({
     {error != null && error !== false ? error : isLoading ? <SemanticContent as="div">
       <SemanticContent as="span" role="status" className="sr-only">{loadingLabel}</SemanticContent>
       <SemanticContent as="div" aria-hidden="true">
-        {Array.from({ length: loadingRowCount }, (_, index) => <SemanticContent as="div" key={index} className="flex items-center px-0 py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton /></SemanticContent>)}
+        {Array.from({ length: loadingRowCount }, (_, index) => <SemanticContent as="div" key={index} className="flex items-center px-0 py-sm" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}><Skeleton aria-hidden className={SKELETON_SHAPE.text} /></SemanticContent>)}
       </SemanticContent>
     </SemanticContent> : items.length === 0 ? <EmptyState {...emptyState} /> : <GridList aria-label={ariaLabel} items={items} selectionMode={selectionMode}
       selectedKeys={selection === "all" ? "all" : new Set(selection)}

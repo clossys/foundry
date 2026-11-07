@@ -60,11 +60,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/PageHeaderMetadata.tsx",
-            "sha256": "4ff4197c1b20718cdbe2e789d2b53b38916a9917a73b58ce082576382ba53c74"
+            "sha256": "f8319a480009478413ee4531b8ef51ed3b9d1d8194e9b121dfcae26d62d8a326"
           },
           {
             "path": "packages/designer/src/blocks/RecordCards.tsx",
-            "sha256": "0ac10fce292891b87343dfaaee5719fce9f92360b2d2b9a32ccef94f30bb6094"
+            "sha256": "1f54c2f3430e2a7747e7855e778e42b836cc9007dbb33c55c2bcacc77591cea3"
           },
           {
             "path": "packages/designer/src/catalog-assets/media.ts",
@@ -77,6 +77,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/surface-tones.ts",
+            "sha256": "b31daa5419d8ba6745c6aa16d81f634765db97e1fada9c5f311bd0a8a84aa090"
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",

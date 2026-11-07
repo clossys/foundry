@@ -56,12 +56,10 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "shape.block": "./components#Skeleton.shape=block"
+        "shape.block": "./components#Skeleton"
       },
       "props": [
-        "aria-label",
-        "className",
-        "shape"
+        "className"
       ],
       "rac": {
         "instance": "react-aria-components",

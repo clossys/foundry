@@ -83,7 +83,7 @@ describe("AppFrame Material registration", () => {
       exportName: "AccountMenu", source: "src/blocks/AccountMenu.tsx",
       regions: ["identity", "trigger", "content", "preferences"],
       dependencies: [
-        { exportName: "Avatar", source: "src/components/Avatar.tsx" },
+        { exportName: "Avatar", source: "src/components/preview-runtime/components/avatar/avatar.tsx" },
         { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
         { exportName: "Icon", source: "src/components/Icon.tsx" },
         { exportName: "Menu", source: "src/components/Menu.tsx" },

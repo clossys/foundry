@@ -1,6 +1,7 @@
 "use client";
 import { Fragment, useMemo, type ReactNode } from "react";
-import { Banner } from "../components/Banner.js";
+import { Alert } from "../components/preview-runtime/components/banner/alert.js";
+import { ALERT_TONE } from "../components/surface-tones.js";
 import { checkConsumerRuntimePorts, runtimeHash, runtimeSourceFindings } from "../catalog-core/index.js";
 import type { BuildCatalogData, CompositeResolved, RuntimeRenderInput } from "../catalog-core/index.js";
 import { surfaceRuntimeCallbacks, surfaceRendererId } from "../runtime/index.js";
@@ -23,11 +24,11 @@ export function NativeRouteFrame({ data, profile, contracts, children, header }:
   const ports = useMemo(() => ({ manifest: data.manifest, renderers, resolveContent: (ref: import("../catalog-core/index.js").RuntimeContentRef) => content.get(runtimeHash(ref)), frameHost: { navigate: nativeRouteNavigate } }), [data.manifest, renderers, content]);
   const checked = checkConsumerRuntimePorts(ports, contracts, { consumer: profile.consumer, libraryHash: data.manifest.libraryHash, selectionHash: profile.selectionHash as `sha256:${string}` });
   const selected = profile.surfaces?.fills[data.frame.leaf], descriptor = data.manifest.fills.find(fill => fill.leaf === data.frame.leaf && fill.fill === data.frame.fill && fill.config === data.frame.config && fill.library === profile.consumer);
-  if (checked.status !== "valid" || !selected || !descriptor || selected.document.$extensions["com.clossys.fill"].id !== data.frame.fill || descriptor.kind !== "frame" || runtimeHash(descriptor.surface) !== runtimeHash(surfaceRuntimeIdentity(selected)) || descriptor.renderer.id !== surfaceRendererId(descriptor.leaf) || !descriptor.headerModule || runtimeSourceFindings(descriptor.headerModule.renderer).length || data.frame.members.some(member => !descriptor.members.includes(member))) return <Banner variant="danger">Selected route frame unavailable</Banner>;
+  if (checked.status !== "valid" || !selected || !descriptor || selected.document.$extensions["com.clossys.fill"].id !== data.frame.fill || descriptor.kind !== "frame" || runtimeHash(descriptor.surface) !== runtimeHash(surfaceRuntimeIdentity(selected)) || descriptor.renderer.id !== surfaceRendererId(descriptor.leaf) || !descriptor.headerModule || runtimeSourceFindings(descriptor.headerModule.renderer).length || data.frame.members.some(member => !descriptor.members.includes(member))) return <Alert {...ALERT_TONE.danger}>Selected route frame unavailable</Alert>;
   const resolved: Record<string, import("../catalog-core/index.js").RuntimeContent> = {};
   for (const [slot, reference] of Object.entries(data.frame.content)) {
     const value = ports.resolveContent(reference);
-    if (!value || value.hash !== runtimeHash(value.value)) return <Banner variant="danger">Selected route frame content unavailable</Banner>;
+    if (!value || value.hash !== runtimeHash(value.value)) return <Alert {...ALERT_TONE.danger}>Selected route frame content unavailable</Alert>;
     resolved[slot] = value;
   }
   const lease = header ?? data.header;

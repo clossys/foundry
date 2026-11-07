@@ -186,6 +186,7 @@
         "themes.spacing"
       ],
       "assets": [
+        "assets.icon-close",
         "assets.icon-layers",
         "assets.icon-list-view",
         "assets.icon-search"

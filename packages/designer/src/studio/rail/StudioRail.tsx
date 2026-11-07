@@ -1,7 +1,9 @@
 "use client";
 import { useSyncExternalStore, type ReactNode } from "react";
 import { Button } from "../../components/preview-runtime/components/button/button.js";
-import { Card } from "../../components/Card.js";
+import { Card } from "../../components/preview-runtime/components/card/card.js";
+import { cx } from "../../components/internal/cx.js";
+import { CARD_SURFACE } from "../../components/surface-tones.js";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "../../components/preview-runtime/components/disclosure/accordion.js";
 import { Drawer } from "../../blocks/Drawer.js";
 import { APP_FRAME_WIDE_QUERY } from "../../frames/app-frame-layout.js";
@@ -36,7 +38,7 @@ const useWideRail = (): boolean => useSyncExternalStore(subscribeWide, wideNow, 
 
 /** One rail card: the stock accordion row (title and chevron) beside an optional control, over its collapsible body. */
 function RailCard({ id, title, expanded, onExpandedChange, header, children }: { id: RailCardId; title: string; expanded: boolean; onExpandedChange(expanded: boolean): void; header?: ReactNode; children: ReactNode }) {
-  return <Card variant="outline" data-studio-rail-card={id} className="flex min-w-0 flex-wrap items-center gap-xs p-sm [&>*>h3]:min-w-0 [&>*>h3]:flex-1 [&>*>[data-slot=accordion-content]]:order-last [&>*>[data-slot=accordion-content]]:min-w-0 [&>*>[data-slot=accordion-content]]:basis-full">
+  return <Card data-studio-rail-card={id} className={cx(CARD_SURFACE.outline, "flex min-w-0 flex-wrap items-center gap-xs p-sm [&>*>h3]:min-w-0 [&>*>h3]:flex-1 [&>*>[data-slot=accordion-content]]:order-last [&>*>[data-slot=accordion-content]]:min-w-0 [&>*>[data-slot=accordion-content]]:basis-full")}>
     <AccordionItem isExpanded={expanded} onExpandedChange={onExpandedChange} className="contents">
       <AccordionTrigger className="min-w-0 gap-xs py-0 text-body-s font-semibold text-ink-primary hover:no-underline focus-ring"><span className="min-w-0 truncate">{title}</span></AccordionTrigger>
       <AccordionContent className="pb-0">{children}</AccordionContent>

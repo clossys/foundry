@@ -3,7 +3,7 @@ import { ShellI18nProvider } from "#designer-frame-i18n";
 
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { OverlayDirection, useOverlayLocale } from "../components/Dialog.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";

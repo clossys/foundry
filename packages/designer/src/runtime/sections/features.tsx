@@ -1,6 +1,6 @@
 /** sections.features: host-authored copy and registered media in the selected feature member. */
 import type { ReactNode } from "react";
-import type { Card } from "../../components/Card.js";
+import type { Card } from "../../components/preview-runtime/components/card/card.js";
 import { componentLeaf } from "../component-leaf.js";
 import { FeatureSurface } from "../../blocks/features/FeatureSurface.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";

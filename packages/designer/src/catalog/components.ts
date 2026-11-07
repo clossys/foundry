@@ -427,7 +427,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Content / Data display
-  onMain("Badge", ["src/components/Badge.tsx"], {
+  onMain("Badge", ["src/components/preview-runtime/components/badge/badge.tsx"], {
     id: "inform.badge",
     label: "Badge",
     racBase: none("presentational"),
@@ -486,7 +486,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Content / Imagery
-  onMain("Avatar", ["src/components/Avatar.tsx", "src/components/Avatar.server.tsx"], {
+  onMain("Avatar", ["src/components/preview-runtime/components/avatar/avatar.tsx"], {
     id: "depict.avatar",
     label: "Avatar",
     racBase: none("presentational"),
@@ -567,12 +567,12 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Feedback / Messages
-  onMain("Banner", ["src/components/Banner.tsx"], {
+  onMain("Alert", ["src/components/preview-runtime/components/banner/alert.tsx"], {
     id: "inform.banner",
     label: "Banner",
     racBase: none("native-element", ["Button"]),
     disposition: "map-to-rac",
-    notes: ["The dismiss control becomes a react-aria-components Button. The region stays presentational."],
+    notes: ["The stock shadcn@aria Alert; a dismiss control is an AlertAction holding a react-aria-components Button."],
   }),
   onMain("StatusMark", ["src/components/StatusMark.tsx"], {
     id: "inform.status-mark",
@@ -605,7 +605,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "map-to-rac",
     notes: ["Maps to an indeterminate react-aria-components ProgressBar."],
   }),
-  onMain("Skeleton", ["src/components/Skeleton.tsx"], {
+  onMain("Skeleton", ["src/components/preview-runtime/components/skeleton/skeleton.tsx"], {
     id: "inform.skeleton",
     label: "Skeleton",
     racBase: none("presentational"),
@@ -614,7 +614,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Containment / Structure
-  onMain("Card", ["src/components/Card.tsx"], {
+  onMain("Card", ["src/components/preview-runtime/components/card/card.tsx"], {
     id: "group.card",
     label: "Card",
     racBase: none("presentational"),
