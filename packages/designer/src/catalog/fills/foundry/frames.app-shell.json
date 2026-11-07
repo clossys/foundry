@@ -100,7 +100,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/AccountMenu.tsx",
-            "sha256": "c04f6cf8c63475385ad27dfc9c80c75a011438205289d78ec296ee788e72af24"
+            "sha256": "37fe8f2a3d82326f5a028b1e5745dfcb1ee1c8825508ae7f3ebc0ee6f9f2db9d"
           },
           {
             "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -108,7 +108,7 @@
           },
           {
             "path": "packages/designer/src/blocks/CommandMenu.tsx",
-            "sha256": "6923e4613411d1e873ffb10f418557f47f57e3121843934c2be2893bca165e5d"
+            "sha256": "4fdf131af8e1c8f7ad1018b0110d7d3dbe4b35f7c7e15abf1c9e30a20670f3f2"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
@@ -143,16 +143,16 @@
             "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
           },
           {
-            "path": "packages/designer/src/components/Dialog.tsx",
-            "sha256": "5c7fb1bf15e48b0061e6e603d2697fee58306b6d21685101677fe6a7d07f9de7"
-          },
-          {
             "path": "packages/designer/src/components/ground-paint.ts",
             "sha256": "fa0ccf04c141467fffaf0ef138ca32ba86bf908f02b92161ad34237c3f62b0f7"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/overlay-context.tsx",
+            "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
           },
           {
             "path": "packages/designer/src/components/preview-runtime/components/_parts/utils/index.ts",
@@ -176,7 +176,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "e0bf3922510d40fd8098e1b2834bc8ea8a0b14994e7f689e49597adda8cf8e90"
+            "sha256": "ef00d5512a77e5dfe16d91c0f45b6178bec97e448587cdf8c2818bff104da50f"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -184,7 +184,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrandTheme.tsx",
-            "sha256": "01b0102600681af1e7bde548135447de7cb9e6cb0060e7a746dc3b2e7c19da27"
+            "sha256": "f97512387e3866e3db30989bda02b99c4e10d93d3dc12e67cc5006790b555d8d"
           },
           {
             "path": "packages/designer/src/frames/frame-dock-layout.ts",
@@ -240,7 +240,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "3f0a2f786c0c6fffc04c37711e69be5258954427e41544ccce532455ac812a87"
+            "sha256": "5a179f1c44b24be92d3de21e71de9294cf7fb01434de25b7d61532e04244f86a"
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
@@ -253,6 +253,10 @@
           {
             "path": "packages/designer/src/theme/ThemeProvider.tsx",
             "sha256": "7cde01b104ce5bcc51b04053d361404bbfe79a2fc87f17493ac168f21efed753"
+          },
+          {
+            "path": "packages/designer/src/theme/ThemeToggle.tsx",
+            "sha256": "9e6156a68274148f387ea70342c801aea24540f33f5d80437575659d5f12ea13"
           }
         ],
         "unresolved": [

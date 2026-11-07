@@ -4503,7 +4503,7 @@
           "components.date-field",
           "components.popover"
         ],
-        "inputsHash": "a868b04df99bb54bdbcc93e540863e3b69105c2e9bb194a9beb4c34e1b1e8d69"
+        "inputsHash": "3fb2dea8dc94ada78eaa4ac8f26accdc16f878a2affff4e39166c73962525262"
       },
       "impl": {
         "entry": "components/date-picker/date-picker.tsx",
@@ -4637,7 +4637,7 @@
             "components.date-field",
             "components.popover"
           ],
-          "inputsHash": "a868b04df99bb54bdbcc93e540863e3b69105c2e9bb194a9beb4c34e1b1e8d69"
+          "inputsHash": "3fb2dea8dc94ada78eaa4ac8f26accdc16f878a2affff4e39166c73962525262"
         }
       }
     },
@@ -6179,46 +6179,64 @@
     },
     "components.icon": {
       "slot": "components.icon",
-      "originKind": "adopted",
+      "originKind": "derived",
       "origin": {
-        "kind": "adopted",
-        "source": "foundry",
-        "fill": "foundry/components.icon",
-        "pin": {
-          "package": "@clossys/designer",
-          "version": "0.12.0",
-          "export": "./components#Icon"
-        },
-        "license": "MIT",
-        "sha256": "d0985f2ab670218bab858312ed936d0ff0dabdd0cf84ac432004f7f46e3bd301",
-        "adoptedAt": "2026-10-26"
+        "kind": "derived",
+        "rule": "derive:icon@1",
+        "inputs": [],
+        "inputsHash": "d35839e3760a754436f52273ce540d279420959dbcab1fb0e7e49ce7ac282a85"
       },
       "impl": {
-        "kind": "package",
-        "module": "@clossys/designer/components",
-        "export": "Icon"
+        "entry": "components/icon/icon.tsx",
+        "export": "Icon",
+        "kind": "source"
       },
       "propMap": {
-        "size.lg": "./components#Icon.size=lg",
-        "size.md": "./components#Icon.size=md",
-        "size.sm": "./components#Icon.size=sm"
+        "size.lg": "Icon.size=lg",
+        "size.md": "Icon.size=md",
+        "size.sm": "Icon.size=sm"
       },
       "reads": {
-        "themes": {
-          "themes.spacing.default": "--spacing"
-        },
+        "themes": {},
         "assets": [],
         "components": []
       },
       "descriptor": {
-        "slot": "components.icon",
-        "source": "defaults-consumer",
-        "root": "presentational",
+        "composes": [],
+        "deps": [
+          {
+            "license": "MIT",
+            "name": "react",
+            "version": ">=18"
+          }
+        ],
+        "impl": {
+          "entry": "components/icon/icon.tsx",
+          "export": "Icon",
+          "kind": "source"
+        },
+        "license": "MIT",
         "members": [
           "size.lg",
           "size.md",
           "size.sm"
         ],
+        "notice": "notices/icon.md",
+        "outputSha256": [
+          {
+            "path": "components/icon/icon.tsx",
+            "sha256": "7cf07f9abdb241070486f452beb22405e6327bae8a8e4976f734d57e6a36962c"
+          },
+          {
+            "path": "notices/icon.md",
+            "sha256": "a53f8eedf5d88896fb98f9e0ec3cc269f613ed026ba4548550a413f2175afa22"
+          }
+        ],
+        "propMap": {
+          "size.lg": "Icon.size=lg",
+          "size.md": "Icon.size=md",
+          "size.sm": "Icon.size=sm"
+        },
         "props": [
           "children",
           "className",
@@ -6227,64 +6245,24 @@
           "label",
           "size"
         ],
-        "propMap": {
-          "size.lg": "./components#Icon.size=lg",
-          "size.md": "./components#Icon.size=md",
-          "size.sm": "./components#Icon.size=sm"
-        },
         "reads": {
-          "themes": [
-            "themes.spacing"
-          ],
           "assets": [],
-          "components": []
+          "components": [],
+          "themes": []
         },
-        "composes": [],
-        "impl": {
-          "kind": "package",
-          "module": "@clossys/designer/components",
-          "export": "Icon"
-        },
-        "license": "MIT",
-        "pin": {
-          "package": "@clossys/designer",
-          "version": "0.12.0",
-          "export": "./components#Icon"
-        },
-        "deps": [
-          {
-            "name": "react",
-            "version": ">=18",
-            "license": "MIT"
-          },
-          {
-            "name": "tailwind-merge",
-            "version": "^3.7.0",
-            "license": "MIT"
-          },
-          {
-            "name": "react-aria-components",
-            "version": "^1.19.0",
-            "license": "Apache-2.0"
-          }
-        ],
+        "root": "presentational",
+        "slot": "components.icon",
+        "source": "defaults-consumer",
         "rac": {
           "range": "^1.19.0",
-          "peer": true,
+          "peer": false,
           "instance": "react-aria-components"
         },
         "origin": {
-          "kind": "adopted",
-          "source": "foundry",
-          "fill": "foundry/components.icon",
-          "pin": {
-            "package": "@clossys/designer",
-            "version": "0.12.0",
-            "export": "./components#Icon"
-          },
-          "license": "MIT",
-          "sha256": "d0985f2ab670218bab858312ed936d0ff0dabdd0cf84ac432004f7f46e3bd301",
-          "adoptedAt": "2026-10-26"
+          "kind": "derived",
+          "rule": "derive:icon@1",
+          "inputs": [],
+          "inputsHash": "d35839e3760a754436f52273ce540d279420959dbcab1fb0e7e49ce7ac282a85"
         }
       }
     },
@@ -13925,6 +13903,10 @@
       "path": "components/file-trigger/file-trigger.tsx"
     },
     {
+      "content": "import { createElement, forwardRef, type ReactNode, type SVGProps } from \"react\";\n\n/** Lucide glyph data: the `[tag, attrs]` tuples each Lucide icon is drawn from. */\nexport type IconNode = ReadonlyArray<readonly [tag: string, attrs: Record<string, string>]>;\ntype IconAccessibility = { decorative: true; label?: undefined } | { decorative?: false; label: string };\ntype IconContent = { glyph: IconNode; children?: undefined } | { glyph?: undefined; children: ReactNode };\nexport type IconProps = IconAccessibility & IconContent & {\n  size?: \"sm\" | \"md\" | \"lg\";\n  mirrorInRtl?: boolean;\n  className?: string;\n} & Omit<SVGProps<SVGSVGElement>, \"children\" | \"aria-hidden\" | \"aria-label\" | \"role\" | \"className\" | \"width\" | \"height\">;\n\nconst SIZES = { sm: \"size-4\", md: \"size-6\", lg: \"size-8\" } as const;\n\n/** A Lucide icon as stock shadcn renders it: 24px grid, 2px current-colour stroke, size-4 by default. */\nexport const Icon = forwardRef<SVGSVGElement, IconProps>(function Icon({ size = \"sm\", mirrorInRtl = false, className, decorative, label, glyph, children, ...props }, ref) {\n  const classes = [\"lucide\", \"shrink-0\", /\\bsize-/.test(className ?? \"\") ? undefined : SIZES[size], mirrorInRtl ? \"rtl:-scale-x-100\" : undefined, className].filter(Boolean).join(\" \");\n  const access = decorative ? { \"aria-hidden\": true } : { role: \"img\", \"aria-label\": label };\n  return createElement(\"svg\", {\n    ref, xmlns: \"http://www.w3.org/2000/svg\", width: 24, height: 24, viewBox: \"0 0 24 24\", fill: \"none\", stroke: \"currentColor\",\n    strokeWidth: 2, strokeLinecap: \"round\", strokeLinejoin: \"round\", ...props, ...access, className: classes,\n  }, glyph ? glyph.map(([tag, attrs], index) => createElement(tag, { key: index, ...attrs })) : children);\n});\n",
+      "path": "components/icon/icon.tsx"
+    },
+    {
       "path": "components/item/item.tsx",
       "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn, classNames, type ClassValue, type VariantProps } from \"../_parts/rail-utils/index\"\nimport { Link as LinkPrimitive, type LinkProps } from \"react-aria-components\"\n\nimport { Separator } from \"../_parts/rail-separator/index\"\n\nfunction ItemGroup({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      role=\"list\"\n      data-slot=\"item-group\"\n      className={cn(\n        \"gap-(--spacing-lg) has-data-[size=sm]:gap-(--spacing-md) has-data-[size=xs]:gap-(--spacing-sm) group/item-group flex w-full flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemSeparator({\n  className,\n  ...props\n}: React.ComponentProps<typeof Separator>) {\n  return (\n    <Separator\n      data-slot=\"item-separator\"\n      orientation=\"horizontal\"\n      className={cn(\"my-(--spacing-sm)\", className)}\n      {...props}\n    />\n  )\n}\n\nconst itemVariants_DEFINITION = {\"base\":\"[a]:hover:bg-(--color-surface-sunken) rounded-(--radius-control) border-(length:--ui-border-hairline) text-(length:--text-sm) group/item flex w-full flex-wrap items-center motion-safe:transition-colors motion-reduce:transition-none motion-reduce:animate-none motion-reduce:duration-0 motion-safe:duration-(--ui-duration-default) ease-(--ease-default) motion-safe:duration-(--ui-duration-fast) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:border-(--color-focus-ring) [a]:motion-safe:transition-colors [a]:motion-safe:duration-(--ui-duration-default) [a]:ease-(--ease-default)\",\"variants\":{\"variant\":{\"default\":\"border-transparent\",\"outline\":\"border-(--color-line-base)\",\"muted\":\"bg-(--color-surface-sunken)/50 border-transparent\"},\"size\":{\"default\":\"gap-(--spacing-md) px-(--spacing-md) py-(--spacing-md)\",\"sm\":\"gap-(--spacing-md) px-(--spacing-md) py-(--spacing-md)\",\"xs\":\"gap-(--spacing-sm) px-(--spacing-md) py-(--spacing-sm) in-data-[slot=dropdown-menu-content]:p-0\"}},\"defaultVariants\":{\"variant\":\"default\",\"size\":\"default\"}}\nfunction itemVariants(props: { \"variant\"?: \"default\" | \"outline\" | \"muted\" | null; \"size\"?: \"default\" | \"sm\" | \"xs\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = itemVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction Item({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  /** @default \"default\" */\n  size = \"default\",\n  ...props\n}: Omit<LinkProps, \"children\"> &\n  React.HTMLAttributes<HTMLElement> &\n  VariantProps<typeof itemVariants>) {\n  const Element = \"href\" in props ? LinkPrimitive : \"div\"\n  return (\n    <Element\n      data-slot=\"item\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(itemVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nconst itemMediaVariants_DEFINITION = {\"base\":\"gap-(--spacing-sm) group-has-data-[slot=item-description]/item:translate-y-(--spacing-xs) group-has-data-[slot=item-description]/item:self-start flex shrink-0 items-center justify-center [&_svg]:pointer-events-none\",\"variants\":{\"variant\":{\"default\":\"bg-transparent\",\"icon\":\"[&_svg:not([class*='size-'])]:size-(--spacing-lg)\",\"image\":\"size-(--spacing-2xl) overflow-hidden rounded-(--radius-control) group-data-[size=sm]/item:size-(--spacing-2xl) group-data-[size=xs]/item:size-(--spacing-xl) [&_img]:size-full [&_img]:object-cover\"}},\"defaultVariants\":{\"variant\":\"default\"}}\nfunction itemMediaVariants(props: { \"variant\"?: \"default\" | \"icon\" | \"image\" | null; class?: ClassValue; className?: ClassValue } = {}) {\n  props ??= {}\n  const definition = itemMediaVariants_DEFINITION\n  const key = (value: unknown) => typeof value === \"boolean\" ? String(value) : value === 0 ? \"0\" : value\n  const supplied = Object.fromEntries(Object.entries(props).filter(([, value]) => value !== undefined))\n  const values: { [axis: string]: unknown } = { ...definition.defaultVariants, ...supplied }\n  const selected = Object.entries(definition.variants).map(([axis, choices]) => {\n    if ((props as { [axis: string]: unknown })[axis] === null) return null\n    const value = key((props as { [axis: string]: unknown })[axis]) || key((definition.defaultVariants as { [axis: string]: unknown })[axis])\n    return (choices as { [value: string]: ClassValue })[String(value)]\n  })\n  const compound = (([]) as { [key: string]: unknown }[]).flatMap(({ class: value, className, ...conditions }) =>\n    Object.entries(conditions).every(([axis, expected]) => Array.isArray(expected) ? expected.includes(values[axis]) : values[axis] === expected)\n      ? [value as ClassValue, className as ClassValue] : [])\n  return classNames(definition.base, selected, compound, props.class, props.className)\n}\n\nfunction ItemMedia({\n  className,\n  /** @default \"default\" */\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<\"div\"> & VariantProps<typeof itemMediaVariants>) {\n  return (\n    <div\n      data-slot=\"item-media\"\n      data-variant={variant}\n      className={cn(itemMediaVariants({ variant, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction ItemContent({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-content\"\n      className={cn(\n        \"gap-(--spacing-xs) group-data-[size=xs]/item:gap-0 flex flex-1 flex-col [&+[data-slot=item-content]]:flex-none\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemTitle({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-title\"\n      className={cn(\n        \"gap-(--spacing-sm) text-(length:--text-sm) leading-(--leading-heading) font-(weight:--font-weight-medium) underline-offset-(--spacing-lg) line-clamp-1 flex w-fit items-center\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemDescription({ className, ...props }: React.ComponentProps<\"p\">) {\n  return (\n    <p\n      data-slot=\"item-description\"\n      className={cn(\n        \"text-(--color-ink-muted) text-start text-(length:--text-sm) leading-(--leading-heading) group-data-[size=xs]/item:text-(length:--text-xs) line-clamp-2 font-(weight:--font-weight-normal) [&>a]:underline [&>a]:underline-offset-(--spacing-lg) [&>a:hover]:text-(--color-action)\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemActions({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-actions\"\n      className={cn(\"gap-(--spacing-sm) flex items-center\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction ItemHeader({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-header\"\n      className={cn(\n        \"gap-(--spacing-sm) flex basis-full items-center justify-between\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction ItemFooter({ className, ...props }: React.ComponentProps<\"div\">) {\n  return (\n    <div\n      data-slot=\"item-footer\"\n      className={cn(\n        \"gap-(--spacing-sm) flex basis-full items-center justify-between\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nexport {\n  Item,\n  ItemMedia,\n  ItemContent,\n  ItemActions,\n  ItemGroup,\n  ItemSeparator,\n  ItemTitle,\n  ItemDescription,\n  ItemHeader,\n  ItemFooter,\n}\n"
     },
@@ -14007,6 +13989,10 @@
     {
       "content": "# File trigger composition\n\nCopyright contributors. Licensed under the MIT License.\n\nOwned wiring of the selected button onto the file trigger. The button's notice remains separate.\n",
       "path": "notices/file-trigger.md"
+    },
+    {
+      "content": "# components.icon (shadcn@aria, rule derive:icon@1)\n\n`components/icon/icon.tsx` is authored by Foundry under the MIT licence. It renders an\nicon the way stock shadcn renders Lucide icons: a 24px viewBox, a 2px `currentColor`\nstroke and a `size-4` class by default.\n\nIt ships no glyph data. The consumer's selected assets supply each glyph through the\ngenerated `components/icon/index.ts` adapter. Lucide glyph data is published under the\nISC licence (https://lucide.dev/license).\n",
+      "path": "notices/icon.md"
     },
     {
       "path": "notices/SHADCN-ARIA-RAIL.md",

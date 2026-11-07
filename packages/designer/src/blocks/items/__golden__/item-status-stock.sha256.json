@@ -1,12 +1,12 @@
 {
   "$capture": "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05; single item on the stock Item anatomy, plain/plate treatments retired (R2F-26b); stock Badge with caller tone data (R2F-29)",
   "hashes": {
-    "Faq/client": "f0bbf9178cf6f043160cdc5141196382417e827959a61da83e0944976d386af4",
-    "Faq/server": "15e5b75e589598f14a523d6d3d5d49def8623bb94f37fa98b1a4979ff62f035f",
-    "Items/client": "aca75bbea3efc54b7abca4b82293374268a68336f7e79134bf8ec4ae9d0391e6",
-    "Items/client/rows/disclose": "69b3672963bf599a89c10a50df45fb4c2291339dad7ad7e6873b9e6c452a8a2e",
-    "Items/server": "04a0b4e24f4d60792a5bb67510cbf979e7407360c8a67d8db5d6d7990f1752d1",
-    "Items/server/rows/disclose": "69b3672963bf599a89c10a50df45fb4c2291339dad7ad7e6873b9e6c452a8a2e",
+    "Faq/client": "7c350907133e13d78e903a7db3ad35fe52519560caccbc266adbfc8dd8694b11",
+    "Faq/server": "360eb978ee9b060e0946a428e59d503d190eb9ef43c9b46220c28ae87e46969a",
+    "Items/client": "727c1b215a11ca0d76512af97ce08f78a62d77c50da9abca0cde95790c23aa16",
+    "Items/client/rows/disclose": "5dbfc9742dc5ec064dd57e8d1de3e6f7a3b499d244eb23fd86772769acc13dd1",
+    "Items/server": "e6883f7286f0c244ae8b04b97577c33183e750080c04e470af816cc5a1dbdcd4",
+    "Items/server/rows/disclose": "5dbfc9742dc5ec064dd57e8d1de3e6f7a3b499d244eb23fd86772769acc13dd1",
     "StockItem": "23a2d40dd2779f0da8b823e8c23c170d0d7959066380f2b980a14dfe08648f7a"
   }
 }

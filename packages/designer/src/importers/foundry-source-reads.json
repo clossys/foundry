@@ -1,14 +1,20 @@
 {
-  "avatar": [],
+  "avatar": [
+    "themes.spacing"
+  ],
   "badge": [],
-  "banner": [],
+  "banner": [
+    "themes.spacing"
+  ],
   "breadcrumbs": [
     "themes.spacing"
   ],
   "button": [
     "themes.spacing"
   ],
-  "calendar": [],
+  "calendar": [
+    "themes.spacing"
+  ],
   "card": [],
   "chart-area": [],
   "chart-bar": [],
@@ -19,7 +25,9 @@
   "chart-sparkline": [],
   "chart-status-strip": [],
   "chart-waterfall": [],
-  "checkbox": [],
+  "checkbox": [
+    "themes.spacing"
+  ],
   "color-picker": [],
   "combo-box": [],
   "date-field": [],
@@ -46,10 +54,14 @@
   "number-field": [],
   "popover": [],
   "progress-bar": [],
-  "radio-group": [],
+  "radio-group": [
+    "themes.spacing"
+  ],
   "resize-handle": [],
   "search-field": [],
-  "select": [],
+  "select": [
+    "themes.spacing"
+  ],
   "semantic-content": [],
   "separator": [],
   "skeleton": [],
@@ -64,7 +76,9 @@
   "specimen-viewport": [],
   "spinner": [],
   "status-mark": [],
-  "switch": [],
+  "switch": [
+    "themes.spacing"
+  ],
   "table": [],
   "tabs": [],
   "tag-group": [],

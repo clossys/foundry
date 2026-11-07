@@ -50,7 +50,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Drawer.tsx",
-            "sha256": "0eee44df38228807c0721632bcf46b4fc0209acce2267011a2a67de8a75651a6"
+            "sha256": "287d3ccbaea0873b709ca790793d9828d4648b1234a8ab22afa84ebb995e137b"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
