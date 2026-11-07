@@ -48,6 +48,7 @@ const designerExports = [
   // Shipped .mjs source: importSpecifier source-fixture probes import with
   // each optional peer omitted. Bare import does not invoke lazy TypeScript.
   "@clossys/designer/ref-verbatim",
+  "@clossys/designer/shadcn-flavor",
   "@clossys/designer/shell",
   "@clossys/designer/shell/server",
   "@clossys/designer/theme",
