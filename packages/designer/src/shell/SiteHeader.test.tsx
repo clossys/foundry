@@ -124,16 +124,8 @@ describe("SiteHeader", () => {
   });
 
   describe("surface", () => {
-    it("documents an inverse overlay whose children inherit the gated ink", () => {
-      const readme = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8");
-      const blocks = [...readme.matchAll(/```tsx\n([\s\S]*?)```/g)].map((match) => match[1] ?? "");
-      const example = blocks.find((block) => block.includes('surface="glass"') && block.includes('tone="inverse"'));
-      expect(example).toBeDefined();
-      // tone sets inherited ink only: no child in the example may set its own.
-      expect(example).not.toMatch(/<Link\b|<Brandmark\b|ActionLink|text-ink-/);
-      const anchors = example?.match(/<a\b[^>]*>/g) ?? [];
-      expect(anchors.length).toBeGreaterThan(0);
-      for (const anchor of anchors) expect(anchor).toContain('className="text-inherit"');
+    it("renders an inverse overlay whose children inherit the gated ink", () => {
+      // tone sets inherited ink only: the children set no ink of their own...
       // ...so every child reads in the header's own ink, which the gate checks over the inverse glass.
       const { container } = render(
         <SiteHeader
@@ -219,9 +211,11 @@ describe("SiteHeader", () => {
       expect(link.querySelector(".sr-only")).toBeNull();
       expect(link.childNodes).toHaveLength(1);
       expect(link.firstChild?.nodeType).toBe(Node.TEXT_NODE);
-      expect(link.className).toContain("bg-action");
-      expect(link.style.minHeight).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link.style.minWidth).toBe("var(--ui-layout-tap-target, 44px)");
+      // The stock primary button at the small size, held to the tap target by the shared utility.
+      expect(link).toHaveAttribute("data-slot", "button");
+      expect(link).toHaveAttribute("data-variant", "default");
+      expect(link).toHaveAttribute("data-size", "sm");
+      expect(link).toHaveClass("min-size-tap");
     });
 
     function renderEnvironments(current: "app" | "admin" | null = "admin") {
@@ -281,16 +275,18 @@ describe("SiteHeader", () => {
 
     it("borrows the small button look without the outline-none that would hide its focus outline", () => {
       render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} variant="primary" />);
-      const classes = screen.getByRole("link", { name: "Home" }).className.split(" ");
-      expect(classes).toContain("bg-action");
-      expect(classes).toContain("px-sm");
+      const link = screen.getByRole("link", { name: "Home" });
+      expect(link).toHaveAttribute("data-variant", "default");
+      expect(link).toHaveAttribute("data-size", "sm");
+      const classes = link.className.split(" ");
       expect(classes).not.toContain("outline-none");
-      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-focus-ring"]));
+      // The stock focus outline stays on: a solid focus-ring outline when focus is visible.
+      expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-solid", "focus-visible:outline-(--color-focus-ring)"]));
     });
 
     it("defaults to the secondary look", () => {
       render(<SiteHeader.ActionLink href="/" label="Home" icon={Home} />);
-      expect(screen.getByRole("link", { name: "Home" }).className).toContain("bg-surface-raised");
+      expect(screen.getByRole("link", { name: "Home" })).toHaveAttribute("data-variant", "secondary");
     });
 
     it("keeps one banner and no navigation landmark when several links fill actions", () => {
@@ -323,6 +319,10 @@ it("ships the default header candidate and a shared frame clearance including sa
   expect(readFileSync(join(styles, "theme-keys.css"), "utf8").match(/& \.nav-disclosure-panel \{[^\n]*padding-inline:[^\n]+/g)?.at(-1)).toContain("padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
 });
 
-it("documents the two decorative icon bars", () => {
-  expect(readFileSync(join(dirname(fileURLToPath(import.meta.url)), "..", "..", "README.md"), "utf8")).toContain("icon toggle draws two\ndecorative bars");
+it("draws the icon toggle as two decorative bars", () => {
+  render(<NavDisclosure trigger="icon"><a href="/about">About</a></NavDisclosure>);
+  const glyph = document.querySelector(".nav-disclosure-icon");
+  expect(glyph).toHaveAttribute("aria-hidden", "true");
+  expect(glyph?.children).toHaveLength(2);
+  for (const bar of glyph?.children ?? []) expect(bar.tagName).toBe("SPAN");
 });

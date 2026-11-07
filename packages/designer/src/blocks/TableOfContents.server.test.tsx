@@ -49,14 +49,13 @@ describe("server TableOfContents", () => {
     expect(links[2]).not.toHaveClass("ps-md");
   });
 
-  it("renders the inline presentation as a native open details element with a summary and no button", () => {
+  it("renders the inline presentation as the stock disclosure, expanded by default around the named navigation", () => {
     const root = host(renderToStaticMarkup(<TableOfContents label={LABEL} items={ITEMS} presentation="inline" />));
-    const details = root.querySelector("details");
-    expect(details).not.toBeNull();
-    expect(details).toHaveAttribute("open");
-    expect(details).toHaveClass("rounded-panel", "border", "border-line-base", "p-md");
-    expect(root.querySelector("summary")).toHaveTextContent(LABEL);
-    expect(root.querySelector("button")).toBeNull();
+    expect(root.firstElementChild).toHaveClass("rounded-panel", "border", "border-line-base", "p-md");
+    const trigger = root.querySelector('[data-slot="accordion-trigger"]');
+    expect(trigger).toHaveTextContent(LABEL);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(root.querySelector("details")).toBeNull();
     expect(root.querySelectorAll("a")).toHaveLength(3);
     expect(root.querySelector("nav")).toHaveAttribute("aria-label", LABEL);
   });
@@ -81,7 +80,11 @@ describe("server TableOfContents", () => {
   it("keeps the client file, hooks and react-aria-components out of the server module graph", () => {
     const source = readFileSync(resolve(import.meta.dirname, "TableOfContents.server.tsx"), "utf8");
     const runtimeImports = [...source.matchAll(/^import\s+(?!type\b)[^;]*from\s+"([^"]+)"/gm)].map(match => match[1]);
-    expect(runtimeImports.sort()).toEqual(["../catalog-core/provenance-attrs.js", "../components/internal/cx.js", "../components/internal/ui-vars.js", "../internal/brandmark.js"]);
+    // Leaves resolve through the server-safe componentLeaf facade; the disclosure module is a facade-only composition.
+    expect(runtimeImports.sort()).toEqual(["../catalog-core/provenance-attrs.js", "../components/internal/cx.js", "../components/internal/ui-vars.js", "../internal/brandmark.js", "../runtime/component-leaf.js", "./ArticleReading.js", "./TableOfContentsDisclosure.js"]);
     expect(source).not.toMatch(/react-aria-components|IntersectionObserver|useEffect|useState|"use client"/);
+    const disclosure = readFileSync(resolve(import.meta.dirname, "TableOfContentsDisclosure.tsx"), "utf8");
+    expect([...disclosure.matchAll(/^import\s+(?!type\b)[^;]*from\s+"([^"]+)"/gm)].map(match => match[1])).toEqual(["../runtime/component-leaf.js"]);
+    expect(disclosure).not.toMatch(/react-aria-components|useEffect|useState|"use client"/);
   });
 });

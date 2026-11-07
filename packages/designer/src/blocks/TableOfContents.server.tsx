@@ -127,7 +127,7 @@ export function renderTableOfContentsInlineNav(
 /**
  * Server-safe variant: no hooks, no client-only dependency. It marks only the
  * `currentId` the host passes; `trackCurrent` belongs to the client variant. The
- * inline presentation is a native `<details open>`.
+ * inline presentation is the selected disclosure leaf, expanded by default.
  */
 export function TableOfContents(props: TableOfContentsProps) {
   validateTableOfContents(props);

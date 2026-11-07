@@ -202,8 +202,13 @@ export class SiteFooterContractError extends TypeError {
   }
 }
 
+/**
+ * The stock link button is a one-line control (nowrap at a fixed height); a legal link is
+ * running text, so it wraps inside its centred track and grows with its lines.
+ */
 const LEGAL_LINK_CLASSES = cx(
   "inline-flex items-center justify-center site-nav-link-inset min-size-tap",
+  "h-auto whitespace-normal break-words text-center",
   "text-body-s text-inherit no-underline",
   "focus-visible:outline-2 focus-visible:outline-offset-2",
   GROUND_PAINT.inverse.focus,

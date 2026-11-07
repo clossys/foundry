@@ -6,13 +6,24 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { NavDisclosure } from "./NavDisclosure.js";
 
-// Captured from main before adding trigger.
-const DEFAULT_LABEL = "<nav aria-label=\"Primary\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"_R_0_\" class=\"inline-flex items-center justify-center gap-sm rounded-control font-body px-sm py-xs text-body-s text-ink-primary hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary nav-disclosure-toggle\" style=\"min-height:var(--ui-layout-tap-target, 44px);min-width:var(--ui-layout-tap-target, 44px)\">Sections menu</button><div id=\"_R_0_\" class=\"nav-disclosure-panel\"><a href=\"#about\">About</a></div></nav>";
-
 describe("NavDisclosure trigger", () => {
-  it("keeps the default label output byte-identical", () => {
-    expect(renderToStaticMarkup(<NavDisclosure triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>)).toBe(DEFAULT_LABEL);
-    expect(renderToStaticMarkup(<NavDisclosure trigger="label" triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>)).toBe(DEFAULT_LABEL);
+  it("renders the default and explicit label triggers as the same collapsed toggle", () => {
+    const markup = renderToStaticMarkup(<NavDisclosure triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>);
+    expect(renderToStaticMarkup(<NavDisclosure trigger="label" triggerLabel="Sections menu"><a href="#about">About</a></NavDisclosure>)).toBe(markup);
+    const host = document.createElement("div");
+    host.innerHTML = markup;
+    const nav = host.querySelector("nav")!;
+    expect(nav).toHaveAttribute("aria-label", "Primary");
+    const toggle = nav.querySelector("button")!;
+    expect(toggle).toHaveAttribute("type", "button");
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle.textContent).toBe("Sections menu");
+    expect(toggle).not.toHaveAttribute("aria-label");
+    // The toggle keeps its tap target and a visible focus outline.
+    expect(toggle).toHaveClass("min-size-tap", "nav-disclosure-toggle", "focus-visible:outline-2");
+    const panel = host.querySelector(`#${CSS.escape(toggle.getAttribute("aria-controls")!)}`)!;
+    expect(panel).toHaveClass("nav-disclosure-panel");
+    expect(panel.querySelector("a")).toHaveAttribute("href", "#about");
   });
 
   it.each([undefined, "label", "icon"] as const)("preserves default and caller labels for trigger %s", trigger => {

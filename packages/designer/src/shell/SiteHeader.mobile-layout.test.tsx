@@ -84,7 +84,8 @@ describe("SiteHeader mobile layout", () => {
     // tested viewport, then let its CSS engine apply their actual selectors.
     const hideSelector = ".site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img))";
     const narrow = cssBlock(compiled.slice(compiled.lastIndexOf("@media", compiled.indexOf(hideSelector))), "@media (width < 768px) {");
-    const desktop = cssBlock(compiled, "@media (width >= 1280px) {");
+    // The shipped desktop utilities: the 1280px block that holds them, not the first 1280px block in the file.
+    const desktop = cssBlock(compiled.slice(compiled.lastIndexOf("@media", compiled.indexOf(".desktop\\:block {"))), "@media (width >= 1280px) {");
     const style = document.createElement("style");
     style.textContent = cssBlock(compiled, "  .hidden {") + cssBlock(compiled, "  .inline-flex {")
       + (width < 768 ? cssBlock(narrow, "    .site-header-contract[data-header-root] .site-header-brand a > span:not([data-brand-mark]):not(:has(img)) {") : "")
