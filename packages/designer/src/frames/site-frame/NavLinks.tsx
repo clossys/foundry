@@ -1,4 +1,4 @@
-import { LinkButton as Link } from "../../components/preview-runtime/components/button/button.js";
+import { LinkButton as Link } from "../../runtime/stock-link-button.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { SiteHeader } from "@clossys/designer/shell/server";
 import type { ResolvedSiteLink, ResolvedSiteShell } from "./internal/resolveShell.js";
