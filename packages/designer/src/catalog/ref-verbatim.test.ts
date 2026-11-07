@@ -6,14 +6,10 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-// @ts-expect-error plain ESM check script, no type declarations for the .mjs path
 import { writeDesignerSlot } from "../../scripts/__fixtures__/slot-model.mjs";
 import { BASELINE_CEILING, CODES, ADAPTATION_KINDS, adaptationHash, baselineKey, checkElement, checkRegistryItem, engineFamily, loadBaseline, refVerbatimFindings, refVerbatimReport } from "../../scripts/check-ref-verbatim.mjs";
-// @ts-expect-error plain ESM check script, no type declarations
 import { cleanClasses, configFromComponents, mapImport, normalizeReference } from "../../scripts/ref-verbatim/normalize.mjs";
-// @ts-expect-error plain ESM check script, no type declarations
 import { replayDataFit, sourceHash } from "../../scripts/ref-verbatim/data-fit.mjs";
-// @ts-expect-error plain ESM check script, no type declarations
 import { ALLOWED, HUNK_CODES, diffSources, isEngineNeutral, tokenSwapAllowed } from "../../scripts/ref-verbatim/diff.mjs";
 
 const pkg = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
