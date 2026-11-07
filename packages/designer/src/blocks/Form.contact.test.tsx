@@ -2,7 +2,8 @@ import { useState, type FormEvent } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Banner } from "../components/Banner.js";
+import { Alert } from "../components/preview-runtime/components/banner/alert.js";
+import { ALERT_TONE } from "../components/surface-tones.js";
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { TextField } from "../components/TextField.js";
 import { Form, type FormError } from "./Form.js";
@@ -59,7 +60,7 @@ describe("contact Form", () => {
       return attempt.promise;
     });
     const { container } = render(<Form composition="contact" onSubmit={onSubmit} onSubmitError={onSubmitError}
-      submitError={<Banner variant="danger">The message could not be sent</Banner>} actions={<Button type="submit">Send message</Button>}>
+      submitError={<Alert {...ALERT_TONE.danger}>The message could not be sent</Alert>} actions={<Button type="submit">Send message</Button>}>
       <TextField label="Name" name="name" />
       <TextField label="Email" name="email" />
     </Form>);
@@ -83,8 +84,8 @@ describe("contact Form", () => {
   it("shows only the supplied success banner after the consumer promise resolves", async () => {
     const attempt = deferred();
     const { container } = render(<Form composition="contact" onSubmit={event => { event.preventDefault(); return attempt.promise; }}
-      submitSuccess={<Banner variant="success">The message was received</Banner>}
-      submitError={<Banner variant="danger">The message could not be sent</Banner>}>
+      submitSuccess={<Alert {...ALERT_TONE.success}>The message was received</Alert>}
+      submitError={<Alert {...ALERT_TONE.danger}>The message could not be sent</Alert>}>
       <TextField label="Message" name="message" defaultValue="A generic enquiry" />
     </Form>);
     expect(screen.queryByText("The message was received")).toBeNull();

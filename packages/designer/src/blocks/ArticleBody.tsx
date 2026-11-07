@@ -3,7 +3,7 @@ import { ArticleReadingProgress } from "./ArticleReading.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */

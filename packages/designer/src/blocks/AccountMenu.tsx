@@ -4,7 +4,7 @@ import { Fragment } from "react";
 
 import { ChevronUp } from "../icons/ChevronUp.js";
 import type { AccountMenuProps, AccountMenuSection } from "./account-menu-types.js";
-import { avatarInitials } from "../components/Avatar.server.js";
+import { avatarInitials } from "../components/avatar-initials.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 import { Avatar, AvatarFallback, AvatarImage, MenuGroup, MenuItem, MenuLabel, MenuSeparator, ShellMenu } from "./shell-menu.js";
 

@@ -1,5 +1,5 @@
 "use client";
-import { Badge, Card, Tree } from "@clossys/designer/components";
+import { BADGE_TONE, Badge, CARD_SURFACE, Card, Tree } from "@clossys/designer/components";
 
 import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
 import { useId, useState } from "react";
@@ -48,10 +48,10 @@ export function PublisherFormatsView({ formats, ia = FORMAT_IA, instances, libra
   const members = selected ? instances.filter(instance => instance.format === selected.id) : [];
   const usedBy = [...new Set([...(selected?.usedByPacks ?? []), ...members.flatMap(instance => instance.packIds)])];
   return <section aria-labelledby={`${id}-title`} className="grid min-w-0 gap-lg text-ink-primary">
-    <SectionHeader id={`${id}-title`} title="Formats" actions={fixtureLibrary ? <Badge variant="warning">fixture library</Badge> : undefined}
+    <SectionHeader id={`${id}-title`} title="Formats" actions={fixtureLibrary ? <Badge {...BADGE_TONE.warning}>fixture library</Badge> : undefined}
       description="Generation configuration · medium, family, format. Layouts are the allowed compositions within a format." />
     <div className="grid min-w-0 gap-lg desktop:grid-cols-[var(--ui-layout-sidebar-w)_minmax(0,1fr)]">
-      <Card variant="outline"><nav aria-label="Formats by medium and family">
+      <Card className={CARD_SURFACE.outline}><nav aria-label="Formats by medium and family">
         <Tree aria-label="Formats by medium and family" selectionMode="single" defaultExpandedKeys={ia.nodes.flatMap(medium => [medium.id, ...medium.children.map(family => family.id)])} selectedKeys={selected ? [selected.id] : []} onSelectionChange={keys => {
           if (keys === "all") return;
           const id = String([...keys][0] ?? "");
@@ -68,7 +68,7 @@ export function PublisherFormatsView({ formats, ia = FORMAT_IA, instances, libra
         </Tree>
       </nav></Card>
       {selected ? <section aria-labelledby={`${id}-selected`} className="grid min-w-0 content-start gap-lg">
-        <Panel header={<SectionHeader id={`${id}-selected`} level={3} title={selected.label} actions={<Badge>{selected.status === "concept" ? "Concept only" : "Built"}</Badge>} />}>
+        <Panel header={<SectionHeader id={`${id}-selected`} level={3} title={selected.label} actions={<Badge {...BADGE_TONE.neutral}>{selected.status === "concept" ? "Concept only" : "Built"}</Badge>} />}>
           <p>{selected.id}</p>
           <DetailView fields={[
             { label: "Output type", value: selected.outputType.toUpperCase() },

@@ -7,11 +7,10 @@
  * `react-aria-components`, which reads `useContext` at module scope and
  * fails to import under React's `react-server` condition — a packaging
  * problem, not an architectural one, because several individual components
- * (`Badge`, `Banner`, `Card`, `Field`, `Icon`, `Meter`, `Skeleton`,
- * `Spinner`, `StatusMark`, and the hook-free `Avatar.server.tsx`,
- * `Banner.server.tsx`, `Meter.server.tsx` and `Spinner.server.tsx`
- * variants of `Avatar`, `Banner`, `Meter` and `Spinner`; the client
- * versions of those last three are built on react-aria-components) plus
+ * (the stock `Alert`, `Badge`, `Card` and `Skeleton`, and `Field`,
+ * `Icon`, `Meter`, `Spinner`, `StatusMark`, with the hook-free
+ * `Meter.server.tsx` and `Spinner.server.tsx` variants of `Meter` and
+ * `Spinner`, whose client versions are built on react-aria-components) plus
  * this package's own `cx` class-merge helper import cleanly under that
  * same condition. This file is that verified-safe subset, published as
  * its own compiled entry (`./dist/components/server.js`) so a React Server
@@ -59,17 +58,16 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
  */
 assertPeerVersion({ peer: "react", declaredRange: REACT_DECLARED_RANGE, foundVersion: reactVersion });
 
-export { Avatar } from "./Avatar.server.js";
-export type { AvatarProps, AvatarSize } from "./Avatar.js";
+export { Badge } from "./preview-runtime/components/badge/badge.js";
+export type BadgeProps = import("react").ComponentProps<typeof import("./preview-runtime/components/badge/badge.js").Badge>;
+export { BADGE_TONE, ALERT_TONE, CARD_SURFACE, SKELETON_SHAPE } from "./surface-tones.js";
+export type { BadgeTone, BadgeToneProps, AlertTone, AlertToneProps, CardSurface, SkeletonShape } from "./surface-tones.js";
 
-export { Badge } from "./Badge.js";
-export type { BadgeProps, BadgeVariant } from "./Badge.js";
+export { Alert, AlertTitle, AlertDescription, AlertAction } from "./preview-runtime/components/banner/alert.js";
+export type AlertProps = import("react").ComponentProps<typeof import("./preview-runtime/components/banner/alert.js").Alert>;
 
-export { Banner } from "./Banner.server.js";
-export type { BannerProps, BannerVariant } from "./Banner.js";
-
-export { Card } from "./Card.js";
-export type { CardProps, CardVariant, CardGround } from "./Card.js";
+export { Card } from "./preview-runtime/components/card/card.js";
+export type CardProps = import("react").ComponentProps<typeof import("./preview-runtime/components/card/card.js").Card>;
 
 export { Field } from "./Field.server.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";
@@ -80,8 +78,8 @@ export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Ic
 export { Meter } from "./Meter.server.js";
 export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";
 
-export { Skeleton } from "./Skeleton.js";
-export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
+export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
+export type SkeletonProps = import("react").ComponentProps<typeof import("./preview-runtime/components/skeleton/skeleton.js").Skeleton>;
 
 export { Spinner } from "./Spinner.server.js";
 export type { SpinnerProps, SpinnerSize } from "./Spinner.js";

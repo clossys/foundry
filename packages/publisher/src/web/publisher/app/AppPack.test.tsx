@@ -25,7 +25,7 @@ it("shows only page chips in collapsed lanes and keeps detail tabs hidden", () =
 it("scrolls the lane matrix inside a Foundry Card region", () => {
   render(<AppPack inventory={projectAppInventory(genericInventory())} />);
   const region = screen.getByRole("region", { name: "Scrollable App lane matrix" });
-  expect(region).toHaveAttribute("data-variant", "outline");
+  expect(region).toHaveAttribute("data-slot", "card"); expect(region).toHaveClass("border-line-panel");
   expect(region).toHaveAttribute("tabindex", "0");
   expect(within(region).getByRole("table", { name: "App publish stages" })).toBeVisible();
 });
@@ -42,7 +42,7 @@ it("renders every publish stage status as a Foundry Badge inside an unstyled lis
     expect(item.getAttribute("class") ?? "").toBe("");
     const badge = item.firstElementChild!;
     expect(badge.tagName).toBe("SPAN");
-    expect(badge.className).toContain("rounded-pill");
+    expect(badge).toHaveAttribute("data-slot", "badge");
     expect(badge).toHaveTextContent(/^\w+: \S/);
   }
 });

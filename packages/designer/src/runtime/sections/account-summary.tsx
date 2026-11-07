@@ -4,8 +4,11 @@ import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import type { SurfaceRendererEntry } from "../contract.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
 import { componentLeaf } from "../component-leaf.js";
+import { avatarInitials } from "../../components/avatar-initials.js";
 
-const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
+const Avatar = componentLeaf<typeof import("../../components/preview-runtime/components/avatar/avatar.js").Avatar>("components.avatar");
+const AvatarImage = componentLeaf<typeof import("../../components/preview-runtime/components/avatar/avatar.js").AvatarImage>("components.avatar", "AvatarImage");
+const AvatarFallback = componentLeaf<typeof import("../../components/preview-runtime/components/avatar/avatar.js").AvatarFallback>("components.avatar", "AvatarFallback");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -33,7 +36,7 @@ export const accountSummaryRenderer: SurfaceRendererEntry = {
   leaf: LEAF,
   sample: dataset => ({
     heading: "Account",
-    identity: { name: dataset.avatar.alt, "name-label": "Name", email: "member@example.com", "email-label": "Email" },
+    identity: { name: dataset.avatar["aria-label"], "name-label": "Name", email: "member@example.com", "email-label": "Email" },
     rows: [{ label: "Workspace", value: dataset.assets.mark.name }],
     actions: [{ label: "Account settings", href: "/account/settings" }],
   }),
@@ -45,7 +48,7 @@ export const accountSummaryRenderer: SurfaceRendererEntry = {
     const name = text(content, identity.name, "identity.name");
     const avatar = optionalText(content, identity.avatar, "identity.avatar");
     const fields: DetailViewField[] = [
-      { label: copy(text(content, identity["name-label"], "identity.name-label")), value: <SemanticContent as="div" className="flex items-center gap-sm"><Avatar alt={name} {...(avatar === undefined ? {} : { src: destination(content, avatar, "identity.avatar") })} />{copy(name)}</SemanticContent> },
+      { label: copy(text(content, identity["name-label"], "identity.name-label")), value: <SemanticContent as="div" className="flex items-center gap-sm"><Avatar role="img" aria-label={name}>{avatar === undefined ? null : <AvatarImage src={destination(content, avatar, "identity.avatar")} alt="" />}<AvatarFallback aria-hidden="true">{avatarInitials(name)}</AvatarFallback></Avatar>{copy(name)}</SemanticContent> },
       { label: copy(text(content, identity["email-label"], "identity.email-label")), value: copy(text(content, identity.email, "identity.email")) },
       ...records(content, "rows").map((row, index) => {
         closed(content, row, ["label", "value"], `rows.${index}`);

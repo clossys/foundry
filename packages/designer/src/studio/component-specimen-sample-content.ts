@@ -11,7 +11,7 @@ import { specimenDataset as d } from "./specimen-dataset.js";
 /** Props objects for components whose whole input is data. */
 export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   "./components#Avatar": d.avatar,
-  "./components#Banner": d.banner,
+  "./components#Alert": d.banner,
   "./components#Calendar": d.dates.calendar,
   "./components#ComboBox": d.combobox,
   "./components#DateField": d.dates.field,
@@ -46,7 +46,7 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
 /** Text content for components that draw their children. */
 export const componentSpecimenText: Readonly<Record<string, string>> = {
   "./components#Badge": d.text.badge,
-  "./components#Banner": d.text.banner,
+  "./components#Alert": d.text.banner,
   "./components#Button": d.text.action,
   "./components#Checkbox": d.text.checkbox,
   "./components#LinkButton": d.text.link,

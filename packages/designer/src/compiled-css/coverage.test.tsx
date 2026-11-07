@@ -31,12 +31,13 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Logomark } from "../components/Logomark.js";
 import { Lockup } from "../blocks/Lockup.js";
-import { Avatar } from "../components/Avatar.js";
-import { Badge } from "../components/Badge.js";
-import { Banner } from "../components/Banner.js";
+import { Avatar } from "../components/preview-runtime/components/avatar/avatar.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
+import { Alert } from "../components/preview-runtime/components/banner/alert.js";
+import { ALERT_TONE } from "../components/surface-tones.js";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/preview-runtime/components/breadcrumbs/breadcrumb.js";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { Card } from "../components/Card.js";
+import { Card } from "../components/preview-runtime/components/card/card.js";
 import { Checkbox } from "../components/Checkbox.js";
 import { Chip } from "../components/Chip.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
@@ -51,7 +52,7 @@ import { GroupedTable } from "../blocks/GroupedTable.js";
 import { AppNavigation } from "../blocks/AppNavigation.js";
 import { RelationGraph } from "../blocks/RelationGraph.js";
 import { FlowCanvas } from "../blocks/FlowCanvas.js";
-import { Skeleton } from "../components/Skeleton.js";
+import { Skeleton } from "../components/preview-runtime/components/skeleton/skeleton.js";
 import { Spinner } from "../components/Spinner.js";
 import { StatusMark } from "../components/StatusMark.js";
 import { Switch } from "../components/Switch.js";
@@ -473,8 +474,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     trees.push(["Chip", render(<Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>)]);
     trees.push(["Separator", render(<Separator />)]);
     trees.push(["Skeleton", render(<Skeleton style={{ width: 100, height: 20 }} />)]);
-    trees.push(["Banner info", render(<Banner variant="info">Heads up</Banner>)]);
-    trees.push(["Banner danger", render(<Banner variant="danger">Careful</Banner>)]);
+    trees.push(["Alert info", render(<Alert {...ALERT_TONE.info}>Heads up</Alert>)]);
+    trees.push(["Alert danger", render(<Alert {...ALERT_TONE.danger}>Careful</Alert>)]);
 
     const renderedClasses = new Set<string>();
     for (const [, result] of trees) {
@@ -710,7 +711,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       for (const c of collectClassNames(result.container)) renderedClasses.add(c);
       result.unmount();
     }
-    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-status-danger-tint", "text-status-danger-text", "bg-status-info-tint", "text-status-info-text"]) {
+    for (const required of ["@container", "@md:table", "@md:not-sr-only", "@md:table-cell", "@lg:grid-cols-4", "desktop:grid-cols-3", "size-2xl", "font-mono", "max-tablet:hidden", "border-s", "border-dashed", "border-ink-secondary", "bg-surface-sunken", "text-ink-secondary", "bg-status-success-tint", "text-status-success-text", "bg-status-warning-tint", "text-status-warning-text", "bg-(--color-status-danger)/10", "text-(--color-status-danger)", "bg-status-info-tint", "text-status-info-text"]) {
       expect(renderedClasses.has(required), required).toBe(true);
     }
 

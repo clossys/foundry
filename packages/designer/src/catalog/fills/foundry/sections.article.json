@@ -53,7 +53,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ArticleBody.tsx",
-            "sha256": "7b639ffc2fea21bcccfcb5395e634e5f079e65d9ac7103135c4682a65f15c7a2"
+            "sha256": "a079894e03be800872f3b777d9ba6adc7615e2a9ffc644e717a369352f64a6d6"
           },
           {
             "path": "packages/designer/src/blocks/ArticleReading.tsx",

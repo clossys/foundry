@@ -1,6 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Avatar } from "../components/Avatar.js";
-import { renderTestimonial } from "./Testimonial.server.js";
+import { renderTestimonial, testimonialAvatar } from "./Testimonial.server.js";
 
 export interface TestimonialBaseProps extends Omit<HTMLAttributes<HTMLElement>, "children"> {
   /** The quoted words themselves. */
@@ -64,9 +63,8 @@ export type TestimonialProps = TestimonialBaseProps &
  *
  * **The avatar is optional and, when present, required to carry real alt
  * text at the type level** — see `TestimonialProps`' own discriminated
- * union. Composed from this package's own `Avatar` component (blocks may import
- * components) rather than a bare `<img>`, so the initials fallback and
- * image-load-failure handling `Avatar` already implements come for free.
+ * union. Composed from the stock `Avatar` (see `testimonialAvatar`), with
+ * the initials fallback when no image is given.
  */
 export function Testimonial({
   avatarSrc,
@@ -75,6 +73,6 @@ export function Testimonial({
 }: TestimonialProps) {
   return renderTestimonial(
     props,
-    avatarAlt ? <Avatar alt={avatarAlt} src={avatarSrc} /> : null,
+    avatarAlt ? testimonialAvatar(avatarAlt, avatarSrc) : null,
   );
 }

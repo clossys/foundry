@@ -101,7 +101,7 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "components/server.js", expectedExports: ["NativeAction", "SemanticContent", "Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "INVERSE_CONTROL_INK", "mergeUiClasses", "cn", "LinkButton"] },
+    { distRelPath: "components/server.js", expectedExports: ["NativeAction", "SemanticContent", "Logomark", "Badge", "Alert", "AlertTitle", "AlertDescription", "AlertAction", "ALERT_TONE", "BADGE_TONE", "CARD_SURFACE", "SKELETON_SHAPE", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "INVERSE_CONTROL_INK", "mergeUiClasses", "cn", "LinkButton"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [

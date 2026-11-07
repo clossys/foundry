@@ -1,4 +1,4 @@
-import { GROUND_PAINT } from "../../components/Card.js";
+import { GROUND_PAINT } from "../../components/ground-paint.js";
 
 /** Shell chrome plates use a closed ground vocabulary — not structural modes. */
 export type ShellGround = "base" | "inverse";

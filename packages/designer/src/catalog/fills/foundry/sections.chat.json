@@ -67,7 +67,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/chat/Chat.tsx",
-            "sha256": "2410c41e1613385ddf3c567a3d299b5fee755eaf1af9fa4767810ef30eeea562"
+            "sha256": "6db5b786d086f7c95d1ec93d486493576a451efad9e798c102252d64ae5da915"
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",
@@ -76,6 +76,10 @@
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/avatar-initials.ts",
+            "sha256": "df6c2becd0a3196515d10f976c6dbabb17e103bd5a7cb9a9dd526e8fdf493f27"
           },
           {
             "path": "packages/designer/src/icons/ArrowRight.ts",

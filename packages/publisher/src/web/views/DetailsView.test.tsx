@@ -8,7 +8,7 @@ import { cleanup, render as renderBare, screen, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup as renderToStaticMarkupBare, renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Banner } from "@clossys/designer/components";
+import { ALERT_TONE, Alert } from "@clossys/designer/components";
 import { DetailsView, type DetailsViewProps, type DetailsViewSection } from "./DetailsView.js";
 import { IndexView } from "./IndexView.js";
 import { AppFrame } from "@clossys/designer/frames";
@@ -122,7 +122,7 @@ describe("DetailsView", () => {
   });
 
   it("starts with the optional content notice before tabs and sections", () => {
-    const { container } = render(<DetailsView {...tabbed()} banner={<Banner variant="warning">Archived record</Banner>} />);
+    const { container } = render(<DetailsView {...tabbed()} banner={<Alert {...ALERT_TONE.warning}>Archived record</Alert>} />);
     const banner = screen.getByRole("status");
     const tablist = screen.getByRole("tablist", { name: "Record sections" });
     const firstSection = screen.getByRole("heading", { name: "Identity", level: 2 });
@@ -287,6 +287,6 @@ describe("DetailsView", () => {
     expect(source).toMatch(/<Tabs\b/);
     expect(source).not.toMatch(/\b(?:PageHeader|Breadcrumb)\b/);
     expect(source).toMatch(/<Skeleton\b/);
-    expect(source).toMatch(/<Banner\b/);
+    expect(source).toMatch(/<Alert\b/);
   });
 });

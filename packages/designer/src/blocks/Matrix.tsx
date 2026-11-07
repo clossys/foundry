@@ -12,7 +12,7 @@ import { LibraryBoardSection, type LibraryBoardSectionProps } from "./library-bo
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
-const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
+const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 

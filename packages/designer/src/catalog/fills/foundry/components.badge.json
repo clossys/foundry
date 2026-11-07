@@ -57,8 +57,8 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "tone.danger": "./components#Badge.variant=danger",
-        "tone.neutral": "./components#Badge.variant=neutral"
+        "tone.danger": "./components#Badge.variant=destructive",
+        "tone.neutral": "./components#Badge.variant=secondary"
       },
       "props": [
         "children",

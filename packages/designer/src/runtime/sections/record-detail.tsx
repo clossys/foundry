@@ -5,7 +5,7 @@ import { entryOf, type GroupBSection, type SectionRenderInput } from "./group-b-
 import { recordDetailCopyOf } from "./copy-ports.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 // GATES-RED G5: the selected stock menu/popover take no trigger prop; compose their declared trigger parts.
 type StockMenu = typeof import("../../components/preview-runtime/components/menu/dropdown-menu.js");

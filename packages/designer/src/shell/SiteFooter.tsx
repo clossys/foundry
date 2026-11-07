@@ -1,7 +1,7 @@
 import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import type { LinkButton } from "../components/preview-runtime/components/button/button.js";

@@ -60,7 +60,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
-            "sha256": "63263ff32452dc9d6effdd677162023d708cdb7e484432663ec64cab683c3bb1"
+            "sha256": "2e53e8b3ccec984228fe9221674caf627d37c4a8b025cb2bb88f1368b8abb455"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

@@ -6,7 +6,10 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronDown } from "../icons/index.js";
 import { Drawer, ResizablePane } from "../blocks/index.js";
 import { cx } from "../components/internal/cx.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
+import { ALERT_TONE } from "../components/surface-tones.js";
+import { AlertAction } from "../components/preview-runtime/components/banner/alert.js";
+import { useGlyph } from "../components/glyph-context.js";
 import { FrameModuleOutlet, FrameSlotOutlet, useFrameSlotModules } from "../shell/index.js";
 import { useFrameNoticeLeases, visibleFrameNotices, type AppFrameNotice } from "./frame-notices.js";
 import { frameDockGeometry, FRAME_DOCK_DEFAULTS, FRAME_NOTICE_COMPACT_BLOCK, type FrameDockBounds } from "./frame-dock-layout.js";
@@ -16,7 +19,7 @@ import type * as NativeTabs from "../components/preview-runtime/components/tabs/
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Banner = componentLeaf<typeof import("../components/index.js").Banner>("components.banner");
+const Alert = componentLeaf<typeof import("../components/index.js").Alert>("components.banner");
 const Button = componentLeaf<typeof import("../components/index.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../components/index.js").Icon>("components.icon");
 type StockTabs = typeof import("../components/preview-runtime/components/tabs/tabs.js");
@@ -36,7 +39,7 @@ const DISMISS_KEY = "frame-dismissed-notices";
 export const FRAME_CHEVRON_MOTION = "frame-chevron-motion";
 /** `sheet` is the frame's narrow layout (the sidebar-overlay breakpoint): the dock body becomes a bottom-sheet Drawer. */
 export function FrameDock({ notices = [], dock, sheet = false }: { notices?: readonly AppFrameNotice[]; dock?: AppFrameDock; sheet?: boolean }) {
-  const copy = useShellCopy();
+  const copy = useShellCopy(), closeGlyph = useGlyph("assets.icon-close");
   const modules = useFrameSlotModules("dock-tab");
   const strips = useFrameSlotModules("dock-strip");
   const [active, setActive] = useState<string>();
@@ -90,10 +93,11 @@ export function FrameDock({ notices = [], dock, sheet = false }: { notices?: rea
     {...geometry} onChange={next => { setHeight(next); dock?.onChange?.(next); }} className="min-h-0 rounded-none border-0 p-0">{panels}</ResizablePane> : null;
   return <>{gestures}<SemanticContent as="section" ref={region} data-application-frame-region="dock" className={"min-w-0 shrink-0 border-t " + GROUND_PAINT.raised.border + " " + GROUND_PAINT.raised.surface}>
     <SemanticContent as="div" ref={noticesRegion} data-frame-notices="" data-frame-notices-compact={short || undefined} className="flex w-full flex-col">
-      {visible.map(notice => <Banner key={notice.id} variant={notice.severity === "error" ? "danger" : notice.severity}
-        className={cx("w-full rounded-none", short && "items-center py-dock-compact first-child-shrink")} onDismiss={notice.severity !== "error" && notice.dismissible !== false ? () => dismiss(notice.id) : undefined}>
+      {visible.map(notice => { const tone = ALERT_TONE[notice.severity === "error" ? "danger" : notice.severity]; return <Alert key={notice.id} {...tone}
+        className={cx(tone.className, "w-full rounded-none", short && "items-center py-dock-compact first-child-shrink")}>
         <SemanticContent as="div" className="mx-auto flex w-full max-w-wide items-center justify-between dock-notice-row"><SemanticContent as="span" className={cx(short && "min-w-0 truncate")}>{notice.text}</SemanticContent>{notice.action && <Button variant="ghost" onPress={notice.action.onAction}>{notice.action.label}</Button>}</SemanticContent>
-      </Banner>)}
+      {notice.severity !== "error" && notice.dismissible !== false ? <AlertAction><Button variant="ghost" className="icon-control-sm rounded-control p-0" aria-label={copy(SHELL_COPY_REFS.banner.dismiss)} onPress={() => dismiss(notice.id)}><Icon glyph={closeGlyph} decorative size="sm" /></Button></AlertAction> : null}
+      </Alert>; })}
     </SemanticContent>
     {modules.length > 0 && sheet ? <SemanticContent as="div" ref={strip} data-frame-dock-strip="" className="flex min-w-0 items-center justify-between dock-strip-row">
       <Drawer placement="bottom" wide="sheet" heading={dock?.label ?? copy(SHELL_COPY_REFS.dock.label)} closeLabel={copy(SHELL_COPY_REFS.dock.collapse)} isOpen={sheetOpen} onOpenChange={setSheetOpen}

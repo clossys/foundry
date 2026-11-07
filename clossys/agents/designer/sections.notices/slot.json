@@ -31,6 +31,8 @@
     },
     "allowedComposes": [
       "components.banner",
+      "components.button",
+      "components.icon",
       "components.semantic-content"
     ],
     "parts": [
@@ -53,7 +55,9 @@
         "themes.animate-marquee-vertical",
         "themes.animate-shiny-text"
       ],
-      "assets": []
+      "assets": [
+        "assets.icon-close"
+      ]
     },
     "data": "host-injected",
     "surface": "both",

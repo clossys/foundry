@@ -3,7 +3,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { RouterProvider } from "react-aria-components";
-import { Badge } from "../components/Badge.js";
+import { Badge } from "../components/preview-runtime/components/badge/badge.js";
 import { ResourceList, type ResourceListItem } from "./ResourceList.js";
 
 const items: ResourceListItem[] = [

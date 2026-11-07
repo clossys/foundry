@@ -62,7 +62,7 @@ describe("legacy colour map (H-TOKEN)", () => {
 
 const INVERSE_KEYS = Object.keys(legacyMap.map).filter(key => key.includes("inverse") && !key.includes("glass")).sort();
 // The component plates the frame layer's inverse uses moved to (GATES-RED round 4, G1/G2).
-const INVERSE_PLATES = ["src/components/Card.tsx", "src/components/button-classes.ts", "src/components/preview-runtime/components/toggle-button/toggle.tsx", "src/components/Logomark.tsx", "src/shell/Brandmark.tsx"];
+const INVERSE_PLATES = ["src/components/ground-paint.ts", "src/components/button-classes.ts", "src/components/preview-runtime/components/toggle-button/toggle.tsx", "src/components/Logomark.tsx", "src/shell/Brandmark.tsx"];
 
 describe("inverse plate = shadcn foreground/background swap (G7)", () => {
   it("maps every inverse key onto the swap, with no new variable", () => {
@@ -81,7 +81,7 @@ describe("inverse plate = shadcn foreground/background swap (G7)", () => {
     const plates = INVERSE_PLATES.map(path => ({ path, content: read(path) }));
     const left = legacyColorUses([...sources, ...plates], legacyMap).filter(row => row.legacy.includes("inverse") && !row.legacy.includes("glass"));
     expect(left.map(row => `${row.file}:${row.line} ${row.use}`)).toEqual([]);
-    expect(read("src/components/Card.tsx")).toContain(`inverse: { surface: "bg-foreground", primary: "text-background", secondary: "text-background/75", border: "border-background/14", focus: "focus-visible:outline-background" }`);
+    expect(read("src/components/ground-paint.ts")).toContain(`inverse: { surface: "bg-foreground", primary: "text-background", secondary: "text-background/75", border: "border-background/14", focus: "focus-visible:outline-background" }`);
   });
 
   it("recomposes an inverse use to the swap, keeps the legacy alpha, and never stacks two opacities (mutation)", () => {

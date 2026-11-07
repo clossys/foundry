@@ -68,7 +68,7 @@ export const RENDER_ENVIRONMENT: Readonly<Record<string, RenderEnvironment>> = {
   "./charts/server": "server-safe",
   "./blocks": "client-only",
   "./frames": "client-only",
-  // Includes the server Testimonial variant, composed with the server Avatar.
+  // Includes the server Testimonial variant, composed with the stock Avatar root and fallback.
   "./blocks/server": "server-safe",
   "./shell": "client-only",
   "./shell/server": "server-safe",

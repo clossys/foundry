@@ -76,7 +76,7 @@ it("renders every skeleton preview scroller through the Foundry Card surface", (
   const regions = screen.getAllByRole("region", { name: /px (light|dark) skeleton$/ });
   expect(regions.map(region => region.getAttribute("aria-label"))).toEqual(["320 px light skeleton", "320 px dark skeleton", "1280 px light skeleton", "1280 px dark skeleton"]);
   for (const region of regions) {
-    expect(region).toHaveAttribute("data-variant", "outline");
+    expect(region).toHaveAttribute("data-slot", "card"); expect(region).toHaveClass("border-line-panel");
     expect(region).toHaveAttribute("tabindex", "0");
   }
 });

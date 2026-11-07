@@ -1,9 +1,20 @@
 import { SemanticContent } from "../components/SemanticContent.js";
 import type { ReactNode } from "react";
-import { Avatar } from "../components/Avatar.server.js";
+import { Avatar, AvatarFallback } from "../components/preview-runtime/components/avatar/avatar.js";
+import { avatarInitials } from "../components/avatar-initials.js";
 import { cx } from "../components/internal/cx.js";
 import type { TestimonialBaseProps, TestimonialProps } from "./Testimonial.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
+
+/**
+ * The stock Avatar with a server-safe image child (the stock AvatarImage holds client
+ * load state), so both variants render identical markup; initials when there is no image.
+ */
+export function testimonialAvatar(alt: string, src: string | undefined): ReactNode {
+  return src
+    ? <Avatar><img src={src} alt={alt} className="h-full w-full rounded-full object-cover" /></Avatar>
+    : <Avatar role="img" aria-label={alt}><AvatarFallback aria-hidden="true">{avatarInitials(alt)}</AvatarFallback></Avatar>;
+}
 
 /** One markup recipe for both variants; each supplies its own Avatar. */
 export function renderTestimonial(
@@ -39,6 +50,6 @@ export function renderTestimonial(
 export function Testimonial({ avatarSrc, avatarAlt, ...props }: TestimonialProps) {
   return renderTestimonial(
     props,
-    avatarAlt ? <Avatar alt={avatarAlt} src={avatarSrc} /> : null,
+    avatarAlt ? testimonialAvatar(avatarAlt, avatarSrc) : null,
   );
 }

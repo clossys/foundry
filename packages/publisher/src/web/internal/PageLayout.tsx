@@ -1,6 +1,6 @@
 import { Children } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, cn } from "@clossys/designer/components/server";
+import { CARD_SURFACE, Card, cn } from "@clossys/designer/components/server";
 import { SectionFrame } from "@clossys/designer/blocks/server";
 
 /**
@@ -108,7 +108,7 @@ export interface PageLayoutProps extends PageLayoutHeaderProps {
  */
 export function PageLayout({ title, subtitle, children, notes, cardLabel, surface, alignment }: PageLayoutProps) {
   const card = surface === "plate"
-    ? <Card variant="plate" className="border border-line-panel flex flex-col gap-lg text-start">{children}</Card>
+    ? <Card className={`${CARD_SURFACE.plate} border border-line-panel flex flex-col gap-lg text-start`}>{children}</Card>
     : <Card className="flex flex-col gap-lg text-start">{children}</Card>;
   return (
     <>

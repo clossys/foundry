@@ -56,9 +56,7 @@
       "propMap": {},
       "props": [
         "children",
-        "className",
-        "ground",
-        "variant"
+        "className"
       ],
       "rac": {
         "instance": "react-aria-components",

@@ -214,7 +214,7 @@ it("keeps absent frame host content explicit without inferring required slots", 
 it("renders the instance scroller through the Foundry Card surface", () => {
   render(<PublisherInstancesView {...base} />);
   const region = screen.getByRole("region", { name: "Scrollable instance render" });
-  expect(region).toHaveAttribute("data-variant", "outline");
+  expect(region).toHaveAttribute("data-slot", "card"); expect(region).toHaveClass("border-line-panel");
   expect(region).toHaveAttribute("tabindex", "0");
 });
 

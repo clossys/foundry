@@ -157,7 +157,7 @@ function slots(container: HTMLElement) {
   const root = column(container);
   const parent = slotParent(root);
   const header = parent.firstElementChild as HTMLElement;
-  const card = parent.querySelector(".rounded-control") as HTMLElement;
+  const card = parent.querySelector("[data-slot=\"card\"]") as HTMLElement;
   let body: HTMLElement = card;
   while (body.parentElement !== parent) body = body.parentElement as HTMLElement;
   return { root, parent, header, card, body, notes: body.nextElementSibling as HTMLElement | null };

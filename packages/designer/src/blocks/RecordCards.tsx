@@ -1,5 +1,5 @@
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
-import type { BadgeVariant } from "../components/Badge.js";
+import { BADGE_TONE, type BadgeTone } from "../components/surface-tones.js";
 import type { LinkButton as LinkType } from "../components/preview-runtime/components/button/button.js";
 import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
@@ -13,7 +13,7 @@ const Card = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("compo
 const CardHeader = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardHeader");
 const CardTitle = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardTitle");
 const CardContent = componentLeaf<ComponentType<HTMLAttributes<HTMLDivElement>>>("components.card", "CardContent");
-const Badge = componentLeaf<ComponentType<{ children?: ReactNode; tone?: BadgeVariant; variant?: BadgeVariant }>>("components.badge");
+const Badge = componentLeaf<ComponentType<{ children?: ReactNode; tone?: "neutral" | "danger"; variant?: "outline"; className?: string }>>("components.badge");
 const Link = componentLeaf<typeof LinkType>("components.link");
 const SECTION_STAMP = dsAttrs("sections", "sections.cards", "foundry/sections.cards");
 
@@ -24,7 +24,7 @@ export interface RecordCardsRecord {
   title: ReactNode;
   description?: ReactNode;
   href?: string;
-  badge?: { label: ReactNode; variant?: BadgeVariant };
+  badge?: { label: ReactNode; variant?: BadgeTone };
   meta?: ReactNode;
   /** Resolved consumer asset; no image URL or copy is invented by this section. */
   image?: ImageResource;
@@ -60,7 +60,7 @@ export function RecordCards({ records, config, locale, layout = "grid", headingL
             {record.href ? <Link href={record.href} variant="link">{record.title}</Link> : record.title}
           </SemanticContent></CardTitle>
           {record.badge ? record.badge.variant && record.badge.variant !== "neutral" && record.badge.variant !== "danger"
-            ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge>
+            ? <Badge {...BADGE_TONE[record.badge.variant] as { variant: "outline"; className?: string }}>{record.badge.label}</Badge>
             : <Badge tone={record.badge.variant ?? "neutral"}>{record.badge.label}</Badge> : null}
         </CardHeader>
         <CardContent className="flex flex-col gap-sm">

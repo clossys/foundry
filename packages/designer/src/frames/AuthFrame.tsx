@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { ShellI18nProvider, ShellLocaleRoot } from "#designer-frame-i18n";
 import { cx } from "../components/internal/cx.js";
-import { GROUND_PAINT } from "../components/Card.js";
+import { GROUND_PAINT } from "../components/ground-paint.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 
 import { SkipLink } from "../shell/SkipLink.js";

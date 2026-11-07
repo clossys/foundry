@@ -60,17 +60,15 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "content.image": "./components#Avatar.src",
-        "content.initials": "./components#Avatar.alt",
+        "content.image": "./components#Avatar",
+        "content.initials": "./components#Avatar",
         "size.lg": "./components#Avatar.size=lg",
-        "size.md": "./components#Avatar.size=md",
+        "size.md": "./components#Avatar.size=default",
         "size.sm": "./components#Avatar.size=sm"
       },
       "props": [
-        "alt",
         "className",
-        "size",
-        "src"
+        "size"
       ],
       "rac": {
         "instance": "react-aria-components",

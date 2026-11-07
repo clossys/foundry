@@ -1,6 +1,7 @@
 "use client";
 import { useMemo } from "react";
-import { Banner } from "../components/Banner.js";
+import { Alert } from "../components/preview-runtime/components/banner/alert.js";
+import { ALERT_TONE } from "../components/surface-tones.js";
 import { defaultComponentPreviews } from "./default-component-previews.js";
 import { surfaceRuntimeCallbacks } from "../runtime/index.js";
 import { runtimeHash } from "../catalog-core/index.js";
@@ -23,8 +24,8 @@ export function DesignerRoutePage({ serverData, initialSession, copy, ...agent }
     catch { return { status: "refused" as const }; }
   }, [serverData, initialSession]);
   if (!copy) return studioCopyNeed("designer.route.copy");
-  if (checked.status === "pending") return <Banner>{readRouteStudioLabel(copy, "route.pending")}</Banner>;
-  if (checked.status === "refused") return <Banner variant="danger">{readRouteStudioLabel(copy, "route.refused")}</Banner>;
+  if (checked.status === "pending") return <Alert {...ALERT_TONE.info}>{readRouteStudioLabel(copy, "route.pending")}</Alert>;
+  if (checked.status === "refused") return <Alert {...ALERT_TONE.danger}>{readRouteStudioLabel(copy, "route.refused")}</Alert>;
   return <StudioCopyProvider binding={copy}><CheckedDesignerRoute copy={copy} checked={checked.value} initialSession={initialSession!} agent={agent} /></StudioCopyProvider>;
 }
 function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: StudioCopyBinding; agent: import("./types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData>; initialSession: NonNullable<DesignerRoutePageProps["initialSession"]> }) {
@@ -40,7 +41,7 @@ function CheckedDesignerRoute({ checked, initialSession, agent, copy }: { copy: 
 function DesignerRouteSurface({ checked, agent }: { agent: import("./types.js").DesignerAgentData; checked: ReturnType<typeof checkedDesignerRouteData> }) {
   const whole = useWholeStudio()!;
   const copy = useStudioCopy();
-  if (whole.failed) return <Banner variant="danger">{readRouteStudioLabel(copy, "route.failed")}</Banner>;
+  if (whole.failed) return <Alert {...ALERT_TONE.danger}>{readRouteStudioLabel(copy, "route.failed")}</Alert>;
   const { nav: _legacyLayerTabs, ...headerData } = checked.data.header.data;
   const header = { ...checked.data.header, data: headerData };
   return <div data-route-display="designer" data-route-authentication="unverified" data-route-session={whole.sessionIdentity} data-route-layer={whole.layer} className="absolute inset-0 min-h-0 min-w-0"><NativeRouteFrame data={checked.data} profile={checked.profile} contracts={checked.contracts} header={header}><Studio copy={copy} {...agent} /></NativeRouteFrame></div>;

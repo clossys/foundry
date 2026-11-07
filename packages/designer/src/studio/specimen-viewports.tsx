@@ -6,7 +6,7 @@ import { componentSpecimenPreview, type ComponentSpecimenMember } from "./compon
 import { SpecimenLayoutSection, specimenComponent, type SpecimenAxis, type SpecimenBreakpointReference, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafProps } from "./specimen-layouts.js";
 import type { DesignerSpecimenContext } from "./DesignerSpecimen.js";
 
-const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
+const Badge = componentLeaf<typeof import("../components/preview-runtime/components/badge/badge.js").Badge>("components.badge");
 const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 export interface ComponentVariantItem { readonly leaf: string; readonly members: readonly string[]; readonly state: string }

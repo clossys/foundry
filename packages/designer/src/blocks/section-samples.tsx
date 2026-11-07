@@ -47,7 +47,7 @@ export const SECTION_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = 
     { id: "editor", label: "Page editor", media: frame("Page editor"), caption: "Editor" },
     { id: "library", label: "Component library", media: frame("Component library"), caption: "Library" },
   ]} />,
-  NoticeList: () => <NoticeList label="Account notices" onDismiss={noop} notices={[
+  NoticeList: () => <NoticeList label="Account notices" onDismiss={noop} dismissLabel="Dismiss notice" notices={[
     { id: "trial", tone: "warning", title: "Trial ends in 3 days.", message: "Choose a plan to keep your projects.", action: <Link variant="link" href="#plans">See plans</Link> },
     { id: "export", tone: "success", message: "Your export is ready to download." },
     { id: "maintenance", tone: "info", title: "Scheduled maintenance.", message: "Saving is paused on Sunday from 02:00 to 02:30 UTC.", dismissible: false },

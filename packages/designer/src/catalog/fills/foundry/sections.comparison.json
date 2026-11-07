@@ -99,7 +99,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "0af139694315cb42d87c19f0d95ab526ac67b61e0e864fec6e6c1a42c1565302"
+            "sha256": "efe935c61e90950b059bde2b4a22b07641340136708a60dfb126686432a81d67"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
@@ -115,7 +115,7 @@
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
-            "sha256": "2cb500be1bb15407b347e04f03b0f4d424052407f65f16a4e6a938d7d383e40a"
+            "sha256": "7aa44221303dcc9619aa5f257f70e95bf17c67aa7c0efd21232b14481964158e"
           },
           {
             "path": "packages/designer/src/blocks/matrix/choices.tsx",
@@ -123,7 +123,7 @@
           },
           {
             "path": "packages/designer/src/blocks/matrix/grid.tsx",
-            "sha256": "5bc770185b35ceb9ed75e74ce704b41d6533bc75e8ff83cd3b641c0a20569122"
+            "sha256": "bf0a1ea6bac2c18ce864a684a3413cf49980ad56bb0ef945b15c0879fd7b3faa"
           },
           {
             "path": "packages/designer/src/blocks/matrix/harvey-mark.tsx",

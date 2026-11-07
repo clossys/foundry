@@ -9,14 +9,14 @@
       "license": "MIT",
       "mode": "implementation",
       "pin": {
-        "export": "./components#Banner",
+        "export": "./components#Alert",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
       "relation": "same-contract",
       "slot": "components.banner",
       "source": "foundry",
-      "sourceAddress": "./components#Banner",
+      "sourceAddress": "./components#Alert",
       "status": "draft",
       "trust": "foundry"
     }
@@ -42,7 +42,7 @@
         }
       ],
       "impl": {
-        "export": "Banner",
+        "export": "Alert",
         "kind": "package",
         "module": "@clossys/designer/components"
       },
@@ -52,20 +52,17 @@
         "tone.info"
       ],
       "pin": {
-        "export": "./components#Banner",
+        "export": "./components#Alert",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
       "propMap": {
-        "tone.danger": "./components#Banner.variant=danger",
-        "tone.info": "./components#Banner.variant=info"
+        "tone.danger": "./components#Alert.variant=destructive",
+        "tone.info": "./components#Alert.variant=default"
       },
       "props": [
         "children",
         "className",
-        "density",
-        "dismissLabel",
-        "onDismiss",
         "variant"
       ],
       "rac": {

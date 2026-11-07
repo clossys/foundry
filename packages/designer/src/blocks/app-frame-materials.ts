@@ -14,8 +14,8 @@ export const APP_FRAME_MATERIALS = [
   {
     id: "panel", layer: "blocks", exportName: "Panel", component: Panel, source: "src/blocks/Panel.tsx",
     regions: ["header", "content", "footer"],
-    dependencies: [{ exportName: "Card", source: "src/components/Card.tsx" }],
-    configs: [{ prop: "ground", values: ["base", "sunken", "inverse"], default: "base", source: "src/components/Card.tsx" }],
+    dependencies: [{ exportName: "Card", source: "src/components/preview-runtime/components/card/card.tsx" }],
+    configs: [{ prop: "ground", values: ["base", "sunken", "inverse"], default: "base", source: "src/blocks/Panel.tsx" }],
     authoredInputs: ["header", "children", "footer"],
   },
   {
@@ -86,7 +86,7 @@ export const APP_FRAME_MATERIALS = [
     id: "account-menu", layer: "blocks", exportName: "AccountMenu", component: AccountMenu, source: "src/blocks/AccountMenu.tsx",
     regions: ["identity", "trigger", "content", "preferences"],
     dependencies: [
-      { exportName: "Avatar", source: "src/components/Avatar.tsx" },
+      { exportName: "Avatar", source: "src/components/preview-runtime/components/avatar/avatar.tsx" },
       { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Icon", source: "src/components/Icon.tsx" },
       { exportName: "Menu", source: "src/components/Menu.tsx" },
@@ -98,7 +98,7 @@ export const APP_FRAME_MATERIALS = [
   {
     id: "grouped-table", layer: "blocks", exportName: "GroupedTable", component: GroupedTable, source: "src/blocks/GroupedTable.tsx",
     regions: ["caption", "headers", "content"],
-    dependencies: [{ exportName: "Card", source: "src/components/Card.tsx" }],
+    dependencies: [{ exportName: "Card", source: "src/components/preview-runtime/components/card/card.tsx" }],
     configs: [],
     authoredInputs: ["caption", "rowHeader", "groups", "rows", "rowKey", "emptyMessage"],
   },

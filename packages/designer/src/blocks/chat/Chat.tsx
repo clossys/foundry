@@ -9,8 +9,11 @@ import { defaultContent } from "./content.js";
 import type { ChatActions, ChatLabels, ChatMessage, ChatProps } from "./types.js";
 import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
+import { avatarInitials } from "../../components/avatar-initials.js";
 
-const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
+const Avatar = componentLeaf<typeof import("../../components/preview-runtime/components/avatar/avatar.js").Avatar>("components.avatar");
+const AvatarImage = componentLeaf<typeof import("../../components/preview-runtime/components/avatar/avatar.js").AvatarImage>("components.avatar", "AvatarImage");
+const AvatarFallback = componentLeaf<typeof import("../../components/preview-runtime/components/avatar/avatar.js").AvatarFallback>("components.avatar", "AvatarFallback");
 const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 type StockButton = typeof import("../../components/preview-runtime/components/button/button.js").Button;
 /** Stock-bound button with the slot's shape axis: shape.icon-only maps to the stock icon size. */
@@ -59,7 +62,7 @@ function MessageActions({
 
 function AuthorGroup({ label, children }: { label: string; children: ReactNode }) {
   return <SemanticContent as="div" role="group" aria-label={label} className="flex min-w-0 items-start gap-sm">
-    <Avatar alt={label} size="sm" />
+    <Avatar role="img" aria-label={label} size="sm"><AvatarFallback aria-hidden="true">{avatarInitials(label)}</AvatarFallback></Avatar>
     <SemanticContent as="div" className="flex min-w-0 flex-1 flex-col gap-sm">
       <SemanticContent as="p" className="text-body-s font-semibold">{label}</SemanticContent>
       {children}

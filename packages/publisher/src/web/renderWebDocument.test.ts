@@ -347,8 +347,8 @@ describe("renderWebDocument — module-level sugar is unaffected by defineWebTem
     expect(html).toContain("Sign in");
     expect(html).toContain("<header");
     expect(html).toContain("<footer");
-    expect(html.indexOf("<h1")).toBeLessThan(html.indexOf("rounded-control"));
-    expect(html.indexOf("rounded-control")).toBeLessThan(html.indexOf("form-marker-7f3a"));
+    expect(html.indexOf("<h1")).toBeLessThan(html.indexOf("data-slot=\"card\""));
+    expect(html.indexOf("data-slot=\"card\"")).toBeLessThan(html.indexOf("form-marker-7f3a"));
   });
 
   it("renders the AuthView footerSecondary slot inside the site footer, after the form", () => {

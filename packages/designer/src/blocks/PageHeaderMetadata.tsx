@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
-import type { Badge as BadgeType } from "../components/Badge.js";
+import type { Badge as BadgeType } from "../components/preview-runtime/components/badge/badge.js";
 import type { LinkButton as LinkType } from "../components/preview-runtime/components/button/button.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 const SemanticContent = componentLeaf<typeof SemanticContentType>("components.semantic-content");
