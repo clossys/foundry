@@ -33,7 +33,11 @@ const alive = (pid: number) => {
 /** True when the lock at `lock` was left by a writer that can no longer release it. */
 function staleLock(lock: string, now = Date.now()): boolean {
   let owner: LockOwner | undefined;
-  try { owner = JSON.parse(readFileSync(join(lock, OWNER_FILE), "utf8")) as LockOwner; } catch { owner = undefined; }
+  try { owner = JSON.parse(readFileSync(join(lock, OWNER_FILE), "utf8")) as LockOwner; } catch (error) {
+    // A writer between mkdir and its owner write leaves no (or a partial) owner file: an ownerless lock, aged below.
+    if ((error as NodeJS.ErrnoException).code !== "ENOENT" && !(error instanceof SyntaxError)) throw error;
+    owner = undefined;
+  }
   if (!owner || !Number.isInteger(owner.pid) || typeof owner.host !== "string") {
     try { return now - statSync(lock).mtimeMs > OWNERLESS_LOCK_MS; } catch { return false; }
   }

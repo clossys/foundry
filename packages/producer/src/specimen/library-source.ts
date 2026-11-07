@@ -290,10 +290,10 @@ function slotInput(root: string, slot: string): SlotInput | string {
   const entry = readSlotEntry(root, "designer", slot);
   if (!entry?.pin) return `input slot ${slot} has no Designer pin`;
   let read: { bytes: string; sha256: string };
-  try { read = readCandidate(root, "designer", slot, entry.pin.candidate); } catch { return `input slot ${slot}: its pinned candidate cannot be read`; }
+  try { read = readCandidate(root, "designer", slot, entry.pin.candidate); } catch (error) { return `input slot ${slot}: its pinned candidate cannot be read (${error instanceof Error ? error.message : String(error)})`; }
   if (read.sha256 !== entry.pin.sha256) return `input slot ${slot}: the pinned candidate bytes do not match sha256`;
   let item: CandidateItem;
-  try { item = JSON.parse(read.bytes); } catch { return `input slot ${slot}: the pinned candidate is not JSON`; }
+  try { item = JSON.parse(read.bytes); } catch (error) { return `input slot ${slot}: the pinned candidate is not JSON (${error instanceof Error ? error.message : String(error)})`; }
   let own: SpecimenInputs;
   try { own = specimenInputs(root, `${slot}/${entry.pin.candidate}`, item, false); } catch (error) { return `input slot ${slot}: ${error instanceof Error ? error.message : String(error)}`; }
   const fixtures = own.preview.fixtures as Record<string, unknown> | undefined;

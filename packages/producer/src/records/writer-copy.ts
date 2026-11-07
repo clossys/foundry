@@ -42,9 +42,11 @@ const cache = new Map<string, { key: string; stamp: string; copy: WriterCopy }>(
 export function writerCopy(consumer: string): WriterCopy {
   const pinned = listSlots(consumer, "writer").filter(entry => entry.pin && entry.id.startsWith("strings."));
   const key = pinned.map(entry => `${entry.id}@${entry.pin!.sha256}`).join("|");
-  const stamp = pinned.map(entry => { try { return candidateStamp(consumer, "writer", entry.id, entry.pin!.candidate); } catch { return "-"; } }).join("|");
+  // An unstampable candidate is never served from cache: the full read below raises its real error.
+  const stamps = pinned.map(entry => { try { return candidateStamp(consumer, "writer", entry.id, entry.pin!.candidate); } catch (error) { return { unreadable: error }; } });
+  const stamp = stamps.map(row => typeof row === "string" ? row : "-").join("|");
   const hit = cache.get(consumer);
-  if (hit?.key === key && hit.stamp === stamp && !stamp.split("|").includes("-")) return hit.copy;
+  if (hit?.key === key && hit.stamp === stamp && stamps.every(row => typeof row === "string")) return hit.copy;
   const entries: { id: string; text: string; context: string; status: "draft" }[] = [];
   const seen = new Set<string>();
   let locale: string | undefined;
