@@ -13,9 +13,13 @@ import { importFoundrySections } from "../importers/foundry-sections.js";
 import { adoptedSurface } from "./__fixtures__/surface-engine/synthetic.js";
 import { resolve } from "./api.js";
 import { surfaceDescriptorHash, surfaceDocument, surfaceOf } from "./surface-library.js";
+import { STUDIO_SPECIMEN_HOST_PARTS } from "./studio-host-parts.js";
+import { SPECIMEN_RENDER_PARTS } from "../studio/specimen-render-part-identities.js";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const callers = ["activity-feed", "resource-list", "usage"];
+const lockedParts = ["sections.band", "sections.section-header", "sections.pagination"];
+const hostParts: readonly string[] = [...Object.keys(STUDIO_SPECIMEN_HOST_PARTS), ...Object.values(SPECIMEN_RENDER_PARTS).flat()];
 const section = (leaf: string) => loadSectionRegistry().slots.find(row => row.id === `sections.${leaf}`)!;
 const descriptor = (leaf: string) => Object.values(importFoundrySections().fills.find(doc => doc.$extensions["com.clossys.fill"].slot === `sections.${leaf}`)!.sections)[0]!;
 let measured: ReturnType<typeof measureFoundrySurfaces>;
@@ -23,8 +27,9 @@ beforeAll(() => { measured = measureFoundrySurfaces(root, buildSurfaceConsumptio
 
 it("measures the real ResourceList EmptyState import as its native section, with a separate header boundary", () => {
   const row = measured.measurements["sections.resource-list"].consumption;
-  // ResourceList renders SemanticContent through componentLeaf("components.semantic-content"); the scanner measures that call.
-  expect(row.scannedComposes).toEqual(["components.button", "components.grid-list", "components.menu", "components.semantic-content", "components.skeleton", "sections.empty-state"]);
+  // ResourceList renders its leaves through componentLeaf(...) (Icon, SemanticContent, and the shell-menu Dialog/Popover);
+  // R2F-20 restored that measurement (251b20cbf), so the pin follows the measured source.
+  expect(row.scannedComposes).toEqual(["components.button", "components.dialog", "components.grid-list", "components.icon", "components.menu", "components.popover", "components.semantic-content", "components.skeleton", "sections.empty-state"]);
   const scan = measured.input.sourceScans.find((scan: { fill: string }) => scan.fill === "foundry/sections.resource-list")!;
   expect(scan.resolvedImports["packages/designer/src/blocks/ResourceList.tsx:./EmptyState.js#EmptyState"]).toBe("sections.empty-state");
   expect(row.sourceFiles.map((file: { path: string }) => file.path)).not.toContain("packages/designer/src/blocks/EmptyState.tsx");
@@ -40,7 +45,8 @@ it("measures the real ResourceList EmptyState import as its native section, with
 it("declares exactly the three real EmptyState callers as composition while keeping shared parts locked", () => {
   const slots = loadSectionRegistry().slots;
   expect(slots.filter(slot => slot.contract.composes?.includes("sections.empty-state")).map(slot => slot.id)).toEqual(callers.map(leaf => `sections.${leaf}`));
-  for (const slot of slots) for (const part of slot.contract.parts) expect(["sections.band", "sections.section-header", "sections.pagination"]).toContain(part);
+  // Section parts stay the three locked parts; Studio specimen rows also carry their typed host/render parts (SectionContract.parts).
+  for (const slot of slots) for (const part of slot.contract.parts) expect([...lockedParts, ...(slot.id.startsWith("sections.specimen-") ? hostParts : [])]).toContain(part);
   for (const leaf of callers) {
     expect(section(leaf).contract.composes).toEqual(["sections.empty-state"]);
     expect(section(leaf).contract.parts).not.toContain("sections.empty-state");

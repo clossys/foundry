@@ -96,8 +96,10 @@ test("current surface descriptors select all measured surfaces and retain their 
   assert.equal(report.surfaceEvidence.runtime, "unmeasured");
   assert.deepEqual(report.surfaceEvidence.fills, descriptors.map(({ meta, body }) => ({ id: meta.id, slot: meta.slot, pin: meta.pin, ...body.consumption })));
   const unresolved = report.surfaceEvidence.fills.flatMap(fill => fill.unresolved ?? []);
-  assert.equal(unresolved.filter(row => row.code === "DF2").length, 146);
-  assert.equal(unresolved.filter(row => row.code === "DF5").length, 39);
+  // planner:R2C-designer: the regenerated report (usage-graph.mjs --write) measures 195 DF2 rows from committed source
+  // and 58 DF5 rows (sectioned-document's 20 unregistered icon imports joined); was 146/39, already stale at d42a35110.
+  assert.equal(unresolved.filter(row => row.code === "DF2").length, 195);
+  assert.equal(unresolved.filter(row => row.code === "DF5").length, 58);
   const site = report.surfaceEvidence.fills.find(fill => fill.slot === "frames.site-shell");
   assert.deepEqual(site.scannedReads.assets, []);
   assert.equal("rawScannedReads" in site, false);
