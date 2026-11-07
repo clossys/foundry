@@ -1,12 +1,14 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
 import { studioOrigin } from './studio-origin.mjs';
 
-const artifacts = fileURLToPath(new URL('../../../../tmp/p0b-resume/propagation/', import.meta.url));
+// Fixtures live in the OS temp directory, never under the checkout (a write there dirties the tree).
+const artifacts = await mkdtemp(join(tmpdir(), 'p0-propagate-'));
 let sequence = 0;
 const originalCSS = ':root { --primary: oklch(0.42 0.09 243); }\n.dark { --primary: #ffffff; }\n';
 const originalButton = 'const buttonVariants = cva("inline-flex rounded-md", { default: "bg-primary text-primary-foreground" });\n';
@@ -52,6 +54,8 @@ test('successful propagation rebuilds mutated sources and restores exact origina
   assert.deepEqual(observed[2].sources, [originalCSS, originalButton]);
   assert.deepEqual(observed[3].sources, [originalCSS, originalButton]);
   assert.deepEqual(await f.contents(), [originalCSS, originalButton]);
+  // The default evidence directory (no --evidence-dir) never writes under the checkout.
+  assert.deepEqual(await readdir(f.root), ['packages']);
 });
 
 test('a stale running Studio fails the assertion and still restores/rebuilds both sources', async () => {

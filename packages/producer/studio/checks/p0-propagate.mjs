@@ -4,6 +4,7 @@ import { createRequire } from 'node:module';
 import { mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createServer } from 'node:net';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { studioOrigin } from './studio-origin.mjs';
 
@@ -179,7 +180,8 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = studi
     if (signal?.aborted) throw new Error('Propagation was cancelled before source mutation.');
     const before = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
     const mutation = createMutations(...originals, before.radius, adapter.primaryOccurrence, adapter.cssVariable);
-    const evidenceDir = artifactDir ?? join(root, 'tmp/p0b-resume/propagation', `${Date.now()}-${process.pid}`);
+    // Source backups default to the OS temp directory: a write under the checkout dirties the tree.
+    const evidenceDir = artifactDir ?? join(tmpdir(), 'p0-propagate', `${Date.now()}-${process.pid}`);
     await mkdir(evidenceDir, { recursive: true });
     await writeFile(join(evidenceDir, 'primary.original.txt'), originals[0]);
     await writeFile(join(evidenceDir, 'button.original.txt'), originals[1]);
