@@ -83,10 +83,6 @@ type TreeItem = { readonly id: string; readonly label: string; readonly expandLa
 function collection(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   const c = componentSpecimenCollections;
   switch (key) {
-    case "./components#Breadcrumb": {
-      const Item = part(Component, "Item");
-      return Item && { props: {}, children: c[key].items.map(item => <Item key={item.id} href={"href" in item ? item.href : undefined}>{item.label}</Item>) };
-    }
     case "./components#GridList": {
       const Item = part(Component, "Item");
       return Item && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>) };

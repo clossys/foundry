@@ -30,5 +30,5 @@ export const testPlacements: readonly Placement[] = [
 /** Host words for SystemCanvas tests. */
 export const testLabels = {
   label: "System canvas", hint: "Scroll or pinch to zoom; drag to pan.", breadcrumb: "Canvas position",
-  layers: { tokens: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames" },
+  layers: { themes: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames" },
 } as const;

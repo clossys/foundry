@@ -40,20 +40,6 @@
       ]
     },
     {
-      "missing": [
-        "collapsed"
-      ],
-      "notes": [
-        "No collapsed trail API is exported.",
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.breadcrumbs",
-      "status": "subset",
-      "supported": [
-        "current"
-      ]
-    },
-    {
       "missing": [],
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."

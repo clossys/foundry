@@ -34,7 +34,7 @@ import { Lockup } from "../blocks/Lockup.js";
 import { Avatar } from "../components/Avatar.js";
 import { Badge } from "../components/Badge.js";
 import { Banner } from "../components/Banner.js";
-import { Breadcrumb } from "../components/Breadcrumb.js";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/preview-runtime/components/breadcrumbs/breadcrumb.js";
 import { Button } from "../components/Button.js";
 import { Card } from "../components/Card.js";
 import { Checkbox } from "../components/Checkbox.js";
@@ -460,8 +460,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       "Breadcrumb",
       render(
         <Breadcrumb>
-          <Breadcrumb.Item href="/">Home</Breadcrumb.Item>
-          <Breadcrumb.Item>Current</Breadcrumb.Item>
+          <BreadcrumbList>
+            <BreadcrumbItem id="home"><BreadcrumbLink href="/">Home</BreadcrumbLink></BreadcrumbItem>
+            <BreadcrumbItem id="current"><BreadcrumbPage>Current</BreadcrumbPage></BreadcrumbItem>
+          </BreadcrumbList>
         </Breadcrumb>,
       ),
     ]);

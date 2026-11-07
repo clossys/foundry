@@ -181,7 +181,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Link"),
     disposition: "keep",
   }),
-  onMain("Breadcrumb", ["src/components/Breadcrumb.tsx"], {
+  onMain("Breadcrumb", ["src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx"], {
     id: "act.breadcrumb",
     label: "Breadcrumb",
     racBase: rac("Breadcrumbs", "Breadcrumb", "Link"),

@@ -80,8 +80,9 @@ export type { BadgeProps, BadgeVariant } from "./Badge.js";
 export { Card } from "./Card.js";
 export type { CardProps, CardVariant, CardGround } from "./Card.js";
 
-export { Breadcrumb } from "./Breadcrumb.js";
-export type { BreadcrumbProps, BreadcrumbItemProps } from "./Breadcrumb.js";
+export { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbPage, BreadcrumbEllipsis } from "./preview-runtime/components/breadcrumbs/breadcrumb.js";
+export type BreadcrumbProps = import("react").ComponentProps<typeof import("./preview-runtime/components/breadcrumbs/breadcrumb.js").Breadcrumb>;
+export type BreadcrumbItemProps = import("react").ComponentProps<typeof import("./preview-runtime/components/breadcrumbs/breadcrumb.js").BreadcrumbItem>;
 
 export { Link } from "./Link.client.js";
 export { buttonLinkClassName, DISCLOSURE_COLLAPSE_SLACK, disclosureToggleClassName, iconButtonClassName, iconButtonLinkClassName, INVERSE_CONTROL_INK } from "./button-classes.js";

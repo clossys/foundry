@@ -446,10 +446,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Breadcrumb",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Breadcrumb.Item carries href and content; the last item is current/inert. The surrounding navigation name defaults to Breadcrumb. There is no separate active-index knob.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. BreadcrumbList holds BreadcrumbItem steps; a BreadcrumbLink carries href and content and the last item is current/inert. The surrounding navigation name defaults to breadcrumb. There is no separate active-index knob.",
   "options": [],
   "constraints": []
-}, "src/components/Breadcrumb.tsx"),
+}, "src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx"),
   "act.menu": entry(
 {
   "purpose": "Offer a compact collection of actions from one trigger.",
@@ -2902,21 +2902,21 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "act.breadcrumb": {
     "exportName": "Breadcrumb",
-    "source": "src/components/Breadcrumb.tsx",
+    "source": "src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx",
     "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--color-ink-link",
+          "property": "--color-ink-muted",
           "kind": "transitive",
           "source": "styles/theme-keys.css",
-          "evidence": "--color-ink-link:",
+          "evidence": "--color-ink-muted:",
           "via": [
             {
-              "source": "src/components/Breadcrumb.tsx",
-              "evidence": "text-ink-link"
+              "source": "src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx",
+              "evidence": "text-(--color-ink-muted)"
             }
           ]
         }

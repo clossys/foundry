@@ -8,7 +8,6 @@ import type { CanvasRect, CanvasSize, Viewport } from "../../blocks/canvas/model
 import type { LayerId, Placement } from "../../catalog-core/index.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Badge } from "../../components/Badge.js";
-import { Breadcrumb } from "../../components/Breadcrumb.js";
 import { Button } from "../../components/Button.js";
 import { cx } from "../../components/internal/cx.js";
 import { Skeleton } from "../../components/Skeleton.js";
@@ -17,6 +16,13 @@ import type { Candidate } from "../model.js";
 import { CompactPreview } from "../previews.js";
 import type { StudioLabels } from "../types.js";
 import { readStudioMessage, studioCopyNeed, type StudioCopyBinding } from "../copy-binding.js";
+import { componentLeaf } from "../../runtime/component-leaf.js";
+
+type StockBreadcrumb = typeof import("../../components/preview-runtime/components/breadcrumbs/breadcrumb.js");
+const Breadcrumb = componentLeaf<StockBreadcrumb["Breadcrumb"]>("components.breadcrumbs");
+const BreadcrumbList = componentLeaf<StockBreadcrumb["BreadcrumbList"]>("components.breadcrumbs", "BreadcrumbList");
+const BreadcrumbItem = componentLeaf<StockBreadcrumb["BreadcrumbItem"]>("components.breadcrumbs", "BreadcrumbItem");
+const BreadcrumbPage = componentLeaf<StockBreadcrumb["BreadcrumbPage"]>("components.breadcrumbs", "BreadcrumbPage");
 import { StudioDataValue } from "../data-value.js";
 import { viewRect, visibleBoards } from "../visible-rows.js";
 import { trailAt } from "./breadcrumb.js";
@@ -267,7 +273,7 @@ export function SystemCanvas({ copy, data, labels, edges = [], selectedLeaf, onS
       </CanvasSurface>
     </CanvasLod>
     {crumbs.length ? <div className="pointer-events-none absolute start-md top-md rounded-control bg-surface-base px-sm py-xs" data-system-breadcrumb="">
-      <Breadcrumb aria-label={labels.breadcrumb}>{crumbs.map((crumb, index) => <Breadcrumb.Item key={index}>{crumb}</Breadcrumb.Item>)}</Breadcrumb>
+      <Breadcrumb aria-label={labels.breadcrumb}><BreadcrumbList>{crumbs.map((crumb, index) => <BreadcrumbItem key={index} id={String(index)}>{index === crumbs.length - 1 ? <BreadcrumbPage>{crumb}</BreadcrumbPage> : crumb}</BreadcrumbItem>)}</BreadcrumbList></Breadcrumb>
     </div> : null}
   </div>;
 }

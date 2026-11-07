@@ -59,7 +59,6 @@ export const componentSpecimenText: Readonly<Record<string, string>> = {
 
 /** Labelled items for collection components, drawn with the component's own item parts. */
 export const componentSpecimenCollections = {
-  "./components#Breadcrumb": d.breadcrumbs,
   "./components#GridList": d.list,
   "./components#Toolbar": d.toolbar,
   "./components#Tree": d.tree,
