@@ -98,8 +98,8 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       return Button && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Button key={item.id}>{item.label}</Button>) };
     }
     case "./components#NavigationTree": {
-      const Item = part(exports, "NavigationTreeItem"), Content = part(exports, "NavigationTreeItemContent"), Link = part(exports, "Link");
-      return Item && Content && Link && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={item.href}><Content><Link>{item.label}</Link></Content></Item>) };
+      const Item = part(exports, "NavigationTreeItem"), Content = part(exports, "NavigationTreeItemContent"), Link = part(exports, "LinkButton");
+      return Item && Content && Link && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={item.href}><Content><Link variant="link">{item.label}</Link></Content></Item>) };
     }
     case "./components#RadioGroup": {
       const Radio = part(Component, "Radio");

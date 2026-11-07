@@ -257,9 +257,7 @@ describe("shared component guidance", () => {
     for (const variant of ["plate", "outline"]) expect(effective(find("group.card", "ground"), { variant })).toBe(true);
     expect(effective(find("inform.meter", "direction"), {})).toBe(false);
     expect(effective(find("inform.meter", "direction"), { limit: 0 })).toBe(true);
-    expect(effective(find("act.link", "variant"), {})).toBe(true);
-    expect(effective(find("act.link", "variant"), { buttonVariant: "quiet" })).toBe(false);
-    expect(effective(find("act.link", "variant"), { buttonSize: "sm" })).toBe(false);
+    expect(rules("act.link")).toEqual([]);
     expect(find("inform.meter", "previous")).toMatchObject({ kind: "paired", props: ["previous", "previousText"], enforcement: "runtime" });
     expect(find("inform.chip", "onRemove")).toMatchObject({ kind: "requires", props: ["onRemove", "removeLabel"], enforcement: "type" });
     expect(find("depict.icon", "decorative")).toMatchObject({ kind: "exclusive", props: ["decorative", "label"], enforcement: "type" });
@@ -283,7 +281,7 @@ describe("shared component guidance", () => {
 
   it("keeps literal pipe evidence in ordinary Markdown code spans", () => {
     const text = readFileSync(join(root, "skill/components-guide.md"), "utf8");
-    const evidence = guidance()["act.link"].media.web.implementation.constraints[0].evidence.evidence;
+    const evidence = guidance()["depict.area-chart"].media.web.implementation.constraints[0].evidence.evidence;
     expect(evidence).toContain(" || ");
     expect(text).toContain("`" + evidence + "`");
     expect(text).not.toContain("&#124;");
@@ -359,9 +357,9 @@ const comparisonGolden: Record<string, {
     retainedCells: 4,
   },
   "act.link": {
-    columns: {"option": "variant", "values": ["default", "muted", "standalone"]},
-    maxCells: 3,
-    retainedCells: 3,
+    columns: {"option": "variant", "values": ["default", "outline", "secondary", "ghost", "destructive", "link"]},
+    maxCells: 6,
+    retainedCells: 6,
   },
   "act.menu": {
     columns: {"option": "triggerAction", "values": ["press", "longPress", "contextMenu"]},
@@ -599,11 +597,11 @@ describe("finite component comparisons", () => {
     }
   });
 
-  it("retains Card's raised default and Link's three text appearances", () => {
+  it("retains Card's raised default and LinkButton's six stock appearances", () => {
     const card = comparisons()!["group.card"];
     expect(comparisonCells(card)).toEqual([{ variant: "raised" }, { variant: "plate" }, { variant: "outline" }]);
     expect(comparisonCells(comparisons()!["act.link"])).toEqual([
-      { variant: "default" }, { variant: "muted" }, { variant: "standalone" },
+      { variant: "default" }, { variant: "outline" }, { variant: "secondary" }, { variant: "ghost" }, { variant: "destructive" }, { variant: "link" },
     ]);
     expect(comparisonViolations(card.constraints, { variant: "raised", ground: "base" })).toEqual([]);
   });
@@ -611,7 +609,7 @@ describe("finite component comparisons", () => {
   it("never excludes cells for applicability, derivation or data guidance", () => {
     const fixtures = [
       ["act.button", { variant: "primary", ground: "base", trailingIcon: null }],
-      ["act.link", { variant: "muted", buttonVariant: "primary" }],
+      ["act.link", { variant: "link" }],
       ["group.card", { variant: "raised", ground: "base" }],
       ["inform.meter", { direction: "higher-is-better" }],
       ["inform.banner", { variant: "danger" }],

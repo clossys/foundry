@@ -4,7 +4,7 @@
 
 Import the shared records from `@clossys/designer/components`. Import navigation and selection from `@clossys/designer/catalog`. The components barrel remains client-only; charts render through the existing `@clossys/designer/charts` entry point. No new package subpath is introduced.
 
-46 legacy guidance records appear once below. Navigation follows 6 authoritative IA groups and 27 families with canonical leaf IDs. Unregistered legacy guidance appears separately, outside navigation.
+46 legacy guidance records appear once below. Navigation follows 6 authoritative IA groups and 28 families with canonical leaf IDs. Unregistered legacy guidance appears separately, outside navigation.
 
 Stable purpose, content and anatomy are separate from medium-specific implementation. Web cites current source; email, print and video are unassessed. Import safety, server rendering and visual resemblance establish no other medium’s support.
 
@@ -20,7 +20,7 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 | --- | --- | ---: |
 | Actions | Buttons, Menus, Toolbars | 7 |
 | Inputs | Form, Text, Choice, Tags, Number, Date, Color, Files | 18 |
-| Display | Data, Labels, Media, Assets, Core charts, Compact charts, Analytic charts, Content | 22 |
+| Display | Data, Labels, Media, Assets, Core charts, Compact charts, Analytic charts, Content, Specimens | 30 |
 | Feedback | Messages, Indicators, Progress | 7 |
 | Navigation | Links, Panels, Trees | 5 |
 | Containment | Structure, Overlays | 9 |
@@ -432,17 +432,17 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/FileTrigger.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/file-trigger/file-trigger.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `FileTrigger`. Source: `src/components/FileTrigger.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. No local visual surface or camera default is supplied. FileList handling, preview, upload progress and trigger disabled state belong to consumer composition.
+Web implementation: `@clossys/designer/components` → `FileTrigger`. Source: `src/components/preview-runtime/components/file-trigger/file-trigger.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. No local visual surface or camera default is supplied. FileList handling, preview, upload progress and trigger disabled state belong to consumer composition.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `allowsMultiple` — Multiple files | `false`: Choose one file.<br>`true`: Allow multiple file choices. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/FileTrigger.tsx`: `<AriaFileTrigger {...rest}>` |
-| `defaultCamera` — Capture camera | `user`: User-facing camera hint.<br>`environment`: Environment-facing camera hint. | omitted: Omitted by default; the package supplies no selected value. | Omission is supported. A consumer preview choosing a camera does not create a package default. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/FileTrigger.tsx`: `<AriaFileTrigger {...rest}>` |
+| `allowsMultiple` — Multiple files | `false`: Choose one file.<br>`true`: Allow multiple file choices. | peer: No local initializer; any inherited default belongs to the installed peer. | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/file-trigger/file-trigger.tsx`: `<AriaFileTrigger {...props} ref={ref}>` |
+| `defaultCamera` — Capture camera | `user`: User-facing camera hint.<br>`environment`: Environment-facing camera hint. | omitted: Omitted by default; the package supplies no selected value. | Omission is supported. A consumer preview choosing a camera does not create a package default. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/file-trigger/file-trigger.tsx`: `<AriaFileTrigger {...props} ref={ref}>` |
 
 
 Token dependency coverage: none-owned. FileTrigger has no styled visual surface of its own; an authored trigger can consume tokens independently.
@@ -939,6 +939,8 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 #### Content
 
+#### Specimens
+
 ### Feedback
 
 #### Messages
@@ -1112,20 +1114,20 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Breadcrumb.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Breadcrumb`. Source: `src/components/Breadcrumb.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Breadcrumb.Item carries href and content; the last item is current/inert. The surrounding navigation name defaults to Breadcrumb. There is no separate active-index knob.
+Web implementation: `@clossys/designer/components` → `Breadcrumb`. Source: `src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. BreadcrumbList holds BreadcrumbItem steps; a BreadcrumbLink carries href and content and the last item is current/inert. The surrounding navigation name defaults to breadcrumb. There is no separate active-index knob.
 
 No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-ink-link` (transitive): `styles/theme-keys.css`: `--color-ink-link:`; consumed via `src/components/Breadcrumb.tsx`: `text-ink-link`.
+- `--color-ink-muted` (transitive): `styles/theme-keys.css`: `--color-ink-muted:`; consumed via `src/components/preview-runtime/components/breadcrumbs/breadcrumb.tsx`: `text-(--color-ink-muted)`.
 
-##### `act.link` — Link
+##### `act.link` — LinkButton
 
 - Purpose: Take the reader to a related destination.
 - Use when: Following a URL is the actual outcome, including a prominent call to action.
@@ -1139,23 +1141,20 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Link.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/button/button.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Link`. Source: `src/components/Link.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `LinkButton`. Source: `src/components/preview-runtime/components/button/button.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock LinkButton keeps link semantics for every variant; variant link is the inline text treatment.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `variant` — Text-link treatment | `default`: Inline prose link.<br>`muted`: Lower-emphasis secondary link.<br>`standalone`: Standalone linked unit. | `default` (`src/components/Link.tsx`: `variant = "default"`) | Ignored when either buttonVariant or buttonSize enables button appearance. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Link.tsx`: `VARIANT_CLASSES[variant]` |
-| `buttonVariant` — Button appearance preset | `primary`: Accent-filled primary navigation.<br>`secondary`: Bordered lower-emphasis navigation.<br>`ghost`: Unfilled navigation that gains hover emphasis.<br>`danger`: Destructive navigation with danger treatment.<br>`outline`: Unfilled secondary call to navigation with an inset edge.<br>`tonal`: Neutral tonal tertiary navigation responsive to its ground.<br>`quiet`: Unboxed quiet navigation classes without an automatic trailing glyph. | conditional: The default depends on another option; see the implementation notes. | Either button prop enables this appearance; omitted partner defaults to primary or md. Quiet shares classes, not Button’s auto trailing icon. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Link.tsx`: `buttonClassName(buttonVariant ?? "primary", buttonSize ?? "md")` |
-| `buttonSize` — Button appearance size | `sm`: Small navigation control.<br>`md`: Medium navigation control.<br>`lg`: Large navigation control. | conditional: The default depends on another option; see the implementation notes. | Either button prop enables button appearance; buttonSize defaults to md only in that mode. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Link.tsx`: `buttonClassName(buttonVariant ?? "primary", buttonSize ?? "md")` |
+| `variant` — Link appearance | `default`: Accent-filled primary navigation.<br>`outline`: Unfilled navigation with an inset edge.<br>`secondary`: Tonal lower-emphasis navigation.<br>`ghost`: Unfilled navigation that gains hover emphasis.<br>`destructive`: Destructive navigation with danger treatment.<br>`link`: Inline text link with hover underline. | `default` (`src/components/preview-runtime/components/button/button.tsx`: `variant = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/button/button.tsx`: `buttonVariants({ variant, size, className })` |
 
-- effective-when (ignored; `variant`, `buttonVariant`, `buttonSize`): Either button prop selects button appearance and ignores text variant; no auto trailing glyph is added. Evidence: `src/components/Link.tsx`: `buttonVariant !== undefined || buttonSize !== undefined`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Link.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-accent-text` (transitive): `styles/tokens.css`: `--color-accent-text:`; consumed via `src/components/preview-runtime/components/button/button.tsx`: `text-(--color-accent-text)`.
 
 #### Panels
 
@@ -1273,21 +1272,20 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Separator.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/separator/separator.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Separator`. Source: `src/components/Separator.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Separator`. Source: `src/components/preview-runtime/components/separator/separator.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `orientation` — Boundary orientation | `horizontal`: Horizontal content boundary.<br>`vertical`: Vertical content boundary. | `horizontal` (`src/components/Separator.tsx`: `orientation = "horizontal"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Separator.tsx`: `orientation={orientation}` |
-| `decorative` — Boundary semantics | `false`: Semantic content boundary.<br>`true`: Purely visual boundary hidden from assistive technology. | `false` (`src/components/Separator.tsx`: `decorative = false`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Separator.tsx`: `decorative           ?` |
+| `orientation` — Boundary orientation | `horizontal`: Horizontal content boundary.<br>`vertical`: Vertical content boundary. | `horizontal` (`src/components/preview-runtime/components/separator/separator.tsx`: `orientation = "horizontal"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/separator/separator.tsx`: `orientation={orientation}` |
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-line-base` (transitive): `styles/theme-keys.css`: `--color-line-base:`; consumed via `src/components/Separator.tsx`: `bg-line-base`.
+- `--color-line-base` (transitive): `styles/theme-keys.css`: `--color-line-base:`; consumed via `src/components/preview-runtime/components/separator/separator.tsx`: `bg-(--color-line-base)`.
 
 ##### `reveal.disclosure` — Disclosure
 
