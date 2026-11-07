@@ -709,18 +709,6 @@
     {
       "missing": [],
       "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.separator",
-      "status": "candidate",
-      "supported": [
-        "orientation.horizontal",
-        "orientation.vertical"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
         "No package implementation is available."
       ],
       "slot": "components.sheet",

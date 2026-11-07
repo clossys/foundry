@@ -1849,30 +1849,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
         "state": "implemented",
         "reason": "The component consumes or forwards this existing prop in the cited source."
       }
-    },
-    {
-      "prop": "decorative",
-      "label": "Boundary semantics",
-      "purpose": "Boundary semantics selects the existing Separator decorative behavior.",
-      "values": [
-        {
-          "value": false,
-          "purpose": "Semantic content boundary."
-        },
-        {
-          "value": true,
-          "purpose": "Purely visual boundary hidden from assistive technology."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
     }
   ],
   "constraints": []
-}, "src/components/Separator.tsx"),
+}, "src/components/preview-runtime/components/separator/separator.tsx"),
   "depict.logomark": entry({
     purpose: "Represent a brand with one decorative glyph and an optional shared plate.",
     useWhen: "A surrounding identity link or adjacent text already names the brand.",
@@ -4080,7 +4060,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "group.separator": {
     "exportName": "Separator",
-    "source": "src/components/Separator.tsx",
+    "source": "src/components/preview-runtime/components/separator/separator.tsx",
     "options": [
       {
         "prop": "orientation",
@@ -4091,29 +4071,12 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         "default": {
           "kind": "value",
           "value": "horizontal",
-          "source": "src/components/Separator.tsx",
+          "source": "src/components/preview-runtime/components/separator/separator.tsx",
           "evidence": "orientation = \"horizontal\""
         },
         "forwarding": {
-          "source": "src/components/Separator.tsx",
+          "source": "src/components/preview-runtime/components/separator/separator.tsx",
           "evidence": "orientation={orientation}"
-        }
-      },
-      {
-        "prop": "decorative",
-        "values": [
-          false,
-          true
-        ],
-        "default": {
-          "kind": "value",
-          "value": false,
-          "source": "src/components/Separator.tsx",
-          "evidence": "decorative = false"
-        },
-        "forwarding": {
-          "source": "src/components/Separator.tsx",
-          "evidence": "decorative\n          ?"
         }
       }
     ],
@@ -4128,8 +4091,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "evidence": "--color-line-base:",
           "via": [
             {
-              "source": "src/components/Separator.tsx",
-              "evidence": "bg-line-base"
+              "source": "src/components/preview-runtime/components/separator/separator.tsx",
+              "evidence": "bg-(--color-line-base)"
             }
           ]
         }
@@ -4853,7 +4816,7 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "inform.skeleton": comparison("inform.skeleton", "shape"),
   "group.card": comparison("group.card", "variant"),
   "group.table": comparison("group.table", "selectionMode"),
-  "group.separator": comparison("group.separator", "orientation", "decorative"),
+  "group.separator": comparison("group.separator", "orientation"),
   "depict.avatar": comparison("depict.avatar", "size"),
   "depict.icon": comparison("depict.icon", "size"),
   "depict.logomark": comparison("depict.logomark", "plate", "size"),

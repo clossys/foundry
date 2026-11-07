@@ -41,7 +41,7 @@ import { Checkbox } from "../components/Checkbox.js";
 import { Chip } from "../components/Chip.js";
 import { Link } from "../components/Link.js";
 import { Meter } from "../components/Meter.js";
-import { Separator } from "../components/Separator.js";
+import { Separator } from "../components/preview-runtime/components/separator/separator.js";
 import { ResizeHandle } from "../components/ResizeHandle.js";
 import { Panel } from "../blocks/Panel.js";
 import { Drawer } from "../blocks/Drawer.js";

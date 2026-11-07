@@ -168,8 +168,8 @@ export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
 export { ProgressBar } from "./ProgressBar.js";
 export type { ProgressBarProps } from "./ProgressBar.js";
 
-export { Separator } from "./Separator.js";
-export type { SeparatorProps } from "./Separator.js";
+export { Separator } from "./preview-runtime/components/separator/separator.js";
+export type SeparatorProps = import("react").ComponentProps<typeof import("./preview-runtime/components/separator/separator.js").Separator>;
 
 export { Chip } from "./Chip.js";
 export type { ChipProps } from "./Chip.js";
