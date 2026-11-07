@@ -36,7 +36,7 @@ function project(marker: "directory" | "file" = "directory") {
   else put(repo, ".git", "gitdir: fixture-worktree-metadata\n");
   const nested = join(repo, "apps/admin"); mkdirSync(nested, { recursive: true });
   put(repo, "surfaces/page.md", "We serve 4,200 customers.\n");
-  return { repo, nested, root: join(repo, "clossys/agents/director"), old: join(repo, "clossys/director") };
+  return { repo, nested, root: join(repo, "clossys/agents/director"), out: join(repo, "clossys/evidence/director"), old: join(repo, "clossys/director") };
 }
 function run(cwd: string, ...args: string[]) {
   const child = spawnSync(process.execPath, [cli, "director", "check", ...args, "--json"], { cwd, encoding: "utf8" });
@@ -46,7 +46,7 @@ function run(cwd: string, ...args: string[]) {
 afterEach(() => projects.splice(0).forEach(root => rmSync(root, { recursive: true, force: true })));
 
 it.each(["directory", "file"] as const)("compiled clossys director check shares repository-root reads and writes from nested cwd with .git %s", marker => {
-  const { repo, nested, root, old } = project(marker); strategy(root);
+  const { repo, nested, root, out, old } = project(marker); strategy(root);
   expect(run(repo, "ground", "surfaces").code).toBe(0);
   expect(run(nested, "ground", "../../surfaces").code).toBe(0);
   const status = run(nested, "status");
@@ -56,17 +56,19 @@ it.each(["directory", "file"] as const)("compiled clossys director check shares 
   for (const retired of [["propose", "focus.segment.core"], ["activate", "focus.segment.core@1"]]) expect(run(nested, ...retired).code).toBe(2);
   expect(existsSync(join(root, "focus.segment.core"))).toBe(false);
   expect(run(nested, "brief", "fixture.brief", "--write").code).toBe(0);
-  expect(JSON.parse(readFileSync(join(root, "briefs/index.json"), "utf8")).briefs[0].contract).toBe("fixture.brief");
+  expect(JSON.parse(readFileSync(join(out, "briefs/index.json"), "utf8")).briefs[0].contract).toBe("fixture.brief");
   expect(run(nested, "index").code).toBe(0);
-  expect(JSON.parse(readFileSync(join(root, "citations.json"), "utf8")).entries).toContainEqual(expect.objectContaining({ ref: { cell: id, version: 1 } }));
+  expect(JSON.parse(readFileSync(join(out, "reports/citations.json"), "utf8")).entries).toContainEqual(expect.objectContaining({ ref: { cell: id, version: 1 } }));
   expect(run(nested, "wont-claim", "../../surfaces").code).toBe(0);
-  expect(existsSync(join(root, "reports/wont-claim.json"))).toBe(true);
+  expect(existsSync(join(out, "reports/wont-claim.json"))).toBe(true);
   expect([0, 1]).toContain(run(nested, "check").code);
-  expect(existsSync(join(root, "reports/cell-quality.json"))).toBe(true);
+  expect(existsSync(join(out, "reports/cell-quality.json"))).toBe(true);
   // Review plans the tripped watch and persists nothing.
   expect(run(nested, "review", "--today", "2026-10-29").code).toBe(1);
   expect(existsSync(join(root, "requests"))).toBe(false);
   expect(existsSync(join(root, "tree.json"))).toBe(false);
+  // Generated output lives under <consumer>/evidence/director, never in the agent tree.
+  for (const generated of ["briefs", "reports", "citations.json"]) expect(existsSync(join(root, generated))).toBe(false);
   expect(existsSync(old)).toBe(false);
   expect(existsSync(join(nested, "clossys"))).toBe(false);
 }, 30_000);
