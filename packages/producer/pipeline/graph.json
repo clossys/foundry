@@ -2135,6 +2135,8 @@
         "routes-published",
         "route-parity",
         "copy-source",
+        "copy-rendered",
+        "rendered-provenance",
         "no-hidden-fallbacks",
         "studio"
       ],
@@ -5196,6 +5198,10 @@
           "value": true
         },
         {
+          "flag": "--bind",
+          "value": false
+        },
+        {
           "flag": "--brief",
           "value": false
         },
@@ -5260,6 +5266,10 @@
         {
           "flag": "--assembly",
           "value": true
+        },
+        {
+          "flag": "--bind",
+          "value": false
         },
         {
           "flag": "--build",
