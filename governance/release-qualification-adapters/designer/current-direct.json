@@ -21,7 +21,8 @@
     "designer-library": 0,
     "designer-section-check": 0,
     "designer-overflow-check": 0,
-    "designer-provenance-check": 0
+    "designer-provenance-check": 0,
+    "designer-ref-verbatim": 2
   },
   "fixtures": ["clean/View.tsx", "violated/View.ts", "indeterminate/View.tsx", "brand/satisfied.css", "brand/violated.css", "brand/indeterminate.css", "contrast/satisfied.css", "contrast/violated.css", "contrast/indeterminate.css", "type-record/satisfied.json", "type-record/violated.json", "type-record/indeterminate.json", "fold/satisfied-desktop.json", "fold/satisfied-narrow.json", "fold/violated.json", "fold/indeterminate.json", "surface/satisfied/app/page.tsx", "surface/satisfied/app/globals.css", "surface/violated/app/page.tsx", "surface/indeterminate/overview.md"],
   "cases": [
