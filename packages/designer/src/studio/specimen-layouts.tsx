@@ -12,17 +12,14 @@ const Content = componentLeaf<typeof import("../components/SemanticContent.js").
 const List = componentLeaf<GridListLeaf>("components.grid-list");
 const ListItem = componentLeaf<typeof import("../components/GridList.js").GridList.Item>("components.grid-list", "Item");
 const GridListItem = componentLeaf<ComponentSpecimenComponent>("components.grid-list", "GridListItem");
-const Table = componentLeaf<typeof import("../components/Table.js").Table>("components.table");
-const NativeTableHeader = componentLeaf<typeof import("../components/Table.js").Table.Header>("components.table", "Header");
-const NativeTableColumn = componentLeaf<typeof import("../components/Table.js").Table.Column>("components.table", "Column");
-const NativeTableBody = componentLeaf<typeof import("../components/Table.js").Table.Body>("components.table", "Body");
-const NativeTableRow = componentLeaf<typeof import("../components/Table.js").Table.Row>("components.table", "Row");
-const NativeTableCell = componentLeaf<typeof import("../components/Table.js").Table.Cell>("components.table", "Cell");
-const TableHeader = componentLeaf<ComponentSpecimenComponent>("components.table", "TableHeader");
-const TableHead = componentLeaf<ComponentSpecimenComponent>("components.table", "TableHead");
-const TableBody = componentLeaf<ComponentSpecimenComponent>("components.table", "TableBody");
-const TableRow = componentLeaf<ComponentSpecimenComponent>("components.table", "TableRow");
-const TableCell = componentLeaf<ComponentSpecimenComponent>("components.table", "TableCell");
+type StockTable = typeof import("../components/preview-runtime/components/table/table.js");
+const Table = componentLeaf<StockTable["Table"]>("components.table");
+const TableHeader = componentLeaf<StockTable["TableHeader"]>("components.table", "TableHeader");
+const TableHead = componentLeaf<StockTable["TableHead"]>("components.table", "TableHead");
+const TableBody = componentLeaf<StockTable["TableBody"]>("components.table", "TableBody");
+const TableRow = componentLeaf<StockTable["TableRow"]>("components.table", "TableRow");
+const TableCell = componentLeaf<StockTable["TableCell"]>("components.table", "TableCell");
+const TABLE_PARTS = ["TableHeader", "TableHead", "TableBody", "TableRow", "TableCell"] as const;
 const Accordion = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").Accordion>("components.disclosure");
 const AccordionItem = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionItem>("components.disclosure", "AccordionItem");
 const AccordionTrigger = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionTrigger>("components.disclosure", "AccordionTrigger");
@@ -146,7 +143,7 @@ export function specimenLayoutNeeds({ id, layout, items, axes = [], context, exp
     if (axes.length >= 2) disclosureRequired = items.some(item => axes.filter((_, index) => index !== 1).some(axis => item.coordinates?.[axis.id] !== items[0]!.coordinates?.[axis.id]));
     const table = specimenComponent(context, "components.table");
     if ("reason" in table) needs.push(table);
-    else if (![["Header", "TableHeader"], ["Column", "TableHead"], ["Body", "TableBody"], ["Row", "TableRow"], ["Cell", "TableCell"]].every(([foundry, shadcn]) => specimenPart(table, foundry!, shadcn!))) add("The selected table has no complete native header, row and cell API.");
+    else if (!TABLE_PARTS.every(name => component(table.exports[name]))) add("The selected table has no complete native header, row and cell API.");
   }
   if (!expanded && disclosureRequired) {
     const disclosure = specimenComponent(context, "components.disclosure");
@@ -213,7 +210,7 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
     const initial = new Set(first); rest = items.filter(item => !initial.has(item));
     const table = specimenComponent(context, "components.table");
     if ("reason" in table) return fail(table.reason);
-    if (![["Header", "TableHeader"], ["Column", "TableHead"], ["Body", "TableBody"], ["Row", "TableRow"], ["Cell", "TableCell"]].every(([foundry, shadcn]) => specimenPart(table, foundry!, shadcn!))) return fail("The selected table has no complete native header, row and cell API.");
+    if (!TABLE_PARTS.every(name => component(table.exports[name]))) return fail("The selected table has no complete native header, row and cell API.");
     draw = entries => {
       const groups = [...new Set(entries.map(groupKey))];
       return groups.map(group => {
@@ -223,12 +220,9 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
         const lookup = (rowId: string, colId: string) => grouped.find(item => item.coordinates![row.id] === rowId && item.coordinates![column.id] === colId);
         const body = mobile ? <List data-ds-leaf="components.grid-list" aria-label={groupLabel || label} layout="list" selectionMode="none">{rows.map(value => listItem(value, <>
           <Content as="h4">{row.label}: {value.label}</Content>{column.values.map(col => { const item = lookup(value.id, col.id); return item ? <Content as="section" key={col.id} className="flex min-w-0 flex-col gap-sm"><Content as="h5">{column.label}: {col.label}</Content>{itemNode(item)}</Content> : null; })}
-        </>))}</List> : table.source === "shadcn@aria" ? <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
-          <TableHeader><TableRow><TableHead scope="col">{row.label}</TableHead>{column.values.map(col => <TableHead key={col.id} scope="col">{col.label}</TableHead>)}</TableRow></TableHeader>
-          <TableBody>{rows.map(value => <TableRow key={value.id}><TableHead scope="row">{value.label}</TableHead>{column.values.map(col => { const item = lookup(value.id, col.id); return <TableCell key={col.id}>{item ? itemNode(item) : null}</TableCell>; })}</TableRow>)}</TableBody>
-        </Table> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
-          <NativeTableHeader><NativeTableColumn isRowHeader>{row.label}</NativeTableColumn>{column.values.map(col => <NativeTableColumn key={col.id}>{col.label}</NativeTableColumn>)}</NativeTableHeader>
-          <NativeTableBody>{rows.map(value => <NativeTableRow id={value.id} key={value.id}><NativeTableCell textValue={value.label}>{value.label}</NativeTableCell>{column.values.map(col => { const item = lookup(value.id, col.id); return <NativeTableCell key={col.id} textValue={item?.label ?? col.label}>{item ? itemNode(item) : null}</NativeTableCell>; })}</NativeTableRow>)}</NativeTableBody>
+        </>))}</List> : <Table data-ds-leaf="components.table" aria-label={groupLabel || label}>
+          <TableHeader><TableHead isRowHeader>{row.label}</TableHead>{column.values.map(col => <TableHead key={col.id}>{col.label}</TableHead>)}</TableHeader>
+          <TableBody>{rows.map(value => <TableRow id={value.id} key={value.id}><TableCell textValue={value.label}>{value.label}</TableCell>{column.values.map(col => { const item = lookup(value.id, col.id); return <TableCell key={col.id} textValue={item?.label ?? col.label}>{item ? itemNode(item) : null}</TableCell>; })}</TableRow>)}</TableBody>
         </Table>;
         return <Content as="section" key={group} data-specimen-matrix-group={group} data-specimen-matrix-mobile={mobile ? "true" : "false"} className="min-w-0 max-w-full">{groupLabel ? <Content as="h3">{groupLabel}</Content> : null}{body}</Content>;
       });

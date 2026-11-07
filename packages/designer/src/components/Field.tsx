@@ -15,7 +15,7 @@ import { cx } from "./internal/cx.js";
  * their own component tree is the one that actually needs them (which isn't
  * always the outermost one — a composite control might need `id` on an
  * inner `<input>` two levels down). The same shape `Dialog`'s function-form
- * `children` and `Table.Body`'s `renderEmptyState` already use in this
+ * `children` and `TableBody`'s `renderEmptyState` already use in this
  * package.
  */
 export interface FieldRenderProps {

@@ -39,12 +39,6 @@ const REPLACEMENTS: readonly Replacement[] = [
   { name: "popover-arrow-rotate", declarations: [/\[data-placement="bottom"\] \*\)\s*\{\s*rotate: 180deg;/, /\[data-placement="left"\] \*\)\s*\{\s*rotate: -90deg;/, /\[data-placement="right"\] \*\)\s*\{\s*rotate: 90deg;/], source: "src/components/Popover.tsx", retired: ["group-data-[placement=bottom]:rotate-180", "group-data-[placement=left]:-rotate-90", "group-data-[placement=right]:rotate-90"], shipsIn: "compiled" },
 ];
 
-/** Plain Tailwind variants that replace bracketed ones: the bare `data-*` form is scanner-visible. */
-const VARIANT_REPLACEMENTS = [
-  { name: "group-data-hovered:bg-primary", source: "src/components/Table.tsx", retired: "group-data-[hovered]:bg-primary" },
-  { name: "group-data-resizing:bg-primary", source: "src/components/Table.tsx", retired: "group-data-[resizing]:bg-primary" },
-  { name: "group-data-focus-visible:bg-primary", source: "src/components/Table.tsx", retired: "group-data-[focus-visible]:bg-primary" },
-];
 
 function utilityBlock(themeKeys: string, name: string): string {
   const start = themeKeys.indexOf(`@utility ${name} {`);
@@ -75,14 +69,6 @@ describe("named replacements for scanner-invisible arbitrary classes", () => {
     expect(text).toMatch(new RegExp(`["\\s]${name}["\\s]`));
     for (const token of retired) expect(text).not.toContain(token);
     expect(shipsIn).toBe("compiled");
-    expect(candidates.has(name), `${name} scanned`).toBe(true);
-    expect(compiled).toContain(`.${escapeClass(name)}`);
-  });
-
-  it.each(VARIANT_REPLACEMENTS)("$name replaces $retired and ships in compiled.css", ({ name, source, retired }) => {
-    const text = read(source);
-    expect(text).toContain(name);
-    expect(text).not.toContain(retired);
     expect(candidates.has(name), `${name} scanned`).toBe(true);
     expect(compiled).toContain(`.${escapeClass(name)}`);
   });

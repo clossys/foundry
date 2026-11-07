@@ -854,7 +854,7 @@
     {
       "missing": [],
       "notes": [
-        "Column resizing: wrap in Table.ResizableContainer and set allowsResizing (with defaultWidth/minWidth/maxWidth) on Table.Column.",
+        "The stock Table holds TableHeader/TableHead and TableBody/TableRow/TableCell parts; selection columns render Checkbox slot=\"selection\" inside a TableHead or TableCell.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.table",

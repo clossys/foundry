@@ -13,6 +13,7 @@ import {
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
+import { useTableTextEntry } from "./internal/table-text-entry.js";
 
 export interface DateFieldProps<T extends DateValue = DateValue>
   extends Omit<AriaDateFieldProps<T>, "children"> {
@@ -81,10 +82,12 @@ export const DateField = forwardRef(function DateField<T extends DateValue = Dat
   className,
   inputClassName,
   pickerTrigger,
+  onFocusChange,
   ...rest
 }: DateFieldProps<T>, ref: Ref<HTMLDivElement>) {
+  const onTableTextEntry = useTableTextEntry(onFocusChange);
   return (
-    <AriaDateField {...rest} ref={ref} className={state => cx("flex flex-col gap-xs", typeof className === "function" ? className(state) : className)}>
+    <AriaDateField {...rest} ref={ref} onFocusChange={onTableTextEntry} className={state => cx("flex flex-col gap-xs", typeof className === "function" ? className(state) : className)}>
       {state => {
         // Height comes from the md control-size token (control-h-md), as TextField, NumberField and TagGroup read it; the
         // segments are positioned so they stay above that utility's tap-target layer and keep receiving pointer input.

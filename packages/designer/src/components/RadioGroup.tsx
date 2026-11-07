@@ -102,9 +102,7 @@ const DOT_BASE =
 
 /**
  * One option within a `RadioGroup`. Named `RadioGroup.Radio`, matching
- * react-aria-components' own naming one level down — the same convention
- * `Table.Row`/`Table.Cell` already follow in this package (see `Table.tsx`'s
- * own doc comment).
+ * react-aria-components' own naming one level down.
  */
 function RadioGroupRadio({ children, description, className, ...rest }: RadioGroupRadioProps) {
   return (

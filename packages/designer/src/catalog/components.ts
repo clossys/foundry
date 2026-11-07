@@ -448,7 +448,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "map-to-rac",
     notes: ["Renders a native meter element today and imports nothing from react-aria-components."],
   }),
-  onMain("Table", ["src/components/Table.tsx"], {
+  onMain("Table", ["src/components/preview-runtime/components/table/table.tsx"], {
     id: "group.table",
     label: "Table",
     racBase: rac("Table", "TableHeader", "TableBody", "Column", "Row", "Cell"),

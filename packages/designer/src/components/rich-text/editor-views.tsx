@@ -2,7 +2,7 @@ import { MarkViewContent, NodeViewContent, NodeViewWrapper, useReactNodeView, ty
 import { Badge } from "../Badge.js";
 import { LinkButton as Link } from "../preview-runtime/components/button/button.js";
 import { SemanticContent } from "../SemanticContent.js";
-import { Table } from "../Table.js";
+import { TableDocument } from "../Table.document.js";
 import { RichTextCode, RichTextCallout, safeHref } from "./document.js";
 
 export function RichTextLinkView({ mark }: MarkViewProps) {
@@ -25,5 +25,5 @@ export function RichTextTableView() {
   const { nodeViewContentRef } = useReactNodeView();
   // The engine owns a tbody contentDOM; the Designer table owns its semantic
   // table shell. No nested tbody or interactive collection replaces its rows.
-  return <NodeViewWrapper><Table.Document ref={nodeViewContentRef} data-node-view-content="" data-slot="rich-text-table" aria-label="Document table" /></NodeViewWrapper>;
+  return <NodeViewWrapper><TableDocument ref={nodeViewContentRef} data-node-view-content="" data-slot="rich-text-table" aria-label="Document table" /></NodeViewWrapper>;
 }
