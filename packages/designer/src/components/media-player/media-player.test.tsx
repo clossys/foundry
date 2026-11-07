@@ -13,7 +13,7 @@ const errorPassage = writer.records.find((record: { id: string }) => record.id =
 const passage: MediaPlayerPassage = {
   title: text("st.7mpayr0001"), play: text("st.7mpayr0002"), pause: text("st.7mpayr0003"),
   mute: text("st.7mpayr0004"), seek: text("st.7mpayr0005"), captions: text("st.7mpayr0006"),
-  error: { title: text(errorPassage.fields.title.id), description: text(errorPassage.fields.description.id) },
+  error: { title: text(errorPassage.fields["header.heading"].id), description: text(errorPassage.fields["header.description"].id) },
 };
 const video: MediaPlayerProps["video"] = { src: "/example.mp4", mediaType: "video/mp4", width: 1280, height: 720, reducedMotion: "poster" };
 const poster: MediaPlayerProps["poster"] = { kind: "illustration", src: "/example-poster.webp", width: 1280, height: 720, alt: "Example Co. overview still" };
