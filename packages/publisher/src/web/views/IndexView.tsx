@@ -2,7 +2,7 @@
 
 import type { HTMLAttributes } from "react";
 import { LinkButton as Link } from "@clossys/designer/components";
-import { mergeUiClasses } from "@clossys/designer/components/server";
+import { cn } from "@clossys/designer/components/server";
 import { DataTable, EmptyState, Pagination, Panel, RecordLedger, Toolbar } from "@clossys/designer/blocks";
 import type { DataTableColumn, DataTableProps, EmptyStateProps, PaginationProps, PanelProps, RecordLedgerProps, ToolbarProps } from "@clossys/designer/blocks";
 import { isSanctionedHref } from "../../internal/href.js";
@@ -96,7 +96,7 @@ export function IndexView<Row>({ rows, columns, rowKey, collectionLabel, empty, 
     },
   });
   return (
-    <div {...rest} className={mergeUiClasses("flex min-w-0 flex-col gap-xl", className)}>
+    <div {...rest} className={cn("flex min-w-0 flex-col gap-xl", className)}>
       {toolbar === undefined ? null : <Toolbar {...toolbar} />}
       {rows.length === 0 && !table?.isLoading ? <EmptyState {...empty} /> : collection === undefined ? (
         <DataTable {...table} aria-label={collectionLabel} rows={rows} columns={linkedColumns} rowKey={rowKey} />

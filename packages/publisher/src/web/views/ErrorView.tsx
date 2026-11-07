@@ -1,5 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { mergeUiClasses } from "@clossys/designer/components/server";
+import { cn } from "@clossys/designer/components/server";
 import { EmptyState } from "@clossys/designer/blocks/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
 
@@ -100,7 +100,7 @@ export function ErrorViewBody({
   return (
     <div
       {...rest}
-      className={mergeUiClasses(
+      className={cn(
         "flex min-h-dvh flex-col items-center justify-center gap-lg p-2xl text-center",
         className,
       )}

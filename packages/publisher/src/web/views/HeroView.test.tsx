@@ -466,7 +466,7 @@ describe("HeroView source guard", () => {
   });
 
   it("uses no arbitrary-value class", () => {
-    expect(source).not.toMatch(/(?:class(?:Name)?\s*=|mergeUiClasses\(|cx\()[^\n]*\[[^\]\n]+\]/);
+    expect(source).not.toMatch(/(?:class(?:Name)?\s*=|cn\(|cx\()[^\n]*\[[^\]\n]+\]/);
     for (const [, literal] of source.matchAll(/"([^"\n]*)"/g)) {
       if (/\b[a-z-]+-\[/.test(literal ?? "")) throw new Error(`arbitrary-value class in ${literal}`);
     }

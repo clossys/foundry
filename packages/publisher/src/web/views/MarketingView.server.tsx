@@ -1,5 +1,5 @@
 import { siteHeaderPresentation } from "../internal/viewChromeGround.js";
-import { mergeUiClasses } from "@clossys/designer/components/server";
+import { cn } from "@clossys/designer/components/server";
 import { Faq, FeatureGrid, Hero } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import type { MarketingViewProps } from "./MarketingView.js";
@@ -43,7 +43,7 @@ export function MarketingView({
 }: MarketingViewProps) {
   const headerPresentation = siteHeaderPresentation(ground);
   return (
-    <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
+    <div {...rest} className={cn("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader surface={headerPresentation.surface} tone={headerPresentation.tone} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main className="flex flex-col gap-2xl py-2xl">
         <Hero

@@ -489,7 +489,7 @@ export function createSectionedView(blocks: SectionedViewBlockSet) {
           eyebrow={callToAction.eyebrow}
           heading={callToAction.heading}
           description={callToAction.description}
-          actions={renderRoleActions(callToAction.actions, ground, true, "lg")}
+          actions={renderRoleActions(callToAction.actions, true, "lg")}
           headingLevel={2}
           ground={ground}
         />,
@@ -554,11 +554,11 @@ const TEXT_LINK_ACTION_STYLE = { minHeight: "var(--ui-layout-tap-target, 44px)" 
  * ground-aware ladder. Explicit emphasis is rendered as authored.
  */
 function renderContentActions(section: ResolvedSectionedViewContentSection): ReactNode {
-  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), section.ground, "md"));
+  return section.actions?.map((action, index) => renderAction(action, resolveActionEmphasis(section, index), "md"));
 }
 
 function renderActions(actions: readonly ResolvedSectionedViewAction[] | undefined, ground: SectionedViewGround, look: SectionedViewHeroActions, centered = false, size: "md" | "lg"): ReactNode {
-  if (look === "button") return renderRoleActions(actions, ground, centered, size);
+  if (look === "button") return renderRoleActions(actions, centered, size);
   return actions?.map((action) => <a key={action.id} href={action.href} className={`inline-flex items-center text-body font-body underline ${ACTION_INK[ground]}`} style={TEXT_LINK_ACTION_STYLE}>{action.label}</a>);
 }
 

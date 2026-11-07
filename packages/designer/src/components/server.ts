@@ -89,6 +89,12 @@ export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
 export { StatusMark } from "./StatusMark.js";
 export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";
 
+/** The stock shadcn `cn`: clsx, then the default tailwind-merge when that optional peer is present. Pure string logic — no React import at all. */
+export { cn } from "./_parts/utils/index.js";
+
+/** The stock shadcn@aria LinkButton behind its deferred boundary: loaded directly where React has createContext, lazily under react-server. */
+export { LinkButton } from "../runtime/stock-link-button.js";
+
 /** Merge token-aware Tailwind class names with last-argument precedence. Pure string logic — no React import at all. */
 export { cx as mergeUiClasses } from "./internal/cx.js";
 

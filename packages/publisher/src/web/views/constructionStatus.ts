@@ -57,7 +57,7 @@ export function constructionStatusProps(input: ConstructionStatusInput, resolveC
       id: "construction-action",
       label: resolveCopy(input.action.label, "action.label", resolveCopyId),
       href: href(input.action.href, "action.href"),
-    }, "primary", "base", "md");
+    }, "primary", "md");
   }
   let routes: StatusViewProps["routes"];
   if (input.destinations !== undefined) {
