@@ -265,10 +265,12 @@ describe("R2 foundations exact shared-token contract", () => {
     const dockProperties = ["--ui-layout-dock-min-block", "--ui-layout-dock-default-block", "--ui-layout-dock-max-block"];
     const controlLineProperties = ["--color-line-control"];
     const inspectorProperties = ["--ui-layout-inspector-w", "--ui-layout-inspector-min-w", "--ui-layout-inspector-max-w"];
-    const expected = [...legacyProperties, ...Object.keys(expectedNew), ...actionProperties, ...dockProperties, ...controlLineProperties, ...inspectorProperties].sort();
+    // R2F-11: 8d2122293 emits CSS variables for the selected type members (display and heading 2xl).
+    const selectedTypeProperties = ["--text-display-2xl", "--text-heading-2xl"];
+    const expected = [...legacyProperties, ...Object.keys(expectedNew), ...actionProperties, ...dockProperties, ...controlLineProperties, ...inspectorProperties, ...selectedTypeProperties].sort();
     expect(Object.keys(TOKENS).sort()).toEqual(expected);
     expect([...root.keys()].sort()).toEqual(expected);
-    expect(expected).toHaveLength(230);
+    expect(expected).toHaveLength(232);
     expect(TOKEN_FAMILIES).toHaveLength(32);
   });
 

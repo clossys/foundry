@@ -52,7 +52,11 @@ async function load(files: readonly ChartSourceFile[], entry: string): Promise<R
 describe("shadcn charts source (charts-core on Recharts)", () => {
   it("pins Recharts exactly at the version the shadcn commit uses", () => {
     const manifest = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../package.json"), "utf8"));
-    expect(manifest.dependencies.recharts).toBe(SHADCN_CHARTS_PIN.engine.version);
+    // G20 (866750fe4): Recharts is an optional peer, exact-pinned, with the dev install on the same spec.
+    expect(manifest.dependencies?.recharts).toBeUndefined();
+    expect(manifest.peerDependencies.recharts).toBe(SHADCN_CHARTS_PIN.engine.version);
+    expect(manifest.peerDependenciesMeta.recharts).toEqual({ optional: true });
+    expect(manifest.devDependencies.recharts).toBe(SHADCN_CHARTS_PIN.engine.version);
     expect(requireFromHere("recharts/package.json").version).toBe("3.8.0");
   });
 

@@ -36,8 +36,8 @@ describe("document frame catalog registration", () => {
       statePorts: [],
       rendering: "server",
       breakpoints: [],
-      layers: [],
-      allowedReads: { themes: [], assets: [] },
+      // R2F-11: the themes-layer rename (736153e72) dropped the empty `layers` field and records the measured primary read.
+      allowedReads: { themes: ["themes.primary"], assets: [] },
       composes: ["frames.site-shell", "frames.app-shell", "frames.auth-shell"],
     });
   });

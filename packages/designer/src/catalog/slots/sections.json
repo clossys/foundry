@@ -4855,7 +4855,9 @@
         "components.link",
         "components.item",
         "components.tabs",
-        "components.semantic-content",
+        "components.semantic-content"
+      ],
+      "composes": [
         "sections.media"
       ],
       "parts": [
