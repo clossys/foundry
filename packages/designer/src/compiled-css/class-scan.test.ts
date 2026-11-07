@@ -78,6 +78,59 @@ describe("scanClassCandidates", () => {
     expect(result.candidates).toContain("text-body");
   });
 
+  it("keeps Tailwind v4 shapes: negatives, variable shorthands, arbitrary properties and variants", () => {
+    writeFileSync(
+      join(dir, "Menu.tsx"),
+      `const A = "-mx-(--spacing-lg) -translate-x-1/2 h-(--ui-control-h-md,calc(var(--spacing)*8))";\n` +
+        `const B = "[--cell-size:var(--ui-control-h-sm)] [&>svg]:size-(--spacing-lg) *:data-[slot=kbd]:z-10";\n` +
+        `const C = "[&_svg:not([class*='size-'])]:size-(--spacing-md) border-(length:--ui-border-hairline,1px) !p-0";\n`,
+    );
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(
+      expect.arrayContaining([
+        "-mx-(--spacing-lg)",
+        "-translate-x-1/2",
+        "h-(--ui-control-h-md,calc(var(--spacing)*8))",
+        "[--cell-size:var(--ui-control-h-sm)]",
+        "[&>svg]:size-(--spacing-lg)",
+        "*:data-[slot=kbd]:z-10",
+        "[&_svg:not([class*='size-'])]:size-(--spacing-md)",
+        "border-(length:--ui-border-hairline,1px)",
+        "!p-0",
+      ]),
+    );
+  });
+
+  it("rejects unbalanced or top-level-punctuated v4 lookalikes", () => {
+    writeFileSync(join(dir, "Prose.tsx"), `const s = "see (the -docs, [here or h-(--x isn't a,b";\n`);
+    const result = scanClassCandidates(dir);
+    for (const token of ["(the", "-docs,", "[here", "h-(--x", "isn't", "a,b"]) expect(result.candidates).not.toContain(token);
+  });
+
+  it("reads a template literal with interpolations without swallowing later literals", () => {
+    writeFileSync(
+      join(dir, "Panel.tsx"),
+      "const inset = `${start}px`;\n" +
+        "const cls = `flex ${open ? \"w-40\" : \"w-0\"} gap-sm`;\n" +
+        `const later = "bottom-sm start-sm";\n` +
+        "const tail = `rounded-control`;\n",
+    );
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(expect.arrayContaining(["flex", "w-40", "w-0", "gap-sm", "bottom-sm", "start-sm", "rounded-control"]));
+  });
+
+  it("reads single-line single-quoted literals, never pairing apostrophes across lines", () => {
+    writeFileSync(
+      join(dir, "Stage.tsx"),
+      `// the frame's own stage\n` +
+        `const STAGE = 'flex flex-col frame-stage-flow';\n` +
+        `const real = "text-body";\n` +
+        `// a component's caller\n`,
+    );
+    const result = scanClassCandidates(dir);
+    expect(result.candidates).toEqual(expect.arrayContaining(["flex-col", "frame-stage-flow", "text-body"]));
+  });
+
   it("ignores non-matching extensions", () => {
     writeFileSync(join(dir, "data.json"), `{"class": "bg-primary"}`);
     const result = scanClassCandidates(dir);

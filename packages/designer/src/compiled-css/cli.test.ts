@@ -14,6 +14,7 @@ beforeEach(() => {
   cpSync(join(packageRoot, "src", "blocks"), join(dir, "src", "blocks"), { recursive: true });
   cpSync(join(packageRoot, "src", "shell"), join(dir, "src", "shell"), { recursive: true });
   cpSync(join(packageRoot, "src", "frames"), join(dir, "src", "frames"), { recursive: true });
+  cpSync(join(packageRoot, "src", "runtime"), join(dir, "src", "runtime"), { recursive: true });
   cpSync(join(packageRoot, "src", "studio"), join(dir, "src", "studio"), { recursive: true });
   cpSync(join(packageRoot, "src", "charts"), join(dir, "src", "charts"), { recursive: true });
   cpSync(join(packageRoot, "src", "theme"), join(dir, "src", "theme"), { recursive: true });
@@ -55,7 +56,7 @@ describe("main --write", () => {
   });
 
   it("returns 2 when every compiled-css source dir is empty", async () => {
-    for (const sub of ["components", "blocks", "shell", "frames", "studio"] as const) {
+    for (const sub of ["components", "blocks", "shell", "frames", "runtime", "studio"] as const) {
       rmSync(join(dir, "src", sub), { recursive: true, force: true });
       mkdirSync(join(dir, "src", sub), { recursive: true });
       writeFileSync(join(dir, "src", sub, "data.json"), "{}");
