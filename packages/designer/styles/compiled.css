@@ -2639,10 +2639,6 @@
   .rounded-surface {
     border-radius: var(--radius-surface, var(--radius-default, 3px));
   }
-  .rounded-s {
-    border-start-start-radius: 0.25rem;
-    border-end-start-radius: 0.25rem;
-  }
   .rounded-s-\(--cell-radius\) {
     border-start-start-radius: var(--cell-radius);
     border-end-start-radius: var(--cell-radius);
