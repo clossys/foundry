@@ -101,22 +101,25 @@ function importKeysNormally(distRelPath: string): string[] {
 describe("server-safe entry points resolve under react-server (test 1)", () => {
   const serverEntries: Array<{ distRelPath: string; expectedExports: string[] }> = [
     { distRelPath: "tokens/server.js", expectedExports: ["readBrandCss", "assertTailwindMergeVersion"] },
-    { distRelPath: "components/server.js", expectedExports: ["Link", "NativeAction", "SemanticContent", "Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "iconButtonClassName", "iconButtonLinkClassName", "mergeUiClasses"] },
+    { distRelPath: "components/server.js", expectedExports: ["NativeAction", "SemanticContent", "Logomark", "Avatar", "Badge", "Banner", "Card", "Field", "Icon", "Meter", "Skeleton", "Spinner", "StatusMark", "buttonLinkClassName", "DISCLOSURE_COLLAPSE_SLACK", "disclosureToggleClassName", "iconButtonClassName", "iconButtonLinkClassName", "INVERSE_CONTROL_INK", "mergeUiClasses"] },
     {
       distRelPath: "blocks/server.js",
       expectedExports: [
         "Lockup",
         "AnatomyCallouts",
         "ArticleBody",
+        "CallToAction",
         "ContentSection",
         "DetailView",
         "EmptyState",
+        "ErrorState",
         "Faq",
         "FeatureGrid",
         "FieldGroup",
         "Hero",
         "Item",
         "Items",
+        "LegalProse",
         "RecordLedger",
         "Scene",
         "layoutScene",
@@ -134,6 +137,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "Specimen",
         "SpecimenPanel",
         "Stat",
+        "StatGroup",
         "StatusList",
         "TableOfContents",
         "TaskList",
@@ -141,6 +145,7 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "Testimonial",
         "TestimonialSet",
         "LogoCloud",
+        "LogoHero",
         "PeopleGrid",
         "Tree",
         "UsageMeter",
@@ -245,9 +250,9 @@ describe("pure Item and Items compiled graphs", () => {
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.message).toMatch(/react|useContext|useState|createContext/i);
   }, 15_000);
-  it("calls native disclosure and published FeatureGrid under react-server", () => {
+  it("calls the selected disclosure with every answer reachable and published FeatureGrid under react-server", () => {
     const absolute = join(distDir, "blocks", "server.js");
-    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const rows=nativeNodes(m.Items({arrangement:"rows",reveal:"disclose",items})); if(rows.filter(n=>n.type==="details").length!==4 || rows.filter(n=>n.type==="summary").length!==4) throw new Error("native disclosure anatomy"); const canonical=nativeNodes(m.Items({arrangement:"columns",columns:3,items:items.slice(0,3)})); if(canonical.filter(n=>n.props["data-item"]!==undefined).length!==3 || canonical.filter(n=>n.type==="ul" && n.props["data-items"]!==undefined).length!==1) throw new Error("canonical Items catalog path missing"); const features=nativeNodes(m.FeatureGrid({heading:"Features",items:items.slice(0,3)})); if(features.filter(n=>n.type==="p" && /^Title /.test(n.props.children)).length!==3 || features.filter(n=>n.type==="h2" && n.props.children==="Features").length!==1) throw new Error("published FeatureGrid path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
+    const script = `import(${JSON.stringify(absolute)}).then(m => { const items = [0,1,2,3].map(i => ({ id: String(i), heading: "Title " + i, description: "Answer " + i })); function nativeNodes(node) { if(Array.isArray(node)) return node.flatMap(nativeNodes); if(!node || typeof node !== "object" || !node.props) return []; if(typeof node.type === "function") return nativeNodes(node.type(node.props)); return [node,...nativeNodes(node.props.children)]; } const parts=[]; function reach(node) { if(Array.isArray(node)) return node.map(reach).join(""); if(typeof node === "string") return node; if(!node || typeof node !== "object" || !node.props) return ""; if(typeof node.type === "function") return reach(node.type(node.props)); const text=reach(node.props.children); if(node.type && node.type.displayName) parts.push({ part: node.type.displayName, id: node.props.id, text }); return text; } reach(m.Items({arrangement:"rows",reveal:"disclose",items})); const disclosure=part=>parts.filter(p=>p.part==="components.disclosure."+part); if(JSON.stringify(disclosure("AccordionItem").map(p=>[p.id,p.text]))!==JSON.stringify(items.map(i=>[i.id,i.heading+i.description])) || JSON.stringify(disclosure("AccordionTrigger").map(p=>p.text))!==JSON.stringify(items.map(i=>i.heading)) || JSON.stringify(disclosure("AccordionContent").map(p=>p.text))!==JSON.stringify(items.map(i=>i.description))) throw new Error("selected disclosure must keep every question in its trigger and every answer in its panel"); const canonical=nativeNodes(m.Items({arrangement:"columns",columns:3,items:items.slice(0,3)})); if(canonical.filter(n=>n.props["data-item"]!==undefined).length!==3 || canonical.filter(n=>n.type==="ul" && n.props["data-items"]!==undefined).length!==1) throw new Error("canonical Items catalog path missing"); const tag=n=>typeof n.type==="string" ? n.type : n.type.displayName==="components.semantic-content" ? n.props.as : undefined; const features=nativeNodes(m.FeatureGrid({heading:"Features",items:items.slice(0,3)})); if(features.filter(n=>tag(n)==="p" && /^Title /.test(n.props.children)).length!==3 || features.filter(n=>tag(n)==="h2" && n.props.children==="Features").length!==1) throw new Error("published FeatureGrid path missing"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");
   }, 15_000);
 });
