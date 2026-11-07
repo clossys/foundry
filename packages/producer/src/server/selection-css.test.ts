@@ -177,8 +177,10 @@ describe("selected runtime CSS closure", () => {
     expect(css.includes("box-sizing: border-box")).toBe(true);
     expect(css.includes("--color-surface-base:")).toBe(true);
     expect(css.includes("components/selected/Selected.tsx")).toBe(false);
-    const { chromium } = createRequire(import.meta.url)("playwright");
-    const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH ?? "/usr/bin/chromium", headless: true, args: ["--no-sandbox"] });
+    // The repository's one browser launch: this machine's Chrome (Playwright's chrome channel, then
+    // CLOSSYS_CHROME), never a hard-coded Linux path and never a downloaded browser.
+    const { launchChrome } = createRequire(import.meta.url)("../../studio/checks/chrome-launch.cjs");
+    const browser = await launchChrome({ args: ["--no-sandbox"] });
     try {
       const page = await browser.newPage();
       await page.setContent('<html data-brand-bound=""><body><div id="selected" class="w-[137px] [&_span]:font-bold"><span>Selected</span></div></body></html>');
