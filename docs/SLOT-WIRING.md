@@ -1,10 +1,10 @@
 # Slot wiring lock
 
 The slot model (`clossys/agents/<agent>/<slot>/{slot.json, candidates/*, pin.json}`) has one
-reader and one writer, and a pin is the only wire from a slot to everything that renders it.
+reader and one writer, and a pin is the one wire from a slot to everything that renders it.
 
-- **One reader.** `packages/producer/src/records/slots.ts` is the only code that opens the slot
-  model; `packages/producer/src/records/slot-write.ts` is the only code that writes it. Publisher
+- **One reader.** `packages/producer/src/records/slots.ts` is the one module that opens the slot
+  model; `packages/producer/src/records/slot-write.ts` is the one module that writes it. Publisher
   (pinned publication), the CLI verbs, Studio and the specimen route import the reader.
 - **No legacy selection path.** The selection writer (`records/selection.ts`), its schema,
   validator, status rows and release snapshots are gone. Pins live only in `pin.json`.
