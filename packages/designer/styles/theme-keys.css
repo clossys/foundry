@@ -1391,7 +1391,6 @@
 @utility designer-rail-width { inline-size: var(--ui-layout-inspector-w); }
 /* A token specimen and its value text stay inside one token-bounded box at every zoom tier (VR2 studio-01). */
 @utility token-specimen-contain { max-inline-size: var(--ui-layout-sidebar-w); overflow: hidden; overflow-wrap: anywhere; }
-@utility calendar-cell-size { width: var(--ui-control-h-sm, 32px); height: var(--ui-control-h-sm, 32px); }
 @utility canvas-caption-zoom-floor { font-size: max(1em, calc(var(--text-caption) / var(--canvas-zoom, 1))); }
 @utility popover-arrow-rotate {
   &:is(:where(.group)[data-placement="bottom"] *) { rotate: 180deg; }

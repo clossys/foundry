@@ -3,7 +3,7 @@ import { Badge } from "../components/Badge.js";
 import { SearchField } from "../components/SearchField.js";
 import { StockSelect } from "./stock-select.js";
 import { Skeleton } from "../components/Skeleton.js";
-import { Switch } from "../components/Switch.js";
+import { StockSwitch } from "./stock-switch.js";
 import { Tabs } from "../components/Tabs.js";
 import { cx } from "../components/internal/cx.js";
 import { CatalogWorkspace } from "./CatalogWorkspace.js";
@@ -105,7 +105,7 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
         {(binding.filters ?? []).map(filter => <StockSelect key={filter.id} label={filter.label}
           options={[{ id: ANY_VALUE, label: labels.anyValue }, ...filter.options]} selectedKey={own(state.filters, filter.id) ?? ANY_VALUE}
           onSelectionChange={value => { if (value !== null) update({ filters: { ...state.filters, [filter.id]: String(value) } }); }} />)}
-        {tree.parkedCount ? <Switch isSelected={state.showParked} onChange={showParked => update({ showParked })}>{labels.showParked(tree.parkedCount)}</Switch> : null}
+        {tree.parkedCount ? <StockSwitch isSelected={state.showParked} onChange={showParked => update({ showParked })}>{labels.showParked(tree.parkedCount)}</StockSwitch> : null}
       </> : undefined} />
     <CatalogWorkspace items={tree.items} selectedId={entry ? entry.id : null}
       onSelect={id => { const next = { catalog: active.kind, entryId: id }; fromTree.current = selectionKey(next); settleTreeRequest(); select(next); }}

@@ -63,11 +63,14 @@
         "state.on": "./components#Switch.isSelected=true"
       },
       "props": [
-        "children",
+        "aria-label",
+        "aria-labelledby",
         "className",
+        "defaultSelected",
         "isDisabled",
         "isSelected",
-        "onChange"
+        "onChange",
+        "size"
       ],
       "rac": {
         "instance": "react-aria-components",

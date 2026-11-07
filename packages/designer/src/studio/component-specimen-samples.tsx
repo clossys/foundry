@@ -101,10 +101,6 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       const Item = part(exports, "NavigationTreeItem"), Content = part(exports, "NavigationTreeItemContent"), Link = part(exports, "LinkButton");
       return Item && Content && Link && { props: { "aria-label": c[key].label }, children: c[key].items.map(item => <Item key={item.id} id={item.id} textValue={item.label} href={item.href}><Content><Link variant="link">{item.label}</Link></Content></Item>) };
     }
-    case "./components#RadioGroup": {
-      const Radio = part(Component, "Radio");
-      return Radio && { props: { label: c[key].label, defaultValue: c[key].defaultValue }, children: c[key].items.map(item => <Radio key={item.id} value={item.id}>{item.label}</Radio>) };
-    }
     case "./components#Tabs": {
       const List = part(Component, "List"), Tab = part(Component, "Tab"), Panel = part(Component, "Panel");
       return List && Tab && Panel && { props: {}, children: [
@@ -361,6 +357,9 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
 
 const stockAnatomy: Readonly<Record<string, string>> = {
   "./components#Select": "components/select/select.tsx#Select",
+  "./components#Switch": "components/switch/switch.tsx#Switch",
+  "./components#RadioGroup": "components/radio-group/radio-group.tsx#RadioGroup",
+  "./components#Calendar": "components/calendar/calendar.tsx#Calendar",
 };
 
 /** Why sample data cannot draw this export (`./shell#Brandmark`), or undefined when it can. */
@@ -375,7 +374,7 @@ export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavail
  */
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
-  // The package Select is the stock shadcn@aria module, drawn with its own barrel-exported parts.
+  // The package Select, Switch, RadioGroup and Calendar are the stock shadcn@aria modules, drawn with their own barrel-exported parts.
   if (Object.hasOwn(stockAnatomy, key)) return sourceSample(stockAnatomy[key]!, exports);
   if (key === "./components#Table") return table(Component);
   // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to

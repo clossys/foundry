@@ -8,7 +8,9 @@
   "button": [
     "themes.spacing"
   ],
-  "calendar": [],
+  "calendar": [
+    "themes.spacing"
+  ],
   "card": [],
   "chart-area": [],
   "chart-bar": [],
@@ -46,7 +48,9 @@
   "number-field": [],
   "popover": [],
   "progress-bar": [],
-  "radio-group": [],
+  "radio-group": [
+    "themes.spacing"
+  ],
   "resize-handle": [],
   "search-field": [],
   "select": [
@@ -66,7 +70,9 @@
   "specimen-viewport": [],
   "spinner": [],
   "status-mark": [],
-  "switch": [],
+  "switch": [
+    "themes.spacing"
+  ],
   "table": [],
   "tabs": [],
   "tag-group": [],

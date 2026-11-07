@@ -61,8 +61,8 @@
         "version": "0.12.0"
       },
       "propMap": {
-        "selection.range": "./components#Calendar.selection=range",
-        "selection.single": "./components#Calendar.selection=single"
+        "selection.range": "./components#RangeCalendar",
+        "selection.single": "./components#Calendar"
       },
       "props": [
         "aria-label",
@@ -79,12 +79,11 @@
         "isReadOnly",
         "maxValue",
         "minValue",
+        "numberOfMonths",
         "onChange",
         "onFocusChange",
         "pageBehavior",
-        "selection",
-        "value",
-        "visibleDuration"
+        "value"
       ],
       "rac": {
         "instance": "react-aria-components",

@@ -66,6 +66,7 @@
     {
       "missing": [],
       "notes": [
+        "The stock shadcn@aria Calendar; a range selection is its RangeCalendar export.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.calendar",
@@ -562,6 +563,7 @@
     {
       "missing": [],
       "notes": [
+        "The stock shadcn@aria radio group over RadioGroupItem rows; it has no label part, so its name is aria-label or aria-labelledby.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.radio-group",
@@ -842,6 +844,7 @@
     {
       "missing": [],
       "notes": [
+        "The stock shadcn@aria switch draws its children inside the track, so its label is text beside it named by aria-labelledby (blocks StockSwitch).",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.switch",

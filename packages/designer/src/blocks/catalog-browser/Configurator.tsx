@@ -1,6 +1,6 @@
 import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { StockSelect } from "../stock-select.js";
-import { Switch } from "../../components/Switch.js";
+import { StockSwitch } from "../stock-switch.js";
 import { TextField } from "../../components/TextField.js";
 import type { CatalogBrowserConfig, CatalogBrowserControl } from "./types.js";
 
@@ -20,8 +20,8 @@ export function Configurator({ controls, config, onChange, noControls, resetLabe
           onSelectionChange={key => { if (key !== null) set(control.id, String(key)); }} />;
       }
       if (control.type === "toggle") {
-        return <Switch key={control.id} isSelected={typeof value === "boolean" ? value : control.defaultValue}
-          onChange={selected => set(control.id, selected)}>{control.label}</Switch>;
+        return <StockSwitch key={control.id} isSelected={typeof value === "boolean" ? value : control.defaultValue}
+          onChange={selected => set(control.id, selected)}>{control.label}</StockSwitch>;
       }
       return <TextField key={control.id} label={control.label}
         value={typeof value === "string" ? value : control.defaultValue} onChange={text => set(control.id, text)} />;
