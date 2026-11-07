@@ -99,7 +99,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "0af139694315cb42d87c19f0d95ab526ac67b61e0e864fec6e6c1a42c1565302"
+            "sha256": "c3e7b71215868155267dd0fa52784fa22746af1adbbf62b2e3b0ff9421fdb3a8"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
