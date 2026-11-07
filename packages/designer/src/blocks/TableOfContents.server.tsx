@@ -70,7 +70,7 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
               aria-current={isCurrent ? "location" : undefined}
               style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}
               className={cx(
-                "flex items-center border-s-2 pe-sm text-body-s",
+                "flex items-center border-s-2 pe-sm text-(length:--text-body-s)",
                 item.level === 4 ? "ps-2xl" : item.level === 3 ? "ps-xl" : "ps-md",
                 isCurrent
                   ? "border-primary font-medium text-ink-primary forced-colors:border-current"

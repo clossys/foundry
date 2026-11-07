@@ -76,7 +76,7 @@ const noopSubscribe = (): (() => void) => () => {};
 const noDecision = (): ConsentSnapshotView => NO_DECISION_VIEW;
 const inert = (): void => {};
 /** The card's inline policy link: body-small, primary ink, a muted underline at rest, never split across lines. */
-const CARD_POLICY_LINK_CLASS = "text-body-s text-ink-primary underline decoration-ink-muted hover:decoration-current whitespace-nowrap";
+const CARD_POLICY_LINK_CLASS = "text-(length:--text-body-s) text-ink-primary underline decoration-ink-muted hover:decoration-current whitespace-nowrap";
 
 function readGpcSignal(): boolean {
   try {

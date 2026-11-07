@@ -165,7 +165,9 @@ describe("TableOfContents", () => {
     render(view());
     for (const link of screen.getAllByRole("link")) {
       expect(link.style.minBlockSize).toBe("var(--ui-layout-tap-target, 44px)");
-      expect(link).toHaveClass("flex", "items-center", "border-s-2", "pe-sm", "text-body-s", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
+      expect(link).toHaveClass("flex", "items-center", "border-s-2", "pe-sm", "text-(length:--text-body-s)", "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-primary");
+      // The body-small size survives the stock LinkButton merge; its default size does not.
+      expect(link).not.toHaveClass("text-(length:--text-sm)");
     }
   });
 
