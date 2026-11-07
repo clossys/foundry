@@ -206,16 +206,12 @@
           "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
         },
         {
-          "path": "packages/designer/src/components/Dialog.tsx",
-          "sha256": "5c7fb1bf15e48b0061e6e603d2697fee58306b6d21685101677fe6a7d07f9de7"
-        },
-        {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
         },
         {
-          "path": "packages/designer/src/components/Link.styles.ts",
-          "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
+          "path": "packages/designer/src/components/internal/overlay-context.tsx",
+          "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
         },
         {
           "path": "packages/designer/src/frames/app-frame-layout.ts",
@@ -227,7 +223,7 @@
         },
         {
           "path": "packages/designer/src/frames/AppFrame.tsx",
-          "sha256": "6f6bad23f63db6fac564ed57a7443139a5d3d20c8104630bf8de6900b1b0a869"
+          "sha256": "335c0411ffc18afdcef79a84028dfcc74d5c27e5ff74e807263a9869192115d2"
         },
         {
           "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -824,9 +820,7 @@
     "consumption": {
       "scanStatus": "lower-bound",
       "scannedComposes": [
-        "components.button",
         "components.card",
-        "components.dialog",
         "components.icon",
         "components.semantic-content",
         "components.sheet"
@@ -834,9 +828,7 @@
       "scannedReads": {
         "assets": [],
         "components": [
-          "components.button",
           "components.card",
-          "components.dialog",
           "components.icon",
           "components.semantic-content",
           "components.sheet"
@@ -846,7 +838,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Drawer.tsx",
-          "sha256": "a7a0e3ba1e9bf1b4ef18e6abd2db0518a5d5df3fa09424cc6a91012cd7056d7a"
+          "sha256": "0eee44df38228807c0721632bcf46b4fc0209acce2267011a2a67de8a75651a6"
         },
         {
           "path": "packages/designer/src/blocks/Panel.tsx",
@@ -859,6 +851,10 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/components/internal/overlay-context.tsx",
+          "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
         },
         {
           "path": "packages/designer/src/icons/X.ts",
@@ -3138,7 +3134,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/Gallery.tsx",
-          "sha256": "875fdcf29bc576f4c686f3492fa642be3629ef9dd0c8a189bf57d51ea906d4c9"
+          "sha256": "2aff0225bca6bf297de35775aa14f02f2f93a685b99ef7a3a7b7a637bd0f1d08"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -3147,6 +3143,14 @@
         {
           "path": "packages/designer/src/components/internal/cx.ts",
           "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+        },
+        {
+          "path": "packages/designer/src/components/preview-runtime/components/_parts/utils/index.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "packages/designer/src/components/preview-runtime/components/dialog/dialog.tsx",
+          "sha256": "81b5ea741eb3c03f6af7c1056ec893fe67f5b6d56fb5ef602de466880547c893"
         }
       ],
       "unresolved": [

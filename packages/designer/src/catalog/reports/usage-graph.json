@@ -14618,25 +14618,7 @@
       ],
       "from": "frames.sheet",
       "kind": "composes",
-      "to": "components.button"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "frames.sheet",
-      "kind": "composes",
       "to": "components.card"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "frames.sheet",
-      "kind": "composes",
-      "to": "components.dialog"
     },
     {
       "evidence": [
@@ -21339,9 +21321,9 @@
     "pages": "absent",
     "runtime": "absent",
     "selection": "sha256:803e5937c0bf5a07e236f6642f7edfab147a6cb2b825d0a9fd95c8df5668b0b2",
-    "surfaces": "sha256:fb5d10f1a31125096d842b16263896b1d12331fe820aad649be5916763316a02"
+    "surfaces": "sha256:1abd3eeb79cff19d53cbf19e42afafbc706ddd2a274d2c00350f27261c402e64"
   },
-  "inputsHash": "sha256:4e309a9bd8bdcfad663a5ef8b1a45450ce6d60c4f7f8e9e960b206d9f606bb95",
+  "inputsHash": "sha256:9504689c91d34f5352aab00c465e4b799538ac148a52915227e7b29a0dcc9689",
   "nodes": [
     {
       "fill": {
@@ -23969,15 +23951,15 @@
   "scope": "Catalog default plan over package values; Foundry surfaces; no product routes or runtime capture. Freshness only, not a conformance clearance.",
   "summary": {
     "edges": {
-      "composes": 324,
+      "composes": 323,
       "hosts": 0,
       "reads": 1685,
       "renders": 0
     },
     "evidence": {
-      "declared": 1418,
+      "declared": 1417,
       "runtime": 0,
-      "scanned": 1387
+      "scanned": 1386
     },
     "nodes": {
       "assets": 49,
@@ -24203,16 +24185,12 @@
             "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
           },
           {
-            "path": "packages/designer/src/components/Dialog.tsx",
-            "sha256": "5c7fb1bf15e48b0061e6e603d2697fee58306b6d21685101677fe6a7d07f9de7"
-          },
-          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
-            "path": "packages/designer/src/components/Link.styles.ts",
-            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
+            "path": "packages/designer/src/components/internal/overlay-context.tsx",
+            "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
           },
           {
             "path": "packages/designer/src/frames/app-frame-layout.ts",
@@ -24224,7 +24202,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "6f6bad23f63db6fac564ed57a7443139a5d3d20c8104630bf8de6900b1b0a869"
+            "sha256": "335c0411ffc18afdcef79a84028dfcc74d5c27e5ff74e807263a9869192115d2"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",
@@ -24820,9 +24798,7 @@
         },
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.button",
           "components.card",
-          "components.dialog",
           "components.icon",
           "components.semantic-content",
           "components.sheet"
@@ -24830,9 +24806,7 @@
         "scannedReads": {
           "assets": [],
           "components": [
-            "components.button",
             "components.card",
-            "components.dialog",
             "components.icon",
             "components.semantic-content",
             "components.sheet"
@@ -24843,7 +24817,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Drawer.tsx",
-            "sha256": "bee8b2f5da66237d651ed627b7c2a948cab8be593fc9b740de2c615e805adf65"
+            "sha256": "0eee44df38228807c0721632bcf46b4fc0209acce2267011a2a67de8a75651a6"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
@@ -24856,6 +24830,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/overlay-context.tsx",
+            "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
           },
           {
             "path": "packages/designer/src/icons/X.ts",
@@ -27135,7 +27113,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Gallery.tsx",
-            "sha256": "63f3dabe0d6ef740580671baf2af3ba4103274a77218f268c6a15716f440e071"
+            "sha256": "2aff0225bca6bf297de35775aa14f02f2f93a685b99ef7a3a7b7a637bd0f1d08"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -27144,6 +27122,14 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/preview-runtime/components/_parts/utils/index.ts",
+            "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          },
+          {
+            "path": "packages/designer/src/components/preview-runtime/components/dialog/dialog.tsx",
+            "sha256": "81b5ea741eb3c03f6af7c1056ec893fe67f5b6d56fb5ef602de466880547c893"
           }
         ],
         "unresolved": [

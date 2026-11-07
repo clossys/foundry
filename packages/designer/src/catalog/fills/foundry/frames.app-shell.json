@@ -145,16 +145,12 @@
             "sha256": "107d94e582844858a2ca359eed79309e3b6f5f77dad5ecf360fb701d8934899f"
           },
           {
-            "path": "packages/designer/src/components/Dialog.tsx",
-            "sha256": "5c7fb1bf15e48b0061e6e603d2697fee58306b6d21685101677fe6a7d07f9de7"
-          },
-          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
-            "path": "packages/designer/src/components/Link.styles.ts",
-            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
+            "path": "packages/designer/src/components/internal/overlay-context.tsx",
+            "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
           },
           {
             "path": "packages/designer/src/frames/app-frame-layout.ts",
@@ -166,7 +162,7 @@
           },
           {
             "path": "packages/designer/src/frames/AppFrame.tsx",
-            "sha256": "6f6bad23f63db6fac564ed57a7443139a5d3d20c8104630bf8de6900b1b0a869"
+            "sha256": "335c0411ffc18afdcef79a84028dfcc74d5c27e5ff74e807263a9869192115d2"
           },
           {
             "path": "packages/designer/src/frames/AppFrameBrand.tsx",

@@ -1799,9 +1799,6 @@
   .max-h-64 {
     max-height: calc(var(--spacing, 0.25rem) * 64);
   }
-  .max-h-\[85vh\] {
-    max-height: 85vh;
-  }
   .max-h-\[calc\(var\(--spacing-6xl\)\*2\)\] {
     max-height: calc(var(--spacing-6xl) * 2);
   }
@@ -1810,9 +1807,6 @@
   }
   .max-h-\[min\(calc\(var\(--spacing-6xl\)\*2-var\(--spacing-2xl\)\)\,calc\(var\(--available-height\)-var\(--spacing-2xl\)\)\)\] {
     max-height: min(calc(var(--spacing-6xl) * 2 - var(--spacing-2xl)), calc(var(--available-height) - var(--spacing-2xl)));
-  }
-  .max-h-none {
-    max-height: none;
   }
   .min-h-\(--spacing-2xl\) {
     min-height: var(--spacing-2xl);
@@ -1923,9 +1917,6 @@
   .max-w-\[20rem\] {
     max-width: 20rem;
   }
-  .max-w-\[24rem\] {
-    max-width: 24rem;
-  }
   .max-w-\[28rem\] {
     max-width: 28rem;
   }
@@ -1943,9 +1934,6 @@
   }
   .max-w-full {
     max-width: 100%;
-  }
-  .max-w-none {
-    max-width: none;
   }
   .max-w-prose {
     max-width: 65ch;
@@ -2111,15 +2099,6 @@
   .flow-canvas-drawing:dir(rtl) {
     scale: -1 1;
   }
-  .popover-arrow-rotate:is(:where(.group)[data-placement="bottom"] *) {
-    rotate: 180deg;
-  }
-  .popover-arrow-rotate:is(:where(.group)[data-placement="left"] *) {
-    rotate: -90deg;
-  }
-  .popover-arrow-rotate:is(:where(.group)[data-placement="right"] *) {
-    rotate: 90deg;
-  }
   .rotate-45 {
     rotate: 45deg;
   }
@@ -2151,18 +2130,6 @@
   }
   .transform-none {
     transform: none;
-  }
-  .overlay-motion-fade[data-entering] {
-    animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
-  }
-  .overlay-motion-fade[data-exiting] {
-    animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both;
-  }
-  .overlay-motion-pop[data-entering] {
-    animation: overlay-pop var(--ui-duration-overlay, 120ms) var(--ease-enter, cubic-bezier(0, 0, .2, 1)) both;
-  }
-  .overlay-motion-pop[data-exiting] {
-    animation: overlay-fade var(--ui-duration-overlay, 120ms) var(--ease-exit, cubic-bezier(.4, 0, 1, 1)) reverse both;
   }
   .animate-none\! {
     animation: none !important;
@@ -3282,9 +3249,6 @@
   .fill-neutral-100 {
     fill: var(--color-neutral-100, oklch(0.9401 0 0));
   }
-  .fill-overlay-surface {
-    fill: var(--color-overlay-surface, oklch(1 0 0));
-  }
   .fill-primary {
     fill: var(--primary);
   }
@@ -3330,14 +3294,8 @@
   .stroke-line-base {
     stroke: var(--color-line-base, oklch(0.8761 0 0));
   }
-  .stroke-overlay-border {
-    stroke: var(--color-overlay-border, oklch(0.8761 0 0));
-  }
   .stroke-primary {
     stroke: var(--primary);
-  }
-  .stroke-1 {
-    stroke-width: 1;
   }
   .object-cover {
     object-fit: cover;
@@ -6941,6 +6899,9 @@
     }
     .sm\:max-w-\[24rem\] {
       max-width: 24rem;
+    }
+    .sm\:max-w-\[42rem\] {
+      max-width: 42rem;
     }
     .sm\:flex-row {
       flex-direction: row;
