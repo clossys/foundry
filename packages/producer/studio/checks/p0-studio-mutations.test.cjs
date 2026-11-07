@@ -1,13 +1,15 @@
 'use strict';
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
-const { test } = require('node:test');
+const { after, test } = require('node:test');
 const { reportError } = require('./p0-studio-check.cjs');
 const { assertMutation, runMutationProof, parseArgs } = require('./p0-studio-mutations.cjs');
 
-const evidenceRoot = path.resolve(__dirname, '../../../../tmp/p0b-resume/browser/unit');
-fs.mkdirSync(evidenceRoot, { recursive: true });
+// Evidence trees live under the OS temp directory (TMPDIR), never in the checkout, and are removed after the run.
+const evidenceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'p0-studio-unit-'));
+after(() => fs.rmSync(evidenceRoot, { recursive: true, force: true }));
 test('proof requires nonzero detection on every fixture route/theme/viewport', () => {
   const report = { status: 'FAIL', checks: Array.from({ length: 16 }, () => ({ findings: [{ rule: 'need' }] })) };
   assert.doesNotThrow(() => assertMutation({ exitCode: 1, report }, ['need']));

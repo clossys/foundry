@@ -1,11 +1,14 @@
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
 
-const artifacts = fileURLToPath(new URL('../../../../tmp/p0b-resume/propagation/', import.meta.url));
+// Fixture trees live under the OS temp directory (TMPDIR), never in the checkout, and are removed after the run.
+const artifacts = await mkdtemp(join(tmpdir(), 'p0-propagate-'));
+after(() => rm(artifacts, { recursive: true, force: true }));
 let sequence = 0;
 const originalCSS = ':root { --primary: oklch(0.42 0.09 243); }\n.dark { --primary: #ffffff; }\n';
 const originalButton = 'const buttonVariants = cva("inline-flex rounded-md", { default: "bg-primary text-primary-foreground" });\n';
