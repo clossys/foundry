@@ -98,6 +98,20 @@ export interface ClassScanResult {
  * own container rather than the viewport (Specimen panels use them).
  */
 const CANDIDATE_SHAPE_RE = /^@?[a-zA-Z][a-zA-Z0-9_:/.@-]*(\[[^\]\s()]*\])?$/;
+/**
+ * Tailwind v4 grammar used verbatim by the stock shadcn@aria sources this
+ * package ships (D1: one stock source per leaf): bracketed variants such as
+ * `aria-[orientation=vertical]:` or `[:is(hr)]:`, the `(--var)` value
+ * shorthand (`bg-(--color-line-base)`, `ring-(--color-ink-primary)/10`) and
+ * `var(...)` inside an arbitrary value (`h-[var(--spacing-xl)]`). A token is a
+ * candidate when it matches either shape, so nothing the original shape kept
+ * is lost. Commas stay disqualifying inside `(...)`, so a prose
+ * `var(--x, fallback)` read is still never emitted.
+ */
+const V4_VARIANT = String.raw`(?:@?[a-zA-Z*][a-zA-Z0-9_.@*-]*(?:\[[^\]\s]*\]|\([^)\s,]*\))?(?:/[a-zA-Z0-9_-]+)?|\[[^\]\s]*\]):`;
+const V4_UTILITY = String.raw`!?-?@?[a-zA-Z][a-zA-Z0-9_./@-]*(?:\[[^\]\s]*\]|\((?:[a-z-]+:)?--[a-zA-Z0-9_-]+\))?(?:/[a-zA-Z0-9._-]+)?!?`;
+const V4_PROPERTY = String.raw`\[--?[a-zA-Z][a-zA-Z0-9_-]*:[^\]\s]+\]`;
+const V4_CANDIDATE_SHAPE_RE = new RegExp(`^(?:${V4_VARIANT})*(?:${V4_UTILITY}|${V4_PROPERTY})$`);
 const MAX_CANDIDATE_LENGTH = 60;
 
 /**
@@ -149,7 +163,7 @@ function extractStringLiterals(content: string): string[] {
 function candidatesFromLiteral(literal: string, out: Set<string>): void {
   for (const token of literal.split(/\s+/)) {
     if (token.length === 0 || token.length > MAX_CANDIDATE_LENGTH) continue;
-    if (CANDIDATE_SHAPE_RE.test(token)) out.add(token);
+    if (CANDIDATE_SHAPE_RE.test(token) || V4_CANDIDATE_SHAPE_RE.test(token)) out.add(token);
   }
 }
 

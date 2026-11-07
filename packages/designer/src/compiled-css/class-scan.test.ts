@@ -58,6 +58,19 @@ describe("scanClassCandidates", () => {
     expect(result.candidates.some((c) => c.includes(","))).toBe(false);
   });
 
+  it("keeps the Tailwind v4 shapes stock shadcn@aria sources use, still refusing comma reads", () => {
+    writeFileSync(
+      join(dir, "separator.tsx"),
+      `const c = "bg-(--color-line-base) aria-[orientation=horizontal]:h-(--ui-border-hairline) [:is(hr)]:w-full ring-(--color-ink-primary)/10 h-[var(--spacing-xl)] text-(length:--text-sm) [--card-spacing:var(--spacing-lg)]";\n` +
+        `const s = "var(--ui-ring-focus, 0 0 0 2px)";\n`,
+    );
+    const result = scanClassCandidates(dir);
+    for (const token of ["bg-(--color-line-base)", "aria-[orientation=horizontal]:h-(--ui-border-hairline)", "[:is(hr)]:w-full", "ring-(--color-ink-primary)/10", "h-[var(--spacing-xl)]", "text-(length:--text-sm)", "[--card-spacing:var(--spacing-lg)]"]) {
+      expect(result.candidates).toContain(token);
+    }
+    expect(result.candidates.some((c) => c.includes(","))).toBe(false);
+  });
+
   it("skips test, spec, check, and declaration files", () => {
     writeFileSync(join(dir, "Widget.test.tsx"), `"bg-primary"`);
     writeFileSync(join(dir, "Widget.check.tsx"), `"bg-primary"`);
