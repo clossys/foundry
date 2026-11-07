@@ -12,7 +12,10 @@ function inspectStudioBody() {
   const violations = [];
   const framework = {};
   let checked = 0;
-  const attributesOnly = (element, allowed) => element.getAttributeNames().every(name => allowed.includes(name));
+  // An open dialog marks everything outside itself `inert`/`aria-hidden`; only then are those two names
+  // accepted on framework scaffolding, which must otherwise match exactly.
+  const modal = Boolean(document.querySelector('[role="dialog"], [role="alertdialog"]'));
+  const attributesOnly = (element, allowed) => element.getAttributeNames().every(name => allowed.includes(name) || (modal && (name === 'inert' || name === 'aria-hidden')));
   function announcer(host) {
     const root = host.shadowRoot;
     const node = root?.firstChild;
@@ -47,6 +50,12 @@ function inspectStudioBody() {
           const content = element.textContent.trim();
           if (/^(?:\(self\.__next_f=self\.__next_f\|\|\[\]\)|self\.__next_f)\.push\(/.test(content)) return 'next-flight';
           if (element.id === '_R_' && /^\(globalThis\["TURBOPACK"\]/.test(content)) return 'next-bootstrap';
+          // React's own streaming-SSR reveal runtime and its boundary instructions: the exact timing
+          // stamp, the reveal runtime definition and `$RC`/`$RS`/`$RX` calls over boundary ids only.
+          if (!element.id && (content === 'requestAnimationFrame(function(){$RT=performance.now()});'
+            || content.startsWith('$RB=[];$RV=function(a){$RT=performance.now();')
+            || content.startsWith('$RS=function(a,b){a=document.getElementById(a);b=document.getElementById(b);')
+            || /^(?:\$R[CSX]\("[A-Za-z0-9:_-]+"(?:,"[A-Za-z0-9:_-]+")*\);?)+$/.test(content))) return 'react-fizz-runtime';
         }
       }
       if (element.localName === 'div' && element.hasAttribute('hidden') && attributesOnly(element, ['hidden'])
@@ -59,11 +68,23 @@ function inspectStudioBody() {
     if (root instanceof ShadowRoot && announcer(root.host) && element === root.firstChild) return 'next-route-announcer-content';
     return undefined;
   }
-  function covered(element) {
-    for (let node = element; node && node !== document.body; node = node.parentElement ?? node.getRootNode().host) {
-      if (node.hasAttribute('data-ds-leaf')) return true;
+  // A body-level portal (a stock dialog, popover or menu) is covered when React places it inside a marked
+  // root: its host Fiber's ancestors include that root's host element. An element React did not render has
+  // no Fiber and stays uncovered.
+  function portalOwner(element) {
+    const key = Object.getOwnPropertyNames(element).find(name => name.startsWith('__reactFiber$'));
+    for (let fiber = key ? element[key]?.return : undefined; fiber; fiber = fiber.return) {
+      if ((fiber.tag === 5 || fiber.tag === 26 || fiber.tag === 27) && fiber.stateNode instanceof Element) return fiber.stateNode.hasAttribute('data-clossys-slot') || covered(fiber.stateNode, false);
     }
     return false;
+  }
+  function covered(element, portals = true) {
+    let top = element;
+    for (let node = element; node && node !== document.body; node = node.parentElement ?? node.getRootNode().host) {
+      if (node.hasAttribute('data-clossys-slot')) return true;
+      top = node;
+    }
+    return portals && top.parentElement === document.body && portalOwner(top);
   }
   function visit(root) {
     for (const element of root.children) {
@@ -80,31 +101,48 @@ function inspectStudioBody() {
   return { checked, framework, violations };
 }
 
-// This audit compares rendered evidence with Producer's compiled selection, never with a host label.
+// This audit compares rendered evidence with Producer's selection, never with a host label. The evidence is
+// the generated DOM provenance every frame and section root carries (`data-clossys-slot`, `-candidate`,
+// `-hash`): each must name a selected leaf and carry exactly that leaf's pinned candidate and content hash.
 function inspectStudioSelection(selection, requireNeeds) {
   const findings = [];
   const leaves = new Map(selection.leaves.map(leaf => [leaf.leaf, leaf]));
   const rendered = [];
   const needs = document.body.innerText ?? document.body.textContent ?? '';
-  for (const element of document.querySelectorAll('[data-ds-leaf]')) {
-    const leaf = element.getAttribute('data-ds-leaf');
-    const fill = element.getAttribute('data-ds-fill');
+  const version = (value, pattern) => pattern.exec(value ?? '')?.[1];
+  for (const element of document.querySelectorAll('[data-clossys-slot]')) {
+    const leaf = element.getAttribute('data-clossys-slot');
+    const candidate = element.getAttribute('data-clossys-candidate');
+    const hash = element.getAttribute('data-clossys-hash');
     const selected = leaves.get(leaf);
-    rendered.push({ leaf, fill });
-    if (!selected) findings.push({ rule: 'unregistered-rendered-leaf', leaf, fill });
-    else if (!selected.fill || fill !== selected.fill) findings.push({ rule: 'selected-fill-mismatch', leaf, expected: selected.fill, actual: fill });
+    rendered.push({ leaf, candidate, hash });
+    if (!selected) findings.push({ rule: 'unregistered-rendered-leaf', leaf, candidate, hash });
+    else if (!selected.fill || !selected.hash || hash !== selected.hash || !version(candidate, /-v([1-9][0-9]*)\.json$/)
+      || version(candidate, /-v([1-9][0-9]*)\.json$/) !== version(selected.fill, /@v([1-9][0-9]*)$/)) findings.push({ rule: 'selected-fill-mismatch', leaf, expected: `${selected.fill} ${selected.hash}`, actual: `${candidate} ${hash}` });
     else if (selected.source === 'unavailable') findings.push({ rule: 'unavailable-leaf-rendered', leaf });
-    else if (selected.source !== 'consumer' && requireNeeds && !needs.includes(`NEED: ${leaf}`)) findings.push({ rule: 'fallback-without-need', leaf, fill });
+    else if (selected.source !== 'consumer' && requireNeeds && !needs.includes(`NEED: ${leaf}`)) findings.push({ rule: 'fallback-without-need', leaf, candidate });
   }
+  // A React Aria element must be the root of a stock component part (its own `data-slot`), inside a selected
+  // frame or section root: a raw primitive the host placed under a frame carries no part slot of its own.
+  // The marked root that owns an element: its DOM ancestor, or for a body-level portal the marked root
+  // React rendered it inside (the first host Fiber above the portal).
+  const owner = element => {
+    const root = element.closest('[data-clossys-slot]');
+    if (root) return root;
+    let top = element;
+    while (top.parentElement && top.parentElement !== document.body) top = top.parentElement;
+    if (top.parentElement !== document.body) return null;
+    const key = Object.getOwnPropertyNames(top).find(name => name.startsWith('__reactFiber$'));
+    for (let fiber = key ? top[key]?.return : undefined; fiber; fiber = fiber.return) {
+      if ((fiber.tag === 5 || fiber.tag === 26 || fiber.tag === 27) && fiber.stateNode instanceof Element) return fiber.stateNode === document.body ? null : owner(fiber.stateNode);
+    }
+    return null;
+  };
   for (const element of document.querySelectorAll('*')) {
     if (!element.getAttributeNames().some(name => name === 'data-rac' || name.startsWith('data-rac-'))) continue;
-    let owned = false;
-    for (let node = element; node && node !== document.body; node = node.parentElement) {
-      if (node.getAttribute('data-ds-leaf')?.startsWith('components.')) { owned = true; break; }
-    }
-    if (!owned) findings.push({ rule: 'rac-without-selected-component', tag: element.localName, html: element.outerHTML.slice(0, 240) });
+    const root = owner(element);
+    if (!element.hasAttribute('data-slot') || !root || !leaves.has(root.getAttribute('data-clossys-slot'))) findings.push({ rule: 'rac-without-selected-component', tag: element.localName, html: element.outerHTML.slice(0, 240) });
   }
-  if (document.documentElement.dataset.selectionHash !== selection.hash) findings.push({ rule: 'selection-hash-mismatch', expected: selection.hash, actual: document.documentElement.dataset.selectionHash });
   if (typeof selection.css === 'string') {
     const style = document.getElementById('studio-selection-style');
     if (!style || style.disabled || !style.sheet || style.sheet.disabled || style.textContent !== selection.css) findings.push({ rule: 'selection-stylesheet-mismatch' });
@@ -113,24 +151,46 @@ function inspectStudioSelection(selection, requireNeeds) {
   return { hash: selection.hash, rendered, findings };
 }
 
+/** Producer's selection is usable when it names its pinned leaves and its hash is the hash of exactly those leaves. */
+function assertUsableSelection(selection) {
+  assert.ok(Array.isArray(selection?.leaves) && selection.leaves.length > 0, 'Producer must compile a usable Designer selection');
+  for (const leaf of selection.leaves) {
+    assert.equal(typeof leaf.leaf, 'string', 'selected leaf id');
+    assert.match(leaf.fill ?? '', /@v[1-9][0-9]*$/, `${leaf.leaf}: selected fill names its pinned candidate version`);
+    assert.match(leaf.hash ?? '', /^sha256:[0-9a-f]{64}$/, `${leaf.leaf}: selected fill carries its pinned content hash`);
+  }
+  assert.equal(selection.hash, `sha256:${createHash('sha256').update(JSON.stringify(selection.leaves), 'utf8').digest('hex')}`, 'independent selection hash over the selected leaves');
+  if (selection.css !== undefined) {
+    assert.equal(typeof selection.css, 'string', 'Producer must supply the compiled selected stylesheet');
+    assert.equal(selection.cssHash, `sha256:${createHash('sha256').update(selection.css, 'utf8').digest('hex')}`, 'independent selected CSS hash');
+  }
+}
+
 function assertSelection(result, label) {
   assert.deepEqual(result.findings, [], `${label}: rendered Designer selection mismatch:\n${JSON.stringify(result.findings, null, 2)}`);
   assert.ok(result.rendered.length > 0, `${label}: no selected Designer leaves rendered`);
 }
 
 async function proveSelectionDetector(page, selection) {
-  const target = page.locator('[data-ds-leaf]').first();
-  const fill = await target.getAttribute('data-ds-fill');
-  await target.evaluate(element => element.setAttribute('data-ds-fill', 'mutation/components.button'));
+  const target = page.locator('[data-clossys-hash]').first();
+  const hash = await target.getAttribute('data-clossys-hash');
+  await target.evaluate(element => element.setAttribute('data-clossys-hash', `sha256:${'0'.repeat(64)}`));
   const changed = await page.evaluate(selection => inspectStudioSelection(selection, false), selection);
-  assert.ok(changed.findings.some(row => row.rule === 'selected-fill-mismatch'), 'changing a rendered fill must fail selection audit');
-  await target.evaluate((element, fill) => element.setAttribute('data-ds-fill', fill), fill);
-  const style = page.locator('#studio-selection-style');
-  await style.evaluate(element => { element.textContent += '\n/* selected stylesheet mutation */'; });
-  const alteredCss = await page.evaluate(selection => inspectStudioSelection(selection, false), selection);
-  assert.ok(alteredCss.findings.some(row => row.rule === 'selection-stylesheet-mismatch'), 'altering live selected CSS without changing its hash must fail');
-  await style.evaluate((element, css) => { element.textContent = css; }, selection.css);
-  await page.locator('[data-ds-leaf^="frames."]').first().evaluate(frame => {
+  assert.ok(changed.findings.some(row => row.rule === 'selected-fill-mismatch'), 'changing a rendered fill hash must fail selection audit');
+  await target.evaluate((element, hash) => element.setAttribute('data-clossys-hash', hash), hash);
+  const candidate = await target.getAttribute('data-clossys-candidate');
+  await target.evaluate(element => element.setAttribute('data-clossys-candidate', element.getAttribute('data-clossys-candidate').replace(/-v([1-9][0-9]*)\.json$/, (_, v) => `-v${Number(v) + 1}.json`)));
+  const stale = await page.evaluate(selection => inspectStudioSelection(selection, false), selection);
+  assert.ok(stale.findings.some(row => row.rule === 'selected-fill-mismatch'), 'a rendered candidate that is not the pinned version must fail selection audit');
+  await target.evaluate((element, candidate) => element.setAttribute('data-clossys-candidate', candidate), candidate);
+  if (typeof selection.css === 'string') {
+    const style = page.locator('#studio-selection-style');
+    await style.evaluate(element => { element.textContent += '\n/* selected stylesheet mutation */'; });
+    const alteredCss = await page.evaluate(selection => inspectStudioSelection(selection, false), selection);
+    assert.ok(alteredCss.findings.some(row => row.rule === 'selection-stylesheet-mismatch'), 'altering live selected CSS without changing its hash must fail');
+    await style.evaluate((element, css) => { element.textContent = css; }, selection.css);
+  }
+  await page.locator('[data-clossys-slot^="frames."]').first().evaluate(frame => {
     const probe = document.createElement('div');
     probe.id = 'studio-unowned-rac-probe';
     probe.setAttribute('data-rac', '');
@@ -162,12 +222,12 @@ function assertCovered(result, label) {
 }
 
 async function proveDetector(page) {
-  // Reuse an actual Designer leaf; do not manufacture data-ds-leaf stamps.
+  // Reuse an actual frame or section root; do not manufacture provenance markers.
   await page.evaluate(() => {
     const covered = document.createElement('div');
     covered.id = 'studio-covered-probe';
     covered.innerHTML = '<span>Covered composition</span>';
-    document.querySelector('body [data-ds-leaf]').append(covered);
+    document.querySelector('body [data-clossys-slot]').append(covered);
     document.body.append(document.createTextNode('Studio text-only probe'));
   });
   assertCovered(await page.evaluate(inspectStudioBody), 'covered descendants and bare text positive proof');
@@ -191,7 +251,7 @@ async function proveDetector(page) {
 }
 
 async function main() {
-  const origin = new URL(process.argv[2] ?? 'http://127.0.0.1:4301').origin;
+  const origin = new URL(process.argv[2] || process.env.STUDIO_ORIGIN || 'http://127.0.0.1:4503').origin;
   const sourceFile = path.join(__dirname, '../components/StudioPage.tsx');
   assert.deepEqual(findHostCellTree(fs.readFileSync(sourceFile, 'utf8'), 'StudioPage.tsx'), [], 'The generic renderer places sections; it authors no nav/ul/li of its own');
   const browser = await launchChrome({ headless: true, args: ['--no-sandbox'] });
@@ -201,9 +261,7 @@ async function main() {
     const configResponse = await page.request.get(origin + '/api/config');
     assert.equal(configResponse.status(), 200, 'Producer config');
     const { selection } = await configResponse.json();
-    assert.ok(selection?.runtimeUrl, 'Producer must compile a usable Designer selection');
-    assert.equal(typeof selection.css, 'string', 'Producer must supply the compiled selected stylesheet');
-    assert.equal(selection.cssHash, `sha256:${createHash('sha256').update(selection.css, 'utf8').digest('hex')}`, 'independent selected CSS hash');
+    assertUsableSelection(selection);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
@@ -222,24 +280,33 @@ async function main() {
       await proveDetector(page);
       await proveSelectionDetector(page, selection);
       checks.push({ route, state: 'ready', ...result, selection: selectionEvidence });
-      await page.getByRole('button', { name: 'Find a page', exact: true }).click();
-      await page.waitForFunction(() => document.querySelector('[role="dialog"]') || document.documentElement.dataset.studioState === 'selection-unavailable');
-      assert.equal(await page.locator('html').getAttribute('data-studio-state'), 'ready', `${route}: opening the selected command menu must preserve a usable selection`);
-      await page.getByRole('dialog').waitFor();
+      // The shell opens its command menu from the keyboard (Ctrl/Cmd+K); it renders no trigger button.
+      // A key pressed before the route hydrates is dropped, so press again (bounded) until the menu opens.
+      const dialog = page.getByRole('dialog');
+      for (let attempt = 0; attempt < 10 && !(await dialog.isVisible()); attempt++) {
+        // A specimen iframe can take focus as it loads (its keys then never reach Studio); return focus first.
+        await page.evaluate(() => { if (document.activeElement instanceof HTMLIFrameElement) document.activeElement.blur(); });
+        await page.keyboard.press('ControlOrMeta+k');
+        await dialog.waitFor({ timeout: 3000 }).catch(() => undefined);
+      }
+      // Opening the command menu must keep every rendered root on the selected fill (audited below).
+      await dialog.waitFor({ timeout: 1000 }).catch(async () => assert.fail(`${route}: the command menu did not open (focus: ${await page.evaluate(() => document.activeElement?.outerHTML.slice(0, 160))})`));
       const commandBody = await page.evaluate(inspectStudioBody);
       assertCovered(commandBody, `${route} command menu`);
       const commandSelection = await page.evaluate(({ selection, requireNeeds }) => inspectStudioSelection(selection, requireNeeds), { selection, requireNeeds });
       assertSelection(commandSelection, `${route} command menu`);
       checks.push({ route, state: 'command-menu', ...commandBody, selection: commandSelection });
+      // A specimen frame that loads while the menu is open can take focus too (named red: an open-overlay fixture).
+      await page.evaluate(() => { if (document.activeElement instanceof HTMLIFrameElement) { document.activeElement.blur(); document.querySelector('[role="dialog"] input')?.focus(); } });
       await page.keyboard.press('Escape');
-      await page.getByRole('dialog').waitFor({ state: 'hidden' });
+      await dialog.waitFor({ state: 'hidden', timeout: 10000 }).catch(async () => assert.fail(`${route}: Escape did not close the command menu (focus: ${await page.evaluate(() => `${document.activeElement?.localName} value=${JSON.stringify(document.activeElement?.value)} dialogs=${document.querySelectorAll("[role=dialog]").length}`)})`));
     }
     assert.deepEqual(errors, [], 'browser page errors');
-    console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unstamped body siblings, stale selected fills, altered selected CSS, and unowned RAC descendants rejected on every route', sourceProof: 'the generic renderer has no host-authored nav/ul/li' }, null, 2));
+    console.log(JSON.stringify({ check: 'Studio no handrolling', routes: routes.length, checks, positiveProof: 'unstamped descendants inside an existing leaf and bare text accepted', negativeProof: 'visible and hidden unmarked body siblings, altered fill hashes, non-pinned candidate versions, altered selected CSS (when compiled), and unowned RAC descendants rejected on every route', sourceProof: 'the generic renderer has no host-authored nav/ul/li' }, null, 2));
   } finally {
     await browser.close();
   }
 }
 
-module.exports = { inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection };
+module.exports = { inspectStudioBody, inspectStudioSelection, findHostCellTree, assertCovered, assertSelection, assertUsableSelection };
 if (require.main === module) main().catch(error => { console.error(error); process.exitCode = failureExitCode(error); });

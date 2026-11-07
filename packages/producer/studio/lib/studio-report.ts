@@ -9,6 +9,16 @@ export interface StudioReport { id: string; area: 'selection' | 'theme' | 'compi
 
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 
+/**
+ * A selection is qualified when Producer compiled a legacy runtime for it, or when it is the
+ * Designer slot model's pinned selection: one or more consumer leaves, each naming its pinned
+ * candidate version and that candidate's content hash. Anything else reports not qualified.
+ */
+const pinnedLeaf = (leaf: unknown) => object(leaf) && typeof leaf.leaf === 'string' && leaf.source === 'consumer'
+  && typeof leaf.fill === 'string' && /@v[1-9][0-9]*$/.test(leaf.fill) && typeof leaf.hash === 'string' && /^sha256:[0-9a-f]{64}$/.test(leaf.hash);
+const qualified = (selection: Record<string, unknown>) => typeof selection.runtimeUrl === 'string'
+  || (Array.isArray(selection.leaves) && selection.leaves.length > 0 && selection.leaves.every(pinnedLeaf));
+
 /** An agent by its content-map group title (Writer name); an agent the map does not hold keeps its id, which is data. */
 const agentTitle = (agent: string) => studioGroups().find(group => group.id === agent)?.label ?? agent;
 
@@ -21,7 +31,7 @@ export function studioReports(config: unknown): StudioReport[] {
   const reports: StudioReport[] = [];
   const selection = object(config.selection) ? config.selection : undefined;
   if (!selection) reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: studioCopy("studio.designer-selection-unavailable"), detail: studioCopy("studio.producer-supplied-no-designer-selection-studio-renders") });
-  else if (typeof selection.runtimeUrl !== 'string') {
+  else if (!qualified(selection)) {
     const reason = studioCopy("studio.the-designer-selection-is-not-compiled").replace(/\.$/, '');
     reports.push({ id: 'selection', area: 'selection', severity: 'warning', title: studioCopy("studio.designer-selection-not-qualified"), detail: studioCopy("studio.selection-fallback-detail", { reason }) });
   }
