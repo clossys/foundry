@@ -63,6 +63,18 @@ test("forwardRef(Impl) and memo(Impl) resolve to the named render function, and 
   write("packages/designer/src/copied-control.tsx", 'export function Control() { return <button className="copy" />; }\n');
   assert.deepEqual(checkOneLeafSource(root, ["components"]).violations.map(row => [row.rule, row.leaf]), [["duplicate-leaf-source", "components.example"]]);
 });
+test("a propMap adapter that only renders its target table is its targets' identity; a tabled copy is a duplicate", () => {
+  const { root, write } = fixture();
+  const adapter = target => `import { createElement, forwardRef, type ComponentType } from "react";\nimport { Control as Impl0 } from "./${target}.js";\nconst targets = { Impl0 } satisfies Record<string, unknown>;\nconst Dispatch = forwardRef<unknown, Record<string, unknown>>(function Control(props, ref) { const target = "Impl0"; return createElement((targets as Record<string, unknown>)[target] as ComponentType<Record<string, unknown>>, { ...props, ref }); });\nexport const Control = Object.assign(Dispatch, {});\n`;
+  write("packages/designer/src/adapter.ts", adapter("components"));
+  const report = checkOneLeafSource(root, ["components"]);
+  assert.equal(report.ok, true, JSON.stringify(report.violations));
+  write("packages/designer/src/copy.tsx", 'export function CopyBody() { return <button className="copy" />; }\n');
+  write("packages/designer/src/adapter.ts", adapter("copy").replace("{ Control as Impl0 }", "{ CopyBody as Impl0 }"));
+  const copied = checkOneLeafSource(root, ["components"]);
+  assert.deepEqual(copied.violations.map(row => [row.rule, row.leaf]), [["duplicate-leaf-source", "components.example"]]);
+  assert.deepEqual(copied.inventory[0].implementations.map(row => row.name), ["Control", "CopyBody"]);
+});
 test("mutation: a separately registered runtime body is an additional implementation", () => {
   const { root, write } = fixture();
   write("packages/designer/src/runtime/registry.tsx", 'export const sections = { "sections.example": { render: () => <section className="duplicate" /> } };\n');

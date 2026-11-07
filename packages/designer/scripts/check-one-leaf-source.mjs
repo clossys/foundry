@@ -84,6 +84,8 @@ export function checkOneLeafSource(repository, layers = allLayers) {
       const forwarded = declarations(tag).flatMap(item => identity(item, seen));
       if (forwarded.length) return forwarded;
     }
+    const dispatched = dispatchTargets(node);
+    if (dispatched) return dispatched.flatMap(item => identity(item, seen));
     let rendered = false;
     const visit = child => { if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child) || ts.isCallExpression(child) && /(?:^|\.)(?:createElement|jsx|jsxs)$/.test(child.expression.getText())) rendered = true; ts.forEachChild(child, visit); };
     visit(node);
@@ -96,6 +98,31 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     const source = node.getSourceFile();
     const line = source.getLineAndCharacterOfPosition(node.getStart(source)).line + 1;
     return [{ key: `${relative(source.fileName)}:${node.getStart(source)}`, file: relative(source.fileName), line, name: node.name?.getText() ?? node.parent?.name?.getText() ?? "render" }];
+  }
+  // A propMap adapter renders nothing of its own: every render is
+  // createElement(table[key], ...) over one object table of imported components.
+  // Its identity is the tabled components', so a copied body stays a duplicate.
+  function dispatchTargets(node) {
+    const tables = [];
+    let own = false;
+    const visit = child => {
+      if (ts.isJsxElement(child) || ts.isJsxSelfClosingElement(child) || ts.isJsxFragment(child)) own = true;
+      else if (ts.isCallExpression(child) && /(?:^|\.)(?:createElement|jsx|jsxs)$/.test(child.expression.getText())) {
+        const tag = unwrap(child.arguments[0]), table = tag && ts.isElementAccessExpression(tag) ? unwrap(tag.expression) : undefined;
+        const declaration = table && ts.isIdentifier(table) ? declarations(table).find(item => ts.isVariableDeclaration(item)) : undefined;
+        const literal = unwrap(declaration?.initializer);
+        if (literal && ts.isObjectLiteralExpression(literal) && literal.properties.length && literal.properties.every(item => ts.isShorthandPropertyAssignment(item))) tables.push(literal);
+        else own = true;
+      }
+      ts.forEachChild(child, visit);
+    };
+    if (node.body) visit(node.body);
+    if (own || !tables.length) return undefined;
+    return tables.flatMap(table => table.properties.flatMap(item => {
+      let symbol = checker.getShorthandAssignmentValueSymbol(item);
+      if (symbol?.flags & ts.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+      return symbol?.declarations ?? [];
+    }));
   }
   function exported(file, name) {
     if (!fs.existsSync(file)) file = file.replace(/\.ts$/, ".tsx");
