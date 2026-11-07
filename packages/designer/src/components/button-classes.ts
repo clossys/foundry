@@ -6,7 +6,6 @@ import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_
  */
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "tonal" | "quiet";
 export type ButtonSize = "sm" | "md" | "lg";
-import { TOKENS } from "../tokens/tokens.js";
 
 /**
  * The grounds a control is drawn for: the page ground (`base`), a sunken
@@ -127,27 +126,7 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, gr
  * on-inverse ink at rest, on hover and on focus, the inverse tonal hover and
  * an on-inverse focus outline.
  */
-/** The width a collapsed disclosure needs to spare before it expands: one small spacing step, so a fit edge cannot flap. */
-export const DISCLOSURE_COLLAPSE_SLACK = parseFloat(TOKENS["--spacing-sm"]!.value);
-
 export const INVERSE_CONTROL_INK = "text-background hover:text-background focus-visible:text-background hover:bg-background/16 focus-visible:outline-background";
-
-/**
- * The navigation disclosure toggle look for a native button: the small ghost
- * link look without its colour transition (only the panel and its bars move),
- * a native pressed fill and the tap-target minimum. On the inverse plate it
- * drops the ghost ink and hover fill, keeps the inverse ink when expanded and takes
- * `INVERSE_CONTROL_INK`. `pressFill: false` keeps the ghost look's own fill
- * and drops the native pressed fill.
- */
-export function disclosureToggleClassName(ground: "base" | "inverse" = "base", { pressFill = true }: { readonly pressFill?: boolean } = {}): string {
-  const ghost = buttonLinkClassName("ghost", "sm").split(" ");
-  const look = [...ghost.filter((token) => !token.includes("transition-")), ...(pressFill ? ["bg-transparent", "active:bg-muted", "transition-none"] : []), "min-size-tap"];
-  if (ground === "base") return look.join(" ");
-  const outline = buttonLinkClassName("outline", "sm").split(" ");
-  const ghostInk = ghost.filter((token) => (token.startsWith("text-") || token.startsWith("hover:bg-")) && !outline.includes(token));
-  return [...look.filter((token) => !ghostInk.includes(token)), INVERSE_CONTROL_INK, "aria-expanded:text-background"].join(" ");
-}
 
 /** The grounds a round icon link is drawn for. Kept as a name for `ControlGround`. */
 export type IconButtonLinkGround = ControlGround;

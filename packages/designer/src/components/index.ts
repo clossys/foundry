@@ -86,7 +86,7 @@ export type BreadcrumbProps = import("react").ComponentProps<typeof import("./pr
 export type BreadcrumbItemProps = import("react").ComponentProps<typeof import("./preview-runtime/components/breadcrumbs/breadcrumb.js").BreadcrumbItem>;
 
 export { LinkButton } from "./preview-runtime/components/button/button.js";
-export { buttonLinkClassName, DISCLOSURE_COLLAPSE_SLACK, disclosureToggleClassName, iconButtonClassName, iconButtonLinkClassName, INVERSE_CONTROL_INK } from "./button-classes.js";
+export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName, INVERSE_CONTROL_INK } from "./button-classes.js";
 export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
 
 export { Checkbox } from "./Checkbox.js";

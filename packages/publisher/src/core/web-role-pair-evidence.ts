@@ -54,7 +54,7 @@ const sources = {
   "../designer/src/frames/site-frame/site-frame-contract.ts": "sha256:2ab7ee65d528d172ea5e96c96b37d492ec9bc2e08263c33d841baa736516367b",
   "../designer/src/frames/site-frame/NavLinks.tsx": "sha256:f08cb4cfe847ee67cfb7031422df5e9aa8f963b514de8180a44f935013bd00ae",
   "../designer/src/frames/site-frame/NavDisclosure.client.tsx": "sha256:e62dd1650d0b9a4964bc72f6ce48ee7c1a41b07c6b1656c4c43ab57d7241e311",
-  "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:a67e16466fdd82b7ddd154e743b7a4af0614a21991d39d206e2a4a74462ba4cc",
+  "../designer/src/frames/site-frame/NavDisclosure.server.tsx": "sha256:a2cf034a0b97106380b19f4898635283bf77e0a1fc398347ecd5e4e853ed8347",
   "../designer/src/frames/site-frame/NavDisclosure.boundary.client.tsx": "sha256:32e1550ce3d62a04d33874e677b5b32e32684d1561ceb994c6020cc57930c05a",
   "../designer/src/frames/site-frame/SiteFrame.tsx": "sha256:cbd8d056c19ffcd211fa0da1c02bf94e6ae2372e75eb21c56aa6f4a2258aea7c",
   "../designer/src/frames/site-frame/types.ts": "sha256:9cf9ac3d145713b6efd520fa92c2fee7729788ed11cfc45990a84feb3c61a32c",

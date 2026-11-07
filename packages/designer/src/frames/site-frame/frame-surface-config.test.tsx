@@ -73,7 +73,7 @@ describe("the single Publisher header surface contract", () => {
       .toEqual(["Help", "Sign in", "Start"]);
     const toggle = header.querySelector(".nav-disclosure-toggle")!;
     expect(toggle).toHaveAttribute("aria-label", "site-frame.nav.trigger-label");
-    expect(toggle.querySelector(".nav-disclosure-icon")).not.toBeNull();
+    expect(toggle.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("does not reintroduce the removed inline layout through a non-site surface", () => {

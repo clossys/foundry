@@ -88,8 +88,7 @@ for (const mode of ["server", "client"] as const) {
       expect(root.querySelector("header")).toHaveClass("text-background");
       expect(root.querySelector("header button")).not.toHaveAttribute("data-tone");
       expect(root.querySelector("header button")).toHaveAttribute("aria-label", "Menu");
-      expect(root.querySelector("header button .nav-disclosure-icon")).toHaveAttribute("aria-hidden", "true");
-      expect(root.querySelectorAll("header button .nav-disclosure-icon > span")).toHaveLength(2);
+      expect(root.querySelector("header button svg")).toHaveAttribute("aria-hidden", "true");
     }
   });
 

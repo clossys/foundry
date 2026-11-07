@@ -17,11 +17,11 @@ describe("NavDisclosure", () => {
     expect(screen.getAllByRole("navigation")).toHaveLength(1);
     const nav = screen.getByRole("navigation", { name: "Primary" });
     const toggle = within(nav).getByRole("button", { name: "Menu" });
-    const links = within(nav).getAllByRole("link");
+    // Collapsed on a narrow layout, the stock panel keeps its links out of the accessibility tree.
+    expect(within(nav).queryAllByRole("link")).toEqual([]);
+    const links = within(nav).getAllByRole("link", { hidden: true });
     expect(links.map(link => link.textContent)).toEqual(["About", "Contact"]);
-    expect(nav.children).toHaveLength(2);
-    expect(nav.firstElementChild).toBe(toggle);
-    expect(nav.lastElementChild?.tagName).toBe("DIV");
+    expect(within(nav).getAllByRole("button")).toEqual([toggle]);
     expect(toggle.compareDocumentPosition(links[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -31,21 +31,24 @@ describe("NavDisclosure", () => {
     const panel = document.getElementById(toggle.getAttribute("aria-controls")!);
     expect(toggle).toHaveAttribute("type", "button");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(panel).toBe(screen.getByRole("link", { name: "About" }).parentElement);
+    expect(panel).toBe(screen.getByRole("link", { name: "About", hidden: true }).parentElement);
     expect(panel).not.toHaveAttribute("data-expanded");
+    expect(panel).toHaveAttribute("hidden");
     // Both tap-target dimensions come from the Components toggle's min-size-tap utility, not inline style.
     expect(toggle).toHaveClass("min-size-tap");
     expect(toggle.getAttribute("style")).toBeNull();
     expect(toggle.className).toContain("nav-disclosure-toggle");
-    expect(toggle.className).not.toMatch(/transition|duration|delay|animate/);
     toggle.focus();
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     expect(panel).toHaveAttribute("data-expanded");
+    expect(panel).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("link", { name: "About" })).toBeVisible();
     expect(toggle).toHaveFocus();
     fireEvent.click(toggle);
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(panel).not.toHaveAttribute("data-expanded");
+    expect(panel).toHaveAttribute("hidden");
   });
 
   it("Escape while expanded collapses and returns focus to the toggle", () => {
@@ -60,21 +63,21 @@ describe("NavDisclosure", () => {
     expect(toggle).toHaveFocus();
   });
 
-  it.each(["link", "nested target"])("activating a panel %s returns focus before the closed panel becomes inert", target => {
+  it.each(["link", "nested target"])("activating a panel %s returns focus before the closed panel hides", target => {
     renderNav();
     const toggle = screen.getByRole("button", { name: "Menu" });
     fireEvent.click(toggle);
     const link = screen.getByRole("link", { name: "Contact" });
     act(() => link.focus());
     expect(link).toHaveFocus();
-    expect(link.parentElement).not.toHaveAttribute("inert");
-    const inertAtFocus: boolean[] = [];
-    toggle.addEventListener("focus", () => { inertAtFocus.push(link.parentElement!.hasAttribute("inert")); }, { once: true });
+    expect(link.parentElement).not.toHaveAttribute("hidden");
+    const hiddenAtFocus: boolean[] = [];
+    toggle.addEventListener("focus", () => { hiddenAtFocus.push(link.parentElement!.hasAttribute("hidden")); }, { once: true });
     fireEvent.click(target === "link" ? link : screen.getByText("Contact"));
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(link.parentElement).not.toHaveAttribute("data-expanded");
-    expect(link.parentElement).toHaveAttribute("inert");
-    expect(inertAtFocus).toEqual([false]);
+    expect(link.parentElement).toHaveAttribute("hidden");
+    expect(hiddenAtFocus).toEqual([false]);
     expect(toggle).toHaveFocus();
   });
 
@@ -87,12 +90,16 @@ describe("NavDisclosure", () => {
     expect(second).not.toBe(first);
   });
 
-  it("server renders collapsed with the links present once for the no-JS fallback", () => {
-    const html = renderToStaticMarkup(<NavDisclosure><a href="#about">About</a></NavDisclosure>);
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).not.toContain("data-expanded");
-    expect(html).not.toContain("hidden=");
-    expect(html).not.toMatch(/\sinert(?:\s|=|>)/);
+  it("server renders the inline row with the links reachable once for the no-JS fallback", () => {
+    const host = document.createElement("div");
+    host.innerHTML = renderToStaticMarkup(<NavDisclosure><a href="#about">About</a></NavDisclosure>);
+    const html = host.innerHTML;
+    expect(within(host).getByRole("link", { name: "About" })).toHaveAttribute("href", "#about");
+    expect(host.querySelector(".nav-disclosure-panel")).not.toHaveAttribute("data-expanded");
+    const panel = host.querySelector(".nav-disclosure-panel");
+    expect(panel).not.toHaveAttribute("hidden");
+    expect(panel).not.toHaveAttribute("aria-hidden", "true");
+    expect(panel?.closest("[hidden],[inert]")).toBeNull();
     expect(html.match(/href="#about"/g)).toHaveLength(1);
   });
 
@@ -107,19 +114,18 @@ describe("NavDisclosure", () => {
 });
 
 describe("HEADER-1 disclosure lifecycle", () => {
-  it("keeps closed content inert and exposes a two-line X state when opened", () => {
+  it("keeps closed content hidden and opens it from the decorative icon toggle", () => {
     render(<SiteHeader brand={<a href="/">Example</a>} nav={<NavDisclosure trigger="icon"><a href="/help">Help</a></NavDisclosure>} />);
     const toggle = screen.getByRole("button", { name: "Menu" });
     const panel = document.getElementById(toggle.getAttribute("aria-controls")!)!;
-    expect(panel).toHaveAttribute("inert");
-    expect(toggle.querySelectorAll(".nav-disclosure-icon > span")).toHaveLength(2);
+    expect(panel).toHaveAttribute("hidden");
+    expect(toggle.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     fireEvent.click(toggle);
-    expect(panel).not.toHaveAttribute("inert");
-    expect(toggle.querySelector(".nav-disclosure-icon")).toHaveAttribute("data-open");
+    expect(panel).not.toHaveAttribute("hidden");
+    expect(screen.getByRole("link", { name: "Help" })).toBeVisible();
     act(() => (panel.querySelector("a") as HTMLElement).focus());
     fireEvent.keyDown(panel.querySelector("a")!, { key: "Escape" });
-    expect(panel).toHaveAttribute("inert");
-    expect(toggle.querySelector(".nav-disclosure-icon")).not.toHaveAttribute("data-open");
+    expect(panel).toHaveAttribute("hidden");
     expect(toggle).toHaveFocus();
   });
   it("resets navigation on history changes and leaves outside focus intact", () => {
@@ -157,8 +163,11 @@ it.each(["wrapped", "direct"])("HEADER-1 collapses from measured unequal tracks 
     width = 1400;
     await act(async () => { fireEvent.resize(window); await nextFrame(); });
     expect(header).not.toHaveAttribute("data-collapsed");
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    expect(document.getElementById(toggle.getAttribute("aria-controls")!)).not.toHaveAttribute("inert");
+    // The desktop row resets the opened state, keeps every link reachable and hides the toggle.
+    const panel = document.getElementById(toggle.getAttribute("aria-controls")!);
+    expect(panel).not.toHaveAttribute("data-expanded");
+    expect(panel).not.toHaveAttribute("hidden");
+    expect(toggle).toHaveClass("hidden");
   } finally { rectangles.mockRestore(); vi.unstubAllGlobals(); }
 });
 
@@ -191,14 +200,14 @@ it("HEADER-1 observes intrinsic children, preserves visible desktop focus and re
     const frame = view.container.firstElementChild as HTMLElement;
     expect(frame.style.getPropertyValue("--site-header-clearance")).toBe("72px");
     expect(observed).toContain(screen.getByRole("link", { name: "Example" }));
-    expect(observed).toContain(screen.getByRole("link", { name: "Help" }));
+    expect(observed).toContain(screen.getByRole("link", { name: "Help", hidden: true }));
     const toggle = screen.getByRole("button", { name: "Menu" });
     fireEvent.click(toggle);
     act(() => screen.getByRole("link", { name: "Help" }).focus());
     media.matches = true;
     await act(async () => { measure(); await nextFrame(); });
     expect(screen.getByRole("link", { name: "Help" })).toHaveFocus();
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(toggle.closest("nav")!.querySelector(".nav-disclosure-panel")).not.toHaveAttribute("data-expanded");
     media.matches = false;
     await act(async () => { measure(); await nextFrame(); });
     expect(toggle).toHaveFocus();
@@ -212,136 +221,6 @@ it("HEADER-1 observes intrinsic children, preserves visible desktop focus and re
     expect(view.container.querySelector("header")).toHaveClass("site-header-contract");
     expect(view.container.querySelector("header nav, header button")).toBeNull();
   } finally { rects.mockRestore(); vi.unstubAllGlobals(); }
-});
-
-type MockAnimation = { keyframes: Keyframe[]; options: KeyframeAnimationOptions; cancel: ReturnType<typeof vi.fn>; finish: () => void; finished: Promise<void> };
-
-/** Installs a controllable element.animate; restore() puts back whatever jsdom had. */
-function mockAnimate() {
-  const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "animate");
-  const animations: MockAnimation[] = [];
-  const animate = vi.fn((keyframes: Keyframe[], options: KeyframeAnimationOptions) => {
-    let finish!: () => void;
-    const finished = new Promise<void>(resolve => { finish = resolve; });
-    const animation: MockAnimation = { keyframes, options, cancel: vi.fn(), finish, finished };
-    animations.push(animation);
-    return animation as unknown as Animation;
-  });
-  Object.defineProperty(HTMLElement.prototype, "animate", { configurable: true, writable: true, value: animate });
-  return {
-    animate, animations,
-    restore() {
-      if (original) Object.defineProperty(HTMLElement.prototype, "animate", original);
-      else delete (HTMLElement.prototype as { animate?: unknown }).animate;
-    },
-  };
-}
-
-/** jsdom applies no stylesheet, so supply the panel's motion tokens inline. */
-function motionTokens(panel: HTMLElement, duration = "240ms") {
-  panel.style.setProperty("--site-header-panel-duration", duration);
-  panel.style.setProperty("--site-header-panel-ease", "cubic-bezier(.2, 0, 0, 1)");
-  panel.style.setProperty("--site-header-panel-shift", "calc(-1 * 8px)");
-}
-
-describe("NavDisclosure panel motion", () => {
-  it.each(["header", "standalone"] as const)("slides the %s sheet in on its motion tokens, then keeps a closing sheet painted but inert", async placement => {
-    const motion = mockAnimate();
-    try {
-      const view = renderNav(placement);
-      const toggle = screen.getByRole("button", { name: "Menu" });
-      const link = screen.getByRole("link", { name: "About" });
-      const panel = link.parentElement!;
-      motionTokens(panel);
-      fireEvent.click(toggle);
-      expect(motion.animate).toHaveBeenCalledTimes(1);
-      expect(motion.animations[0]!.keyframes).toEqual([
-        { opacity: "0", transform: "translateY(calc(-1 * 8px))" },
-        { opacity: "1", transform: "none" },
-      ]);
-      expect(motion.animations[0]!.options).toEqual({ duration: 240, easing: "cubic-bezier(.2, 0, 0, 1)", fill: "both" });
-      expect(panel).toHaveAttribute("data-present");
-      expect(panel).not.toHaveAttribute("inert");
-      await act(async () => motion.animations[0]!.finish());
-      expect(panel).not.toHaveAttribute("data-present");
-      expect(panel).toHaveAttribute("data-expanded");
-
-      act(() => link.focus());
-      let inertWhenFocused = false;
-      toggle.addEventListener("focus", () => { inertWhenFocused = panel.hasAttribute("inert"); }, { once: true });
-      fireEvent.keyDown(link, { key: "Escape" });
-      // Focus returns before the panel turns inert, and the panel is inert at once.
-      expect(inertWhenFocused).toBe(false);
-      expect(toggle).toHaveFocus();
-      expect(panel).toHaveAttribute("inert");
-      expect(panel).not.toHaveAttribute("data-expanded");
-      expect(panel).toHaveAttribute("data-present");
-      expect(motion.animations[1]!.keyframes.at(-1)).toEqual({ opacity: "0", transform: "translateY(calc(-1 * 8px))" });
-      await act(async () => motion.animations[1]!.finish());
-      expect(panel).not.toHaveAttribute("data-present");
-      expect(panel).toHaveAttribute("inert");
-
-      // Reopening mid-close reverses from the current frame and cancels the old run.
-      fireEvent.click(toggle);
-      fireEvent.click(toggle);
-      expect(motion.animations[2]!.cancel).toHaveBeenCalled();
-      expect(panel).toHaveAttribute("inert");
-      view.unmount();
-      expect(motion.animations[3]!.cancel).toHaveBeenCalled();
-    } finally { motion.restore(); }
-  });
-
-  it.each(["header", "standalone"] as const)("switches the %s sheet at once, still inert after close, under reduced motion", placement => {
-    vi.stubGlobal("matchMedia", (query: string) => ({ matches: query.includes("prefers-reduced-motion"), addEventListener: vi.fn(), removeEventListener: vi.fn() }));
-    const motion = mockAnimate();
-    try {
-      renderNav(placement);
-      const toggle = screen.getByRole("button", { name: "Menu" });
-      const panel = screen.getByRole("link", { name: "About" }).parentElement!;
-      motionTokens(panel);
-      fireEvent.click(toggle);
-      expect(panel).toHaveAttribute("data-expanded");
-      fireEvent.click(toggle);
-      expect(motion.animate).not.toHaveBeenCalled();
-      expect(panel).not.toHaveAttribute("data-present");
-      expect(panel).toHaveAttribute("inert");
-    } finally { motion.restore(); vi.unstubAllGlobals(); }
-  });
-
-  it.each(["header", "standalone"] as const)("treats a zero duration token on the %s sheet, the stylesheet's reduced-motion fallback, as no motion", placement => {
-    const motion = mockAnimate();
-    try {
-      renderNav(placement);
-      const toggle = screen.getByRole("button", { name: "Menu" });
-      const panel = screen.getByRole("link", { name: "About" }).parentElement!;
-      motionTokens(panel, "0s");
-      fireEvent.click(toggle);
-      fireEvent.click(toggle);
-      expect(motion.animate).not.toHaveBeenCalled();
-      expect(panel).toHaveAttribute("inert");
-    } finally { motion.restore(); }
-  });
-
-  it.each(["header", "standalone"] as const)("cancels a running %s slide as soon as reduced motion turns on", placement => {
-    let onChange = () => {};
-    const reduced = { matches: false, addEventListener: (_: string, callback: () => void) => { onChange = callback; }, removeEventListener: vi.fn() };
-    vi.stubGlobal("matchMedia", (query: string) => query.includes("prefers-reduced-motion") ? reduced : { matches: false, addEventListener: vi.fn(), removeEventListener: vi.fn() });
-    const motion = mockAnimate();
-    try {
-      renderNav(placement);
-      const toggle = screen.getByRole("button", { name: "Menu" });
-      const panel = screen.getByRole("link", { name: "About" }).parentElement!;
-      motionTokens(panel);
-      fireEvent.click(toggle);
-      fireEvent.click(toggle);
-      expect(panel).toHaveAttribute("data-present");
-      reduced.matches = true;
-      act(onChange);
-      expect(motion.animations[1]!.cancel).toHaveBeenCalled();
-      expect(panel).not.toHaveAttribute("data-present");
-      expect(panel).toHaveAttribute("inert");
-    } finally { motion.restore(); vi.unstubAllGlobals(); }
-  });
 });
 
 describe("NavDisclosure collapse measurement", () => {

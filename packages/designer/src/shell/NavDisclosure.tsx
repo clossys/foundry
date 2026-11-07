@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { TOKENS } from "../tokens/tokens.js";
-import { DISCLOSURE_COLLAPSE_SLACK, disclosureToggleClassName } from "../components/button-classes.js";
-import { cx } from "../components/internal/cx.js";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../components/preview-runtime/components/disclosure/collapsible.js";
+import { buttonVariants } from "../components/preview-runtime/components/button/button.js";
+import { cn } from "../components/preview-runtime/components/_parts/utils/index.js";
+import { INVERSE_CONTROL_INK } from "../components/button-classes.js";
+import { Icon } from "../components/Icon.js";
+import { List } from "../icons/index.js";
 
 export interface NavDisclosureProps {
   /** Navigation links, rendered once in the responsive panel. */
@@ -20,38 +24,28 @@ export interface NavDisclosureProps {
   className?: string;
 }
 
-// Panel motion must land before paint, but a server render has no layout.
-const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
-
-/** A CSS time such as `240ms` or `.24s`, in milliseconds; 0 when absent or unparseable. */
-function milliseconds(time: string): number {
-  const value = parseFloat(time);
-  if (!Number.isFinite(value) || value <= 0) return 0;
-  return time.trim().endsWith("ms") ? value : value * 1000;
-}
-
 /**
- * SiteHeader navigation that becomes a sheet below tablet and an inline row
- * above it. CSS keeps the same links inline when scripting is unavailable.
- * Unlike NavShell, this is a disclosure, without a modal drawer or focus trap.
+ * SiteHeader navigation on the stock Collapsible: a disclosure below tablet and
+ * an always-expanded inline row above it. The server and first client render
+ * are expanded, so the links stay reachable without scripting. Unlike NavShell,
+ * this is a disclosure, without a modal drawer or focus trap.
  */
 export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", triggerLabel = "Menu", trigger = "label", tone, className }: NavDisclosureProps) {
-  // Select a complete look before cx: tailwind-merge is an optional peer.
-  // The Components-owned toggle look; on the inverse plate it carries the inverse control ink.
-  const look = disclosureToggleClassName(tone === "inverse" ? "inverse" : "base", { pressFill: false });
-  const panelId = useId();
-  const toggle = useRef<HTMLButtonElement>(null);
   const [expanded, setExpanded] = useState(false);
   const nav = useRef<HTMLElement>(null);
-  const panel = useRef<HTMLDivElement>(null);
-  const [mobile, setMobile] = useState(true);
+  // The stock parts take no ref; find them inside this landmark.
+  const toggle = { get current() { return nav.current?.querySelector<HTMLButtonElement>(".nav-disclosure-toggle") ?? null; } };
+  const panel = { get current() { return nav.current?.querySelector<HTMLDivElement>(".nav-disclosure-panel") ?? null; } };
+  // Desktop until measured: the server markup keeps every link reachable.
+  const [mobile, setMobile] = useState(false);
+  // The stock ghost Button look; on the inverse plate it carries the inverse control ink.
+  // An inline desktop row, and the server render, needs no toggle.
+  const look = cn(buttonVariants({ variant: "ghost", size: trigger === "icon" ? "icon" : "sm" }), "min-size-tap", tone === "inverse" && [INVERSE_CONTROL_INK, "aria-expanded:text-background"], !mobile && "hidden", "nav-disclosure-toggle");
   const open = useRef(false);
   open.current = expanded;
   const close = (restore = true) => {
     if (!open.current) return;
     if (restore) toggle.current?.focus();
-    // Inert at once, while a closing panel may still be painted.
-    panel.current?.setAttribute("inert", "");
     setExpanded(false);
   };
   useEffect(() => {
@@ -87,7 +81,7 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         const required = 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
         // Hysteresis: a collapsed header expands only with one small spacing
         // step to spare, so widths at the fit edge cannot flap between layouts.
-        const slack = settled && wasMobile ? DISCLOSURE_COLLAPSE_SLACK : 0;
+        const slack = settled && wasMobile ? parseFloat(TOKENS["--spacing-sm"]!.value) : 0;
         settled = true;
         narrow ||= width < required + slack;
         header.removeAttribute("data-measuring");
@@ -98,7 +92,6 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
       const active = document.activeElement;
       const activeActions = active?.closest(".site-header-actions");
       if (!narrow) {
-        panel.current?.removeAttribute("inert");
         if (active === toggle.current || (activeActions && getComputedStyle(activeActions).display === "none")) {
           const anchors = [...(nav.current?.querySelectorAll<HTMLAnchorElement>("a[href]") ?? [])];
           const target = anchors.find(link => active instanceof HTMLAnchorElement && link.href === active.href) ?? anchors[0] ?? header?.querySelector<HTMLElement>(".site-header-brand a");
@@ -151,61 +144,6 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
       if (priorClearance) frame?.style.setProperty("--site-header-clearance", priorClearance); else frame?.style.removeProperty("--site-header-clearance");
     };
   }, []);
-  // Imperative boolean attributes support React 18 as well as React 19, with
-  // no inert server markup to break the no-scripting fallback.
-  const motion = useRef<Animation | null>(null);
-  const shown = useRef(false);
-  useBeforePaint(() => {
-    const element = panel.current;
-    if (!element) return;
-    element.toggleAttribute("inert", mobile && !expanded);
-    const running = motion.current;
-    const changed = shown.current !== expanded;
-    shown.current = expanded;
-    if (!changed && (mobile || !running)) return;
-    motion.current = null;
-    // The sheet slides from just under the header and fades, on the panel's
-    // motion tokens. data-present keeps a closing sheet painted (but inert)
-    // until it has left; reduced motion, a zero duration, an inline desktop
-    // row or an engine without element.animate switch at once.
-    const style = getComputedStyle(element);
-    const duration = milliseconds(style.getPropertyValue("--site-header-panel-duration"));
-    const shift = style.getPropertyValue("--site-header-panel-shift").trim();
-    const easing = style.getPropertyValue("--site-header-panel-ease").trim();
-    const still = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-    if (!changed || !mobile || still || !duration || !shift || typeof element.animate !== "function") {
-      running?.cancel();
-      element.removeAttribute("data-present");
-      return;
-    }
-    const away = { opacity: "0", transform: `translateY(${shift})` };
-    const here = { opacity: "1", transform: "none" };
-    // Reverse from where an interrupted animation had reached.
-    const from = running ? { opacity: style.opacity, transform: style.transform } : expanded ? away : here;
-    running?.cancel();
-    element.setAttribute("data-present", "");
-    const animation = element.animate([from, expanded ? here : away], { duration, easing: easing || undefined, fill: "both" });
-    motion.current = animation;
-    const settle = () => {
-      if (motion.current !== animation) return;
-      motion.current = null;
-      element.removeAttribute("data-present");
-      animation.cancel();
-    };
-    animation.finished.then(settle, settle);
-  }, [mobile, expanded]);
-  useEffect(() => {
-    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)");
-    const stop = () => {
-      const animation = motion.current;
-      motion.current = null;
-      animation?.cancel();
-      panel.current?.removeAttribute("data-present");
-    };
-    const change = () => { if (reduced?.matches) stop(); };
-    reduced?.addEventListener?.("change", change);
-    return () => { reduced?.removeEventListener?.("change", change); stop(); };
-  }, []);
   useEffect(() => {
     const reset = () => close();
     const leave = (event: FocusEvent) => {
@@ -230,45 +168,22 @@ export function NavDisclosure({ children, "aria-label": ariaLabel = "Primary", t
         event.preventDefault();
         close();
       }}
+      onClick={event => {
+        // A followed link closes the panel and returns focus to the toggle.
+        if (event.target instanceof Element && event.target.closest(".nav-disclosure-panel a[href]")) close();
+      }}
     >
-      {trigger === "icon" ? (
-        <button
-          ref={toggle}
-          type="button"
-          aria-label={triggerLabel}
-          aria-expanded={expanded}
-          aria-controls={panelId}
-          data-tone={tone}
-          className={cx(look, "nav-disclosure-toggle")}
-          onClick={() => (expanded ? close() : setExpanded(true))}
+      <Collapsible className="contents" isExpanded={expanded || !mobile} onExpandedChange={next => (next ? setExpanded(true) : close())}>
+        <CollapsibleTrigger aria-label={trigger === "icon" ? triggerLabel : undefined} data-tone={tone} className={look}>
+          {trigger === "icon" ? <Icon glyph={List} decorative /> : triggerLabel}
+        </CollapsibleTrigger>
+        <CollapsibleContent
+          className="nav-disclosure-panel"
+          data-expanded={expanded ? "" : undefined}
         >
-          <><span className="nav-disclosure-icon" data-open={expanded ? "" : undefined} aria-hidden="true"><span /><span /></span></>
-        </button>
-      ) : (
-        <button
-          ref={toggle}
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={panelId}
-          data-tone={tone}
-          className={cx(look, "nav-disclosure-toggle")}
-          onClick={() => (expanded ? close() : setExpanded(true))}
-        >
-          {triggerLabel}
-        </button>
-      )}
-      <div
-        ref={panel}
-        id={panelId}
-        className="nav-disclosure-panel"
-        data-expanded={expanded ? "" : undefined}
-        onClick={event => {
-          // Return focus before closing makes the mobile panel inert.
-          if (event.target instanceof Element && event.target.closest("a[href]")) close();
-        }}
-      >
-        {children}
-      </div>
+          {children}
+        </CollapsibleContent>
+      </Collapsible>
     </nav>
   );
 }

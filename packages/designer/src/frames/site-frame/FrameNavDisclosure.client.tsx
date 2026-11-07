@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { NativeAction, SemanticContent, Icon } from "@clossys/designer/components/server";
+import { SemanticContent, Icon } from "@clossys/designer/components/server";
 import { Sheet, SheetClose, SheetTitle } from "../../components/sheet/index.js";
 import { DialogTarget, useOverlayLocale } from "../../components/Dialog.js";
-import { X } from "../../icons/index.js";
+import { List, X } from "../../icons/index.js";
 import { FrameRegion } from "./FrameRegion.js";
 import { TOKENS } from "../../tokens/tokens.js";
-import { DISCLOSURE_COLLAPSE_SLACK, disclosureToggleClassName } from "../../components/button-classes.js";
-import { cx } from "../../components/internal/cx.js";
+import { INVERSE_CONTROL_INK } from "../../components/button-classes.js";
+import { cn } from "../../components/preview-runtime/components/_parts/utils/index.js";
+import { componentLeaf, type ButtonLeaf } from "../../runtime/component-leaf.js";
 import { SECTION_REVEAL_ATTRIBUTE, SectionRevealStyle } from "../../styles/section-reveal.js";
 
 export interface NavDisclosureProps {
@@ -28,7 +29,15 @@ export interface NavDisclosureProps {
   className?: string;
 }
 
-// Panel motion must land before paint, but a server render has no layout.
+/** The selected stock Button; the server shape renders the same leaf, so hydration agrees. */
+const Button = componentLeaf<ButtonLeaf>("components.button");
+
+/** The toggle's classes beside the stock ghost look; the server shape renders the base tone. */
+function navToggleClassName(tone?: "auto" | "inverse"): string {
+  return cn("min-size-tap", tone === "inverse" && [INVERSE_CONTROL_INK, "aria-expanded:text-background"], "nav-disclosure-toggle");
+}
+
+// Panel inertness must land before paint, but a server render has no layout.
 const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffect;
 
 /**
@@ -37,8 +46,6 @@ const useBeforePaint = typeof window === "undefined" ? useEffect : useLayoutEffe
  * The inline tree remains available to server rendering and no-script layouts.
  */
 export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerLabel, closeLabel, trigger = "label", tone, className }: NavDisclosureProps) {
-  // The Components-owned toggle look; on the inverse plate it carries the inverse control ink.
-  const look = disclosureToggleClassName(tone === "inverse" ? "inverse" : "base");
   const { locale, direction } = useOverlayLocale();
   const panelId = useId();
   const sheetId = `${panelId}-sheet`;
@@ -84,7 +91,7 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
         const required = 2 * Math.max(extent(brand), extent(actions)) + extent(links) + 2 * gap;
         // Hysteresis: a collapsed header expands only with one small spacing
         // step to spare, so widths at the fit edge cannot flap between layouts.
-        const slack = settled && wasMobile ? DISCLOSURE_COLLAPSE_SLACK : 0;
+        const slack = settled && wasMobile ? parseFloat(TOKENS["--spacing-sm"]!.value) : 0;
         settled = true;
         narrow ||= width < required + slack;
         header.removeAttribute("data-measuring");
@@ -177,34 +184,20 @@ export function FrameNavDisclosure({ children, "aria-label": ariaLabel, triggerL
       aria-label={ariaLabel}
       className={className}
     >
-      {trigger === "icon" ? (
-        <NativeAction
-          ref={toggle}
-          type="button"
-          aria-label={triggerLabel}
-          aria-expanded={expanded}
-          aria-controls={sheetId}
-          aria-haspopup="dialog"
-          data-tone={tone}
-          className={cx(look, "nav-disclosure-toggle")}
-          onClick={() => (expanded ? close() : setExpanded(true))}
-        >
-          <><SemanticContent as="span" className="nav-disclosure-icon" data-open={expanded ? "" : undefined} aria-hidden="true"><SemanticContent as="span" /><SemanticContent as="span" /></SemanticContent></>
-        </NativeAction>
-      ) : (
-        <NativeAction
-          ref={toggle}
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={sheetId}
-          aria-haspopup="dialog"
-          data-tone={tone}
-          className={cx(look, "nav-disclosure-toggle")}
-          onClick={() => (expanded ? close() : setExpanded(true))}
-        >
-          {triggerLabel}
-        </NativeAction>
-      )}
+      <Button
+        ref={toggle}
+        variant="ghost"
+        size="sm"
+        aria-label={trigger === "icon" ? triggerLabel : undefined}
+        aria-expanded={expanded}
+        aria-controls={sheetId}
+        aria-haspopup="dialog"
+        data-tone={tone}
+        className={navToggleClassName(tone)}
+        onPress={() => (expanded ? close() : setExpanded(true))}
+      >
+        {trigger === "icon" ? <Icon glyph={List} decorative /> : triggerLabel}
+      </Button>
       <SemanticContent as="div"
         ref={panel}
         id={panelId}

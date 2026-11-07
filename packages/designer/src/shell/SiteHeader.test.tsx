@@ -319,10 +319,7 @@ it("ships the default header candidate and a shared frame clearance including sa
   expect(readFileSync(join(styles, "theme-keys.css"), "utf8").match(/& \.nav-disclosure-panel \{[^\n]*padding-inline:[^\n]+/g)?.at(-1)).toContain("padding-inline: max(var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px)), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px))");
 });
 
-it("draws the icon toggle as two decorative bars", () => {
+it("draws the icon toggle as a decorative stock icon", () => {
   render(<NavDisclosure trigger="icon"><a href="/about">About</a></NavDisclosure>);
-  const glyph = document.querySelector(".nav-disclosure-icon");
-  expect(glyph).toHaveAttribute("aria-hidden", "true");
-  expect(glyph?.children).toHaveLength(2);
-  for (const bar of glyph?.children ?? []) expect(bar.tagName).toBe("SPAN");
+  expect(document.querySelector(".nav-disclosure-toggle svg")).toHaveAttribute("aria-hidden", "true");
 });

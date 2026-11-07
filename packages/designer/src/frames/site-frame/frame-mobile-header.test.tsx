@@ -117,8 +117,7 @@ it.each(["base", "inverse"] as const)("renders identical initial server/client i
   const toggle = within(output(shell, true)).getByRole("button", { name: "Menu" });
   expect(toggle).toHaveAttribute("aria-expanded", "false");
   expect(toggle.textContent).toBe("");
-  expect(toggle.querySelector(".nav-disclosure-icon")).toHaveAttribute("aria-hidden", "true");
-  expect(toggle.querySelectorAll(".nav-disclosure-icon > span")).toHaveLength(2);
+  expect(toggle.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
 });
 
 it("passes mobile layout through direct shells and siteShellFor into SiteHeader", () => {

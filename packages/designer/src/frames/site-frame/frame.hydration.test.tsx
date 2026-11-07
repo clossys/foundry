@@ -55,7 +55,7 @@ it("hydrates server navigation through the real default frame boundary with poin
     expect(dialog).toHaveAttribute("id", panelId);
     await user.keyboard("{Escape}");
     expect(toggle).toHaveAttribute("aria-expanded", "false");
-    toggle.focus();
+    act(() => toggle.focus());
     await user.keyboard("{Enter}");
     expect(toggle).toHaveAttribute("aria-expanded", "true");
     await user.keyboard("{Escape}");
