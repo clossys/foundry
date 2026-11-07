@@ -8,6 +8,7 @@ import { GROUND_PAINT } from "../components/Card.js";
 import { Layers, List, Search } from "../icons/index.js";
 import { AccountMenu, AppNavigation, PageBar, CommandMenu, Drawer, ResizablePane, useCommandMenuShortcut, type DrawerProps } from "../blocks/index.js";
 import { ThemeProvider, useTheme } from "../theme/index.js";
+import { ThemeTogglePresentation } from "../theme/ThemeToggle.js";
 import { FrameSlotProvider, FrameSlotOutlet, useFramePageHeader } from "../shell/index.js";
 import { framePageHeaderDeclaration } from "../shell/FrameSlots.js";
 import { AppFrameThemeSection } from "./AppFrameBrandTheme.js";
@@ -245,7 +246,8 @@ function FrameContent({ brand, navigation, account: { avatar = "initials", ...ac
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
   }, [hasToasts, dir]);
   const changeCollapsed = (next: boolean) => { setPanelCollapsed(next); rightPanel?.onCollapsedChange?.(next); };
-  const themeSlot = themeControl == null ? undefined : <SemanticContent as="div" data-application-frame-slot="theme-control" className="shrink-0">{themeControl}</SemanticContent>;
+  // The theme control is revealed inside the account menu popover: a ThemeToggle there shows labelled radios and no tooltips.
+  const themeSlot = themeControl == null ? undefined : <SemanticContent as="div" data-application-frame-slot="theme-control" className="shrink-0"><ThemeTogglePresentation value="menu">{themeControl}</ThemeTogglePresentation></SemanticContent>;
   const accountTheme = themeControl === undefined ? { preferenceLabels: theme?.preferenceLabels, toggleLabel: theme?.toggleLabel, preferenceAnnouncement: theme?.preferenceAnnouncement } : undefined;
   // The full footer track belongs to the actor; theme controls are revealed in the account popup.
   const accountControl = !showAccount ? null : account.actor

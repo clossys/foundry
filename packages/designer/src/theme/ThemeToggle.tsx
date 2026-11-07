@@ -1,6 +1,6 @@
 import { useShellCopy } from "../components/Banner.copy-context.js";
 import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
-import { useId, useState } from "react";
+import { createContext, useContext, useId, useState } from "react";
 import { Icon } from "../components/Icon.js";
 import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../components/ToggleGroup.js";
 import { Toolbar } from "../components/Toolbar.js";
@@ -11,6 +11,14 @@ import type { ThemePreference } from "./internal/theme-core.js";
 
 const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
 
+/**
+ * "menu" when a frame reveals the toggle inside a menu popover: each radio shows its
+ * label beside the glyph and opens no tooltip, so the menu alone owns hover and Escape.
+ */
+const ThemeTogglePresentationContext = createContext<"toolbar" | "menu">("toolbar");
+/** Frame-internal: the frame wraps a host theme control it places in its account menu. */
+export const ThemeTogglePresentation = ThemeTogglePresentationContext.Provider;
+
 /*
  * The selected preference is a surface step with the primary ink and a 1px
  * ink ring (the state reads at 3:1 or more without a fill), not the full
@@ -19,6 +27,9 @@ const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
  */
 const SELECTED_STEP =
   "icon-control-md shrink-0 transition-colors duration-(--ui-duration-fast) data-selected:bg-surface-selected data-selected:text-ink-primary data-selected:ring-1 data-selected:ring-inset data-selected:ring-current aria-pressed:bg-surface-selected aria-pressed:text-ink-primary";
+
+/** A labelled menu radio keeps the selected step but sizes to its glyph and label (the stock toggle's own text sizing). */
+const MENU_STEP = SELECTED_STEP.replace("icon-control-md ", "");
 
 export interface ThemePreferenceLabels {
   readonly system: string;
@@ -80,6 +91,7 @@ export function ThemeToggle({
   };
   const [announcedPreference, setAnnouncedPreference] = useState<ThemePreference | null>(null);
   const statusId = useId();
+  const inMenu = useContext(ThemeTogglePresentationContext) === "menu";
 
   return <>
     <Toolbar aria-label={toolbarLabel} className="border-0 p-0">
@@ -92,7 +104,11 @@ export function ThemeToggle({
           setAnnouncedPreference(next);
         }
       }}>
-      {PREFERENCES.map(target => <Tooltip key={target} trigger={
+      {PREFERENCES.map(target => inMenu
+        ? <ToggleGroupItem key={target} id={target} className={MENU_STEP}>
+          <Icon glyph={PREFERENCE_GLYPH[target]} decorative /><span>{preferenceLabels[target]}</span>
+        </ToggleGroupItem>
+        : <Tooltip key={target} trigger={
         <ToggleGroupItem id={target} aria-label={preferenceLabels[target]} className={SELECTED_STEP}>
           <Icon glyph={PREFERENCE_GLYPH[target]} decorative />
         </ToggleGroupItem>
