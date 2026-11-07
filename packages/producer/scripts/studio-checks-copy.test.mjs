@@ -16,8 +16,11 @@ const expected = { title: 'Checks', check: 'Check', result: 'Result', detail: 'D
   allPass: 'All {count} checks pass.', findings: '{failing} of {count} checks report a finding.' };
 
 test('Checks copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
-  await checkPayload({ slot: 'sections.studio.checks', element: 'studio-checks', version: 2, files: await candidateFiles(join(root, 'clossys'), 'sections.studio.checks', 'studio-checks-v2.json'), studioDir: source,
-    payload: ['LICENCE.md', 'index.tsx', 'registry-item.json'] });
+  // The normal payload is the one the Designer slot model pins today (re-pinned past v2 by later adoptions).
+  const pinned = JSON.parse(await readFile(join(root, 'clossys/agents/designer/sections.studio.checks/pin.json'), 'utf8')).candidate;
+  const files = await candidateFiles(join(root, 'clossys'), 'sections.studio.checks', pinned);
+  await checkPayload({ slot: 'sections.studio.checks', element: 'studio-checks', version: Number(/-v([1-9][0-9]*)\.json$/.exec(pinned)[1]), files, studioDir: source,
+    payload: [...files.keys()] });
   const registry = await studioCopyRegistry(join(root, 'clossys'));
   for (const [field, text] of Object.entries(expected)) {
     const id = `studio.checks-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;
@@ -69,8 +72,8 @@ test('Writer input preserves exact Checks markup across all conditional branches
   await build({ stdin: { contents: `export { slotDetailInputs } from './packages/producer/studio/lib/slot-detail.ts';`, resolveDir: root },
     outfile: callersBundle, bundle: true, platform: 'node', format: 'esm', packages: 'external', nodePaths: [join(root, 'node_modules')] });
   const { slotDetailInputs } = await import(callersBundle);
-  const links = { leaf: () => '/leaf', back: { href: '/writer', label: 'Writer' } };
-  const detail = { agent: 'writer', id: 'strings.example', kind: 'strings', trail: [], contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, history: [], checks: [], candidates: [], shown: null };
+  const links = { leaf: () => '/leaf', label: () => undefined, back: { href: '/writer', label: 'Writer' } };
+  const detail = { agent: 'writer', id: 'strings.example', name: 'Example', kind: 'strings', trail: [], contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, state: { state: 'rejected', reason: 'no-pin' }, history: [], checks: [], candidates: [], shown: null };
   assert.deepEqual(slotDetailInputs(detail, links, 'light').checks, { rows: [], copy: checksCopy([]) });
-  assert.deepEqual(slotDetailInputs({ ...detail, checks: [passing] }, links, 'light').checks, { rows: [{ key: '0', ...passing }], copy: checksCopy([passing]) });
+  assert.deepEqual(slotDetailInputs({ ...detail, checks: [passing] }, links, 'light').checks, { rows: [{ ...passing, key: '0' }], copy: checksCopy([passing]) });
 });

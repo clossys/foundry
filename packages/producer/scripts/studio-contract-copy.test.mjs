@@ -16,8 +16,11 @@ const expected = { title: 'Contract', description: 'What this leaf promises and 
   fact: 'Fact', value: 'Value', input: 'Input', type: 'Type', required: 'Required', yes: 'Yes', no: 'No', none: 'None' };
 
 test('Contract copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
-  await checkPayload({ slot: 'sections.studio.contract', element: 'studio-contract', version: 2, files: await candidateFiles(join(root, 'clossys'), 'sections.studio.contract', 'studio-contract-v2.json'), studioDir: source,
-    payload: ['LICENCE.md', 'index.tsx', 'registry-item.json'] });
+  // The normal payload is the one the Designer slot model pins today (re-pinned past v2 by later adoptions).
+  const pinned = JSON.parse(await readFile(join(root, 'clossys/agents/designer/sections.studio.contract/pin.json'), 'utf8')).candidate;
+  const files = await candidateFiles(join(root, 'clossys'), 'sections.studio.contract', pinned);
+  await checkPayload({ slot: 'sections.studio.contract', element: 'studio-contract', version: Number(/-v([1-9][0-9]*)\.json$/.exec(pinned)[1]), files, studioDir: source,
+    payload: [...files.keys()] });
   const registry = await studioCopyRegistry(join(root, 'clossys'));
   for (const [field, text] of Object.entries(expected)) {
     const id = `studio.contract-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;

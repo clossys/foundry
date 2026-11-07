@@ -16,8 +16,11 @@ const expected = { title: 'Options (pending approval)', key: 'Key', text: 'Text'
   pinnedTitle: '{name} v{version}, pinned', optionTitle: '{name} v{version}, option', stringsLabel: '{name} v{version} strings' };
 
 test('Options copy resolves all existing labels as draft and its normal pinned payload matches', async () => {
-  await checkPayload({ slot: 'sections.studio.options', element: 'studio-options', version: 2, files: await candidateFiles(join(root, 'clossys'), 'sections.studio.options', 'studio-options-v2.json'), studioDir: source,
-    payload: ['LICENCE.md', 'index.tsx', 'registry-item.json'] });
+  // The normal payload is the one the Designer slot model pins today (re-pinned past v2 by later adoptions).
+  const pinned = JSON.parse(await readFile(join(root, 'clossys/agents/designer/sections.studio.options/pin.json'), 'utf8')).candidate;
+  const files = await candidateFiles(join(root, 'clossys'), 'sections.studio.options', pinned);
+  await checkPayload({ slot: 'sections.studio.options', element: 'studio-options', version: Number(/-v([1-9][0-9]*)\.json$/.exec(pinned)[1]), files, studioDir: source,
+    payload: [...files.keys()] });
   const registry = await studioCopyRegistry(join(root, 'clossys'));
   for (const [field, text] of Object.entries(expected)) {
     const id = `studio.options-${field.replace(/[A-Z]/g, c => `-${c.toLowerCase()}`)}`;
@@ -88,8 +91,8 @@ test('Writer input preserves exact Options markup across all conditional branche
   await build({ stdin: { contents: `export { slotDetailInputs } from './packages/producer/studio/lib/slot-detail.ts';`, resolveDir: root },
     outfile: callersBundle, bundle: true, platform: 'node', format: 'esm', packages: 'external', nodePaths: [join(root, 'node_modules')] });
   const { slotDetailInputs } = await import(callersBundle);
-  const links = { leaf: () => '/leaf', back: { href: '/writer', label: 'Writer' } };
-  const detail = { agent: 'writer', id: 'strings.example', kind: 'strings', trail: [], contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, history: [], checks: [], candidates: [], shown: null };
+  const links = { leaf: () => '/leaf', label: () => undefined, back: { href: '/writer', label: 'Writer' } };
+  const detail = { agent: 'writer', id: 'strings.example', name: 'Example', kind: 'strings', trail: [], contract: {}, inputs: [], uses: [], usedBy: [], links: [], pin: null, state: { state: 'rejected', reason: 'no-pin' }, history: [], checks: [], candidates: [], shown: null };
   const canonical = slotDetailInputs(detail, links, 'light').options;
   assert.deepEqual(canonical.copy, copy);
   assert.deepEqual(canonical.rows, []);
