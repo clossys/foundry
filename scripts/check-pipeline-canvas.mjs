@@ -205,7 +205,7 @@ export function checkGeometry(graph, rendered, viewport = VIEWPORT) {
     for (const id of steps.keys()) if (!rendered.parts.some(part => part.id === id && part.part === "badge")) findings.push({ rule: "contain", message: `step ${id} draws no kind badge` });
   }
   if (rendered.sheet !== undefined) {
-    if (!rendered.sheet?.click) findings.push({ rule: "sheet", message: "a click on a step node away from its title does not open the step sheet" });
+    if (!rendered.sheet?.click) findings.push({ rule: "sheet", message: `a click on a step node away from its title does not open the step sheet${rendered.sheet?.clickError ? ` (the click did not land: ${rendered.sheet.clickError})` : ""}` });
     if (!rendered.sheet?.enter) findings.push({ rule: "sheet", message: "Enter on the focused step node does not open the step sheet" });
   }
   const legend = rendered.legend;
@@ -343,8 +343,9 @@ async function renderPage({ origin, expected, screenshot, sheetScreenshot, color
       sheet.enter = await opens();
       if (sheet.enter) { await page.keyboard.press("Escape"); await dialog.waitFor({ state: "hidden", timeout: 5_000 }).catch(() => {}); }
       const size = await step.boundingBox();
-      if (size) await step.click({ position: { x: size.width / 2, y: size.height - 6 } });
-      sheet.click = await opens();
+      // A click another element intercepts (the step lies outside the drawn canvas) is the sheet finding, not a crash.
+      const clicked = size ? await step.click({ position: { x: size.width / 2, y: size.height - 6 }, timeout: 10_000 }).then(() => true, error => { sheet.clickError = String(error?.message ?? error).split("\n")[0]; return false; }) : false;
+      sheet.click = clicked && await opens();
       if (sheet.click && sheetScreenshot) {
         await page.waitForTimeout(500);
         mkdirSync(dirname(sheetScreenshot), { recursive: true });
