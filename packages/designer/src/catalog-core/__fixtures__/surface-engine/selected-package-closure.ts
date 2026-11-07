@@ -22,13 +22,13 @@ export function selectedPackageComponentOptions() {
   } };
 }
 
-/** Foundry component candidates plus the selected stock source (shadcn@aria) for every component Foundry does not
- * supply, as the shipped selection does; stock fills come with their materialized source bundles. */
+/** Strict stock-first (planner:R2C-designer D3): the selected stock source (shadcn@aria) for every component it
+ * supplies, with its materialized source bundle, and a Foundry candidate only where no stock item exists. */
 export function selectedComponentFills(): CompositeCatalogData["components"]["fills"] {
-  const foundry = importFoundryComponents().fills;
-  const covered = new Set(foundry.map(doc => doc.$extensions["com.clossys.fill"].slot));
-  const stock = loadCatalogBundles().componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria" && !covered.has(doc.$extensions["com.clossys.fill"].slot));
-  return [...foundry, ...stock] as unknown as CompositeCatalogData["components"]["fills"];
+  const stock = loadCatalogBundles().componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria");
+  const covered = new Set(stock.map(doc => doc.$extensions["com.clossys.fill"].slot));
+  const foundry = importFoundryComponents().fills.filter(doc => !covered.has(doc.$extensions["com.clossys.fill"].slot));
+  return [...stock, ...foundry] as unknown as CompositeCatalogData["components"]["fills"];
 }
 
 /** The components the supplied surfaces declare, with their actual dependencies, in install order (dependency first). */

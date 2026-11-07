@@ -143,13 +143,16 @@ describe("real package-surface library golden", () => {
     // Re-captured by planner:R2C-designer (`vitest run -u`): R2F-11 parks the charts in components IA data and moves features'
     // sections.media into `composes`; R2F-20 residuals add the measured sheet/dialog/popover composes. Values unchanged:
     // composite 50ddc6b7 -> e6de19f5, component 9f5690b4 -> 3dda4793, surface f80ff291 -> fd4c1310, whole abac3d51 -> e7e52d3f.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:43f7fb11a7051e63740429965075485895a73a844c977479392ff202e7637009"`);
+    // Re-captured by planner:R2C-designer D3 (`vitest run -u`): the fixture takes strict stock-first components (shadcn@aria
+    // wherever a stock item exists, Foundry only otherwise). Values and surfaces unchanged:
+    // composite 43f7fb11 -> c07617e9, component 3dda4793 -> d0dfe6b0, whole 1ce98182 -> 04daad96.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:c07617e9f9d0111e26447f26ba99d96874cab9e44a9cdc1b40cddc77fb4a9022"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
-    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:3dda4793c1b323776c7cfda6b737a43d04e6d0b490429d01317ffcf583a8848e"`);
+    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:d0dfe6b02302abff9cdf79d4dce7555036b9f39184c777bed68bf990e798b583"`);
     expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:f5388d9a150eaa51b42c6746eeeb9ed152ab6670c7f7bb25f732659d485bb585"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"1ce9818205448b93a360aa97539cc6aa6e0e7c54a6bc2775ba753ab7a2f577bd"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"04daad96e9b7b31c0376bc187bd0afcd3899b86d03450ce2af678741adefd213"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });
