@@ -583,7 +583,8 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     ];
     trees.push(...navTrees);
     const navActiveClasses = [...new Set(navTrees.flatMap(tree => [...collectClassNames(tree.container)]).filter(className => className.startsWith("active:")))].sort();
-    expect(navActiveClasses).toEqual(["active:bg-surface-raised", "active:decoration-current"]);
+    // The stock LinkButton adds its press nudge; it must compile like every other rendered class.
+    expect(navActiveClasses).toEqual(["active:bg-surface-raised", "active:decoration-current", "active:not-aria-[haspopup]:translate-y-(--ui-border-hairline)"]);
 
     const renderedClasses = new Set<string>();
     for (const result of trees) {

@@ -113,6 +113,49 @@ const V4_UTILITY = String.raw`!?-?@?[a-zA-Z][a-zA-Z0-9_./@-]*(?:\[[^\]\s]*\]|\((
 const V4_PROPERTY = String.raw`\[--?[a-zA-Z][a-zA-Z0-9_-]*:[^\]\s]+\]`;
 const V4_CANDIDATE_SHAPE_RE = new RegExp(`^(?:${V4_VARIANT})*(?:${V4_UTILITY}|${V4_PROPERTY})$`);
 const MAX_CANDIDATE_LENGTH = 60;
+/**
+ * The stock shadcn@aria button and breadcrumb write Tailwind v4 values the
+ * two regexes above cannot express: a `(--var,fallback)` shorthand with a
+ * fallback (`border-(length:--ui-border-hairline,1px)`), a nested
+ * `calc(var(...))` fallback, and a variant holding a nested selector
+ * (`[&_svg:not([class*='size-'])]:`). This shape walks the token with a
+ * delimiter stack instead: every `[`/`(` closes in order, quotes stay inside a
+ * bracket, a `(...)` value must start with a custom property (optionally
+ * typed), and only whitespace-free tokens reach it. A prose read such as
+ * `var(--x, fallback)` is split at its space, so neither half balances and it
+ * is still never emitted. A plain arbitrary property (`[display:inherit]`,
+ * the stock dialog and sheet content) balances the same way. These grammar
+ * tokens may be longer.
+ */
+const BALANCED_MAX_LENGTH = 120;
+const BALANCED_HEAD_RE = /^!?-?@?[a-zA-Z*][a-zA-Z0-9_.@*-]*$/;
+function balancedCandidate(token: string): boolean {
+  if (token.length > BALANCED_MAX_LENGTH || !/[[(]/.test(token)) return false;
+  const parts: string[] = [];
+  const stack: string[] = [];
+  let start = 0;
+  for (let index = 0; index < token.length; index++) {
+    const ch = token[index]!;
+    if (ch === "[" || ch === "(") stack.push(ch === "[" ? "]" : ")");
+    else if (ch === "]" || ch === ")") { if (stack.pop() !== ch) return false; }
+    else if ((ch === "'" || ch === "\"") && !stack.includes("]")) return false;
+    else if (ch === ":" && stack.length === 0) { parts.push(token.slice(start, index)); start = index + 1; }
+  }
+  if (stack.length) return false;
+  parts.push(token.slice(start));
+  return parts.every((part, index) => {
+    const utility = index === parts.length - 1;
+    if (part.startsWith("[")) return part.endsWith("]") && (!utility || /^\[(?:--?[a-zA-Z][a-zA-Z0-9_-]*|[a-z][a-z-]*):[^\s]+\]$/.test(part));
+    const open = part.search(/[[(]/);
+    const head = open < 0 ? part : part.slice(0, open);
+    if (!BALANCED_HEAD_RE.test(head.replace(/\/[a-zA-Z0-9._-]+!?$/, ""))) return false;
+    if (open < 0) return true;
+    const close = part[open] === "[" ? part.lastIndexOf("]") : part.lastIndexOf(")");
+    const value = part.slice(open + 1, close);
+    if (part[open] === "(" && !/^(?:[a-z-]+:)?--[a-zA-Z0-9_-]+(?:,|$)/.test(value)) return false;
+    return /^(?:\/[a-zA-Z0-9._%-]+)?!?$/.test(part.slice(close + 1));
+  });
+}
 
 /**
  * Extracts every DOUBLE-quoted string literal, and every template literal
@@ -162,8 +205,9 @@ function extractStringLiterals(content: string): string[] {
 
 function candidatesFromLiteral(literal: string, out: Set<string>): void {
   for (const token of literal.split(/\s+/)) {
-    if (token.length === 0 || token.length > MAX_CANDIDATE_LENGTH) continue;
-    if (CANDIDATE_SHAPE_RE.test(token) || V4_CANDIDATE_SHAPE_RE.test(token)) out.add(token);
+    if (token.length === 0) continue;
+    if (token.length <= MAX_CANDIDATE_LENGTH && (CANDIDATE_SHAPE_RE.test(token) || V4_CANDIDATE_SHAPE_RE.test(token))) out.add(token);
+    else if (balancedCandidate(token)) out.add(token);
   }
 }
 

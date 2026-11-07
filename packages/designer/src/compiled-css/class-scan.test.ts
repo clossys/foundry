@@ -71,6 +71,16 @@ describe("scanClassCandidates", () => {
     expect(result.candidates.some((c) => c.includes(","))).toBe(false);
   });
 
+  it("keeps the stock button and breadcrumb fallback, nested calc, nested-selector and arbitrary-property shapes", () => {
+    const tokens = ["border-(length:--ui-border-hairline,1px)", "h-(--ui-control-h-md,calc(var(--spacing)*8))", "disabled:opacity-(--ui-alpha-disabled,50%)",
+      "active:not-aria-[haspopup]:translate-y-(--ui-border-hairline)", "[&>svg]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))",
+      "[&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4))", "[display:inherit]", "[flex-direction:inherit]"];
+    writeFileSync(join(dir, "button.tsx"), `const c = "${tokens.join(" ")}";\nconst s = "var(--ui-ring-focus, 0 0 0 2px) call(value) (prose)";\n`);
+    const result = scanClassCandidates(dir);
+    expect(tokens.filter((token) => !result.candidates.includes(token))).toEqual([]);
+    expect(result.candidates.filter((c) => !tokens.includes(c))).toEqual([]);
+  });
+
   it("skips test, spec, check, and declaration files", () => {
     writeFileSync(join(dir, "Widget.test.tsx"), `"bg-primary"`);
     writeFileSync(join(dir, "Widget.check.tsx"), `"bg-primary"`);
