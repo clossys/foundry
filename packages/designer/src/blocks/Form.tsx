@@ -17,7 +17,7 @@ import type { FormProps as SelectedFormProps } from "../components/Form.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const LeafForm = componentLeaf<typeof import("../components/Form.js").Form>("components.form");
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -333,6 +333,7 @@ export function Form({
             {errorList.map((error, index) => (
               <SemanticContent as="li" key={`${error.fieldId}-${index}`}>
                 <Link
+                  variant="link"
                   href={`#${error.fieldId}`}
                   className="text-status-danger-text"
                   style={(renderProps) =>

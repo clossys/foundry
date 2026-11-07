@@ -12,7 +12,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const BarChart = componentLeaf<typeof import("../../charts/BarChart.js").BarChart>("components.chart-bar");
 const LineChart = componentLeaf<typeof import("../../charts/LineChart.js").LineChart>("components.chart-line");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const Logomark = componentLeaf<typeof import("../../components/Logomark.js").Logomark>("components.logo");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -83,14 +83,15 @@ export function memberValue<Value extends string>(content: SectionContent, axis:
   return chosen[0] as Value | undefined;
 }
 
-const LINK_VARIANTS = ["primary", "secondary", "outline", "ghost", "tonal", "quiet"] as const;
-type ActionVariant = (typeof LINK_VARIANTS)[number];
+/** Content action vocabulary -> the stock LinkButton variant that renders it. */
+export const STOCK_LINK_VARIANT = { primary: "default", secondary: "secondary", outline: "outline", ghost: "ghost", tonal: "secondary", quiet: "ghost" } as const;
+type ActionVariant = keyof typeof STOCK_LINK_VARIANT;
 /** An action record `{ label, href, variant? }`, rendered by the registered Link in its button look. */
 export function actionNode(content: SectionContent, value: RuntimeJson | undefined, path: string, fallback: ActionVariant): ReactNode {
   const action = object(content, value, path);
   const variant = action.variant === undefined ? fallback : text(content, action.variant, `${path}.variant`);
-  if (!(LINK_VARIANTS as readonly string[]).includes(variant)) throw new SectionContentError(content.leaf, `${path}.variant ${variant} is not a link button variant`);
-  return <Link href={text(content, action.href, `${path}.href`)} buttonVariant={variant as ActionVariant}>{text(content, action.label, `${path}.label`)}</Link>;
+  if (!Object.hasOwn(STOCK_LINK_VARIANT, variant)) throw new SectionContentError(content.leaf, `${path}.variant ${variant} is not a link button variant`);
+  return <Link href={text(content, action.href, `${path}.href`)} variant={STOCK_LINK_VARIANT[variant as ActionVariant]}>{text(content, action.label, `${path}.label`)}</Link>;
 }
 
 /**

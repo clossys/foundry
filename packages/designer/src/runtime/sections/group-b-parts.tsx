@@ -5,7 +5,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SearchField = componentLeaf<typeof import("../../components/SearchField.js").SearchField>("components.search-field");
 const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
 const Toolbar = componentLeaf<typeof import("../../components/Toolbar.js").Toolbar>("components.toolbar");
@@ -29,7 +29,7 @@ export function FieldRegion({ content, field }: { readonly content: FieldRegionC
 }
 
 export function LinkRegion({ content }: { readonly content: LinkRegionContent }) {
-  return <>{content.links.map(link => <Link key={link.id} href={link.href} variant="muted">{link.label}</Link>)}</>;
+  return <>{content.links.map(link => <Link key={link.id} href={link.href} variant="link">{link.label}</Link>)}</>;
 }
 
 export function ToggleToolbarRegion({ content }: { readonly content: ToggleToolbarContent }) {

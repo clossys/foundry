@@ -6,7 +6,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { Button } from "../components/Button.js";
-import { Link } from "../components/Link.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { ErrorState, type ErrorStateKind } from "./ErrorState.js";
 
 describe("ErrorState", () => {
@@ -30,7 +30,7 @@ describe("ErrorState", () => {
     const onClick = vi.fn();
     const onRetry = vi.fn();
     render(<ErrorState kind="failure" title="Could not load" headingLevel={3} id="failure" dir="rtl" data-host="error" style={{ marginTop: 9 }} className="p-xl gap-lg" onClick={onClick}
-      retry={<Button onPress={onRetry}>Retry</Button>} report={<Link href="/help">Get help</Link>} />);
+      retry={<Button onPress={onRetry}>Retry</Button>} report={<Link variant="link" href="/help">Get help</Link>} />);
     const region = screen.getByRole("region", { name: "Could not load" });
     expect(region).toHaveAttribute("id", "failure");
     expect(region).toHaveAttribute("dir", "rtl");

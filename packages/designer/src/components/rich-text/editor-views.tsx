@@ -1,13 +1,13 @@
 import { MarkViewContent, NodeViewContent, NodeViewWrapper, useReactNodeView, type MarkViewProps } from "@tiptap/react";
 import { Badge } from "../Badge.js";
-import { Link } from "../Link.server.js";
+import { LinkButton as Link } from "../preview-runtime/components/button/button.js";
 import { SemanticContent } from "../SemanticContent.js";
 import { Table } from "../Table.js";
 import { RichTextCode, RichTextCallout, safeHref } from "./document.js";
 
 export function RichTextLinkView({ mark }: MarkViewProps) {
   const href = safeHref(mark.attrs.href);
-  return href ? <Link href={href} data-slot="rich-text-link"><MarkViewContent /></Link> : <SemanticContent as="span"><MarkViewContent /></SemanticContent>;
+  return href ? <Link variant="link" href={href} data-slot="rich-text-link"><MarkViewContent /></Link> : <SemanticContent as="span"><MarkViewContent /></SemanticContent>;
 }
 export function RichTextBadgeView() {
   return <Badge data-slot="rich-text-badge"><MarkViewContent /></Badge>;

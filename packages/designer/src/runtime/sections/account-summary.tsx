@@ -6,7 +6,7 @@ import { object, optionalText, readSectionContent, required, SectionContentError
 import { componentLeaf } from "../component-leaf.js";
 
 const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const LEAF = "sections.account-summary";
@@ -54,7 +54,7 @@ export const accountSummaryRenderer: SurfaceRendererEntry = {
     ];
     const actions = records(content, "actions").map((action, index) => {
       closed(content, action, ["label", "href"], `actions.${index}`);
-      return <Link key={index} href={destination(content, action.href, `actions.${index}.href`)}>{copy(text(content, action.label, `actions.${index}.label`))}</Link>;
+      return <Link key={index} variant="link" href={destination(content, action.href, `actions.${index}.href`)}>{copy(text(content, action.label, `actions.${index}.label`))}</Link>;
     });
     return <DetailView {...dsAttrs("sections", LEAF, `foundry/${LEAF}`)} data-designer-requires-section-frame="" title={copy(heading)} fields={fields} {...(actions.length ? { actions: <>{actions}</> } : {})} />;
   },

@@ -5,7 +5,7 @@ import { object, SectionContentError, text, type SectionContent } from "./group-
 import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 /** Live commands are consumer-owned and never enter the JSON content snapshot. */
 export interface MessageSectionHost {
@@ -40,7 +40,7 @@ export function messageActions(content: SectionContent, host: MessageSectionHost
     const label = text(content, action.label, `${path}.label`);
     if ((action.href === undefined) === (action.action === undefined)) throw new SectionContentError(content.leaf, `${path} needs exactly one of href or action`);
     const variant = index === 0 ? "primary" : "secondary";
-    if (action.href !== undefined) return <Link key={index} href={text(content, action.href, `${path}.href`)} buttonVariant={variant} isDisabled={host.pending} dir="auto">{label}</Link>;
+    if (action.href !== undefined) return <Link key={index} href={text(content, action.href, `${path}.href`)} variant={variant === "primary" ? "default" : variant} isDisabled={host.pending} dir="auto">{label}</Link>;
     const id = text(content, action.action, `${path}.action`);
     if (!host.onAction) throw new SectionContentError(content.leaf, `${path}.action needs sectionHost.onAction`);
     return <Button key={index} type="button" variant={variant} isDisabled={host.pending} onPress={() => { void host.onAction!(id); }} dir="auto">{label}</Button>;

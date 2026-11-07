@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ConsentBanner } from "./ConsentBanner.js";
-import { Link } from "../components/Link.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 
 describe("MR-7b consent section composition", () => {
   it("builds its content anatomy through SemanticContent rather than native JSX", () => {
@@ -19,7 +19,7 @@ describe("MR-7b consent section composition", () => {
     const onAccept = vi.fn(), onReject = vi.fn();
     render(<ConsentBanner presentation="card" selectedChoice="denied"
       title="Host title" body="Host body" acceptLabel="Host accept" rejectLabel="Host reject"
-      status="Host status" privacyLink={<Link href="/privacy">Host policy</Link>}
+      status="Host status" privacyLink={<Link variant="link" href="/privacy">Host policy</Link>}
       onAccept={onAccept} onReject={onReject} />);
     expect(screen.getByRole("region", { name: "Host title" })).toContainElement(screen.getByRole("status"));
     expect(screen.getByRole("status")).toHaveTextContent("Host status");

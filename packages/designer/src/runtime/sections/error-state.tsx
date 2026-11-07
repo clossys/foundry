@@ -5,7 +5,7 @@ import { actionsOf, anatomyOf, memberOf, noop, refuseUnmapped, requiredAnatomy, 
 import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const LEAF = "sections.error-state";
 const KINDS: readonly ErrorStateKind[] = ["not-found", "failure", "forbidden", "offline"];
@@ -35,7 +35,7 @@ export const renderErrorState: SectionRenderer = input => {
       description={description}
       code={textOf(slotValue(input, "code"))}
       retry={retry ? <Button variant="primary" onPress={noop}>{retry.label}</Button> : undefined}
-      report={report ? report.href ? <Link href={report.href}>{report.label}</Link> : <Button variant="secondary" onPress={noop}>{report.label}</Button> : undefined}
+      report={report ? report.href ? <Link variant="link" href={report.href}>{report.label}</Link> : <Button variant="secondary" onPress={noop}>{report.label}</Button> : undefined}
     />
   );
 };

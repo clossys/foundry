@@ -1,7 +1,7 @@
 "use client";
 
 import type { HTMLAttributes } from "react";
-import { Link } from "@clossys/designer/components";
+import { LinkButton as Link } from "@clossys/designer/components";
 import { mergeUiClasses } from "@clossys/designer/components/server";
 import { DataTable, EmptyState, Pagination, Panel, RecordLedger, Toolbar } from "@clossys/designer/blocks";
 import type { DataTableColumn, DataTableProps, EmptyStateProps, PaginationProps, PanelProps, RecordLedgerProps, ToolbarProps } from "@clossys/designer/blocks";
@@ -85,7 +85,7 @@ export function IndexView<Row>({ rows, columns, rowKey, collectionLabel, empty, 
     ...column,
     cell: (row: Row) => {
       const href = routes.get(row)!;
-      return <Link href={href} onKeyDown={event => {
+      return <Link variant="link" href={href} onKeyDown={event => {
         // React Aria reports a synthetic click on keyup; cancel the native Enter default separately.
         if (event.key === "Enter" && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) event.preventDefault();
       }} onClick={event => {

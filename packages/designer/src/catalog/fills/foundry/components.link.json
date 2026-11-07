@@ -9,14 +9,14 @@
       "license": "MIT",
       "mode": "implementation",
       "pin": {
-        "export": "./components#Link",
+        "export": "./components#LinkButton",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
       "relation": "same-contract",
       "slot": "components.link",
       "source": "foundry",
-      "sourceAddress": "./components#Link",
+      "sourceAddress": "./components#LinkButton",
       "status": "draft",
       "trust": "foundry"
     }
@@ -42,7 +42,7 @@
         }
       ],
       "impl": {
-        "export": "Link",
+        "export": "LinkButton",
         "kind": "package",
         "module": "@clossys/designer/components"
       },
@@ -52,20 +52,19 @@
         "appearance.inline"
       ],
       "pin": {
-        "export": "./components#Link",
+        "export": "./components#LinkButton",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
       "propMap": {
-        "appearance.button": "./components#Link.buttonVariant",
-        "appearance.inline": "./components#Link.variant=default"
+        "appearance.button": "./components#LinkButton.variant",
+        "appearance.inline": "./components#LinkButton.variant=link"
       },
       "props": [
-        "buttonSize",
-        "buttonVariant",
         "children",
         "className",
         "href",
+        "size",
         "variant"
       ],
       "rac": {

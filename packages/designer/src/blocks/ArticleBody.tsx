@@ -1,7 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { ArticleReadingProgress } from "./ArticleReading.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
 import { cx } from "../components/internal/cx.js";
@@ -93,7 +93,7 @@ function ArticleFigureCaption({ children }: { children: ReactNode }) {
 }
 function ArticleFootnoteReference({ id, noteId, children }: { id: string; noteId: string; children: ReactNode }) {
   assertFootnoteId(id); assertFootnoteId(noteId);
-  return <SemanticContent as="sup"><Link id={id} href={"#" + noteId} data-footnote-reference="">{children}</Link></SemanticContent>;
+  return <SemanticContent as="sup"><Link variant="link" id={id} href={"#" + noteId} data-footnote-reference="">{children}</Link></SemanticContent>;
 }
 function assertFootnoteId(value: string): void {
   if (typeof value !== "string" || !value || /[\s#]/.test(value)) throw new TypeError("ArticleBody: footnote ids must be nonempty fragment ids.");
@@ -102,7 +102,7 @@ function ArticleFootnotes({ label, items }: { label: string; items: readonly { i
   if (typeof label !== "string" || !label.trim()) throw new TypeError("ArticleBody: footnotes require a host label.");
   const ids = new Set<string>(), references = new Set<string>();
   for (const item of items) { assertFootnoteId(item.id); assertFootnoteId(item.referenceId); if (item.id === item.referenceId || ids.has(item.id) || references.has(item.referenceId)) throw new TypeError("ArticleBody: footnote ids must be unique."); ids.add(item.id); references.add(item.referenceId); }
-  return <SemanticContent as="section" role="doc-endnotes" aria-label={label}><SemanticContent as="ol" className="flex flex-col gap-sm">{items.map(item => <SemanticContent as="li" key={item.id} id={item.id} role="doc-endnote">{item.body}<Link href={"#" + item.referenceId} data-footnote-backlink="">{item.backlink}</Link></SemanticContent>)}</SemanticContent></SemanticContent>;
+  return <SemanticContent as="section" role="doc-endnotes" aria-label={label}><SemanticContent as="ol" className="flex flex-col gap-sm">{items.map(item => <SemanticContent as="li" key={item.id} id={item.id} role="doc-endnote">{item.body}<Link variant="link" href={"#" + item.referenceId} data-footnote-backlink="">{item.backlink}</Link></SemanticContent>)}</SemanticContent></SemanticContent>;
 }
 
 export const ArticleBody = Object.assign(ArticleBodyRoot, { PullQuote: ArticlePullQuote, FigureCaption: ArticleFigureCaption, FootnoteReference: ArticleFootnoteReference, Footnotes: ArticleFootnotes, Progress: ArticleReadingProgress });

@@ -11,7 +11,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -91,7 +91,7 @@ function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T
   </>;
   return <SemanticContent as="div" role="none">
     <SemanticContent as="div" role="none" ref={element => register(node.id, element?.querySelector<HTMLElement>("button, a") ?? null)}>
-      {node.href !== undefined ? <Link id={rowId} href={node.href} buttonVariant={selectedId === node.id ? "secondary" : "ghost"}
+      {node.href !== undefined ? <Link id={rowId} href={node.href} variant={selectedId === node.id ? "secondary" : "ghost"}
         className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
         render={domProps => <a {...domProps as ComponentPropsWithRef<"a">} {...semantics} />}
         onFocus={() => focus(node.id)} onKeyDown={event => keyboard(event, node)} onPress={() => activate(node)}>{content}</Link> :

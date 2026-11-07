@@ -2,9 +2,9 @@
 import type { ReactNode } from "react";
 import { componentLeaf } from "../component-leaf.js";
 import { CallToAction } from "../../blocks/CallToAction.js";
-import { object, optionalText, readSectionContent, required, SectionContentError, text, type SectionContent, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
+import { object, optionalText, readSectionContent, required, SectionContentError, STOCK_LINK_VARIANT, text, type SectionContent, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const variants = ["primary", "secondary", "outline", "ghost", "tonal", "quiet"] as const;
 type ActionVariant = typeof variants[number];
 function isVariant(value: string): value is ActionVariant { return variants.some(variant => variant === value); }
@@ -14,7 +14,7 @@ function action(content: SectionContent, value: Parameters<typeof object>[1], pa
   const entry = object(content, value, path);
   const variant = entry.variant === undefined ? defaultVariant : text(content, entry.variant, `${path}.variant`);
   if (!isVariant(variant)) throw new SectionContentError(content.leaf, `${path}.variant is not a link button variant`);
-  return <Link href={text(content, entry.href, `${path}.href`)} buttonVariant={variant}>{text(content, entry.label, `${path}.label`)}</Link>;
+  return <Link href={text(content, entry.href, `${path}.href`)} variant={STOCK_LINK_VARIANT[variant]}>{text(content, entry.label, `${path}.label`)}</Link>;
 }
 
 export const callToActionInputs: SectionRendererInputs = { slots: ["actions", "header"], members: [] };

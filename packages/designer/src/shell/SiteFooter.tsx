@@ -1,14 +1,14 @@
-import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode, type ComponentType } from "react";
+import { Children, cloneElement, isValidElement, type HTMLAttributes, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SITE_CHROME_GROUND_CLASSES, siteChromeHasBorder, type SiteChromeGround } from "./internal/shell-ground.js";
 import { GROUND_PAINT } from "../components/Card.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { SemanticContent } from "../components/SemanticContent.js";
-import type { LinkProps } from "../components/Link.types.js";
+import type { LinkButton } from "../components/preview-runtime/components/button/button.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 /** The selected pinned shadcn button module owns navigation semantics and styling. */
-const FooterLink = componentLeaf<ComponentType<Omit<LinkProps, "variant" | "buttonVariant" | "buttonSize"> & { variant?: "link" }>>("components.button", "LinkButton");
+const FooterLink = componentLeaf<typeof LinkButton>("components.button", "LinkButton");
 import { Logomark } from "../components/Logomark.js";
 import { Icon } from "../components/Icon.js";
 import type { IconNode } from "../icons/types.js";

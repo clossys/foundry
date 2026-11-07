@@ -1,5 +1,5 @@
 "use client";
-import { Link } from "@clossys/designer/components";
+import { LinkButton as Link } from "@clossys/designer/components";
 import { Button, Card, Select } from "@clossys/designer/components";
 
 import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
@@ -95,7 +95,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
           <Badge>{adopted ? `adopted into ${library.id}` : "not adopted"}</Badge>
           <Badge>used by {uses} {uses === 1 ? "instance" : "instances"} · selected config</Badge>
         </div>
-        {!adopted && <p>No consumer fill for this config. <Link href={designerHref}>Adopt in Designer</Link></p>}
+        {!adopted && <p>No consumer fill for this config. <Link variant="link" href={designerHref}>Adopt in Designer</Link></p>}
         <Select label="Config" selectedKey={selection.config} onSelectionChange={key => {
           const value = String(key ?? "");
           const owner = offered.find(item => item.contract.configs.some(config => config.id === value));

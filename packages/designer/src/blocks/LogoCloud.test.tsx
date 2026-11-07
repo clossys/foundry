@@ -16,8 +16,8 @@ import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 // barrel: the barrel re-exports modules that import this mocked module, so
 // awaiting it here waits on itself and the file never loads.
 vi.mock("../runtime/component-leaf.js", async () => {
-  const [link, content, item] = await Promise.all([import("../components/Link.client.js"), import("../components/SemanticContent.js"), import("../components/item/item.js")]);
-  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? link.Link : content.SemanticContent };
+  const [link, content, item] = await Promise.all([import("../components/preview-runtime/components/button/button.js"), import("../components/SemanticContent.js"), import("../components/item/item.js")]);
+  return { componentLeaf: (leaf: string, part?: string) => part ? item[part as keyof typeof item] : leaf === "components.link" ? link.LinkButton : content.SemanticContent };
 });
 
 type BrowserStep =

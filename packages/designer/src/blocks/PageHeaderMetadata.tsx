@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
 import type { Badge as BadgeType } from "../components/Badge.js";
-import type { Link as LinkType } from "../components/Link.js";
+import type { LinkButton as LinkType } from "../components/preview-runtime/components/button/button.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 const SemanticContent = componentLeaf<typeof SemanticContentType>("components.semantic-content");
 const Badge = componentLeaf<typeof BadgeType>("components.badge");
@@ -28,7 +28,7 @@ export function editorialDate(value: string, locale: string | undefined): string
 export function PageHeaderMetadata({ metadata, locale }: { metadata: EditorialMetadata; locale?: string }) {
   const { author, date, readingTime, tags, summary, outcomeStats } = metadata;
   const entries = [
-    author ? { id: "author", label: author.label, value: author.href ? <Link href={author.href}>{author.name}</Link> : author.name } : null,
+    author ? { id: "author", label: author.label, value: author.href ? <Link variant="link" href={author.href}>{author.name}</Link> : author.name } : null,
     date ? { id: "date", label: date.label, value: <SemanticContent as="time" dateTime={date.value}>{editorialDate(date.value, locale)}</SemanticContent> } : null,
     readingTime ? { id: "reading-time", label: readingTime.label, value: readingTime.value } : null,
   ].filter(entry => entry !== null);
@@ -41,7 +41,7 @@ export function PageHeaderMetadata({ metadata, locale }: { metadata: EditorialMe
       </SemanticContent> : <SemanticContent as="p" key={entry.id} dir="auto" className="m-0">{entry.value}</SemanticContent>)}
     </SemanticContent> : null}
     {tags?.length ? <SemanticContent as="ul" role="list" className="m-0 flex flex-wrap gap-xs p-0">
-      {tags.map(tag => <SemanticContent as="li" key={tag.id}><Badge>{tag.href ? <Link href={tag.href}>{tag.label}</Link> : tag.label}</Badge></SemanticContent>)}
+      {tags.map(tag => <SemanticContent as="li" key={tag.id}><Badge>{tag.href ? <Link variant="link" href={tag.href}>{tag.label}</Link> : tag.label}</Badge></SemanticContent>)}
     </SemanticContent> : null}
     {outcomeStats?.length ? <SemanticContent as="dl" className="m-0 grid grid-cols-1 gap-md tablet:grid-cols-3">
       {outcomeStats.map(stat => <SemanticContent as="div" key={stat.id}>

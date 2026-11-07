@@ -4,10 +4,10 @@
  */
 import type { ReactNode } from "react";
 import { PricingTable, type PricingTier } from "../../blocks/PricingTable.js";
-import { list, object, optionalText, readSectionContent, required, SectionContentError, text, texts, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
+import { list, object, optionalText, readSectionContent, required, SectionContentError, STOCK_LINK_VARIANT, text, texts, type SectionRenderInput, type SectionRendererInputs } from "./group-a-content.js";
 
 import { componentLeaf } from "../component-leaf.js";
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 export const pricingInputs: SectionRendererInputs = { slots: ["highlight", "interval", "plans"], members: [] };
 
@@ -27,7 +27,7 @@ export function renderPricingSection(input: SectionRenderInput): ReactNode {
         const requested = optionalText(content, action.variant, `${at}.cta.variant`) ?? (isHighlighted ? "primary" : "outline");
         const variant = (["primary", "secondary", "outline", "ghost", "tonal", "quiet"] as const).find(value => value === requested);
         if (!variant) throw new SectionContentError(content.leaf, `${at}.cta.variant is not a link button variant`);
-        return <Link href={text(content, action.href, `${at}.cta.href`)} buttonVariant={variant}>{text(content, action.label, `${at}.cta.label`)}</Link>;
+        return <Link href={text(content, action.href, `${at}.cta.href`)} variant={STOCK_LINK_VARIANT[variant]}>{text(content, action.label, `${at}.cta.label`)}</Link>;
       })(),
       isHighlighted,
       badge: optionalText(content, plan.badge, `${at}.badge`),

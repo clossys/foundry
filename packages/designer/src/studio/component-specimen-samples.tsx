@@ -37,7 +37,7 @@ const toggle: StateProps = { ...disabled, selected: { isSelected: true }, "read-
 /** The component's own props that force each state, by sample key. A state absent here cannot be forced by a prop. */
 const stateProps: Readonly<Record<string, StateProps>> = {
   "./components#Button": disabled,
-  "./components#Link": disabled,
+  "./components#LinkButton": disabled,
   "./components#Slider": disabled,
   "./components#Tabs": disabled,
   "./components#ToggleGroup": disabled,
@@ -165,7 +165,7 @@ function composed(key: string, exports: Namespace): ComponentSpecimenSample | un
     case "./components#Card": return Content && { props: {}, children: [<Content key="title" as="h3">{componentSpecimenCard.title}</Content>, <Content key="body" as="p">{componentSpecimenCard.content}</Content>] };
     case "./components#FileTrigger": return Button && { props: {}, children: <Button>{a.upload}</Button> };
     case "./components#Form": return Button && TextField && { props: {}, children: [<TextField key="field" {...a.field} />, <Button key="submit" type="submit">{a.submit}</Button>] };
-    case "./components#Link": return { props: { href: a.href } };
+    case "./components#LinkButton": return { props: { href: a.href, variant: "link" } };
     default: return undefined;
   }
 }

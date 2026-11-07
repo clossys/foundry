@@ -26,7 +26,7 @@ const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const ToggleButton = componentLeaf<StockToggle["Toggle"]>("components.toggle-button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const EMBEDDED_HEADER = "frame-header-row";
 const GLASS_SURFACE = "bg-surface-glass";
@@ -97,9 +97,9 @@ export interface PageBarProps {
 
 function PageAction({ label, href, onAction, isDisabled, primary, icon, isSelected, onSelectedChange }: PageBarAction) {
   if (isSelected !== undefined) return <ToggleButton aria-label={label} isSelected={isSelected} onChange={onSelectedChange ?? (() => onAction?.())} isDisabled={isDisabled}>{icon ?? label}</ToggleButton>;
-  if (icon) return href !== undefined ? <Link href={href} aria-label={label} buttonVariant="ghost" isDisabled={isDisabled}>{icon}</Link> : <Button aria-label={label} className={CONTROL} style={TAP} variant="ghost" onPress={onAction} isDisabled={isDisabled}>{icon}</Button>;
+  if (icon) return href !== undefined ? <Link href={href} aria-label={label} variant="ghost" isDisabled={isDisabled}>{icon}</Link> : <Button aria-label={label} className={CONTROL} style={TAP} variant="ghost" onPress={onAction} isDisabled={isDisabled}>{icon}</Button>;
   return href !== undefined
-    ? <Link href={href} buttonVariant={primary ? "primary" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
+    ? <Link href={href} variant={primary ? "default" : "ghost"} isDisabled={isDisabled} className="min-w-0 max-w-full"
         data-application-frame-action={primary ? "primary" : "secondary"}><SemanticContent as="span" className="min-w-0 truncate">{label}</SemanticContent></Link>
     : <Button variant={primary ? "primary" : "ghost"} onPress={onAction} isDisabled={isDisabled} className="min-w-0 max-w-full"
         data-application-frame-action={primary ? "primary" : "secondary"}><SemanticContent as="span" className="min-w-0 truncate">{label}</SemanticContent></Button>;
@@ -124,7 +124,7 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
     <ol className="m-0 flex min-w-0 list-none items-center gap-xs p-0">
       {root && <SemanticContent as="li" className="min-w-0 shrink-0">
         {workspaces?.length ? <CrumbMenu id="workspace" label={root.label} siblings={workspaces} /> :
-          <Link href={root.href} variant="standalone" className={CONTROL} style={TAP}>{root.label}</Link>}
+          <Link href={root.href} variant="link" className={CONTROL} style={TAP}>{root.label}</Link>}
       </SemanticContent>}
       {narrow && ancestors.length > 0
         ? <SemanticContent as="li" className="shrink-0"><MenuTrigger>
@@ -138,7 +138,7 @@ function PageTrail({ root, title, breadcrumb = [], workspaces, narrow,
             </PopupMenu>
           </MenuTrigger></SemanticContent>
         : ancestors.map(item => <SemanticContent as="li" key={item.id} className="min-w-0 shrink-0">
-            {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="standalone" className={CONTROL} style={TAP}>{item.label}</Link>}
+            {item.siblings?.length ? <CrumbMenu {...item} /> : <Link href={item.href} variant="link" className={CONTROL} style={TAP}>{item.label}</Link>}
           </SemanticContent>)}
       <SemanticContent as="li" className="min-w-0 flex-1">
         <SemanticContent as="h1" aria-current="page" className="m-0 truncate text-body font-semibold">{title}</SemanticContent>
@@ -312,7 +312,7 @@ function HeaderSlots({ header, onNavigate, embedded = false }: { header: PageBar
       style={embedded && overflow.compactNav ? { gridColumn: "1 / -1", gridRow: 2, blockSize: 0, inlineSize: 0, overflow: "hidden" } : undefined}>
       {header.nav?.items.map(item => {
         const selected = item.id === header.nav?.activeId;
-        return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} buttonVariant="ghost"
+        return <Link key={item.id} href={item.href} onClick={event => frameLinkNavigation(event, onNavigate)} aria-current={selected ? "page" : undefined} data-selected={selected || undefined} variant="ghost"
           className={"whitespace-nowrap border-b-2 " + (selected ? "border-primary text-ink-primary" : "border-transparent")} style={TAP}>{item.label}</Link>;
       })}
     </nav>

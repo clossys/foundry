@@ -55,7 +55,7 @@ function fedKeys(): Set<string> {
   return new Set([
     ...[componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples].flatMap(map => Object.keys(map)),
     // Drawn from the dataset's table, field, card, color and action records.
-    "./components#Table", "./components#Field", "./components#Card", "./components#ColorPicker", "./components#FileTrigger", "./components#Form", "./components#Link",
+    "./components#Table", "./components#Field", "./components#Card", "./components#ColorPicker", "./components#FileTrigger", "./components#Form", "./components#LinkButton",
     // The contained toast region takes the cell's own queue, seeded from the dataset's toasts.
     "./shell#Toaster",
   ]);

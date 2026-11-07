@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { renderToString } from "react-dom/server";
 import { afterEach, expect, it, vi } from "vitest";
-import { Link } from "../../components/Link.js";
+import { LinkButton as Link } from "../../components/preview-runtime/components/button/button.js";
 import { SiteHeader } from "../../shell/SiteHeader.js";
 import { FrameNavDisclosure } from "./FrameNavDisclosure.client.js";
 import { SiteNavDisclosure as ClientNavigation } from "./NavDisclosure.client.js";
@@ -21,7 +21,7 @@ const actions = [{ href: "https://contact.example.com/start?from=site", label: "
 const nav = { label: "Primary", triggerLabel: "Menu", closeLabel: "Close navigation", links };
 
 function fixture(label = "Products") {
-  return <SiteHeader brand={<Link href="#home">Home</Link>} nav={
+  return <SiteHeader brand={<Link variant="link" href="#home">Home</Link>} nav={
     <FrameNavDisclosure aria-label={nav.label} triggerLabel={nav.triggerLabel} closeLabel={nav.closeLabel} trigger="icon">
       <NavLinks links={[{ ...links[0]!, label }, ...links.slice(1)]} actions={actions} />
     </FrameNavDisclosure>

@@ -3,7 +3,7 @@ import { ConsentBanner } from "../../blocks/ConsentBanner.js";
 import { actionsOf, noop, refuseUnmapped, requireSlot, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const LEAF = "sections.consent";
 
@@ -27,7 +27,7 @@ export const renderConsent: SectionRenderer = input => {
       rejectLabel={choices[1]!.label}
       onAccept={noop}
       onReject={noop}
-      privacyLink={<Link href={policy.href}>{policy.label}</Link>}
+      privacyLink={<Link variant="link" href={policy.href}>{policy.label}</Link>}
     />
   );
 };

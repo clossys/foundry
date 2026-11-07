@@ -61,7 +61,7 @@ export const APP_FRAME_MATERIALS = [
     dependencies: [
       { exportName: "Panel", source: "src/blocks/Panel.tsx" },
       { exportName: "Drawer", source: "src/blocks/Drawer.tsx" },
-      { exportName: "Link", source: "src/components/Link.tsx" },
+      { exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Button", source: "src/components/Button.tsx" },
       { exportName: "Tooltip", source: "src/components/Tooltip.tsx" },
       { exportName: "Icon", source: "src/components/Icon.tsx" },
@@ -73,7 +73,7 @@ export const APP_FRAME_MATERIALS = [
     id: "page-bar", layer: "blocks", exportName: "PageBar", component: PageBar, source: "src/blocks/PageBar.tsx",
     regions: ["trail", "page-info", "actions"],
     dependencies: [
-      { exportName: "Link", source: "src/components/Link.tsx" },
+      { exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Menu", source: "src/components/Menu.tsx" },
       { exportName: "Popover", source: "src/components/Popover.tsx" },
       { exportName: "Button", source: "src/components/Button.tsx" },
@@ -105,7 +105,7 @@ export const APP_FRAME_MATERIALS = [
   {
     id: "relation-graph", layer: "blocks", informationArchitecture: "navigation", exportName: "RelationGraph", component: RelationGraph, source: "src/blocks/RelationGraph.tsx",
     regions: ["content", "drawing", "list"],
-    dependencies: [{ exportName: "Link", source: "src/components/Link.tsx" }, { exportName: "Button", source: "src/components/Button.tsx" }],
+    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Button", source: "src/components/Button.tsx" }],
     configs: [],
     authoredInputs: ["nodes", "edges", "kinds", "label", "selectedId", "onSelectionChange", "emptyMessage", "unavailableMessage", "incomingLabel", "outgoingLabel", "refusedLabel"],
   },

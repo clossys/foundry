@@ -160,15 +160,15 @@ describe("observeComponentSources on the real catalog", () => {
     expect(adoptedAffected.filter(slot => before.has(slot))).toEqual(adoptedAffected);
     expect(adoptedAffected.filter(slot => after.has(slot))).toEqual([]);
   }, 120_000);
-  it("observes the actual Link entry separately for default and react-server conditions", () => {
+  it("observes the stock LinkButton entry under default and react-server conditions", () => {
     const { input } = real();
-    for (const [condition, entry] of [["default", "client"], ["react-server", "server"]] as const) {
+    for (const condition of ["default", "react-server"] as const) {
       const result = observeComponentSources({ ...input, packageSource: (module, name) => packageSource(module, name, condition) });
       const link = result.evidence.observations["components.link"]!;
       expect(result.unobserved).toEqual([]);
-      expect(link.files.map(file => file.path)).toEqual([`components/Link.${entry}.tsx`]);
+      expect(link.files.map(file => file.path)).toEqual(["components/preview-runtime/components/button/button.tsx"]);
       expect(link.sourceHash).toBe(componentSourceHash(link.files));
-      expect(link.root).toBe(condition === "react-server" ? "engine:none" : "rac:Link");
+      expect(link.root).toBe("rac:Link");
       expect(link.forwardsRef).toBe(false);
     }
   }, 120_000);

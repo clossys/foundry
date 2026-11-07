@@ -7,7 +7,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { Icon } from "../components/Icon.js";
-import { Link } from "../components/Link.server.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { Globe } from "../icons/Globe.js";
 import { Brandmark } from "./Brandmark.js";
 import { SiteFooter } from "./SiteFooter.js";
@@ -16,9 +16,9 @@ const brand = <Brandmark variant="lockup" size="lg" label="Example home" wordmar
 const fixture = () => <SiteFooter
   brand={brand}
   columns={[
-    <SiteFooter.Column key="company" heading="Company"><Link href="/about">About</Link></SiteFooter.Column>,
-    <SiteFooter.Column key="legal" heading="Legal"><Link href="/privacy">Privacy</Link></SiteFooter.Column>,
-    <SiteFooter.Column key="connect" heading="Connect"><Link href="https://example.org/profile" aria-label="Public profile"><Icon glyph={Globe} decorative /></Link></SiteFooter.Column>,
+    <SiteFooter.Column key="company" heading="Company"><Link variant="link" href="/about">About</Link></SiteFooter.Column>,
+    <SiteFooter.Column key="legal" heading="Legal"><Link variant="link" href="/privacy">Privacy</Link></SiteFooter.Column>,
+    <SiteFooter.Column key="connect" heading="Connect"><Link variant="link" href="https://example.org/profile" aria-label="Public profile"><Icon glyph={Globe} decorative /></Link></SiteFooter.Column>,
   ]}
   secondary={<SiteFooter.Legal entity="Example" links={[]} />}
 />;

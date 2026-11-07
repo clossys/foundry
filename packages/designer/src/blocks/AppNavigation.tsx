@@ -23,7 +23,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const NavigationTree = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTree>("components.navigation-tree");
 const NavigationTreeItem = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTreeItem>("components.navigation-tree", "NavigationTreeItem");
 const NavigationTreeItemContent = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTreeItemContent>("components.navigation-tree", "NavigationTreeItemContent");
@@ -180,7 +180,7 @@ export function AppNavigation({ onNavigate, fullViewport = false, retainMounted 
       <SemanticContent as="span" className="min-w-0 truncate">{node.label}</SemanticContent></>;
     const shared = { "data-application-navigation-control": "", "data-navigation-node-id": node.id, "data-parent-id": parentId,
       "aria-current": current ? "page" as const : undefined, style: { borderInlineStartWidth: "var(--ui-border-rule)" }, className };
-    return node.href !== undefined ? <Link {...shared} variant="muted" href={node.href} onClick={event => frameLinkNavigation(event, onNavigate)}>{content}</Link> :
+    return node.href !== undefined ? <Link {...shared} variant="link" href={node.href} onClick={event => frameLinkNavigation(event, onNavigate)}>{content}</Link> :
       <Button {...shared} variant="ghost" onPress={() => { node.onAction?.(); if (narrow) changeOpen(false); }}>{content}</Button>;
   };
   const item = (node: AppNavigationNode, parentId?: string): ReactNode => {

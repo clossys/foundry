@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
-import { Link } from "@clossys/designer/components";
+import { LinkButton as Link } from "@clossys/designer/components";
 import { ConsentBanner } from "@clossys/designer/blocks";
 import type { ResolvedConsentCopy, ResolvedCopyField } from "../../consent-copy/types.js";
 import { isSanctionedHref } from "../../internal/href.js";
@@ -445,7 +445,7 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
     };
   }, [visible, noticeCopyMissing, presentation]);
 
-  const inlinePolicy = linkLabel === undefined ? null : policyLinkShown ? <Link href={policyHref} className={CARD_POLICY_LINK_CLASS}>{linkLabel}</Link> : linkLabel;
+  const inlinePolicy = linkLabel === undefined ? null : policyLinkShown ? <Link variant="link" href={policyHref} className={CARD_POLICY_LINK_CLASS}>{linkLabel}</Link> : linkLabel;
   const cardBody = (
     <>
       {body}
@@ -469,7 +469,7 @@ export function ConsentExperience(props: ConsentExperienceProps): ReactNode {
         rejectLabel={rejectLabel}
         onAccept={seamFailed ? inert : handleAccept}
         onReject={seamFailed ? inert : handleReject}
-        privacyLink={presentation === "banner" && policyLinkShown ? <Link href={policyHref}>{linkLabel}</Link> : undefined}
+        privacyLink={presentation === "banner" && policyLinkShown ? <Link variant="link" href={policyHref}>{linkLabel}</Link> : undefined}
         status={statusCopyMissing ? undefined : statusCopy?.text}
       />
     </div>

@@ -10,7 +10,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Link = componentLeaf<typeof import("../components/Link.client.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.link-index", "foundry/sections.link-index");
@@ -56,7 +56,7 @@ function LinkedCard({ item }: { item: LinkedNavItem }) {
   const separateDescription = hasInteractiveContent([item.description]);
   assertNoNestedInteractive("NavGrid", item.id, separateDescription ? [item.icon, item.title] : [item.icon, item.title, item.description]);
   const heading = separateDescription ? (
-    <Link href={item.href} className="inline-flex items-center text-inherit underline underline-offset-4 rounded-control outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, minInlineSize: UI_LAYOUT_TAP_TARGET }}>{item.title}</Link>
+    <Link href={item.href} variant="link" className="inline-flex items-center text-inherit underline underline-offset-4 rounded-control outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET, minInlineSize: UI_LAYOUT_TAP_TARGET }}>{item.title}</Link>
   ) : item.title;
   return <SemanticContent as="div" data-nav-grid-card="" className={cx(CARD_BASE, separateDescription ? undefined : LINKED_TILE)}>
     <ItemRenderer item={{ id: item.id, heading, description: item.description, icon: item.icon, ...(separateDescription ? {} : { href: item.href }) }} treatment="plain" size="standard" ground="base" navigation="control" />

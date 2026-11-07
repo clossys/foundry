@@ -39,7 +39,7 @@ import { Button } from "../components/Button.js";
 import { Card } from "../components/Card.js";
 import { Checkbox } from "../components/Checkbox.js";
 import { Chip } from "../components/Chip.js";
-import { Link } from "../components/Link.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { Meter } from "../components/Meter.js";
 import { Separator } from "../components/preview-runtime/components/separator/separator.js";
 import { ResizeHandle } from "../components/ResizeHandle.js";
@@ -467,9 +467,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         </Breadcrumb>,
       ),
     ]);
-    trees.push(["Link default", render(<Link href="/x">Go</Link>)]);
-    trees.push(["Link muted", render(<Link href="/x" variant="muted">Go</Link>)]);
-    trees.push(["Link standalone", render(<Link href="/x" variant="standalone">Go</Link>)]);
+    trees.push(["LinkButton link", render(<Link href="/x" variant="link">Go</Link>)]);
     trees.push(["Chip", render(<Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>)]);
     trees.push(["Separator", render(<Separator />)]);
     trees.push(["Skeleton", render(<Skeleton style={{ width: 100, height: 20 }} />)]);

@@ -1,5 +1,5 @@
 "use client";
-import { Link } from "@clossys/designer/components";
+import { LinkButton as Link } from "@clossys/designer/components";
 import { Button, Card, Select } from "@clossys/designer/components";
 
 import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
@@ -112,7 +112,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
     // Other rows have their own inspector after selection; their exact path is retained.
     const path = targetPath(finding.path, rowIndex);
     const href = anchor(rowIndex, path);
-    return <Link href={`#${href}`} onClick={event => {
+    return <Link variant="link" href={`#${href}`} onClick={event => {
       event.preventDefault(); setSelection(rows[rowIndex]!.key); setFocusTarget(href);
     }}>{label ? `${label} · ` : ""}{finding.code} · {finding.path}: {finding.message}</Link>;
   };
@@ -167,7 +167,7 @@ export function PublisherInstancesView({ instances, library, registries, compile
               {(binding.fills[slot] ?? []).length ? <ol>{binding.fills[slot]!.map((fill, i) => renderFill(fill, `fills.${slot}.${i}`, i + 1))}</ol> : <p>No fill supplied</p>}
             </div>)}
             <div id={anchor(selected!.index, "frame.slotFills")} tabIndex={-1}><SectionHeader level={5} title={<>Frame optional slots</>} />{(["context", "consent"] as const).map(slot => <div key={slot}><p>{slot}</p>{binding.frame.slotFills?.[slot] ? <ol>{renderFill(binding.frame.slotFills[slot], `frame.slotFills.${slot}`, 1)}</ol> : <p>No fill supplied</p>}</div>)}</div>
-            <Link href={designerHref}>Adopt in Designer</Link><p>Fill selection is read-only.</p>
+            <Link variant="link" href={designerHref}>Adopt in Designer</Link><p>Fill selection is read-only.</p>
           </section>
           <section aria-label="Content refs" className="grid gap-md"><SectionHeader level={4} title={<>Content refs</>} />
             <div role="group" aria-label="Frame host content references" id={anchor(selected!.index, "frame.content")} tabIndex={-1}>

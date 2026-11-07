@@ -175,7 +175,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Navigation
-  onMain("Link", ["src/components/Link.tsx"], {
+  onMain("Link", ["src/components/preview-runtime/components/button/button.tsx"], {
     id: "act.link",
     label: "Link",
     racBase: rac("Link"),

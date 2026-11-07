@@ -49,7 +49,7 @@ export const componentSpecimenText: Readonly<Record<string, string>> = {
   "./components#Banner": d.text.banner,
   "./components#Button": d.text.action,
   "./components#Checkbox": d.text.checkbox,
-  "./components#Link": d.text.link,
+  "./components#LinkButton": d.text.link,
   "./components#NativeAction": d.text.draft,
   "./components#SemanticContent": d.text.paragraph,
   "./components#StatusMark": d.text.statusMark,

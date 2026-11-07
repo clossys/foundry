@@ -1,7 +1,7 @@
 "use client";
 import { createPublisherValueNames, publisherValueRef } from "./value-names.js";
 import { publisherCopy, PUBLISHER_COPY_REFS, PUBLISHER_PAGE_DESCRIPTION_REF, type PublisherCopyResolver, type PublisherCopyRef } from "./copy.js";
-import { Badge, Button, Link, Select } from "@clossys/designer/components";
+import { Badge, Button, LinkButton as Link, Select } from "@clossys/designer/components";
 import { DataTable, DetailView, EmptyState, NoticeList, PageHeader, ResourceList, StatGroup } from "@clossys/designer/blocks";
 import { SlotModule, PageHeaderModule } from "@clossys/designer/shell";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -286,7 +286,7 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
             { label: name("publisher.contentKey", "deliveries"), value: chosenDisplay.deliveries.map((delivery, index) => <span key={index}>{text(delivery.labelRef)}{delivery.fidelityRef ? <> · {text(delivery.fidelityRef)}</> : null}</span>) },
           ]} />)}
         </> }]} />
-        {selectedRow.route && <DetailView fields={[{ label: copy("routeEvidence"), value: <Link href={selectedRow.route.registration.path}>{selectedLabel}</Link> }]} />}
+        {selectedRow.route && <DetailView fields={[{ label: copy("routeEvidence"), value: <Link variant="link" href={selectedRow.route.registration.path}>{selectedLabel}</Link> }]} />}
         {itemAssembly && selectedPipeline?.configured && <DetailView fields={[{ label: copy("evidence"), value: itemAssembly(selectedPipeline), span: 2 }]} />}
       </div>
     </SlotModule>}

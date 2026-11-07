@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Banner, Button, Card, Link, Select } from '@clossys/designer/components';
+import { Banner, Button, Card, LinkButton as Link, Select } from '@clossys/designer/components';
 import { DataTable, DetailView, EmptyState, Form, NoticeList, SectionHeader, Toolbar } from '@clossys/designer/blocks';
 import type { InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherConfiguration } from '../../planning/configuration.js';
@@ -16,7 +16,7 @@ export interface PublisherSectionProps {
 /** Closed Section adapters: controllers keep the sole plan, history, settings and source bindings. */
 export function PublisherSection(props: PublisherSectionProps) {
   const { data, onCommand } = props;
-  const cell = (value: PublisherCell) => value.kind === 'text' ? value.text : value.kind === 'link' ? <Link href={value.href}>{value.label}</Link> : <Button onPress={() => onCommand(value.command)}>{value.label}</Button>;
+  const cell = (value: PublisherCell) => value.kind === 'text' ? value.text : value.kind === 'link' ? <Link variant="link" href={value.href}>{value.label}</Link> : <Button onPress={() => onCommand(value.command)}>{value.label}</Button>;
   if (data.section === 'sections.form') return <PublisherFormSection {...props} data={data} />;
   if (data.section === 'sections.empty-state' || data.section === 'sections.error-state') return <section aria-label={data.label} data-publisher-section={data.id}><div role={data.section === 'sections.error-state' ? 'alert' : undefined}><EmptyState title={data.label} description={data.message} /></div></section>;
   if (data.section === 'sections.notices') return <NoticeList label={data.label} data-publisher-section={data.id} notices={data.notices} />;

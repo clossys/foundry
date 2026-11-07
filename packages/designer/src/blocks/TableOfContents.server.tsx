@@ -1,6 +1,6 @@
 import { componentLeaf } from "../runtime/component-leaf.js";
 import { TableOfContentsDisclosure } from "./TableOfContentsDisclosure.js";
-const Link = componentLeaf<typeof import("../components/Link.server.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 import { articleTocCss, readingTarget } from "./ArticleReading.js";
 import type { ReactNode } from "react";
@@ -63,7 +63,7 @@ export function renderTableOfContentsList(items: readonly TableOfContentsItem[],
         return (
           <SemanticContent as="li" key={item.id}>
             <LinkComponent
-              variant="standalone"
+              variant="link"
               data-reading-target={cssTracking ? readingTarget(item.id).name : undefined}
               href={"#" + item.id}
               onClick={onNavigate ? event => { event.preventDefault(); onNavigate(item.id); } : undefined}

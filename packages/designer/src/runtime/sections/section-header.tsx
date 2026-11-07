@@ -13,7 +13,7 @@ const MenuTrigger = componentLeaf<StockMenu["DropdownMenuTrigger"]>("components.
 const PopupMenu = componentLeaf<StockMenu["DropdownMenu"]>("components.menu");
 const MenuItem = componentLeaf<StockMenu["DropdownMenuItem"]>("components.menu", "MenuItem");
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const LEAF = "sections.section-header";
 const ALIGNS = ["start", "center"] as const;
@@ -50,7 +50,7 @@ export const renderSectionHeader: SectionRenderer = input => {
     const items = isObject(raw) ? raw.items : undefined;
     if (items !== undefined) return <MenuTrigger key={action.id}><Button variant="secondary">{action.label}</Button><PopupMenu>{actionsOf(LEAF, "actions.items", items).map(item => <MenuItem key={item.id} id={item.id} href={item.href} onAction={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(item.id); }}>{item.label}</MenuItem>)}</PopupMenu></MenuTrigger>;
     return action.href
-      ? <Link key={action.id} href={action.href} variant="standalone">{action.label}</Link>
+      ? <Link key={action.id} href={action.href} variant="link">{action.label}</Link>
       : <Button key={action.id} variant={index === 0 ? "primary" : "secondary"} onPress={() => { const handler = input.sectionHost?.onAction; if (typeof handler === "function") handler(action.id); else noop(); }}>{action.label}</Button>;
   });
   return (

@@ -6809,20 +6809,20 @@
         "pin": {
           "package": "@clossys/designer",
           "version": "0.12.0",
-          "export": "./components#Link"
+          "export": "./components#LinkButton"
         },
         "license": "MIT",
-        "sha256": "aa238236d84db65bd9a5c41c9a395126d1bb1ed3109f23f493777edce3e5d9ff",
+        "sha256": "2117459676ff7a5eedefddd34a7b87902ccd5a9c21d4d14f1e7bae7de908ca00",
         "adoptedAt": "2026-10-26"
       },
       "impl": {
         "kind": "package",
         "module": "@clossys/designer/components",
-        "export": "Link"
+        "export": "LinkButton"
       },
       "propMap": {
-        "appearance.button": "./components#Link.buttonVariant",
-        "appearance.inline": "./components#Link.variant=default"
+        "appearance.button": "./components#LinkButton.variant",
+        "appearance.inline": "./components#LinkButton.variant=link"
       },
       "reads": {
         "themes": {
@@ -6870,16 +6870,15 @@
           "appearance.inline"
         ],
         "props": [
-          "buttonSize",
-          "buttonVariant",
           "children",
           "className",
           "href",
+          "size",
           "variant"
         ],
         "propMap": {
-          "appearance.button": "./components#Link.buttonVariant",
-          "appearance.inline": "./components#Link.variant=default"
+          "appearance.button": "./components#LinkButton.variant",
+          "appearance.inline": "./components#LinkButton.variant=link"
         },
         "reads": {
           "themes": [
@@ -6922,13 +6921,13 @@
         "impl": {
           "kind": "package",
           "module": "@clossys/designer/components",
-          "export": "Link"
+          "export": "LinkButton"
         },
         "license": "MIT",
         "pin": {
           "package": "@clossys/designer",
           "version": "0.12.0",
-          "export": "./components#Link"
+          "export": "./components#LinkButton"
         },
         "deps": [
           {
@@ -6959,10 +6958,10 @@
           "pin": {
             "package": "@clossys/designer",
             "version": "0.12.0",
-            "export": "./components#Link"
+            "export": "./components#LinkButton"
           },
           "license": "MIT",
-          "sha256": "aa238236d84db65bd9a5c41c9a395126d1bb1ed3109f23f493777edce3e5d9ff",
+          "sha256": "2117459676ff7a5eedefddd34a7b87902ccd5a9c21d4d14f1e7bae7de908ca00",
           "adoptedAt": "2026-10-26"
         }
       }
@@ -17626,7 +17625,7 @@
       "ItemMedia",
       "ItemSeparator",
       "ItemTitle",
-      "Link",
+      "LinkButton",
       "Logomark",
       "MediaPlayer",
       "Menu",

@@ -8,7 +8,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { SemanticContent } from "../../components/SemanticContent.js";
-import { Link } from "../../components/Link.client.js";
+import { LinkButton } from "../../components/preview-runtime/components/button/button.js";
 import { Button } from "../../components/Button.js";
 import { CallToAction } from "../../blocks/CallToAction.js";
 import { componentDescriptorHash, type ResolvedComponents } from "../../catalog-core/resolve-components.js";
@@ -66,7 +66,7 @@ beforeAll(async () => {
   if (!previous) throw new Error("NEED registered Card preview selection");
   profile.components = { ...profile.components, "components.card": { ...previous, descriptor, impl: descriptor.impl, propMap: descriptor.propMap } };
   profile.files = [...profile.files, ...files];
-  selection = { profile: { components: profile }, selectionHash: profile.selectionHash, descriptors: Object.fromEntries(Object.entries(profile.components).map(([leaf, chosen]) => [leaf, componentDescriptorHash(chosen.descriptor)])), modules: { "@clossys/designer/components": { SemanticContent, Link, Button }, "components/button/button.tsx": defaultSourceModules["components/button/button.tsx"], [descriptor.impl.entry]: native } };
+  selection = { profile: { components: profile }, selectionHash: profile.selectionHash, descriptors: Object.fromEntries(Object.entries(profile.components).map(([leaf, chosen]) => [leaf, componentDescriptorHash(chosen.descriptor)])), modules: { "@clossys/designer/components": { SemanticContent, LinkButton, Button }, "components/button/button.tsx": defaultSourceModules["components/button/button.tsx"], [descriptor.impl.entry]: native } };
 });
 function mount(node: React.ReactNode) {
   return render(<ConsumerComponentProvider value={selection}><Suspense>{node}</Suspense></ConsumerComponentProvider>);

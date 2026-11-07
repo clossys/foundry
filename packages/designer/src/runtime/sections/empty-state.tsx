@@ -7,7 +7,7 @@ import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
 const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const LEAF = "sections.empty-state";
 const GLYPHS = icons as unknown as Readonly<Record<string, icons.IconNode | undefined>>;
@@ -35,7 +35,7 @@ export const renderEmptyState: SectionRenderer = input => {
     icon = label ? <Icon glyph={glyph} label={label} size="lg" /> : <Icon glyph={glyph} decorative size="lg" />;
   }
   const actions = actionsOf(LEAF, "actions", slotValue(input, "actions"), 2).map((action, index) => action.href
-    ? <Link key={action.id} href={action.href} variant="standalone">{action.label}</Link>
+    ? <Link key={action.id} href={action.href} variant="link">{action.label}</Link>
     : <Button key={action.id} variant={index === 0 ? "primary" : "secondary"} onPress={noop}>{action.label}</Button>);
   return <EmptyState title={title} description={description} icon={icon} action={actions.length ? actions : undefined} />;
 };

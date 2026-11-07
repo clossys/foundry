@@ -15,7 +15,7 @@ import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const read = frameContent("frames.app-sidebar");
 type Presentation = "docked" | "collapsed" | "overlay";
@@ -29,7 +29,7 @@ export function appSidebarProps(input: Pick<FrameInput, "content" | "selection" 
   let headerNode: ReactNode;
   if (header) {
     const label = read.required(header.label, "header.label"), target = read.destination(header, host, "header");
-    headerNode = "href" in target ? <Link href={target.href} buttonVariant="secondary">{label}</Link> : <Button variant="secondary" onPress={target.onAction}>{label}</Button>;
+    headerNode = "href" in target ? <Link href={target.href} variant="secondary">{label}</Link> : <Button variant="secondary" onPress={target.onAction}>{label}</Button>;
   }
   const presentation = runtimeMember<Presentation>(input, "presentation", "docked");
   return {

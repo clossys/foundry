@@ -1,6 +1,6 @@
 import type { ComponentType, HTMLAttributes, ReactNode } from "react";
 import type { BadgeVariant } from "../components/Badge.js";
-import type { Link as LinkType } from "../components/Link.js";
+import type { LinkButton as LinkType } from "../components/preview-runtime/components/button/button.js";
 import type { SemanticContent as SemanticContentType } from "../components/SemanticContent.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 import { cx } from "../components/internal/cx.js";
@@ -57,7 +57,7 @@ export function RecordCards({ records, config, locale, layout = "grid", headingL
         </SemanticContent> : null}
         <CardHeader className="flex flex-col gap-sm">
           <CardTitle><SemanticContent as={heading} className="m-0 text-body-l font-medium text-ink-primary">
-            {record.href ? <Link href={record.href} variant="standalone">{record.title}</Link> : record.title}
+            {record.href ? <Link href={record.href} variant="link">{record.title}</Link> : record.title}
           </SemanticContent></CardTitle>
           {record.badge ? record.badge.variant && record.badge.variant !== "neutral" && record.badge.variant !== "danger"
             ? <Badge variant={record.badge.variant}>{record.badge.label}</Badge>

@@ -5,7 +5,7 @@ import { ChevronRight } from "../icons/ChevronRight.js";
 import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -98,7 +98,7 @@ export interface CardLinkTitleProps {
 /** The title as the item's one link, with its chevron. Place it inside the title element. */
 export function CardLinkTitle({ href, frame, ground, iconSize = "sm", children, className }: CardLinkTitleProps) {
   return (
-    <Link href={href} variant="standalone" style={{ font: "inherit" }} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground], className)}>
+    <Link href={href} variant="link" style={{ font: "inherit" }} data-card-link="" className={cx(ANCHOR_BASE, HIT_AREA_CLASSES[frame], RING_CLASSES[ground], className)}>
       {children}
       <SemanticContent as="span" aria-hidden="true">{" "}</SemanticContent>
       <Icon glyph={ChevronRight} decorative size={iconSize} className={cx("inline align-middle", SECTION_GROUND_CLASSES[ground].secondary)} />

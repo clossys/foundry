@@ -347,8 +347,8 @@ export function NativeFrame({ children, copy }: { children?: ReactNode; copy: { 
   await writeFile(join(dir, "app/page.tsx"), draft.module!);
   await writeFile(join(dir, draft.host!.file), draft.host!.module);
   await writeFile(join(dir, "selection.ts"), `import type { ConsumerComponentSelection } from "@clossys/designer/frames";
-import { Link } from "@clossys/designer/components";
-export const componentSelection: ConsumerComponentSelection = { profile: ${JSON.stringify(adoptedSelection.profile)}, selectionHash: ${JSON.stringify(adoptedSelection.selectionHash)}, descriptors: ${JSON.stringify(adoptedSelection.descriptors)}, modules: { "@clossys/designer/components": { Link } } };
+import { LinkButton } from "@clossys/designer/components";
+export const componentSelection: ConsumerComponentSelection = { profile: ${JSON.stringify(adoptedSelection.profile)}, selectionHash: ${JSON.stringify(adoptedSelection.selectionHash)}, descriptors: ${JSON.stringify(adoptedSelection.descriptors)}, modules: { "@clossys/designer/components": { LinkButton } } };
 `);
   await writeFile(join(dir, "app/layout.tsx"), `import type { ReactNode } from "react";
 export default function Layout({children}: {children: ReactNode}) { return <html lang="en"><body>{children}</body></html>; }

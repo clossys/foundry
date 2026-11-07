@@ -1,9 +1,15 @@
 import type { ComponentProps, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
-import { SKIP_LINK_CLASSES } from "../components/Link.styles.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
-const Link = componentLeaf<typeof import("../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
+
+/**
+ * The skip link's look: visually hidden until focused, then a fixed primary
+ * plate at the inline-start corner on the skip-link layer. The link keeps its
+ * own focus ring.
+ */
+const SKIP_LINK_CLASSES = "sr-only focus:not-sr-only layer-skip-link focus:fixed focus:skip-link-inset focus:rounded-control focus:bg-primary focus:text-body focus:text-primary-foreground focus:outline-none";
 
 export interface SkipLinkProps {
   /**
@@ -93,6 +99,7 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
 
   return (
     <Link
+      variant="link"
       href={`#${targetId}`}
       onClick={onClick}
       onKeyDown={onKeyDown}

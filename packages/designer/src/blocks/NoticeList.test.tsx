@@ -6,13 +6,13 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { ShellCopyProvider } from "../components/Banner.copy-context.js";
 import { SHELL_COPY_REFS, type ShellCopyRef } from "../components/Banner.copy.js";
-import { Link } from "../components/Link.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { NoticeList } from "./NoticeList.js";
 
 describe("NoticeList", () => {
   it("preserves labelled list semantics, severity and inline reading order", () => {
     render(<NoticeList label="Account notices" id="notices" dir="rtl" data-host="notices" style={{ marginTop: 9 }} className="gap-lg" notices={[
-      { id: "warning", tone: "danger", title: "Payment needed", message: "Update billing.", action: <Link href="/billing">Review billing</Link> },
+      { id: "warning", tone: "danger", title: "Payment needed", message: "Update billing.", action: <Link variant="link" href="/billing">Review billing</Link> },
       { id: "news", message: "Export ready." },
     ]} />);
     const region = screen.getByRole("region", { name: "Account notices" });

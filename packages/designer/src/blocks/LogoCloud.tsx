@@ -6,7 +6,7 @@ import { SECTION_GROUND_CLASSES, type SectionGround } from "./section-ground.js"
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.logo-cloud", "foundry/sections.logo-cloud");
-const Link = componentLeaf<typeof import("../components/Link.server.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const ItemMedia = componentLeaf<typeof import("../components/item/item.js").ItemMedia>("components.item", "ItemMedia");
 const ItemTitle = componentLeaf<typeof import("../components/item/item.js").ItemTitle>("components.item", "ItemTitle");
@@ -56,7 +56,7 @@ export function LogoCloud({ items, tone = "monochrome", ground = "base", classNa
         const markToneClasses = item.href === undefined ? monochromeClasses : undefined;
         const mark = <><ItemMedia aria-hidden="true" className={cx("inline-flex h-8 w-full max-w-40 overflow-hidden tablet:h-10", markToneClasses)}>{item.logo}</ItemMedia><ItemTitle className="sr-only">{item.name}</ItemTitle></>;
         return <SemanticContent as="li" key={item.id} className="flex min-w-0 items-center justify-center" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>
-          {item.href === undefined ? mark : <Link variant="standalone" href={item.href} className={cx("inline-flex w-full max-w-40 items-center rounded-control", FOCUS_CLASSES[ground], anchorToneClasses)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>{mark}</Link>}
+          {item.href === undefined ? mark : <Link variant="link" href={item.href} className={cx("inline-flex w-full max-w-40 items-center rounded-control", FOCUS_CLASSES[ground], anchorToneClasses)} style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>{mark}</Link>}
         </SemanticContent>;
       })}
     </SemanticContent>

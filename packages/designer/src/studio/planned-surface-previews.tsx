@@ -54,7 +54,7 @@ import { Gallery } from "../blocks/Gallery.js";
 import { NoticeList } from "../blocks/NoticeList.js";
 import { StatGroup } from "../blocks/StatGroup.js";
 import { Button } from "../components/Button.js";
-import { Link } from "../components/Link.js";
+import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
 import { SiteFooter } from "../shell/SiteFooter.js";
@@ -105,16 +105,16 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   TableOfContents: () => <TableOfContents {...S.tableOfContents} presentation="inline" trackCurrent={false} />,
   TestimonialSet: () => <TestimonialSet {...S.testimonials} />,
   CallToAction: () => <CallToAction eyebrow={S.callToAction.eyebrow} title={S.callToAction.title} description={S.callToAction.description}
-    primaryAction={<Link href={S.callToAction.primary.href} buttonVariant="primary">{S.callToAction.primary.label}</Link>}
-    secondaryAction={<Link href={S.callToAction.secondary.href} buttonVariant="secondary">{S.callToAction.secondary.label}</Link>} />,
+    primaryAction={<Link href={S.callToAction.primary.href} variant="default">{S.callToAction.primary.label}</Link>}
+    secondaryAction={<Link href={S.callToAction.secondary.href} variant="secondary">{S.callToAction.secondary.label}</Link>} />,
   RecordCards: () => <RecordCards {...S.recordCards} />,
   ConsentBanner: () => <ConsentBanner title={S.consentBanner.title} body={S.consentBanner.body} acceptLabel={S.consentBanner.acceptLabel} rejectLabel={S.consentBanner.rejectLabel} onAccept={noop} onReject={noop}
-    privacyLink={<Link href={S.consentBanner.privacy.href}>{S.consentBanner.privacy.label}</Link>} />,
+    privacyLink={<Link variant="link" href={S.consentBanner.privacy.href}>{S.consentBanner.privacy.label}</Link>} />,
   ErrorState: () => <ErrorState kind="failure" code={S.errorState.code} title={S.errorState.title} description={S.errorState.description}
-    retry={<Button variant="primary" size="md" onPress={noop}>{S.errorState.retryLabel}</Button>} report={<Link href={S.errorState.report.href}>{S.errorState.report.label}</Link>} />,
+    retry={<Button variant="primary" size="md" onPress={noop}>{S.errorState.retryLabel}</Button>} report={<Link variant="link" href={S.errorState.report.href}>{S.errorState.report.label}</Link>} />,
   Gallery: () => <Gallery label={S.gallery.label} images={S.gallery.images.map(image => ({ ...image, media: media(image.label) }))} />,
   NoticeList: () => <NoticeList label={S.noticeList.label} onDismiss={noop}
-    notices={S.noticeList.notices.map(({ action, ...notice }) => ({ ...notice, action: action ? <Link href={action.href}>{action.label}</Link> : undefined }))} />,
+    notices={S.noticeList.notices.map(({ action, ...notice }) => ({ ...notice, action: action ? <Link variant="link" href={action.href}>{action.label}</Link> : undefined }))} />,
   StatGroup: () => <StatGroup {...S.statGroup} />,
   PageBar: () => <PageBar position="static" {...S.pageBar} />,
   ...STRUCTURED_BLOCK_SAMPLES,
@@ -130,7 +130,7 @@ const BLOCK_STATE_SAMPLES: SurfaceStateSamples = {
   ...STRUCTURED_BLOCK_STATE_SAMPLES,
 };
 const SHELL_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
-  SiteHeader: () => <SiteHeader position="static" brand={<SemanticContent as="span">{F.siteHeader.brand}</SemanticContent>} nav={<Link href={F.siteHeader.nav.href}>{F.siteHeader.nav.label}</Link>} />,
+  SiteHeader: () => <SiteHeader position="static" brand={<SemanticContent as="span">{F.siteHeader.brand}</SemanticContent>} nav={<Link variant="link" href={F.siteHeader.nav.href}>{F.siteHeader.nav.label}</Link>} />,
   SiteFooter: () => <SiteFooter secondary={<SemanticContent as="p">{F.siteFooter.body}</SemanticContent>} />,
 };
 const FRAME_SAMPLES: Readonly<Record<string, () => ReactNode>> = {

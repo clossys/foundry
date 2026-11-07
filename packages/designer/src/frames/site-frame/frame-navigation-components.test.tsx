@@ -2,14 +2,14 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { afterEach, expect, it, vi } from "vitest";
 import { SiteHeader } from "../../shell/SiteHeader.js";
-import { Link } from "../../components/Link.js";
+import { LinkButton as Link } from "../../components/preview-runtime/components/button/button.js";
 import { FrameNavDisclosure } from "./FrameNavDisclosure.client.js";
 import { NavLinks } from "./NavLinks.js";
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 function fixture() {
-  return <><Link href="#outside">Outside</Link><SiteHeader surface="glass" brand={<Link href="#home">Home</Link>} nav={
+  return <><Link variant="link" href="#outside">Outside</Link><SiteHeader surface="glass" brand={<Link variant="link" href="#home">Home</Link>} nav={
     <FrameNavDisclosure trigger="icon" aria-label="Primary" triggerLabel="Menu" closeLabel="Close navigation">
       <NavLinks links={[{ href: "#products", label: "Products", isCurrent: true }, { href: "#pricing", label: "Pricing" }, { href: "#help", label: "Help" }]} actions={[{ href: "#start", label: "Start now", emphasis: "primary" }]} />
     </FrameNavDisclosure>

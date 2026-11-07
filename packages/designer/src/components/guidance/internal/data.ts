@@ -310,128 +310,49 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "accessibility": "Preserve link semantics even when the link uses a button appearance."
 },
 {
-  "exportName": "Link",
+  "exportName": "LinkButton",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock LinkButton keeps link semantics for every variant; variant link is the inline text treatment.",
   "options": [
     {
       "prop": "variant",
-      "label": "Text-link treatment",
-      "purpose": "Text-link treatment selects the existing Link variant behavior.",
+      "label": "Link appearance",
+      "purpose": "Link appearance selects the existing LinkButton variant behavior.",
       "values": [
         {
           "value": "default",
-          "purpose": "Inline prose link."
-        },
-        {
-          "value": "muted",
-          "purpose": "Lower-emphasis secondary link."
-        },
-        {
-          "value": "standalone",
-          "purpose": "Standalone linked unit."
-        }
-      ],
-      "applicability": "Ignored when either buttonVariant or buttonSize enables button appearance.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
-    {
-      "prop": "buttonVariant",
-      "label": "Button appearance preset",
-      "purpose": "Button appearance preset selects the existing Link buttonVariant behavior.",
-      "values": [
-        {
-          "value": "primary",
           "purpose": "Accent-filled primary navigation."
         },
         {
+          "value": "outline",
+          "purpose": "Unfilled navigation with an inset edge."
+        },
+        {
           "value": "secondary",
-          "purpose": "Bordered lower-emphasis navigation."
+          "purpose": "Tonal lower-emphasis navigation."
         },
         {
           "value": "ghost",
           "purpose": "Unfilled navigation that gains hover emphasis."
         },
         {
-          "value": "danger",
+          "value": "destructive",
           "purpose": "Destructive navigation with danger treatment."
         },
         {
-          "value": "outline",
-          "purpose": "Unfilled secondary call to navigation with an inset edge."
-        },
-        {
-          "value": "tonal",
-          "purpose": "Neutral tonal tertiary navigation responsive to its ground."
-        },
-        {
-          "value": "quiet",
-          "purpose": "Unboxed quiet navigation classes without an automatic trailing glyph."
+          "value": "link",
+          "purpose": "Inline text link with hover underline."
         }
       ],
-      "applicability": "Either button prop enables this appearance; omitted partner defaults to primary or md. Quiet shares classes, not Button’s auto trailing icon.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
-    {
-      "prop": "buttonSize",
-      "label": "Button appearance size",
-      "purpose": "Button appearance size selects the existing Link buttonSize behavior.",
-      "values": [
-        {
-          "value": "sm",
-          "purpose": "Small navigation control."
-        },
-        {
-          "value": "md",
-          "purpose": "Medium navigation control."
-        },
-        {
-          "value": "lg",
-          "purpose": "Large navigation control."
-        }
-      ],
-      "applicability": "Either button prop enables button appearance; buttonSize defaults to md only in that mode.",
+      "applicability": "Effective for this component when supplied.",
       "support": {
         "state": "implemented",
         "reason": "The component consumes or forwards this existing prop in the cited source."
       }
     }
   ],
-  "constraints": [
-    {
-      "kind": "effective-when",
-      "props": [
-        "variant",
-        "buttonVariant",
-        "buttonSize"
-      ],
-      "reason": "Either button prop selects button appearance and ignores text variant; no auto trailing glyph is added.",
-      "enforcement": "ignored",
-      "evidence": {
-        "source": "src/components/Link.tsx",
-        "evidence": "buttonVariant !== undefined || buttonSize !== undefined"
-      },
-      "effectiveWhen": {
-        "all": [
-          {
-            "prop": "buttonVariant",
-            "present": false
-          },
-          {
-            "prop": "buttonSize",
-            "present": false
-          }
-        ]
-      }
-    }
-  ]
-}, "src/components/Link.tsx"),
+  "constraints": []
+}, "src/components/preview-runtime/components/button/button.tsx"),
   "act.breadcrumb": entry(
 {
   "purpose": "Locate the current page within an ordered hierarchy.",
@@ -2823,61 +2744,28 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
     }
   },
   "act.link": {
-    "exportName": "Link",
-    "source": "src/components/Link.tsx",
+    "exportName": "LinkButton",
+    "source": "src/components/preview-runtime/components/button/button.tsx",
     "options": [
       {
         "prop": "variant",
         "values": [
           "default",
-          "muted",
-          "standalone"
+          "outline",
+          "secondary",
+          "ghost",
+          "destructive",
+          "link"
         ],
         "default": {
           "kind": "value",
           "value": "default",
-          "source": "src/components/Link.tsx",
+          "source": "src/components/preview-runtime/components/button/button.tsx",
           "evidence": "variant = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Link.tsx",
-          "evidence": "VARIANT_CLASSES[variant]"
-        }
-      },
-      {
-        "prop": "buttonVariant",
-        "values": [
-          "primary",
-          "secondary",
-          "ghost",
-          "danger",
-          "outline",
-          "tonal",
-          "quiet"
-        ],
-        "default": {
-          "kind": "conditional",
-          "reason": "The default depends on another option; see the implementation notes."
-        },
-        "forwarding": {
-          "source": "src/components/Link.tsx",
-          "evidence": "buttonClassName(buttonVariant ?? \"primary\", buttonSize ?? \"md\")"
-        }
-      },
-      {
-        "prop": "buttonSize",
-        "values": [
-          "sm",
-          "md",
-          "lg"
-        ],
-        "default": {
-          "kind": "conditional",
-          "reason": "The default depends on another option; see the implementation notes."
-        },
-        "forwarding": {
-          "source": "src/components/Link.tsx",
-          "evidence": "buttonClassName(buttonVariant ?? \"primary\", buttonSize ?? \"md\")"
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "buttonVariants({ variant, size, className })"
         }
       }
     ],
@@ -2886,14 +2774,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-accent-text",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/tokens.css",
+          "evidence": "--color-accent-text:",
           "via": [
             {
-              "source": "src/components/Link.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/button/button.tsx",
+              "evidence": "text-(--color-accent-text)"
             }
           ]
         }

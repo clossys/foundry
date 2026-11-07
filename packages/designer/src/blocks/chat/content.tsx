@@ -4,7 +4,7 @@ import type { ChatLabels } from "./types.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
-const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
+const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 interface InlinePart { text: string; isCode: boolean }
@@ -61,7 +61,7 @@ function inline(text: string): ReactNode[] {
     }
     const link = /^\[([^\]]+)\]\(([^\s)]+)\)$/.exec(part);
     if (link && !/[\\\u0000-\u0020\u007f]/.test(link[2]!) && /^(?:https?:\/\/|mailto:|\/(?!\/)|#)/i.test(link[2]!)) {
-      return <Link key={index} href={link[2]} rel="noopener noreferrer">{link[1]}</Link>;
+      return <Link key={index} variant="link" href={link[2]} rel="noopener noreferrer">{link[1]}</Link>;
     }
     return <Fragment key={index}>{part}</Fragment>;
   });
