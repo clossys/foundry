@@ -7,7 +7,7 @@ import { evaluateReview, parseWatch, evaluateModelReview, reviewCitationScan, re
 
 import { runReviewCli } from './cli/review.js';
 import { main } from './cli.js';
-import { stageFinding, stageSlot, strategyRoot } from './ground/fixtures.js';
+import { stageFinding, stageSlot, strategyRoot } from './__fixtures__/slot-model.js';
 import { loadCatalog } from './catalog.js';
 import type { StrategyModel } from './format/types.js';
 import type { CitationIndex } from './citations/index.js';

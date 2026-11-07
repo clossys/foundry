@@ -6,7 +6,7 @@ import { checkCell, checkCoherence, completion, strategyStatus } from './index.j
 import type { Cell, Ref } from '../format/types.js';
 import type { StrategyModel } from '../format/types.js';
 import { readStrategyRoot } from '../store.js';
-import { stageFinding, stageSlot, strategyRoot } from '../ground/fixtures.js';
+import { stageFinding, stageSlot, strategyRoot } from '../__fixtures__/slot-model.js';
 import { formatRef } from '../format/ref.js';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';

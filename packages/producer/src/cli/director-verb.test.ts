@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 // Director's own fixtures (test-only source import; @clossys/director ships them in no export).
-import { stageFinding, strategyRoot } from "../../../director/src/ground/fixtures.js";
+import { stageFinding, strategyRoot } from "../../../director/src/__fixtures__/slot-model.js";
 import { runCli } from "./main.js";
 
 /** `clossys director check|rate-check`: Director's commands, run through the compiled clossys CLI. */

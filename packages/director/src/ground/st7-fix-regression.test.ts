@@ -8,7 +8,7 @@ import { buildFactIndex, isTracedSurfaceForm, type FactIndex } from "../fact-ind
 import type { Finding } from "../format/types.js";
 import { readStrategyRoot } from "../store.js";
 import { checkWontClaimDrift } from "../wont-claim-drift.js";
-import { evidenceDir, stageFinding, stageSlot, stageWontClaimCells, strategyRoot } from "./fixtures.js";
+import { evidenceDir, stageFinding, stageSlot, stageWontClaimCells, strategyRoot } from "../__fixtures__/slot-model.js";
 
 let base: string;
 let root: string;

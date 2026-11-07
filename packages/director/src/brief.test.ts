@@ -6,7 +6,7 @@ import { compileBrief } from "./brief.js";
 import { discoverBriefContracts, validateBriefContract } from "./brief-contracts.js";
 import { openStrategy } from "./api.js";
 import { readStrategyRoot } from "./store.js";
-import { stageFinding, stageSlot, strategyRoot } from "./ground/fixtures.js";
+import { stageFinding, stageSlot, strategyRoot } from "./__fixtures__/slot-model.js";
 import { reader } from "../test/store.js";
 
 const roots: string[] = [];

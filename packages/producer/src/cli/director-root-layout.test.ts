@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, expect, it } from "vitest";
 // Director's own fixtures (test-only source import; @clossys/director ships them in no export).
-import { stageFinding, stageSlot } from "../../../director/src/ground/fixtures.js";
+import { stageFinding, stageSlot } from "../../../director/src/__fixtures__/slot-model.js";
 
 /**
  * `clossys director check …` end to end through the compiled clossys CLI: @clossys/director is a

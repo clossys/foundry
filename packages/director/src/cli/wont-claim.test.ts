@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { main } from "../cli.js";
-import { stageSlot } from "../ground/fixtures.js";
+import { stageSlot } from "../__fixtures__/slot-model.js";
 
 const roots: string[] = [];
 function fixture(text: string) {

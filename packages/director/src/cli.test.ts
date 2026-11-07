@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CliInputError, main, parseArgs, runDirectorCli } from "./cli.js";
-import { evidenceDir, findingFixture, stageFinding, stageWontClaimCells, strategyRoot } from "./ground/fixtures.js";
+import { evidenceDir, findingFixture, stageFinding, stageWontClaimCells, strategyRoot } from "./__fixtures__/slot-model.js";
 
 // Hermetic: every test operates on its own pair of `mkdtemp` directories
 // (strategy + scan), removed afterward, and calls the exported `main(argv, store)`

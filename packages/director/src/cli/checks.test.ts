@@ -9,7 +9,7 @@ import type { Cell, Ref } from "../format/types.js";
 import { main } from "../cli.js";
 import { executeChecksCommand } from "./checks.js";
 import { runReadCommand } from "./read.js";
-import { stageFinding, stageSlot, strategyRoot, type SlotFixture } from "../ground/fixtures.js";
+import { stageFinding, stageSlot, strategyRoot, type SlotFixture } from "../__fixtures__/slot-model.js";
 
 const roots: string[] = [];
 const catalog = loadCatalog();
