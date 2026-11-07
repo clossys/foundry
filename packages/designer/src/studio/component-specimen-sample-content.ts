@@ -85,14 +85,6 @@ export const componentSpecimenCard = d.card;
 /** A link's destination and the pressable children of FileTrigger and Form. */
 export const componentSpecimenActions = { href: d.text.linkHref, upload: d.text.upload, submit: d.text.submit, field: d.textField } as const;
 
-/** A trigger and its content for overlay components, which draw only their trigger at rest. */
-export const componentSpecimenOverlays = {
-  "./components#Dialog": { trigger: d.dialog.trigger, title: d.dialog.title, content: d.dialog.body },
-  "./components#Popover": d.popover,
-  "./components#Tooltip": d.tooltip,
-  "./components#Menu": d.menu,
-} as const;
-
 /** A starting color and a few swatches to pick from. */
 export const componentSpecimenColor = d.color;
 

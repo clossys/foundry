@@ -152,7 +152,6 @@ function violations(uses: readonly Use[]): Record<string, string[]> {
 }
 
 const BASELINE: Readonly<Record<string, readonly string[]>> = {
-  "blocks/Drawer.tsx": ["components.dialog -> overlayClassName,trigger", "components.dialog.Heading undeclared part"],
   "blocks/EventItem.tsx": ["components.avatar -> alt,src"],
   "blocks/NoticeList.tsx": ["components.banner -> dismissLabel,onDismiss"],
   "blocks/chat/Chat.tsx": ["components.avatar -> alt"],

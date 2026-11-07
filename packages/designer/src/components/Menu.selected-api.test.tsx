@@ -33,7 +33,8 @@ import { menuCaller } from "./__fixtures__/selected-module-harness/menu-caller.j
  * the packed archive; browser focus/geometry/forced-colour measurement is not
  * claimed here (jsdom only).
  */
-const PARTS = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }, { name: "MenuSeparator", export: "DropdownMenuSeparator" }, { name: "DropdownMenuTrigger", export: "DropdownMenuTrigger" }] as const;
+// Name-sorted, matching the resolver inventory order.
+const PARTS = [{ name: "DropdownMenuTrigger", export: "DropdownMenuTrigger" }, { name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }, { name: "MenuSeparator", export: "DropdownMenuSeparator" }] as const;
 const COHORT = [["components.button", DEFAULT_COMPONENT_PICKS["components.button"]!], ["components.card", DEFAULT_COMPONENT_PICKS["components.card"]!], ["components.table", DEFAULT_COMPONENT_PICKS["components.table"]!], ["components.icon", "foundry"], ["components.menu", "shadcn@aria"]] as const;
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const repository = resolve(packageDirectory, "../..");
@@ -168,11 +169,12 @@ describe("API-M1 selected Menu presentation and parts through the generated leaf
     const menu = profile.components["components.menu"]!;
     expect(menu.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria", sha256: componentDescriptorHash(menu.descriptor) });
     expect(menu.descriptor.impl).toEqual({ kind: "source", entry: ENTRY, export: "DropdownMenu" });
-    expect(menu.descriptor.secondaryExports).toEqual(PARTS);
+    expect([...menu.descriptor.secondaryExports!].sort((a, b) => a.name < b.name ? -1 : 1)).toEqual(PARTS);
     expect(componentSecondaryExports(menu.descriptor, profile.files)).toEqual(PARTS);
     expect(menu.descriptor.members).toEqual(["presentation.inline", "presentation.popup", "selection.multiple", "selection.none", "selection.single"]);
     expect(menu.propMap).toMatchObject({ "presentation.inline": "InlineMenu", "presentation.popup": "DropdownMenu" });
-    for (const slot of ["components.button", "components.icon"]) expect(profile.components[slot]!.descriptor.secondaryExports, slot).toBeUndefined();
+    expect(profile.components["components.button"]!.descriptor.secondaryExports).toEqual([{ name: "LinkButton", export: "LinkButton" }]);
+    expect(profile.components["components.icon"]!.descriptor.secondaryExports).toBeUndefined();
   });
   it("M3 publishes only the approved parts and trigger at the menu leaf; no InlineMenu, submenu or shortcut export, and the root is unchanged", () => {
     const leaf = file(emitted, LEAF);

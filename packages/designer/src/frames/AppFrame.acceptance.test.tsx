@@ -6,7 +6,7 @@ import { resolve } from "node:path";
 import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Button, Dialog } from "../components/index.js";
+import { Button, Dialog, DialogHeader, DialogTitle } from "../components/index.js";
 import { Panel } from "../blocks/index.js";
 import { ThemeToggle as ShellFixtureThemeToggle, useTheme } from "../theme/index.js";
 import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
@@ -82,8 +82,8 @@ function AccountHost({ destroy }: { destroy: () => void }) {
     { kind: "link", id: "profile", label: "Profile", href: "#profile" },
     { kind: "destructive", id: "delete", label: "Delete workspace", onAction: () => setConfirm(true) },
   ] }];
-  return <AppFrame {...props}><Dialog trigger={null} isOpen={confirm} onOpenChange={setConfirm}>
-    {({ close }) => <><Dialog.Heading>Confirm workspace deletion</Dialog.Heading><Button onPress={close}>Cancel deletion</Button><Button onPress={() => { destroy(); close(); }}>Confirm deletion</Button></>}
+  return <AppFrame {...props}><Dialog showCloseButton={false} isOpen={confirm} onOpenChange={setConfirm}>
+    {({ close }) => <><DialogHeader><DialogTitle>Confirm workspace deletion</DialogTitle></DialogHeader><Button onPress={close}>Cancel deletion</Button><Button onPress={() => { destroy(); close(); }}>Confirm deletion</Button></>}
   </Dialog></AppFrame>;
 }
 

@@ -52,8 +52,10 @@ describe("shell RTL logical-direction utilities", () => {
     );
     await user.click(screen.getByRole("button", { name: "Menu" }));
     const dialog = await screen.findByRole("dialog");
-    expect(dialog.parentElement?.className).toContain("start-0");
-    expect(dialog.className).toContain("border-e");
+    // The stock Sheet surface owns the side: inline-start anchor and its inline-end divider.
+    const surface = dialog.closest<HTMLElement>('[data-slot="sheet-content"]')!;
+    expect(surface).toHaveAttribute("data-side", "left");
+    expect(surface.className.split(" ")).toEqual(expect.arrayContaining(["data-[side=left]:start-0", "data-[side=left]:border-e-(length:--ui-border-hairline)"]));
   });
 
   it("anchors toasts at inline-end", () => {
