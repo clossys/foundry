@@ -5,21 +5,33 @@ import { completedTokenLibrary } from "../importers/__fixtures__/completed-token
 import { applyLibraryChange, assetCoverageReport, check, consumptionReport, deriveIdentity, emit, emitGlyphModule, libraryHash, loadCatalog, resolve, stableStringify, type Source } from "./index.js";
 import { emitWebIcons } from "./server.js";
 import { compare } from "./model.js";
+import themeSlots from "../catalog/slots/themes.json" with { type: "json" };
+import assetSlots from "../catalog/slots/assets.json" with { type: "json" };
+import assetRules from "../catalog-assets/rules.json" with { type: "json" };
+import { THEME_OUTPUTS } from "./emit.js";
 
 const source: Source = { id: "example-complete-catalog", kind: "consumer", author: "consumer", license: "MIT" };
 const catalog = loadCatalog();
 const library = completedCatalogLibrary(catalog, source, "2026-10-23");
+// Read from the ratified leaf data: one fill per themes and assets leaf, one binding per themes emit.
+const THEMES_LEAVES = themeSlots.length;
+const ASSET_LEAVES = assetSlots.length;
+const LEAVES = THEMES_LEAVES + ASSET_LEAVES;
+const BINDINGS = THEME_OUTPUTS.length;
 
 describe("complete consumer token and asset library", () => {
-  it("serves every one of 105 leaves including the pending gradient leaf and all 230 CSS bindings with zero check errors", () => {
+  it("serves every ratified leaf including the pending gradient leaf and every themes CSS binding with zero check errors", () => {
     const result = check({ catalog, library });
     expect(result.findings.filter(finding => finding.severity === "error")).toEqual([]); expect(result.ok).toBe(true);
-    expect(library.complete).toBe(true); expect(library.fills).toHaveLength(105);
+    expect(library.complete).toBe(true); expect(library.fills).toHaveLength(LEAVES);
     const profile = resolve({ catalog, library });
-    expect(new Set(Object.values(profile.members).map(member => member.slot)).size).toBe(105);
-    expect(Object.values(profile.members).filter(member => member.emit)).toHaveLength(230);
-    expect(assetCoverageReport(catalog, library)).toMatchObject({ total: 49, served: 49 });
-    expect(catalog.rules?.map(rule => rule.id)).toContain("token-diverging-neutral@1");
+    expect(new Set(Object.values(profile.members).map(member => member.slot)).size).toBe(LEAVES);
+    expect(Object.values(profile.members).filter(member => member.emit).map(member => member.emit).sort()).toEqual(THEME_OUTPUTS.map(output => output.property).sort());
+    expect(Object.values(profile.members).filter(member => member.emit)).toHaveLength(BINDINGS);
+    expect(assetCoverageReport(catalog, library)).toMatchObject({ total: ASSET_LEAVES, served: ASSET_LEAVES });
+    // The themes layer derives nothing (stock shadcn values are adopted, not derived): every catalog rule is an asset identity rule read from the leaf data.
+    expect(catalog.rules?.map(rule => rule.id).sort()).toEqual(assetRules.map(rule => rule.id).sort());
+    expect(catalog.rules?.every(rule => assetSlots.some(slot => slot.id === rule.slot))).toBe(true);
     expect(result.findings.some(finding => finding.code === "A6" && finding.severity === "notice")).toBe(true);
     const tokensOnly = completedTokenLibrary(catalog, source, "2026-10-23");
     expect(check({ catalog, library: tokensOnly }).findings.some(finding => finding.code === "A12" && finding.severity === "error")).toBe(true);
@@ -27,7 +39,7 @@ describe("complete consumer token and asset library", () => {
 
   it("records generated reverse edges, orphan counts and per-leaf consumer origins", async () => {
     const profile = resolve({ catalog, library }); const consumption = consumptionReport({ catalog, library });
-    expect(consumption.counts.orphanEdges).toBe(0); expect(consumption.leaves).toHaveLength(105);
+    expect(consumption.counts.orphanEdges).toBe(0); expect(consumption.leaves).toHaveLength(LEAVES);
     const leaves = catalog.slots.map(slot => {
       const members = Object.entries(profile.members).filter(([, member]) => member.slot === slot.id);
       return { slot: slot.id, members: members.length, sources: [...new Set(members.map(([, member]) => member.origin?.kind === "adopted" ? member.origin.source : source.id))].sort(compare), originKinds: [...new Set(members.map(([, member]) => member.origin?.kind))].sort(), rules: [...new Set(members.flatMap(([, member]) => member.origin?.kind === "derived" ? [member.origin.rule] : []))].sort(compare) };

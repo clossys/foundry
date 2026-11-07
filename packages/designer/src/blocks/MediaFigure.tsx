@@ -113,9 +113,11 @@ export function MediaFigure({
     >
       <ChromeSpecimen chrome={chrome} label={chromeLabel} ground={ground}>
         <SemanticContent as="div" data-screenshot-chrome={chrome === "bare" ? "bare" : undefined}
-          className={framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden"}
+          className={cx(framed ? cx("w-full overflow-hidden rounded-control border", colors.border) : image === undefined ? "w-full" : "w-full overflow-hidden",
+            // A colour placeholder paints the stock placeholder surface (the shadcn Skeleton's
+            // themes.accent) under the loading resource; a Block never paints a data colour inline.
+            image?.placeholder?.kind === "color" && "bg-accent")}
           style={{ aspectRatio: crop ? `${crop.width} / ${crop.height}` : undefined,
-            backgroundColor: image?.placeholder?.kind === "color" ? image.placeholder.value : undefined,
             backgroundImage: image?.placeholder?.kind === "blur" ? `url(${JSON.stringify(image.placeholder.value)})` : undefined,
             backgroundSize: image?.placeholder?.kind === "blur" ? "cover" : undefined }}>
           {resource}
