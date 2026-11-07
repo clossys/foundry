@@ -309,6 +309,12 @@ async function main() {
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
     await context.route(`${origin}/api/events`, route => route.fulfill({ contentType: 'text/event-stream', body: ': connected\n\n' }));
+    // The check reads the route's own document only (collectRendered never enters a frame, and a specimen frame is
+    // an opaque sandbox): a child frame's document is answered empty, so it loads without a server render per frame.
+    if (!pages) await context.route(() => true, route => {
+      const request = route.request();
+      return request.isNavigationRequest() && request.frame().parentFrame() ? route.fulfill({ contentType: 'text/html', body: '' }) : route.fallback();
+    });
     const queue = [...routes];
     const worker = async () => {
       const page = await context.newPage();
