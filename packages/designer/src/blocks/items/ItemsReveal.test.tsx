@@ -23,7 +23,6 @@ describe("Items disclosure", () => {
       expect(button).toHaveAttribute("aria-expanded", "false");
       const panel = document.getElementById(button.getAttribute("aria-controls")!);
       expect(panel).not.toBeNull(); expect(panel).not.toBeVisible();
-      expect(panel).toHaveClass("disclosure-panel-motion");
       expect(panel).toHaveAttribute("aria-labelledby", button.id);
       expect(button.closest("li")?.contains(panel)).toBe(true);
     }
@@ -36,7 +35,6 @@ describe("Items disclosure", () => {
     second!.focus(); await user.keyboard(" ");
     expect(first).toHaveAttribute("aria-expanded", "true"); expect(second).toHaveAttribute("aria-expanded", "true");
     expect(screen.getByText("Answer 0")).toBeVisible(); expect(screen.getByText("Answer 1")).toBeVisible();
-    expect(first!.querySelector(".disclosure-icon-motion")).toHaveClass("rotate-180", "disclosure-icon-motion");
     first!.focus(); await user.keyboard("{Enter}");
     expect(first).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText("Answer 0")).toBeInTheDocument(); expect(screen.getByText("Answer 0")).not.toBeVisible();
@@ -65,8 +63,7 @@ describe("Items disclosure", () => {
     draw({ items: data().map((item, i) => i === 0 ? { ...item, icon: <svg aria-hidden="true"><path /></svg>, eyebrow: "Reference", meta: "Updated", badge: { label: "Beta", tone: "info" } } : item) });
     expect(screen.getAllByRole("heading", { level: 3 })).toHaveLength(4);
     const trigger = screen.getByRole("button", { name: /Reference.*Beta.*Updated.*Question 0/ });
-    expect(trigger.querySelectorAll("svg")).toHaveLength(2);
-    expect(trigger.querySelector(".disclosure-icon-motion")).not.toHaveClass("rotate-180");
+    expect(trigger.querySelectorAll('svg:not([data-slot="accordion-trigger-icon"])')).toHaveLength(1);
     expect(trigger.querySelector(".bg-surface-base")).not.toBeNull();
   });
   it.each([4, 5, 6])("accepts %s rows", count => draw({ items: data(count) }));
@@ -127,13 +124,12 @@ describe("Items disclosure", () => {
 });
 
 
-it("binds reveal panel and chevron motion policies to actual closed and open Items", async () => {
-  const user = userEvent.setup(); const { container } = draw();
+it("opens the actual panel and keeps the stock chevrons decorative", async () => {
+  const user = userEvent.setup(); draw();
   const trigger = screen.getByRole("button", { name: "Question 0" });
   const panel = document.getElementById(trigger.getAttribute("aria-controls")!)!;
-  const chevron = trigger.querySelector(".disclosure-icon-motion")!;
-  expect(panel).toHaveClass("disclosure-panel-motion"); expect(chevron).toHaveClass("disclosure-icon-motion");
+  for (const chevron of trigger.querySelectorAll('[data-slot="accordion-trigger-icon"]')) expect(chevron).toHaveAttribute("aria-hidden", "true");
+  expect(panel).not.toBeVisible();
   await user.click(trigger);
-  expect(panel).toBeVisible(); expect(chevron).toHaveClass("rotate-180", "disclosure-icon-motion");
-  expect(container.querySelectorAll(".disclosure-panel-motion")).toHaveLength(4);
+  expect(panel).toBeVisible();
 });

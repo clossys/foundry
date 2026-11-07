@@ -65,9 +65,9 @@ describe("native disclosure typography baseline", () => {
   it.each([3, 4] as const)("sets the h%s baseline without flattening authored emphasis", headingLevel => {
     const items = questions().map(item => ({ ...item, meta: <>Actor <strong>Lead</strong></> }));
     const { container } = render(<NativeItems arrangement="rows" reveal="disclose" headingLevel={headingLevel} items={items} />);
-    expect(container.querySelectorAll(`summary > h${headingLevel}`)).toHaveLength(4);
-    for (const heading of container.querySelectorAll(`summary > h${headingLevel}`)) {
-      expect(heading).toHaveClass("font-medium");
+    expect(container.querySelectorAll(`h${headingLevel} > button`)).toHaveLength(4);
+    for (const heading of container.querySelectorAll(`h${headingLevel} > button`)) {
+      expect(heading.querySelector("[data-item-heading]")).toHaveClass("font-medium");
       expect(heading.querySelector('[data-item-meta] .text-caption')).toHaveClass("font-body");
       expect(heading.querySelector("strong")).toHaveTextContent("Lead");
     }
