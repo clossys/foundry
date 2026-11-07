@@ -57,6 +57,19 @@ function findRouteLiterals(source, file = 'StudioFrame.tsx') {
     ts.forEachChild(node, collectUrls);
   }
   collectUrls(tree);
+  // A constant whose every use is an asset attribute (`src={AVATAR}`) holds an asset URL, exactly as the
+  // literal written in that attribute would; one non-asset use (or none) keeps it a route candidate.
+  const declared = new Map(), uses = new Map();
+  function collectBindings(node) {
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.initializer && (ts.isStringLiteral(node.initializer) || ts.isNoSubstitutionTemplateLiteral(node.initializer))
+      && ts.isVariableDeclarationList(node.parent) && node.parent.flags & ts.NodeFlags.Const) declared.set(node.name.text, node.initializer);
+    else if (ts.isIdentifier(node) && !(ts.isVariableDeclaration(node.parent) && node.parent.name === node)) {
+      uses.set(node.text, [...(uses.get(node.text) ?? []), assetContext(node)]);
+    }
+    ts.forEachChild(node, collectBindings);
+  }
+  collectBindings(tree);
+  const assetBindings = new Set([...declared].filter(([name]) => (uses.get(name) ?? []).length > 0 && uses.get(name).every(Boolean)).map(([, literal]) => literal));
   function originShapeCheck(node, value) {
     if (value !== '/' || !ts.isBinaryExpression(node.parent)) return false;
     const other = node.parent.left === node ? node.parent.right : node.parent.left;
@@ -70,9 +83,12 @@ function findRouteLiterals(source, file = 'StudioFrame.tsx') {
       const rootPath = /^\/(?!\/)/.test(value);
       // Producer's own endpoints: data under /api, and the reserved /__ resources (the specimen frame).
       const dataEndpoint = /^\/(?:api|__[a-z-]+)(?:\/|$|\?)/.test(value);
-      const asset = assetContext(node) && /\.[a-z\d]+(?:[?#]|$)/i.test(value);
+      const asset = (assetContext(node) || assetBindings.has(node)) && /\.[a-z\d]+(?:[?#]|$)/i.test(value);
       const stateOnly = /^[?#]/.test(value);
-      if (!stateOnly && !resourceLink(node) && !delimiterUse(node, value) && !originShapeCheck(node, value) && (destination && value.length > 0 || rootPath && !dataEndpoint && !asset)) {
+      // A link to another site (a library's attribution page) is not a Studio route the map could own;
+      // an absolute URL back to a local Studio origin still is one.
+      const offsite = /^https?:\/\//i.test(value) && !/^https?:\/\/(?:localhost|127\.0\.0\.1|\[::1\])(?:[:/?#]|$)/i.test(value);
+      if (!stateOnly && !offsite && !resourceLink(node) && !delimiterUse(node, value) && !originShapeCheck(node, value) && (destination && value.length > 0 || rootPath && !dataEndpoint && !asset)) {
         const { line, character } = tree.getLineAndCharacterOfPosition(node.getStart(tree));
         findings.push({ rule: 'route-literal-outside-projection', file, line: line + 1, column: character + 1, value });
       }
@@ -106,7 +122,13 @@ function inspectFrameProjection(source, file = 'components/StudioPage.tsx') {
     ts.forEachChild(node, collect);
   }
   collect(tree);
-  const frames = elements.filter(node => shells.has(node.tagName.getText(tree)));
+  // The frame element is the pinned component itself, or the one renderer it is handed to as
+  // `frame={Shell}` (components/StudioShell.tsx): that element takes the same inputs and is held to
+  // the same rules.
+  const handsFrame = node => node.attributes.properties.some(attribute => ts.isJsxAttribute(attribute) && propertyName(attribute.name) === 'frame'
+    && attribute.initializer && ts.isJsxExpression(attribute.initializer) && attribute.initializer.expression
+    && ts.isIdentifier(attribute.initializer.expression) && shells.has(attribute.initializer.expression.text));
+  const frames = elements.filter(node => shells.has(node.tagName.getText(tree)) || handsFrame(node));
   function projects(node, seen = new Set()) {
     let found = false;
     function visit(child) {
