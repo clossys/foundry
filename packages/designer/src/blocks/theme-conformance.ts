@@ -111,7 +111,7 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "RecordLedger", source: "src/blocks/RecordLedger.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "AnatomyCallouts", source: "src/blocks/AnatomyCallouts.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Scene", source: "src/blocks/scene/Scene.tsx", contrastPairs: BASE_READING },
-  { exportName: "Item", source: "src/blocks/items/Item.tsx", contrastPairs: GROUNDED_READING },
+  { exportName: "StockItem", source: "src/blocks/items/StockItem.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Tree", source: "src/blocks/tree/Tree.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "Items", source: "src/blocks/items/Items.tsx", contrastPairs: GROUNDED_READING },
   { exportName: "GroupedTable", source: "src/blocks/GroupedTable.tsx", contrastPairs: [...RAISED_READING, "ink-primary/surface-sunken"] },

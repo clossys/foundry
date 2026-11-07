@@ -137,19 +137,19 @@ describe("derived surface dogfood", () => {
     expect(result.summary.library).toBe(2);
   });
   it("resolves exact registered server exports with named and namespace aliases", () => {
-    const source = 'import { Card as Plate } from "@clossys/designer/components/server"; import * as Blocks from "@clossys/designer/blocks/server"; import { Item as Row } from "@clossys/designer/blocks/server"; const Page=()=> <Plate><Blocks.Items/><Row/></Plate>';
+    const source = 'import { Card as Plate } from "@clossys/designer/components/server"; import * as Blocks from "@clossys/designer/blocks/server"; import { StockItem as Row } from "@clossys/designer/blocks/server"; const Page=()=> <Plate><Blocks.Items/><Row/></Plate>';
     const fixture = input(source);
     expect(runDogfood(fixture).findings).toEqual([]);
     expect(dogfoodComposes(fixture)).toEqual([
       expect.objectContaining({ tag: "Plate", module: "@clossys/designer/components/server", symbol: "Card", slotId: "components.card" }),
       expect.objectContaining({ tag: "Blocks.Items", module: "@clossys/designer/blocks/server", symbol: "Items", slotId: "items.raw" }),
-      expect.objectContaining({ tag: "Row", module: "@clossys/designer/blocks/server", symbol: "Item", slotId: "items.item" }),
+      expect.objectContaining({ tag: "Row", module: "@clossys/designer/blocks/server", symbol: "StockItem", slotId: "items.item" }),
     ]);
   });
   it.each([
     ["@clossys/designer/components/server/internal", "Card"],
     ["@clossys/designer/components/server-extra", "Card"],
-    ["@clossys/designer/blocks/server/internal", "Item"],
+    ["@clossys/designer/blocks/server/internal", "StockItem"],
     ["@clossys/designer/blocks/server-extra", "Items"],
     ["foreign-ui/components/server", "Card"],
     ["@clossys/designer/shell/server", "Card"],
@@ -187,7 +187,7 @@ describe("derived surface dogfood", () => {
     const source = `import { ${symbol} as Fake } from "@clossys/designer/${family}/server"; const Page=()=> <Fake/>`;
     expect(runDogfood(input(source)).findings).toEqual([expect.objectContaining({ code: "DF5", tag: "Fake" })]);
   });
-  it.each([["components", "Card"], ["blocks", "Item"], ["blocks", "Items"]])("rejects invented named and namespace members of %s/server#%s", (family, symbol) => {
+  it.each([["components", "Card"], ["blocks", "StockItem"], ["blocks", "Items"]])("rejects invented named and namespace members of %s/server#%s", (family, symbol) => {
     const source = `import { ${symbol} as Plate } from "@clossys/designer/${family}/server"; import * as Server from "@clossys/designer/${family}/server"; const Page=()=> <><Plate/><Server.${symbol}/><Plate.NotAnExport/><Server.${symbol}.NotAnExport/></>`;
     const fixture = input(source);
     expect(runDogfood(fixture).findings.map(row => [row.code, row.tag])).toEqual([["DF5", "Plate.NotAnExport"], ["DF5", `Server.${symbol}.NotAnExport`]]);

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it } from "vitest";
 import { SpecimenPanel } from "./SpecimenPanel.js";
 import type { SpecimenStatusRowsPart } from "./parts.js";
-import { Item } from "../items/Item.js";
+import { StockItem as Item } from "../items/StockItem.js";
 
 const part: SpecimenStatusRowsPart = { id: "checks", type: "status-rows", label: "Record", items: Array.from({ length: 5 }, (_, i) => ({ id: String(i), label: `Row ${i}`, detail: "Detail", status: { tone: "neutral", label: "Received" } })) };
 describe("status-row successors to retired tile assertions", () => {
@@ -23,7 +23,7 @@ describe("status-row successors to retired tile assertions", () => {
     const control = <span>Read <a href="/nested">more</a></span>;
     const unsafe: SpecimenStatusRowsPart = slot === "part" ? { ...part, label: control } : { ...part, items: part.items.map((row, index) => index !== 0 ? row : slot === "status" ? { ...row, status: { ...row.status, label: control } } : { ...row, [slot]: control }) };
     expect(() => render(<SpecimenPanel parts={[unsafe]} />)).toThrow(TypeError);
-    expect(() => render(<Item id="one" heading="Title" href="/one" visual={<SpecimenPanel parts={[unsafe]} />} treatment="plain" size="standard" ground="base" />)).toThrow(TypeError);
+    expect(() => render(<Item id="one" heading="Title" href="/one" visual={<SpecimenPanel parts={[unsafe]} />} ground="base" />)).toThrow(TypeError);
   });
   it("retains authored inert emphasis and builds no native controls", () => {
     const inert = { ...part, label: <strong>Record</strong>, items: part.items.map(row => ({ ...row, label: <strong>{row.label}</strong> })) };
@@ -44,7 +44,7 @@ function inSlot(slot: "part" | "label" | "detail" | "status", node: ReactNode): 
 }
 function mount(part: SpecimenStatusRowsPart, linked: boolean) {
   const panel = <SpecimenPanel parts={[part]} />;
-  return linked ? <Item id="one" heading="Title" href="/one" visual={panel} treatment="plain" size="standard" ground="base" /> : panel;
+  return linked ? <Item id="one" heading="Title" href="/one" visual={panel} ground="base" /> : panel;
 }
 
 describe("status-row SVG resources", () => {

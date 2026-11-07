@@ -494,7 +494,8 @@ export type { ScatterChartProps } from "./charts/ScatterChart.js";
 export { AreaChart, Heatmap, StatusStrip } from "./charts/index.js";
 export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, StatusStripSegment } from "./charts/index.js";
 
-export { Item } from "./blocks/items/Item.js";
+export { StockItem } from "./blocks/items/StockItem.js";
+export type { StockItemProps } from "./blocks/items/StockItem.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
 export { PageBar } from "./blocks/PageBar.js";
@@ -508,7 +509,7 @@ export type { FlowCanvasNode, FlowCanvasEdge, FlowCanvasOrientation, FlowCanvasL
 export { Items } from "./blocks/items/Items.js";
 export { RelationGraph } from "./blocks/RelationGraph.js";
 export type { RelationGraphProps, RelationGraphNode, RelationGraphEdge } from "./blocks/relation-graph-types.js";
-export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./blocks/items/types.js";
 
 export { Logomark } from "./components/index.js";
 export type { LogomarkProps, LogomarkSize, LogomarkTone, LogomarkPlate } from "./components/index.js";

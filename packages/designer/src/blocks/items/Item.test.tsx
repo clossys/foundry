@@ -1,71 +1,59 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Item } from "./Item.js";
-import type { ItemProps } from "./types.js";
+import { StockItem as Item, type StockItemProps } from "./StockItem.js";
 
-const base = { id: "one", heading: "Title", treatment: "plain" as const, size: "standard" as const, ground: "base" as const };
+const base = { id: "one", heading: "Title", ground: "base" as const };
 
+// Behaviour on the stock Item anatomy (R2F-26b): the Foundry Item block, its treatments, sizes and
+// title-only hit area are retired; stock owns the look, so these assert slots, links and refusals.
 describe("Item", () => {
-  it.each(["standard", "display"] as const)("uses the %s heading scale", (size) => {
-    render(<Item {...base} size={size} icon={<svg />} />);
-    expect(screen.getByText("Title")).toHaveClass(size === "standard" ? "text-body-l" : "text-h3");
-    if (size === "standard") expect(screen.getByText("Title")).toHaveClass("font-semibold");
-    expect(document.querySelector('[aria-hidden="true"]')).toHaveClass("text-ink-secondary");
+  it("renders the stock Item anatomy with an aria-hidden icon in the ground's secondary ink", () => {
+    const { container } = render(<Item {...base} icon={<svg />} description="Support" />);
+    expect(container.querySelector("[data-item]")).toHaveAttribute("data-slot", "item");
+    expect(screen.getByText("Title")).toHaveAttribute("data-slot", "item-title");
+    expect(screen.getByText("Support")).toHaveAttribute("data-slot", "item-description");
+    const media = container.querySelector('[data-slot="item-media"]')!;
+    expect(media).toHaveAttribute("aria-hidden", "true");
+    expect(media).toHaveClass("text-ink-secondary");
   });
-  it.each(["base", "sunken", "inverse"] as const)("uses a hairline on %s", (ground) => {
-    const { container } = render(<Item {...base} ground={ground} treatment="rule" />);
-    expect(container.querySelector("[data-item]")).toHaveStyle({ borderBlockStartWidth: "var(--ui-border-hairline, 1px)" });
-    expect(container.innerHTML).not.toContain("--ui-border-rule");
-  });
-  it.each(["plain", "rule", "plate"] as const)("keeps eyebrow, badge and meta together in %s", (treatment) => {
-    const { container } = render(<Item {...base} treatment={treatment} eyebrow="Area" meta="Actor" badge={{ label: "Beta" }} />);
+  it("keeps eyebrow, badge and meta together in the stock header", () => {
+    const { container } = render(<Item {...base} eyebrow="Area" meta="Actor" badge={{ label: "Beta" }} />);
     const row = container.querySelector("[data-item-meta]");
+    expect(row).toHaveAttribute("data-slot", "item-header");
     expect(row).toHaveTextContent("AreaBetaActor");
-    expect(screen.getByText("Beta")).toHaveClass("rounded-pill", "bg-surface-sunken", "text-ink-secondary");
   });
-  it.each([
-    ["neutral", "bg-surface-sunken"], ["success", "bg-status-success-tint"], ["warning", "bg-status-warning-tint"],
-    ["danger", "bg-status-danger-tint"], ["info", "bg-status-info-tint"],
-  ] as const)("maps badge tone %s to the existing component", (tone, cls) => {
-    render(<Item {...base} badge={{ label: "State", tone }} />);
-    expect(screen.getByText("State")).toHaveClass(cls);
-  });
-  it.each(["success", "warning", "danger", "info"] as const)("backs status badge %s with the checked opaque surface", (tone) => {
-    const { container } = render(<Item {...base} ground="inverse" treatment="plate" href="/one" meta={0} badge={{ label: 0, tone }} />);
+  it.each(["neutral", "success", "warning", "danger", "info"] as const)("renders badge tone %s through the stock badge", (tone) => {
+    const { container } = render(<Item {...base} badge={{ label: "State", tone }} />);
     const row = container.querySelector("[data-item-meta]")!;
-    const badge = row.querySelector(`.bg-status-${tone}-tint`)!;
-    expect(badge).toHaveTextContent("0");
-    expect(badge.parentElement).toHaveClass("inline-flex", "rounded-pill", "bg-surface-base");
+    expect(row).toContainElement(screen.getByText("State"));
+    if (tone === "neutral") expect(screen.getByText("State").parentElement).toBe(row);
+    else expect(screen.getByText("State").parentElement).toHaveClass("inline-flex", "rounded-pill", "bg-surface-base");
+  });
+  it.each(["success", "warning", "danger", "info"] as const)("backs status badge %s with the checked opaque surface inside the single link", (tone) => {
+    const { container } = render(<Item {...base} ground="inverse" href="/one" meta={0} badge={{ label: 0, tone }} />);
+    const row = container.querySelector("[data-item-meta]")!;
+    const backing = row.querySelector(".bg-surface-base")!;
+    expect(backing).toHaveTextContent("0");
+    expect(backing).toHaveClass("inline-flex", "rounded-pill");
     expect(row).toHaveTextContent("00");
     expect(screen.getAllByRole("link")).toHaveLength(1);
-    expect(screen.getByRole("link", { name: "Title" })).not.toContainElement(badge);
-    expect(badge.parentElement!.querySelector("a,button,input,[tabindex]")).toBeNull();
+    expect(backing.querySelector("a,button,input,[tabindex]")).toBeNull();
   });
   it.each([undefined, "neutral"] as const)("keeps the already opaque neutral badge directly in its meta row (%s)", (tone) => {
     const { container } = render(<Item {...base} ground="inverse" badge={{ label: "Neutral", tone }} />);
     expect(screen.getByText("Neutral").parentElement).toBe(container.querySelector("[data-item-meta]"));
   });
   it.each([true, false])("refuses retired featured=%s on standalone items", featured => {
-    expect(() => render(<Item {...({ ...base, featured } as unknown as ItemProps)} />)).toThrow(/featured.*retired/);
+    expect(() => render(<Item {...({ ...base, featured } as unknown as StockItemProps)} />)).toThrow(/featured.*retired/);
   });
-  it.each(["plain", "rule"] as const)("keeps heading-only linked %s items at the tap-target minimum", (treatment) => {
-    const { container } = render(<Item {...base} href="/one" treatment={treatment} />);
-    expect(container.querySelector("[data-item]")).toHaveStyle({ minBlockSize: "var(--ui-layout-tap-target, 44px)" });
-  });
-  it("keeps a transparent hairline edge on linked plates", () => {
-    const { container } = render(<Item {...base} href="/one" treatment="plate" />);
-    const plate = container.querySelector("[data-item]");
-    expect(plate).toHaveClass("border", "border-transparent");
-    expect(plate).not.toHaveClass("border-primary", "border-t-primary");
-    expect(plate).toHaveStyle({ borderWidth: "var(--ui-border-hairline, 1px)" });
-  });
-  it("names its only link from the title and leaves other slots outside it", () => {
-    render(<Item {...base} size="display" href="/one" description="Support" meta="Actor" visual={<div>Visual</div>} badge={{ label: "Beta" }} />);
-    const anchor = screen.getByRole("link", { name: "Title" });
+  it("renders a linked item as the stock Item's only link around every slot", () => {
+    const { container } = render(<Item {...base} href="/one" description="Support" meta="Actor" visual={<div>Visual</div>} badge={{ label: "Beta" }} />);
+    const anchor = screen.getByRole("link");
     expect(screen.getAllByRole("link")).toHaveLength(1);
+    expect(anchor).toBe(container.querySelector("[data-item]"));
     expect(anchor).toHaveAttribute("href", "/one");
-    expect(anchor.parentElement).toHaveClass("transform-none");
-    for (const label of ["Support", "Actor", "Visual", "Beta"]) expect(anchor).not.toContainElement(screen.getByText(label));
+    expect(anchor).toHaveAttribute("data-slot", "item");
+    for (const label of ["Title", "Support", "Actor", "Visual", "Beta"]) expect(anchor).toContainElement(screen.getByText(label));
   });
   it.each(["heading", "description", "eyebrow", "icon", "meta", "visual", "badge"])("rejects nested controls in %s", (slot) => {
     const node = <><span><button>Other</button></span></>;
@@ -102,12 +90,12 @@ describe("Item", () => {
 
 
 describe("standalone Item heading outline", () => {
-  it("keeps the default paragraph", () => { render(<Item {...base} />); expect(screen.getByText("Title").tagName).toBe("P"); });
-  it.each([3, 4] as const)("accepts explicit h%s without changing its visual scale", (headingLevel) => {
+  it("keeps the stock title without a heading by default", () => { render(<Item {...base} />); expect(screen.queryByRole("heading")).toBeNull(); expect(screen.getByText("Title")).toHaveAttribute("data-slot", "item-title"); });
+  it.each([3, 4] as const)("accepts explicit h%s inside the stock title", (headingLevel) => {
     render(<Item {...base} {...{ headingLevel }} />);
-    expect(screen.getByRole("heading", { level: headingLevel })).toHaveClass("text-body-l");
+    expect(screen.getByRole("heading", { level: headingLevel }).parentElement).toHaveAttribute("data-slot", "item-title");
   });
   it.each([null, 2, 5, "3"])("refuses unsupported heading level %s", (headingLevel) => {
-    expect(() => render(<Item {...({ ...base, headingLevel } as unknown as ItemProps)} />)).toThrow(RangeError);
+    expect(() => render(<Item {...({ ...base, headingLevel } as unknown as StockItemProps)} />)).toThrow(RangeError);
   });
 });

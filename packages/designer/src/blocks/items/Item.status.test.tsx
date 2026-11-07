@@ -5,14 +5,14 @@ import { Faq } from "../Faq.js";
 import { Faq as ServerFaq } from "../Faq.server.js";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Item } from "./Item.js";
+import { StockItem as Item, type StockItemProps } from "./StockItem.js";
 import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
-import type { ItemData, ItemProps } from "./types.js";
+import type { ItemData } from "./types.js";
 import { withoutDsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { stableStringify } from "../../catalog-core/stable.js";
 
-const single = { id: "one", heading: "Search", treatment: "plain", size: "standard", ground: "base" } as const;
+const single = { id: "one", heading: "Search", ground: "base" } as const;
 const data = (count = 3): ItemData[] => Array.from({ length: count }, (_, index) => ({
   id: `state-${index}`, heading: `Service ${index}`, description: "Details", status: { tone: "success", label: `Available ${index}` },
 }));
@@ -45,14 +45,13 @@ function idSlots(): ItemData {
 }
 function legacyIdSlotHtml(name: string): string {
   const [kind, entry, arrangement, reveal] = name.split("/");
-  if (kind === "Item") return renderToStaticMarkup(<Item {...idSlots()} treatment={entry as "plain" | "plate"} size="standard" ground="base" />);
+  if (kind === "StockItem") return renderToStaticMarkup(<Item {...idSlots()} ground="base" />);
   const Component = entry === "client" ? Items : ServerItems;
   return renderToStaticMarkup(<Component items={Array.from({ length: reveal === "disclose" ? 4 : 3 }, (_, i) => ({ ...idSlots(), id: `reference-${i}` }))} arrangement={arrangement as "columns" | "rows" | "stacked"} reveal={reveal as "all" | "disclose"} />);
 }
 
 describe("Item status", () => {
   it.each([
-    ["Item/plain", "106c4515e4e5053ec6d4b0c6dd54288dc3f1ba268b2424a370215c550016d889"],
     ["Items/client/columns/all", "e390b9257082d8cc11006b5d92ebcc86bfcfaf4a00af26b194dd335994146b06"],
     ["Items/client/rows/all", "386bb663af3eaab3c7b48617e9b0166becdc873438b26cff70d972dc00d03c9c"],
     ["Items/client/stacked/all", "68adb232a2f1cee1b5ff84d745b6327f409344c2263c2fe82ea17c81656d1499"],
@@ -71,10 +70,10 @@ describe("Item status", () => {
   it("preserves the stock-leaf legacy HTML captures without status", async () => {
     const sha = (html: string) => createHash("sha256").update(html).digest("hex");
     const hashes = {
-      ...Object.fromEntries((["Item/plate", "Items/client/rows/disclose", "Items/server/rows/disclose"] as const).map(name => [name, sha(legacyIdSlotHtml(name))])),
+      ...Object.fromEntries((["StockItem", "Items/client/rows/disclose", "Items/server/rows/disclose"] as const).map(name => [name, sha(legacyIdSlotHtml(name))])),
       ...Object.fromEntries((["Faq/client", "Faq/server", "Items/client", "Items/server"] as const).map(consumer => [consumer, sha(legacyDisclosureHtml(consumer))])),
     };
-    await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
+    await expect(stableStringify({ $capture: "stock Card plate and selected stock accordion (E4, ebd6753ac); inverse ground as token classes, no inline re-point (E4); planner:R2F-05; single item on the stock Item anatomy, plain/plate treatments retired (R2F-26b)", hashes }) + "\n").toMatchFileSnapshot("__golden__/item-status-stock.sha256.json");
   }, 60_000);
 
   it("renders StatusMark with a visible label in the meta row", () => {
@@ -97,8 +96,8 @@ describe("Item status", () => {
   });
 
   it.each(["plain", "rule", "plate"] as const)("accepts status in %s treatment", treatment => {
-    render(<Item {...single} treatment={treatment} status={{ tone: "info", label: "In progress" }} />);
-    expect(screen.getByText("In progress")).toBeVisible();
+    render(<Items arrangement="columns" treatment={treatment} items={data()} />);
+    expect(screen.getByText("Available 0")).toBeVisible();
   });
 
   it.each(["base", "sunken", "inverse"] as const)("keeps the status on its checked backing on %s", ground => {
@@ -158,7 +157,7 @@ describe("Item status", () => {
   });
 
   it.each([{ tone: "success", label: " " }, { tone: "other", label: "State" }, null])("rejects incomplete status data %j", status => {
-    expect(() => renderToStaticMarkup(<Item {...({ ...single, status } as unknown as ItemProps)} />)).toThrow(/status/i);
+    expect(() => renderToStaticMarkup(<Item {...({ ...single, status } as unknown as StockItemProps)} />)).toThrow(/status/i);
   });
 
   it("keeps authored zero as the visible status label", () => {

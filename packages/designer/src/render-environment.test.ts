@@ -117,7 +117,8 @@ describe("server-safe entry points resolve under react-server (test 1)", () => {
         "FeatureGrid",
         "FieldGroup",
         "Hero",
-        "Item",
+        "StockItem",
+        "assertItemLink",
         "Items",
         "LegalProse",
         "RecordLedger",
@@ -236,11 +237,11 @@ describe("compiled Tree server graph", () => {
   }, 15_000);
 });
 
-describe("pure Item and Items compiled graphs", () => {
-  it.each(["Item", "Items"])("imports and calls %s under react-server", (name) => {
+describe("pure StockItem and Items compiled graphs", () => {
+  it.each(["StockItem", "Items"])("imports and calls %s under react-server", (name) => {
     const absolute = join(distDir, "blocks", "items", `${name === "Items" ? "Items.server" : name}.js`);
-    const props = name === "Item"
-      ? { id: "one", heading: "Title", treatment: "plate", size: "standard", ground: "base", badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: "Visual" }
+    const props = name === "StockItem"
+      ? { id: "one", heading: "Title", ground: "base", badge: { label: "Beta", tone: "info" }, meta: "Actor", visual: "Visual" }
       : { arrangement: "rows", items: [{ id: "one", heading: "One", badge: { label: "Beta" }, meta: "Actor" }, { id: "two", heading: "Two" }, { id: "three", heading: "Three" }, { id: "four", heading: "Four" }], groups: [{ id: "a", label: "Group A", items: ["one", "two"] }, { id: "b", label: "Group B", items: ["three", "four"] }] };
     const script = `import(${JSON.stringify(absolute)}).then(m => { const tree = m[${JSON.stringify(name)}](${JSON.stringify(props)}); if (!tree || typeof tree !== "object" || !tree.props) throw new Error("missing rendered tree"); process.stdout.write("OK"); }).catch(e => { console.error(e); process.exit(1); });`;
     expect(execFileSync(process.execPath, ["--conditions=react-server", "-e", script], { encoding: "utf8", timeout: 10_000 })).toBe("OK");

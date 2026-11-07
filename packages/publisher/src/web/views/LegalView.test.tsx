@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { renderToStaticMarkup } from "react-dom/server";
-import { DetailView, Item, Items } from "@clossys/designer/blocks/server";
+import { DetailView, Items, StockItem } from "@clossys/designer/blocks/server";
 import { describe, expect, it, vi } from "vitest";
 import type { CopyRegistry, CopyResolver } from "@clossys/writer";
 import { createCopyResolver } from "@clossys/writer";
@@ -18,7 +18,7 @@ import type { LegalViewLabels, LegalViewProps } from "./LegalView.js";
 
 vi.mock("@clossys/designer/blocks/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@clossys/designer/blocks/server")>();
-  return { ...actual, Item: vi.fn(actual.Item), Items: vi.fn(actual.Items) };
+  return { ...actual, StockItem: vi.fn(actual.StockItem), Items: vi.fn(actual.Items) };
 });
 
 vi.mock("../../document/render.js", async (importOriginal) => {
@@ -547,13 +547,13 @@ describe("LegalView related references", () => {
     expect(render(doc, { related: withRelated([]) })).toBe(omitted);
     expect(omitted).not.toContain(RELATED_LABEL);
   });
-  it("forwards one linked item to canonical Item after ArticleBody and before the footer", () => {
-    vi.mocked(Item).mockClear(); vi.mocked(Items).mockClear();
+  it("forwards one linked item to the stock Item after ArticleBody and before the footer", () => {
+    vi.mocked(StockItem).mockClear(); vi.mocked(Items).mockClear();
     const item = Object.freeze({ ...relatedItem("single"), eyebrow: "Placeholder eyebrow", meta: "Placeholder meta",
       icon: <svg aria-hidden="true"><path d="M0 0h1" /></svg>, badge: { label: "Placeholder badge" } });
     const html = render(legalDoc("terms"), { related: withRelated(Object.freeze([item])), footerSecondary: <span>FOOTER-SENTINEL</span> });
-    expect(vi.mocked(Item).mock.calls).toHaveLength(1);
-    expect(vi.mocked(Item).mock.calls[0]![0]).toMatchObject({ ...item, ...RELATED_FRAME });
+    expect(vi.mocked(StockItem).mock.calls).toHaveLength(1);
+    expect(vi.mocked(StockItem).mock.calls[0]![0]).toMatchObject({ ...item, ground: "base", headingLevel: 3 });
     expect(vi.mocked(Items).mock.calls).toHaveLength(0);
     const section = relatedSection(html);
     expect(section.body).toContain('href="/placeholder/single"');
@@ -565,11 +565,11 @@ describe("LegalView related references", () => {
   });
   for (const count of [2, 3, 4, 5, 6]) {
     it(`forwards ${count} linked references to canonical rows Items in authored order`, () => {
-      vi.mocked(Item).mockClear(); vi.mocked(Items).mockClear();
+      vi.mocked(StockItem).mockClear(); vi.mocked(Items).mockClear();
       const items = Object.freeze(relatedItems(count).reverse().map(item => Object.freeze(item)));
       const html = render(legalDoc("privacy"), { related: withRelated(items) });
       expect(vi.mocked(Items).mock.calls).toHaveLength(1);
-      expect(vi.mocked(Item).mock.calls).toHaveLength(0);
+      expect(vi.mocked(StockItem).mock.calls).toHaveLength(0);
       expect(vi.mocked(Items).mock.calls[0]![0]).toMatchObject({
         items, arrangement: "rows", columns: 1, scale: "item", ...RELATED_FRAME,
       });

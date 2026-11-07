@@ -59,7 +59,7 @@ import { TextField } from "../components/TextField.js";
 import { Textarea } from "../components/Textarea.js";
 import { Hero } from "../blocks/Hero.js";
 import { AccountMenu } from "../blocks/AccountMenu.js";
-import { Item } from "../blocks/items/Item.js";
+import { StockItem } from "../blocks/items/StockItem.js";
 import { Items } from "../blocks/items/Items.js";
 import { Items as NativeItems } from "../blocks/items/Items.server.js";
 import { Matrix } from "../blocks/Matrix.js";
@@ -360,10 +360,12 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
     const classes = new Set<string>();
     const tones = ["neutral", "success", "warning", "danger", "info"] as const;
     for (const ground of ["base", "sunken", "inverse"] as const) for (const treatment of ["plain", "rule", "plate"] as const) {
-      const tree = render(<Item id="one" heading="Title" size="display" treatment={treatment} ground={ground} href="/one" icon={<svg />} eyebrow="Area" meta="Actor" description="Support" visual={<div>Visual</div>} badge={{ label: "Beta", tone: "info" }} />);
+      // The deleted standalone Item's treatments stay covered through the same renderer in Items; the stock Item covers each ground.
+      const slots = { icon: <svg />, eyebrow: "Area", meta: "Actor", description: "Support", visual: <div>Visual</div>, badge: { label: "Beta", tone: "info" as const } };
+      const tree = render(<><Items arrangement="rows" size="display" treatment={treatment} ground={ground} items={[{ id: "one", heading: "Title", href: "/one", ...slots }, { id: "two", heading: "Title", href: "/two", ...slots }]} /><StockItem id="one" heading="Title" ground={ground} href="/one" {...slots} /></>);
       for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount();
     }
-    for (const tone of tones) { const tree = render(<Item id={tone} heading="Title" size="standard" treatment="plain" ground="base" badge={{ label: "State", tone }} />); for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); }
+    for (const tone of tones) { const tree = render(<StockItem id={tone} heading="Title" ground="base" badge={{ label: "State", tone }} />); for (const cls of collectClassNames(tree.container)) classes.add(cls); tree.unmount(); }
     for (const arrangement of ["columns", "rows", "bento", "stacked"] as const) {
       const count = arrangement === "columns" ? 3 : 2;
       const tree = render(<Items arrangement={arrangement} items={Array.from({ length: count }, (_, i) => ({ id: String(i), heading: "Title" }))} />);
