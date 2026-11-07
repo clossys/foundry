@@ -550,6 +550,12 @@
       "kind": "test"
     },
     {
+      "id": "designer scripts/ref-verbatim/flavor.test.mjs",
+      "cwd": "packages/designer",
+      "run": "node --test scripts/ref-verbatim/flavor.test.mjs",
+      "kind": "test"
+    },
+    {
       "id": "designer scripts/sections-frames-source.test.mjs",
       "cwd": "packages/designer",
       "run": "node --test scripts/sections-frames-source.test.mjs",
