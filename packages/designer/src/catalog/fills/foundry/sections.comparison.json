@@ -95,7 +95,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/CandidatePromptDialog.tsx",
-            "sha256": "0a9185a0b61b3cc4ba31f811ced8bff1669f71640ccd2592bf99c56ac0c17f19"
+            "sha256": "229560186b838ac3ffbb877435b3de596b4de4497d4cc3247bbb1c702fee5196"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
@@ -103,7 +103,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
-            "sha256": "4eaa7b6defd82fbb0cb001edb07bdd6b66bd6f977d290e57b02c6df6399f242e"
+            "sha256": "f4a1fa82872614ebfae49858266bce5305debaae76f28be3876bdf096e1d8486"
           },
           {
             "path": "packages/designer/src/blocks/library-board/model.ts",
@@ -111,7 +111,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/OpenWithActions.tsx",
-            "sha256": "4f36b4fdd9b614f741d371b6e4e2cf9723b7efd03c31b94391b7eef8d77c5ddd"
+            "sha256": "ef3621ffd2696e89b531492771b37785bd12efde5e75e76f468d3eb0cc769716"
           },
           {
             "path": "packages/designer/src/blocks/Matrix.tsx",
@@ -171,7 +171,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

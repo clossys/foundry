@@ -67,11 +67,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/chat/Chat.tsx",
-            "sha256": "28051795d3231012d27e8ceb186d0fe126713ed8000df48c153296a02d2fb5c5"
+            "sha256": "2410c41e1613385ddf3c567a3d299b5fee755eaf1af9fa4767810ef30eeea562"
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",
-            "sha256": "59e19ceed7d4a0a27dcd95952fc6f29a79229fd3d2115598aebe615884bb4621"
+            "sha256": "55de28399d4c51c5be481f09f5f84437aa0f72edc8b18ad83859ffe154c81b88"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -95,7 +95,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

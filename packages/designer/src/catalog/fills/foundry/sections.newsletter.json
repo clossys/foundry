@@ -51,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "sha256": "672c1b903e4a17916744eed14850dc525eb5132d96420073fd2f35763db571b3"
+            "sha256": "11db95577549a11e5c0f70ef3c21cbf44c7fb76a55d932b448f44baf4ad3bb32"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",

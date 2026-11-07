@@ -76,7 +76,7 @@
           },
           {
             "path": "packages/designer/src/blocks/PageBar.tsx",
-            "sha256": "0febd0f97cba48518e887c459d3884e15813a7f00390abf69715e7e425059b5d"
+            "sha256": "5600e772273765eb654c98e38a652671dd65c1f17bbc3e21be4c0440c486a285"
           },
           {
             "path": "packages/designer/src/blocks/shell-menu.tsx",
@@ -100,7 +100,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

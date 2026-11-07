@@ -72,7 +72,7 @@
           },
           {
             "path": "packages/designer/src/blocks/AppNavigation.tsx",
-            "sha256": "3f925a05fe32cf6b0833c75b23169c475decff5b54480435dde79153917a0b73"
+            "sha256": "2f8a280c933b4092b5e24eed161e63d3b995326b64cb2b29a74da3f0edb2f917"
           },
           {
             "path": "packages/designer/src/blocks/frame-navigation.ts",
@@ -124,7 +124,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

@@ -51,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FormWizard.tsx",
-            "sha256": "3bb2d1003ad20db6519269aa0fad575066fcf4e048036564078358ef1a1ed131"
+            "sha256": "41463029ac35faabff32884689c39a7c1264a9277f12fa3484d47b4f7c876888"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -63,7 +63,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

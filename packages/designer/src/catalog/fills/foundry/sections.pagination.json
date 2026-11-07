@@ -61,7 +61,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Pagination.tsx",
-            "sha256": "c74c5a30e72fde9a43aa03f7c65152c0507442a28a56554bd21098844be190c6"
+            "sha256": "cce79082903a0254e44feebc2fce8c675e6fe8137362e1ff6644dfe4ae0b4fb5"
           },
           {
             "path": "packages/designer/src/blocks/stock-select.tsx",
@@ -85,7 +85,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

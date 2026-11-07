@@ -62,7 +62,7 @@
           },
           {
             "path": "packages/designer/src/blocks/AccessMatrix.tsx",
-            "sha256": "ab9214574b5cd103232a322398fa59a21ad4ff09efaca90ec1a733fc0973b5fc"
+            "sha256": "18741a18abcbaf57d1e37ebabf60387e12a640474fd11e9e7b8752d7192db300"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -78,7 +78,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

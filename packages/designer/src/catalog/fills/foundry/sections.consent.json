@@ -51,7 +51,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-            "sha256": "61fba7843dc3b778f7f83988565537211c6a7620823c3826cacbc19aa4ff74bf"
+            "sha256": "87785c63094ea2b9de381d98bffe1dbfe4972828377d761bc07f399bd333753c"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -67,7 +67,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

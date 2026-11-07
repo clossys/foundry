@@ -98,7 +98,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/AccountMenu.tsx",
-            "sha256": "72c31cc1c2c3c7a32d017edc0f2242b86c0e32ba27b6bafe116932d51e5f1b3c"
+            "sha256": "c4a02b5d4f95fbbeb6404ce88f45853fcfa1f2569d0826ee92095e3bd2cec89e"
           },
           {
             "path": "packages/designer/src/blocks/canvas/models.ts",
@@ -106,7 +106,7 @@
           },
           {
             "path": "packages/designer/src/blocks/CommandMenu.tsx",
-            "sha256": "fc6af3399546a5f2522abe69cc5216770d2647d9ee01729f146ecfd24961f2dc"
+            "sha256": "6923e4613411d1e873ffb10f418557f47f57e3121843934c2be2893bca165e5d"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
@@ -222,7 +222,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           },
           {
             "path": "packages/designer/src/shell/FrameSlots.tsx",
@@ -234,7 +234,7 @@
           },
           {
             "path": "packages/designer/src/shell/Toaster.tsx",
-            "sha256": "8e33cb3918934124ff1a12db003df30d0dbf1c7e086606d5333df0c77d0d83f7"
+            "sha256": "0aca811e7249ac99cf3348ed87a1985a5d448129b3dbc4d9794a3dd6d5d5d3ce"
           },
           {
             "path": "packages/designer/src/theme/internal/theme-core.ts",

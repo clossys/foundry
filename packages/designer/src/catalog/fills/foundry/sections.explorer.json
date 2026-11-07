@@ -54,7 +54,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Explorer.tsx",
-            "sha256": "610f83f327fdaac193f3e2e6a59eb25ba7f039214883c7aa36463479d781388f"
+            "sha256": "1f3580563e9201ad5997eb63b29db57c6b560b880cfcd3a908158c6de0099fef"
           },
           {
             "path": "packages/designer/src/blocks/tree-model.ts",
@@ -82,7 +82,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [

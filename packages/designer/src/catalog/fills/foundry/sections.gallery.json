@@ -48,7 +48,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Gallery.tsx",
-            "sha256": "63f3dabe0d6ef740580671baf2af3ba4103274a77218f268c6a15716f440e071"
+            "sha256": "875fdcf29bc576f4c686f3492fa642be3629ef9dd0c8a189bf57d51ea906d4c9"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

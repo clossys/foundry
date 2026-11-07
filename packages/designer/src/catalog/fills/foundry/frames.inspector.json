@@ -84,7 +84,7 @@
           },
           {
             "path": "packages/designer/src/frames/InspectorFrame.tsx",
-            "sha256": "24bd71cd60576867a47b8dc455d58564c32b61b76e76b99434973884d1b3dedc"
+            "sha256": "b004fcd093a6514b3a8dc2012f9ccdf906b4522cc21bf317e0dbc2373ca5d5de"
           },
           {
             "path": "packages/designer/src/frames/right-panel-config.ts",
@@ -92,7 +92,7 @@
           },
           {
             "path": "packages/designer/src/runtime/component-leaf.tsx",
-            "sha256": "76b3940bf0bd24dc5ece87216178e868e0d1bfc7e0303ddd36b247a5c9bc171b"
+            "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           }
         ],
         "unresolved": [
