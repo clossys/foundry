@@ -8,7 +8,7 @@ import type { CanvasRect, CanvasSize, Viewport } from "../../blocks/canvas/model
 import type { LayerId, Placement } from "../../catalog-core/index.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Badge } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { cx } from "../../components/internal/cx.js";
 import { Skeleton } from "../../components/Skeleton.js";
 import { TOKENS } from "../../tokens/tokens.js";

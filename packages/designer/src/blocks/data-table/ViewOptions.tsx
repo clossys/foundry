@@ -7,7 +7,7 @@ import { StockSelect } from "../stock-select.js";
 import { editView, type DataTableViewModel } from "./view-model.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
 type StockDialog = typeof import("../../components/preview-runtime/components/dialog/dialog.js");
 type StockPopover = typeof import("../../components/preview-runtime/components/popover/popover.js");

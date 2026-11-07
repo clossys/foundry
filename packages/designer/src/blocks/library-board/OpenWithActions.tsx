@@ -7,7 +7,7 @@ import { type StudioOpenContext } from "./open-context.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 import { MenuItem, MenuSeparator, MenuTrigger, PopupMenu } from "../shell-menu.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 

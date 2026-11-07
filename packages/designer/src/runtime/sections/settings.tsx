@@ -4,7 +4,7 @@ import type { SettingsSectionGroup } from "../../blocks/SettingsSection.js";
 import { anatomyOf, noop, recordsOf, refuseUnmapped, requiredAnatomy, requireSlot, slotValue, stringField, textOf, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
 const Switch = componentLeaf<typeof import("../../components/Switch.js").Switch>("components.switch");
 

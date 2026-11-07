@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Button } from "./Button.js";
+import { Button } from "./preview-runtime/components/button/button.js";
 import { Tooltip } from "./Tooltip.js";
 import { Tooltip as Surface } from "react-aria-components";
 

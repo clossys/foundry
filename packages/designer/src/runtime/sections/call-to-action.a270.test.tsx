@@ -9,7 +9,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { LinkButton } from "../../components/preview-runtime/components/button/button.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { CallToAction } from "../../blocks/CallToAction.js";
 import { componentDescriptorHash, type ResolvedComponents } from "../../catalog-core/resolve-components.js";
 import { defaultSourceModules } from "../../components/preview-runtime/modules.js";

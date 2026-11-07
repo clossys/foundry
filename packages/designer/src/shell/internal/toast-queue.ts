@@ -1,4 +1,4 @@
-import type { ButtonProps } from "../../components/Button.js";
+import type { ButtonProps } from "react-aria-components";
 import type { ReactNode } from "react";
 import { UNSTABLE_ToastQueue as AriaToastQueue } from "react-aria-components";
 

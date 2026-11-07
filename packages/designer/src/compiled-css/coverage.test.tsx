@@ -35,7 +35,7 @@ import { Avatar } from "../components/Avatar.js";
 import { Badge } from "../components/Badge.js";
 import { Banner } from "../components/Banner.js";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/preview-runtime/components/breadcrumbs/breadcrumb.js";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Card } from "../components/Card.js";
 import { Checkbox } from "../components/Checkbox.js";
 import { Chip } from "../components/Chip.js";
@@ -383,7 +383,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
         <Hero
           heading="Placeholder heading"
           description="Placeholder description."
-          actions={<Button variant="primary">Continue</Button>}
+          actions={<Button>Continue</Button>}
           media={<img src="/placeholder.png" alt="Placeholder still" />}
           composition="split"
         />,
@@ -396,7 +396,7 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       result.unmount();
     }
 
-    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-action", "text-ink-on-action", "rounded-control", "tablet:grid-cols-2"]) {
+    for (const required of ["text-display-m", "tablet:text-display-l", "font-display", "bg-(--color-action)", "text-(--color-ink-on-action)", "rounded-(--radius-control)", "tablet:grid-cols-2"]) {
       expect(renderedClasses.has(required), required).toBe(true);
     }
 
@@ -413,10 +413,10 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
 
   it("collects classes from a representative set of components and cross-checks against a fresh compiled.css", async () => {
     const trees: Array<[string, ReturnType<typeof render>]> = [];
-    trees.push(["Button primary md", render(<Button variant="primary" size="md">Save</Button>)]);
+    trees.push(["Button default", render(<Button>Save</Button>)]);
     trees.push(["Button secondary sm", render(<Button variant="secondary" size="sm">Save</Button>)]);
     trees.push(["Button ghost lg", render(<Button variant="ghost" size="lg">Save</Button>)]);
-    trees.push(["Button danger", render(<Button variant="danger">Delete</Button>)]);
+    trees.push(["Button destructive", render(<Button variant="destructive">Delete</Button>)]);
     trees.push(["Button outline lg", render(<Button variant="outline" size="lg">See an example</Button>)]);
     trees.push(["Badge neutral", render(<Badge>Active</Badge>)]);
     trees.push(["Badge success", render(<Badge variant="success">Active</Badge>)]);

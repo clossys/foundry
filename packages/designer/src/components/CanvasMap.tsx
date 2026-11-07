@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("./SemanticContent.js").SemanticContent>("components.semantic-content");
-const Button = componentLeaf<typeof import("./Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 
 type CanvasRect = { x: number; y: number; width: number; height: number };
 type CanvasSize = { width: number; height: number };

@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { TextField } from "../components/TextField.js";
 import { Form, type FormError } from "./Form.js";
 import { useFormValidation, type FormValidation } from "./useFormValidation.js";

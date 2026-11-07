@@ -23,7 +23,7 @@ const SemanticContent = componentLeaf<typeof import("../components/SemanticConte
 /** Stock anatomy (E2): the selected DialogTrigger opens the selected Popover, anchored to the bar by triggerRef. */
 const DialogTrigger = componentLeaf<StockDialog["DialogTrigger"]>("components.dialog", "DialogTrigger");
 const Popover = componentLeaf<StockPopover["Popover"]>("components.popover");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const ToggleButton = componentLeaf<StockToggle["Toggle"]>("components.toggle-button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");

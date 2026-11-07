@@ -22,7 +22,7 @@ export interface LibraryBoardSectionProps {
 import { dsPassThrough } from "../../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 type StockTable = typeof import("../../components/preview-runtime/components/table/table.js");
 const Table = componentLeaf<StockTable["Table"]>("components.table");
 const TableHeader = componentLeaf<StockTable["TableHeader"]>("components.table", "TableHeader");

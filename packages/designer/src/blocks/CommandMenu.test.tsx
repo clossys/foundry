@@ -3,7 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Dialog } from "../components/Dialog.js";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { X } from "../icons/X.js";
 import * as blocks from "./index.js";
 import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";

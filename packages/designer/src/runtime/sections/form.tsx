@@ -4,7 +4,7 @@ import type { FormError, FormProps } from "../../blocks/Form.js";
 import { actionsOf, anatomyOf, isObject, recordsOf, refuseUnmapped, requireSlot, slotValue, stringField, textOf, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Banner = componentLeaf<typeof import("../../components/Banner.js").Banner>("components.banner");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
 const ComboBox = componentLeaf<typeof import("../../components/ComboBox.js").ComboBox>("components.combo-box");

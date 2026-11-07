@@ -6,7 +6,7 @@
  * conformance evidence.
  */
 import { useState, type ReactNode } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { TextField } from "../components/TextField.js";
 import { Chat } from "../blocks/chat/Chat.js";
@@ -42,7 +42,7 @@ function CommandMenuPreview() {
   </>;
 }
 
-const PricingAction = componentLeaf<typeof Button>("components.button");
+const PricingAction = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 
 /** Samples keyed by the export name inside `@clossys/designer/blocks`. */
 export const STRUCTURED_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {

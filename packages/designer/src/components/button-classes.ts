@@ -1,6 +1,11 @@
 import type { CSSProperties } from "react";
 import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_INVERSE } from "./internal/ui-vars.js";
-import type { ButtonSize, ButtonVariant } from "./Button.js";
+/**
+ * The looks the class helpers below draw on a plain element (`buttonLinkClassName`,
+ * `buttonClassName`). The `Button` component itself is the stock shadcn@aria button.
+ */
+export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "tonal" | "quiet";
+export type ButtonSize = "sm" | "md" | "lg";
 import { TOKENS } from "../tokens/tokens.js";
 
 /**

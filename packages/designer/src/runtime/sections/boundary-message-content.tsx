@@ -4,7 +4,7 @@ import type { RuntimeRenderInput, RuntimeJson } from "../../catalog-core/runtime
 import { object, SectionContentError, text, type SectionContent } from "./group-a-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 /** Live commands are consumer-owned and never enter the JSON content snapshot. */

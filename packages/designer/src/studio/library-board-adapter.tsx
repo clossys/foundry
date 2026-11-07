@@ -8,7 +8,7 @@ import type { CandidatePromptData } from './candidate-prompt.js';
 import type { MatrixBoard, MatrixRow } from './matrix-model.js';
 import type { Candidate } from './model.js';
 import { CandidateCell } from './CandidateCell.js';
-import { Button } from '../components/Button.js';
+import { Button } from '../components/preview-runtime/components/button/button.js';
 import { LeafCell } from '../blocks/library-board/LeafCell.js';
 import { CandidatePromptDialog } from '../blocks/library-board/CandidatePromptDialog.js';
 import type { CandidateWorkflow } from '../blocks/library-board/types.js';

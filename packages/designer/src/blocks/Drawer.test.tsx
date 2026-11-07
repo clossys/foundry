@@ -4,7 +4,7 @@ import { renderToString } from "react-dom/server";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { TOKENS } from "../tokens/index.js";
 import * as blocks from "./index.js";
 

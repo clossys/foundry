@@ -1,7 +1,7 @@
 "use client";
 import { useId, useMemo, useState, type ReactNode } from "react";
 import { Badge } from "../../components/Badge.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { Switch } from "../../components/Switch.js";
 import type { CatalogBrowserReference } from "../../blocks/catalog-browser/types.js";
 import type { UsageEdgeKind, UsageEvidence, UsageGraph, UsageLayer } from "../../catalog-core/usage-graph.js";
@@ -82,7 +82,7 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
   const rows = (list: readonly UsageRow[]) => list.length ? <ul className="flex flex-col gap-xs">{list.map(entry => {
     const target = reference(entry), navigable = canNavigate?.(target.entryId) ?? true;
     return <li key={entry.id} data-usage-row={entry.id} className="flex flex-wrap items-baseline gap-sm">
-      {navigable ? <Button variant="quiet" size="sm" trailingIcon={null} onPress={() => navigation.select(target.entryId)}><StudioDataValue kind="identifier" value={target.label} /></Button> : <span className={DETAIL}><StudioDataValue kind="identifier" value={target.label} /></span>}
+      {navigable ? <Button variant="link" size="sm" onPress={() => navigation.select(target.entryId)}><StudioDataValue kind="identifier" value={target.label} /></Button> : <span className={DETAIL}><StudioDataValue kind="identifier" value={target.label} /></span>}
       {entry.fill ? <span className={DETAIL}><StudioDataValue kind="source" value={entry.fill.source} /></span> : null}
       {entry.kinds?.map(kind => <Badge key={kind}>{labels.kind[kind]}</Badge>)}
       {entry.evidence?.map(evidence => <Badge key={evidence} variant="info">{labels.evidence[evidence]}</Badge>)}

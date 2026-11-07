@@ -62,8 +62,9 @@ assertPeerVersion({
   foundVersion: reactAriaComponentsPackageJson.version,
 });
 
-export { Button } from "./Button.js";
-export type { ButtonProps, ButtonSize, ButtonVariant } from "./Button.js";
+export { Button } from "./preview-runtime/components/button/button.js";
+export type ButtonProps = import("react").ComponentProps<typeof import("./preview-runtime/components/button/button.js").Button>;
+export type { ButtonSize, ButtonVariant } from "./button-classes.js";
 
 export { IconButton } from "./IconButton.js";
 export type { IconButtonProps } from "./IconButton.js";
@@ -219,8 +220,7 @@ export type { NavigationTreeProps, NavigationTreeItemProps, NavigationTreeItemCo
 
 export { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
 export type { ToggleGroupProps, ToggleGroupItemProps } from "./ToggleGroup.js";
-export { ToggleButton } from "./ToggleButton.js";
-export type { ToggleButtonProps, ToggleButtonShape } from "./ToggleButton.js";
+export { Toggle } from "./preview-runtime/components/toggle-button/toggle.js";
 
 export { CanvasZoom } from "./CanvasZoom.js";
 export type { CanvasZoomProps } from "./CanvasZoom.js";

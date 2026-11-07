@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Dialog, type DialogProps } from "../components/Dialog.js";
 import { Icon } from "../components/Icon.js";
 import { cx } from "../components/internal/cx.js";

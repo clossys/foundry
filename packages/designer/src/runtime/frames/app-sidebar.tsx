@@ -14,7 +14,7 @@ import { frameContent, guardedNavigate, type FrameInput, type FrameJson } from "
 
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const read = frameContent("frames.app-sidebar");

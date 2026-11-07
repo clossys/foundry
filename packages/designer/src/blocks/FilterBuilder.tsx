@@ -4,7 +4,7 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 import { StockSelect } from "./stock-select.js";
 
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Card = componentLeaf<typeof import("../components/Card.js").Card>("components.card");
 const TextField = componentLeaf<typeof import("../components/TextField.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");

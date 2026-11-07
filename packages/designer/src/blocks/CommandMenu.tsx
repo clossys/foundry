@@ -7,7 +7,7 @@ import type { CommandMenuProps, CommandMenuShortcutOptions } from "./command-men
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Dialog = componentLeaf<(props: Omit<ModalOverlayProps, "children" | "className"> & { children: DialogProps["children"]; className?: string; showCloseButton?: boolean }) => ReactElement>("components.dialog");
 const DialogTitle = componentLeaf<(props: Omit<HeadingProps, "slot">) => ReactElement>("components.dialog", "DialogTitle");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { UI_BORDER_HAIRLINE } from "../components/internal/ui-vars.js";
 import { layoutRelationGraph, relationGraphHref } from "./relation-graph-layout.js";
 import type { RelationGraphProps } from "./relation-graph-types.js";

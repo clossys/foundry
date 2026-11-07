@@ -9,7 +9,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 import { Avatar, AvatarFallback, AvatarImage, MenuGroup, MenuItem, MenuLabel, MenuSeparator, ShellMenu } from "./shell-menu.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 
 export type { AccountMenuProps } from "./account-menu-types.js";

@@ -4,7 +4,7 @@ import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 type StockProgress = typeof import("../components/preview-runtime/components/progress-bar/progress.js");
 /** Stock anatomy (E2): the selected Progress names itself with its own ProgressLabel part. */
 const ProgressBar = componentLeaf<StockProgress["Progress"]>("components.progress-bar");

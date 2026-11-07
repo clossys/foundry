@@ -12,7 +12,7 @@ import { frameContent, type FrameInput, type FrameJson } from "./frame-content.j
 
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 

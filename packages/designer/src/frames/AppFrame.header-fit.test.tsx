@@ -9,7 +9,7 @@ import { renderToString } from "react-dom/server";
 import { expect, it } from "vitest";
 import { AppFrame } from "./AppFrame.js";
 import { PageHeaderModule } from "../shell/FrameSlots.js";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Menu } from "../components/Menu.js";
 import { shellCopyFixtureResolver } from "./__fixtures__/shell-copy.js";
 import { selectChromium } from "../__fixtures__/chromium-discovery.js";
@@ -98,7 +98,7 @@ it("keeps a full-stage surface, docked tools and intrinsic overflow at 390/1440/
       import React from 'react'; import {hydrateRoot} from 'react-dom/client';
       import {AppFrame} from './src/frames/AppFrame.js';
       import {PageHeaderModule} from './src/shell/FrameSlots.js';
-      import {Button} from './src/components/Button.js'; import {Menu} from './src/components/Menu.js';
+      import {Button} from './src/components/preview-runtime/components/button/button.js'; import {Menu} from './src/components/Menu.js';
       import {shellCopyFixtureResolver as copyResolver} from './src/frames/__fixtures__/shell-copy.js';
       window.fitErrors=[]; hydrateRoot(document.getElementById('root'), (${fixture.toString()})({React,AppFrame,PageHeaderModule,Button,Menu,copyResolver},${legacy}),{onRecoverableError:error=>window.fitErrors.push(String(error))});
     `, resolveDir: packageRoot, loader: "tsx" }, bundle: true, write: false, platform: "browser", format: "esm", define: { "process.env.NODE_ENV": '"production"' } });

@@ -139,13 +139,13 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     id: "act.native-action", label: "Native action", racBase: none("native-element", ["button"]), disposition: "keep",
     notes: ["Fixed primary/md/base appearance, native button semantics and explicit type. Local draft capability awaiting owner review; runtime qualification remains separate."],
   }),
-  onMain("Button", ["src/components/Button.tsx", "src/components/button-classes.ts"], {
+  onMain("Button", ["src/components/preview-runtime/components/button/button.tsx"], {
     id: "act.button",
     label: "Button",
     racBase: rac("Button"),
     disposition: "keep",
     contract: BUTTON_CONTRACT,
-    notes: ["The icon-end slot is the quiet variant's trailing icon, ChevronRight by default."],
+    notes: ["The stock shadcn@aria button; an icon-end glyph is an Icon child with data-icon=inline-end."],
   }),
   onMain("IconButton", ["src/components/IconButton.tsx", "src/components/button-classes.ts"], {
     id: "act.icon-button",

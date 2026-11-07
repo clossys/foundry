@@ -19,6 +19,10 @@ export type { ConsumerComponentBinding, ConsumerComponentSelection } from "./com
 export type GridListLeaf = (<T extends object>(props: Omit<GridListProps<T>, "layout"> & { readonly layout?: "list" | "grid" }) => React.ReactElement)
   & Pick<typeof import("../components/GridList.js").GridList, "Item" | "SelectionCheckbox">;
 
+/** The selected Button contract: its members (primary, danger, md) map onto the stock button's own vocabulary. */
+export type ButtonLeaf = (props: Omit<React.ComponentProps<typeof import("../components/preview-runtime/components/button/button.js").Button>, "variant" | "size">
+  & { readonly variant?: "primary" | "secondary" | "ghost" | "danger" | "outline"; readonly size?: "sm" | "md" | "lg" }) => React.ReactElement;
+
 /** Server-safe facade: its client boundary resolves only the consumer's selected component leaf. */
 export function componentLeaf<T>(leaf: `components.${string}`, part?: string): T {
   if (!/^components\.[a-z][a-z0-9-]*$/.test(leaf)) throw new TypeError("A registered component leaf id is required");

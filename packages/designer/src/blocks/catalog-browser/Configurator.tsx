@@ -1,4 +1,4 @@
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { Select } from "../../components/Select.js";
 import { Switch } from "../../components/Switch.js";
 import { TextField } from "../../components/TextField.js";
@@ -27,7 +27,7 @@ export function Configurator({ controls, config, onChange, noControls, resetLabe
         value={typeof value === "string" ? value : control.defaultValue} onChange={text => set(control.id, text)} />;
     })}
     <div>
-      <Button variant="quiet" size="sm" trailingIcon={null}
+      <Button variant="link" size="sm"
         onPress={() => onChange(Object.fromEntries(controls.map(control => [control.id, control.defaultValue])))}>{resetLabel}</Button>
     </div>
   </div>;

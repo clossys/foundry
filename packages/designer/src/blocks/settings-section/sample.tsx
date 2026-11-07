@@ -1,4 +1,4 @@
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { Switch } from "../../components/Switch.js";
 import { TextField } from "../../components/TextField.js";
 import type { SettingsSectionProps } from "../SettingsSection.js";
@@ -11,6 +11,6 @@ export const settingsSectionSample: SettingsSectionProps = {
     { id: "notifications", legend: "Notifications", children: <><Switch defaultSelected>Weekly summary</Switch><Switch>Product updates</Switch></> },
   ],
   dirty: ["general"],
-  saveBar: <><Button variant="secondary">Discard</Button><Button variant="primary">Save</Button></>,
+  saveBar: <><Button variant="secondary">Discard</Button><Button>Save</Button></>,
   labels: { unsaved: "Unsaved changes", saveBar: "Save changes" },
 };

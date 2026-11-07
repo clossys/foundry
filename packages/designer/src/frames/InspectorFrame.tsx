@@ -10,7 +10,7 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 
 /** DOM provenance (WIRE-3 D1): this frame root stamps its leaf and fill. */
 const FRAME_STAMP = dsAttrs("frames", "frames.inspector", "foundry/frames.inspector");

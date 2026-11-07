@@ -13,7 +13,7 @@ import { Select } from "./Select.js";
 import { Switch } from "./Switch.js";
 import { Textarea } from "./Textarea.js";
 import { TextField } from "./TextField.js";
-import { ToggleButton } from "./ToggleButton.js";
+import { Toggle } from "./preview-runtime/components/toggle-button/toggle.js";
 
 /*
  * Visual pass (VF-8): a control's RESTING boundary is drawn with
@@ -102,7 +102,9 @@ describe("control boundary line (VF-8)", () => {
     expect(buttonClassName("secondary", "md").split(" ")).toContain("border-line-control");
     expect(buttonClassName("secondary", "md").split(" ")).not.toContain("border-line-base");
     expect(buttonClassName("outline", "md").split(" ")).toEqual(expect.arrayContaining(["ring-current", "ring-1", "hover:ring-2"]));
-    render(<ToggleButton>Bold</ToggleButton>);
-    expectControlLine(screen.getByRole("button", { name: "Bold" }));
+    render(<Toggle variant="outline">Bold</Toggle>);
+    const toggle = screen.getByRole("button", { name: "Bold" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(classes(toggle)).toContain("border-(--color-line-strong)");
   });
 });

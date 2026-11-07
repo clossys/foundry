@@ -53,7 +53,7 @@ it("actual Chrome proves native activation/forms/focus and compiled Button appea
   const nativeClasses = /class="([^"]+)"/.exec(renderToStaticMarkup(createElement(NativeAction, { type: "button" }, "Caller")))![1]!;
   const candidates = [...new Set([...nativeClasses.split(/\s+/), ...buttonClassName("primary", "md", "base").split(/\s+/)])];
   const { css } = await generateCompiledCss({ stylesDir: join(packageRoot, "styles"), candidates });
-  const fixture = `import React,{createRef,useEffect,useState} from "react";import{createRoot}from"react-dom/client";import{NativeAction}from${JSON.stringify(join(packageRoot, "src/components/NativeAction.tsx"))};import{Button}from${JSON.stringify(join(packageRoot, "src/components/Button.tsx"))};
+  const fixture = `import React,{createRef,useEffect,useState} from "react";import{createRoot}from"react-dom/client";import{NativeAction}from${JSON.stringify(join(packageRoot, "src/components/NativeAction.tsx"))};import{Button}from${JSON.stringify(join(packageRoot, "src/components/preview-runtime/components/button/button.tsx"))};
 const ref=createRef();window.counts={native:0,annotation:0,submit:0,reset:0};function App(){const[disabled,setDisabled]=useState(false);window.disable=setDisabled;window.ref=ref;useEffect(()=>{window.ready=true},[]);return <><span id="name">Caller name</span><span id="description">Caller description</span><form id="form" onSubmit={e=>{e.preventDefault();window.counts.submit++}} onReset={()=>window.counts.reset++}>
 <NativeAction id="native" type="button" ref={ref} disabled={disabled} name="intent" value="save" aria-labelledby="name" aria-describedby="description" onClick={()=>window.counts.native++}>Caller</NativeAction>
 <Button id="aria" type="button" isDisabled={disabled}>Caller</Button>

@@ -14,7 +14,7 @@ import type { DesignerSpecimenContext, DesignerSpecimenNeed } from "./DesignerSp
 import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenItem, type SpecimenLeafDefinition, type SpecimenLeafId, type SpecimenLeafProps, type SpecimenLayout, type SpecimenSpan } from "./specimen-layouts.js";
 
 const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
 const Logomark = componentLeaf<typeof import("../components/Logomark.js").Logomark>("components.logo");
 

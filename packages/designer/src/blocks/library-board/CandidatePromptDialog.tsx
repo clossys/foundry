@@ -7,7 +7,7 @@ import type { LayerId } from "../../catalog-core/index.js";
 import type { CandidateWorkflow, LibraryBoardLabels, PendingCandidate } from "./types.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Dialog = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").Dialog>("components.dialog");
 const DialogTrigger = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogTrigger>("components.dialog", "DialogTrigger");
 const DialogHeader = componentLeaf<typeof import("../../components/preview-runtime/components/dialog/dialog.js").DialogHeader>("components.dialog", "DialogHeader");

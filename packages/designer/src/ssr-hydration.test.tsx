@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "./components/Button.js";
+import { Button } from "./components/preview-runtime/components/button/button.js";
 import { PageHeader } from "./blocks/PageHeader.js";
 import { CommandMenu, useCommandMenuShortcut } from "./blocks/CommandMenu.js";
 import { Shell } from "./shell/Shell.js";

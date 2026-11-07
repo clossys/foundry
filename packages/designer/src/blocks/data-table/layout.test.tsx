@@ -9,7 +9,7 @@ import { DataTable } from "../DataTable.js";
 import { DetailView } from "../DetailView.js";
 import { Matrix } from "../Matrix.js";
 import { PAGINATION_COPY_REFS, Pagination } from "../Pagination.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { SearchField } from "../../components/SearchField.js";
 import { Select } from "../../components/Select.js";
 import { selectChromium } from "../../__fixtures__/chromium-discovery.js";

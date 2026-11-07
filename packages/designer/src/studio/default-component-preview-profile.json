@@ -17691,7 +17691,7 @@
       "TagGroup",
       "TextField",
       "Textarea",
-      "ToggleButton",
+      "Toggle",
       "ToggleGroup",
       "ToggleGroupItem",
       "Toolbar",

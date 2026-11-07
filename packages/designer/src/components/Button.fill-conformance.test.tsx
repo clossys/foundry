@@ -4,13 +4,13 @@ import { resolve } from "node:path";
 import { fireEvent, render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Button } from "./Button.js";
+import { Button } from "./preview-runtime/components/button/button.js";
 import { IconButton } from "./IconButton.js";
 import { TextField } from "./TextField.js";
 import { SearchField } from "./SearchField.js";
 import { Select } from "./Select.js";
-import { ToggleButton } from "./ToggleButton.js";
 import { Toggle } from "./toggle-button/toggle.js";
+import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
 import { Tabs } from "./Tabs.js";
 import { Menu } from "./Menu.js";
@@ -24,17 +24,15 @@ afterEach(cleanup);
 const name = "Control";
 const options = [{ id: "one", label: "One" }];
 const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] = [
-  ["Button", d => <Button isDisabled={d}>{name}</Button>, () => screen.getByRole("button", { name })],
   ["IconButton", d => <IconButton isDisabled={d} icon={X} label={name} />, () => screen.getByRole("button", { name })],
   ["TextField", d => <TextField isDisabled={d} label={name} placeholder="Type here" />, () => screen.getByRole("textbox", { name })],
   ["SearchField", d => <SearchField isDisabled={d} label={name} placeholder="Search here" />, () => screen.getByRole("searchbox", { name })],
   ["Select", d => <Select isDisabled={d} label={name} options={options} />, () => screen.getByRole("button", { name: /Control/ })],
-  ["ToggleButton", d => <ToggleButton isDisabled={d}>{name}</ToggleButton>, () => screen.getByRole("button", { name })],
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
   ["Tabs", d => <Tabs><Tabs.List aria-label="Sections"><Tabs.Tab id="one" isDisabled={d}>{name}</Tabs.Tab></Tabs.List><Tabs.Panel id="one">Panel</Tabs.Panel></Tabs>, () => screen.getByRole("tab", { name })],
   ["Menu", d => <Menu.Inline aria-label="Actions"><Menu.Item id="one" isDisabled={d}>{name}</Menu.Item></Menu.Inline>, () => screen.getByRole("menuitem", { name })],
-  ["Popover trigger", d => <Popover trigger={<Button isDisabled={d}>{name}</Button>} aria-label="Details">Details</Popover>, () => screen.getByRole("button", { name })],
+  ["Popover trigger", d => <Popover trigger={<IconButton isDisabled={d} icon={X} label={name} />} aria-label="Details">Details</Popover>, () => screen.getByRole("button", { name })],
 ];
 const layer = (control: HTMLElement) => control.style.backgroundImage;
 
@@ -84,14 +82,11 @@ describe("control fill conformance", () => {
   });
 
   it.each(["sm", "md", "lg"] as const)("%s uses the control-height token, including square icon controls", size => {
-    render(<><Button size={size}>Action</Button><Button variant="quiet" size={size}>Quiet action</Button><TextField label="Field" size={size}/><Select label="Choice" size={size} options={options}/><IconButton size={size} icon={X} label="Icon"/></>);
-    for (const control of [screen.getByRole("button", { name: "Action" }), screen.getByRole("button", { name: "Quiet action" }), screen.getByRole("textbox"), screen.getByRole("button", { name: /Choice/ }), screen.getByRole("button", { name: "Icon" })]) {
+    render(<><TextField label="Field" size={size}/><Select label="Choice" size={size} options={options}/><IconButton size={size} icon={X} label="Icon"/></>);
+    for (const control of [screen.getByRole("textbox"), screen.getByRole("button", { name: /Choice/ }), screen.getByRole("button", { name: "Icon" })]) {
       if (control.style.blockSize) expect(control.style.blockSize).toContain(`--ui-control-h-${size}`);
       else expect(control).toHaveClass(`control-h-${size}`);
     }
-    const quiet = screen.getByRole("button", { name: "Quiet action" });
-    expect(quiet.style.blockSize).toBe("");
-    expect(quiet.style.minBlockSize).toBe("");
     const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     expect(compiled).toContain(`&.control-h-${size} {\n      min-block-size: var(--ui-control-h-${size}, ${size === "sm" ? 28 : size === "md" ? 32 : 36}px);`);
     const icon = screen.getByRole("button", { name: "Icon" });
@@ -108,17 +103,38 @@ describe("control fill conformance", () => {
     expect(document.head.querySelector('style[data-href="designer-native-search"]')?.textContent).toContain("appearance: none");
   });
 
-  it("selected toggles retain action fill under hover and pressed layers", async () => {
-    const user = userEvent.setup();
-    render(<ToggleButton isSelected>Selected</ToggleButton>);
-    const toggle = screen.getByRole("button");
+  it("the stock toggle keeps its selected state and action fill through hover and press", async () => {
+    const user = userEvent.setup(), onChange = vi.fn();
+    render(<StockToggle defaultSelected onChange={onChange}>Selected</StockToggle>);
+    const toggle = screen.getByRole("button", { name: "Selected" });
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(toggle.className.split(" ")).toContain("data-selected:bg-(--color-action)");
     await user.hover(toggle);
-    expect(toggle).toHaveClass("bg-action");
-    expect(layer(toggle)).toContain("--ui-state-hover-alpha");
-    await user.pointer({ target: toggle, keys: "[MouseLeft>]" });
-    expect(toggle).toHaveClass("bg-action");
-    expect(layer(toggle)).toContain("--ui-state-pressed-alpha");
-    await user.pointer({ keys: "[/MouseLeft]" });
+    expect(toggle).toHaveAttribute("data-hovered", "true");
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    await user.click(toggle);
+    expect(onChange).toHaveBeenCalledWith(false);
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("the stock button presses once, exposes hover and keyboard focus, and refuses presses when disabled", async () => {
+    const user = userEvent.setup(), onPress = vi.fn();
+    const view = render(<><button>Before</button><Button size="sm" onPress={onPress}>Act</Button></>);
+    const button = screen.getByRole("button", { name: "Act" });
+    expect(button).toHaveAttribute("data-slot", "button");
+    expect(button.className).toContain("--ui-control-h-sm");
+    await user.hover(button);
+    expect(button).toHaveAttribute("data-hovered", "true");
+    await user.click(button);
+    expect(onPress).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Before" }));
+    await user.tab();
+    expect(button).toHaveFocus();
+    expect(button).toHaveAttribute("data-focus-visible", "true");
+    view.rerender(<><button>Before</button><Button size="sm" isDisabled onPress={onPress}>Act</Button></>);
+    expect(button).toBeDisabled();
+    await user.click(button);
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 
   it.each(["horizontal", "vertical"] as const)("%s tabs have a separate indicator only on the selected tab", orientation => {
@@ -161,14 +177,14 @@ describe("control fill conformance", () => {
   });
 
   it("a disabled action can expose its explicit reason without changing the enabled default", () => {
-    render(<Button isDisabled disabledReason="Complete the required fields">Save</Button>);
+    render(<><Button isDisabled aria-describedby="save-reason">Save</Button><span id="save-reason">Complete the required fields</span></>);
     expect(screen.getByRole("button", { name: "Save" })).toHaveAccessibleDescription("Complete the required fields");
   });
 
   it("primary rest remains action-filled and does not imply an unexplained unavailable state", () => {
     render(<Button>Save</Button>);
     const button = screen.getByRole("button", { name: "Save" });
-    expect(button).toHaveClass("bg-action", "text-ink-on-action");
+    expect(button).toHaveClass("bg-(--color-action)", "text-(--color-ink-on-action)");
     expect(button).not.toBeDisabled();
     expect(button.style.opacity).toBe("");
     expect(button.style.backgroundColor).toBe("");

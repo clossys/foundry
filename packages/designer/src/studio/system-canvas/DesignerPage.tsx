@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { CanvasSize, Viewport } from "../../blocks/canvas/models.js";
 import { minimapModel } from "../../blocks/canvas/models.js";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { CanvasMap } from "../../components/CanvasMap.js";
 import { CanvasZoom } from "../../components/CanvasZoom.js";
 import { Slider } from "../../components/Slider.js";

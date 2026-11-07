@@ -24,7 +24,7 @@ export const APP_FRAME_MATERIALS = [
     dependencies: [
       { exportName: "Dialog", source: "src/components/Dialog.tsx" },
       { exportName: "Panel", source: "src/blocks/Panel.tsx" },
-      { exportName: "Button", source: "src/components/Button.tsx" },
+      { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Icon", source: "src/components/Icon.tsx" },
     ],
     configs: [
@@ -62,7 +62,7 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Panel", source: "src/blocks/Panel.tsx" },
       { exportName: "Drawer", source: "src/blocks/Drawer.tsx" },
       { exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" },
-      { exportName: "Button", source: "src/components/Button.tsx" },
+      { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Tooltip", source: "src/components/Tooltip.tsx" },
       { exportName: "Icon", source: "src/components/Icon.tsx" },
     ],
@@ -76,7 +76,7 @@ export const APP_FRAME_MATERIALS = [
       { exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Menu", source: "src/components/Menu.tsx" },
       { exportName: "Popover", source: "src/components/Popover.tsx" },
-      { exportName: "Button", source: "src/components/Button.tsx" },
+      { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Icon", source: "src/components/Icon.tsx" },
     ],
     configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
@@ -87,7 +87,7 @@ export const APP_FRAME_MATERIALS = [
     regions: ["identity", "trigger", "content", "preferences"],
     dependencies: [
       { exportName: "Avatar", source: "src/components/Avatar.tsx" },
-      { exportName: "Button", source: "src/components/Button.tsx" },
+      { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
       { exportName: "Icon", source: "src/components/Icon.tsx" },
       { exportName: "Menu", source: "src/components/Menu.tsx" },
       { exportName: "Tooltip", source: "src/components/Tooltip.tsx" },
@@ -105,7 +105,7 @@ export const APP_FRAME_MATERIALS = [
   {
     id: "relation-graph", layer: "blocks", informationArchitecture: "navigation", exportName: "RelationGraph", component: RelationGraph, source: "src/blocks/RelationGraph.tsx",
     regions: ["content", "drawing", "list"],
-    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Button", source: "src/components/Button.tsx" }],
+    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" }],
     configs: [],
     authoredInputs: ["nodes", "edges", "kinds", "label", "selectedId", "onSelectionChange", "emptyMessage", "unavailableMessage", "incomingLabel", "outgoingLabel", "refusedLabel"],
   },

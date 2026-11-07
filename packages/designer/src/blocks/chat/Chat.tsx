@@ -11,7 +11,7 @@ import { dsAttrs } from "../../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 type StockButton = typeof import("../../components/preview-runtime/components/button/button.js").Button;
 /** Stock-bound button with the slot's shape axis: shape.icon-only maps to the stock icon size. */
 const IconButton = componentLeaf<(props: ComponentProps<StockButton> & { readonly shape: "icon-only" }) => ReactElement>("components.button");

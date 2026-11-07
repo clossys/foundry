@@ -3,7 +3,7 @@ import { Pagination } from "../../blocks/Pagination.js";
 
 import { componentLeaf } from "../component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SearchField = componentLeaf<typeof import("../../components/SearchField.js").SearchField>("components.search-field");

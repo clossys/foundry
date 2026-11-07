@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { CandidatePromptDialog } from "./CandidatePromptDialog.js";
 import { candidatePrompt, type CandidatePromptData } from "./candidate-prompt.js";
 import { labels } from "./__fixtures__/studio.js";

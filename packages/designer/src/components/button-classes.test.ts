@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ButtonSize, ButtonVariant } from "./Button.js";
 import {
   buttonClassName,
+  type ButtonSize,
+  type ButtonVariant,
   buttonLinkClassName,
   iconButtonClassName,
   iconButtonLinkClassName,

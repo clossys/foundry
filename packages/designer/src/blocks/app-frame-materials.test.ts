@@ -6,7 +6,7 @@ import ts from "typescript";
 import { createElement, type ComponentProps } from "react";
 import { render as renderBare, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { describe, expect, it, vi } from "vitest";
 import * as blocks from "./index.js";
 import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
@@ -84,7 +84,7 @@ describe("AppFrame Material registration", () => {
       regions: ["identity", "trigger", "content", "preferences"],
       dependencies: [
         { exportName: "Avatar", source: "src/components/Avatar.tsx" },
-        { exportName: "Button", source: "src/components/Button.tsx" },
+        { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
         { exportName: "Icon", source: "src/components/Icon.tsx" },
         { exportName: "Menu", source: "src/components/Menu.tsx" },
         { exportName: "Tooltip", source: "src/components/Tooltip.tsx" },
@@ -229,7 +229,7 @@ it("registers PageBar's complete authored contract and actual component dependen
   expect(entry).toMatchObject({
     layer: "blocks", exportName: "PageBar", component: (blocks as any).PageBar, source: "src/blocks/PageBar.tsx",
     regions: ["trail", "page-info", "actions"],
-    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Menu", source: "src/components/Menu.tsx" }, { exportName: "Popover", source: "src/components/Popover.tsx" }, { exportName: "Button", source: "src/components/Button.tsx" }, { exportName: "Icon", source: "src/components/Icon.tsx" }],
+    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Menu", source: "src/components/Menu.tsx" }, { exportName: "Popover", source: "src/components/Popover.tsx" }, { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Icon", source: "src/components/Icon.tsx" }],
     configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
     authoredInputs: ["root", "page", "workspaces", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   });

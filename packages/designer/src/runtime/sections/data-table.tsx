@@ -13,7 +13,7 @@ import { tableCopyOf, type PaginationSummaryMessage, type WriterCopyFormatter } 
 import { componentLeaf } from "../component-leaf.js";
 
 const Badge = componentLeaf<typeof import("../../components/Badge.js").Badge>("components.badge");
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const StatusMark = componentLeaf<typeof import("../../components/StatusMark.js").StatusMark>("components.status-mark");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");

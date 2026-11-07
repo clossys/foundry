@@ -12,7 +12,7 @@ type StockMenu = typeof import("../../components/preview-runtime/components/menu
 const MenuTrigger = componentLeaf<StockMenu["DropdownMenuTrigger"]>("components.menu", "DropdownMenuTrigger");
 const PopupMenu = componentLeaf<StockMenu["DropdownMenu"]>("components.menu");
 const MenuItem = componentLeaf<StockMenu["DropdownMenuItem"]>("components.menu", "MenuItem");
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 
 const LEAF = "sections.section-header";

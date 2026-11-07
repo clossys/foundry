@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { ErrorState, type ErrorStateKind } from "./ErrorState.js";
 

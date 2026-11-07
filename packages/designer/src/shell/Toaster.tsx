@@ -1,7 +1,7 @@
 import { useLocale } from "react-aria-components";
 import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
 import type { QueuedToast, UNSTABLE_ToastQueue as ToastQueue } from "react-aria-components";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Toast, ToastContent, ToastRegion, ToastText, type ToastPlacement } from "../components/Toast.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_ELEVATION_FLOATING } from "../components/internal/ui-vars.js";

@@ -10,7 +10,7 @@ import { SpecimenLayoutSection, specimenComponent, specimenLayoutNeeds, type Spe
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const RichText = componentLeaf<typeof import("../components/RichText.js").RichText>("components.rich-text");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Badge = componentLeaf<typeof import("../components/Badge.js").Badge>("components.badge");
 const NavigationTree = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTree>("components.navigation-tree");
 const NavigationTreeItem = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTree.Item>("components.navigation-tree", "Item");

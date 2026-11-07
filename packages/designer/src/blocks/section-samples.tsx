@@ -4,7 +4,7 @@
  * no claim about any consumer's content.
  */
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { CallToAction } from "./CallToAction.js";
 import { RecordCards } from "./RecordCards.js";
@@ -41,7 +41,7 @@ export const SECTION_BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = 
     { id: "status", header: "Status", cell: row => row.status },
     { id: "total", header: "Total", cell: row => row.total },
   ]} />,
-  ErrorState: () => <ErrorState kind="failure" code="Error 503" title="This page did not load" description="The service is busy. Your work is saved; try again in a moment." retry={<Button variant="primary" size="md" onPress={noop}>Try again</Button>} report={<Link variant="link" href="#status">Check service status</Link>} />,
+  ErrorState: () => <ErrorState kind="failure" code="Error 503" title="This page did not load" description="The service is busy. Your work is saved; try again in a moment." retry={<Button onPress={noop}>Try again</Button>} report={<Link variant="link" href="#status">Check service status</Link>} />,
   Gallery: () => <Gallery label="Workspace screens" images={[
     { id: "overview", label: "Workspace overview", media: frame("Workspace overview"), caption: "Overview" },
     { id: "editor", label: "Page editor", media: frame("Page editor"), caption: "Editor" },

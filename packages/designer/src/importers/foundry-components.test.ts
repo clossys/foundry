@@ -75,7 +75,7 @@ describe("Foundry component package descriptors", () => {
       expect(fill.rac).toEqual({ range: "^1.19.0", peer: true, instance: "react-aria-components" });
     }
     const bySlot = new Map(descriptors.map(fill => [fill.slot, fill]));
-    expect(bySlot.get("components.button")!.propMap["shape.icon-only"]).toBe("./components#IconButton");
+    expect(bySlot.get("components.button")!.propMap["shape.icon-only"]).toBe("./components#Button.size=icon");
     expect(bySlot.get("components.text-field")!.propMap["line.multiline"]).toBe("./components#Textarea");
     expect(bySlot.get("components.logo")!.propMap["content.lockup"]).toBe("./shell#Brandmark.variant=lockup");
     expect(bySlot.get("components.toast")!.impl).toMatchObject({ module: "@clossys/designer/shell", export: "Toaster" });

@@ -5,7 +5,7 @@ import * as icons from "../../icons/index.js";
 import { actionsOf, anatomyOf, noop, refuseUnmapped, requiredAnatomy, slotValue, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
 const Link = componentLeaf<typeof import("../../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 

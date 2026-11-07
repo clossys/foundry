@@ -6,7 +6,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { GridList } from "../components/GridList.js";
 import { TagGroup } from "../components/TagGroup.js";
 import { Toolbar } from "../components/Toolbar.js";

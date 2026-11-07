@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Button } from "./components/Button.js";
+import { Button } from "./components/preview-runtime/components/button/button.js";
 import { Menu } from "./components/Menu.js";
 import { Popover } from "./components/Popover.js";
 import { Tooltip } from "./components/Tooltip.js";

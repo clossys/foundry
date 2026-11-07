@@ -6,7 +6,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("./SemanticContent.js").SemanticContent>("components.semantic-content");
 const Icon = componentLeaf<typeof import("./Icon.js").Icon>("components.icon");
-const Button = componentLeaf<typeof import("./Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Toolbar = componentLeaf<typeof import("./Toolbar.js").Toolbar>("components.toolbar");
 
 export interface CanvasZoomProps {

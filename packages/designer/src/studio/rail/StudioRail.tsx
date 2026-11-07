@@ -1,6 +1,6 @@
 "use client";
 import { useSyncExternalStore, type ReactNode } from "react";
-import { Button } from "../../components/Button.js";
+import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { Card } from "../../components/Card.js";
 import { AccordionContent, AccordionItem, AccordionTrigger } from "../../components/preview-runtime/components/disclosure/accordion.js";
 import { Drawer } from "../../blocks/Drawer.js";

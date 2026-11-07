@@ -2,7 +2,7 @@ import {
   useEffect, useId, useRef,
   type CSSProperties, type FormEvent, type ReactNode,
 } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Icon } from "../components/Icon.js";
 import { TextField } from "../components/TextField.js";
 import { cx } from "../components/internal/cx.js";
@@ -113,7 +113,7 @@ export function NewsletterBand({
             isInvalid={status === "failed"}
             aria-describedby={[hasHint ? hintId : undefined, status === "failed" ? failedId : undefined].filter(Boolean).join(" ") || undefined}
           />
-          <Button type="submit" size="md" isPending={status === "pending"} className="w-full tablet:w-auto" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>
+          <Button type="submit" isPending={status === "pending"} className="w-full tablet:w-auto" style={{ minBlockSize: UI_LAYOUT_TAP_TARGET }}>
             {status === "pending" ? pendingLabel : submitLabel}
           </Button>
         </div>

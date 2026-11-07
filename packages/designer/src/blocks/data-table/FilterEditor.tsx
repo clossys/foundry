@@ -6,7 +6,7 @@ import { dateValue } from "../table-model/model.js";
 import { componentLeaf } from "../../runtime/component-leaf.js";
 import { StockSelect } from "../stock-select.js";
 
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
 const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");

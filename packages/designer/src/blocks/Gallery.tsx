@@ -1,5 +1,5 @@
 import type { HTMLAttributes, ReactNode } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Dialog } from "../components/Dialog.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
@@ -64,7 +64,7 @@ export function Gallery({ images, label, lightbox = true, labels = DEFAULT_LABEL
                       <div className={TILE}>{image.media}</div>
                       {image.caption ? <p className="text-body-s text-ink-secondary">{image.caption}</p> : null}
                       <div className="flex justify-end">
-                        <Button variant="secondary" size="md" onPress={close}>{labels.close}</Button>
+                        <Button variant="secondary" onPress={close}>{labels.close}</Button>
                       </div>
                     </>
                   )}

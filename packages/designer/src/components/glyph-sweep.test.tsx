@@ -7,7 +7,7 @@ import userEvent from "@testing-library/user-event";
 import { renderToStaticMarkup } from "react-dom/server";
 import { GlyphProvider } from "./glyph-context.js";
 import type { IconNode } from "../icons/types.js";
-import { Button } from "./Button.js";
+import { Button } from "./preview-runtime/components/button/button.js";
 import { Checkbox } from "./Checkbox.js";
 import { Switch } from "./Switch.js";
 import { Select } from "./Select.js";

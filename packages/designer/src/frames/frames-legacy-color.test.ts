@@ -62,7 +62,7 @@ describe("legacy colour map (H-TOKEN)", () => {
 
 const INVERSE_KEYS = Object.keys(legacyMap.map).filter(key => key.includes("inverse") && !key.includes("glass")).sort();
 // The component plates the frame layer's inverse uses moved to (GATES-RED round 4, G1/G2).
-const INVERSE_PLATES = ["src/components/Card.tsx", "src/components/button-classes.ts", "src/components/ToggleButton.tsx", "src/components/Logomark.tsx", "src/shell/Brandmark.tsx"];
+const INVERSE_PLATES = ["src/components/Card.tsx", "src/components/button-classes.ts", "src/components/preview-runtime/components/toggle-button/toggle.tsx", "src/components/Logomark.tsx", "src/shell/Brandmark.tsx"];
 
 describe("inverse plate = shadcn foreground/background swap (G7)", () => {
   it("maps every inverse key onto the swap, with no new variable", () => {

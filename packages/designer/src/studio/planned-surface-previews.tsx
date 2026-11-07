@@ -53,7 +53,7 @@ import { ErrorState } from "../blocks/ErrorState.js";
 import { Gallery } from "../blocks/Gallery.js";
 import { NoticeList } from "../blocks/NoticeList.js";
 import { StatGroup } from "../blocks/StatGroup.js";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { SiteHeader } from "../shell/SiteHeader.js";
@@ -111,7 +111,7 @@ const BLOCK_SAMPLES: Readonly<Record<string, () => ReactNode>> = {
   ConsentBanner: () => <ConsentBanner title={S.consentBanner.title} body={S.consentBanner.body} acceptLabel={S.consentBanner.acceptLabel} rejectLabel={S.consentBanner.rejectLabel} onAccept={noop} onReject={noop}
     privacyLink={<Link variant="link" href={S.consentBanner.privacy.href}>{S.consentBanner.privacy.label}</Link>} />,
   ErrorState: () => <ErrorState kind="failure" code={S.errorState.code} title={S.errorState.title} description={S.errorState.description}
-    retry={<Button variant="primary" size="md" onPress={noop}>{S.errorState.retryLabel}</Button>} report={<Link variant="link" href={S.errorState.report.href}>{S.errorState.report.label}</Link>} />,
+    retry={<Button onPress={noop}>{S.errorState.retryLabel}</Button>} report={<Link variant="link" href={S.errorState.report.href}>{S.errorState.report.label}</Link>} />,
   Gallery: () => <Gallery label={S.gallery.label} images={S.gallery.images.map(image => ({ ...image, media: media(image.label) }))} />,
   NoticeList: () => <NoticeList label={S.noticeList.label} onDismiss={noop}
     notices={S.noticeList.notices.map(({ action, ...notice }) => ({ ...notice, action: action ? <Link variant="link" href={action.href}>{action.label}</Link> : undefined }))} />,

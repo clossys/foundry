@@ -10,7 +10,7 @@ import { Panel } from "./Panel.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Button = componentLeaf<typeof import("../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Dialog = componentLeaf<typeof import("../components/Dialog.js").Dialog>("components.dialog");
 const Sheet = componentLeaf<typeof import("../components/sheet/index.js").Sheet>("components.sheet");
 const SheetTrigger = componentLeaf<typeof import("../components/sheet/index.js").SheetTrigger>("components.sheet", "SheetTrigger");

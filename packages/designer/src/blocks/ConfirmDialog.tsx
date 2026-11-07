@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Dialog, type DialogProps } from "../components/Dialog.js";
 
 export type ConfirmDialogTone = "neutral" | "destructive";
@@ -113,7 +113,7 @@ export function ConfirmDialog({
               {cancelLabel}
             </Button>
             <Button
-              variant={isDestructive ? "danger" : "primary"}
+              variant={isDestructive ? "destructive" : "default"}
               autoFocus={!isDestructive}
               onPress={() => {
                 onConfirm();

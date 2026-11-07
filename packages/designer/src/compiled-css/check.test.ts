@@ -53,7 +53,7 @@ describe("checkCompiledCssFreshness — drift detection (isolated fixture)", () 
   });
 
   it("reports drift when an component gains a new real utility class without regenerating", async () => {
-    const buttonPath = join(dir, "src", "components", "Button.tsx");
+    const buttonPath = join(dir, "src", "components", "preview-runtime", "components", "button", "button.tsx");
     const original = readFileSync(buttonPath, "utf8");
     // A real Tailwind utility not used anywhere else in this fixture's
     // components/ — guaranteed to change the generated output, unlike editing

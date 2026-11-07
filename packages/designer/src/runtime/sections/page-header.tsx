@@ -10,7 +10,7 @@ const BreadcrumbList = componentLeaf<StockBreadcrumb["BreadcrumbList"]>("compone
 const BreadcrumbItem = componentLeaf<StockBreadcrumb["BreadcrumbItem"]>("components.breadcrumbs", "BreadcrumbItem");
 const BreadcrumbLink = componentLeaf<StockBreadcrumb["BreadcrumbLink"]>("components.breadcrumbs", "BreadcrumbLink");
 const BreadcrumbPage = componentLeaf<StockBreadcrumb["BreadcrumbPage"]>("components.breadcrumbs", "BreadcrumbPage");
-const Button = componentLeaf<typeof import("../../components/Button.js").Button>("components.button");
+const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 
 const LEAF = "sections.page-header";
 

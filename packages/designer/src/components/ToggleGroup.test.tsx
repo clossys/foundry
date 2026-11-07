@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 import { cva } from "class-variance-authority";
 import { describe, expect, it } from "vitest";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
-import { ToggleButton } from "./ToggleButton.js";
+import { Toggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { toggleExecutableSource } from "../importers/toggle-executable-profile.js";
 import { rewriteShadcnAria } from "../importers/rewrite.js";
 import { normalizeSelectedSource } from "../importers/normalize-selected-source.js";
@@ -93,9 +93,9 @@ describe("adopted shadcn@aria ToggleGroup", () => {
 
   it("forwards a standalone toggle's ref and selected-state render prop", async () => {
     const user = userEvent.setup(), ref = createRef<HTMLButtonElement>();
-    render(<ToggleButton ref={ref} className={({ isSelected }) => isSelected ? "selected" : "rest"}>
+    render(<Toggle ref={ref} className={({ isSelected }) => isSelected ? "selected" : "rest"}>
       {({ isSelected }) => isSelected ? "Enabled" : "Enable"}
-    </ToggleButton>);
+    </Toggle>);
     expect(ref.current).toBe(screen.getByRole("button", { name: "Enable" }));
     await user.click(ref.current!);
     expect(ref.current).toHaveAttribute("aria-pressed", "true");

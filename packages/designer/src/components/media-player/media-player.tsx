@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { ImageResource, VideoResource } from "../../catalog-assets/media.js";
-import { Button } from "../Button.js";
-import { ToggleButton } from "../ToggleButton.js";
+import { Button } from "../preview-runtime/components/button/button.js";
+import { Toggle as ToggleButton } from "../preview-runtime/components/toggle-button/toggle.js";
 import { Slider } from "../Slider.js";
 import { Icon } from "../Icon.js";
 import { ChevronRight } from "../../icons/ChevronRight.js";

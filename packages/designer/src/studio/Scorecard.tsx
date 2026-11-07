@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactElement } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Table } from "../components/Table.js";
 import type { MatrixSummary } from "./matrix-model.js";
 import type { StudioLabels } from "./types.js";
