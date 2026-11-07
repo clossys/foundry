@@ -1,1 +1,0 @@
-{"schemaVersion":1,"id":"qualification.handoff","owner":"qualification","requires":["advantage.proposition.proof","context.market.size","execution.roadmap.milestone","focus.category.stance","focus.segment.core"],"optional":[]}

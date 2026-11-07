@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -50,6 +50,25 @@ describe("clossys director", () => {
     expect(JSON.parse(ok.stdout)).toMatchObject({ state: "satisfied", metric: "strategy traceability rate", rate: 1 });
     const missing = run("rate-check", join(temp(), "missing.json"));
     expect(missing.code).toBe(2); expect(missing.stderr).toContain("clossys director rate-check: ");
+  });
+
+  it("check brand|direction|apply give their verdicts over the pinned slots and write nothing", { timeout: 30_000 }, () => {
+    const fx = fileURLToPath(new URL("../../../../governance/release-qualification-fixtures/producer/current-direct/director/", import.meta.url));
+    const root = (name: string) => join(fx, name, "clossys", "agents", "director");
+    const files = () => readdirSync(fx, { recursive: true }).map(String).sort();
+    const before = files();
+    const verdict = (...args: string[]) => { const result = run("check", ...args, "--json"); return [result.code, JSON.parse(result.stdout)] as const; };
+    expect(verdict("brand", "--root", root("identity"))).toMatchObject([0, { state: "satisfied", findings: [] }]);
+    const [uncoveredCode, uncovered] = verdict("brand", "--root", root("ready"));
+    expect(uncoveredCode).toBe(1);
+    expect(uncovered.findings.map((finding: { cell: string }) => finding.cell)).toContain("identity.brand.essence");
+    expect(verdict("direction", "--root", root("identity"))).toMatchObject([0, { state: "satisfied" }]);
+    expect(verdict("direction", "--root", root("superseded"))).toMatchObject([1, { findings: [{ rule: "direction-superseded", cell: "identity.verbal.voice" }] }]);
+    expect(verdict("direction", "--root", root("unpinned"))).toMatchObject([2, { state: "indeterminate" }]);
+    expect(verdict("apply", join(fx, "pages", "applied"), "--root", root("identity"))).toMatchObject([0, { state: "satisfied" }]);
+    expect(verdict("apply", join(fx, "pages", "grounded"), "--root", root("identity"))).toMatchObject([1, { findings: [{ rule: "apply-uncited" }] }]);
+    expect(verdict("apply", join(fx, "pages", "grounded"), "--root", root("ready"))).toMatchObject([2, { state: "indeterminate" }]);
+    expect(files()).toEqual(before);
   });
 
   it("refuses an unknown subcommand without running anything", async () => {

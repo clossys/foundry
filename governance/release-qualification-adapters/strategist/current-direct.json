@@ -3,31 +3,12 @@
   "package": "@clossys/strategist",
   "archetype": "current-direct",
   "bins": {
-    "director-check": 0,
     "director-rate-check": 0
   },
   "fixtures": [
     "rate/satisfied/assessment.json",
     "rate/violated/assessment.json",
-    "rate/indeterminate/assessment.json",
-    "apply/cited/page.md",
-    "apply/uncited/page.md",
-    "brand/slots-uncovered.json",
-    "brand/slots-covered.json",
-    "brand/derivations.json",
-    "direction/current/direction.json",
-    "direction/current/reviews.json",
-    "direction/superseded/direction.json",
-    "direction/superseded/reviews.json",
-    "handoff/ready/audiences.json",
-    "handoff/ready/brand.json",
-    "handoff/ready/claims.json",
-    "handoff/ready/constraints.json",
-    "handoff/ready/direction.json",
-    "handoff/ready/facts.json",
-    "handoff/ready/markets.json",
-    "handoff/ready/positioning.json",
-    "handoff/ready/roadmap.json"
+    "rate/indeterminate/assessment.json"
   ],
   "cases": [
     {
@@ -62,108 +43,6 @@
       ],
       "exitCode": 2,
       "group": "rate"
-    },
-    {
-      "id": "brand-coverage-satisfied",
-      "bin": "director-check",
-      "args": [
-        {
-          "literal": "brand-coverage"
-        },
-        {
-          "fixture": "brand/derivations.json"
-        },
-        {
-          "fixture": "brand/slots-covered.json"
-        }
-      ],
-      "exitCode": 0,
-      "group": "brand-coverage"
-    },
-    {
-      "id": "brand-coverage-uncovered",
-      "bin": "director-check",
-      "args": [
-        {
-          "literal": "brand-coverage"
-        },
-        {
-          "fixture": "brand/derivations.json"
-        },
-        {
-          "fixture": "brand/slots-uncovered.json"
-        }
-      ],
-      "exitCode": 1,
-      "group": "brand-coverage"
-    },
-    {
-      "id": "direction-current",
-      "bin": "director-check",
-      "args": [
-        {
-          "literal": "direction"
-        },
-        {
-          "fixture": "direction/current/direction.json"
-        },
-        {
-          "fixture": "direction/current/reviews.json"
-        }
-      ],
-      "exitCode": 0,
-      "group": "direction"
-    },
-    {
-      "id": "direction-superseded",
-      "bin": "director-check",
-      "args": [
-        {
-          "literal": "direction"
-        },
-        {
-          "fixture": "direction/superseded/direction.json"
-        },
-        {
-          "fixture": "direction/superseded/reviews.json"
-        }
-      ],
-      "exitCode": 1,
-      "group": "direction"
-    },
-    {
-      "id": "apply-constraint-cited",
-      "bin": "director-check",
-      "args": [
-        {
-          "literal": "apply"
-        },
-        {
-          "fixtureDirectory": "handoff/ready"
-        },
-        {
-          "fixtureDirectory": "apply/cited"
-        }
-      ],
-      "exitCode": 0,
-      "group": "apply"
-    },
-    {
-      "id": "apply-constraint-uncited",
-      "bin": "director-check",
-      "args": [
-        {
-          "literal": "apply"
-        },
-        {
-          "fixtureDirectory": "handoff/ready"
-        },
-        {
-          "fixtureDirectory": "apply/uncited"
-        }
-      ],
-      "exitCode": 1,
-      "group": "apply"
     }
   ],
   "dimensionEvidence": {
