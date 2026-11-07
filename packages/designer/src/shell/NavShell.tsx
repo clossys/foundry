@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { Dialog, type DialogProps } from "../components/Dialog.js";
+import { Sheet, SheetClose, SheetTitle, SheetTrigger } from "../components/preview-runtime/components/sheet/sheet.js";
+import type { OverlayTriggerProps } from "../components/internal/overlay-context.js";
 import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import { cx } from "../components/internal/cx.js";
 import { X } from "../icons/index.js";
 
-/** The drawer's open-state props: every `Dialog` trigger prop, none of its surface props (the drawer owns those). */
-type NavShellDialogProps = Omit<DialogProps, "trigger" | "children" | "size" | "role" | "isDismissable" | "className" | "style" | "overlayClassName" | "modalClassName" | "modalStyle">;
+/** The drawer's open-state props: every stock `SheetTrigger` prop, none of its surface props (the drawer owns those). */
+type NavShellDialogProps = Omit<OverlayTriggerProps, "trigger" | "role" | "className" | "style">;
 
 export interface NavShellProps extends NavShellDialogProps {
   /**
@@ -68,9 +69,9 @@ export interface NavShellProps extends NavShellDialogProps {
  * accepted.
  *
  * **The drawer's accessibility contract** comes from composing this
- * package's own `Dialog` component (see its doc comment for the underlying
- * `useModalOverlay`/`useOverlayTrigger` mechanism); the drawer only restyles
- * its surface and names it with a visually hidden `Dialog.Heading`. None of
+ * stock `Sheet` (react-aria-components' `useModalOverlay`/`useOverlayTrigger`
+ * underneath); the drawer only sizes its surface and names it with a visually
+ * hidden `SheetTitle`. None of
  * it is reimplemented here:
  *
  *   - **Focus moves into the drawer on open, and is trapped there while
@@ -109,32 +110,22 @@ export function NavShell({
       <nav aria-label={ariaLabel} className={cx("hidden items-center nav-shell-row tablet:flex", className)}>
         {children}
       </nav>
-      <Dialog
-        {...rest}
-        isDismissable
-        trigger={
-          <Button variant="ghost" size="sm" className="tablet:hidden">
-            {triggerLabel}
-          </Button>
-        }
-        overlayClassName="block p-0"
-        modalClassName="fixed inset-y-0 start-0 h-full max-w-none flex-col outline-none w-nav-drawer"
-        className="h-full max-h-none gap-nav-drawer rounded-none border-0 border-e"
-      >
-        {({ close }) => (
-          <>
-            <Dialog.Heading className="sr-only">{ariaLabel}</Dialog.Heading>
-            <div className="flex items-center justify-end">
-              <Button variant="ghost" size="sm" aria-label={closeLabel} onPress={close}>
-                <Icon glyph={X} decorative />
-              </Button>
-            </div>
-            <nav aria-label={ariaLabel} className="flex flex-col nav-shell-list">
-              {children}
-            </nav>
-          </>
-        )}
-      </Dialog>
+      <SheetTrigger {...rest}>
+        <Button variant="ghost" size="sm" className="tablet:hidden">
+          {triggerLabel}
+        </Button>
+        <Sheet side="left" showCloseButton={false} className="w-nav-drawer gap-nav-drawer">
+          <SheetTitle className="sr-only">{ariaLabel}</SheetTitle>
+          <div className="flex items-center justify-end">
+            <SheetClose variant="ghost" size="sm" aria-label={closeLabel}>
+              <Icon glyph={X} decorative />
+            </SheetClose>
+          </div>
+          <nav aria-label={ariaLabel} className="flex flex-col nav-shell-list">
+            {children}
+          </nav>
+        </Sheet>
+      </SheetTrigger>
     </>
   );
 }

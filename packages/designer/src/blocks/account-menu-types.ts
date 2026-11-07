@@ -43,7 +43,7 @@ export interface AccountMenuProps {
   /** Section IDs must be unique within this menu. */
   sections: readonly AccountMenuSection[];
   contextLabel?: string;
-  /** Additional host-composed Menu.Section or Menu.Item content. */
+  /** Additional host-composed MenuGroup or MenuItem content. */
   menuContent?: ReactNode;
   /** Host-owned controls beside the menu inside the account popup. */
   controls?: ReactNode;

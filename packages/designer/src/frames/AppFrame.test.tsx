@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { hydrateRoot } from "react-dom/client";
 import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Button, Dialog } from "../components/index.js";
+import { Button, Dialog, DialogHeader, DialogTitle, DialogTrigger } from "../components/index.js";
 import { ThemeToggle as ShellFixtureThemeToggle } from "../theme/index.js";
 import { APP_FRAME_WIDE_QUERY } from "./app-frame-layout.js";
 import { AppFrame as ShellFixtureAppFrame } from "./AppFrame.js";
@@ -47,9 +47,9 @@ function fixture(): AppFrameProps {
 function nestedPanelFixture(): AppFrameProps {
   const props = fixture();
   props.rightPanel!.children = <>
-    <Dialog trigger={<Button>Open nested dialog</Button>}>
-      {({ close }) => <><Dialog.Heading>Nested settings</Dialog.Heading><Button onPress={close}>Close nested dialog</Button><Button>Nested action</Button></>}
-    </Dialog>
+    <DialogTrigger><Button>Open nested dialog</Button><Dialog showCloseButton={false}>
+      {({ close }) => <><DialogHeader><DialogTitle>Nested settings</DialogTitle></DialogHeader><Button onPress={close}>Close nested dialog</Button><Button>Nested action</Button></>}
+    </Dialog></DialogTrigger>
     <button>Remaining inspector action</button>
   </>;
   return props;
@@ -376,9 +376,9 @@ describe("AppFrame composition", () => {
     wide.matches = false;
     const props = fixture();
     props.rightPanel!.children = <>
-      <Dialog trigger={<Button>Open nested dialog</Button>}>
-        {({ close }) => <><Dialog.Heading>Nested settings</Dialog.Heading><Button onPress={close}>Close nested dialog</Button></>}
-      </Dialog>
+      <DialogTrigger><Button>Open nested dialog</Button><Dialog showCloseButton={false}>
+        {({ close }) => <><DialogHeader><DialogTitle>Nested settings</DialogTitle></DialogHeader><Button onPress={close}>Close nested dialog</Button></>}
+      </Dialog></DialogTrigger>
       <button>Remaining inspector action</button>
     </>;
     render(<AppFrame {...props} />);

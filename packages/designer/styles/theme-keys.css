@@ -1393,11 +1393,6 @@
 @utility token-specimen-contain { max-inline-size: var(--ui-layout-sidebar-w); overflow: hidden; overflow-wrap: anywhere; }
 @utility calendar-cell-size { width: var(--ui-control-h-sm, 32px); height: var(--ui-control-h-sm, 32px); }
 @utility canvas-caption-zoom-floor { font-size: max(1em, calc(var(--text-caption) / var(--canvas-zoom, 1))); }
-@utility popover-arrow-rotate {
-  &:is(:where(.group)[data-placement="bottom"] *) { rotate: 180deg; }
-  &:is(:where(.group)[data-placement="left"] *) { rotate: -90deg; }
-  &:is(:where(.group)[data-placement="right"] *) { rotate: 90deg; }
-}
 
 /* Frame layout geometry. The frame layer names a region, a measure, a stacking layer or an edge;
    the theme layer owns the value, read from the --ui-* layout token with its tokens.css default,

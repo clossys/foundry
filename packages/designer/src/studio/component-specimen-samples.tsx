@@ -2,7 +2,7 @@
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { TooltipTriggerStateContext } from "react-aria-components";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenOverlays, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
 
@@ -136,18 +136,6 @@ function table(exports: Namespace): ComponentSpecimenSample | undefined {
     <Header key="header">{columns.map((column, index) => <Column key={column.id} id={column.id} isRowHeader={index === 0} allowsSorting={column.allowsSorting}>{column.label}</Column>)}</Header>,
     <Body key="body">{rows.map(row => <Row key={row.id} id={row.id}>{columns.map(column => <Cell key={column.id}>{row[column.id]}</Cell>)}</Row>)}</Body>,
   ] };
-}
-
-function overlay(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
-  const sample = Object.hasOwn(componentSpecimenOverlays, key) ? componentSpecimenOverlays[key as keyof typeof componentSpecimenOverlays] : undefined;
-  const Button = part(exports, "Button");
-  if (!sample || !Button) return undefined;
-  const trigger = <Button>{sample.trigger}</Button>;
-  if ("items" in sample) {
-    const Item = part(Component, "Item");
-    return Item && { props: { trigger }, children: sample.items.map(item => <Item key={item.id} id={item.id} textValue={item.label}>{item.label}</Item>) };
-  }
-  return { props: { trigger, ...("label" in sample ? { "aria-label": sample.label } : {}) }, children: <>{sample.content}</> };
 }
 
 function colorPicker(Component: unknown): ComponentSpecimenSample | undefined {
@@ -369,8 +357,17 @@ export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavail
  * data-driven component draws without host data. Undefined when the export needs none or its parts are not in
  * the host's modules. A host `specimens` entry always replaces it.
  */
+/** Foundry overlay leaves whose export is the stock shadcn@aria part: drawn with that part's own source sample. */
+export const componentSpecimenStockOverlays: Readonly<Record<string, string>> = {
+  "./components#Dialog": "components/dialog/dialog.tsx#Dialog",
+  "./components#Popover": "components/popover/popover.tsx#Popover",
+  "./components#Tooltip": "components/tooltip/tooltip.tsx#Tooltip",
+  "./components#Menu": "components/menu/dropdown-menu.tsx#DropdownMenu",
+};
+
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
+  if (Object.hasOwn(componentSpecimenStockOverlays, key)) return sourceSample(componentSpecimenStockOverlays[key]!, exports);
   if (key === "./components#Table") return table(exports);
   // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
   // a host-owned native control, so its specimen is that native control.
@@ -391,7 +388,7 @@ export function componentSpecimenSample(key: string, Component: unknown, exports
     };
   }
   if (key === "./shell#Toaster") return { props: { "aria-label": componentSpecimenToast.label }, host: containedToaster(componentSpecimenToast) };
-  const built = collection(key, Component, exports) ?? overlay(key, Component, exports) ?? composed(key, exports);
+  const built = collection(key, Component, exports) ?? composed(key, exports);
   const props = Object.hasOwn(componentSpecimenProps, key) ? componentSpecimenProps[key] : undefined;
   const text = Object.hasOwn(componentSpecimenText, key) ? componentSpecimenText[key] : undefined;
   const handler = Object.hasOwn(handlers, key) ? handlers[key] : undefined;

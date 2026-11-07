@@ -3,7 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { SemanticContent, Icon } from "@clossys/designer/components/server";
 import { Sheet, SheetClose, SheetTitle } from "../../components/sheet/index.js";
-import { DialogTarget, useOverlayLocale } from "../../components/Dialog.js";
+import { DialogTarget, useOverlayLocale } from "../../components/internal/overlay-context.js";
 import { List, X } from "../../icons/index.js";
 import { FrameRegion } from "./FrameRegion.js";
 import { TOKENS } from "../../tokens/tokens.js";

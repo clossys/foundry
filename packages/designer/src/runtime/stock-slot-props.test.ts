@@ -153,7 +153,6 @@ function violations(uses: readonly Use[]): Record<string, string[]> {
 }
 
 const BASELINE: Readonly<Record<string, readonly string[]>> = {
-  "blocks/Drawer.tsx": ["components.dialog -> overlayClassName,trigger", "components.dialog.Heading undeclared part"],
   "blocks/matrix/choices.tsx": ["components.radio-group -> label"],
   "shell/SiteHeader.tsx": ["components.button.LinkButton -> aria-current"],
 };

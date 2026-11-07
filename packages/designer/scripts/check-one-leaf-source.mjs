@@ -84,6 +84,12 @@ export function checkOneLeafSource(repository, layers = allLayers) {
       const forwarded = declarations(tag).flatMap(item => identity(item, seen));
       if (forwarded.length) return forwarded;
     }
+    // A generated stamp adapter's single createElement(target, ...) return is the JSX alias above without JSX.
+    const called = returned && ts.isCallExpression(returned) && /(?:^|\.)(?:createElement|jsx|jsxs)$/.test(returned.expression.getText()) ? unwrap(returned.arguments[0]) : undefined;
+    if (called && (ts.isIdentifier(called) || ts.isPropertyAccessExpression(called))) {
+      const forwarded = declarations(called).flatMap(item => identity(item, seen));
+      if (forwarded.length) return forwarded;
+    }
     const dispatched = dispatchTargets(node);
     if (dispatched) return dispatched.flatMap(item => identity(item, seen));
     let rendered = false;

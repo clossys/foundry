@@ -13,7 +13,7 @@ import type { CompositeResolved, ResolvedComponent } from "../catalog-core/index
 import * as content from "./component-specimen-sample-content.js";
 import { COMPONENT_SPECIMEN_PROBE_STATES, componentSpecimenPreview } from "./index.js";
 import { SPECIMEN_ANCHOR_DATE, SPECIMEN_DATASET_SEED, specimenDataset } from "./specimen-dataset.js";
-import { componentSpecimenSample } from "./component-specimen-samples.js";
+import { componentSpecimenSample, componentSpecimenStockOverlays } from "./component-specimen-samples.js";
 
 const hostModules = { "@clossys/designer/components": components, "@clossys/designer/charts": charts, "@clossys/designer/shell": shell };
 const source = (file: string) => readFileSync(new URL(file, import.meta.url), "utf8");
@@ -51,9 +51,9 @@ const keyOf = (fill: ResolvedComponent["descriptor"]) => fill.impl.kind === "pac
 
 /** Keys that have sample content in the dataset-addressing module. */
 function fedKeys(): Set<string> {
-  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples } = content;
+  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples } = content;
   return new Set([
-    ...[componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples].flatMap(map => Object.keys(map)),
+    ...[componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenStockOverlays].flatMap(map => Object.keys(map)),
     // Drawn from the dataset's table, field, card, color and action records.
     "./components#Table", "./components#Field", "./components#Card", "./components#ColorPicker", "./components#FileTrigger", "./components#Form", "./components#LinkButton",
     // The contained toast region takes the cell's own queue, seeded from the dataset's toasts.
@@ -97,8 +97,8 @@ it("carries every kind of sample the specimens need, in each component's own sha
 });
 
 it("feeds every sample from the dataset: no inline per-specimen arrays or literals", () => {
-  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast } = content;
-  const exportsFed = { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenOverlays, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast };
+  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast } = content;
+  const exportsFed = { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast };
   expect(Object.entries(exportsFed).flatMap(([name, value]) => unfed(value, name))).toEqual([]);
 });
 

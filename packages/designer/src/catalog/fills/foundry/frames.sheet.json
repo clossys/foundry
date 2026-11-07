@@ -24,9 +24,7 @@
   "frames": {
     "sheet": {
       "composes": [
-        "components.button",
         "components.card",
-        "components.dialog",
         "components.icon",
         "components.semantic-content",
         "components.sheet"
@@ -34,9 +32,7 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
-          "components.button",
           "components.card",
-          "components.dialog",
           "components.icon",
           "components.semantic-content",
           "components.sheet"
@@ -44,9 +40,7 @@
         "scannedReads": {
           "assets": [],
           "components": [
-            "components.button",
             "components.card",
-            "components.dialog",
             "components.icon",
             "components.semantic-content",
             "components.sheet"
@@ -56,7 +50,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Drawer.tsx",
-            "sha256": "a7a0e3ba1e9bf1b4ef18e6abd2db0518a5d5df3fa09424cc6a91012cd7056d7a"
+            "sha256": "0eee44df38228807c0721632bcf46b4fc0209acce2267011a2a67de8a75651a6"
           },
           {
             "path": "packages/designer/src/blocks/Panel.tsx",
@@ -69,6 +63,10 @@
           {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
+          },
+          {
+            "path": "packages/designer/src/components/internal/overlay-context.tsx",
+            "sha256": "a6db3b633fb20f893ae20388705ccc760b51599fb855692d1132cab130fbbb2d"
           },
           {
             "path": "packages/designer/src/icons/X.ts",

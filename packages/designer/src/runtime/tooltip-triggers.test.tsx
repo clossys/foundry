@@ -3,13 +3,13 @@
  * Class-wide check (T17): every Tooltip caller renders its trigger element.
  *
  * The selected `components.tooltip` fill is the stock shadcn content-only `Tooltip`; it has no `trigger`
- * prop, and the stock `TooltipTrigger` needs tooltip timing that is not placed yet (owner decision, see
- * `--ui-duration-tooltip-*` in catalog/tokens.ts). A `trigger` handed to the leaf is therefore dropped and
- * the control it carried never renders. So: no source file may pass `trigger` to a `components.tooltip`
- * leaf binding (the probe below proves the drop, and fails the day a fill starts rendering triggers), and a
- * Tooltip caller that needs a description uses Foundry's own `Tooltip`, which renders the trigger as given.
+ * prop. A `trigger` handed to the leaf is therefore dropped and the control it carried never renders. So:
+ * no source file may pass `trigger` to a `components.tooltip` leaf binding (the probe below proves the drop,
+ * and fails the day a fill starts rendering triggers), and a Tooltip caller wraps its control and the
+ * `Tooltip` in the stock `TooltipTrigger`, which takes its delays from `behaviorTiming`.
  */
 import "@testing-library/jest-dom/vitest";
+import type { ReactElement } from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative } from "node:path";
@@ -42,7 +42,8 @@ export function droppedTriggers(files: readonly { file: string; text: string }[]
     .map(([, name]) => `${file}: <${name} trigger=...>`));
 }
 
-const LeafTooltip = componentLeaf<typeof import("../components/Tooltip.js").Tooltip>("components.tooltip");
+// The mistaken call shape: the stock Tooltip has no trigger prop, so the leaf drops it.
+const LeafTooltip = componentLeaf<(props: { readonly trigger: ReactElement; readonly children: string }) => ReactElement | null>("components.tooltip");
 
 describe("Tooltip callers render their trigger", () => {
   it("the selected tooltip fill drops a trigger handed to the leaf (why the scan exists)", () => {

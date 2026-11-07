@@ -163,7 +163,7 @@ describe("ConfirmDialog", () => {
     expect(screen.getByRole("button", { name: "Open" })).toBeInTheDocument();
   });
 
-  it("forwards className onto the dialog surface, and the consumer's conflicting class wins the merge", async () => {
+  it("forwards className onto the stock dialog surface", async () => {
     const user = userEvent.setup();
     render(
       <ConfirmDialog
@@ -175,24 +175,16 @@ describe("ConfirmDialog", () => {
       />,
     );
     await user.click(screen.getByRole("button", { name: "Open" }));
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog.className).toContain("bg-status-info");
-    expect(dialog.className).not.toContain("bg-overlay-surface");
+    const dialog = await screen.findByRole("dialog", { name: "Delete prompt?" });
+    expect(dialog.closest('[data-slot="dialog-content"]')).toHaveClass("bg-status-info");
   });
 
-  it("forwards a consumer style prop onto the dialog surface", async () => {
+  it("role alertdialog is announced as an alert dialog and ignores a scrim press", async () => {
     const user = userEvent.setup();
-    render(
-      <ConfirmDialog
-        trigger={<AriaButton>Open</AriaButton>}
-        heading="Delete prompt?"
-        message="This can't be undone."
-        onConfirm={vi.fn()}
-        style={{ padding: "40px" }}
-      />,
-    );
+    render(<ConfirmDialog trigger={<AriaButton>Open</AriaButton>} heading="Delete prompt?" message="Gone." onConfirm={vi.fn()} role="alertdialog" />);
     await user.click(screen.getByRole("button", { name: "Open" }));
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog.style.padding).toBe("40px");
+    await screen.findByRole("alertdialog", { name: "Delete prompt?" });
+    await user.click(document.querySelector('[data-slot="dialog-overlay"]') as HTMLElement);
+    expect(screen.getByRole("alertdialog")).toBeInTheDocument();
   });
 });

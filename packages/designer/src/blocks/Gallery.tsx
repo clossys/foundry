@@ -1,6 +1,6 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { Dialog } from "../components/Dialog.js";
+import { Dialog, DialogTitle, DialogTrigger } from "../components/preview-runtime/components/dialog/dialog.js";
 import { cx } from "../components/internal/cx.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -23,7 +23,7 @@ export interface GalleryProps extends Omit<HTMLAttributes<HTMLElement>, "childre
   label: string;
   /**
    * `true` makes each image a control that opens it in a modal lightbox
-   * (the Foundry `Dialog`: focus trap, Escape, focus return). `false`
+   * (the stock `Dialog`: focus trap, Escape, focus return). `false`
    * renders plain figures. @default true
    */
   lightbox?: boolean;
@@ -50,25 +50,23 @@ export function Gallery({ images, label, lightbox = true, labels = DEFAULT_LABEL
           <li key={image.id} className="min-w-0">
             <figure className="flex flex-col gap-xs">
               {lightbox ? (
-                <Dialog
-                  size="lg"
-                  trigger={
-                    <Button variant="ghost" aria-label={labels.enlarge(image.label)} className={cx(TILE, "p-0 cursor-zoom-in")}>
-                      {image.media}
-                    </Button>
-                  }
-                >
-                  {({ close }) => (
-                    <>
-                      <Dialog.Heading className="sr-only">{image.label}</Dialog.Heading>
-                      <div className={TILE}>{image.media}</div>
-                      {image.caption ? <p className="text-body-s text-ink-secondary">{image.caption}</p> : null}
-                      <div className="flex justify-end">
-                        <Button variant="secondary" onPress={close}>{labels.close}</Button>
-                      </div>
-                    </>
-                  )}
-                </Dialog>
+                <DialogTrigger>
+                  <Button variant="ghost" aria-label={labels.enlarge(image.label)} className={cx(TILE, "p-0 cursor-zoom-in")}>
+                    {image.media}
+                  </Button>
+                  <Dialog showCloseButton={false} className="sm:max-w-[42rem]">
+                    {({ close }) => (
+                      <>
+                        <DialogTitle className="sr-only">{image.label}</DialogTitle>
+                        <div className={TILE}>{image.media}</div>
+                        {image.caption ? <p className="text-body-s text-ink-secondary">{image.caption}</p> : null}
+                        <div className="flex justify-end">
+                          <Button variant="secondary" onPress={close}>{labels.close}</Button>
+                        </div>
+                      </>
+                    )}
+                  </Dialog>
+                </DialogTrigger>
               ) : (
                 <div className={TILE}>{image.media}</div>
               )}

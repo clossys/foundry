@@ -2,7 +2,7 @@ import { act, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { Dialog } from "../components/Dialog.js";
+import { Dialog, DialogTitle, DialogTrigger } from "../components/preview-runtime/components/dialog/dialog.js";
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { X } from "../icons/X.js";
 import * as blocks from "./index.js";
@@ -262,7 +262,7 @@ describe("CommandMenu", () => {
   });
 
   it("does not open over another existing modal", async () => {
-    render(<><Host shortcut /><Dialog trigger={<Button>Other modal</Button>}><Dialog.Heading>Other</Dialog.Heading><Button>Stay here</Button></Dialog></>);
+    render(<><Host shortcut /><DialogTrigger><Button>Other modal</Button><Dialog showCloseButton={false}><DialogTitle>Other</DialogTitle><Button>Stay here</Button></Dialog></DialogTrigger></>);
     await userEvent.click(screen.getByRole("button", { name: "Other modal" }));
     await screen.findByRole("dialog", { name: "Other" });
     expect(modKey().defaultPrevented).toBe(false);

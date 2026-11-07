@@ -121,13 +121,13 @@ describe("Foundry component package descriptors", () => {
     const result = imported(), coverage = result.coverage.find(row => row.slot === "components.menu")!;
     const fill = result.fills.find(doc => doc.components.menu)!.components.menu!;
     expect(fill.propMap).toEqual({
-      "presentation.inline": "./components#Menu.Inline", "presentation.popup": "./components#Menu",
+      "presentation.inline": "./components#InlineMenu", "presentation.popup": "./components#Menu",
       "selection.multiple": "./components#Menu.selectionMode=multiple", "selection.none": "./components#Menu.selectionMode=none", "selection.single": "./components#Menu.selectionMode=single",
     });
     expect(coverage.status).toBe("candidate");
     expect(coverage.missing).toEqual([]);
     expect(fill.props).toContain("selectionMode");
-    expect(fill.reads.assets).toEqual(["assets.icon-check"]);
+    expect(fill.reads.assets).toEqual(["assets.icon-check", "assets.icon-chevron-right"]);
   });
 
   it("rejects nonexistent primary and alternate exports", () => {

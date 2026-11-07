@@ -13,8 +13,7 @@ import { Toggle } from "./toggle-button/toggle.js";
 import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
 import { Tabs } from "./Tabs.js";
-import { Menu } from "./Menu.js";
-import { Popover } from "./Popover.js";
+import { Popover, PopoverTrigger } from "./preview-runtime/components/popover/popover.js";
 import { X } from "../icons/X.js";
 import { CommandMenu as CommandMenuBase } from "../blocks/CommandMenu.js";
 import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
@@ -31,8 +30,7 @@ const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] 
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
   ["Tabs", d => <Tabs><Tabs.List aria-label="Sections"><Tabs.Tab id="one" isDisabled={d}>{name}</Tabs.Tab></Tabs.List><Tabs.Panel id="one">Panel</Tabs.Panel></Tabs>, () => screen.getByRole("tab", { name })],
-  ["Menu", d => <Menu.Inline aria-label="Actions"><Menu.Item id="one" isDisabled={d}>{name}</Menu.Item></Menu.Inline>, () => screen.getByRole("menuitem", { name })],
-  ["Popover trigger", d => <Popover trigger={<IconButton isDisabled={d} icon={X} label={name} />} aria-label="Details">Details</Popover>, () => screen.getByRole("button", { name })],
+  ["Popover trigger", d => <PopoverTrigger><IconButton isDisabled={d} icon={X} label={name} /><Popover aria-label="Details">Details</Popover></PopoverTrigger>, () => screen.getByRole("button", { name })],
 ];
 const layer = (control: HTMLElement) => control.style.backgroundImage;
 
