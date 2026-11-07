@@ -62,10 +62,10 @@ describe("selected FAQ disclosure section", () => {
     expect(first).toHaveFocus();
   });
 
-  it("keeps every answer in native server HTML", () => {
+  it("keeps every answer in the server HTML behind a collapsed trigger", () => {
     const html = renderToStaticMarkup(<ServerFaq items={items} />);
     expect(html).toContain("First answer"); expect(html).toContain("Second answer");
-    expect(html.match(/<details/g)).toHaveLength(2);
+    expect(html.match(/aria-expanded="false"/g)).toHaveLength(2);
   });
 
   it("keeps row ids unique across FAQ instances with the same authored keys", async () => {

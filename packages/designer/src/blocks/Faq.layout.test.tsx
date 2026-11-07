@@ -11,8 +11,8 @@ const ITEMS: FaqItem[] = [
 ];
 
 describe.each([
-  ["React Aria", Faq, "button"],
-  ["server-native", ServerFaq, "summary"],
+  ["React Aria", Faq, '[data-slot="accordion-trigger"]'],
+  ["server", ServerFaq, '[data-slot="accordion-trigger"]'],
 ] as const)("Faq layout (%s)", (_name, Block, triggerSelector) => {
   it("keeps the default list byte-identical whether layout is omitted or list", () => {
     const omitted = renderToStaticMarkup(<Block heading="FAQ" items={ITEMS} ground="inverse" />);

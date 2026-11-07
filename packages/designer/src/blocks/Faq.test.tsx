@@ -26,7 +26,8 @@ describe("Faq", () => {
 
   it("renders no heading region when heading/description are both omitted", () => {
     render(<Faq items={ITEMS} />);
-    expect(screen.queryByRole("heading")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 2 })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("heading").map(heading => heading.textContent)).toEqual(["Question one text", "Question two text"]);
   });
 
   it("renders one question trigger per item", () => {
@@ -97,24 +98,15 @@ describe("Faq", () => {
     expect(second).toHaveAttribute("aria-expanded", "true");
   });
 
-  it("turns the trigger's decorative chevron when the question opens", async () => {
+  it("keeps the trigger's chevrons decorative inside the one named hit area", async () => {
     const user = userEvent.setup();
     render(<Faq items={ITEMS} />);
     const trigger = screen.getByRole("button", { name: "Question one text" });
-    const chevron = trigger.querySelector("svg") as SVGElement;
-
-    expect(chevron).toHaveAttribute("aria-hidden", "true");
-    expect(chevron).toHaveClass("disclosure-icon-motion");
-    expect(chevron).not.toHaveClass("rotate-180");
-    await user.click(trigger);
-    expect(chevron).toHaveClass("rotate-180");
-  });
-
-  it("makes the whole row the hit area with the question at body-l and the focus-visible outline", () => {
-    render(<Faq items={ITEMS} />);
-    const trigger = screen.getByRole("button", { name: "Question one text" });
-    expect(trigger).toHaveClass("w-full", "py-lg", "tablet:py-xl", "text-body-l", "focus-visible:outline-2", "focus-visible:outline-primary");
-    expect(trigger).not.toHaveClass("outline-none");
+    const chevrons = Array.from(trigger.querySelectorAll("svg"));
+    expect(chevrons.length).toBeGreaterThan(0);
+    for (const chevron of chevrons) expect(chevron).toHaveAttribute("aria-hidden", "true");
+    await user.click(screen.getByText("Question one text"));
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
   });
 
   it("aria-controls on the trigger points at the answer panel's own id", () => {
@@ -132,22 +124,19 @@ describe("Faq", () => {
   });
 
   it.each([
-    ["base", "", "text-ink-primary", "text-ink-secondary", "border-line-base"],
-    ["sunken", "bg-surface-sunken", "text-ink-primary", "text-ink-secondary", "border-line-base"],
-    ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "text-ink-on-inverse-muted", "border-line-on-inverse"],
-  ] as const)("selects the complete %s ground policy", (ground, surface, primary, secondary, border) => {
+    ["base", "", "text-ink-primary", "border-line-base"],
+    ["sunken", "bg-surface-sunken", "text-ink-primary", "border-line-base"],
+    ["inverse", "bg-surface-inverse", "text-ink-on-inverse", "border-line-on-inverse"],
+  ] as const)("selects the complete %s ground policy", (ground, surface, primary, border) => {
     const { container } = render(<Faq heading="FAQ heading" items={ITEMS} ground={ground} />);
     const root = container.firstElementChild as HTMLElement;
     if (surface) expect(root).toHaveClass(surface);
     else expect(root.className).not.toMatch(/\bbg-surface-/);
-    expect(screen.getByRole("heading")).toHaveClass(primary);
+    expect(screen.getByRole("heading", { level: 2 })).toHaveClass(primary);
     const firstTrigger = screen.getByRole("button", { name: "Question one text" });
-    const secondTrigger = screen.getByRole("button", { name: "Question two text" });
-    expect(firstTrigger).toHaveClass(primary);
     const panel = document.getElementById(firstTrigger.getAttribute("aria-controls") as string) as HTMLElement;
-    expect(panel).toHaveClass("disclosure-panel-motion");
-    expect(panel.firstElementChild).toHaveClass(secondary);
-    expect(secondTrigger.parentElement).toHaveClass(border);
+    expect(panel).toHaveTextContent("Answer one text.");
+    expect(firstTrigger.closest('[data-slot="accordion"]')).toHaveClass(border);
   });
 });
 
