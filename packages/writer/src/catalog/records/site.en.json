@@ -908,6 +908,54 @@
       "status": "draft",
       "origin": "authored",
       "text": "Your message could not be sent. Please try again."
+    },
+    {
+      "id": "st.7mpayr0001",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player title",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Example Co. overview"
+    },
+    {
+      "id": "st.7mpayr0002",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player play",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Play video"
+    },
+    {
+      "id": "st.7mpayr0003",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player pause",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Pause video"
+    },
+    {
+      "id": "st.7mpayr0004",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player mute",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Mute sound"
+    },
+    {
+      "id": "st.7mpayr0005",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player seek",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Playback position"
+    },
+    {
+      "id": "st.7mpayr0006",
+      "leaf": "strings.field-labels",
+      "context": "Inline media player captions",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Captions"
     }
   ],
   "externalRecords": [

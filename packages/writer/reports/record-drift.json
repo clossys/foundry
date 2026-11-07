@@ -19,7 +19,7 @@
     },
     {
       "path": "admin-studio.r1.en.json",
-      "sha256": "c381924da771cd1acac2371b29bdf458683660adebe2c41fd0c71997b94b33e1"
+      "sha256": "828bc84627fb6d514df0528f7c9157eee4a6eaf9ebdc818e2bd5067b096abd75"
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -51,7 +51,7 @@
     },
     {
       "path": "site.en.json",
-      "sha256": "085fa79de29c23742d1710463c78fc888f571d00a1d200e4d0316e8eedd3140d"
+      "sha256": "9de961c5dafb26df69e62a315e19fad6feec8feb671d9ba610890492b66a701b"
     }
   ],
   "bundles": [
@@ -85,7 +85,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 393
+      "records": 396
     },
     {
       "path": "admin-voice.r1.en.json",
@@ -150,10 +150,10 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 52
+      "records": 58
     }
   ],
-  "records": 1471,
+  "records": 1480,
   "locales": [
     "ar",
     "en"
