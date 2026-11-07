@@ -2,7 +2,7 @@
 import { forwardRef, type ReactNode } from "react";
 import { NumberField as AriaNumberField, Group, Input, Label, Text, FieldError, type NumberFieldProps as AriaNumberFieldProps, type ValidationResult } from "react-aria-components";
 import { Button } from "./preview-runtime/components/button/button.js";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { controlHeight } from "./button-classes.js";
 import { cx } from "./internal/cx.js";

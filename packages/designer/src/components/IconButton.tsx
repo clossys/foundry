@@ -13,7 +13,7 @@ import {
   type IconButtonShape,
   type IconButtonSize,
 } from "./button-classes.js";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { cx } from "./internal/cx.js";
 
 export interface IconButtonProps extends Omit<AriaButtonProps, "children" | "aria-label" | "aria-labelledby"> {

@@ -9,7 +9,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 import { StockSelect } from "./stock-select.js";
 
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */

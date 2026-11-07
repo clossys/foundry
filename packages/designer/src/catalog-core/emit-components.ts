@@ -175,9 +175,11 @@ function leafModule(component: ResolvedComponent, packageExports: ResolvedCompon
     const impl = imports.get(`${base.module}#${base.name}`)!;
     rows.push('type WithAsset<Props> = Props extends unknown ? Omit<Props, "glyph" | "children"> & { asset: keyof typeof glyphs } : never;');
     rows.push(`const stamp = ${JSON.stringify(stamp)} as const;`);
+    // The same one-entry target table as every propMap adapter: the asset lookup forwards to the selected Icon.
+    rows.push(`const targets = { ${impl} };`);
     rows.push(`export function Icon({ asset, ...props }: WithAsset<ComponentProps<typeof ${impl}>>) {`);
     rows.push('  const glyph = glyphs[asset]; if (!glyph) throw new Error("Missing consumer glyph");');
-    rows.push(`  return createElement(${impl}, { ...props, ...stamp, glyph });`, '}');
+    rows.push(`  return createElement(targets[${quote(impl)}], { ...props, ...stamp, glyph });`, '}');
     return { path, content: rows.join("\n") + "\n" };
   }
   // When every contract member maps to the same export, the stamping wrapper keeps that export's own type.

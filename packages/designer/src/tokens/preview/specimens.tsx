@@ -4,7 +4,8 @@ import { useState, type CSSProperties, type ReactElement, type ReactNode } from 
 import { Card } from "../../components/preview-runtime/components/card/card.js";
 import { cx } from "../../components/internal/cx.js";
 import { CARD_SURFACE } from "../../components/surface-tones.js";
-import { Icon, type IconSize } from "../../components/Icon.js";
+import { Icon } from "../../components/preview-runtime/components/icon/icon.js";
+import type { IconSize } from "../../catalog/types.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Toggle } from "../../components/toggle-button/index.js";
 import { unsafeText } from "../../catalog-core/model.js";

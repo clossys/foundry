@@ -7,7 +7,7 @@
 import { checkComponentProfile, DEFAULT_COHERENCE_GROUPS, OBSERVATIONS_UNAVAILABLE } from "./check-components.js";
 import { componentDescriptorHash, componentOf } from "./resolve-components.js";
 import type { ComponentCheckInput, ComponentFinding } from "./check-components.js";
-import type { ComponentCandidate, ComponentCatalog } from "./resolve-components.js";
+import type { ComponentCandidate, ComponentCatalog, ComponentRule } from "./resolve-components.js";
 import type { LibraryDecision } from "./library-decisions.js";
 import type { SourceBundle } from "./changeset-components.js";
 import { isSelectableComponentSource, NON_SELECTABLE_SOURCE_REASON } from "./component-sources.js";
@@ -17,6 +17,7 @@ export const DEFAULT_COMPONENT_PREFERENCE: readonly string[] = ["shadcn@aria", "
 /** The approved shadcn default picks; choices remain exclusive overrides. */
 export const DEFAULT_COMPONENT_PICKS: Readonly<Record<string, string>> = {
   "components.button": "shadcn@aria", "components.table": "shadcn@aria", "components.tooltip": "shadcn@aria", "components.card": "shadcn@aria",
+  "components.icon": "shadcn@aria",
 };
 /** Whole-component fallbacks stay subject to the normal eligibility checker. */
 export const DEFAULT_COMPONENT_FALLBACK = { source: "foundry", slots: ["checkbox", "dialog", "popover", "tabs", "toggle-button", "disclosure", "select", "chart-sparkline", "color-picker",
@@ -80,6 +81,8 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
   };
   const bundled = (fill: ComponentCandidate): boolean => fill.impl.kind !== "source" || input.bundles.some(bundle => bundle.slot === fill.slot && bundle.descriptorHash === componentDescriptorHash(fill));
 
+  // A compose rule seats its leaf by default; an opt-in derive rule only where a choice or owner pick names its source.
+  const seats = (rule: ComponentRule): boolean => rule.kind === "compose" || (input.choices?.[rule.slot] ?? input.picks?.[rule.slot]) === rule.template.source;
   const reasons = new Map<string, string[]>();
   const offers = new Map<string, Offer[]>();
   for (const slot of input.slots) {
@@ -93,7 +96,7 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     const fallback = !choice && input.fallback?.slots.includes(slot) ? input.fallback.source : undefined;
     const why: string[] = [];
     const eligible: Offer[] = [];
-    const ruled = (input.catalog.rules ?? []).find(rule => rule.kind === "compose" && rule.slot === slot);
+    const ruled = (input.catalog.rules ?? []).find(rule => seats(rule) && rule.slot === slot);
     for (const source of fallback && !order.includes(fallback) ? [...order, fallback] : order) {
       const doc = docs.find(candidate => candidate.$extensions["com.clossys.fill"].source === source);
       // A registered composition is its template source's offer for the seat: it outranks every later source.
@@ -137,15 +140,15 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
   }
 
   // Registered compositions fill otherwise-unchosen leaves once every input is chosen.
-  const composed = new Map<string, { rule: string; inputs: readonly string[] }>();
+  const composed = new Map<string, { rule: string; kind: ComponentRule["kind"]; inputs: readonly string[] }>();
   // Closure: a leaf whose declared dependencies are unchosen cannot execute.
   for (let changed = true; changed;) {
     changed = false;
     for (const rule of input.catalog.rules ?? []) {
-      if (rule.kind !== "compose" || !input.slots.includes(rule.slot) || selected.has(rule.slot) || composed.has(rule.slot)) continue;
+      if (!seats(rule) || !input.slots.includes(rule.slot) || selected.has(rule.slot) || composed.has(rule.slot)) continue;
       const locked = input.choices?.[rule.slot] ?? input.picks?.[rule.slot];
       if (locked && locked !== rule.template.source) continue;
-      if (rule.inputs.every(id => selected.has(id) || composed.has(id))) { composed.set(rule.slot, { rule: rule.id, inputs: rule.inputs }); changed = true; }
+      if (rule.inputs.every(id => selected.has(id) || composed.has(id))) { composed.set(rule.slot, { rule: rule.id, kind: rule.kind, inputs: rule.inputs }); changed = true; }
     }
     for (const [slot, offer] of selected) {
       const missing = unique([...offer.fill.composes, ...offer.fill.reads.components]).filter(id => !selected.has(id) && !composed.has(id));
@@ -160,7 +163,7 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     }
   }
   for (const rule of input.catalog.rules ?? []) {
-    if (rule.kind !== "compose" || !input.slots.includes(rule.slot) || selected.has(rule.slot) || composed.has(rule.slot)) continue;
+    if (!seats(rule) || !input.slots.includes(rule.slot) || selected.has(rule.slot) || composed.has(rule.slot)) continue;
     const missing = rule.inputs.filter(id => !selected.has(id));
     reasons.get(rule.slot)!.push(`${rule.id}: inputs not chosen ${missing.join(",")}`);
   }
@@ -192,7 +195,7 @@ export function planComponentDefaults(input: ComponentDefaultsInput): ComponentD
     const row = rows.find(candidate => candidate.slot === slot)!;
     return row.source
       ? { slot, kind: "adopt" as const, source: row.source, fill: row.fill!, note: `Default fill (${row.basis})` }
-      : { slot, kind: "compose" as const, rule: row.rule!, reads: [...composed.get(slot)!.inputs], note: "Default fill (registered composition)" };
+      : { slot, kind: composed.get(slot)!.kind, rule: row.rule!, reads: [...composed.get(slot)!.inputs], note: "Default fill (registered composition)" };
   });
   return { rows, decisions, findings };
 }

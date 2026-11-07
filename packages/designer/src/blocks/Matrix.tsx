@@ -13,7 +13,7 @@ import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */

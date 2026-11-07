@@ -6,7 +6,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppNavigation as ShellFixtureAppNavigation } from "./AppNavigation.js";
-import { Icon } from "../components/Icon.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import { ChevronDown } from "../icons/ChevronDown.js";
 import { getAppNavigationCloseStyle } from "./app-navigation-layout.js";
 import type { AppNavigationNode } from "./app-navigation-tree.js";
@@ -479,7 +479,8 @@ describe("AppNavigation visual pass (VF-1 shell-01/02, cross-05)", () => {
     const withIcon: readonly AppNavigationNode[] = [{ id: "home", label: "Home", href: "#home", icon: <Icon glyph={ChevronDown} decorative size="lg" /> }];
     const { container } = render(<AppNavigation tree={withIcon} activeId="home" />);
     const svg = container.querySelector("[data-navigation-node-id=home] svg") as SVGElement;
-    expect(svg.style.width).toContain("--ui-icon-sm");
+    expect(svg).toHaveClass("size-4");
+    expect(svg).not.toHaveClass("size-8");
     expect((svg.parentElement as HTMLElement).style.inlineSize).toContain("--ui-icon-sm");
   });
 });

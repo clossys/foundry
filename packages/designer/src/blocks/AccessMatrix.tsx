@@ -9,7 +9,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../components/Checkbox.js").Checkbox>("components.checkbox");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */

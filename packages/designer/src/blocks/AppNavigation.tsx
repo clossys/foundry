@@ -22,7 +22,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const NavigationTree = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTree>("components.navigation-tree");
 const NavigationTreeItem = componentLeaf<typeof import("../components/NavigationTree.js").NavigationTreeItem>("components.navigation-tree", "NavigationTreeItem");

@@ -1,7 +1,7 @@
 import { Children, Fragment, cloneElement, isValidElement, type AnchorHTMLAttributes, type ComponentType, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { Brandmark, type BrandmarkProps } from "./Brandmark.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
-import { Icon, type IconNode } from "../components/Icon.js";
+import { Icon, type IconNode } from "../components/preview-runtime/components/icon/icon.js";
 import { cx } from "../components/internal/cx.js";
 import { SHELL_GROUND_CLASSES } from "./internal/shell-ground.js";
 import { resolveFrameHeaderOptions } from "../catalog-core/frame-header-options.js";

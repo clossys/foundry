@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { componentLeaf } from "../runtime/component-leaf.js";
-import type { IconNode } from "../components/Icon.js";
+import type { IconNode } from "../components/preview-runtime/components/icon/icon.js";
 import type { ResolvedMember } from "../catalog-core/types.js";
 import { malformed, unsafeText } from "../catalog-core/model.js";
 import { inspectGlyph, inspectSvg } from "../catalog-assets/svg.js";
@@ -15,7 +15,7 @@ import { SpecimenLayoutSection, specimenLayoutNeeds, type SpecimenItem, type Spe
 
 const Content = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const Logomark = componentLeaf<typeof import("../components/Logomark.js").Logomark>("components.logo");
 
 /** The cell carries native member identities. Values always come from the current consumer resolution. */

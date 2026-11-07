@@ -5,7 +5,7 @@ import type { ImageResource, VideoResource } from "../../catalog-assets/media.js
 import { Button } from "../preview-runtime/components/button/button.js";
 import { Toggle as ToggleButton } from "../preview-runtime/components/toggle-button/toggle.js";
 import { Slider } from "../Slider.js";
-import { Icon } from "../Icon.js";
+import { Icon } from "../preview-runtime/components/icon/icon.js";
 import { ChevronRight } from "../../icons/ChevronRight.js";
 import { SemanticContent } from "../SemanticContent.js";
 import { cx } from "../internal/cx.js";

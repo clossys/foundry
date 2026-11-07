@@ -72,8 +72,9 @@ export type CardProps = import("react").ComponentProps<typeof import("./preview-
 export { Field } from "./Field.server.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";
 
-export { Icon } from "./Icon.js";
-export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Icon.js";
+export { Icon } from "./preview-runtime/components/icon/icon.js";
+export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
+export type { IconSize } from "../catalog/types.js";
 
 export { Meter } from "./Meter.server.js";
 export type { MeterProps, MeterTone, MeterDirection, MeterEmphasis } from "./Meter.js";

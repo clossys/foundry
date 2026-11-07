@@ -12,7 +12,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 import { MenuGroup, MenuItem, MenuLabel } from "../blocks/shell-menu.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 
 /** Internal frame composition: the same provider and Writer references as ThemeToggle. */
 export function AppFrameThemeSection({ preferenceLabels: suppliedLabels, toggleLabel, preferenceAnnouncement }: Pick<ThemeToggleProps, "preferenceLabels" | "toggleLabel" | "preferenceAnnouncement">) {

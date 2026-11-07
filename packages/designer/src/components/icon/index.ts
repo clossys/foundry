@@ -1,11 +1,2 @@
-import { createElement, type ComponentProps } from "react";
-import { Icon as Primitive } from "../Icon.js";
-import { glyphs } from "../preview-runtime/adapters/glyphs.js";
-import { PanelLeft } from "../../icons/PanelLeft.js";
-const adoptedGlyphs = { ...glyphs, "assets.icon-panel-left": PanelLeft };
-type WithAsset<Props> = Props extends unknown ? Omit<Props, "glyph" | "children"> & { asset: keyof typeof adoptedGlyphs } : never;
-export function Icon({ asset, ...props }: WithAsset<ComponentProps<typeof Primitive>>) {
-  const glyph = adoptedGlyphs[asset];
-  if (!glyph) throw new Error("Missing consumer glyph");
-  return createElement(Primitive, { ...props, glyph });
-}
+// The rail sources' leaf-relative `../icon/index` resolves here; the icon leaf is the stock Icon (R2F-34).
+export { Icon } from "../preview-runtime/components/icon/index.js";

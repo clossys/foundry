@@ -9,7 +9,7 @@ import { SECTION_GROUND_CLASSES, stockCardGroundClass, type SectionGround } from
 import { componentLeaf } from "../../runtime/component-leaf.js";
 
 const Card = componentLeaf<typeof import("../../components/preview-runtime/components/card/card.js").Card>("components.card");
-const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 // The ordinary mixed dispatcher stays unchanged. Keep this pure sides renderer

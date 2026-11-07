@@ -71,7 +71,7 @@ const EXPECTED_DEFAULTS = {
   avatar: "shadcn@aria", badge: "shadcn@aria", banner: "shadcn@aria", breadcrumbs: "shadcn@aria", button: "shadcn@aria", calendar: "shadcn@aria", card: "shadcn@aria",
   "chart-area": "foundry", "chart-bar": "foundry", "chart-heatmap": "foundry", "chart-line": "foundry", "chart-range": "foundry",
   "chart-scatter": "foundry", "chart-sparkline": "foundry", "chart-status-strip": "foundry", "chart-waterfall": "foundry", checkbox: "shadcn@aria", "color-picker": "foundry", "combo-box": "shadcn@aria",
-  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "foundry", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "foundry", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
+  "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "foundry", "grid-list": "foundry", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "derive:icon@1", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "shadcn@aria", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
   spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "shadcn@aria", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
@@ -97,6 +97,13 @@ describe("component default fills", () => {
     expect(plan.findings).toEqual([]);
     expect(plan.rows.find(row => row.slot === "components.button")).toMatchObject({ status: "default", basis: "owner-pick", source: "shadcn@aria", fill: "shadcn@aria/components.button" });
     expect(plan.rows.find(row => row.slot === "components.avatar")).toMatchObject({ status: "default", basis: "preference" });
+  });
+  it("defaults components.icon to the stock shadcn Lucide Icon through its opt-in derive rule, which stays unseated without a pick", () => {
+    const { input } = setup();
+    const icon = (plan: ReturnType<typeof planComponentDefaults>) => plan.rows.find(row => row.slot === "components.icon")!;
+    expect(icon(planComponentDefaults(input))).toMatchObject({ status: "default", basis: "rule", rule: "derive:icon@1" });
+    const { "components.icon": _icon, ...unpicked } = PICKS;
+    expect(icon(planComponentDefaults({ ...input, picks: unpicked }))).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.icon" });
   });
   it("selects consumed button, table, card and menu with their faithful registered typography reads", () => {
     const { input } = setup();

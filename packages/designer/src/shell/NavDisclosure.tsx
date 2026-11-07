@@ -6,7 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../componen
 import { buttonVariants } from "../components/preview-runtime/components/button/button.js";
 import { cn } from "../components/preview-runtime/components/_parts/utils/index.js";
 import { INVERSE_CONTROL_INK } from "../components/button-classes.js";
-import { Icon } from "../components/Icon.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import { List } from "../icons/index.js";
 
 export interface NavDisclosureProps {
