@@ -89,8 +89,17 @@ export const STUDIO_APP = fileURLToPath(new URL("../../studio/app/", import.meta
  * One served Studio route's HTML, as the child renders it for a GET; undefined unless it answers 200.
  * A page with group tabs lands on its first tab (a same-origin redirect), so the render follows
  * up to `MAX_ROUTE_REDIRECTS` redirects to a path on the same child; any other redirect is undefined.
+ * Next streams a server `redirect()` as a 200 whose body is only a page-redirect refresh meta
+ * (NEXT_PAGE_REDIRECT); that body is a redirect too, never the page: served as a preview it would
+ * navigate its frame to the live route after a second and nest the whole running app in a card.
  */
 export const MAX_ROUTE_REDIRECTS = 3;
+const NEXT_PAGE_REDIRECT = /<meta\b(?=[^>]*\bid=["']__next-page-redirect["'])[^>]*\bcontent=["']\d+;\s*url=([^"']+)["'][^>]*>/i;
+/** The same-origin path a Next page-redirect body names, or undefined when the body is a page. */
+export function nextPageRedirect(html: string): string | undefined {
+  const target = NEXT_PAGE_REDIRECT.exec(html)?.[1];
+  return target === undefined ? undefined : target.replace(/&amp;/g, "&");
+}
 export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000, redirects = MAX_ROUTE_REDIRECTS): Promise<string | undefined> {
   return new Promise((resolve, reject) => {
     const origin = `http://127.0.0.1:${port}`;
@@ -107,7 +116,13 @@ export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000
       if (status !== 200 || !String(response.headers["content-type"] ?? "").startsWith("text/html")) { response.resume(); resolve(undefined); return; }
       const chunks: Buffer[] = [];
       response.on("data", chunk => chunks.push(chunk));
-      response.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+      response.on("end", () => {
+        const html = Buffer.concat(chunks).toString("utf8"), target = nextPageRedirect(html);
+        if (target === undefined) { resolve(html); return; }
+        // An unparsable, off-child or over-budget page redirect is not a render, like an HTTP one.
+        const next = URL.canParse(target, origin + path) ? new URL(target, origin + path) : undefined;
+        resolve(redirects > 0 && next?.origin === origin ? renderStudioRoute(port, next.pathname + next.search, timeoutMs, redirects - 1) : undefined);
+      });
       response.on("error", () => resolve(undefined));
     });
     request.on("timeout", () => request.destroy());

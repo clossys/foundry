@@ -433,7 +433,7 @@ async function captureShot(browser, contextId, origin, job, outDir) {
           break;
         }
       }
-      if (Date.now() > deadline) { timedOut = `not settled after ${job.timeoutMs}ms (inflight ${inflight.size}, load ${loaded})`; break; }
+      if (Date.now() > deadline) { timedOut = `not settled after ${job.timeoutMs}ms (inflight ${inflight.size}${inflight.size ? `: ${[...inflight.values()].slice(0, 3).join(", ")}` : ""}, load ${loaded})`; break; }
       await new Promise(next => setTimeout(next, 100));
     }
     const metrics = await send("Page.getLayoutMetrics");

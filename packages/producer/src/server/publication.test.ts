@@ -310,6 +310,9 @@ it("applies the preview theme on <html> without dropping the page's own classes"
   expect(themePage("<HTML><body></body></HTML>", "dark")).toBe('<html class="dark" style="color-scheme:dark"><body></body></HTML>');
   expect(staticPage('<html><head><link rel="stylesheet" href="/a.css"/><link rel="preload" as="script" fetchPriority="low" href="/_next/static/chunks/a.js"/><link rel="modulepreload" href="/m.js"/><link rel="preload" as="image" href="/i.svg"/><script src="/_next/static/chunks/b.js" async=""></script></head><body><h1>x</h1><script>self.__next_f.push([1,"</div>"])</script><SCRIPT id="_R_">$RC()</SCRIPT></body></html>'))
     .toBe('<html><head><link rel="stylesheet" href="/a.css"/><link rel="preload" as="image" href="/i.svg"/></head><body><h1>x</h1></body></html>');
+  // A static preview never navigates its own frame: no refresh meta survives, any spelling.
+  expect(staticPage('<head><meta id="__next-page-redirect" http-equiv="refresh" content="1;url=/designer/themes/colors"/><META HTTP-EQUIV=Refresh CONTENT="0; url=/x"><meta name="description" content="d"/></head>'))
+    .toBe('<head><meta name="description" content="d"/></head>');
 });
 
 it("lists the Studio publication's installed pages as ready with frame previews once publish --install --next put them in the app Producer serves", async () => {

@@ -33,6 +33,10 @@ it("renders a page that lands on its first tab by following the same-origin redi
     if (request.url === "/director/context") { response.writeHead(307, { Location: "/director/context/market" }); response.end(); return; }
     if (request.url === "/loop") { response.writeHead(307, { Location: "/loop" }); response.end(); return; }
     if (request.url === "/away") { response.writeHead(307, { Location: "http://example.com/director" }); response.end(); return; }
+    // Next streams a server redirect() as a 200 page-redirect body; it is a redirect, not the page.
+    if (request.url === "/designer/themes") { response.writeHead(200, { "Content-Type": "text/html; charset=utf-8" }); response.end('<!DOCTYPE html><html><head><meta charSet="utf-8"/><meta id="__next-page-redirect" http-equiv="refresh" content="1;url=/director/context/market"/></head><body></body></html>'); return; }
+    if (request.url === "/streamed-away") { response.writeHead(200, { "Content-Type": "text/html" }); response.end('<meta id="__next-page-redirect" http-equiv="refresh" content="1;url=http://example.com/x"/>'); return; }
+    if (request.url === "/streamed-loop") { response.writeHead(200, { "Content-Type": "text/html" }); response.end('<meta id="__next-page-redirect" http-equiv="refresh" content="0;url=/streamed-loop"/>'); return; }
     if (request.url === "/director/context/market") { response.writeHead(200, { "Content-Type": "text/html" }); response.end("<h1>Market</h1>"); return; }
     response.writeHead(404); response.end();
   });
@@ -44,5 +48,8 @@ it("renders a page that lands on its first tab by following the same-origin redi
     expect(await renderStudioRoute(port, "/loop")).toBeUndefined();
     expect(await renderStudioRoute(port, "/away")).toBeUndefined();
     expect(await renderStudioRoute(port, "/missing")).toBeUndefined();
+    expect(await renderStudioRoute(port, "/designer/themes")).toBe("<h1>Market</h1>");
+    expect(await renderStudioRoute(port, "/streamed-away")).toBeUndefined();
+    expect(await renderStudioRoute(port, "/streamed-loop")).toBeUndefined();
   } finally { await new Promise(done => server.close(done)); }
 });
