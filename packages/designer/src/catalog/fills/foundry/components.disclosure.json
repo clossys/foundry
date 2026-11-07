@@ -9,14 +9,14 @@
       "license": "MIT",
       "mode": "implementation",
       "pin": {
-        "export": "./components#Disclosure",
+        "export": "./components#Accordion",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
       "relation": "same-contract",
       "slot": "components.disclosure",
       "source": "foundry",
-      "sourceAddress": "./components#Disclosure",
+      "sourceAddress": "./components#Accordion",
       "status": "draft",
       "trust": "foundry"
     }
@@ -42,7 +42,7 @@
         }
       ],
       "impl": {
-        "export": "Disclosure",
+        "export": "Accordion",
         "kind": "package",
         "module": "@clossys/designer/components"
       },
@@ -51,20 +51,20 @@
         "scope.group"
       ],
       "pin": {
-        "export": "./components#Disclosure",
+        "export": "./components#Accordion",
         "package": "@clossys/designer",
         "version": "0.12.0"
       },
       "propMap": {
-        "scope.group": "./components#Disclosure.Group"
+        "scope.group": "./components#Accordion"
       },
       "props": [
+        "allowsMultipleExpanded",
         "children",
         "className",
-        "id",
-        "isExpanded",
-        "onExpandedChange",
-        "title"
+        "defaultExpandedKeys",
+        "expandedKeys",
+        "onExpandedChange"
       ],
       "rac": {
         "instance": "react-aria-components",

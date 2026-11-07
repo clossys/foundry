@@ -17564,6 +17564,10 @@
       "WaterfallChart"
     ],
     "@clossys/designer/components": [
+      "Accordion",
+      "AccordionContent",
+      "AccordionItem",
+      "AccordionTrigger",
       "Avatar",
       "Badge",
       "Banner",
@@ -17591,7 +17595,6 @@
       "CommandShortcut",
       "DateField",
       "Dialog",
-      "Disclosure",
       "DropdownMenu",
       "DropdownMenuGroup",
       "DropdownMenuItem",

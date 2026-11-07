@@ -627,7 +627,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Separator"),
     disposition: "keep",
   }),
-  onMain("Disclosure", ["src/components/Disclosure.tsx"], {
+  onMain("Disclosure", ["src/components/preview-runtime/components/disclosure/accordion.tsx"], {
     id: "reveal.disclosure",
     label: "Disclosure",
     racBase: rac("Disclosure", "DisclosurePanel", "Button"),

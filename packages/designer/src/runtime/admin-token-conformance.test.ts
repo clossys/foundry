@@ -40,10 +40,9 @@ describe("admin renderer token conformance", () => {
     expect(UI_OUTLINE_FOCUS).toContain("var(--ui-border-focus, 2px)");
   });
   it("binds AppFrame and Studio native controls to the shared focus role rather than copied widths/colors", () => {
-    const frame = read("../frames/AppFrame.tsx"), rail = read("../studio/rail/StudioRail.tsx"), disclosure = read("../components/Disclosure.tsx");
+    const frame = read("../frames/AppFrame.tsx"), rail = read("../studio/rail/StudioRail.tsx");
     expect(frame.match(/const CONTROL = "([^"]+)"/)?.[1].split(/\s+/)).toContain("focus-ring");
-    expect(rail.match(/triggerClassName="([^"]+)"/)?.[1].split(/\s+/)).toContain("focus-ring");
-    expect(disclosure.slice(0, disclosure.indexOf("function DisclosureGroup"))).toContain("focus-ring");
+    expect(rail.match(/<AccordionTrigger className="([^"]+)"/)?.[1].split(/\s+/)).toContain("focus-ring");
     for (const source of [frame, rail]) expect(source).not.toMatch(/focus-visible:outline-(?:\d|offset-\d|accent)/);
     const focus = utility("focus-ring");
     for (const token of ["--ui-border-focus", "--ui-focus-offset", "--color-focus-ring"]) expect(focus).toContain(`var(${token},`);
@@ -66,7 +65,7 @@ describe("admin renderer token conformance", () => {
     expect(canvas).not.toMatch(/focus-visible:outline-(?:\d|accent)/);
   });
   it("has no off-scale raw paint or arbitrary design dimensions in the touched renderer sources", () => {
-    for (const path of ["../frames/AppFrame.tsx", "../studio/rail/StudioRail.tsx", "../components/Disclosure.tsx", "../components/internal/ui-vars.ts", "../blocks/canvas/CanvasSurface.tsx"]) {
+    for (const path of ["../frames/AppFrame.tsx", "../studio/rail/StudioRail.tsx", "../components/internal/ui-vars.ts", "../blocks/canvas/CanvasSurface.tsx"]) {
       const source = withoutTokenReads(read(path).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, ""));
       expect(source, path).not.toMatch(/#[\da-f]{3,8}\b|\b(?:rgb|rgba|hsl|hsla|oklch)\(/i);
       expect(source, path).not.toMatch(/(?:p|m|gap|rounded|text|shadow|duration)-\[(?:\d|#)/);

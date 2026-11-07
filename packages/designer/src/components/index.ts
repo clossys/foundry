@@ -162,8 +162,8 @@ export type { SearchFieldProps } from "./SearchField.js";
 export { FileTrigger } from "./preview-runtime/components/file-trigger/file-trigger.js";
 export type { FileTriggerProps } from "./preview-runtime/components/file-trigger/file-trigger.js";
 
-export { Disclosure } from "./Disclosure.js";
-export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
+export { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "./preview-runtime/components/disclosure/accordion.js";
+export type AccordionProps = import("react").ComponentProps<typeof import("./preview-runtime/components/disclosure/accordion.js").Accordion>;
 
 export { ProgressBar } from "./ProgressBar.js";
 export type { ProgressBarProps } from "./ProgressBar.js";

@@ -23,7 +23,6 @@ const TableHead = componentLeaf<ComponentSpecimenComponent>("components.table", 
 const TableBody = componentLeaf<ComponentSpecimenComponent>("components.table", "TableBody");
 const TableRow = componentLeaf<ComponentSpecimenComponent>("components.table", "TableRow");
 const TableCell = componentLeaf<ComponentSpecimenComponent>("components.table", "TableCell");
-const FoundryDisclosure = componentLeaf<typeof import("../components/Disclosure.js").Disclosure>("components.disclosure");
 const Accordion = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").Accordion>("components.disclosure");
 const AccordionItem = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionItem>("components.disclosure", "AccordionItem");
 const AccordionTrigger = componentLeaf<typeof import("../components/preview-runtime/components/disclosure/accordion.js").AccordionTrigger>("components.disclosure", "AccordionTrigger");
@@ -238,10 +237,7 @@ export function SpecimenLayoutSection(props: LayoutProps): ReactNode {
   if (expanded || !rest.length) return region(draw(items));
   const disclosure = specimenComponent(context, "components.disclosure");
   if ("reason" in disclosure) return fail(disclosure.reason);
-  if (disclosure.source === "shadcn@aria") {
-    const Item = disclosure.exports.AccordionItem, Trigger = disclosure.exports.AccordionTrigger, Panel = disclosure.exports.AccordionContent;
-    if (!component(Item) || !component(Trigger) || !component(Panel)) return fail("The selected accordion has no native item, trigger and content API.");
-    return region(<>{draw(first)}<Accordion data-ds-leaf="components.disclosure"><AccordionItem id={`${id}-all`}><AccordionTrigger>{labels.showAllVariants(items.length)}</AccordionTrigger><AccordionContent>{draw(rest)}</AccordionContent></AccordionItem></Accordion></>);
-  }
-  return region(<>{draw(first)}<FoundryDisclosure data-ds-leaf="components.disclosure" title={labels.showAllVariants(items.length)}>{draw(rest)}</FoundryDisclosure></>);
+  const Item = disclosure.exports.AccordionItem, Trigger = disclosure.exports.AccordionTrigger, Panel = disclosure.exports.AccordionContent;
+  if (!component(Item) || !component(Trigger) || !component(Panel)) return fail("The selected accordion has no native item, trigger and content API.");
+  return region(<>{draw(first)}<Accordion data-ds-leaf="components.disclosure"><AccordionItem id={`${id}-all`}><AccordionTrigger>{labels.showAllVariants(items.length)}</AccordionTrigger><AccordionContent>{draw(rest)}</AccordionContent></AccordionItem></Accordion></>);
 }

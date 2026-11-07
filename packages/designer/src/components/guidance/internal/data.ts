@@ -2081,16 +2081,16 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Tabs for peer panels; a consumer-owned accordion block for coordinated disclosures.",
   "content": "Name the expandable section with a title that predicts its contents.",
   "anatomy": "One persistent section trigger and its expandable content.",
-  "composition": "In a consumer-owned FAQ block, repeat Disclosure for independently expandable answers.",
+  "composition": "In a consumer-owned FAQ block, repeat AccordionItem rows for independently expandable answers.",
   "accessibility": "Preserve the trigger-to-panel association and expanded state; hidden content remains part of the disclosure."
 },
 {
-  "exportName": "Disclosure",
+  "exportName": "Accordion",
   "entrypoint": "components",
   "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
   "options": [],
   "constraints": []
-}, "src/components/Disclosure.tsx"),
+}, "src/components/preview-runtime/components/disclosure/accordion.tsx"),
   "reveal.tabs": entry(
 {
   "purpose": "Switch among peer panels within the same context.",
@@ -4203,8 +4203,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
     }
   },
   "reveal.disclosure": {
-    "exportName": "Disclosure",
-    "source": "src/components/Disclosure.tsx",
+    "exportName": "Accordion",
+    "source": "src/components/preview-runtime/components/disclosure/accordion.tsx",
     "options": [],
     "tokens": {
       "coverage": "partial",
@@ -4217,8 +4217,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "evidence": "--color-ink-primary:",
           "via": [
             {
-              "source": "src/components/Disclosure.tsx",
-              "evidence": "text-ink-primary"
+              "source": "src/components/preview-runtime/components/disclosure/accordion.tsx",
+              "evidence": "hover:text-(--color-ink-primary)"
             }
           ]
         }

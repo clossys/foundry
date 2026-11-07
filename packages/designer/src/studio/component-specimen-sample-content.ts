@@ -67,7 +67,7 @@ export const componentSpecimenCollections = {
   "./components#Tabs": d.tabs,
   "./components#TagGroup": d.tags,
   "./components#ToggleGroup": d.toggles,
-  "./components#Disclosure": d.disclosure,
+  "./components#Accordion": d.disclosure,
 } as const;
 
 /** A sortable table: mixed-type rows under sortable columns, the first a row header. */

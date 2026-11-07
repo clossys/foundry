@@ -55,7 +55,7 @@ const stateProps: Readonly<Record<string, StateProps>> = {
   "./components#ComboBox": field,
   "./components#RadioGroup": field,
   "./components#Select": { ...disabled, invalid: { isInvalid: true } },
-  "./components#Disclosure": { ...disabled, open: { isExpanded: true } },
+  "./components#Accordion": { ...disabled, open: { defaultExpandedKeys: ["shipping"] } },
   "components/button/button.tsx#Button": disabled,
   "components/slider/slider.tsx#Slider": disabled,
   "components/checkbox/checkbox.tsx#Checkbox": { ...toggle, invalid: { isInvalid: true } },
@@ -120,9 +120,9 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
       const Item = part(exports, "ToggleGroupItem");
       return Item && { props: { "aria-label": c[key].label, selectionMode: "single", defaultSelectedKeys: c[key].defaultSelectedKeys }, children: c[key].items.map(item => <Item key={item.id} id={item.id}>{item.label}</Item>) };
     }
-    case "./components#Disclosure": {
-      const [first] = c[key].items;
-      return { props: { title: first.label }, children: first.content };
+    case "./components#Accordion": {
+      const Item = part(exports, "AccordionItem"), Trigger = part(exports, "AccordionTrigger"), Content = part(exports, "AccordionContent");
+      return Item && Trigger && Content && { props: {}, children: c[key].items.map(item => <Item key={item.id} id={item.id}><Trigger>{item.label}</Trigger><Content>{item.content}</Content></Item>) };
     }
     default: return undefined;
   }
