@@ -110,11 +110,11 @@ export type { AvatarProps, AvatarSize } from "./Avatar.js";
 export { Spinner } from "./Spinner.js";
 export type { SpinnerProps, SpinnerSize } from "./Spinner.js";
 
-export { Menu } from "./Menu.js";
-export type { MenuProps, MenuItemProps, MenuSeparatorProps } from "./Menu.js";
+export { DropdownMenu as Menu, InlineMenu } from "./preview-runtime/components/menu/dropdown-menu.js";
+export type MenuProps = import("react").ComponentProps<typeof import("./preview-runtime/components/menu/dropdown-menu.js").DropdownMenu>;
 
-export { Dialog } from "./Dialog.js";
-export type { DialogProps, DialogSize, DialogHeadingProps } from "./Dialog.js";
+export { Dialog, DialogTrigger, DialogClose, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "./preview-runtime/components/dialog/dialog.js";
+export type DialogProps = import("react").ComponentProps<typeof import("./preview-runtime/components/dialog/dialog.js").Dialog>;
 
 export { Tabs } from "./Tabs.js";
 export type { TabsProps, TabsListProps, TabsTabProps, TabsPanelProps } from "./Tabs.js";
@@ -137,8 +137,8 @@ export type { FieldProps, FieldRenderProps } from "./Field.js";
 export { Skeleton } from "./Skeleton.js";
 export type { SkeletonProps, SkeletonShape } from "./Skeleton.js";
 
-export { Tooltip } from "./Tooltip.js";
-export type { TooltipProps } from "./Tooltip.js";
+export { Tooltip, TooltipTrigger } from "./preview-runtime/components/tooltip/tooltip.js";
+export type TooltipProps = import("react").ComponentProps<typeof import("./preview-runtime/components/tooltip/tooltip.js").Tooltip>;
 
 export { Banner } from "./Banner.js";
 export type { BannerProps, BannerVariant } from "./Banner.js";
@@ -146,8 +146,8 @@ export type { BannerProps, BannerVariant } from "./Banner.js";
 export { RadioGroup } from "./RadioGroup.js";
 export type { RadioGroupProps, RadioGroupRadioProps } from "./RadioGroup.js";
 
-export { Popover } from "./Popover.js";
-export type { PopoverProps } from "./Popover.js";
+export { Popover, PopoverTrigger, PopoverHeader, PopoverTitle, PopoverDescription } from "./preview-runtime/components/popover/popover.js";
+export type PopoverProps = import("react").ComponentProps<typeof import("./preview-runtime/components/popover/popover.js").Popover>;
 
 export { Calendar } from "./Calendar.js";
 export type { CalendarProps, SingleCalendarProps, RangeCalendarProps } from "./Calendar.js";

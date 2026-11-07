@@ -23,7 +23,7 @@ import { declaredNames, packageRoot, resolveRuntime, resolveType, staticImports 
 import { menuCaller } from "./__fixtures__/selected-module-harness/menu-caller.js";
 
 /**
- * API-M1: the selected Menu's inline/popup presentation and its three command-result parts
+ * API-M1: the selected Menu's inline/popup presentation, its command-result parts and its trigger
  * (MenuGroup/MenuLabel/MenuItem) through the REAL consumer path.
  * Real consumer token/glyph values, real adoption of the generated fills with their
  * materialized source bundles, the real resolver/check (no observations supplied, so
@@ -33,7 +33,7 @@ import { menuCaller } from "./__fixtures__/selected-module-harness/menu-caller.j
  * the packed archive; browser focus/geometry/forced-colour measurement is not
  * claimed here (jsdom only).
  */
-const THREE = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }] as const;
+const PARTS = [{ name: "MenuGroup", export: "DropdownMenuGroup" }, { name: "MenuItem", export: "DropdownMenuItem" }, { name: "MenuLabel", export: "DropdownMenuLabel" }, { name: "MenuSeparator", export: "DropdownMenuSeparator" }, { name: "DropdownMenuTrigger", export: "DropdownMenuTrigger" }] as const;
 const COHORT = [["components.button", DEFAULT_COMPONENT_PICKS["components.button"]!], ["components.card", DEFAULT_COMPONENT_PICKS["components.card"]!], ["components.table", DEFAULT_COMPONENT_PICKS["components.table"]!], ["components.icon", "foundry"], ["components.menu", "shadcn@aria"]] as const;
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const repository = resolve(packageDirectory, "../..");
@@ -157,10 +157,10 @@ afterAll(() => {
 });
 
 const ENTRY = "components/menu/dropdown-menu.tsx", LEAF = "components/menu/index.ts";
-const reexport = (row: { name: string; export: string }) => `export { ${row.export} as ${row.name} } from "./dropdown-menu";`;
+const reexport = (row: { name: string; export: string }) => `export { ${row.name === row.export ? row.name : `${row.export} as ${row.name}`} } from "./dropdown-menu";`;
 
 describe("API-M1 selected Menu presentation and parts through the generated leaf API (real resolver/emitter; jsdom, no browser claim)", () => {
-  it("M6/M3 resolves a checked, runtime-pending cohort whose adopted Menu carries exactly the three part approvals and the accepted presentation axis", () => {
+  it("M6/M3 resolves a checked, runtime-pending cohort whose adopted Menu carries exactly the part and trigger approvals and the accepted presentation axis", () => {
     expect(profile.check.ok).toBe(true);
     for (const leaf of ["button", "table", "card", "menu"]) expect(profile.components[`components.${leaf}`]!.origin, leaf).toMatchObject({ kind: "adopted", source: "shadcn@aria" });
     expect(profile.check.findings.every(isObservationPending)).toBe(true);
@@ -168,16 +168,16 @@ describe("API-M1 selected Menu presentation and parts through the generated leaf
     const menu = profile.components["components.menu"]!;
     expect(menu.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria", sha256: componentDescriptorHash(menu.descriptor) });
     expect(menu.descriptor.impl).toEqual({ kind: "source", entry: ENTRY, export: "DropdownMenu" });
-    expect(menu.descriptor.secondaryExports).toEqual(THREE);
-    expect(componentSecondaryExports(menu.descriptor, profile.files)).toEqual(THREE);
+    expect(menu.descriptor.secondaryExports).toEqual(PARTS);
+    expect(componentSecondaryExports(menu.descriptor, profile.files)).toEqual(PARTS);
     expect(menu.descriptor.members).toEqual(["presentation.inline", "presentation.popup", "selection.multiple", "selection.none", "selection.single"]);
     expect(menu.propMap).toMatchObject({ "presentation.inline": "InlineMenu", "presentation.popup": "DropdownMenu" });
     for (const slot of ["components.button", "components.icon"]) expect(profile.components[slot]!.descriptor.secondaryExports, slot).toBeUndefined();
   });
-  it("M3 publishes only the three parts at the menu leaf; no InlineMenu, trigger, submenu, separator or shortcut export, and the root is unchanged", () => {
+  it("M3 publishes only the approved parts and trigger at the menu leaf; no InlineMenu, submenu or shortcut export, and the root is unchanged", () => {
     const leaf = file(emitted, LEAF);
-    expect(publicNames(leaf)).toEqual(["Menu", "MenuGroup", "MenuItem", "MenuLabel"]);
-    for (const row of THREE) expect(leaf).toContain(reexport(row));
+    expect(publicNames(leaf)).toEqual(["DropdownMenuTrigger", "Menu", "MenuGroup", "MenuItem", "MenuLabel", "MenuSeparator"]);
+    for (const row of PARTS) expect(leaf).toContain(reexport(row));
     expect(publicNames(file(emitted, "component-index.ts"))).toEqual(["Button", "Card", "Icon", "LibraryProvider", "Menu", "Table"]);
   });
   it("M3 each leaf part is the selected entry's own runtime value; unapproved entry values stay unreachable", async () => {
@@ -185,29 +185,29 @@ describe("API-M1 selected Menu presentation and parts through the generated leaf
     expect({ diagnostics: identity.compiled.diagnostics, closure: identity.compiled.closureError, bundle: identity.compiled.bundle.errors }).toEqual({ diagnostics: [], closure: undefined, bundle: [] });
     expect(identity.compiled.status).toBe("compiled");
     const { leaf, entry } = await importBundle(identity.bundle) as { leaf: Record<string, unknown>; entry: Record<string, unknown> };
-    expect(Object.keys(leaf).sort()).toEqual(["Menu", "MenuGroup", "MenuItem", "MenuLabel"]);
-    for (const row of THREE) {
+    expect(Object.keys(leaf).sort()).toEqual(["DropdownMenuTrigger", "Menu", "MenuGroup", "MenuItem", "MenuLabel", "MenuSeparator"]);
+    for (const row of PARTS) {
       expect(typeof entry[row.export], row.export).toBe("function");
       expect(leaf[row.name], row.name).toBe(entry[row.export]);
     }
-    for (const name of ["InlineMenu", "DropdownMenu", "DropdownMenuTrigger", "DropdownMenuSeparator", "DropdownMenuShortcut", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent"]) {
+    for (const name of ["InlineMenu", "DropdownMenu", "DropdownMenuShortcut", "DropdownMenuSub", "DropdownMenuSubTrigger", "DropdownMenuSubContent"]) {
       expect(typeof entry[name], name).toBe("function");
       expect(leaf[name], name).toBeUndefined();
     }
   }, 120_000);
-  it("M3 the approval adds only the three leaf lines: root and every other emitted byte are unchanged", () => {
+  it("M3 the approval adds only its own leaf lines: root and every other emitted byte are unchanged", () => {
     const library = structuredClone(input.library);
     const fill = library.fills.find(row => componentOf(row).slot === "components.menu")!.components.menu! as ComponentCandidate & { origin: unknown };
     delete fill.secondaryExports;
     fill.origin = { kind: "authored", license: "MIT" };
     const without = emitComponents(resolveComponents({ ...input, library }), ["component-index"], { glyphModule: glyphModule as never });
-    const withThree = emitted.filter(row => row.path !== "components-consumption.json");
-    expect(without.map(row => row.path)).toEqual(withThree.map(row => row.path));
-    for (const row of withThree) if (row.path !== LEAF) expect(file(without, row.path), row.path).toBe(row.content);
+    const withParts = emitted.filter(row => row.path !== "components-consumption.json");
+    expect(without.map(row => row.path)).toEqual(withParts.map(row => row.path));
+    for (const row of withParts) if (row.path !== LEAF) expect(file(without, row.path), row.path).toBe(row.content);
     // The authored control is stamped with its own fill identity; that one stamp line is the only other difference.
     const stamp = (line: string) => line.startsWith("const stamp = ");
     const before = file(without, LEAF).split("\n"), after = file(emitted, LEAF).split("\n");
-    expect(after.filter(line => !before.includes(line) && !stamp(line)).sort()).toEqual(THREE.map(reexport).sort());
+    expect(after.filter(line => !before.includes(line) && !stamp(line)).sort()).toEqual(PARTS.map(reexport).sort());
     expect(before.filter(line => !after.includes(line) && !stamp(line))).toEqual([]);
     expect(after.filter(stamp)).toHaveLength(before.filter(stamp).length);
   });
@@ -305,7 +305,7 @@ describe("API-M1 selected Menu presentation and parts through the generated leaf
     fill.secondaryExports = [...fill.secondaryExports!, { name: "InlineMenu", export: "InlineMenu" }];
     expect(() => resolveComponents({ ...input, library: widened })).toThrow(/hand-edit requires authored origin/);
     const stale = structuredClone(profile);
-    stale.components["components.menu"]!.descriptor.secondaryExports = [...THREE, { name: "MenuTrigger", export: "DropdownMenuTrigger" }];
+    stale.components["components.menu"]!.descriptor.secondaryExports = [...PARTS, { name: "MenuShortcut", export: "DropdownMenuShortcut" }];
     expect(() => emitComponents(stale, ["component-index"], { glyphModule: glyphModule as never })).toThrow(/secondary export descriptor differs from adoption/);
     const failed = structuredClone(profile); failed.check.ok = false;
     expect(() => emitComponents(failed, ["component-index"], { glyphModule: glyphModule as never })).toThrow(/checks failed/);

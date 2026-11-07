@@ -22,7 +22,8 @@ import { declaredNames, packageRoot, resolveRuntime, resolveType, staticImports 
 import { dialogCaller } from "./__fixtures__/selected-module-harness/dialog-caller.js";
 
 /**
- * API-D1: the selected Dialog's naming anatomy (DialogHeader/DialogTitle/DialogDescription)
+ * API-D1: the selected Dialog's naming anatomy (DialogHeader/DialogTitle/DialogDescription) and its
+ * DialogTrigger opener
  * through the REAL consumer path.
  * Real consumer token/glyph values, real adoption of the generated fills with their
  * materialized source bundles, the real resolver/check (no observations supplied, so
@@ -32,7 +33,7 @@ import { dialogCaller } from "./__fixtures__/selected-module-harness/dialog-call
  * the packed archive; browser focus/geometry/forced-colour measurement is not
  * claimed here (jsdom only).
  */
-const THREE = [{ name: "DialogDescription", export: "DialogDescription" }, { name: "DialogHeader", export: "DialogHeader" }, { name: "DialogTitle", export: "DialogTitle" }] as const;
+const PARTS = [{ name: "DialogDescription", export: "DialogDescription" }, { name: "DialogHeader", export: "DialogHeader" }, { name: "DialogTitle", export: "DialogTitle" }, { name: "DialogTrigger", export: "DialogTrigger" }] as const;
 const COHORT = [["components.button", "foundry"], ["components.icon", "foundry"], ["components.dialog", "shadcn@aria"]] as const;
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const repository = resolve(packageDirectory, "../..");
@@ -159,53 +160,53 @@ const ENTRY = "components/dialog/dialog.tsx", LEAF = "components/dialog/index.ts
 const reexport = (row: { name: string; export: string }) => `export { ${row.export} } from "./dialog";`;
 
 describe("API-D1 selected Dialog naming parts through the generated leaf API (real resolver/emitter; jsdom, no browser claim)", () => {
-  it("D1 resolves a checked, runtime-pending cohort whose adopted Dialog carries exactly the three naming approvals", () => {
+  it("D1 resolves a checked, runtime-pending cohort whose adopted Dialog carries exactly the naming and trigger approvals", () => {
     expect(profile.check.ok).toBe(true);
     expect(profile.check.findings.every(isObservationPending)).toBe(true);
     expect(JSON.parse(file(emitted, "components-consumption.json")).status).toBe("runtime-pending");
     const dialog = profile.components["components.dialog"]!;
     expect(dialog.origin).toMatchObject({ kind: "adopted", source: "shadcn@aria", sha256: componentDescriptorHash(dialog.descriptor) });
     expect(dialog.descriptor.impl).toEqual({ kind: "source", entry: ENTRY, export: "Dialog" });
-    expect(dialog.descriptor.secondaryExports).toEqual(THREE);
-    expect(componentSecondaryExports(dialog.descriptor, profile.files)).toEqual(THREE);
+    expect(dialog.descriptor.secondaryExports).toEqual(PARTS);
+    expect(componentSecondaryExports(dialog.descriptor, profile.files)).toEqual(PARTS);
     for (const slot of ["components.button", "components.icon"]) expect(profile.components[slot]!.descriptor.secondaryExports, slot).toBeUndefined();
   });
-  it("D1 publishes only the three naming parts at the dialog leaf; root and package boundaries are unchanged", () => {
+  it("D1 publishes only the naming parts and the trigger at the dialog leaf; root and package boundaries are unchanged", () => {
     const leaf = file(emitted, LEAF);
-    expect(publicNames(leaf)).toEqual(["Dialog", "DialogDescription", "DialogHeader", "DialogTitle"]);
-    for (const row of THREE) expect(leaf).toContain(reexport(row));
+    expect(publicNames(leaf)).toEqual(["Dialog", "DialogDescription", "DialogHeader", "DialogTitle", "DialogTrigger"]);
+    for (const row of PARTS) expect(leaf).toContain(reexport(row));
     expect(publicNames(file(emitted, "component-index.ts"))).toEqual(["Button", "Dialog", "Icon", "LibraryProvider"]);
     // The leaf's only module edges are its own selected entry and React; no package Dialog or foreign RAC module.
-    expect([...leaf.matchAll(/from "([^"]+)"/g)].map(match => match[1]).sort()).toEqual(["./dialog", "./dialog", "./dialog", "./dialog", "react"]);
+    expect([...leaf.matchAll(/from "([^"]+)"/g)].map(match => match[1]).sort()).toEqual(["./dialog", "./dialog", "./dialog", "./dialog", "./dialog", "react"]);
   });
-  it("D1 each leaf part is the selected entry's own runtime value; Trigger/Close/Overlay/Footer/Content stay unreachable", async () => {
+  it("D1 each leaf part is the selected entry's own runtime value; Close/Overlay/Footer/Content stay unreachable", async () => {
     const identity = await compileHost("harness/identity.ts", identityHost(LEAF, ENTRY));
     expect({ diagnostics: identity.compiled.diagnostics, closure: identity.compiled.closureError, bundle: identity.compiled.bundle.errors }).toEqual({ diagnostics: [], closure: undefined, bundle: [] });
     expect(identity.compiled.status).toBe("compiled");
     const { leaf, entry } = await importBundle(identity.bundle) as { leaf: Record<string, unknown>; entry: Record<string, unknown> };
-    expect(Object.keys(leaf).sort()).toEqual(["Dialog", "DialogDescription", "DialogHeader", "DialogTitle"]);
-    for (const row of THREE) {
+    expect(Object.keys(leaf).sort()).toEqual(["Dialog", "DialogDescription", "DialogHeader", "DialogTitle", "DialogTrigger"]);
+    for (const row of PARTS) {
       expect(typeof entry[row.export], row.export).toBe("function");
       expect(leaf[row.name], row.name).toBe(entry[row.export]);
     }
-    for (const name of ["DialogTrigger", "DialogClose", "DialogOverlay", "DialogFooter", "DialogContent"]) {
+    for (const name of ["DialogClose", "DialogOverlay", "DialogFooter", "DialogContent"]) {
       expect(typeof entry[name], name).toBe("function");
       expect(leaf[name], name).toBeUndefined();
     }
   }, 120_000);
-  it("D4 the approval adds only the three leaf lines: root and every other emitted byte are unchanged", () => {
+  it("D4 the approval adds only its own leaf lines: root and every other emitted byte are unchanged", () => {
     const library = structuredClone(input.library);
     const fill = library.fills.find(row => componentOf(row).slot === "components.dialog")!.components.dialog! as ComponentCandidate & { origin: unknown };
     delete fill.secondaryExports;
     fill.origin = { kind: "authored", license: "MIT" };
     const without = emitComponents(resolveComponents({ ...input, library }), ["component-index"], { glyphModule: glyphModule as never });
-    const withThree = emitted.filter(row => row.path !== "components-consumption.json");
-    expect(without.map(row => row.path)).toEqual(withThree.map(row => row.path));
-    for (const row of withThree) if (row.path !== LEAF) expect(file(without, row.path), row.path).toBe(row.content);
+    const withParts = emitted.filter(row => row.path !== "components-consumption.json");
+    expect(without.map(row => row.path)).toEqual(withParts.map(row => row.path));
+    for (const row of withParts) if (row.path !== LEAF) expect(file(without, row.path), row.path).toBe(row.content);
     // The authored control is stamped with its own fill identity; that one stamp line is the only other difference.
     const stamp = (line: string) => line.startsWith("const stamp = ");
     const before = file(without, LEAF).split("\n"), after = file(emitted, LEAF).split("\n");
-    expect(after.filter(line => !before.includes(line) && !stamp(line)).sort()).toEqual(THREE.map(reexport).sort());
+    expect(after.filter(line => !before.includes(line) && !stamp(line)).sort()).toEqual(PARTS.map(reexport).sort());
     expect(before.filter(line => !after.includes(line) && !stamp(line))).toEqual([]);
     expect(after.filter(stamp)).toHaveLength(before.filter(stamp).length);
   });
@@ -274,7 +275,7 @@ describe("API-D1 selected Dialog naming parts through the generated leaf API (re
     fill.secondaryExports = [...fill.secondaryExports!, { name: "DialogFooter", export: "DialogFooter" }];
     expect(() => resolveComponents({ ...input, library: widened })).toThrow(/hand-edit requires authored origin/);
     const stale = structuredClone(profile);
-    stale.components["components.dialog"]!.descriptor.secondaryExports = [...THREE, { name: "DialogTrigger", export: "DialogTrigger" }];
+    stale.components["components.dialog"]!.descriptor.secondaryExports = [...PARTS, { name: "DialogClose", export: "DialogClose" }];
     expect(() => emitComponents(stale, ["component-index"], { glyphModule: glyphModule as never })).toThrow(/secondary export descriptor differs from adoption/);
     const failed = structuredClone(profile); failed.check.ok = false;
     expect(() => emitComponents(failed, ["component-index"], { glyphModule: glyphModule as never })).toThrow(/checks failed/);

@@ -5,9 +5,9 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./components/preview-runtime/components/button/button.js";
-import { Menu } from "./components/Menu.js";
-import { Popover } from "./components/Popover.js";
-import { Tooltip } from "./components/Tooltip.js";
+import { DropdownMenu, DropdownMenuItem, DropdownMenuTrigger } from "./components/preview-runtime/components/menu/dropdown-menu.js";
+import { Popover, PopoverTrigger } from "./components/preview-runtime/components/popover/popover.js";
+import { Tooltip, TooltipTrigger } from "./components/preview-runtime/components/tooltip/tooltip.js";
 import { ThemeProvider } from "./theme/ThemeProvider.js";
 import { ThemeToggle } from "./theme/ThemeToggle.js";
 import { suppressThemeTransitions } from "./theme/internal/theme-core.js";
@@ -45,15 +45,15 @@ describe("overlay motion (cross-12)", () => {
     expect(css).toMatch(/&\[data-exiting\] \{ animation: overlay-fade var\(--ui-duration-overlay, 120ms\) var\(--ease-exit[^;]*reverse both; \}/);
   });
 
-  it("puts the pop recipe on Popover and Menu panels and the fade on Tooltip", async () => {
-    const view = render(<Popover defaultOpen aria-label="Details" trigger={<Button>Open</Button>}>Body</Popover>);
-    expect(screen.getByRole("dialog", { name: "Details" }).parentElement).toHaveClass("overlay-motion-pop");
+  it("opens the stock Popover, Menu and Tooltip panels as their own placed overlay surfaces", async () => {
+    const view = render(<PopoverTrigger defaultOpen><Button>Open</Button><Popover>Body</Popover></PopoverTrigger>);
+    expect(screen.getByText("Body").closest('[data-slot="popover-content"]')).toHaveAttribute("data-placement");
     view.unmount();
-    const menu = render(<Menu defaultOpen aria-label="Actions" trigger={<Button>More</Button>}><Menu.Item id="a">A</Menu.Item></Menu>);
-    expect(screen.getByRole("menu").parentElement).toHaveClass("overlay-motion-pop");
+    const menu = render(<DropdownMenuTrigger defaultOpen><Button>More</Button><DropdownMenu aria-label="Actions"><DropdownMenuItem id="a">A</DropdownMenuItem></DropdownMenu></DropdownMenuTrigger>);
+    expect(screen.getByRole("menu").closest('[data-slot="dropdown-menu-content"]')).toHaveAttribute("data-placement");
     menu.unmount();
-    render(<Tooltip defaultOpen trigger={<Button>Hint</Button>}>Tip</Tooltip>);
-    expect(await screen.findByRole("tooltip")).toHaveClass("overlay-motion-fade");
+    render(<TooltipTrigger defaultOpen behaviorTiming={{ "tooltip-delay": { value: 0, unit: "ms" }, "tooltip-close": { value: 0, unit: "ms" } }}><Button>Hint</Button><Tooltip>Tip</Tooltip></TooltipTrigger>);
+    expect(await screen.findByRole("tooltip")).toHaveAttribute("data-placement", "top");
   });
 });
 

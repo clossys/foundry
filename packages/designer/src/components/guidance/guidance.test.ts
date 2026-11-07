@@ -361,11 +361,6 @@ const comparisonGolden: Record<string, {
     maxCells: 6,
     retainedCells: 6,
   },
-  "act.menu": {
-    columns: {"option": "triggerAction", "values": ["press", "longPress", "contextMenu"]},
-    maxCells: 3,
-    retainedCells: 3,
-  },
   "enter.text-field": {
     columns: {"option": "isInvalid", "values": [false, true]},
     rows: {"option": "isDisabled", "values": [false, true]},
@@ -511,13 +506,7 @@ const comparisonGolden: Record<string, {
     retainedCells: 6,
   },
   "reveal.dialog": {
-    columns: {"option": "size", "values": ["sm", "md", "lg"]},
-    rows: {"option": "isDismissable", "values": [false, true]},
-    maxCells: 6,
-    retainedCells: 6,
-  },
-  "reveal.tooltip": {
-    columns: {"option": "triggerAction", "values": ["hover", "focus"]},
+    columns: {"option": "isDismissable", "values": [false, true]},
     maxCells: 2,
     retainedCells: 2,
   },

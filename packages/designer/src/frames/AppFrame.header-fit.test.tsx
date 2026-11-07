@@ -10,21 +10,21 @@ import { expect, it } from "vitest";
 import { AppFrame } from "./AppFrame.js";
 import { PageHeaderModule } from "../shell/FrameSlots.js";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { Menu } from "../components/Menu.js";
+import { DropdownMenu as Menu, DropdownMenuItem as MenuItem, DropdownMenuTrigger as MenuTrigger } from "../components/preview-runtime/components/menu/dropdown-menu.js";
 import { shellCopyFixtureResolver } from "./__fixtures__/shell-copy.js";
 import { selectChromium } from "../__fixtures__/chromium-discovery.js";
 
 const packageRoot = resolve(import.meta.dirname, "../..");
-const ports = { React, AppFrame, PageHeaderModule, Button, Menu, copyResolver: shellCopyFixtureResolver };
+const ports = { React, AppFrame, PageHeaderModule, Button, Menu, MenuItem, MenuTrigger, copyResolver: shellCopyFixtureResolver };
 
 // Every dependency is a parameter so exactly this fixture also runs in the browser bundle.
-function fixture({ React: react, AppFrame: Frame, PageHeaderModule: Header, Button: Control, Menu: ActionMenu, copyResolver }: any, legacy = false) {
+function fixture({ React: react, AppFrame: Frame, PageHeaderModule: Header, Button: Control, Menu: ActionMenu, MenuItem: ActionItem, MenuTrigger: ActionTrigger, copyResolver }: any, legacy = false) {
   const h = react.createElement;
   const actions = [{ id: "publish", label: "Publish", primary: true, onAction() {} }, { id: "duplicate", label: "Duplicate", onAction() {} }];
   const header = { title: "Workspace view", nav: { label: "Page views", activeId: "overview", items: [
     { id: "overview", label: "Overview", href: "#overview" }, { id: "activity", label: "Activity history", href: "#activity" }, { id: "settings", label: "Workspace settings", href: "#settings" },
   ] }, actions: { render: ({ compact }: { compact: boolean }) => compact
-    ? h(ActionMenu, { trigger: h(Control, { "data-fixture-actions": "", "aria-label": "Page actions" }, "Actions") }, actions.map(action => h(ActionMenu.Item, { key: action.id, id: action.id, onAction: action.onAction }, action.label)))
+    ? h(ActionTrigger, null, h(Control, { "data-fixture-actions": "", "aria-label": "Page actions" }, "Actions"), h(ActionMenu, { "aria-label": "Page actions" }, actions.map(action => h(ActionItem, { key: action.id, id: action.id, onAction: action.onAction }, action.label))))
     : h(react.Fragment, null, ...actions.map(action => h(Control, { key: action.id }, action.label))) } };
   return h(Frame, {
     brand: { markSrc: "/mark.svg" },
@@ -98,9 +98,9 @@ it("keeps a full-stage surface, docked tools and intrinsic overflow at 390/1440/
       import React from 'react'; import {hydrateRoot} from 'react-dom/client';
       import {AppFrame} from './src/frames/AppFrame.js';
       import {PageHeaderModule} from './src/shell/FrameSlots.js';
-      import {Button} from './src/components/preview-runtime/components/button/button.js'; import {Menu} from './src/components/Menu.js';
+      import {Button} from './src/components/preview-runtime/components/button/button.js'; import {DropdownMenu as Menu, DropdownMenuItem as MenuItem, DropdownMenuTrigger as MenuTrigger} from './src/components/preview-runtime/components/menu/dropdown-menu.js';
       import {shellCopyFixtureResolver as copyResolver} from './src/frames/__fixtures__/shell-copy.js';
-      window.fitErrors=[]; hydrateRoot(document.getElementById('root'), (${fixture.toString()})({React,AppFrame,PageHeaderModule,Button,Menu,copyResolver},${legacy}),{onRecoverableError:error=>window.fitErrors.push(String(error))});
+      window.fitErrors=[]; hydrateRoot(document.getElementById('root'), (${fixture.toString()})({React,AppFrame,PageHeaderModule,Button,Menu,MenuItem,MenuTrigger,copyResolver},${legacy}),{onRecoverableError:error=>window.fitErrors.push(String(error))});
     `, resolveDir: packageRoot, loader: "tsx" }, bundle: true, write: false, platform: "browser", format: "esm", define: { "process.env.NODE_ENV": '"production"' } });
     await browser(async (evaluate, send) => {
       await send("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });

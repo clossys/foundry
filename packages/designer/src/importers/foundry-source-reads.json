@@ -2,8 +2,12 @@
   "avatar": [],
   "badge": [],
   "banner": [],
-  "breadcrumbs": [],
-  "button": [],
+  "breadcrumbs": [
+    "themes.spacing"
+  ],
+  "button": [
+    "themes.spacing"
+  ],
   "calendar": [],
   "card": [],
   "chart-area": [],
@@ -20,16 +24,22 @@
   "combo-box": [],
   "date-field": [],
   "dialog": [],
-  "disclosure": [],
+  "disclosure": [
+    "themes.spacing"
+  ],
   "field": [],
   "file-trigger": [],
   "form": [],
   "grid-list": [],
   "icon": [],
-  "link": [],
+  "link": [
+    "themes.spacing"
+  ],
   "logo": [],
   "media-player": [],
-  "menu": [],
+  "menu": [
+    "themes.spacing"
+  ],
   "meter": [],
   "native-action": [],
   "navigation-tree": [],
@@ -60,7 +70,9 @@
   "tag-group": [],
   "text-field": [],
   "toast": [],
-  "toggle-button": [],
+  "toggle-button": [
+    "themes.spacing"
+  ],
   "toggle-group": [],
   "toolbar": [],
   "tooltip": [],

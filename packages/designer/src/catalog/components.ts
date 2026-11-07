@@ -153,7 +153,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("Button"),
     disposition: "keep",
   }),
-  onMain("Menu", ["src/components/Menu.tsx"], {
+  onMain("Menu", ["src/components/preview-runtime/components/menu/dropdown-menu.tsx"], {
     id: "act.menu",
     label: "Menu",
     racBase: rac("Menu", "MenuItem", "MenuTrigger", "MenuSection", "Header", "Popover", "Separator"),
@@ -659,19 +659,19 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Containment / Overlays
-  onMain("Dialog", ["src/components/Dialog.tsx"], {
+  onMain("Dialog", ["src/components/preview-runtime/components/dialog/dialog.tsx"], {
     id: "reveal.dialog",
     label: "Dialog",
     racBase: rac("Dialog", "DialogTrigger", "Modal", "ModalOverlay", "Heading"),
     disposition: "keep",
   }),
-  onMain("Popover", ["src/components/Popover.tsx"], {
+  onMain("Popover", ["src/components/preview-runtime/components/popover/popover.tsx"], {
     id: "reveal.popover",
     label: "Popover",
     racBase: rac("Popover", "Dialog", "DialogTrigger"),
     disposition: "keep",
   }),
-  onMain("Tooltip", ["src/components/Tooltip.tsx"], {
+  onMain("Tooltip", ["src/components/preview-runtime/components/tooltip/tooltip.tsx"], {
     id: "reveal.tooltip",
     label: "Tooltip",
     racBase: rac("Tooltip", "TooltipTrigger"),

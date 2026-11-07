@@ -377,43 +377,18 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "useWhen": "Several related commands should be revealed on demand.",
   "avoidWhen": "The content is an input choice set or a rich explanatory panel.",
   "alternatives": "Use Select for choosing a value; Popover for arbitrary panel content.",
-  "content": "Name the trigger and each command. Use Menu.Section for a real section heading and separators between groups.",
-  "anatomy": "One trigger and a repeated collection of actionable items, optionally grouped in Menu.Section with a real heading.",
-  "composition": "AccountMenu composes Menu.Item commands and Menu.Section preference groups with an actor trigger.",
-  "accessibility": "Name the trigger and each section. Section headings use the menu primitive's Header; section selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive."
+  "content": "Name the trigger and each command. Use MenuGroup with MenuLabel for a real section heading and MenuSeparator between groups.",
+  "anatomy": "A DropdownMenuTrigger holding the trigger control and the DropdownMenu panel of MenuItem commands, optionally grouped in MenuGroup with a MenuLabel heading.",
+  "composition": "AccountMenu composes MenuItem commands and MenuGroup preference groups behind an actor trigger.",
+  "accessibility": "Name the trigger and each group. Group headings use MenuLabel; group selection provides menuitemcheckbox preferences. Disabled items and keyboard navigation belong to the primitive."
 },
 {
   "exportName": "Menu",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Root props forward to MenuTrigger, not the inner menu list. triggerAction forwards to the peer trigger prop; the package supplies no local initializer. Item-level commands use Menu.Item; destructive emphasis is item-level. Menu.Section supplies a real heading through Header and forwards selectionMode, selectedKeys, onSelectionChange and shouldCloseOnSelect to the peer MenuSection. Checkbox preferences use multiple selection with caller-owned keys and callbacks.",
-  "options": [
-    {
-      "prop": "triggerAction",
-      "label": "Opening interaction",
-      "purpose": "Opening interaction selects the existing Menu triggerAction behavior.",
-      "values": [
-        {
-          "value": "press",
-          "purpose": "Press to open."
-        },
-        {
-          "value": "longPress",
-          "purpose": "Long press to open."
-        },
-        {
-          "value": "contextMenu",
-          "purpose": "Context-menu gesture to open."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. DropdownMenu is the stock menu panel; DropdownMenuTrigger owns the opening interaction. Destructive emphasis is item-level. InlineMenu is the stock always-visible list for the inline presentation.",
+  "options": [],
   "constraints": []
-}, "src/components/Menu.tsx"),
+}, "src/components/preview-runtime/components/menu/dropdown-menu.tsx"),
   "enter.text-field": entry(
 {
   "purpose": "Collect one line of free-form text.",
@@ -1961,38 +1936,14 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use Disclosure for inline content; Popover for an anchored task; Tooltip for a short description.",
   "content": "Supply a clear dialog heading and purposeful task content through the content slot.",
   "anatomy": "An opening trigger, a modal content surface and a dismissal path.",
-  "composition": "In a consumer-owned confirmation block, compose Dialog.Heading, the explanation and explicit action controls.",
-  "accessibility": "Retain focus containment, Escape dismissal and focus return; use Dialog.Heading for the content name."
+  "composition": "In a consumer-owned confirmation block, compose DialogHeader with DialogTitle and DialogDescription, then DialogFooter with explicit action controls.",
+  "accessibility": "Retain focus containment, Escape dismissal and focus return; use DialogTitle for the content name."
 },
 {
   "exportName": "Dialog",
   "entrypoint": "components",
   "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
   "options": [
-    {
-      "prop": "size",
-      "label": "Dialog width",
-      "purpose": "Dialog width selects the existing Dialog size behavior.",
-      "values": [
-        {
-          "value": "sm",
-          "purpose": "Small modal surface."
-        },
-        {
-          "value": "md",
-          "purpose": "Medium modal surface."
-        },
-        {
-          "value": "lg",
-          "purpose": "Large modal surface."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    },
     {
       "prop": "isDismissable",
       "label": "Outside dismissal",
@@ -2015,7 +1966,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Dialog.tsx"),
+}, "src/components/preview-runtime/components/dialog/dialog.tsx"),
   "reveal.popover": entry(
 {
   "purpose": "Reveal an anchored panel for a small contextual task.",
@@ -2030,10 +1981,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Popover",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to bottom and offset to 8. The inner AriaDialog supplies dialog behavior; this is not a nonmodal arbitrary HTML tooltip.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to bottom and offset to 4. PopoverTrigger opens it and supplies dialog behavior; PopoverHeader, PopoverTitle and PopoverDescription name the panel.",
   "options": [],
   "constraints": []
-}, "src/components/Popover.tsx"),
+}, "src/components/preview-runtime/components/popover/popover.tsx"),
   "reveal.tooltip": entry(
 {
   "purpose": "Give a short supplementary description of another element.",
@@ -2048,31 +1999,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Tooltip",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to top. triggerAction is forwarded without a local initializer. Any peer timing defaults are separate from package-authored defaults.",
-  "options": [
-    {
-      "prop": "triggerAction",
-      "label": "Description interaction",
-      "purpose": "Description interaction selects the existing Tooltip triggerAction behavior.",
-      "values": [
-        {
-          "value": "hover",
-          "purpose": "Hover and keyboard focus behavior."
-        },
-        {
-          "value": "focus",
-          "purpose": "Keyboard focus behavior only."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. placement defaults to top and offset to 4. TooltipTrigger owns the opening interaction and reads its delay and close timing from behaviorTiming.",
+  "options": [],
   "constraints": []
-}, "src/components/Tooltip.tsx"),
+}, "src/components/preview-runtime/components/tooltip/tooltip.tsx"),
   "reveal.disclosure": entry(
 {
   "purpose": "Reveal or hide one section while retaining its place in the document.",
@@ -2813,38 +2743,21 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "act.menu": {
     "exportName": "Menu",
-    "source": "src/components/Menu.tsx",
-    "options": [
-      {
-        "prop": "triggerAction",
-        "values": [
-          "press",
-          "longPress",
-          "contextMenu"
-        ],
-        "default": {
-          "kind": "peer",
-          "reason": "No local initializer; any inherited default belongs to the installed peer."
-        },
-        "forwarding": {
-          "source": "src/components/Menu.tsx",
-          "evidence": "trigger={triggerAction}"
-        }
-      }
-    ],
+    "source": "src/components/preview-runtime/components/menu/dropdown-menu.tsx",
+    "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-elevation-floating",
+          "property": "--color-overlay-surface",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-elevation-floating,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-overlay-surface:",
           "via": [
             {
-              "source": "src/components/Menu.tsx",
-              "evidence": "boxShadow: UI_ELEVATION_FLOATING"
+              "source": "src/components/preview-runtime/components/menu/dropdown-menu.tsx",
+              "evidence": "bg-(--color-overlay-surface)"
             }
           ]
         }
@@ -4083,26 +3996,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "reveal.dialog": {
     "exportName": "Dialog",
-    "source": "src/components/Dialog.tsx",
+    "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
     "options": [
-      {
-        "prop": "size",
-        "values": [
-          "sm",
-          "md",
-          "lg"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "md",
-          "source": "src/components/Dialog.tsx",
-          "evidence": "size = \"md\""
-        },
-        "forwarding": {
-          "source": "src/components/Dialog.tsx",
-          "evidence": "SIZE_CLASSES[size]"
-        }
-      },
       {
         "prop": "isDismissable",
         "values": [
@@ -4112,11 +4007,11 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
         "default": {
           "kind": "value",
           "value": true,
-          "source": "src/components/Dialog.tsx",
+          "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
           "evidence": "isDismissable = true"
         },
         "forwarding": {
-          "source": "src/components/Dialog.tsx",
+          "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
           "evidence": "isDismissable={isDismissable}"
         }
       }
@@ -4126,14 +4021,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-elevation-floating",
+          "property": "--color-overlay-surface",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-elevation-floating,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-overlay-surface:",
           "via": [
             {
-              "source": "src/components/Dialog.tsx",
-              "evidence": "boxShadow: UI_ELEVATION_FLOATING"
+              "source": "src/components/preview-runtime/components/dialog/dialog.tsx",
+              "evidence": "bg-(--color-overlay-surface)"
             }
           ]
         }
@@ -4142,21 +4037,21 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "reveal.popover": {
     "exportName": "Popover",
-    "source": "src/components/Popover.tsx",
+    "source": "src/components/preview-runtime/components/popover/popover.tsx",
     "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-elevation-floating",
+          "property": "--color-overlay-surface",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-elevation-floating,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-overlay-surface:",
           "via": [
             {
-              "source": "src/components/Popover.tsx",
-              "evidence": "boxShadow: UI_ELEVATION_FLOATING"
+              "source": "src/components/preview-runtime/components/popover/popover.tsx",
+              "evidence": "bg-(--color-overlay-surface)"
             }
           ]
         }
@@ -4165,37 +4060,21 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "reveal.tooltip": {
     "exportName": "Tooltip",
-    "source": "src/components/Tooltip.tsx",
-    "options": [
-      {
-        "prop": "triggerAction",
-        "values": [
-          "hover",
-          "focus"
-        ],
-        "default": {
-          "kind": "peer",
-          "reason": "No local initializer; any inherited default belongs to the installed peer."
-        },
-        "forwarding": {
-          "source": "src/components/Tooltip.tsx",
-          "evidence": "trigger={triggerAction}"
-        }
-      }
-    ],
+    "source": "src/components/preview-runtime/components/tooltip/tooltip.tsx",
+    "options": [],
     "tokens": {
       "coverage": "partial",
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-elevation-floating",
+          "property": "--color-ink-primary",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-elevation-floating,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-primary:",
           "via": [
             {
-              "source": "src/components/Tooltip.tsx",
-              "evidence": "boxShadow: UI_ELEVATION_FLOATING"
+              "source": "src/components/preview-runtime/components/tooltip/tooltip.tsx",
+              "evidence": "bg-(--color-ink-primary)"
             }
           ]
         }
@@ -4681,7 +4560,6 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "act.button": comparison("act.button", "variant", "size"),
   "act.icon-button": comparison("act.icon-button", "shape", "size"),
   "act.link": comparison("act.link", "variant"),
-  "act.menu": comparison("act.menu", "triggerAction"),
   "enter.text-field": comparison("enter.text-field", "isInvalid", "isDisabled"),
   "enter.textarea": comparison("enter.textarea", "isInvalid", "isDisabled"),
   "enter.search-field": comparison("enter.search-field", "isInvalid", "isDisabled"),
@@ -4708,8 +4586,7 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "depict.avatar": comparison("depict.avatar", "size"),
   "depict.icon": comparison("depict.icon", "size"),
   "depict.logomark": comparison("depict.logomark", "plate", "size"),
-  "reveal.dialog": comparison("reveal.dialog", "size", "isDismissable"),
-  "reveal.tooltip": comparison("reveal.tooltip", "triggerAction"),
+  "reveal.dialog": comparison("reveal.dialog", "isDismissable"),
   "reveal.tabs": comparison("reveal.tabs", "orientation", "isDisabled"),
   "depict.bar-chart": comparison("depict.bar-chart", "fit", "marks"),
   "depict.waterfall-chart": comparison("depict.waterfall-chart", "fit"),

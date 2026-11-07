@@ -4,10 +4,13 @@ import { useId, useState } from "react";
 import { Icon } from "../components/Icon.js";
 import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../components/ToggleGroup.js";
 import { Toolbar } from "../components/Toolbar.js";
-import { Tooltip } from "../components/Tooltip.js";
+import { Tooltip, TooltipTrigger, type TooltipBehaviorTiming } from "../components/preview-runtime/components/tooltip/tooltip.js";
 import { Monitor, Moon, Sun, type IconNode } from "../icons/index.js";
 import { useOptionalTheme } from "./ThemeProvider.js";
 import type { ThemePreference } from "./internal/theme-core.js";
+
+/** The peer TooltipTrigger delays this toggle already used; `--ui-duration-tooltip-*` stay unplaced. */
+const TOOLTIP_TIMING: TooltipBehaviorTiming = { "tooltip-delay": { value: 1500, unit: "ms" }, "tooltip-close": { value: 500, unit: "ms" } };
 
 const PREFERENCES: readonly ThemePreference[] = ["system", "light", "dark"];
 
@@ -92,11 +95,12 @@ export function ThemeToggle({
           setAnnouncedPreference(next);
         }
       }}>
-      {PREFERENCES.map(target => <Tooltip key={target} trigger={
+      {PREFERENCES.map(target => <TooltipTrigger key={target} behaviorTiming={TOOLTIP_TIMING}>
         <ToggleGroupItem id={target} aria-label={preferenceLabels[target]} className={SELECTED_STEP}>
           <Icon glyph={PREFERENCE_GLYPH[target]} decorative />
         </ToggleGroupItem>
-      }>{toggleLabel(preference, target, preferenceLabels)}</Tooltip>)}
+        <Tooltip>{toggleLabel(preference, target, preferenceLabels)}</Tooltip>
+      </TooltipTrigger>)}
     </ToggleGroup>
     </Toolbar>
     <span id={statusId} role="status" aria-live="polite" className="sr-only">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-import type { DialogProps } from "../components/Dialog.js";
+import { DialogRole, type OverlayTriggerProps } from "../components/internal/overlay-context.js";
 
 import { cx } from "../components/internal/cx.js";
 import { X } from "../icons/X.js";
@@ -11,7 +11,6 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
-const Dialog = componentLeaf<typeof import("../components/Dialog.js").Dialog>("components.dialog");
 const Sheet = componentLeaf<typeof import("../components/sheet/index.js").Sheet>("components.sheet");
 const SheetTrigger = componentLeaf<typeof import("../components/sheet/index.js").SheetTrigger>("components.sheet", "SheetTrigger");
 const SheetTitle = componentLeaf<typeof import("../components/sheet/index.js").SheetTitle>("components.sheet", "SheetTitle");
@@ -20,7 +19,7 @@ const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("compone
 
 const TABLET_QUERY = `(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`;
 
-export interface DrawerProps extends Omit<DialogProps, "children" | "size" | "isDismissable" | "overlayClassName" | "modalClassName" | "modalStyle"> {
+export interface DrawerProps extends OverlayTriggerProps {
   heading: ReactNode;
   /** Frame navigation uses the entire viewport width. */
   fullViewport?: boolean;
@@ -88,18 +87,12 @@ export function Drawer({
       if (anchor && !event.defaultPrevented && event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) close();
     }}
   >{children}</Panel>;
-  // Sheet exposes a dialog role only. The existing Dialog leaf retains the explicit alertdialog capability.
-  if (role === "alertdialog") return <Dialog {...rest} role={role} trigger={trigger} isOpen={open} onOpenChange={change}
-    overlayClassName={placement === "bottom" ? "items-end p-0" : placement === "start" ? "items-stretch justify-start p-0" : "items-stretch justify-end p-0"}>
-    {({ close }) => panel(close, <Dialog.Heading>{heading}</Dialog.Heading>, <Button variant="ghost" aria-label={closeLabel} onPress={close} style={closeButtonStyle}
-      aria-expanded={closeButtonStyle ? true : undefined} className="icon-control-md shrink-0 border-0 bg-transparent p-0"><Icon glyph={X} decorative size="md" /></Button>)}
-  </Dialog>;
   return <SheetTrigger {...rest} isOpen={open} onOpenChange={change}>
     {trigger}
-    <Sheet side={placement === "bottom" ? "bottom" : placement === "start" ? "left" : "right"} showCloseButton={false}
+    <DialogRole role={role}><Sheet isDismissable={role !== "alertdialog"} side={placement === "bottom" ? "bottom" : placement === "start" ? "left" : "right"} showCloseButton={false}
       className={fullViewport ? "w-full max-w-full" : undefined}>
       {panel(() => change(false), <SheetTitle>{heading}</SheetTitle>, <SheetClose variant="ghost" size="icon" aria-label={closeLabel} style={closeButtonStyle}
         aria-expanded={closeButtonStyle ? true : undefined} className="icon-control-md shrink-0 border-0 bg-transparent p-0"><Icon glyph={X} decorative size="md" /></SheetClose>)}
-    </Sheet>
+    </Sheet></DialogRole>
   </SheetTrigger>;
 }

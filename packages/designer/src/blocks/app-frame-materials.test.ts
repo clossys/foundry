@@ -86,8 +86,7 @@ describe("AppFrame Material registration", () => {
         { exportName: "Avatar", source: "src/components/Avatar.tsx" },
         { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" },
         { exportName: "Icon", source: "src/components/Icon.tsx" },
-        { exportName: "Menu", source: "src/components/Menu.tsx" },
-        { exportName: "Tooltip", source: "src/components/Tooltip.tsx" },
+        { exportName: "Menu", source: "src/components/preview-runtime/components/menu/dropdown-menu.tsx" },
       ],
       configs: [{ prop: "collapsed", values: [false, true], default: false, source: "src/blocks/AccountMenu.tsx" }],
       authoredInputs: ["actor", "sections", "contextLabel", "triggerLabel", "collapsed", "onClose", "onRoute"],
@@ -190,10 +189,10 @@ describe("AppFrame Material registration", () => {
     }
   });
 
-  it("keeps Dialog the single overlay owner and all additions outside server subsets", () => {
-    const dialog = readFileSync(join(root, "src/components/Dialog.tsx"), "utf8");
+  it("keeps the stock Dialog the single dialog overlay owner and all additions outside server subsets", () => {
+    const dialog = readFileSync(join(root, "src/components/preview-runtime/components/dialog/dialog.tsx"), "utf8");
     const drawer = readFileSync(join(root, "src/blocks/Drawer.tsx"), "utf8");
-    expect([...dialog.matchAll(/<ModalOverlay\b/g)]).toHaveLength(1);
+    expect([...dialog.matchAll(/<ModalOverlayPrimitive\b/g)]).toHaveLength(1);
     expect(drawer).not.toMatch(/ModalOverlay|DialogTrigger|usePreventScroll|document\.(?:body|documentElement)\.style/);
     for (const layer of ["components", "blocks", "shell"]) {
       const source = readFileSync(join(root, `src/${layer}/server.ts`), "utf8");
@@ -229,7 +228,7 @@ it("registers PageBar's complete authored contract and actual component dependen
   expect(entry).toMatchObject({
     layer: "blocks", exportName: "PageBar", component: (blocks as any).PageBar, source: "src/blocks/PageBar.tsx",
     regions: ["trail", "page-info", "actions"],
-    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Menu", source: "src/components/Menu.tsx" }, { exportName: "Popover", source: "src/components/Popover.tsx" }, { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Icon", source: "src/components/Icon.tsx" }],
+    dependencies: [{ exportName: "Link", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Menu", source: "src/components/preview-runtime/components/menu/dropdown-menu.tsx" }, { exportName: "Popover", source: "src/components/preview-runtime/components/popover/popover.tsx" }, { exportName: "Button", source: "src/components/preview-runtime/components/button/button.tsx" }, { exportName: "Icon", source: "src/components/Icon.tsx" }],
     configs: [{ prop: "narrow", values: [false, true], default: false, source: "src/blocks/PageBar.tsx" }],
     authoredInputs: ["root", "page", "workspaces", "header", "onNavigate", "labels", "reserveStart", "reserveEnd", "dir", "onHeightChange"],
   });

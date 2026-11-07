@@ -301,7 +301,7 @@
     {
       "missing": [],
       "notes": [
-        "role=alertdialog keeps the modal surface and Escape, and ignores a scrim press unless isDismissable is set.",
+        "The stock Dialog opens from a DialogTrigger and is named by DialogTitle inside DialogHeader; DialogFooter holds the actions.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.dialog",
@@ -464,8 +464,7 @@
     {
       "missing": [],
       "notes": [
-        "Menu is the trigger-owned popup; Menu.Inline presents the same menu inline. Root selectionMode applies to both; selected items show the check glyph.",
-        "Frozen reads omit source-consumed themes.primary; the contract's allowedReads must widen before this is enforced.",
+        "Menu is the stock DropdownMenu opened by DropdownMenuTrigger; InlineMenu presents the same items inline. Root selectionMode applies to both.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.menu",
@@ -538,7 +537,7 @@
     {
       "missing": [],
       "notes": [
-        "The arrow is opt-in (arrow=false by default) and decorative; it follows the resolved placement.",
+        "The stock Popover opens from a PopoverTrigger; PopoverHeader, PopoverTitle and PopoverDescription name it.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.popover",
@@ -976,6 +975,7 @@
     {
       "missing": [],
       "notes": [
+        "The stock Tooltip opens from a TooltipTrigger whose behaviorTiming supplies the open and close delays.",
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
       "slot": "components.tooltip",

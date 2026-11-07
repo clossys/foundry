@@ -3,18 +3,19 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Checkbox } from "../../components/Checkbox.js";
 import { Select } from "../../components/Select.js";
-import { Tooltip } from "../../components/Tooltip.js";
+import { Tooltip, TooltipTrigger } from "../../components/preview-runtime/components/tooltip/tooltip.js";
 
 describe("AccessMatrix and ColumnMapper main component integration", () => {
   it("opens a reason Tooltip from the focusable read-only Checkbox and preserves its persistent description", async () => {
     const user = userEvent.setup();
     const changed = vi.fn();
     render(<>
-      <Tooltip delay={0} closeDelay={0} trigger={
+      <TooltipTrigger behaviorTiming={{ "tooltip-delay": { value: 0, unit: "ms" }, "tooltip-close": { value: 0, unit: "ms" } }}>
         <Checkbox isReadOnly isSelected aria-describedby="inherited-reason" onChange={changed}>
           <span className="sr-only">Editor: Export reports</span>
         </Checkbox>
-      }>Included with Viewer access to reports.</Tooltip>
+        <Tooltip>Included with Viewer access to reports.</Tooltip>
+      </TooltipTrigger>
       <span id="inherited-reason" className="sr-only">Included with Viewer access to reports.</span>
     </>);
     const checkbox = screen.getByRole("checkbox", { name: "Editor: Export reports" });
