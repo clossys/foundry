@@ -1652,13 +1652,13 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "alternatives": "Use a consumer-owned list block for prose items; build sorting and filtering around Table primitives.",
   "content": "Author meaningful column headings, row identities and cell values.",
   "anatomy": "Column headings and repeated records made of corresponding cells.",
-  "composition": "In a consumer-owned records block, assemble Table.Header, Table.Body, rows and cells with selection controls.",
+  "composition": "In a consumer-owned records block, assemble TableHeader, TableBody, rows and cells with selection controls.",
   "accessibility": "Name the table and identify row headers; controlled sorting and selection need consumer state."
 },
 {
   "exportName": "Table",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Compound Header/Column/Body/Row/Cell parts own content. Selection checkboxes reuse Checkbox. Sorting and selection are controlled by consumer state; a one-row fixture is limited demonstration evidence.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. TableHeader/TableHead/TableBody/TableRow/TableCell parts own content. Selection checkboxes reuse Checkbox. Sorting and selection are controlled by consumer state; a one-row fixture is limited demonstration evidence.",
   "options": [
     {
       "prop": "selectionMode",
@@ -1686,7 +1686,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/Table.tsx"),
+}, "src/components/preview-runtime/components/table/table.tsx"),
   "group.separator": entry(
 {
   "purpose": "Mark a boundary between neighboring groups of content.",
@@ -3846,7 +3846,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "group.table": {
     "exportName": "Table",
-    "source": "src/components/Table.tsx",
+    "source": "src/components/preview-runtime/components/table/table.tsx",
     "options": [
       {
         "prop": "selectionMode",
@@ -3860,8 +3860,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/Table.tsx",
-          "evidence": "<AriaTable\n      {...rest}"
+          "source": "src/components/preview-runtime/components/table/table.tsx",
+          "evidence": "<TablePrimitive\n        data-slot=\"table\""
         }
       }
     ],
@@ -3870,14 +3870,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-ink-primary",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/theme-keys.css",
+          "evidence": "--color-ink-primary:",
           "via": [
             {
-              "source": "src/components/Table.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/table/table.tsx",
+              "evidence": "text-(--color-ink-primary)"
             }
           ]
         }

@@ -4,7 +4,7 @@ import { Badge } from "../preview-runtime/components/badge/badge.js";
 import { BADGE_TONE } from "../surface-tones.js";
 import { LinkButton as Link } from "../preview-runtime/components/button/button.js";
 import { SemanticContent } from "../SemanticContent.js";
-import { Table } from "../Table.js";
+import { TableDocument } from "../Table.document.js";
 import { RICH_TEXT_HEADINGS, RICH_TEXT_PARAGRAPH, RICH_TEXT_BULLETS, RICH_TEXT_ORDERED, RICH_TEXT_ITEM, RICH_TEXT_QUOTE, RICH_TEXT_PRE, RICH_TEXT_CODE, RICH_TEXT_CALLOUT, RICH_TEXT_RULE, RICH_TEXT_QUOTE_STYLE, RICH_TEXT_RULE_STYLE } from "./styles.js";
 
 /** Document code and callout parts stay within the rich-text leaf. */
@@ -30,14 +30,14 @@ function RichTextTable({ node }: { node: JSONContent }) {
   const rows = node.content ?? [];
   const first = rows[0]?.content ?? [];
   const hasHeader = first.length > 0 && first.every(cell => cell.type === "tableHeader");
-  const row = (value: JSONContent, index: number, header: boolean) => <Table.Document.Row key={index}>{value.content?.map((cell, cellIndex) => {
-    const Cell = cell.type === "tableHeader" ? Table.Document.HeaderCell : Table.Document.Cell;
+  const row = (value: JSONContent, index: number, header: boolean) => <TableDocument.Row key={index}>{value.content?.map((cell, cellIndex) => {
+    const Cell = cell.type === "tableHeader" ? TableDocument.HeaderCell : TableDocument.Cell;
     return <Cell key={cellIndex} scope={cell.type === "tableHeader" ? header ? "col" : "row" : undefined} colSpan={Number(cell.attrs?.colspan) || 1} rowSpan={Number(cell.attrs?.rowspan) || 1}>{children(cell)}</Cell>;
-  })}</Table.Document.Row>;
-  return <Table.Document aria-label="Document table" data-slot="rich-text-table">
-    {hasHeader ? <Table.Document.Head>{row(rows[0]!, 0, true)}</Table.Document.Head> : null}
-    <Table.Document.Body>{rows.slice(hasHeader ? 1 : 0).map((value, index) => row(value, index, false))}</Table.Document.Body>
-  </Table.Document>;
+  })}</TableDocument.Row>;
+  return <TableDocument aria-label="Document table" data-slot="rich-text-table">
+    {hasHeader ? <TableDocument.Head>{row(rows[0]!, 0, true)}</TableDocument.Head> : null}
+    <TableDocument.Body>{rows.slice(hasHeader ? 1 : 0).map((value, index) => row(value, index, false))}</TableDocument.Body>
+  </TableDocument>;
 }
 
 export function renderRichTextNode(node: JSONContent): ReactNode {

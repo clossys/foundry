@@ -102,7 +102,7 @@ export interface SiteFooterColumnProps {
  * One grouped column of footer links: a heading region and the links
  * themselves, the two regions that differ in kind inside a single column.
  * Ships as a sub-component (`SiteFooter.Column`, the same `Object.assign`
- * shape `Dialog.Heading`/`Menu.Item`/`Table.Row` already use in this
+ * shape `Dialog.Heading`/`Menu.Item` already use in this
  * package) rather than a `columns` data prop: a real footer's columns
  * routinely differ column-by-column (link count, an occasional icon next
  * to one link) in a way that reads more naturally as hand-written JSX —

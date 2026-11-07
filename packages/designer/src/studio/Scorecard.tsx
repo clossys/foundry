@@ -2,7 +2,7 @@
 
 import type { ReactElement } from "react";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { Table } from "../components/Table.js";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/preview-runtime/components/table/table.js";
 import type { MatrixSummary } from "./matrix-model.js";
 import type { StudioLabels } from "./types.js";
 import { readStudioFinding, readStudioMessage, type StudioCopyBinding } from "./copy-binding.js";
@@ -18,11 +18,11 @@ export function Scorecard({ summary, labels, copy, onClose, onIssue }: { summary
       <div><dt>{text.checks}</dt><dd>{text.counts(summary.errors, summary.notices)}</dd></div>
     </dl>
     <Table aria-label={text.title} className="text-start text-body-s">
-      <Table.Header><Table.Column id="category" isRowHeader>{text.title}</Table.Column><Table.Column id="checks">{text.checks}</Table.Column></Table.Header>
-      <Table.Body>{summary.categories.map(category => <Table.Row key={category.id} id={category.id}>
-        <Table.Cell>{text.categories[category.id]}</Table.Cell>
-        <Table.Cell>{category.supported ? <>{text.counts(category.errors ?? 0, category.notices ?? 0)} <small>{text.supported(category.codes)}</small> <StudioDataValue kind="identifier" value={category.codes.join(", ")} /></> : text.target}</Table.Cell>
-      </Table.Row>)}</Table.Body>
+      <TableHeader><TableHead id="category" isRowHeader>{text.title}</TableHead><TableHead id="checks">{text.checks}</TableHead></TableHeader>
+      <TableBody>{summary.categories.map(category => <TableRow key={category.id} id={category.id}>
+        <TableCell>{text.categories[category.id]}</TableCell>
+        <TableCell>{category.supported ? <>{text.counts(category.errors ?? 0, category.notices ?? 0)} <small>{text.supported(category.codes)}</small> <StudioDataValue kind="identifier" value={category.codes.join(", ")} /></> : text.target}</TableCell>
+      </TableRow>)}</TableBody>
     </Table>
     <h3 className="text-body">{text.issues}</h3>
     {summary.issues.length ? <ul>{summary.issues.map(({ finding, slotId }, index) => <li key={`${finding.code}:${finding.subject}:${index}`}><Button variant="ghost" size="sm" isDisabled={slotId === undefined} onPress={() => { if (slotId) onIssue(slotId); }}>{readStudioFinding(copy, finding, `designer.scorecard.finding.${finding.code}`)}</Button></li>)}</ul> : <p>{text.noIssues}</p>}

@@ -16,13 +16,9 @@
  * just repeated) belongs one layer up, in `@clossys/designer/blocks`,
  * not here.
  *
- * `Table` is the one component here that composes another component of its own
- * (`Checkbox`, for its `SelectAllCheckbox`/`SelectionCheckbox`
- * sub-components) — see `Table.tsx`'s own doc comment for why that's the
- * ladder's explicitly-allowed direction (a sibling component, not a `blocks/`
- * import) rather than an exception to it. `Button` (the trailing icon of
- * its `quiet` variant) and `IconButton` (its one glyph) compose `Icon` the
- * same way.
+ * A component may compose a sibling component (never a `blocks/` import):
+ * `Button` (the trailing icon of its `quiet` variant) and `IconButton` (its
+ * one glyph) compose `Icon` this way.
  *
  * Thirty-six ship as of this file. See the README's "What's deliberately
  * not here" for what was left out on purpose (`Toolbar`, `Accordion`, ...).
@@ -122,17 +118,8 @@ export type { DialogProps, DialogSize, DialogHeadingProps } from "./Dialog.js";
 export { Tabs } from "./Tabs.js";
 export type { TabsProps, TabsListProps, TabsTabProps, TabsPanelProps } from "./Tabs.js";
 
-export { Table } from "./Table.js";
-export type {
-  TableProps,
-  TableHeaderProps,
-  TableColumnProps,
-  TableBodyProps,
-  TableRowProps,
-  TableCellProps,
-  TableSelectAllCheckboxProps,
-  TableSelectionCheckboxProps,
-} from "./Table.js";
+export { Table, TableHeader, TableHead, TableBody, TableRow, TableCell, TableFooter, TableCaption } from "./preview-runtime/components/table/table.js";
+export type TableProps = import("react").ComponentProps<typeof import("./preview-runtime/components/table/table.js").Table>;
 
 export { Field } from "./Field.js";
 export type { FieldProps, FieldRenderProps } from "./Field.js";

@@ -10,6 +10,7 @@ import {
 } from "react-aria-components";
 import { cx } from "./internal/cx.js";
 import { controlSizeStyle, controlStateStyle } from "./button-classes.js";
+import { useTableTextEntry } from "./internal/table-text-entry.js";
 
 const SIZE_CLASSES = { sm: "control-h-sm", md: "control-h-md", lg: "control-h-lg" } as const;
 
@@ -57,11 +58,13 @@ export function TextField({
   errorMessage,
   className,
   inputClassName,
+  onFocusChange,
   ...rest
 }: TextFieldProps) {
   const [pressed, setPressed] = useState(false);
+  const onTableTextEntry = useTableTextEntry(onFocusChange);
   return (
-    <AriaTextField {...rest} className={cx("flex flex-col gap-xs", className)}>
+    <AriaTextField {...rest} onFocusChange={onTableTextEntry} className={cx("flex flex-col gap-xs", className)}>
       {label != null ? <Label className="text-body-s text-ink-secondary font-body">{label}</Label> : null}
       <Input
         placeholder={placeholder}

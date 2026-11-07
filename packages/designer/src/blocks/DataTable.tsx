@@ -12,7 +12,7 @@ const SECTION_STAMP = dsAttrs("sections", "sections.data-table", "foundry/sectio
 export type DataTableSelectionMode = "none" | "single" | "multiple";
 
 export interface DataTableColumn<Row> {
-  /** Stable identifier, passed through to `Table.Column`'s own `id`. */
+  /** Stable identifier, passed through to `TableHead`'s own `id`. */
   id: string;
   /** Column header content. */
   header: ReactNode;
@@ -20,13 +20,13 @@ export interface DataTableColumn<Row> {
   cell: (row: Row) => ReactNode;
   /**
    * Makes this column's header clickable to sort — reported through
-   * `onSortChange`, the same as `Table.Column`'s own `allowsSorting`.
+   * `onSortChange`, the same as `TableHead`'s own `allowsSorting`.
    */
   allowsSorting?: boolean;
   /**
-   * Marks this column as the row's accessible name (`Table.Column`'s own
+   * Marks this column as the row's accessible name (`TableHead`'s own
    * `isRowHeader`). Exactly one column should set this — it's what a
-   * `Table.SelectionCheckbox` reads to announce "Select row Ada" instead of
+   * row's selection checkbox reads to announce "Select row Ada" instead of
    * just "Select row".
    */
   isRowHeader?: boolean;
@@ -59,8 +59,8 @@ export interface DataTableProps<Row> {
   onSortChange?: (descriptor: SortDescriptor) => void;
   /**
    * Row selection. `"none"` (the default) renders no selection column at
-   * all. `"multiple"` renders `Table.SelectAllCheckbox`/
-   * `Table.SelectionCheckbox` as a leading column, including the select-all
+   * all. `"multiple"` renders select-all and per-row
+   * selection checkboxes as a leading column, including the select-all
    * indeterminate state for a partial selection. `"single"` relies on
    * `Table`'s own row-press selection, with no checkbox column.
    * @default "none"

@@ -128,8 +128,8 @@ function collection(key: string, Component: unknown, exports: Namespace): Compon
   }
 }
 
-function table(Component: unknown): ComponentSpecimenSample | undefined {
-  const [Header, Column, Body, Row, Cell] = ["Header", "Column", "Body", "Row", "Cell"].map(name => part(Component, name));
+function table(exports: Namespace): ComponentSpecimenSample | undefined {
+  const [Header, Column, Body, Row, Cell] = ["TableHeader", "TableHead", "TableBody", "TableRow", "TableCell"].map(name => part(exports, name));
   if (!Header || !Column || !Body || !Row || !Cell) return undefined;
   const { label, columns, rows, sortDescriptor } = componentSpecimenTable;
   return { props: { "aria-label": label, sortDescriptor }, children: [
@@ -371,7 +371,7 @@ export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavail
  */
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
-  if (key === "./components#Table") return table(Component);
+  if (key === "./components#Table") return table(exports);
   // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
   // a host-owned native control, so its specimen is that native control.
   if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
