@@ -70,7 +70,9 @@ describe("Designer slot contracts", () => {
     ]));
     expect(hero.references).toEqual([expect.objectContaining({ registry: "tailark-oss", item: "mist-hero-section-1" })]);
     const shell = committed.frames.find(row => row.slot === "frames.site-shell")!;
-    expect(shell.references.map(row => `${row.registry}/${row.item}`)).toEqual(["tailark-oss/mist-hero-section-1-header", "tailark-oss/mist-footer-1", "shadcn/sonner", "diceui/skip-nav"]);
+    // Follows the vendored references: 170c4b5df made the stock navigation-menu example the
+    // primary reference and ac458cdd3 added the shadcn@aria sonner example (R2F-12 G9).
+    expect(shell.references.map(row => `${row.registry}/${row.item}`)).toEqual(["shadcn/navigation-menu-example", "tailark-oss/mist-hero-section-1-header", "tailark-oss/mist-footer-1", "diceui/skip-nav", "shadcn-aria/sonner-example", "shadcn/sonner"]);
     expect(shell.limits["references.blocked"]).toBeUndefined();
     const form = committed.sections.find(row => row.slot === "sections.form")!;
     expect(form.references.map(row => `${row.registry}/${row.item}`)).toContain("shadcn/field");
