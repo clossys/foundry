@@ -1,12 +1,12 @@
 /** @vitest-environment jsdom */
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import { importFoundryFrames, importFoundrySections, loadBuildCatalog } from "../../catalog-core/index.js";
-import type { CompositeEngineInput, CompositeResolved } from "../../catalog-core/types.js";
+import { importFoundryFrames, importFoundrySections, loadBuildCatalog } from "../catalog-core/index.js";
+import type { CompositeEngineInput, CompositeResolved } from "../catalog-core/types.js";
 import { designerSurfacePreviews, designerSurfacePreview } from "./DesignerPage.js";
-import { specimenDataset } from "../specimen-dataset.js";
-import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
-import { shellCopyFixtureResolver } from "../../frames/__fixtures__/shell-copy.js";
+import { specimenDataset } from "./specimen-dataset.js";
+import { ShellCopyProvider } from "../components/Banner.copy-context.js";
+import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy.js";
 
 const contracts = loadBuildCatalog();
 const fills = [...importFoundrySections().fills, ...importFoundryFrames().fills];

@@ -75,7 +75,7 @@ export type { DesignerSpecimenCellData, DesignerSpecimenCellCases } from "./spec
 export { SpecimenSwatch, SpecimenColorRamp, SpecimenTypeLadder, SpecimenSpacingLadder, SpecimenRadiusLadder, SpecimenMotionPlayer, SpecimenAssetGrid, SpecimenIconGrid, tokenAssetSpecimenLeaves, tokenSpecimenItems, assetSpecimenItems, colorRampSpecimenItems } from "./specimen-token-assets.js";
 
 // The complete-page constructor is private; hosts compose Studio through their route.
-export type { DesignerPageProps } from "./system-canvas/DesignerPage.js";
+export type { DesignerPageProps } from "./DesignerPage.js";
 export { createRouteStudioLabels } from "./route-labels.js";
 export { createStudioUsageLabels } from "./usage/copy-labels.js";
 export { StudioCopyNeedsError, readStudioCopy, readStudioMessage } from "./copy-binding.js";

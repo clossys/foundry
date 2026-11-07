@@ -8,14 +8,15 @@ import userEvent from "@testing-library/user-event";
 import { render } from "../__fixtures__/frame.js";
 import { buildUsageGraph, type UsageGraph, type UsageGraphInputs } from "../../catalog-core/usage-graph.js";
 import { checkWiring, type WiringException } from "../../catalog-core/wiring.js";
-import { componentIntegration } from "../../catalog-core/__fixtures__/component-integration.js";
-import { labels as studioLabels, smallCatalog } from "../__fixtures__/studio.js";
-import { Studio } from "../index.js";
-import { WholeStudioProvider } from "../WholeStudioProvider.js";
-import type { CompositeStudioLabels } from "../types.js";
 import { UsagePanel, type UsagePanelLabels } from "./UsagePanel.js";
 import { usageBlockRelations, usageConsumers, usageModel } from "./model.js";
 import { loadCommittedUsage } from "./committed-graph.js";
+import { studioTestCopy } from "../__fixtures__/copy.js";
+import type { StudioCopyBinding } from "../copy-binding.js";
+
+// The panel has no words of its own: a not-linked finding's message is the host's Writer record for its code.
+const findingCopy: StudioCopyBinding = { ...studioTestCopy, messages: { "studio.usage.finding.WL5": { id: "fixture.usage.finding.WL5" } },
+  resolver: ref => ref.id === "fixture.usage.finding.WL5" ? { ref, text: "no provenance stamp", servedLocale: "en", chain: ["en"] } : studioTestCopy.resolver(ref) };
 
 afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 
@@ -118,8 +119,8 @@ describe("UsagePanel", () => {
     for (const text of ["hero-geometry", "layout-geometry", "design", "2026-12-31", "proposed"]) expect(within(owns).getByText(text)).toBeInTheDocument();
     expect(list("U-owns").querySelector('[data-usage-exception="elsewhere"]')).toBeNull();
     cleanup();
-    render(<UsagePanel id="themes.unused" graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]}
-      findings={[{ code: "WL5", subject: "themes.unused", message: "no provenance stamp" }, { code: "WL5", subject: "themes.color", message: "other" }]} />);
+    render(<UsagePanel id="themes.unused" copy={findingCopy} graph={graph} labels={labels} onNavigate={vi.fn()} exceptions={[owned, other]}
+      findings={[{ code: "WL5", subject: "themes.unused", message: "untranslated host diagnostic" }, { code: "WL5", subject: "themes.color", message: "other" }]} />);
     expect(screen.getByText("U-used-nowhere")).toBeInTheDocument();
     // The exception whose read is one of this token's members is shown on the token.
     expect(list("U-exceptions").querySelector('[data-usage-exception="hero-geometry"]')).not.toBeNull();
@@ -155,30 +156,7 @@ describe("UsagePanel", () => {
   });
 });
 
-describe("Studio mounts", () => {
-  const wholeLabels: CompositeStudioLabels = { ...studioLabels, usage: labels, whole: { signoff: "W-signoff", proposed: "W-proposed", contract: "W-contract", contentSlots: "W-slots", configurations: "W-config", unresolved: "W-unresolved", unassessed: "W-unassessed" } };
-
-  it("the contract inspector shows the host graph's usage and a row changes the selected element, with back", async () => {
-    const user = userEvent.setup();
-    const input = componentIntegration();
-    const library = { ...input.library, values: { fills: [] } };
-    const adapter = { kind: "composite" as const, catalog: { ...input.catalog, values: smallCatalog }, load: async () => ({ library, componentOptions: input.componentOptions, usageGraph: graph }), save: async () => ({ ok: false as const, reason: "unavailable" as const }) };
-    // The Inspector card fills on a selection: deep-link the leaf (?node=), as a shared Designer URL does.
-    window.history.replaceState(null, "", "?node=components.button");
-    render(<WholeStudioProvider adapter={adapter} labels={wholeLabels} initialSlotId="components.button"><Studio /></WholeStudioProvider>);
-    const inspector = () => document.querySelector<HTMLElement>('[data-studio-panel="inspector"]')!;
-    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]') ?? null).not.toBeNull());
-    expect(rowIds(within(inspector()).getByRole("heading", { name: "U-used-where", level: 4 }).closest("section")!, "frames")).toEqual(["frames.app-shell"]);
-    // Pages have no Studio tab: the row is text, not a control.
-    await user.click(within(inspector()).getByRole("switch", { name: "U-transitive" }));
-    expect(within(inspector().querySelector<HTMLElement>('[data-usage-row="pages.home"]')!).queryByRole("button")).toBeNull();
-    await user.click(within(inspector()).getByRole("switch", { name: "U-transitive" }));
-    // A row in another layer switches tab and selection.
-    await user.click(within(inspector()).getByRole("button", { name: "frames.app-shell" }));
-    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="frames.app-shell"]') ?? null).not.toBeNull());
-    expect(within(inspector()).getByRole("heading", { name: "frames.app-shell", level: 2 })).toBeInTheDocument();
-    await user.click(within(inspector()).getByRole("button", { name: "U-back" }));
-    await waitFor(() => expect(inspector()?.querySelector('[data-studio-usage="components.button"]') ?? null).not.toBeNull());
-    expect(within(inspector()).getByRole("button", { name: "U-back" })).toBeDisabled();
-  });
-});
+// R2F-19 removed the "Studio mounts" suite's one test, "the contract inspector shows the host graph's usage and a
+// row changes the selected element, with back": the Inspector card retired with the read-only Designer
+// (designer-read-only asserts no inspector mounts) and the vertical scroll has no selection panel. Usage navigation
+// and its back stack stay pinned by the UsagePanel unit tests above.

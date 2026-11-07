@@ -6,7 +6,7 @@ import { randomUUID } from "node:crypto";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import { stableStringify } from "../catalog-core/stable.js";
-import type { ThumbnailIndex } from "../studio/system-canvas/thumbnails/thumbnail-index.js";
+import type { ThumbnailIndex } from "./thumbnail-index.js";
 import { checkLibraryReceipt, LibraryInputError } from "./fs-library.js";
 import { digest, readReceipt } from "./write-receipt.js";
 

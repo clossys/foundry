@@ -1,5 +1,5 @@
-import type { LayerId, Placement } from "../../catalog-core/index.js";
-import { buildSlotTree, type SlotTreeNode } from "../model.js";
+import type { LayerId, Placement } from "../catalog-core/index.js";
+import { buildSlotTree, type SlotTreeNode } from "./model.js";
 
 export const STUDIO_LAYERS: readonly LayerId[] = ["themes", "assets", "components", "sections", "frames"];
 

@@ -7,7 +7,7 @@ import { createStudioEvaluation } from "./evaluation.js";
 import { buildCandidates } from "./model.js";
 import { CompactPreview } from "./previews.js";
 import { labels } from "./__fixtures__/studio.js";
-import { designerSurfacePreviews, designerSurfacePreview } from "./system-canvas/DesignerPage.js";
+import { designerSurfacePreviews, designerSurfacePreview } from "./DesignerPage.js";
 import { defaultComponentPreviews } from "./default-component-previews.js";
 import componentProfile from "./default-component-preview-profile.json" with { type: "json" };
 import { glyphs } from "../components/preview-runtime/adapters/glyphs.js";

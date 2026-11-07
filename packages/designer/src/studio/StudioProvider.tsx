@@ -6,7 +6,7 @@ import { studioEngine } from "./engine.js";
 import { createStudioEvaluation } from "./evaluation.js";
 import { matrixBoards, matrixRows, matrixSources, matrixSummary, purePlacementTree } from "./matrix-model.js";
 import { DEFAULT_SLOT_ID, allNodes, emptyChanges, scopeTargets, workingLibrary, type Candidate } from "./model.js";
-import { normaliseWindowLocation, replaceStudioLocation, resolverFromPlacements } from "./system-canvas/url.js";
+import { normaliseWindowLocation, replaceStudioLocation, resolverFromPlacements } from "./studio-url.js";
 import type { StudioNavigateTarget } from "./rail/explorer-tree.js";
 import type { LegacyStudioProps, StudioProviderProps } from "./types.js";
 import { StudioCopyProvider } from "./copy-context.js";
@@ -175,7 +175,7 @@ function useStudioState({ catalog: catalogProp, adapter, labels, initialSlotId: 
     slotId, setSlotId, expanded, setExpanded, focusedCell, setFocusedCell, showRows, requestRow, groupChoices: NO_GROUP_CHOICES, boardElements, rowElements, canvasActions, cameras,
     scoreOpen, setScoreOpen, scoreTrigger, closeScore };
 }
-type StudioSession = ReturnType<typeof useStudioState>;
+export type StudioSession = ReturnType<typeof useStudioState>;
 const StudioContext = createContext<StudioSession | null>(null);
 export const useOptionalStudioSession = (): StudioSession | null => useContext(StudioContext);
 export function useStudioSession(): StudioSession {

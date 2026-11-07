@@ -1,6 +1,5 @@
 import { libraryHash, loadBuildCatalog, resolve, runtimeHash, runtimeSnapshot } from "../catalog-core/index.js";
 import type { BuildCatalogData, CompositeCatalogData, CompositeResolved, ConsumerRuntimeManifest, RuntimeContent, RuntimeFillSelection, RuntimeCell, SurfaceCatalog } from "../catalog-core/index.js";
-import type { DesignerAgentData } from "./types.js";
 import type { FramePageHeader } from "../frame-page-header.js";
 import { surfaceRuntimeIdentity } from "../catalog-core/surface-check.js";
 import { checkWholeStudioInitialSession } from "./initial-session.js";
@@ -25,7 +24,7 @@ export interface DesignerRouteServerData extends NativeRouteFrameData {
   readonly snapshot: WholeStudioInitialSnapshot;
   readonly initialSlotId?: string;
 }
-export interface DesignerRoutePageProps extends DesignerAgentData {
+export interface DesignerRoutePageProps {
   /** Supplied by the client host; executable copy resolution is never serialized in serverData. */
   readonly copy: import("./copy-binding.js").StudioCopyBinding;
   readonly serverData: DesignerRouteServerData;

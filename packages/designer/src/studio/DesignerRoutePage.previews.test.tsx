@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render } from "@testing-library/react";
+import { act, cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, expect, it, vi } from "vitest";
 import { loadCatalogBundles, installedHeadlessLibrary } from "../catalog-bundles.js";
 import { applyLibraryChange, libraryHash, planSurfaceRuntime, resolve, runtimeHash } from "../catalog-core/index.js";
@@ -53,29 +53,20 @@ beforeAll(async () => {
 }, 120000);
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); window.history.replaceState(null, "", "/"); document.documentElement.style.fontSize = ""; });
 
-it("renders registered Feedback implementations in near and mid complete-route cells", async () => {
+it("renders registered Feedback implementations in their library-board rows on the complete route", async () => {
   document.documentElement.style.fontSize = "18px";
   vi.stubGlobal("matchMedia", vi.fn((media: string) => ({ media, matches: true, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {} })));
-  // A narrow measured canvas keeps some cells in the visible board at mid tier,
-  // while the selected component receives a live near-tier slot.
-  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, left: 0, top: 0, width: 400, height: 300, right: 400, bottom: 300, toJSON() {} });
-  vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(400);
-  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(300);
   window.history.replaceState(null, "", "/?layer=components&node=components.banner");
   const { copy: originalCopy } = pseudoStudioCopy();
   const copy: StudioCopyBinding = { ...originalCopy, messages: findingMessages, resolver: ref => ref.id.startsWith("fixture.finding.") ? { ref, text: `[[${ref.id}]]`, servedLocale: ref.locale } : originalCopy.resolver(ref) };
   const view = render(<ShellCopyProvider resolver={shellCopyFixtureResolver}><DesignerRoutePage copy={copy} serverData={serverData} initialSession={JSON.parse(JSON.stringify(initialSession))} /></ShellCopyProvider>);
   await act(async () => {});
   expect(view.container.querySelector('[data-route-display="designer"]')).toHaveAttribute("data-route-session", initialSession.id);
-  const cells = feedback.map(leaf => {
-    const cell = view.container.querySelector(`[data-system-cell="${leaf}"]`);
-    expect(cell, leaf).not.toBeNull();
-    expect(cell!.querySelector('[data-system-thumbnail="pending"]'), leaf).toBeNull();
-    expect(cell!.querySelector(`[data-component-specimen="${leaf}"]`), leaf).not.toBeNull();
-    expect(cell!.querySelector('[data-specimen-error], [data-specimen-unavailable]'), leaf).toBeNull();
-    if (cell!.getAttribute("data-system-tier") === "mid") expect(cell!.querySelector("[data-system-rest-preview]")).toHaveAttribute("inert");
-    return cell!;
-  });
-  expect(cells.some(cell => cell.getAttribute("data-system-tier") === "near")).toBe(true);
-  expect(cells.some(cell => cell.getAttribute("data-system-tier") === "mid")).toBe(true);
+  // R2F-19: the canvas's near/mid level-of-detail tiers are retired; every Feedback leaf is a row of its board on
+  // the vertical scroll, and its registered implementation renders in that row (no pending or unavailable preview).
+  await waitFor(() => { for (const leaf of feedback) expect(view.container.querySelector(`[data-designer-row="${leaf}"] [data-component-specimen="${leaf}"]`), leaf).not.toBeNull(); }, { timeout: 20000 });
+  for (const leaf of feedback) {
+    const row = view.container.querySelector(`[data-designer-row="${leaf}"]`)!;
+    expect(row.querySelector('[data-specimen-error], [data-specimen-unavailable]'), leaf).toBeNull();
+  }
 }, 30000);

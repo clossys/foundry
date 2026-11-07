@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { resolve as resolvePath } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
-import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { parseDate } from "@internationalized/date";
 import { render, findLayerSelect, chooseLayer } from "./__fixtures__/frame.js";
@@ -26,8 +26,8 @@ afterEach(() => { cleanup(); window.history.replaceState(null, "", "/"); });
 
 /**
  * The canvas content slot as a page would serve it. The app-shell frame and the page root are stamped here
- * because the Studio frame stamp is WIRE-5a-frame (after WIRE-4); explorer, map, zoom and inspector stay in
- * frame-owned slots (D5d), so only the content slot is scanned, inside the frame's `<main>`.
+ * because the Studio frame stamp is WIRE-5a-frame (after WIRE-4); the explorer and checks stay in frame-owned
+ * slots (D5d), so only the content slot is scanned, inside the frame's `<main>`.
  */
 const ROUTE = "agents-designer";
 const attrs = (stamp: Record<string, string>) => Object.entries(stamp).map(([name, value]) => `${name}="${value}"`).join(" ");
@@ -52,8 +52,9 @@ it("renders every value-layer canvas board as the registered library-board Secti
     if (layer !== "Tokens") await chooseLayer(labels, layer, userEvent.setup());
     await waitFor(() => expect(document.querySelector("[data-studio-world] section[data-library-board]")).not.toBeNull());
     expect(declared.boards).toBeGreaterThan(0);
-    // The camera zoom reaches board titles through the registered CanvasLod owner, not a Studio inline style.
-    expect(document.querySelector("[data-studio-world]")!.closest<HTMLElement>("[data-canvas-lod]")?.style.getPropertyValue("--canvas-zoom")).toMatch(/^\d/);
+    // R2F-19: no camera, so no CanvasLod owner and no zoom; the boards stack in the page's one vertical scroll.
+    expect(document.querySelector("[data-studio-world]")!.closest("[data-canvas-lod]")).toBeNull();
+    expect(document.querySelector("[data-studio-world]")!.closest("[data-designer-region=scroll]")).not.toBeNull();
     const findings = scanCanvas(declared.boards);
     expect(findings.filter(finding => finding.code === "WL1"), layer).toEqual([]);
     expect(findings.filter(finding => finding.code === "WL6"), layer).toEqual([]);
@@ -106,23 +107,6 @@ it("a date segment inside a canvas board cell keeps ArrowUp/ArrowDown; the grid 
   expect(day).toHaveAttribute("aria-valuenow", "26");
 });
 
-it("canvas shortcuts still work when the canvas itself has focus, and never from a focused date segment", async () => {
-  render(<Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }), save: async () => ({ ok: false, reason: "unavailable" }) }} labels={labels} copy={studioHostCopy} />);
-  await findLayerSelect();
-  // Let the boards mount and the camera finish its initial fit before measuring a pan.
-  await waitFor(() => expect(document.querySelector("[data-studio-world] section[data-library-board]")).not.toBeNull());
-  await act(async () => { await new Promise(settle => setTimeout(settle, 50)); });
-  const viewport = screen.getByRole("region", { name: "L-canvas" }), world = document.querySelector<HTMLElement>("[data-studio-world]")!;
-  act(() => viewport.focus());
-  const before = world.style.transform;
-  fireEvent.keyDown(viewport, { key: "ArrowDown" });
-  const panned = world.style.transform;
-  expect(panned).not.toBe(before);
-  // A focused spin button (a date segment's role) inside the world owns its arrows: the camera does not pan.
-  const segment = Object.assign(document.createElement("div"), { tabIndex: 0 }); segment.setAttribute("role", "spinbutton");
-  world.querySelector("section[data-library-board]")?.append(segment) ?? world.append(segment);
-  act(() => segment.focus());
-  fireEvent.keyDown(segment, { key: "ArrowDown" });
-  expect(world.style.transform).toBe(panned);
-  segment.remove();
-});
+// R2F-19 removed "canvas shortcuts still work when the canvas itself has focus": it asserted the retired camera's
+// keyboard pan (the world's transform). The vertical scroll has no camera; the date-segment arrow ownership it also
+// covered is asserted above inside a library-board grid.

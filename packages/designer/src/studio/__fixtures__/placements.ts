@@ -1,11 +1,4 @@
-import type { Placement } from "../../../catalog-core/index.js";
-import type { SystemMetrics } from "../layout.js";
-
-/** Small whole-number metrics so test geometry reads at a glance. */
-export const testMetrics: SystemMetrics = {
-  cellWidth: 40, cellHeight: 30, cellGap: 10, lineGap: 10, lineLabelWidth: 20,
-  boardPadding: 5, boardTitleHeight: 15, boardGap: 50, rowGap: 100,
-};
+import type { Placement } from "../../catalog-core/index.js";
 
 /** Five layers in catalog (build) order, deliberately not in canvas order. Ragged on purpose. */
 export const testPlacements: readonly Placement[] = [
@@ -26,9 +19,3 @@ export const testPlacements: readonly Placement[] = [
   { layer: "sections", nodes: [{ id: "parts", label: "Parts", children: [{ id: "parts-structure", label: "Structure", leaves: ["sections.band", "sections.section-header"] }] }] },
   { layer: "frames", nodes: [{ id: "page-shells", label: "Page shells", children: [{ id: "page-shells-documents", label: "Documents", leaves: ["frames.site-shell"] }] }] },
 ];
-
-/** Host words for SystemCanvas tests. */
-export const testLabels = {
-  label: "System canvas", hint: "Scroll or pinch to zoom; drag to pan.", breadcrumb: "Canvas position",
-  layers: { tokens: "Tokens", assets: "Assets", components: "Components", sections: "Sections", frames: "Frames" },
-} as const;

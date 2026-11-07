@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
-import { normaliseStudioUrl, resolverFromPlacements } from "./url.js";
-import { testPlacements } from "./__fixtures__/system.js";
+import { normaliseStudioUrl, resolverFromPlacements } from "./studio-url.js";
+import { testPlacements } from "./__fixtures__/placements.js";
 const resolver = resolverFromPlacements(testPlacements);
 it.each([
   ["", "", "", ""], ["?layer=components", "", "?layer=components", ""],

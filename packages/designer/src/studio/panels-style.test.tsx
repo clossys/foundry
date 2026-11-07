@@ -5,7 +5,7 @@ import { StudioDataValue } from "./data-value.js";
 import { ExplorerTree } from "./rail/ExplorerTree.js";
 import { createRouteStudioLabels } from "./route-labels.js";
 import { studioTestCopy } from "./__fixtures__/copy.js";
-import { testPlacements } from "./system-canvas/__fixtures__/system.js";
+import { testPlacements } from "./__fixtures__/placements.js";
 
 afterEach(cleanup);
 const labels = createRouteStudioLabels(studioTestCopy);

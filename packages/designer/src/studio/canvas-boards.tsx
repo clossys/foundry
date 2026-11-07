@@ -54,14 +54,17 @@ export interface CanvasBoardsProps {
   readonly onRowElement?: (id: string, element: HTMLElement | null) => void;
 }
 
+/** A board's page anchor: a fragment-safe id, so `#<anchor>` links scroll the page to that board. */
+export const boardAnchor = (id: string): string => `designer-board-${id.replace(/[^A-Za-z0-9_-]/g, "-")}`;
+
 /** A board row's leaf id: the edit matrix marks its rows; a view row names its leaf in the shared leaf label. */
 export function boardRowLeaf(row: HTMLElement): string | undefined {
   return row.dataset.studioRow ?? row.querySelector<HTMLElement>("[data-leaf-id]")?.textContent ?? undefined;
 }
 /**
  * One canvas board: the registered `sections.comparison@library-board` Section and nothing drawn around it.
- * The wrapper is structural only (no class, style, role or tab stop); it carries the board and domain ids the
- * camera, map and explorer address, and registers the Section's rows for reveal and visible-row loading.
+ * The wrapper is structural only (no class, style, role or tab stop); it carries the board's page anchor and the
+ * board and domain ids the explorer addresses, and registers the Section's rows for reveal and visible-row loading.
  */
 // Memoized: a session notification that leaves the prepared board unchanged does not render its Section (or host previews) again.
 const CanvasBoard = memo(function CanvasBoard({ board, labels, workflow, onCommand, onBoardElement, onRowElement }: Omit<CanvasBoardsProps, "boards"> & { board: CanvasBoardEntry }) {
@@ -80,7 +83,7 @@ const CanvasBoard = memo(function CanvasBoard({ board, labels, workflow, onComma
     rows.current = next;
   });
   useLayoutEffect(() => () => { for (const id of rows.current.keys()) register.current?.(id, null); rows.current.clear(); }, []);
-  return <div ref={ref} data-studio-canvas-board={board.id} data-studio-domain={board.domain} hidden={board.hidden || undefined}>
+  return <div ref={ref} id={boardAnchor(board.id)} data-studio-canvas-board={board.id} data-studio-domain={board.domain} hidden={board.hidden || undefined}>
     <Comparison arrangement="library-board" records={board.records} previews={board.previews} labels={labels} workflow={workflow} onCommand={onCommand} />
   </div>;
 });
