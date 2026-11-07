@@ -27,6 +27,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chrome, loadStudioMap } from './studio-dom-check.mjs';
 import { pinned } from '../../scripts/check-generated-derived.mjs';
+import { studioOrigin } from './studio-origin.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const CLOSSYS = resolve(here, '../../../../clossys');
@@ -188,7 +189,7 @@ export async function runRenderedProvenance(origin, { only, workers } = {}) {
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   const args = process.argv.slice(2);
-  const origin = args.find(arg => /^https?:/.test(arg)) ?? process.env.STUDIO_ORIGIN ?? 'http://127.0.0.1:4617';
+  const origin = args.find(arg => /^https?:/.test(arg)) ?? studioOrigin();
   const out = args.includes('--out') ? args[args.indexOf('--out') + 1] : process.env.STUDIO_CHECK_OUT && join(process.env.STUDIO_CHECK_OUT, 'rendered-provenance.json');
   const only = args.includes('--only') ? args.slice(args.indexOf('--only') + 1).filter(arg => arg.startsWith('/')) : undefined;
   const workers = args.includes('--workers') ? args[args.indexOf('--workers') + 1] : process.env.RENDERED_PROVENANCE_WORKERS;

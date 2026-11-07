@@ -24,7 +24,7 @@
  * Anything else is a literal the Studio rendered without a registry entry, and fails.
  *
  * Usage: node studio/checks/check-copy-rendered.mjs [origin] [--root DIR] [--pages DIR] [--routes N] [--json FILE]
- *   origin   the running Studio (default $STUDIO_ORIGIN or http://127.0.0.1:4617)
+ *   origin   the running Studio (default $STUDIO_ORIGIN or http://127.0.0.1:4503, studio-origin.mjs)
  *   --root   the repository whose clossys/ the Studio serves (default this repository)
  *   --pages  read each route's rendered page from DIR/<route>/index.html instead of an origin (a fixture)
  *   --routes only the first N routes (a probe; the gate itself always runs every route)
@@ -35,6 +35,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { studioOrigin } from './studio-origin.mjs';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
@@ -295,7 +296,7 @@ export function installedRoutes(repo) {
 async function main() {
   const repo = resolve(flag('--root') ?? join(here, '../../../..'));
   const pages = flag('--pages') ? resolve(flag('--pages')) : undefined;
-  const origin = pages ? pathToFileURL(pages).href : new URL(positional[0] ?? process.env.STUDIO_ORIGIN ?? 'http://127.0.0.1:4617').origin;
+  const origin = pages ? pathToFileURL(pages).href : new URL(positional[0] ?? studioOrigin()).origin;
   const address = route => pages ? pathToFileURL(join(pages, route, 'index.html')).href : origin + route;
   const limit = flag('--routes') ? Number(flag('--routes')) : undefined;
   const universe = await registryUniverse(repo);
