@@ -28,9 +28,10 @@ describe("IconButton", () => {
   it("sizes the glyph to the box: sm takes the sm icon, md the md icon", () => {
     const { rerender } = render(<IconButton icon={ChevronRight} label="Next" size="sm" />);
     const svg = () => screen.getByRole("button", { name: "Next" }).querySelector("svg") as SVGElement;
-    expect(svg().getAttribute("style") ?? "").toContain("--ui-icon-sm");
+    expect(svg()).toHaveClass("size-4");
     rerender(<IconButton icon={ChevronRight} label="Next" size="md" />);
-    expect(svg().getAttribute("style") ?? "").toContain("--ui-icon-md");
+    expect(svg()).toHaveClass("size-6");
+    expect(svg()).not.toHaveClass("size-4");
   });
 
   it("fires onPress, and a consumer class wins the merge", async () => {

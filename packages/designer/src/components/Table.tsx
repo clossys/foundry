@@ -18,7 +18,7 @@ import {
   type TableProps as AriaTableProps,
 } from "react-aria-components";
 import { Checkbox } from "./Checkbox.js";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
 import { UI_RING_FOCUS } from "./internal/ui-vars.js";

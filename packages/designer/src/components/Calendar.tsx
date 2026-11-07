@@ -15,7 +15,7 @@ import {
 } from "react-aria-components";
 import { Button } from "./preview-runtime/components/button/button.js";
 import { useGlyph } from "./glyph-context.js";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_RING_FOCUS } from "./internal/ui-vars.js";
 

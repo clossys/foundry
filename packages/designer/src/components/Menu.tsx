@@ -13,7 +13,7 @@ import {
   type MenuSectionProps as AriaMenuSectionProps,
 } from "react-aria-components";
 import { Popover as ControlPopover } from "./Popover.js";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { controlStateStyle } from "./button-classes.js";
 import { cx } from "./internal/cx.js";

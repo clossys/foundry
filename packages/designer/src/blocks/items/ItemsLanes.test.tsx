@@ -26,1728 +26,864 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
     "c4b18fcf7287ee90ebbd608619202fb464e2e1c2287c28583652652b84f07e83"
   ],
   [
-    "client:false:stacked:3:base:plain:continues",
-    "848d4a4583a13c539327646125297be9ead6d05844178977e857f30a4900b846"
-  ],
-  [
     "client:false:stacked:3:base:rule:ends",
     "46a3ca7c43c9a1e81244c8e7afb3667731ae500fa202a365181eaca25e5ac74b"
-  ],
-  [
-    "client:false:stacked:3:base:rule:continues",
-    "c9b6568510a6ff794305df0de4e3866ae97be4ed1e4ac356353f1fce31022cd2"
   ],
   [
     "client:false:stacked:3:sunken:plain:ends",
     "c4b18fcf7287ee90ebbd608619202fb464e2e1c2287c28583652652b84f07e83"
   ],
   [
-    "client:false:stacked:3:sunken:plain:continues",
-    "848d4a4583a13c539327646125297be9ead6d05844178977e857f30a4900b846"
-  ],
-  [
     "client:false:stacked:3:sunken:rule:ends",
     "46a3ca7c43c9a1e81244c8e7afb3667731ae500fa202a365181eaca25e5ac74b"
-  ],
-  [
-    "client:false:stacked:3:sunken:rule:continues",
-    "c9b6568510a6ff794305df0de4e3866ae97be4ed1e4ac356353f1fce31022cd2"
   ],
   [
     "client:false:stacked:3:inverse:plain:ends",
     "648f23f4e6f32a840837ee0b4ff33bf48e4cfece8fadbaac1d8ded8e7bb9c3e1"
   ],
   [
-    "client:false:stacked:3:inverse:plain:continues",
-    "0489fd939a579c802fa58f432df720cc6cbd3426efd6082af3250180d2781d3c"
-  ],
-  [
     "client:false:stacked:3:inverse:rule:ends",
     "d0323a340b77a365a900209d7809baddf4549fb4381f0e060442ae9d14667a60"
-  ],
-  [
-    "client:false:stacked:3:inverse:rule:continues",
-    "acec79b68b5fe080e65b4d419f2954d42d8373690dc0ef5c41d8608e74e795f3"
   ],
   [
     "client:false:stacked:4:base:plain:ends",
     "2dd8e72c8a5f393d5740a820f469235568e963f332fdb7b43aa6fe2ce139e3df"
   ],
   [
-    "client:false:stacked:4:base:plain:continues",
-    "7f3bed4f3363ea59b02d5c5c39ee4a7482a9a762de5f061f3e929afd5582e607"
-  ],
-  [
     "client:false:stacked:4:base:rule:ends",
     "cdc87d29c0a2a0a7d448d865bf6d457fbb4568cbbd3dafffd0d0d7da983a975d"
-  ],
-  [
-    "client:false:stacked:4:base:rule:continues",
-    "4b2c2f328906f36d4412fb3b9734645d3255de3f88cf5fe80d59d03a4f775e7f"
   ],
   [
     "client:false:stacked:4:sunken:plain:ends",
     "2dd8e72c8a5f393d5740a820f469235568e963f332fdb7b43aa6fe2ce139e3df"
   ],
   [
-    "client:false:stacked:4:sunken:plain:continues",
-    "7f3bed4f3363ea59b02d5c5c39ee4a7482a9a762de5f061f3e929afd5582e607"
-  ],
-  [
     "client:false:stacked:4:sunken:rule:ends",
     "cdc87d29c0a2a0a7d448d865bf6d457fbb4568cbbd3dafffd0d0d7da983a975d"
-  ],
-  [
-    "client:false:stacked:4:sunken:rule:continues",
-    "4b2c2f328906f36d4412fb3b9734645d3255de3f88cf5fe80d59d03a4f775e7f"
   ],
   [
     "client:false:stacked:4:inverse:plain:ends",
     "521ee4b5ae502f6d0070bbc66409261191fbba221f8beac96af3b47f18f8f18b"
   ],
   [
-    "client:false:stacked:4:inverse:plain:continues",
-    "f00a60d7b8d79c0cdc60a8250055fea459db26f0b4f5439bcc6e36463ba8a578"
-  ],
-  [
     "client:false:stacked:4:inverse:rule:ends",
     "991083ed703310b0bac8f60986cdd48fff4bfda52bef17d5174c6e174c135836"
-  ],
-  [
-    "client:false:stacked:4:inverse:rule:continues",
-    "32f0ea282df611c18b581c94c3237cc0e27fc0624a6effb3760c675c15d71bb1"
   ],
   [
     "client:false:stacked:5:base:plain:ends",
     "9bb39c0c2591f2678dd7a5e8ec4782eb6f78fbaa1da032831ba58dc40f0f283f"
   ],
   [
-    "client:false:stacked:5:base:plain:continues",
-    "2b13ed5af2908deb2cc515edb5c33d97a60ca1a6eb5cd933abb7e68bf3812172"
-  ],
-  [
     "client:false:stacked:5:base:rule:ends",
     "3ed967dca09e83bd17e8e7a99d13ab09fcb1d2bd6fdf84364c7516d21702dda6"
-  ],
-  [
-    "client:false:stacked:5:base:rule:continues",
-    "270b900d3defa604cd9096db84c25c699f9623791fba071d2a58b508708d7bf9"
   ],
   [
     "client:false:stacked:5:sunken:plain:ends",
     "9bb39c0c2591f2678dd7a5e8ec4782eb6f78fbaa1da032831ba58dc40f0f283f"
   ],
   [
-    "client:false:stacked:5:sunken:plain:continues",
-    "2b13ed5af2908deb2cc515edb5c33d97a60ca1a6eb5cd933abb7e68bf3812172"
-  ],
-  [
     "client:false:stacked:5:sunken:rule:ends",
     "3ed967dca09e83bd17e8e7a99d13ab09fcb1d2bd6fdf84364c7516d21702dda6"
-  ],
-  [
-    "client:false:stacked:5:sunken:rule:continues",
-    "270b900d3defa604cd9096db84c25c699f9623791fba071d2a58b508708d7bf9"
   ],
   [
     "client:false:stacked:5:inverse:plain:ends",
     "13c317f4067083cd16187cfc06d75aff3f9bb57979f8b96997ecd30d23244ca8"
   ],
   [
-    "client:false:stacked:5:inverse:plain:continues",
-    "cfaf724a5af03a173d471a01540e74aee830b95eb5d19650537ffe6dc82beb35"
-  ],
-  [
     "client:false:stacked:5:inverse:rule:ends",
     "faa6dbe78d4eada4b05fbeb01ef94c8f911fc4329557f3568721b8405d47b7c8"
-  ],
-  [
-    "client:false:stacked:5:inverse:rule:continues",
-    "5cc684b0b335ace10198c8d4e98b7903b943a4a52ed6e9c8a250f4245a4340b4"
   ],
   [
     "client:false:columns2:3:base:plain:ends",
     "eb8139c147d2ec07ca654d0c2b85af419b93588f98d5b167614cffab759ebb96"
   ],
   [
-    "client:false:columns2:3:base:plain:continues",
-    "3605bbfc7077f530835b054176fb1a903ed92b69fa1f25c87999a1dc591175cb"
-  ],
-  [
     "client:false:columns2:3:base:rule:ends",
     "54e60fb45a08d25750fd1c6e003bae823a98e9e10429e2194dc6f0afabef9e2d"
-  ],
-  [
-    "client:false:columns2:3:base:rule:continues",
-    "3fbd8d3a2d695a6bf3c2bef09270eb204cdd1f506e51ce121bdf95ccd9e20b9e"
   ],
   [
     "client:false:columns2:3:sunken:plain:ends",
     "eb8139c147d2ec07ca654d0c2b85af419b93588f98d5b167614cffab759ebb96"
   ],
   [
-    "client:false:columns2:3:sunken:plain:continues",
-    "3605bbfc7077f530835b054176fb1a903ed92b69fa1f25c87999a1dc591175cb"
-  ],
-  [
     "client:false:columns2:3:sunken:rule:ends",
     "54e60fb45a08d25750fd1c6e003bae823a98e9e10429e2194dc6f0afabef9e2d"
-  ],
-  [
-    "client:false:columns2:3:sunken:rule:continues",
-    "3fbd8d3a2d695a6bf3c2bef09270eb204cdd1f506e51ce121bdf95ccd9e20b9e"
   ],
   [
     "client:false:columns2:3:inverse:plain:ends",
     "670002f22fe9d8354943c368bfa824b4f90ec69db1f8ce712166bb26311c2294"
   ],
   [
-    "client:false:columns2:3:inverse:plain:continues",
-    "64520a614e67f3d404aa60a7907cc5588fa47604cd7ad9483acc0a869ae61385"
-  ],
-  [
     "client:false:columns2:3:inverse:rule:ends",
     "44b093d5dc6b4cf8f1a6707e38b7c588f3e3c6ec90cc9681a50bc97a394ad5a5"
-  ],
-  [
-    "client:false:columns2:3:inverse:rule:continues",
-    "a0059943c888dac4d480fdd7df242fc420f6c1f44698f5281ae996f49458dc24"
   ],
   [
     "client:false:columns2:4:base:plain:ends",
     "59aab344919722cae197127b663d744a27598142ed0bedfdfc02f9650c1f697e"
   ],
   [
-    "client:false:columns2:4:base:plain:continues",
-    "d36b38e03ab1d6a0243f5927e1c6bc41429351490ea69362a8be6bdf49f2fdd0"
-  ],
-  [
     "client:false:columns2:4:base:rule:ends",
     "2df0e72d139b770683388aaf69b3aa938e847ecaac10ba432be94de964cdf52b"
-  ],
-  [
-    "client:false:columns2:4:base:rule:continues",
-    "b3b50c7311b6d36f6b924fc5ac28182d05f29852c5aaa15d27032085bccb4e67"
   ],
   [
     "client:false:columns2:4:sunken:plain:ends",
     "59aab344919722cae197127b663d744a27598142ed0bedfdfc02f9650c1f697e"
   ],
   [
-    "client:false:columns2:4:sunken:plain:continues",
-    "d36b38e03ab1d6a0243f5927e1c6bc41429351490ea69362a8be6bdf49f2fdd0"
-  ],
-  [
     "client:false:columns2:4:sunken:rule:ends",
     "2df0e72d139b770683388aaf69b3aa938e847ecaac10ba432be94de964cdf52b"
-  ],
-  [
-    "client:false:columns2:4:sunken:rule:continues",
-    "b3b50c7311b6d36f6b924fc5ac28182d05f29852c5aaa15d27032085bccb4e67"
   ],
   [
     "client:false:columns2:4:inverse:plain:ends",
     "4c9a7ecc7545b69b82b8aa586b7518ffa1ef41f34955cf07d1c56964fe7a5c02"
   ],
   [
-    "client:false:columns2:4:inverse:plain:continues",
-    "861436c43841770a1b66e162a2e5182aaaac07a13e28d496547da89d6849d103"
-  ],
-  [
     "client:false:columns2:4:inverse:rule:ends",
     "31017ef0414256d5c9829947e730cc0fd7acca563c49509ccb4b4aa9131ca874"
-  ],
-  [
-    "client:false:columns2:4:inverse:rule:continues",
-    "432adba4c472b86905d236b28d796496f47bb53bffaee41bc988f687659d8050"
   ],
   [
     "client:false:columns2:5:base:plain:ends",
     "8989abe319df1ae2f52b76c9abe9e9cb54069e88eca37d36bd8b1302ec8f1cbe"
   ],
   [
-    "client:false:columns2:5:base:plain:continues",
-    "0be50bfc627c2951c61caf0d539b2f578188fc3ae7d08d571568eb671d705157"
-  ],
-  [
     "client:false:columns2:5:base:rule:ends",
     "3c373373f726e56678a37b8520f6e798d8bb3c8f579a93a8e4ce81464b8efc72"
-  ],
-  [
-    "client:false:columns2:5:base:rule:continues",
-    "426809ed22db60b9ff23f1406379b315c87434f096d5b56b2684b43316550e82"
   ],
   [
     "client:false:columns2:5:sunken:plain:ends",
     "8989abe319df1ae2f52b76c9abe9e9cb54069e88eca37d36bd8b1302ec8f1cbe"
   ],
   [
-    "client:false:columns2:5:sunken:plain:continues",
-    "0be50bfc627c2951c61caf0d539b2f578188fc3ae7d08d571568eb671d705157"
-  ],
-  [
     "client:false:columns2:5:sunken:rule:ends",
     "3c373373f726e56678a37b8520f6e798d8bb3c8f579a93a8e4ce81464b8efc72"
-  ],
-  [
-    "client:false:columns2:5:sunken:rule:continues",
-    "426809ed22db60b9ff23f1406379b315c87434f096d5b56b2684b43316550e82"
   ],
   [
     "client:false:columns2:5:inverse:plain:ends",
     "4d3d0716186a326aeed5c124b919af596b60188bc483dbbd0fce4d05eee2e859"
   ],
   [
-    "client:false:columns2:5:inverse:plain:continues",
-    "191aae4c729b662a3bf54662566966b478c64bb14ba41c083ce8e2599b58517a"
-  ],
-  [
     "client:false:columns2:5:inverse:rule:ends",
     "7abdc4de1fc7867106779bdcf79bac48b682239a918182755808bd03fc99c757"
-  ],
-  [
-    "client:false:columns2:5:inverse:rule:continues",
-    "2fcb5717eda30f8d01c9b876024a43f20354318d2d06c3a035cc21193558af2e"
   ],
   [
     "client:false:columns3:3:base:plain:ends",
     "c2947d711abaa17fa711eb62eb86b9983bb9693fcc765af0c0be7af1bf32d083"
   ],
   [
-    "client:false:columns3:3:base:plain:continues",
-    "0b94d80704d85750045a4b783bef885a647b49b8555afe3908ff8f2640e49b54"
-  ],
-  [
     "client:false:columns3:3:base:rule:ends",
     "f822777a474e2604d526bfaff9f5281489a7b4d8b440ae0be95bf7aa3552de5b"
-  ],
-  [
-    "client:false:columns3:3:base:rule:continues",
-    "fb90fa8e125481542462f815ddb34b9bf8049cd46cd7ebd6a4a5c6119790d74c"
   ],
   [
     "client:false:columns3:3:sunken:plain:ends",
     "c2947d711abaa17fa711eb62eb86b9983bb9693fcc765af0c0be7af1bf32d083"
   ],
   [
-    "client:false:columns3:3:sunken:plain:continues",
-    "0b94d80704d85750045a4b783bef885a647b49b8555afe3908ff8f2640e49b54"
-  ],
-  [
     "client:false:columns3:3:sunken:rule:ends",
     "f822777a474e2604d526bfaff9f5281489a7b4d8b440ae0be95bf7aa3552de5b"
-  ],
-  [
-    "client:false:columns3:3:sunken:rule:continues",
-    "fb90fa8e125481542462f815ddb34b9bf8049cd46cd7ebd6a4a5c6119790d74c"
   ],
   [
     "client:false:columns3:3:inverse:plain:ends",
     "cf86ec4f34e263eac430b89979b7514a5228bc48d834eee5bc8e0764c852dc7b"
   ],
   [
-    "client:false:columns3:3:inverse:plain:continues",
-    "bcb47df3eda8cc5bc0e147ca5df5761fad448c67a7eb49def70782af7f85a7ec"
-  ],
-  [
     "client:false:columns3:3:inverse:rule:ends",
     "d55610433777f3a22ecc20307fc0274dd9a5fe4a938ce2572d375fab55f5793a"
-  ],
-  [
-    "client:false:columns3:3:inverse:rule:continues",
-    "1c440b747e2d6c88800d6a208370496d42d389193b04bd422bc4827757559d9a"
   ],
   [
     "client:false:columns3:4:base:plain:ends",
     "d97177a02b784b3c7b64be0066bcb104238f0ec481e760d532fd5dade3f938ed"
   ],
   [
-    "client:false:columns3:4:base:plain:continues",
-    "bef598bfcc6df3921c67f05f32c225a6ab6f8f6739dfb653aa2c8b932706dd08"
-  ],
-  [
     "client:false:columns3:4:base:rule:ends",
     "ed7918e779a25a09d1c3d586637a9747865e24af206339db96a0616ae1041494"
-  ],
-  [
-    "client:false:columns3:4:base:rule:continues",
-    "5c465af30601f2252cba197883a92933545dc08b30a7ac61f5b8601006d0ea98"
   ],
   [
     "client:false:columns3:4:sunken:plain:ends",
     "d97177a02b784b3c7b64be0066bcb104238f0ec481e760d532fd5dade3f938ed"
   ],
   [
-    "client:false:columns3:4:sunken:plain:continues",
-    "bef598bfcc6df3921c67f05f32c225a6ab6f8f6739dfb653aa2c8b932706dd08"
-  ],
-  [
     "client:false:columns3:4:sunken:rule:ends",
     "ed7918e779a25a09d1c3d586637a9747865e24af206339db96a0616ae1041494"
-  ],
-  [
-    "client:false:columns3:4:sunken:rule:continues",
-    "5c465af30601f2252cba197883a92933545dc08b30a7ac61f5b8601006d0ea98"
   ],
   [
     "client:false:columns3:4:inverse:plain:ends",
     "033af920ebc4e6bf8e2ba4860b14aeadf384abc33978c611faeb0748044d3ed3"
   ],
   [
-    "client:false:columns3:4:inverse:plain:continues",
-    "a3b961cae943d36c22e97502caf70a9b67a133ec26a358ef4f382d5fe8a4805d"
-  ],
-  [
     "client:false:columns3:4:inverse:rule:ends",
     "6a0feb76d3da6109c88a9ac2c38241a389b91f34439005c46f66f426044b328c"
-  ],
-  [
-    "client:false:columns3:4:inverse:rule:continues",
-    "4904e2f6f74eb0b7f7a283352f5d8dacda717cd8d173b81b1f067d9280951901"
   ],
   [
     "client:false:columns3:5:base:plain:ends",
     "f8d3e1b1fe8c41172d63041f200bdeef9840ac8fb74a2921fcaf9715f6778683"
   ],
   [
-    "client:false:columns3:5:base:plain:continues",
-    "8a8f97f49cec52bb82bb37019e8d95ee56bcabe6fa55c3d5058cb644fc448454"
-  ],
-  [
     "client:false:columns3:5:base:rule:ends",
     "f81e21514e781f09178a15620384655dda495af365ca821d9ebff20a6ac7bbe0"
-  ],
-  [
-    "client:false:columns3:5:base:rule:continues",
-    "7873063e7a2607e1a21a205ccb9532f83ff7c98f3341efbf201653fdf147f13f"
   ],
   [
     "client:false:columns3:5:sunken:plain:ends",
     "f8d3e1b1fe8c41172d63041f200bdeef9840ac8fb74a2921fcaf9715f6778683"
   ],
   [
-    "client:false:columns3:5:sunken:plain:continues",
-    "8a8f97f49cec52bb82bb37019e8d95ee56bcabe6fa55c3d5058cb644fc448454"
-  ],
-  [
     "client:false:columns3:5:sunken:rule:ends",
     "f81e21514e781f09178a15620384655dda495af365ca821d9ebff20a6ac7bbe0"
-  ],
-  [
-    "client:false:columns3:5:sunken:rule:continues",
-    "7873063e7a2607e1a21a205ccb9532f83ff7c98f3341efbf201653fdf147f13f"
   ],
   [
     "client:false:columns3:5:inverse:plain:ends",
     "7afdc7f473082e6054bbf6d4884fe7231c7e1a1b1bff70aee61e8869ccf263f2"
   ],
   [
-    "client:false:columns3:5:inverse:plain:continues",
-    "e6d0acb72bfc1c558c81a153bb30db57ca72ea71f903d535fa683492f0fc379a"
-  ],
-  [
     "client:false:columns3:5:inverse:rule:ends",
     "e66bdf85996de48d385e3861ce7e85bbf145c117548330eff3809fb810bade4c"
-  ],
-  [
-    "client:false:columns3:5:inverse:rule:continues",
-    "cf05cb469c1eb08d2a7513300ce018be0ea8c693561ed666f2b65fa153b2ceff"
   ],
   [
     "client:true:stacked:3:base:plain:ends",
     "28695ef968d4d5611a006d5364c8916d0377d515157abeaebe8400b9cefa975e"
   ],
   [
-    "client:true:stacked:3:base:plain:continues",
-    "0b11d1f39fdb66fe7eb8830b13713435a02148324a9978e44b295c22aa4622aa"
-  ],
-  [
     "client:true:stacked:3:base:rule:ends",
     "52a790af8a31224479b0801fedf4ab8e6ee11cb9a4b69b7821463e86de5f63d0"
-  ],
-  [
-    "client:true:stacked:3:base:rule:continues",
-    "096fc3ad3634738b6758a7678399e4e3869a40d7f616ebd4e29257e8355de746"
   ],
   [
     "client:true:stacked:3:sunken:plain:ends",
     "28695ef968d4d5611a006d5364c8916d0377d515157abeaebe8400b9cefa975e"
   ],
   [
-    "client:true:stacked:3:sunken:plain:continues",
-    "0b11d1f39fdb66fe7eb8830b13713435a02148324a9978e44b295c22aa4622aa"
-  ],
-  [
     "client:true:stacked:3:sunken:rule:ends",
     "52a790af8a31224479b0801fedf4ab8e6ee11cb9a4b69b7821463e86de5f63d0"
-  ],
-  [
-    "client:true:stacked:3:sunken:rule:continues",
-    "096fc3ad3634738b6758a7678399e4e3869a40d7f616ebd4e29257e8355de746"
   ],
   [
     "client:true:stacked:3:inverse:plain:ends",
     "b7aaf49df7809f0b45b383bc7804f1e4e3125f22c3ab26cf7d3024f1fc3a10e2"
   ],
   [
-    "client:true:stacked:3:inverse:plain:continues",
-    "7ae2962c232903399f4c0a309dba599edc7cd90d86f82e86017696f0666a3fff"
-  ],
-  [
     "client:true:stacked:3:inverse:rule:ends",
     "fcde729f991dc82576efa447ecb98fbd93d2a4ff01bfd2b94a0866e07354ec96"
-  ],
-  [
-    "client:true:stacked:3:inverse:rule:continues",
-    "8a5865e2763d2ef6c4f1fdda5bb0616bd6bfc2f83f0397c6a3d62b5da78645d0"
   ],
   [
     "client:true:stacked:4:base:plain:ends",
     "d5efb300465ad079723dfaa2d0b212ea1ed63b0f81f948f6ff64c7b6582a0ec9"
   ],
   [
-    "client:true:stacked:4:base:plain:continues",
-    "9455417f3df1744cf318687a6dd313d4413b71acfa7e012289cbb5e5372d685b"
-  ],
-  [
     "client:true:stacked:4:base:rule:ends",
     "f0aa969e9d39c107a2cdef7c55b0786511efc02ddc934a7c5012b9e53ba2c469"
-  ],
-  [
-    "client:true:stacked:4:base:rule:continues",
-    "d8a48c99955e06fe68acac987f66ede89d4b4a10136bfcc104eb53ae7de7d52e"
   ],
   [
     "client:true:stacked:4:sunken:plain:ends",
     "d5efb300465ad079723dfaa2d0b212ea1ed63b0f81f948f6ff64c7b6582a0ec9"
   ],
   [
-    "client:true:stacked:4:sunken:plain:continues",
-    "9455417f3df1744cf318687a6dd313d4413b71acfa7e012289cbb5e5372d685b"
-  ],
-  [
     "client:true:stacked:4:sunken:rule:ends",
     "f0aa969e9d39c107a2cdef7c55b0786511efc02ddc934a7c5012b9e53ba2c469"
-  ],
-  [
-    "client:true:stacked:4:sunken:rule:continues",
-    "d8a48c99955e06fe68acac987f66ede89d4b4a10136bfcc104eb53ae7de7d52e"
   ],
   [
     "client:true:stacked:4:inverse:plain:ends",
     "2804c7f51e982b07e9af1611f3ee3e16ac80117468761b97ed7c572f3f8719ac"
   ],
   [
-    "client:true:stacked:4:inverse:plain:continues",
-    "3cd5c3a142837b3926db5c120c61596652f1106da72b451f0b938504ddad2c4e"
-  ],
-  [
     "client:true:stacked:4:inverse:rule:ends",
     "beb3e6723e4871cae7243c098edce4dba0d8fece89f7dad00ade6ec6ce8f6e5e"
-  ],
-  [
-    "client:true:stacked:4:inverse:rule:continues",
-    "d457c0cd888288f1852cc2aeb3dc814f231593514eae246cc8b902f6b00f9126"
   ],
   [
     "client:true:stacked:5:base:plain:ends",
     "7b0f8915bf004d5fb5d3450d96e27a27d49adafd3d746a097054204a8e53f42c"
   ],
   [
-    "client:true:stacked:5:base:plain:continues",
-    "da72aece6012739f76cb4403714ee847ddbfb9eeb4df364062f902a2be86374c"
-  ],
-  [
     "client:true:stacked:5:base:rule:ends",
     "cd48fe220c19f7b8a9aef5c3066eac58e8542150b5a207539e490060f7058066"
-  ],
-  [
-    "client:true:stacked:5:base:rule:continues",
-    "588b5cc018ada160818d4231e17e09f221bc2cbb38ff189f48e26b3ad6c86df2"
   ],
   [
     "client:true:stacked:5:sunken:plain:ends",
     "7b0f8915bf004d5fb5d3450d96e27a27d49adafd3d746a097054204a8e53f42c"
   ],
   [
-    "client:true:stacked:5:sunken:plain:continues",
-    "da72aece6012739f76cb4403714ee847ddbfb9eeb4df364062f902a2be86374c"
-  ],
-  [
     "client:true:stacked:5:sunken:rule:ends",
     "cd48fe220c19f7b8a9aef5c3066eac58e8542150b5a207539e490060f7058066"
-  ],
-  [
-    "client:true:stacked:5:sunken:rule:continues",
-    "588b5cc018ada160818d4231e17e09f221bc2cbb38ff189f48e26b3ad6c86df2"
   ],
   [
     "client:true:stacked:5:inverse:plain:ends",
     "ab406ce9c278cb90170dca7d800db09d2fde1b968ce1830e0f9925be2566d20d"
   ],
   [
-    "client:true:stacked:5:inverse:plain:continues",
-    "b5e6b6d00a29e6159abd08c0f1c4780d5b34b4da90108ecb56ca54e4adc30614"
-  ],
-  [
     "client:true:stacked:5:inverse:rule:ends",
     "56052268da5d03211d020c7ce77352e348221ef0a1fb0fccd292a63dd1b4bd3f"
-  ],
-  [
-    "client:true:stacked:5:inverse:rule:continues",
-    "7150e5c1ff5760670b14f22e3baac4c4134903598ff748f7ca4cf9dc2530a02a"
   ],
   [
     "client:true:columns2:3:base:plain:ends",
     "63636696bdd4a519819d8d0edc88683db3a0f7e32f8b4cd0d5c10688e324f013"
   ],
   [
-    "client:true:columns2:3:base:plain:continues",
-    "1a8cbc3cd5d2b9636f3dd56d516b19b854275a20e77278f30d64f305e335aff6"
-  ],
-  [
     "client:true:columns2:3:base:rule:ends",
     "998a18ced9ba3b10fa78b6b9a352e2be2c2d752e44ba3246291d65ff99ee0013"
-  ],
-  [
-    "client:true:columns2:3:base:rule:continues",
-    "a525289da029f88285021ef37feaaba4eb0fb8c695b945655c13e655c8f2228f"
   ],
   [
     "client:true:columns2:3:sunken:plain:ends",
     "63636696bdd4a519819d8d0edc88683db3a0f7e32f8b4cd0d5c10688e324f013"
   ],
   [
-    "client:true:columns2:3:sunken:plain:continues",
-    "1a8cbc3cd5d2b9636f3dd56d516b19b854275a20e77278f30d64f305e335aff6"
-  ],
-  [
     "client:true:columns2:3:sunken:rule:ends",
     "998a18ced9ba3b10fa78b6b9a352e2be2c2d752e44ba3246291d65ff99ee0013"
-  ],
-  [
-    "client:true:columns2:3:sunken:rule:continues",
-    "a525289da029f88285021ef37feaaba4eb0fb8c695b945655c13e655c8f2228f"
   ],
   [
     "client:true:columns2:3:inverse:plain:ends",
     "d29192335846f0c9ad7583dc0707e8599b5b6e32d77efac6d9b22808610f0fa0"
   ],
   [
-    "client:true:columns2:3:inverse:plain:continues",
-    "3bb715d08e0395be28dd0290aa2a315c2e3fc55c1ef572662da1444c862447b3"
-  ],
-  [
     "client:true:columns2:3:inverse:rule:ends",
     "00fc4b72bfff3ee567d60af7c3d6b56f7b82a519783e3c9cdcea632cdff6b89b"
-  ],
-  [
-    "client:true:columns2:3:inverse:rule:continues",
-    "b3543737e6eae52b4572710e264c002f6f1a226c396c02e9ae288efe94bc092d"
   ],
   [
     "client:true:columns2:4:base:plain:ends",
     "2b8c00c33a5bdf47372a8b0fb2f7054a4cd8d439f3d43e0401a2e51aa018ee61"
   ],
   [
-    "client:true:columns2:4:base:plain:continues",
-    "cfd06114a4235aa6b04d100e463b597d5150ba60ab918d735a6b904dae2385b0"
-  ],
-  [
     "client:true:columns2:4:base:rule:ends",
     "0ae50e65599640ad2f2644f657bcada2221dd1358759abb03f662954843c08c6"
-  ],
-  [
-    "client:true:columns2:4:base:rule:continues",
-    "004dcacf8d43235bb2ac01b131d1e7ea1586f4b0edc1f23d036ae223f1b4efb2"
   ],
   [
     "client:true:columns2:4:sunken:plain:ends",
     "2b8c00c33a5bdf47372a8b0fb2f7054a4cd8d439f3d43e0401a2e51aa018ee61"
   ],
   [
-    "client:true:columns2:4:sunken:plain:continues",
-    "cfd06114a4235aa6b04d100e463b597d5150ba60ab918d735a6b904dae2385b0"
-  ],
-  [
     "client:true:columns2:4:sunken:rule:ends",
     "0ae50e65599640ad2f2644f657bcada2221dd1358759abb03f662954843c08c6"
-  ],
-  [
-    "client:true:columns2:4:sunken:rule:continues",
-    "004dcacf8d43235bb2ac01b131d1e7ea1586f4b0edc1f23d036ae223f1b4efb2"
   ],
   [
     "client:true:columns2:4:inverse:plain:ends",
     "706f1a149228de83ca46164636f859406a17b8c1310ed66766d3b42d64245e9d"
   ],
   [
-    "client:true:columns2:4:inverse:plain:continues",
-    "21de0047f3631715c98117e3cea0958f9f6b44eed49e0c322f520eda84d70aaa"
-  ],
-  [
     "client:true:columns2:4:inverse:rule:ends",
     "a6d668f279115b42ffb2304daa9b70e650becb15e5f269d13a621451cc1dcf46"
-  ],
-  [
-    "client:true:columns2:4:inverse:rule:continues",
-    "f2eadbc7fe67153e2cb4b5361568a7f159f1c390164f02d8cbaaa2aeafb37fd7"
   ],
   [
     "client:true:columns2:5:base:plain:ends",
     "1529d74ce048a70e6e51bfddbdbf50b97b43e138aaf8949ee1df001fb6e2c15f"
   ],
   [
-    "client:true:columns2:5:base:plain:continues",
-    "40f457a1bb7f0ccb83b1000b7b2f686f5672a6844a54bcde417a79d4add737b2"
-  ],
-  [
     "client:true:columns2:5:base:rule:ends",
     "19c1b962e5529a55a3d80583ee289cb22388fcae673d66236d3f9d6bd1ceca51"
-  ],
-  [
-    "client:true:columns2:5:base:rule:continues",
-    "60e17d1d5c808edcd5c4ce99f227f4f2eb1225346ca434bf2210a9451ba31640"
   ],
   [
     "client:true:columns2:5:sunken:plain:ends",
     "1529d74ce048a70e6e51bfddbdbf50b97b43e138aaf8949ee1df001fb6e2c15f"
   ],
   [
-    "client:true:columns2:5:sunken:plain:continues",
-    "40f457a1bb7f0ccb83b1000b7b2f686f5672a6844a54bcde417a79d4add737b2"
-  ],
-  [
     "client:true:columns2:5:sunken:rule:ends",
     "19c1b962e5529a55a3d80583ee289cb22388fcae673d66236d3f9d6bd1ceca51"
-  ],
-  [
-    "client:true:columns2:5:sunken:rule:continues",
-    "60e17d1d5c808edcd5c4ce99f227f4f2eb1225346ca434bf2210a9451ba31640"
   ],
   [
     "client:true:columns2:5:inverse:plain:ends",
     "6dc6a5ac56bbf7da9715db793e74a96473796298de5b9358beb667191bf6d4ad"
   ],
   [
-    "client:true:columns2:5:inverse:plain:continues",
-    "7fb5d6cf70ae89cd5d04b01e59a65a4d28d81f01308c559193986ed70f68defc"
-  ],
-  [
     "client:true:columns2:5:inverse:rule:ends",
     "f680fc332eae046be4619598ccebfdf41f232aca61c3969a5ac96249aaddba97"
-  ],
-  [
-    "client:true:columns2:5:inverse:rule:continues",
-    "a1ccf14effaf298b5148aa7916ff1395f3a611be49653c0efa441453049064ad"
   ],
   [
     "client:true:columns3:3:base:plain:ends",
     "01379b89bd7bcea5e52c4d99d9095aafa7f5d67fdb03b9ff570f9298afa8c2fd"
   ],
   [
-    "client:true:columns3:3:base:plain:continues",
-    "8f82dd3a46d444c2c918b9cc1c7a416ca94923f8c3157eac42666fb723403766"
-  ],
-  [
     "client:true:columns3:3:base:rule:ends",
     "73574c12bee7aec2cde0b629ce790762bbcff0cde83c931390d134018e2f205a"
-  ],
-  [
-    "client:true:columns3:3:base:rule:continues",
-    "29e88ccc021e7c58a6433f1ae624fa8a9ee80b24504197a873f7eb9ce5ab36a5"
   ],
   [
     "client:true:columns3:3:sunken:plain:ends",
     "01379b89bd7bcea5e52c4d99d9095aafa7f5d67fdb03b9ff570f9298afa8c2fd"
   ],
   [
-    "client:true:columns3:3:sunken:plain:continues",
-    "8f82dd3a46d444c2c918b9cc1c7a416ca94923f8c3157eac42666fb723403766"
-  ],
-  [
     "client:true:columns3:3:sunken:rule:ends",
     "73574c12bee7aec2cde0b629ce790762bbcff0cde83c931390d134018e2f205a"
-  ],
-  [
-    "client:true:columns3:3:sunken:rule:continues",
-    "29e88ccc021e7c58a6433f1ae624fa8a9ee80b24504197a873f7eb9ce5ab36a5"
   ],
   [
     "client:true:columns3:3:inverse:plain:ends",
     "cf3804fb787520cf757f5f946d32fadf6c7551deafa63e3b6641a0732d5a509c"
   ],
   [
-    "client:true:columns3:3:inverse:plain:continues",
-    "f9edd8a8d11a0acab6a4846335961cb6cc5ff516d71d932c56bac89816c122e5"
-  ],
-  [
     "client:true:columns3:3:inverse:rule:ends",
     "00b5acb8515c5bf4b88911201a2e73ce21c3fd04b126e8c229cb0bfd95278d9b"
-  ],
-  [
-    "client:true:columns3:3:inverse:rule:continues",
-    "099b02be9feee34200a7ad644eef5ad01c976eab943fb8d22085922771e0ba93"
   ],
   [
     "client:true:columns3:4:base:plain:ends",
     "97db2a4d57e7f818c2cba91ae6ee06060c7a27c65820c9b0041262880d9e52f7"
   ],
   [
-    "client:true:columns3:4:base:plain:continues",
-    "a2d076d17905747a0126488d6a53a10fa7fccc209767da9c645dd0b5a6a73197"
-  ],
-  [
     "client:true:columns3:4:base:rule:ends",
     "9cced4aa9abf9a9f8c749146d4cd0bc9fcfb02c224886dcd3013ca9861232995"
-  ],
-  [
-    "client:true:columns3:4:base:rule:continues",
-    "1141ec757599f4c4823a6a1300232f2a0d0ce5ea77b4e50822ff79cfd73595a7"
   ],
   [
     "client:true:columns3:4:sunken:plain:ends",
     "97db2a4d57e7f818c2cba91ae6ee06060c7a27c65820c9b0041262880d9e52f7"
   ],
   [
-    "client:true:columns3:4:sunken:plain:continues",
-    "a2d076d17905747a0126488d6a53a10fa7fccc209767da9c645dd0b5a6a73197"
-  ],
-  [
     "client:true:columns3:4:sunken:rule:ends",
     "9cced4aa9abf9a9f8c749146d4cd0bc9fcfb02c224886dcd3013ca9861232995"
-  ],
-  [
-    "client:true:columns3:4:sunken:rule:continues",
-    "1141ec757599f4c4823a6a1300232f2a0d0ce5ea77b4e50822ff79cfd73595a7"
   ],
   [
     "client:true:columns3:4:inverse:plain:ends",
     "54c64970ca6ee76ecc0f3a13a46c59729950b2fd781b5553b185a75cd9a969a5"
   ],
   [
-    "client:true:columns3:4:inverse:plain:continues",
-    "8e1141c570c2fec5a5d218289d7c852f822e53bdeacf436da22098b37e7736ba"
-  ],
-  [
     "client:true:columns3:4:inverse:rule:ends",
     "392fe3cc31eb22df29f7f2703a73f1bb2044e6bbea5d29d1582250949bb809e6"
-  ],
-  [
-    "client:true:columns3:4:inverse:rule:continues",
-    "99582f0f177d3a7c941011b0ee9916601b5dcac7b8d9176ffb2e9a8799c9ade3"
   ],
   [
     "client:true:columns3:5:base:plain:ends",
     "9933271ddc4edd5d81e1825bcbdbaebb564f76911e26466b54439d6eeedc8f7e"
   ],
   [
-    "client:true:columns3:5:base:plain:continues",
-    "ef33bea1e5e8cc8c0e928f6267bf2a98dd95e4e28bb9e1251c9abba29b5c867b"
-  ],
-  [
     "client:true:columns3:5:base:rule:ends",
     "c320ac236021fa06d5a1227e48ff569e8b9d9deb5dd4eb4e9229463afd67b79a"
-  ],
-  [
-    "client:true:columns3:5:base:rule:continues",
-    "8538b4b77967f7b536daf202d1ada8d74ec69272ec8805dffc86ab0b04531832"
   ],
   [
     "client:true:columns3:5:sunken:plain:ends",
     "9933271ddc4edd5d81e1825bcbdbaebb564f76911e26466b54439d6eeedc8f7e"
   ],
   [
-    "client:true:columns3:5:sunken:plain:continues",
-    "ef33bea1e5e8cc8c0e928f6267bf2a98dd95e4e28bb9e1251c9abba29b5c867b"
-  ],
-  [
     "client:true:columns3:5:sunken:rule:ends",
     "c320ac236021fa06d5a1227e48ff569e8b9d9deb5dd4eb4e9229463afd67b79a"
-  ],
-  [
-    "client:true:columns3:5:sunken:rule:continues",
-    "8538b4b77967f7b536daf202d1ada8d74ec69272ec8805dffc86ab0b04531832"
   ],
   [
     "client:true:columns3:5:inverse:plain:ends",
     "146ccbc226fe53c72bdb648a8a280b35a0637198d915b006fbf3f531918ec22f"
   ],
   [
-    "client:true:columns3:5:inverse:plain:continues",
-    "cc6894ced03b9bb5e869803f203042885700ce730cd77ab61a43e55257344bca"
-  ],
-  [
     "client:true:columns3:5:inverse:rule:ends",
     "5731124301325ed153aede4c77f9b5bb6fd7713b028f672db74fb91e3283b101"
-  ],
-  [
-    "client:true:columns3:5:inverse:rule:continues",
-    "8522b56fa748c1a3a678d71fbad4feb12e121cba835d470169f726c579d3e53c"
   ],
   [
     "server:false:stacked:3:base:plain:ends",
     "c4b18fcf7287ee90ebbd608619202fb464e2e1c2287c28583652652b84f07e83"
   ],
   [
-    "server:false:stacked:3:base:plain:continues",
-    "848d4a4583a13c539327646125297be9ead6d05844178977e857f30a4900b846"
-  ],
-  [
     "server:false:stacked:3:base:rule:ends",
     "46a3ca7c43c9a1e81244c8e7afb3667731ae500fa202a365181eaca25e5ac74b"
-  ],
-  [
-    "server:false:stacked:3:base:rule:continues",
-    "c9b6568510a6ff794305df0de4e3866ae97be4ed1e4ac356353f1fce31022cd2"
   ],
   [
     "server:false:stacked:3:sunken:plain:ends",
     "c4b18fcf7287ee90ebbd608619202fb464e2e1c2287c28583652652b84f07e83"
   ],
   [
-    "server:false:stacked:3:sunken:plain:continues",
-    "848d4a4583a13c539327646125297be9ead6d05844178977e857f30a4900b846"
-  ],
-  [
     "server:false:stacked:3:sunken:rule:ends",
     "46a3ca7c43c9a1e81244c8e7afb3667731ae500fa202a365181eaca25e5ac74b"
-  ],
-  [
-    "server:false:stacked:3:sunken:rule:continues",
-    "c9b6568510a6ff794305df0de4e3866ae97be4ed1e4ac356353f1fce31022cd2"
   ],
   [
     "server:false:stacked:3:inverse:plain:ends",
     "648f23f4e6f32a840837ee0b4ff33bf48e4cfece8fadbaac1d8ded8e7bb9c3e1"
   ],
   [
-    "server:false:stacked:3:inverse:plain:continues",
-    "0489fd939a579c802fa58f432df720cc6cbd3426efd6082af3250180d2781d3c"
-  ],
-  [
     "server:false:stacked:3:inverse:rule:ends",
     "d0323a340b77a365a900209d7809baddf4549fb4381f0e060442ae9d14667a60"
-  ],
-  [
-    "server:false:stacked:3:inverse:rule:continues",
-    "acec79b68b5fe080e65b4d419f2954d42d8373690dc0ef5c41d8608e74e795f3"
   ],
   [
     "server:false:stacked:4:base:plain:ends",
     "2dd8e72c8a5f393d5740a820f469235568e963f332fdb7b43aa6fe2ce139e3df"
   ],
   [
-    "server:false:stacked:4:base:plain:continues",
-    "7f3bed4f3363ea59b02d5c5c39ee4a7482a9a762de5f061f3e929afd5582e607"
-  ],
-  [
     "server:false:stacked:4:base:rule:ends",
     "cdc87d29c0a2a0a7d448d865bf6d457fbb4568cbbd3dafffd0d0d7da983a975d"
-  ],
-  [
-    "server:false:stacked:4:base:rule:continues",
-    "4b2c2f328906f36d4412fb3b9734645d3255de3f88cf5fe80d59d03a4f775e7f"
   ],
   [
     "server:false:stacked:4:sunken:plain:ends",
     "2dd8e72c8a5f393d5740a820f469235568e963f332fdb7b43aa6fe2ce139e3df"
   ],
   [
-    "server:false:stacked:4:sunken:plain:continues",
-    "7f3bed4f3363ea59b02d5c5c39ee4a7482a9a762de5f061f3e929afd5582e607"
-  ],
-  [
     "server:false:stacked:4:sunken:rule:ends",
     "cdc87d29c0a2a0a7d448d865bf6d457fbb4568cbbd3dafffd0d0d7da983a975d"
-  ],
-  [
-    "server:false:stacked:4:sunken:rule:continues",
-    "4b2c2f328906f36d4412fb3b9734645d3255de3f88cf5fe80d59d03a4f775e7f"
   ],
   [
     "server:false:stacked:4:inverse:plain:ends",
     "521ee4b5ae502f6d0070bbc66409261191fbba221f8beac96af3b47f18f8f18b"
   ],
   [
-    "server:false:stacked:4:inverse:plain:continues",
-    "f00a60d7b8d79c0cdc60a8250055fea459db26f0b4f5439bcc6e36463ba8a578"
-  ],
-  [
     "server:false:stacked:4:inverse:rule:ends",
     "991083ed703310b0bac8f60986cdd48fff4bfda52bef17d5174c6e174c135836"
-  ],
-  [
-    "server:false:stacked:4:inverse:rule:continues",
-    "32f0ea282df611c18b581c94c3237cc0e27fc0624a6effb3760c675c15d71bb1"
   ],
   [
     "server:false:stacked:5:base:plain:ends",
     "9bb39c0c2591f2678dd7a5e8ec4782eb6f78fbaa1da032831ba58dc40f0f283f"
   ],
   [
-    "server:false:stacked:5:base:plain:continues",
-    "2b13ed5af2908deb2cc515edb5c33d97a60ca1a6eb5cd933abb7e68bf3812172"
-  ],
-  [
     "server:false:stacked:5:base:rule:ends",
     "3ed967dca09e83bd17e8e7a99d13ab09fcb1d2bd6fdf84364c7516d21702dda6"
-  ],
-  [
-    "server:false:stacked:5:base:rule:continues",
-    "270b900d3defa604cd9096db84c25c699f9623791fba071d2a58b508708d7bf9"
   ],
   [
     "server:false:stacked:5:sunken:plain:ends",
     "9bb39c0c2591f2678dd7a5e8ec4782eb6f78fbaa1da032831ba58dc40f0f283f"
   ],
   [
-    "server:false:stacked:5:sunken:plain:continues",
-    "2b13ed5af2908deb2cc515edb5c33d97a60ca1a6eb5cd933abb7e68bf3812172"
-  ],
-  [
     "server:false:stacked:5:sunken:rule:ends",
     "3ed967dca09e83bd17e8e7a99d13ab09fcb1d2bd6fdf84364c7516d21702dda6"
-  ],
-  [
-    "server:false:stacked:5:sunken:rule:continues",
-    "270b900d3defa604cd9096db84c25c699f9623791fba071d2a58b508708d7bf9"
   ],
   [
     "server:false:stacked:5:inverse:plain:ends",
     "13c317f4067083cd16187cfc06d75aff3f9bb57979f8b96997ecd30d23244ca8"
   ],
   [
-    "server:false:stacked:5:inverse:plain:continues",
-    "cfaf724a5af03a173d471a01540e74aee830b95eb5d19650537ffe6dc82beb35"
-  ],
-  [
     "server:false:stacked:5:inverse:rule:ends",
     "faa6dbe78d4eada4b05fbeb01ef94c8f911fc4329557f3568721b8405d47b7c8"
-  ],
-  [
-    "server:false:stacked:5:inverse:rule:continues",
-    "5cc684b0b335ace10198c8d4e98b7903b943a4a52ed6e9c8a250f4245a4340b4"
   ],
   [
     "server:false:columns2:3:base:plain:ends",
     "eb8139c147d2ec07ca654d0c2b85af419b93588f98d5b167614cffab759ebb96"
   ],
   [
-    "server:false:columns2:3:base:plain:continues",
-    "3605bbfc7077f530835b054176fb1a903ed92b69fa1f25c87999a1dc591175cb"
-  ],
-  [
     "server:false:columns2:3:base:rule:ends",
     "54e60fb45a08d25750fd1c6e003bae823a98e9e10429e2194dc6f0afabef9e2d"
-  ],
-  [
-    "server:false:columns2:3:base:rule:continues",
-    "3fbd8d3a2d695a6bf3c2bef09270eb204cdd1f506e51ce121bdf95ccd9e20b9e"
   ],
   [
     "server:false:columns2:3:sunken:plain:ends",
     "eb8139c147d2ec07ca654d0c2b85af419b93588f98d5b167614cffab759ebb96"
   ],
   [
-    "server:false:columns2:3:sunken:plain:continues",
-    "3605bbfc7077f530835b054176fb1a903ed92b69fa1f25c87999a1dc591175cb"
-  ],
-  [
     "server:false:columns2:3:sunken:rule:ends",
     "54e60fb45a08d25750fd1c6e003bae823a98e9e10429e2194dc6f0afabef9e2d"
-  ],
-  [
-    "server:false:columns2:3:sunken:rule:continues",
-    "3fbd8d3a2d695a6bf3c2bef09270eb204cdd1f506e51ce121bdf95ccd9e20b9e"
   ],
   [
     "server:false:columns2:3:inverse:plain:ends",
     "670002f22fe9d8354943c368bfa824b4f90ec69db1f8ce712166bb26311c2294"
   ],
   [
-    "server:false:columns2:3:inverse:plain:continues",
-    "64520a614e67f3d404aa60a7907cc5588fa47604cd7ad9483acc0a869ae61385"
-  ],
-  [
     "server:false:columns2:3:inverse:rule:ends",
     "44b093d5dc6b4cf8f1a6707e38b7c588f3e3c6ec90cc9681a50bc97a394ad5a5"
-  ],
-  [
-    "server:false:columns2:3:inverse:rule:continues",
-    "a0059943c888dac4d480fdd7df242fc420f6c1f44698f5281ae996f49458dc24"
   ],
   [
     "server:false:columns2:4:base:plain:ends",
     "59aab344919722cae197127b663d744a27598142ed0bedfdfc02f9650c1f697e"
   ],
   [
-    "server:false:columns2:4:base:plain:continues",
-    "d36b38e03ab1d6a0243f5927e1c6bc41429351490ea69362a8be6bdf49f2fdd0"
-  ],
-  [
     "server:false:columns2:4:base:rule:ends",
     "2df0e72d139b770683388aaf69b3aa938e847ecaac10ba432be94de964cdf52b"
-  ],
-  [
-    "server:false:columns2:4:base:rule:continues",
-    "b3b50c7311b6d36f6b924fc5ac28182d05f29852c5aaa15d27032085bccb4e67"
   ],
   [
     "server:false:columns2:4:sunken:plain:ends",
     "59aab344919722cae197127b663d744a27598142ed0bedfdfc02f9650c1f697e"
   ],
   [
-    "server:false:columns2:4:sunken:plain:continues",
-    "d36b38e03ab1d6a0243f5927e1c6bc41429351490ea69362a8be6bdf49f2fdd0"
-  ],
-  [
     "server:false:columns2:4:sunken:rule:ends",
     "2df0e72d139b770683388aaf69b3aa938e847ecaac10ba432be94de964cdf52b"
-  ],
-  [
-    "server:false:columns2:4:sunken:rule:continues",
-    "b3b50c7311b6d36f6b924fc5ac28182d05f29852c5aaa15d27032085bccb4e67"
   ],
   [
     "server:false:columns2:4:inverse:plain:ends",
     "4c9a7ecc7545b69b82b8aa586b7518ffa1ef41f34955cf07d1c56964fe7a5c02"
   ],
   [
-    "server:false:columns2:4:inverse:plain:continues",
-    "861436c43841770a1b66e162a2e5182aaaac07a13e28d496547da89d6849d103"
-  ],
-  [
     "server:false:columns2:4:inverse:rule:ends",
     "31017ef0414256d5c9829947e730cc0fd7acca563c49509ccb4b4aa9131ca874"
-  ],
-  [
-    "server:false:columns2:4:inverse:rule:continues",
-    "432adba4c472b86905d236b28d796496f47bb53bffaee41bc988f687659d8050"
   ],
   [
     "server:false:columns2:5:base:plain:ends",
     "8989abe319df1ae2f52b76c9abe9e9cb54069e88eca37d36bd8b1302ec8f1cbe"
   ],
   [
-    "server:false:columns2:5:base:plain:continues",
-    "0be50bfc627c2951c61caf0d539b2f578188fc3ae7d08d571568eb671d705157"
-  ],
-  [
     "server:false:columns2:5:base:rule:ends",
     "3c373373f726e56678a37b8520f6e798d8bb3c8f579a93a8e4ce81464b8efc72"
-  ],
-  [
-    "server:false:columns2:5:base:rule:continues",
-    "426809ed22db60b9ff23f1406379b315c87434f096d5b56b2684b43316550e82"
   ],
   [
     "server:false:columns2:5:sunken:plain:ends",
     "8989abe319df1ae2f52b76c9abe9e9cb54069e88eca37d36bd8b1302ec8f1cbe"
   ],
   [
-    "server:false:columns2:5:sunken:plain:continues",
-    "0be50bfc627c2951c61caf0d539b2f578188fc3ae7d08d571568eb671d705157"
-  ],
-  [
     "server:false:columns2:5:sunken:rule:ends",
     "3c373373f726e56678a37b8520f6e798d8bb3c8f579a93a8e4ce81464b8efc72"
-  ],
-  [
-    "server:false:columns2:5:sunken:rule:continues",
-    "426809ed22db60b9ff23f1406379b315c87434f096d5b56b2684b43316550e82"
   ],
   [
     "server:false:columns2:5:inverse:plain:ends",
     "4d3d0716186a326aeed5c124b919af596b60188bc483dbbd0fce4d05eee2e859"
   ],
   [
-    "server:false:columns2:5:inverse:plain:continues",
-    "191aae4c729b662a3bf54662566966b478c64bb14ba41c083ce8e2599b58517a"
-  ],
-  [
     "server:false:columns2:5:inverse:rule:ends",
     "7abdc4de1fc7867106779bdcf79bac48b682239a918182755808bd03fc99c757"
-  ],
-  [
-    "server:false:columns2:5:inverse:rule:continues",
-    "2fcb5717eda30f8d01c9b876024a43f20354318d2d06c3a035cc21193558af2e"
   ],
   [
     "server:false:columns3:3:base:plain:ends",
     "c2947d711abaa17fa711eb62eb86b9983bb9693fcc765af0c0be7af1bf32d083"
   ],
   [
-    "server:false:columns3:3:base:plain:continues",
-    "0b94d80704d85750045a4b783bef885a647b49b8555afe3908ff8f2640e49b54"
-  ],
-  [
     "server:false:columns3:3:base:rule:ends",
     "f822777a474e2604d526bfaff9f5281489a7b4d8b440ae0be95bf7aa3552de5b"
-  ],
-  [
-    "server:false:columns3:3:base:rule:continues",
-    "fb90fa8e125481542462f815ddb34b9bf8049cd46cd7ebd6a4a5c6119790d74c"
   ],
   [
     "server:false:columns3:3:sunken:plain:ends",
     "c2947d711abaa17fa711eb62eb86b9983bb9693fcc765af0c0be7af1bf32d083"
   ],
   [
-    "server:false:columns3:3:sunken:plain:continues",
-    "0b94d80704d85750045a4b783bef885a647b49b8555afe3908ff8f2640e49b54"
-  ],
-  [
     "server:false:columns3:3:sunken:rule:ends",
     "f822777a474e2604d526bfaff9f5281489a7b4d8b440ae0be95bf7aa3552de5b"
-  ],
-  [
-    "server:false:columns3:3:sunken:rule:continues",
-    "fb90fa8e125481542462f815ddb34b9bf8049cd46cd7ebd6a4a5c6119790d74c"
   ],
   [
     "server:false:columns3:3:inverse:plain:ends",
     "cf86ec4f34e263eac430b89979b7514a5228bc48d834eee5bc8e0764c852dc7b"
   ],
   [
-    "server:false:columns3:3:inverse:plain:continues",
-    "bcb47df3eda8cc5bc0e147ca5df5761fad448c67a7eb49def70782af7f85a7ec"
-  ],
-  [
     "server:false:columns3:3:inverse:rule:ends",
     "d55610433777f3a22ecc20307fc0274dd9a5fe4a938ce2572d375fab55f5793a"
-  ],
-  [
-    "server:false:columns3:3:inverse:rule:continues",
-    "1c440b747e2d6c88800d6a208370496d42d389193b04bd422bc4827757559d9a"
   ],
   [
     "server:false:columns3:4:base:plain:ends",
     "d97177a02b784b3c7b64be0066bcb104238f0ec481e760d532fd5dade3f938ed"
   ],
   [
-    "server:false:columns3:4:base:plain:continues",
-    "bef598bfcc6df3921c67f05f32c225a6ab6f8f6739dfb653aa2c8b932706dd08"
-  ],
-  [
     "server:false:columns3:4:base:rule:ends",
     "ed7918e779a25a09d1c3d586637a9747865e24af206339db96a0616ae1041494"
-  ],
-  [
-    "server:false:columns3:4:base:rule:continues",
-    "5c465af30601f2252cba197883a92933545dc08b30a7ac61f5b8601006d0ea98"
   ],
   [
     "server:false:columns3:4:sunken:plain:ends",
     "d97177a02b784b3c7b64be0066bcb104238f0ec481e760d532fd5dade3f938ed"
   ],
   [
-    "server:false:columns3:4:sunken:plain:continues",
-    "bef598bfcc6df3921c67f05f32c225a6ab6f8f6739dfb653aa2c8b932706dd08"
-  ],
-  [
     "server:false:columns3:4:sunken:rule:ends",
     "ed7918e779a25a09d1c3d586637a9747865e24af206339db96a0616ae1041494"
-  ],
-  [
-    "server:false:columns3:4:sunken:rule:continues",
-    "5c465af30601f2252cba197883a92933545dc08b30a7ac61f5b8601006d0ea98"
   ],
   [
     "server:false:columns3:4:inverse:plain:ends",
     "033af920ebc4e6bf8e2ba4860b14aeadf384abc33978c611faeb0748044d3ed3"
   ],
   [
-    "server:false:columns3:4:inverse:plain:continues",
-    "a3b961cae943d36c22e97502caf70a9b67a133ec26a358ef4f382d5fe8a4805d"
-  ],
-  [
     "server:false:columns3:4:inverse:rule:ends",
     "6a0feb76d3da6109c88a9ac2c38241a389b91f34439005c46f66f426044b328c"
-  ],
-  [
-    "server:false:columns3:4:inverse:rule:continues",
-    "4904e2f6f74eb0b7f7a283352f5d8dacda717cd8d173b81b1f067d9280951901"
   ],
   [
     "server:false:columns3:5:base:plain:ends",
     "f8d3e1b1fe8c41172d63041f200bdeef9840ac8fb74a2921fcaf9715f6778683"
   ],
   [
-    "server:false:columns3:5:base:plain:continues",
-    "8a8f97f49cec52bb82bb37019e8d95ee56bcabe6fa55c3d5058cb644fc448454"
-  ],
-  [
     "server:false:columns3:5:base:rule:ends",
     "f81e21514e781f09178a15620384655dda495af365ca821d9ebff20a6ac7bbe0"
-  ],
-  [
-    "server:false:columns3:5:base:rule:continues",
-    "7873063e7a2607e1a21a205ccb9532f83ff7c98f3341efbf201653fdf147f13f"
   ],
   [
     "server:false:columns3:5:sunken:plain:ends",
     "f8d3e1b1fe8c41172d63041f200bdeef9840ac8fb74a2921fcaf9715f6778683"
   ],
   [
-    "server:false:columns3:5:sunken:plain:continues",
-    "8a8f97f49cec52bb82bb37019e8d95ee56bcabe6fa55c3d5058cb644fc448454"
-  ],
-  [
     "server:false:columns3:5:sunken:rule:ends",
     "f81e21514e781f09178a15620384655dda495af365ca821d9ebff20a6ac7bbe0"
-  ],
-  [
-    "server:false:columns3:5:sunken:rule:continues",
-    "7873063e7a2607e1a21a205ccb9532f83ff7c98f3341efbf201653fdf147f13f"
   ],
   [
     "server:false:columns3:5:inverse:plain:ends",
     "7afdc7f473082e6054bbf6d4884fe7231c7e1a1b1bff70aee61e8869ccf263f2"
   ],
   [
-    "server:false:columns3:5:inverse:plain:continues",
-    "e6d0acb72bfc1c558c81a153bb30db57ca72ea71f903d535fa683492f0fc379a"
-  ],
-  [
     "server:false:columns3:5:inverse:rule:ends",
     "e66bdf85996de48d385e3861ce7e85bbf145c117548330eff3809fb810bade4c"
-  ],
-  [
-    "server:false:columns3:5:inverse:rule:continues",
-    "cf05cb469c1eb08d2a7513300ce018be0ea8c693561ed666f2b65fa153b2ceff"
   ],
   [
     "server:true:stacked:3:base:plain:ends",
     "28695ef968d4d5611a006d5364c8916d0377d515157abeaebe8400b9cefa975e"
   ],
   [
-    "server:true:stacked:3:base:plain:continues",
-    "0b11d1f39fdb66fe7eb8830b13713435a02148324a9978e44b295c22aa4622aa"
-  ],
-  [
     "server:true:stacked:3:base:rule:ends",
     "52a790af8a31224479b0801fedf4ab8e6ee11cb9a4b69b7821463e86de5f63d0"
-  ],
-  [
-    "server:true:stacked:3:base:rule:continues",
-    "096fc3ad3634738b6758a7678399e4e3869a40d7f616ebd4e29257e8355de746"
   ],
   [
     "server:true:stacked:3:sunken:plain:ends",
     "28695ef968d4d5611a006d5364c8916d0377d515157abeaebe8400b9cefa975e"
   ],
   [
-    "server:true:stacked:3:sunken:plain:continues",
-    "0b11d1f39fdb66fe7eb8830b13713435a02148324a9978e44b295c22aa4622aa"
-  ],
-  [
     "server:true:stacked:3:sunken:rule:ends",
     "52a790af8a31224479b0801fedf4ab8e6ee11cb9a4b69b7821463e86de5f63d0"
-  ],
-  [
-    "server:true:stacked:3:sunken:rule:continues",
-    "096fc3ad3634738b6758a7678399e4e3869a40d7f616ebd4e29257e8355de746"
   ],
   [
     "server:true:stacked:3:inverse:plain:ends",
     "b7aaf49df7809f0b45b383bc7804f1e4e3125f22c3ab26cf7d3024f1fc3a10e2"
   ],
   [
-    "server:true:stacked:3:inverse:plain:continues",
-    "7ae2962c232903399f4c0a309dba599edc7cd90d86f82e86017696f0666a3fff"
-  ],
-  [
     "server:true:stacked:3:inverse:rule:ends",
     "fcde729f991dc82576efa447ecb98fbd93d2a4ff01bfd2b94a0866e07354ec96"
-  ],
-  [
-    "server:true:stacked:3:inverse:rule:continues",
-    "8a5865e2763d2ef6c4f1fdda5bb0616bd6bfc2f83f0397c6a3d62b5da78645d0"
   ],
   [
     "server:true:stacked:4:base:plain:ends",
     "d5efb300465ad079723dfaa2d0b212ea1ed63b0f81f948f6ff64c7b6582a0ec9"
   ],
   [
-    "server:true:stacked:4:base:plain:continues",
-    "9455417f3df1744cf318687a6dd313d4413b71acfa7e012289cbb5e5372d685b"
-  ],
-  [
     "server:true:stacked:4:base:rule:ends",
     "f0aa969e9d39c107a2cdef7c55b0786511efc02ddc934a7c5012b9e53ba2c469"
-  ],
-  [
-    "server:true:stacked:4:base:rule:continues",
-    "d8a48c99955e06fe68acac987f66ede89d4b4a10136bfcc104eb53ae7de7d52e"
   ],
   [
     "server:true:stacked:4:sunken:plain:ends",
     "d5efb300465ad079723dfaa2d0b212ea1ed63b0f81f948f6ff64c7b6582a0ec9"
   ],
   [
-    "server:true:stacked:4:sunken:plain:continues",
-    "9455417f3df1744cf318687a6dd313d4413b71acfa7e012289cbb5e5372d685b"
-  ],
-  [
     "server:true:stacked:4:sunken:rule:ends",
     "f0aa969e9d39c107a2cdef7c55b0786511efc02ddc934a7c5012b9e53ba2c469"
-  ],
-  [
-    "server:true:stacked:4:sunken:rule:continues",
-    "d8a48c99955e06fe68acac987f66ede89d4b4a10136bfcc104eb53ae7de7d52e"
   ],
   [
     "server:true:stacked:4:inverse:plain:ends",
     "2804c7f51e982b07e9af1611f3ee3e16ac80117468761b97ed7c572f3f8719ac"
   ],
   [
-    "server:true:stacked:4:inverse:plain:continues",
-    "3cd5c3a142837b3926db5c120c61596652f1106da72b451f0b938504ddad2c4e"
-  ],
-  [
     "server:true:stacked:4:inverse:rule:ends",
     "beb3e6723e4871cae7243c098edce4dba0d8fece89f7dad00ade6ec6ce8f6e5e"
-  ],
-  [
-    "server:true:stacked:4:inverse:rule:continues",
-    "d457c0cd888288f1852cc2aeb3dc814f231593514eae246cc8b902f6b00f9126"
   ],
   [
     "server:true:stacked:5:base:plain:ends",
     "7b0f8915bf004d5fb5d3450d96e27a27d49adafd3d746a097054204a8e53f42c"
   ],
   [
-    "server:true:stacked:5:base:plain:continues",
-    "da72aece6012739f76cb4403714ee847ddbfb9eeb4df364062f902a2be86374c"
-  ],
-  [
     "server:true:stacked:5:base:rule:ends",
     "cd48fe220c19f7b8a9aef5c3066eac58e8542150b5a207539e490060f7058066"
-  ],
-  [
-    "server:true:stacked:5:base:rule:continues",
-    "588b5cc018ada160818d4231e17e09f221bc2cbb38ff189f48e26b3ad6c86df2"
   ],
   [
     "server:true:stacked:5:sunken:plain:ends",
     "7b0f8915bf004d5fb5d3450d96e27a27d49adafd3d746a097054204a8e53f42c"
   ],
   [
-    "server:true:stacked:5:sunken:plain:continues",
-    "da72aece6012739f76cb4403714ee847ddbfb9eeb4df364062f902a2be86374c"
-  ],
-  [
     "server:true:stacked:5:sunken:rule:ends",
     "cd48fe220c19f7b8a9aef5c3066eac58e8542150b5a207539e490060f7058066"
-  ],
-  [
-    "server:true:stacked:5:sunken:rule:continues",
-    "588b5cc018ada160818d4231e17e09f221bc2cbb38ff189f48e26b3ad6c86df2"
   ],
   [
     "server:true:stacked:5:inverse:plain:ends",
     "ab406ce9c278cb90170dca7d800db09d2fde1b968ce1830e0f9925be2566d20d"
   ],
   [
-    "server:true:stacked:5:inverse:plain:continues",
-    "b5e6b6d00a29e6159abd08c0f1c4780d5b34b4da90108ecb56ca54e4adc30614"
-  ],
-  [
     "server:true:stacked:5:inverse:rule:ends",
     "56052268da5d03211d020c7ce77352e348221ef0a1fb0fccd292a63dd1b4bd3f"
-  ],
-  [
-    "server:true:stacked:5:inverse:rule:continues",
-    "7150e5c1ff5760670b14f22e3baac4c4134903598ff748f7ca4cf9dc2530a02a"
   ],
   [
     "server:true:columns2:3:base:plain:ends",
     "63636696bdd4a519819d8d0edc88683db3a0f7e32f8b4cd0d5c10688e324f013"
   ],
   [
-    "server:true:columns2:3:base:plain:continues",
-    "1a8cbc3cd5d2b9636f3dd56d516b19b854275a20e77278f30d64f305e335aff6"
-  ],
-  [
     "server:true:columns2:3:base:rule:ends",
     "998a18ced9ba3b10fa78b6b9a352e2be2c2d752e44ba3246291d65ff99ee0013"
-  ],
-  [
-    "server:true:columns2:3:base:rule:continues",
-    "a525289da029f88285021ef37feaaba4eb0fb8c695b945655c13e655c8f2228f"
   ],
   [
     "server:true:columns2:3:sunken:plain:ends",
     "63636696bdd4a519819d8d0edc88683db3a0f7e32f8b4cd0d5c10688e324f013"
   ],
   [
-    "server:true:columns2:3:sunken:plain:continues",
-    "1a8cbc3cd5d2b9636f3dd56d516b19b854275a20e77278f30d64f305e335aff6"
-  ],
-  [
     "server:true:columns2:3:sunken:rule:ends",
     "998a18ced9ba3b10fa78b6b9a352e2be2c2d752e44ba3246291d65ff99ee0013"
-  ],
-  [
-    "server:true:columns2:3:sunken:rule:continues",
-    "a525289da029f88285021ef37feaaba4eb0fb8c695b945655c13e655c8f2228f"
   ],
   [
     "server:true:columns2:3:inverse:plain:ends",
     "d29192335846f0c9ad7583dc0707e8599b5b6e32d77efac6d9b22808610f0fa0"
   ],
   [
-    "server:true:columns2:3:inverse:plain:continues",
-    "3bb715d08e0395be28dd0290aa2a315c2e3fc55c1ef572662da1444c862447b3"
-  ],
-  [
     "server:true:columns2:3:inverse:rule:ends",
     "00fc4b72bfff3ee567d60af7c3d6b56f7b82a519783e3c9cdcea632cdff6b89b"
-  ],
-  [
-    "server:true:columns2:3:inverse:rule:continues",
-    "b3543737e6eae52b4572710e264c002f6f1a226c396c02e9ae288efe94bc092d"
   ],
   [
     "server:true:columns2:4:base:plain:ends",
     "2b8c00c33a5bdf47372a8b0fb2f7054a4cd8d439f3d43e0401a2e51aa018ee61"
   ],
   [
-    "server:true:columns2:4:base:plain:continues",
-    "cfd06114a4235aa6b04d100e463b597d5150ba60ab918d735a6b904dae2385b0"
-  ],
-  [
     "server:true:columns2:4:base:rule:ends",
     "0ae50e65599640ad2f2644f657bcada2221dd1358759abb03f662954843c08c6"
-  ],
-  [
-    "server:true:columns2:4:base:rule:continues",
-    "004dcacf8d43235bb2ac01b131d1e7ea1586f4b0edc1f23d036ae223f1b4efb2"
   ],
   [
     "server:true:columns2:4:sunken:plain:ends",
     "2b8c00c33a5bdf47372a8b0fb2f7054a4cd8d439f3d43e0401a2e51aa018ee61"
   ],
   [
-    "server:true:columns2:4:sunken:plain:continues",
-    "cfd06114a4235aa6b04d100e463b597d5150ba60ab918d735a6b904dae2385b0"
-  ],
-  [
     "server:true:columns2:4:sunken:rule:ends",
     "0ae50e65599640ad2f2644f657bcada2221dd1358759abb03f662954843c08c6"
-  ],
-  [
-    "server:true:columns2:4:sunken:rule:continues",
-    "004dcacf8d43235bb2ac01b131d1e7ea1586f4b0edc1f23d036ae223f1b4efb2"
   ],
   [
     "server:true:columns2:4:inverse:plain:ends",
     "706f1a149228de83ca46164636f859406a17b8c1310ed66766d3b42d64245e9d"
   ],
   [
-    "server:true:columns2:4:inverse:plain:continues",
-    "21de0047f3631715c98117e3cea0958f9f6b44eed49e0c322f520eda84d70aaa"
-  ],
-  [
     "server:true:columns2:4:inverse:rule:ends",
     "a6d668f279115b42ffb2304daa9b70e650becb15e5f269d13a621451cc1dcf46"
-  ],
-  [
-    "server:true:columns2:4:inverse:rule:continues",
-    "f2eadbc7fe67153e2cb4b5361568a7f159f1c390164f02d8cbaaa2aeafb37fd7"
   ],
   [
     "server:true:columns2:5:base:plain:ends",
     "1529d74ce048a70e6e51bfddbdbf50b97b43e138aaf8949ee1df001fb6e2c15f"
   ],
   [
-    "server:true:columns2:5:base:plain:continues",
-    "40f457a1bb7f0ccb83b1000b7b2f686f5672a6844a54bcde417a79d4add737b2"
-  ],
-  [
     "server:true:columns2:5:base:rule:ends",
     "19c1b962e5529a55a3d80583ee289cb22388fcae673d66236d3f9d6bd1ceca51"
-  ],
-  [
-    "server:true:columns2:5:base:rule:continues",
-    "60e17d1d5c808edcd5c4ce99f227f4f2eb1225346ca434bf2210a9451ba31640"
   ],
   [
     "server:true:columns2:5:sunken:plain:ends",
     "1529d74ce048a70e6e51bfddbdbf50b97b43e138aaf8949ee1df001fb6e2c15f"
   ],
   [
-    "server:true:columns2:5:sunken:plain:continues",
-    "40f457a1bb7f0ccb83b1000b7b2f686f5672a6844a54bcde417a79d4add737b2"
-  ],
-  [
     "server:true:columns2:5:sunken:rule:ends",
     "19c1b962e5529a55a3d80583ee289cb22388fcae673d66236d3f9d6bd1ceca51"
-  ],
-  [
-    "server:true:columns2:5:sunken:rule:continues",
-    "60e17d1d5c808edcd5c4ce99f227f4f2eb1225346ca434bf2210a9451ba31640"
   ],
   [
     "server:true:columns2:5:inverse:plain:ends",
     "6dc6a5ac56bbf7da9715db793e74a96473796298de5b9358beb667191bf6d4ad"
   ],
   [
-    "server:true:columns2:5:inverse:plain:continues",
-    "7fb5d6cf70ae89cd5d04b01e59a65a4d28d81f01308c559193986ed70f68defc"
-  ],
-  [
     "server:true:columns2:5:inverse:rule:ends",
     "f680fc332eae046be4619598ccebfdf41f232aca61c3969a5ac96249aaddba97"
-  ],
-  [
-    "server:true:columns2:5:inverse:rule:continues",
-    "a1ccf14effaf298b5148aa7916ff1395f3a611be49653c0efa441453049064ad"
   ],
   [
     "server:true:columns3:3:base:plain:ends",
     "01379b89bd7bcea5e52c4d99d9095aafa7f5d67fdb03b9ff570f9298afa8c2fd"
   ],
   [
-    "server:true:columns3:3:base:plain:continues",
-    "8f82dd3a46d444c2c918b9cc1c7a416ca94923f8c3157eac42666fb723403766"
-  ],
-  [
     "server:true:columns3:3:base:rule:ends",
     "73574c12bee7aec2cde0b629ce790762bbcff0cde83c931390d134018e2f205a"
-  ],
-  [
-    "server:true:columns3:3:base:rule:continues",
-    "29e88ccc021e7c58a6433f1ae624fa8a9ee80b24504197a873f7eb9ce5ab36a5"
   ],
   [
     "server:true:columns3:3:sunken:plain:ends",
     "01379b89bd7bcea5e52c4d99d9095aafa7f5d67fdb03b9ff570f9298afa8c2fd"
   ],
   [
-    "server:true:columns3:3:sunken:plain:continues",
-    "8f82dd3a46d444c2c918b9cc1c7a416ca94923f8c3157eac42666fb723403766"
-  ],
-  [
     "server:true:columns3:3:sunken:rule:ends",
     "73574c12bee7aec2cde0b629ce790762bbcff0cde83c931390d134018e2f205a"
-  ],
-  [
-    "server:true:columns3:3:sunken:rule:continues",
-    "29e88ccc021e7c58a6433f1ae624fa8a9ee80b24504197a873f7eb9ce5ab36a5"
   ],
   [
     "server:true:columns3:3:inverse:plain:ends",
     "cf3804fb787520cf757f5f946d32fadf6c7551deafa63e3b6641a0732d5a509c"
   ],
   [
-    "server:true:columns3:3:inverse:plain:continues",
-    "f9edd8a8d11a0acab6a4846335961cb6cc5ff516d71d932c56bac89816c122e5"
-  ],
-  [
     "server:true:columns3:3:inverse:rule:ends",
     "00b5acb8515c5bf4b88911201a2e73ce21c3fd04b126e8c229cb0bfd95278d9b"
-  ],
-  [
-    "server:true:columns3:3:inverse:rule:continues",
-    "099b02be9feee34200a7ad644eef5ad01c976eab943fb8d22085922771e0ba93"
   ],
   [
     "server:true:columns3:4:base:plain:ends",
     "97db2a4d57e7f818c2cba91ae6ee06060c7a27c65820c9b0041262880d9e52f7"
   ],
   [
-    "server:true:columns3:4:base:plain:continues",
-    "a2d076d17905747a0126488d6a53a10fa7fccc209767da9c645dd0b5a6a73197"
-  ],
-  [
     "server:true:columns3:4:base:rule:ends",
     "9cced4aa9abf9a9f8c749146d4cd0bc9fcfb02c224886dcd3013ca9861232995"
-  ],
-  [
-    "server:true:columns3:4:base:rule:continues",
-    "1141ec757599f4c4823a6a1300232f2a0d0ce5ea77b4e50822ff79cfd73595a7"
   ],
   [
     "server:true:columns3:4:sunken:plain:ends",
     "97db2a4d57e7f818c2cba91ae6ee06060c7a27c65820c9b0041262880d9e52f7"
   ],
   [
-    "server:true:columns3:4:sunken:plain:continues",
-    "a2d076d17905747a0126488d6a53a10fa7fccc209767da9c645dd0b5a6a73197"
-  ],
-  [
     "server:true:columns3:4:sunken:rule:ends",
     "9cced4aa9abf9a9f8c749146d4cd0bc9fcfb02c224886dcd3013ca9861232995"
-  ],
-  [
-    "server:true:columns3:4:sunken:rule:continues",
-    "1141ec757599f4c4823a6a1300232f2a0d0ce5ea77b4e50822ff79cfd73595a7"
   ],
   [
     "server:true:columns3:4:inverse:plain:ends",
     "54c64970ca6ee76ecc0f3a13a46c59729950b2fd781b5553b185a75cd9a969a5"
   ],
   [
-    "server:true:columns3:4:inverse:plain:continues",
-    "8e1141c570c2fec5a5d218289d7c852f822e53bdeacf436da22098b37e7736ba"
-  ],
-  [
     "server:true:columns3:4:inverse:rule:ends",
     "392fe3cc31eb22df29f7f2703a73f1bb2044e6bbea5d29d1582250949bb809e6"
-  ],
-  [
-    "server:true:columns3:4:inverse:rule:continues",
-    "99582f0f177d3a7c941011b0ee9916601b5dcac7b8d9176ffb2e9a8799c9ade3"
   ],
   [
     "server:true:columns3:5:base:plain:ends",
     "9933271ddc4edd5d81e1825bcbdbaebb564f76911e26466b54439d6eeedc8f7e"
   ],
   [
-    "server:true:columns3:5:base:plain:continues",
-    "ef33bea1e5e8cc8c0e928f6267bf2a98dd95e4e28bb9e1251c9abba29b5c867b"
-  ],
-  [
     "server:true:columns3:5:base:rule:ends",
     "c320ac236021fa06d5a1227e48ff569e8b9d9deb5dd4eb4e9229463afd67b79a"
-  ],
-  [
-    "server:true:columns3:5:base:rule:continues",
-    "8538b4b77967f7b536daf202d1ada8d74ec69272ec8805dffc86ab0b04531832"
   ],
   [
     "server:true:columns3:5:sunken:plain:ends",
     "9933271ddc4edd5d81e1825bcbdbaebb564f76911e26466b54439d6eeedc8f7e"
   ],
   [
-    "server:true:columns3:5:sunken:plain:continues",
-    "ef33bea1e5e8cc8c0e928f6267bf2a98dd95e4e28bb9e1251c9abba29b5c867b"
-  ],
-  [
     "server:true:columns3:5:sunken:rule:ends",
     "c320ac236021fa06d5a1227e48ff569e8b9d9deb5dd4eb4e9229463afd67b79a"
-  ],
-  [
-    "server:true:columns3:5:sunken:rule:continues",
-    "8538b4b77967f7b536daf202d1ada8d74ec69272ec8805dffc86ab0b04531832"
   ],
   [
     "server:true:columns3:5:inverse:plain:ends",
     "146ccbc226fe53c72bdb648a8a280b35a0637198d915b006fbf3f531918ec22f"
   ],
   [
-    "server:true:columns3:5:inverse:plain:continues",
-    "cc6894ced03b9bb5e869803f203042885700ce730cd77ab61a43e55257344bca"
-  ],
-  [
     "server:true:columns3:5:inverse:rule:ends",
     "5731124301325ed153aede4c77f9b5bb6fd7713b028f672db74fb91e3283b101"
-  ],
-  [
-    "server:true:columns3:5:inverse:rule:continues",
-    "8522b56fa748c1a3a678d71fbad4feb12e121cba835d470169f726c579d3e53c"
   ],
   [
     "assignment:client:false:stacked:3:aba",
@@ -2954,6 +2090,11 @@ const BASE_GOLDENS: readonly (readonly [string, string])[] = [
 // 216 shapes left the immutable main capture above. Re-captured by planner:R2F-05: each shape differs from the
 // 99a6de763a capture only in the plate element (stock Card markup; inverse re-points the card tokens). The
 // golden file is written by `vitest run -u` from this render, never by hand. The look is on the owner CREATIVE list.
+// The continuation arrow is the selected stock Icon (R2F-34, shadcn default), so the 216 `continues` shapes left the
+// immutable main capture above: each differs from it only in that <svg> open tag (stock lucide/size-4 classes and
+// width/height/stroke-width attributes in place of the --ui-icon-* inline style). Written by `vitest run -u`, never by hand.
+const CONTINUES_GOLDEN_KEYS: readonly string[] = ["client", "server"].flatMap(entry => ["false", "true"].flatMap(nested => ["stacked", "columns2", "columns3"].flatMap(arrangement =>
+  ["3", "4", "5"].flatMap(count => ["base", "sunken", "inverse"].flatMap(ground => ["plain", "rule"].map(treatment => [entry, nested, arrangement, count, ground, treatment, "continues"].join(":")))))));
 const PLATE_GOLDEN_KEYS: readonly string[] = [
   "client:false:stacked:3:base:plate:ends",
   "client:false:stacked:3:base:plate:continues",
@@ -3211,6 +2352,18 @@ describe("Items lanes", () => {
   it.each(BASE_GOLDENS)("keeps every 2-lane shape byte-identical to the base golden: %s", (key, expected) => {
     expect(goldenHash(key)).toBe(expected);
   });
+
+  it("keeps every 2-lane continuation shape byte-identical to its stock Icon capture, the arrow rendering as the stock Lucide Icon", async () => {
+    expect(CONTINUES_GOLDEN_KEYS).toHaveLength(216);
+    expect(CONTINUES_GOLDEN_KEYS.filter(key => BASE_GOLDENS.some(([base]) => base === key))).toEqual([]);
+    const { container } = render(<Items {...goldenProps(CONTINUES_GOLDEN_KEYS[0]!).props} />);
+    expect(container.querySelectorAll("svg").length).toBeGreaterThan(0);
+    for (const arrow of container.querySelectorAll("svg")) {
+      expect(arrow).toHaveClass("lucide", "shrink-0", "size-4"); expect(arrow).toHaveAttribute("stroke-width", "2"); expect(arrow).toHaveAttribute("aria-hidden", "true"); expect(arrow).not.toHaveAttribute("style");
+    }
+    const hashes = Object.fromEntries(CONTINUES_GOLDEN_KEYS.map(key => [key, goldenHash(key)]));
+    await expect(stableStringify({ $capture: "stock Icon continuation arrow (R2F-34, shadcn default); planner:R2F-34", hashes }) + "\n").toMatchFileSnapshot("__golden__/lanes-continues.sha256.json");
+  }, 60_000);
 
   it("keeps every 2-lane plate shape byte-identical to its stock Card capture", async () => {
     expect(PLATE_GOLDEN_KEYS).toHaveLength(216);

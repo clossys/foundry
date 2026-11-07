@@ -1653,9 +1653,17 @@
     width: var(--spacing-3xl, 48px);
     height: var(--spacing-3xl, 48px);
   }
+  .size-4 {
+    width: calc(var(--spacing, 0.25rem) * 4);
+    height: calc(var(--spacing, 0.25rem) * 4);
+  }
   .size-6 {
     width: calc(var(--spacing, 0.25rem) * 6);
     height: calc(var(--spacing, 0.25rem) * 6);
+  }
+  .size-8 {
+    width: calc(var(--spacing, 0.25rem) * 8);
+    height: calc(var(--spacing, 0.25rem) * 8);
   }
   .size-10 {
     width: calc(var(--spacing, 0.25rem) * 10);

@@ -5,7 +5,7 @@ import * as icons from "../../icons/index.js";
 import { anatomyOf, noop, recordsOf, refuseUnmapped, requireSlot, stringField, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Icon = componentLeaf<typeof import("../../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 
 const LEAF = "sections.link-index";
 const GLYPHS = icons as unknown as Readonly<Record<string, icons.IconNode | undefined>>;

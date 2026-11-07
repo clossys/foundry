@@ -1,7 +1,8 @@
 "use client";
 import type { ReactElement, ReactNode } from "react";
 import { Card } from "../components/Card.js";
-import { Icon, type IconNode, type IconSize } from "../components/Icon.js";
+import { Icon, type IconNode } from "../components/preview-runtime/components/icon/icon.js";
+import type { IconSize } from "../catalog/types.js";
 import { Logomark } from "../components/Logomark.js";
 import { SemanticContent } from "../components/SemanticContent.js";
 import { RatioFixture } from "./ratio-fixture.js";

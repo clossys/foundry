@@ -1,4 +1,4 @@
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph, useIndeterminateGlyph } from "./glyph-context.js";
 import type { ReactNode } from "react";
 import {

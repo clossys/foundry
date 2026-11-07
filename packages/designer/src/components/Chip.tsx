@@ -1,4 +1,4 @@
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph } from "./glyph-context.js";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import { Button as AriaButton } from "react-aria-components";

@@ -5,7 +5,7 @@ import { Plus } from "../icons/Plus.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("./SemanticContent.js").SemanticContent>("components.semantic-content");
-const Icon = componentLeaf<typeof import("./Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("./preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Toolbar = componentLeaf<typeof import("./Toolbar.js").Toolbar>("components.toolbar");
 

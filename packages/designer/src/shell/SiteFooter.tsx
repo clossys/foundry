@@ -10,7 +10,7 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 /** The selected pinned shadcn button module owns navigation semantics and styling. */
 const FooterLink = componentLeaf<typeof LinkButton>("components.button", "LinkButton");
 import { Logomark } from "../components/Logomark.js";
-import { Icon } from "../components/Icon.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import type { IconNode } from "../icons/types.js";
 import { isImageResource, type ImageResource } from "../catalog-assets/media.js";
 

@@ -14,6 +14,8 @@ import { extractStyleCandidates } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
 import { buttonVariants } from "../components/preview-runtime/components/button/button.js";
+import { Icon as StockIcon } from "../components/preview-runtime/components/icon/icon.js";
+import { FileText } from "../icons/FileText.js";
 
 function chain(count: number): TreeNode[] {
   let node: TreeNode = { id: String(count), label: `Level ${count}` };
@@ -129,6 +131,10 @@ describe("Explorer", () => {
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
     // Rows are the stock Button: its own anatomy is stock-owned, so only the classes Explorer adds are pinned here.
     const stock = new Set((["secondary", "ghost"] as const).flatMap(variant => buttonVariants({ variant }).split(/\s+/)));
+    // Glyphs are the stock Icon: its own anatomy (the `lucide` marker, shrink, default size) is stock-owned too.
+    const glyph = render(<StockIcon glyph={FileText} decorative size="sm" />);
+    for (const name of glyph.container.querySelector("svg")!.classList) stock.add(name);
+    glyph.unmount();
     const classes = new Set<string>();
     for (const expanded of [[], Array.from({ length: 11 }, (_, i) => String(i + 1))]) {
       const view = render(<Explorer tree={chain(12)} label="Files" selectedId="12" defaultExpandedIds={expanded} renderDetails={() => "Metadata"} />);

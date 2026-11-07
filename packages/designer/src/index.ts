@@ -75,7 +75,6 @@ export type {
   ButtonVariant,
   IconProps,
   IconSize,
-  IconAccessibilityProps,
   IconNode,
   TextFieldProps,
   BadgeProps,

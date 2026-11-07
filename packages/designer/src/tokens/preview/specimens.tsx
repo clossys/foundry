@@ -2,7 +2,8 @@
 
 import { useState, type CSSProperties, type ReactElement, type ReactNode } from "react";
 import { Card } from "../../components/Card.js";
-import { Icon, type IconSize } from "../../components/Icon.js";
+import { Icon } from "../../components/preview-runtime/components/icon/icon.js";
+import type { IconSize } from "../../catalog/types.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { Toggle } from "../../components/toggle-button/index.js";
 import { unsafeText } from "../../catalog-core/model.js";

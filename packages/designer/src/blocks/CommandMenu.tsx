@@ -10,7 +10,7 @@ const SemanticContent = componentLeaf<typeof import("../components/SemanticConte
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Dialog = componentLeaf<(props: Omit<ModalOverlayProps, "children" | "className"> & { children: DialogProps["children"]; className?: string; showCloseButton?: boolean }) => ReactElement>("components.dialog");
 const DialogTitle = componentLeaf<(props: Omit<HeadingProps, "slot">) => ReactElement>("components.dialog", "DialogTitle");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 const Command = componentLeaf<typeof import("../components/command/index.js").Command>("components.command");
 const CommandInput = componentLeaf<typeof import("../components/command/index.js").CommandInput>("components.command", "CommandInput");
 const CommandList = componentLeaf<typeof import("../components/command/index.js").CommandList>("components.command", "CommandList");

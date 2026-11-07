@@ -6,7 +6,7 @@ import { renderToString } from "react-dom/server";
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { Icon } from "../components/Icon.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { Globe } from "../icons/Globe.js";
 import { Brandmark } from "./Brandmark.js";

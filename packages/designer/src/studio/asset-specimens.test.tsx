@@ -81,8 +81,9 @@ describe("icon specimen", () => {
   it("draws the glyph once at each icon size token, smallest first, labelled with its name", () => {
     const view = render(<IconSpecimen glyph={[["circle", { cx: "12", cy: "12", r: "8" }]]} name="dot" />);
     const specimen = view.container.querySelector("[data-asset-specimen='icon']")!;
-    const widths = [...specimen.querySelectorAll<SVGElement>("svg")].map(icon => icon.style.width);
-    expect(widths.map(width => /--ui-icon-(sm|md|lg)/.exec(width)?.[1])).toEqual(["sm", "md", "lg"]);
+    const steps = { "size-4": "sm", "size-6": "md", "size-8": "lg" } as const;
+    const sizes = [...specimen.querySelectorAll<SVGElement>("svg")].map(icon => [...icon.classList].map(name => steps[name as keyof typeof steps]).find(Boolean));
+    expect(sizes).toEqual(["sm", "md", "lg"]);
     expect(specimen.textContent).toContain("dot");
   });
 });

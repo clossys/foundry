@@ -1,7 +1,7 @@
 "use client";
 
 import { inspectGlyph, inspectSvg } from "../catalog-assets/svg.js";
-import type { IconNode } from "../components/Icon.js";
+import type { IconNode } from "../components/preview-runtime/components/icon/icon.js";
 import { IconSpecimen, RatioSpecimen, SvgSpecimen, mediaSpecimen, ratioOf } from "./asset-specimens.js";
 import type { ReactElement } from "react";
 import type { StudioLabels } from "./types.js";

@@ -1,11 +1,12 @@
 /**
- * Compile-time proof that `IconProps` (`../Icon.tsx`) does what its own doc
+ * Compile-time proof that the stock `IconProps`
+ * (`../preview-runtime/components/icon/icon.tsx`) does what its own doc
  * comments claim:
  *
  *   1. A call site MUST supply either `decorative: true` or a `label`,
- *      never neither and never both (`IconAccessibilityProps`).
+ *      never neither and never both (`IconAccessibility`).
  *   2. A call site MUST supply either `glyph` or `children`, never neither
- *      and never both (`IconContentProps`).
+ *      and never both (`IconContent`).
  *
  * This file is deliberately named `*.check.tsx`, not `*.test.tsx` — this
  * package's `tsconfig.json` (matching every other package in this repo)
@@ -48,7 +49,7 @@
  * Every edit was reverted immediately after confirming red, restoring this
  * file and `../Icon.tsx` to the versions shipped in this PR.
  */
-import { Icon } from "../Icon.js";
+import { Icon } from "../preview-runtime/components/icon/icon.js";
 
 const glyph = [["path", { d: "M12 2v20" }]] as const;
 
@@ -96,24 +97,6 @@ export const contentChildrenOnly = (
   </Icon>
 );
 
-// ── Owned-by-the-token props (color/fill/stroke/width/height/strokeWidth)
-//    are Omit'd from IconProps, so a call site can't silently defeat the
-//    size/colour contract by passing one directly. These belong here, not
-//    in Icon.test.tsx (a repository-only test that does not ship): a
-//    `@ts-expect-error` in a `*.test.tsx` file is the
-//    exact inert-check trap this file's own header comment (and issue #24)
-//    describes — vitest transpiles test files without type-checking them,
-//    so an assertion like these placed there would silently stop proving
-//    anything the moment `Omit` regressed, while still reading as green. ──
-
-// @ts-expect-error — `color` is Omit'd; colour comes from `currentColor`
-// only, via CSS on an ancestor, never a per-instance prop.
-export const colorOmitted = <Icon decorative glyph={glyph} color="red" />;
-
-// @ts-expect-error — `strokeWidth` is Omit'd; the `--ui-icon-stroke` token
-// is the only lever for stroke weight, not a per-instance prop.
-export const strokeWidthOmitted = <Icon decorative glyph={glyph} strokeWidth={5} />;
-
 // @ts-expect-error — `width`/`height` are Omit'd; size comes from the
-// `size` prop's `--ui-icon-*` token mapping only.
+// `size` prop's stock `size-*` class mapping only.
 export const widthOmitted = <Icon decorative glyph={glyph} width={40} />;

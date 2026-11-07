@@ -1,7 +1,7 @@
 import { useShellCopy } from "../components/Banner.copy-context.js";
 import { SHELL_COPY_REFS } from "../components/Banner.copy.js";
 import { useId, useState } from "react";
-import { Icon } from "../components/Icon.js";
+import { Icon } from "../components/preview-runtime/components/icon/icon.js";
 import { ToggleGroup, ToggleGroupItem, type ToggleGroupProps } from "../components/ToggleGroup.js";
 import { Toolbar } from "../components/Toolbar.js";
 import { Tooltip } from "../components/Tooltip.js";

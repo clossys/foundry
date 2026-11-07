@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import * as Glyphs from "../icons/index.js";
 import { ICON_ENTRIES } from "../catalog/icons.js";
 
@@ -87,58 +87,29 @@ describe("Icon", () => {
   });
 
   describe("size", () => {
-    it("defaults to size=md and reads the --ui-icon-md token, with a literal fallback", () => {
-      const { container } = render(<Icon glyph={CIRCLE_GLYPH} decorative />);
-      const svg = container.querySelector("svg");
-      expect(svg?.style.width).toBe("var(--ui-icon-md, var(--spacing-xl, 24px))");
-      expect(svg?.style.height).toBe("var(--ui-icon-md, var(--spacing-xl, 24px))");
-    });
-
-    it("maps size=sm and size=lg to their own distinct --ui-icon-* tokens", () => {
-      const { rerender, container } = render(<Icon glyph={CIRCLE_GLYPH} decorative size="sm" />);
-      expect(container.querySelector("svg")?.style.width).toBe("var(--ui-icon-sm, var(--spacing-lg, 16px))");
-
+    it("renders the stock shadcn Lucide sizes: size-4 by default, size-6 for md, size-8 for lg", () => {
+      const { rerender, container } = render(<Icon glyph={CIRCLE_GLYPH} decorative />);
+      const svg = () => container.querySelector("svg")!;
+      expect(svg()).toHaveClass("lucide", "shrink-0", "size-4");
+      rerender(<Icon glyph={CIRCLE_GLYPH} decorative size="md" />);
+      expect(svg()).toHaveClass("size-6"); expect(svg()).not.toHaveClass("size-4");
       rerender(<Icon glyph={CIRCLE_GLYPH} decorative size="lg" />);
-      expect(container.querySelector("svg")?.style.width).toBe("var(--ui-icon-lg, var(--spacing-2xl, 32px))");
+      expect(svg()).toHaveClass("size-8");
+      expect(svg()).not.toHaveAttribute("style");
     });
 
-    it("shrinks to 0 in a flex layout by default (an icon never grows to fill space)", () => {
-      const { container } = render(<Icon glyph={CIRCLE_GLYPH} decorative />);
-      expect(container.querySelector("svg")?.style.flexShrink).toBe("0");
+    it("lets a caller's own size-* class replace the default step", () => {
+      const { container } = render(<Icon glyph={CIRCLE_GLYPH} decorative className="size-3 text-status-danger" />);
+      const svg = container.querySelector("svg")!;
+      expect(svg).toHaveClass("size-3", "text-status-danger"); expect(svg).not.toHaveClass("size-4");
     });
   });
 
-  describe("stroke weight", () => {
-    it("reads the --ui-icon-stroke token, with a literal fallback, never a hardcoded stroke-width attribute", () => {
-      const { container } = render(<Icon glyph={CIRCLE_GLYPH} decorative />);
-      const svg = container.querySelector("svg");
-      expect(svg?.style.strokeWidth).toBe("var(--ui-icon-stroke, 2)");
-      expect(svg).not.toHaveAttribute("stroke-width");
-    });
-
-    // No `strokeWidth` prop exists to test omitting at runtime — that's a
-    // compile-time guarantee, proven in `internal/icon-contract.check.tsx`
-    // for the same "inert in a .test.tsx file" reason noted above.
-  });
-
-  describe("className / style merging", () => {
-    it("forwards className, and a consumer's own class is present", () => {
-      const { container } = render(<Icon glyph={CIRCLE_GLYPH} decorative className="text-status-danger" />);
-      expect(container.querySelector("svg")).toHaveClass("text-status-danger");
-    });
-
-    it("merges a consumer's style on top of this component's own, with the consumer's values winning", () => {
-      const { container } = render(
-        <Icon glyph={CIRCLE_GLYPH} decorative style={{ width: "40px", opacity: 0.5 }} />,
-      );
-      const svg = container.querySelector("svg");
-      // Consumer's width wins over the token-driven default.
-      expect(svg?.style.width).toBe("40px");
-      // Consumer's own, unrelated style property is preserved.
-      expect(svg?.style.opacity).toBe("0.5");
-      // This component's own non-overridden style is still present.
-      expect(svg?.style.flexShrink).toBe("0");
-    });
+  it("strokes at the stock 2px weight on the 24px Lucide grid", () => {
+    const { container } = render(<Icon glyph={CIRCLE_GLYPH} decorative />);
+    const svg = container.querySelector("svg")!;
+    expect(svg).toHaveAttribute("stroke-width", "2");
+    expect(svg).toHaveAttribute("viewBox", "0 0 24 24");
   });
 
   describe("ref forwarding", () => {
@@ -156,9 +127,5 @@ describe("Icon", () => {
       expect(node).not.toBeNull();
       expect((node as unknown as SVGSVGElement)?.tagName).toBe("svg");
     });
-  });
-
-  it("sets a stable displayName", () => {
-    expect(Icon.displayName).toBe("Icon");
   });
 });

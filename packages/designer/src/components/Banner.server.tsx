@@ -1,7 +1,7 @@
 import type { CSSProperties } from "react";
 import { cx } from "./internal/cx.js";
 import { UI_WIDTH_NOTICE_MAX } from "./internal/ui-vars.js";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { X } from "../icons/X.js";
 import type { BannerDensity, BannerProps, BannerVariant } from "./Banner.js";
 import { resolveShellCopy, SHELL_COPY_REFS } from "./Banner.copy.js";

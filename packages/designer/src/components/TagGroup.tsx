@@ -1,7 +1,7 @@
 "use client";
 import { forwardRef, type ReactNode } from "react";
 import { TagGroup as AriaTagGroup, TagList, Tag, Button, Label, Text, type TagGroupProps as AriaTagGroupProps, type TagProps, type TagListProps } from "react-aria-components";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_RING_FOCUS } from "./internal/ui-vars.js";

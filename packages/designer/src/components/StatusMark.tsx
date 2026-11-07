@@ -1,4 +1,4 @@
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import type { IconNode } from "../icons/types.js";
 import type { GlyphBindings } from "./glyph-context.js";
 import type { HTMLAttributes, ReactNode } from "react";

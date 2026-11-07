@@ -1,7 +1,7 @@
 "use client";
 import { forwardRef, type ReactNode, type ForwardedRef, type RefAttributes, type ReactElement } from "react";
 import { Tree as AriaTree, TreeItem, TreeItemContent, Button, type TreeProps as AriaTreeProps, type TreeItemProps } from "react-aria-components";
-import { Icon } from "./Icon.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_LAYOUT_TAP_TARGET, UI_RING_FOCUS } from "./internal/ui-vars.js";

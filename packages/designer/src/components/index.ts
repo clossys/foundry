@@ -69,8 +69,9 @@ export type { ButtonSize, ButtonVariant } from "./button-classes.js";
 export { IconButton } from "./IconButton.js";
 export type { IconButtonProps } from "./IconButton.js";
 
-export { Icon } from "./Icon.js";
-export type { IconProps, IconSize, IconAccessibilityProps, IconNode } from "./Icon.js";
+export { Icon } from "./preview-runtime/components/icon/icon.js";
+export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
+export type { IconSize } from "../catalog/types.js";
 
 export { TextField } from "./TextField.js";
 export type { TextFieldProps } from "./TextField.js";

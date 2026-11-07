@@ -16,7 +16,7 @@ const Sheet = componentLeaf<typeof import("../components/sheet/index.js").Sheet>
 const SheetTrigger = componentLeaf<typeof import("../components/sheet/index.js").SheetTrigger>("components.sheet", "SheetTrigger");
 const SheetTitle = componentLeaf<typeof import("../components/sheet/index.js").SheetTitle>("components.sheet", "SheetTitle");
 const SheetClose = componentLeaf<typeof import("../components/sheet/index.js").SheetClose>("components.sheet", "SheetClose");
-const Icon = componentLeaf<typeof import("../components/Icon.js").Icon>("components.icon");
+const Icon = componentLeaf<typeof import("../components/preview-runtime/components/icon/icon.js").Icon>("components.icon");
 
 const TABLET_QUERY = `(min-width: ${TOKENS["--breakpoint-tablet"]!.value})`;
 
