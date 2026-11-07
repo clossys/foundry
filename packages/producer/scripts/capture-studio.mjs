@@ -369,8 +369,11 @@ async function captureShot(browser, contextId, origin, job, outDir) {
   const failed = [];
   const inflight = new Map();
   // Frame navigations by request: an isolated frame's own session can report its finish before
-  // that session is enabled, so the frame's own complete document retires its navigation instead.
+  // that session is enabled, and a frame removed mid-navigation may report neither finish nor
+  // failure. So a navigation also leaves the inflight set when its frame's own document is
+  // complete, or when its frame is removed from the document (it can never finish).
   const navigations = new Map();
+  const retireFrame = frameId => { for (const [id, frame] of navigations) if (frame === frameId) { navigations.delete(id); inflight.delete(id); } };
   let lastActivity = Date.now();
   let loaded = false;
   // A sandboxed opaque iframe runs out of process, as its own target: the page session sees its
@@ -396,11 +399,12 @@ async function captureShot(browser, contextId, origin, job, outDir) {
     browser.send("Runtime.evaluate", { expression: paintProbe, returnByValue: true }, child).then(result => result.result?.value && { ...result.result.value, targetId: info.targetId }, () => undefined)))).filter(Boolean);
   // An isolated frame's target id is its frame id: a frame whose own document is complete has finished its navigation.
   const retireNavigations = painted => {
-    for (const frame of painted) if (frame.readyState === "complete" && frame.targetId) for (const [id, frameId] of navigations) if (frameId === frame.targetId) { navigations.delete(id); inflight.delete(id); }
+    for (const frame of painted) if (frame.readyState === "complete" && frame.targetId) retireFrame(frame.targetId);
   };
   function listener(method, params) {
     if (method === "Target.attachedToTarget") { attachChild(params.sessionId, params.targetInfo).catch(unobserved(params.sessionId, "attach")); return; }
     if (method === "Target.detachedFromTarget") { browser.off(params.sessionId); children.delete(params.sessionId); return; }
+    if (method === "Page.frameDetached") { if (params.reason === "remove") retireFrame(params.frameId); return; }
     if (method === "Runtime.consoleAPICalled" && params.type === "error") consoleErrors.push(params.args.map(arg => arg.value ?? arg.description ?? "").join(" "));
     else if (method === "Runtime.exceptionThrown") consoleErrors.push(params.exceptionDetails?.exception?.description ?? params.exceptionDetails?.text ?? "exception");
     else if (method === "Log.entryAdded" && params.entry.level === "error" && params.entry.source !== "console-api") consoleErrors.push(`${params.entry.source}: ${params.entry.text} ${params.entry.url ?? ""}`.trim());
