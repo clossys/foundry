@@ -293,6 +293,19 @@ export function installedRoutes(repo) {
   return [...new Set(paths)];
 }
 
+/** Chrome pages reading routes at once. The Studio renders each route's document in turn, so more add little. */
+export const WORKERS = 3;
+/**
+ * One route's share of the bound per worker: measured at 990 s for 606 routes on three workers (about 4.9 s each,
+ * load 12, 2026-11-07), with headroom. The check's work grows with the installed routes, so its bound does too.
+ */
+export const ROUTE_SECONDS = 8;
+
+/** The wall-clock bound a runner gives this check: Chrome start and the registry universe, then each route's share. */
+export function timeoutSeconds(routes = installedRoutes(join(here, '../../../..')).length, startSeconds = 120) {
+  return startSeconds + Math.ceil(routes / WORKERS) * ROUTE_SECONDS;
+}
+
 async function main() {
   const repo = resolve(flag('--root') ?? join(here, '../../../..'));
   const pages = flag('--pages') ? resolve(flag('--pages')) : undefined;
@@ -346,7 +359,7 @@ async function main() {
       }
       await page.close();
     };
-    await Promise.all(Array.from({ length: 3 }, worker));
+    await Promise.all(Array.from({ length: WORKERS }, worker));
   } finally {
     await browser.close();
   }

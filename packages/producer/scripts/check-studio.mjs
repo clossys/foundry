@@ -16,9 +16,10 @@
  * the live sub-checks still run (and fail). With STUDIO_ORIGIN set, that Studio is used as is.
  *
  * Each sub-check gets the --timeout bound (default 600 s). A sub-check whose manifest row names
- * `"timeout": "studio-routes"` walks every Studio map entry, so its bound is sized from the route
- * count instead: the check module's own `timeoutSeconds()` (Chrome start plus the worst case per
- * route, shared across its bounded worker pool), never less than the --timeout bound. A sub-check
+ * `"timeout": "studio-routes"` walks every Studio map entry, and one naming `"timeout": "copy-routes"`
+ * reads every installed route, so its bound is sized from the route count instead: the check module's
+ * own `timeoutSeconds()` (Chrome start plus each route's share, across its bounded worker pool), never
+ * less than the --timeout bound. A sub-check
  * that still runs past its bound is killed and reported red with its timeout; it never passes.
  *
  * Usage: node scripts/check-studio.mjs [--only <id substring>]... [--id <exact id>]... [--json FILE] [--timeout SECONDS]
@@ -69,6 +70,7 @@ const delay = ms => new Promise(accept => setTimeout(accept, ms));
 /** Sized bounds a manifest row may name in `timeout`: each resolves to seconds from the current tree. */
 export const SIZED_TIMEOUTS = {
   "studio-routes": async () => (await import("../studio/checks/check-rendered-provenance.mjs")).timeoutSeconds(),
+  "copy-routes": async () => (await import("../studio/checks/check-copy-rendered.mjs")).timeoutSeconds(),
 };
 
 /** The bound for one sub-check: the runner's bound, or for a sized row the larger of that and its sized bound. */

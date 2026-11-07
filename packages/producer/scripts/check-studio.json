@@ -288,7 +288,8 @@
       "id": "producer check-copy-rendered (live)",
       "cwd": "packages/producer",
       "run": "node studio/checks/check-copy-rendered.mjs \"$STUDIO_ORIGIN\" --json \"$STUDIO_CHECK_OUT/copy-rendered.json\"",
-      "kind": "live"
+      "kind": "live",
+      "timeout": "copy-routes"
     },
     {
       "id": "producer studio-dom-check (live)",
