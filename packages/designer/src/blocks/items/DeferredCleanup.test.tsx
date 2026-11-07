@@ -1,14 +1,14 @@
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { Item } from "./Item.js";
+import { StockItem as Item } from "./StockItem.js";
 import { Items } from "./Items.js";
 import { Items as NativeItems } from "./Items.server.js";
 import type { ItemData } from "./types.js";
 
 const questions = (icon?: ItemData["icon"]): ItemData[] => Array.from({ length: 4 }, (_, i) => ({ id: String(i), heading: `Question ${i}`, description: `Answer ${i}`, icon }));
 const graphic = <svg><use href="#check" /><image href="/example.svg" /><use xlinkHref="#check" /></svg>;
-const linked = (icon: ItemData["icon"]) => <Item id="one" heading="Title" icon={icon} href="/one" treatment="plain" size="standard" ground="base" />;
+const linked = (icon: ItemData["icon"]) => <Item id="one" heading="Title" icon={icon} href="/one" ground="base" />;
 
 describe("native SVG references in canonical supplied content", () => {
   it.each([Items, NativeItems])("accepts use and image resources in every trigger slot without creating targets", Component => {

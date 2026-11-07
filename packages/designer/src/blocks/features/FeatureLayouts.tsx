@@ -4,7 +4,7 @@ import type * as NativeTabs from "../../components/preview-runtime/components/ta
 import { componentLeaf } from "../../runtime/component-leaf.js";
 import { cx } from "../../components/internal/cx.js";
 import { SectionHeader } from "../SectionHeader.js";
-import { Item } from "../items/Item.js";
+import { StockItem } from "../items/StockItem.js";
 import { Items } from "../items/Items.js";
 import type { ItemSpan } from "../items/types.js";
 import type { FeatureLayoutItem, FeatureLayoutProps } from "./types.js";
@@ -18,7 +18,7 @@ const TabsTrigger = componentLeaf<typeof NativeTabs.TabsTrigger>("components.tab
 const TabsContent = componentLeaf<typeof NativeTabs.TabsContent>("components.tabs", "TabsContent");
 
 function FeatureCopy({ item, ground }: { item: FeatureLayoutItem; ground: SectionGround }) {
-  return <Item id={item.id} heading={item.heading} description={item.description} icon={item.icon} treatment="plain" size="standard" ground={ground} />;
+  return <StockItem id={item.id} heading={item.heading} description={item.description} icon={item.icon} ground={ground} />;
 }
 
 /** The logical start column follows the document direction; odd rows reverse it at tablet. */

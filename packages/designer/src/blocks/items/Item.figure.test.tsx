@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { Item } from "./Item.js";
+import { StockItem as Item, type StockItemProps } from "./StockItem.js";
 import { Items } from "./Items.js";
 import { Items as ServerItems } from "./Items.server.js";
-import type { ItemData, ItemProps, ItemsProps } from "./types.js";
+import type { ItemData, ItemsProps } from "./types.js";
 
-const single = { id: "one", heading: "Requests", treatment: "plain", size: "standard", ground: "base" } as const;
+const single = { id: "one", heading: "Requests", ground: "base" } as const;
 const data = (count = 3): ItemData[] => Array.from({ length: count }, (_, index) => ({
   id: `metric-${index}`, heading: `Metric ${index}`, figure: { value: `${index + 1},200`, delta: "+12%", trend: "up" },
 }));
@@ -26,10 +26,9 @@ describe("Item figure", () => {
     expect(change).toHaveTextContent(delta);
   });
 
-  it("uses the display figure scale without changing the heading scale", () => {
-    render(<Item {...single} size="display" figure={{ value: "2,481" }} />);
-    expect(screen.getByText("2,481")).toHaveClass("text-h1", "font-display", "tabular-nums");
-    expect(screen.getByText("Requests")).toHaveClass("text-h3");
+  it("uses the display figure scale in a display collection", () => {
+    render(<Items arrangement="columns" size="display" items={data()} />);
+    expect(screen.getByText("1,200")).toHaveClass("text-h1", "font-display", "tabular-nums");
   });
 
   it("keeps authored zero and defaults the delta to neutral", () => {
@@ -71,7 +70,7 @@ describe("Item figure", () => {
   });
 
   it.each([{ value: 1, trend: "up" }, { value: 1, delta: " ", trend: "down" }, { value: " " }, { value: 1, delta: "+1", trend: "sideways" }, null])("rejects incomplete figure data %j", figure => {
-    expect(() => renderToStaticMarkup(<Item {...({ ...single, figure } as unknown as ItemProps)} />)).toThrow(/figure/i);
+    expect(() => renderToStaticMarkup(<Item {...({ ...single, figure } as unknown as StockItemProps)} />)).toThrow(/figure/i);
   });
 
   it.each(["value", "delta"] as const)("rejects nested controls in linked figure %s", slot => {
@@ -79,11 +78,13 @@ describe("Item figure", () => {
     expect(() => renderToStaticMarkup(<Item {...single} href="/metric" figure={figure} />)).toThrow(/interactive/i);
   });
 
-  it("keeps figure slots outside the only linked title", () => {
+  it("renders a linked figure as the stock Item's single link", () => {
     render(<Item {...single} href="/metric" figure={{ value: "2,481", delta: "+12%", trend: "up" }} />);
-    const anchor = screen.getByRole("link", { name: "Requests" });
+    const anchor = screen.getByRole("link");
     expect(screen.getAllByRole("link")).toHaveLength(1);
-    expect(anchor).not.toContainElement(screen.getByText("2,481"));
-    expect(anchor).not.toContainElement(screen.getByText("+12%"));
+    expect(anchor).toHaveAttribute("href", "/metric");
+    expect(anchor).toHaveAttribute("data-slot", "item");
+    expect(anchor).toContainElement(screen.getByText("2,481"));
+    expect(anchor).toContainElement(screen.getByText("Requests"));
   });
 });

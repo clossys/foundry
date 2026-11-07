@@ -35,7 +35,7 @@ describe("StatusView next destinations", () => {
     expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Contact us" })).toHaveAttribute("href", "/contact");
   });
-  it("renders one destination through standalone Item under a visibly named region", () => {
+  it("renders one destination through the stock Item under a visibly named region", () => {
     const { container } = draw(routes(1));
     const region = screen.getByRole("region", { name: "Next destinations" });
     expect(region.tagName).toBe("SECTION");
@@ -46,7 +46,9 @@ describe("StatusView next destinations", () => {
     expect(within(region).getByRole("heading", { level: 2, name: "Next destinations" })).toBeVisible();
     expect(region.querySelectorAll("[data-item]")).toHaveLength(1);
     expect(region.querySelector("[data-items]")).toBeNull();
-    expect(within(region).getByRole("link", { name: "Destination 0" })).toHaveAttribute("href", "/destination/0");
+    // The stock Item is the single link around every slot, so its name carries the supporting copy too.
+    expect(within(region).getAllByRole("link")).toHaveLength(1);
+    expect(within(region).getByRole("link", { name: /^Destination 0\b/ })).toHaveAttribute("href", "/destination/0");
     expect(container.querySelectorAll("h1")).toHaveLength(1);
     expect(container.querySelector("main, header, footer")).toBeNull();
   });

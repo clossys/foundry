@@ -191,11 +191,15 @@ export type { AnatomyCalloutsProps, AnatomyCalloutsMarker } from "./AnatomyCallo
 export { Scene, layoutScene, sceneRelationText } from "./scene/index.js";
 export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneApprovalChain, SceneDisorder, SceneFormat, SceneDocument, SceneRow, SceneStatus, ScenePerson, SceneFinding, ScenePoint, ScenePart, SceneWire, SceneTerminal, SceneTag, SceneNode, ScenePersonLayout, SceneLayout } from "./scene/index.js";
 
-export { Item } from "./items/Item.js";
+export { StockItem } from "./items/StockItem.js";
+export type { StockItemProps } from "./items/StockItem.js";
+// The one shared, server-safe Item link-safety helper; Publisher view links call it before rendering.
+export { assertItemLink } from "./items/link-safety.js";
+export type { ItemLinkSlots } from "./items/link-safety.js";
 export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.server.js";
-export type { ItemData, ItemFigureData, ItemStatusData, ItemProps, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
+export type { ItemData, ItemFigureData, ItemStatusData, ItemBadge, ItemSize, ItemTreatment, ItemSpan, ItemsProps, ItemsArrangement, ItemsColumns, ItemsScale, ItemsGroup, ItemsLane } from "./items/types.js";
 
 export { Lockup } from "./Lockup.js";
 export type { LockupProps } from "./Lockup.js";

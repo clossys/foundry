@@ -192,7 +192,7 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
 
   // Organize / Collection
   built("Items", { id: "items.raw", label: "Items" }),
-  built("Item", { id: "items.item", label: "Item" }),
+  built("StockItem", { id: "items.item", label: "Item" }),
   built("RecordCards", { id: "items.cards", label: "Card grid" }),
   exported("TaskList", { id: "items.task-list", label: "Task list" }),
 
