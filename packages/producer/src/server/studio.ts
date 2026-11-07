@@ -100,6 +100,27 @@ export function nextPageRedirect(html: string): string | undefined {
   const target = NEXT_PAGE_REDIRECT.exec(html)?.[1];
   return target === undefined ? undefined : target.replace(/&amp;/g, "&");
 }
+/**
+ * One render per Studio path until `clear` (Producer clears on every watched record change):
+ * concurrent requests for a path share its render, and a path that did not render is not kept.
+ */
+export function memoizedRender(render: (path: string) => Promise<string | undefined>): { render: (path: string) => Promise<string | undefined>; clear: () => void } {
+  const renders = new Map<string, Promise<string | undefined>>();
+  const forget = (path: string, pending: Promise<string | undefined>) => { if (renders.get(path) === pending) renders.delete(path); };
+  return {
+    render(path) {
+      let pending = renders.get(path);
+      if (!pending) {
+        pending = render(path);
+        renders.set(path, pending);
+        const settled = pending;
+        settled.then(html => { if (html === undefined) forget(path, settled); }, () => forget(path, settled));
+      }
+      return pending;
+    },
+    clear() { renders.clear(); },
+  };
+}
 export function renderStudioRoute(port: number, path: string, timeoutMs = 20_000, redirects = MAX_ROUTE_REDIRECTS): Promise<string | undefined> {
   return new Promise((resolve, reject) => {
     const origin = `http://127.0.0.1:${port}`;
