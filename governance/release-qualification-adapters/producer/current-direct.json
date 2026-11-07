@@ -11,7 +11,47 @@
     "satisfied/clossys/agents/director/brief.qualification/candidates/brief-v1.md",
     "violated/clossys/agents/director/ia.json",
     "violated/clossys/agents/director/brief.qualification/slot.json",
-    "violated/clossys/agents/director/brief.qualification/candidates/brief-v1.md"
+    "violated/clossys/agents/director/brief.qualification/candidates/brief-v1.md",
+    "director/pages/grounded/page.md",
+    "director/pages/ungrounded/page.md",
+    "director/ready/clossys/agents/director/advantage.proposition.proof/candidates/fixture-v1.md",
+    "director/ready/clossys/agents/director/advantage.proposition.proof/pin.json",
+    "director/ready/clossys/agents/director/advantage.proposition.proof/slot.json",
+    "director/ready/clossys/agents/director/context.market.size/candidates/fixture-v1.md",
+    "director/ready/clossys/agents/director/context.market.size/pin.json",
+    "director/ready/clossys/agents/director/context.market.size/slot.json",
+    "director/ready/clossys/agents/director/contracts/audience.json",
+    "director/ready/clossys/agents/director/contracts/claim.json",
+    "director/ready/clossys/agents/director/contracts/handoff.json",
+    "director/ready/clossys/agents/director/contracts/market.json",
+    "director/ready/clossys/agents/director/contracts/positioning.json",
+    "director/ready/clossys/agents/director/contracts/roadmap.json",
+    "director/ready/clossys/agents/director/execution.roadmap.milestone/candidates/fixture-v1.md",
+    "director/ready/clossys/agents/director/execution.roadmap.milestone/pin.json",
+    "director/ready/clossys/agents/director/execution.roadmap.milestone/slot.json",
+    "director/ready/clossys/agents/director/focus.category.stance/candidates/fixture-v1.md",
+    "director/ready/clossys/agents/director/focus.category.stance/pin.json",
+    "director/ready/clossys/agents/director/focus.category.stance/slot.json",
+    "director/ready/clossys/agents/director/focus.segment.core/candidates/fixture-v1.md",
+    "director/ready/clossys/agents/director/focus.segment.core/pin.json",
+    "director/ready/clossys/agents/director/focus.segment.core/slot.json",
+    "director/ready/clossys/evidence/director/active-customers.md",
+    "director/unpinned/clossys/agents/director/advantage.proposition.proof/candidates/fixture-v1.md",
+    "director/unpinned/clossys/agents/director/advantage.proposition.proof/slot.json",
+    "director/unpinned/clossys/agents/director/context.market.size/candidates/fixture-v1.md",
+    "director/unpinned/clossys/agents/director/context.market.size/slot.json",
+    "director/unpinned/clossys/agents/director/contracts/audience.json",
+    "director/unpinned/clossys/agents/director/contracts/claim.json",
+    "director/unpinned/clossys/agents/director/contracts/handoff.json",
+    "director/unpinned/clossys/agents/director/contracts/market.json",
+    "director/unpinned/clossys/agents/director/contracts/positioning.json",
+    "director/unpinned/clossys/agents/director/contracts/roadmap.json",
+    "director/unpinned/clossys/agents/director/execution.roadmap.milestone/candidates/fixture-v1.md",
+    "director/unpinned/clossys/agents/director/execution.roadmap.milestone/slot.json",
+    "director/unpinned/clossys/agents/director/focus.category.stance/candidates/fixture-v1.md",
+    "director/unpinned/clossys/agents/director/focus.category.stance/slot.json",
+    "director/unpinned/clossys/agents/director/focus.segment.core/candidates/fixture-v1.md",
+    "director/unpinned/clossys/agents/director/focus.segment.core/slot.json"
   ],
   "cases": [
     {
@@ -88,6 +128,231 @@
       ],
       "exitCode": 2,
       "group": "slot-model"
+    },
+    {
+      "id": "director-ground-clean",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "ground"
+        },
+        {
+          "fixtureDirectory": "director/ready/clossys/agents/director"
+        },
+        {
+          "fixtureDirectory": "director/pages/grounded"
+        }
+      ],
+      "exitCode": 0,
+      "group": "director-ground"
+    },
+    {
+      "id": "director-ground-violated",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "ground"
+        },
+        {
+          "fixtureDirectory": "director/ready/clossys/agents/director"
+        },
+        {
+          "fixtureDirectory": "director/pages/ungrounded"
+        }
+      ],
+      "exitCode": 1,
+      "group": "director-ground"
+    },
+    {
+      "id": "director-ground-indeterminate",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "ground"
+        },
+        {
+          "fixtureDirectory": "director/unpinned/clossys/agents/director"
+        },
+        {
+          "fixtureDirectory": "director/pages/grounded"
+        }
+      ],
+      "exitCode": 2,
+      "group": "director-ground"
+    },
+    {
+      "id": "director-handoff-ready",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "handoff"
+        },
+        {
+          "literal": "qualification.handoff"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "director/ready/clossys/agents/director"
+        }
+      ],
+      "exitCode": 0,
+      "group": "director-handoff"
+    },
+    {
+      "id": "director-handoff-audience-unpinned",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "handoff"
+        },
+        {
+          "literal": "qualification.audience"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "director/unpinned/clossys/agents/director"
+        }
+      ],
+      "exitCode": 1,
+      "group": "director-handoff"
+    },
+    {
+      "id": "director-handoff-market-unpinned",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "handoff"
+        },
+        {
+          "literal": "qualification.market"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "director/unpinned/clossys/agents/director"
+        }
+      ],
+      "exitCode": 1,
+      "group": "director-handoff"
+    },
+    {
+      "id": "director-handoff-positioning-unpinned",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "handoff"
+        },
+        {
+          "literal": "qualification.positioning"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "director/unpinned/clossys/agents/director"
+        }
+      ],
+      "exitCode": 1,
+      "group": "director-handoff"
+    },
+    {
+      "id": "director-handoff-claim-unpinned",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "handoff"
+        },
+        {
+          "literal": "qualification.claim"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "director/unpinned/clossys/agents/director"
+        }
+      ],
+      "exitCode": 1,
+      "group": "director-handoff"
+    },
+    {
+      "id": "director-handoff-roadmap-unpinned",
+      "bin": "clossys",
+      "args": [
+        {
+          "literal": "director"
+        },
+        {
+          "literal": "check"
+        },
+        {
+          "literal": "handoff"
+        },
+        {
+          "literal": "qualification.roadmap"
+        },
+        {
+          "literal": "--root"
+        },
+        {
+          "fixtureDirectory": "director/unpinned/clossys/agents/director"
+        }
+      ],
+      "exitCode": 1,
+      "group": "director-handoff"
     }
   ],
   "dimensionEvidence": {

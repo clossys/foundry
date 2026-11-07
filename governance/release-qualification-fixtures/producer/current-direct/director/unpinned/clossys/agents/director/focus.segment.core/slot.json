@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "focus.segment.core",
+  "agent": "director",
+  "ia": {
+    "l1": "focus",
+    "l2": "focus.segment",
+    "order": 16
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "Who exactly do we serve first, and who do we turn away?",
+    "mustContain": [
+      {
+        "key": "Who"
+      },
+      {
+        "key": "Situation"
+      },
+      {
+        "key": "Not"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 1
+}

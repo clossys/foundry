@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "advantage.proposition.proof",
+  "agent": "director",
+  "ia": {
+    "l1": "advantage",
+    "l2": "advantage.proposition",
+    "order": 25
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "What evidence backs the promise, what is still missing, and what must we never claim?",
+    "mustContain": [
+      {
+        "key": "Proof"
+      },
+      {
+        "key": "Gap"
+      },
+      {
+        "key": "Never-claim"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 1
+}
