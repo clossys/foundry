@@ -1,8 +1,6 @@
 node_modules/
 dist/
 build/
-# The Studio's /build route is a Publisher-installed page, not build output.
-!packages/producer/studio/app/build/
 coverage/
 *.tsbuildinfo
 *.tgz

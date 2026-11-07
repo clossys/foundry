@@ -3774,12 +3774,12 @@
       "sha256": "7f55136bc8185021ad0cd83e8cc04c830856017bb0a3d200232ee752308007a9"
     },
     {
-      "path": "clossys/agents/publisher/page.build-overview/candidates/page-v3.json",
-      "sha256": "7a206303671ff91b404f982b5691c5c8b84c6ae04ec5c26839205ef01dbaa356"
+      "path": "clossys/agents/publisher/page.build-overview/candidates/page-v4.json",
+      "sha256": "e47eca2eb5a08f77099fa6b59ffad2723361da1aeb4370e38bd702736152c1a3"
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/pin.json",
-      "sha256": "e63f18c1f85b432040d079faf4b291a9dc973e21688e71f97196ca4fa73ef639"
+      "sha256": "a0099c1f45b18667d569614e3b827f70e143aa43ae4ea9c2d41a8eea2a143a7b"
     },
     {
       "path": "clossys/agents/publisher/page.build-overview/slot.json",
@@ -5700,7 +5700,7 @@
   ],
   "outputs": [
     {
-      "path": "app/build/page.tsx",
+      "path": "app/build-overview/page.tsx",
       "sha256": "2d00e2f59d5c99fd741eb8fa90efd524173d7a98a99509280b448cf7e6bf1074"
     },
     {
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "f0e27fd065e5d03f7ce18dfbc15fe43daecbbc5939b81c82223111fd6f69bbcf"
+      "sha256": "65f12571e5e15c747c43bb04e6e959701d784abd2fb574634e1c907a17980c5d"
     },
     {
       "path": "generated/studio-map.ts",
