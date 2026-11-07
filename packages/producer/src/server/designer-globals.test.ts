@@ -10,17 +10,24 @@ const roots: string[] = [];
 function put(path: string, content: string) { mkdirSync(dirname(path), { recursive: true }); writeFileSync(path, content); }
 
 /** A consumer whose globals name a hand-picked family and whose Designer slot model pins a different font item. */
-function workspace(): string {
+function workspace({ authored = true, primary = false } = {}): string {
   const root = realpathSync(mkdtempSync(join(tmpdir(), 'designer-globals-')));
   roots.push(root);
   const lib = join(root, 'clossys');
   put(join(lib, 'package.json'), '{"name":"consumer","private":true}');
-  put(join(lib, 'agents/designer/globals.css'), '@import "tailwindcss";\n@theme inline {\n  --font-heading: var(--font-display);\n}\n:root { --font-display: "Hand Picked"; }\n');
-  const slot = 'themes.font-heading';
-  const ia: IaDoc = { schema: 'clossys.ia/1', source: 'consumer#fixture', extensions: [], nodes: [{ id: 'themes.typography', label: 'Typography', children: [{ id: 'fonts', label: 'Fonts', slots: [slot] }] }] };
-  const position = slotPositions('designer', ia).get(slot)!, dir = slotDir(lib, 'designer', slot);
+  if (authored) put(join(lib, 'agents/designer/globals.css'), '@import "tailwindcss";\n@theme inline {\n  --font-heading: var(--font-display);\n}\n:root { --font-display: "Hand Picked"; }\n');
+  const slot = 'themes.font-heading', colour = 'themes.primary';
+  const ia: IaDoc = { schema: 'clossys.ia/1', source: 'consumer#fixture', extensions: [], nodes: [{ id: 'themes.typography', label: 'Typography', children: [{ id: 'fonts', label: 'Fonts', slots: [slot] }, ...(primary ? [{ id: 'colours', label: 'Colours', slots: [colour] }] : [])] }] };
+  const positions = slotPositions('designer', ia), dir = slotDir(lib, 'designer', slot);
   put(iaPath(lib, 'designer'), jsonBytes(ia));
-  put(slotFile(dir), jsonBytes({ schema: 'clossys.slot/1', id: slot, agent: 'designer', kind: 'element', ia: position, contract: {}, inputs: [], uses: [] }));
+  put(slotFile(dir), jsonBytes({ schema: 'clossys.slot/1', id: slot, agent: 'designer', kind: 'element', ia: positions.get(slot)!, contract: {}, inputs: [], uses: [] }));
+  if (primary) {
+    const colourDir = slotDir(lib, 'designer', colour);
+    put(slotFile(colourDir), jsonBytes({ schema: 'clossys.slot/1', id: colour, agent: 'designer', kind: 'element', ia: positions.get(colour)!, contract: {}, inputs: [], uses: [] }));
+    const item = jsonBytes({ name: 'primary', type: 'registry:theme', files: [], cssVars: { light: { primary: '#8250DF', info: '#0969DA' }, dark: { primary: '#A371F7' } }, meta: { slot: colour, source: { kind: 'derived', ref: ['shadcn/neutral'] } } });
+    put(join(candidatesDir(colourDir), 'primary-v1.json'), item);
+    put(pinFile(colourDir), jsonBytes({ candidate: 'primary-v1.json', sha256: sha256Hex(item), decidedBy: 'owner:fixture', basis: 'bulk', at: '2026-10-31T00:00:00Z' }));
+  }
   const candidate = jsonBytes({
     name: 'font-heading-pinned', type: 'registry:font', files: [],
     font: { family: "'Pinned Face Variable', sans-serif", variable: '--font-heading', dependency: '@fontsource-variable/pinned-face' },
@@ -47,5 +54,19 @@ describe('Studio globals load the pinned font through the theme pipeline', () =>
     expect(globals.css).toMatch(/\.font-heading\s*\{\s*font-family:\s*'Pinned Face Variable', sans-serif;/);
     expect(globals.css).not.toMatch(/\.font-heading\s*\{\s*font-family:\s*var\(--font-display\)/);
     expect((await consumerFontFile(root, '/api/designer/fonts/@fontsource-variable/pinned-face/files/pinned-face.woff2'))?.type).toBe('font/woff2');
+  });
+
+  it('serves the compiled consumer theme as the token source, after any authored globals', async () => {
+    const root = workspace({ authored: false, primary: true });
+    const globals = await consumerGlobals(root);
+    expect(globals.missing).toEqual([]);
+    const root$ = /:root\s*\{([^}]*)\}/.exec(globals.css)?.[1] ?? '';
+    for (const token of ['--primary: #8250DF;', '--info: #0969DA;', "--font-heading: 'Pinned Face Variable', sans-serif;"]) expect(root$).toContain(token);
+    expect(globals.css).toMatch(/\.dark\s*\{[^}]*--primary:\s*#A371F7;/);
+    // The theme pipeline's own font utility and font files still apply without an authored stylesheet.
+    expect(globals.css).toMatch(/\.font-heading\s*\{\s*font-family:\s*'Pinned Face Variable', sans-serif;/);
+    expect(globals.css).toContain('url(/api/designer/fonts/@fontsource-variable/pinned-face/files/pinned-face.woff2)');
+    const authored = await consumerGlobals(workspace({ primary: true }));
+    expect(authored.css.indexOf('--font-display')).toBeLessThan(authored.css.indexOf('--primary: #8250DF'));
   });
 });

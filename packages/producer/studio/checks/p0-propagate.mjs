@@ -2,7 +2,8 @@
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { mkdir, readFile, readdir, realpath, stat, writeFile } from 'node:fs/promises';
-import { isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { createHash } from 'node:crypto';
+import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +16,61 @@ function variablePattern(name) {
   return new RegExp(`(?<![a-zA-Z0-9_-])(${name}\\s*:\\s*)([^;{}]+)(;)`, 'g');
 }
 const radiusPattern = /\brounded-(?:none|sm|md|lg|xl|2xl|3xl|full)\b/;
+const literalColor = /^(?:oklch|oklab|hsl|hsla|rgb|rgba|color|color-mix)\(|^#[a-f\d]{3,8}$/i;
+const themeModes = ['theme', 'light', 'dark'];
+const sha256 = text => createHash('sha256').update(text).digest('hex');
+const canonical = value => `${JSON.stringify(value, null, 2)}\n`;
+
+/**
+ * A compiled-theme source is a pinned Designer `registry:theme` candidate (`<slot>/candidates/<file>.json`):
+ * Studio serves its cssVars as the consumer's tokens. Its slot pin must select exactly these bytes, so a
+ * mutation re-points the pin's sha256 at the mutated bytes for the run and restores both byte-exactly.
+ */
+function parseCanonical(text, what) {
+  let value;
+  try { value = JSON.parse(text); } catch { throw new Error(`${what} is not JSON.`); }
+  if (canonical(value) !== text) throw new Error(`${what} is not canonical JSON (two-space indent, trailing newline); refusing to rewrite it.`);
+  return value;
+}
+
+async function themePin(root, primaryPath, primaryText) {
+  if (basename(dirname(primaryPath)) !== 'candidates') throw new Error('A theme-candidate primarySource must live in its slot\'s candidates/ folder.');
+  const pinPath = await sourcePath(root, relative(root, join(dirname(dirname(primaryPath)), 'pin.json')));
+  const pin = parseCanonical(await readFile(pinPath, 'utf8'), 'The theme slot pin');
+  if (pin.candidate !== basename(primaryPath)) throw new Error(`The theme slot pin selects ${pin.candidate}, not ${basename(primaryPath)}.`);
+  if (pin.sha256 !== sha256(primaryText)) throw new Error(`The theme slot pin's sha256 does not match ${basename(primaryPath)}; the candidate is not what Studio serves.`);
+  return pinPath;
+}
+
+/** Repoints a canonical pin at new candidate bytes (the only field the mutation changes). */
+export function repin(pinText, candidateText) {
+  return canonical({ ...parseCanonical(pinText, 'The theme slot pin'), sha256: sha256(candidateText) });
+}
+
+function mutatePrimary(primary, occurrence, cssVariable, format) {
+  const mix = color => `color-mix(in srgb, ${color} 70%, transparent)`;
+  const check = color => { if (!literalColor.test(color)) throw new Error(`Selected ${cssVariable} must be a literal CSS color expression; legacy channel-only tokens need an explicit source adapter.`); };
+  if (format === 'theme-json') {
+    const item = parseCanonical(primary, 'The theme candidate');
+    const name = cssVariable.slice(2);
+    if (item?.type !== 'registry:theme' || !item.cssVars || typeof item.cssVars !== 'object') throw new Error('The theme candidate is not a registry:theme item with cssVars.');
+    // Occurrences follow the compiled order: theme, then light (both :root), then dark (.dark).
+    const found = themeModes.filter(mode => typeof item.cssVars[mode]?.[name] === 'string');
+    const mode = found[occurrence];
+    if (!mode) throw new Error(`Selected theme candidate declares no matching ${cssVariable} variable.`);
+    const originalColor = item.cssVars[mode][name].trim();
+    check(originalColor);
+    item.cssVars[mode][name] = mix(originalColor);
+    return { primary: canonical(item), originalColor };
+  }
+  const declarations = [...primary.matchAll(variablePattern(cssVariable))];
+  const declaration = declarations[occurrence];
+  if (!declaration) throw new Error(`Selected UI CSS source has no matching ${cssVariable} declaration.`);
+  const originalColor = declaration[2].trim();
+  check(originalColor);
+  const replacement = `${declaration[1]}${mix(originalColor)}${declaration[3]}`;
+  return { primary: primary.slice(0, declaration.index) + replacement + primary.slice(declaration.index + declaration[0].length), originalColor };
+}
 
 async function sourcePath(root, name) {
   if (typeof name !== 'string' || isAbsolute(name)) throw new Error('Adapter source paths must be relative to the repository.');
@@ -76,23 +132,20 @@ export async function validateAdapter(root, adapter) {
   if (!Array.isArray(adapter.buildCommands) || !adapter.buildCommands.length || adapter.buildCommands.some(command => !Array.isArray(command) || !command.length || command.some(part => typeof part !== 'string' || !part))) throw new Error('Adapter buildCommands must contain executable/argument arrays.');
   const occurrence = adapter.primaryOccurrence ?? 0;
   if (!Number.isInteger(occurrence) || occurrence < 0) throw new Error('primaryOccurrence must be a nonnegative integer.');
-  return { ...adapter, cssVariable, buttonSelector, primaryPath, buttonPath, primaryOccurrence: occurrence };
+  const primaryFormat = primaryPath.endsWith('.json') ? 'theme-json' : 'css';
+  const pinPath = primaryFormat === 'theme-json' ? await themePin(root, primaryPath, await readFile(primaryPath, 'utf8')) : undefined;
+  return { ...adapter, cssVariable, buttonSelector, primaryPath, buttonPath, primaryOccurrence: occurrence, primaryFormat, pinPath };
 }
 
-export function createMutations(primary, button, radius, occurrence = 0, cssVariable = '--primary') {
-  const declarations = [...primary.matchAll(variablePattern(cssVariable))];
-  const declaration = declarations[occurrence];
-  if (!declaration) throw new Error(`Selected UI CSS source has no matching ${cssVariable} declaration.`);
-  const originalColor = declaration[2].trim();
-  if (!/^(?:oklch|oklab|hsl|hsla|rgb|rgba|color|color-mix)\(|^#[a-f\d]{3,8}$/i.test(originalColor)) throw new Error(`Selected ${cssVariable} must be a literal CSS color expression; legacy channel-only tokens need an explicit source adapter.`);
+export function createMutations(primary, button, radius, occurrence = 0, cssVariable = '--primary', format = 'css') {
+  const { primary: mutatedPrimary, originalColor } = mutatePrimary(primary, occurrence, cssVariable, format);
   if (!Number.isFinite(radius) || radius < 0) throw new Error('The rendered button radius must resolve to pixels.');
   if (!/\bbuttonVariants\b/.test(button) || !/\bbg-primary\b/.test(button)) throw new Error('Selected button source is not the primary shadcn button variant.');
   const token = button.match(radiusPattern)?.[0];
   if (!token) throw new Error('Selected button source has no supported rounded class to mutate.');
   const nextRadius = radius + 3;
-  const replacement = `${declaration[1]}color-mix(in srgb, ${originalColor} 70%, transparent)${declaration[3]}`;
   return {
-    primary: primary.slice(0, declaration.index) + replacement + primary.slice(declaration.index + declaration[0].length),
+    primary: mutatedPrimary,
     button: button.replace(token, `rounded-[${nextRadius}px]`),
     originalColor, originalClass: token, nextRadius,
   };
@@ -169,7 +222,9 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = studi
   adapter = await validateAdapter(root, adapter ?? await discoverAdapter(root));
   const url = new URL(adapter.route, baseURL);
   if (url.origin !== new URL(baseURL).origin) throw new Error('Propagation route escaped the Studio origin.');
-  const originals = await Promise.all([readFile(adapter.primaryPath, 'utf8'), readFile(adapter.buttonPath, 'utf8')]);
+  // The mutated files: the primary source, the button source and (for a theme candidate) its slot pin.
+  const paths = [adapter.primaryPath, adapter.buttonPath, ...(adapter.pinPath ? [adapter.pinPath] : [])];
+  const originals = await Promise.all(paths.map(path => readFile(path, 'utf8')));
   const ownedDriver = !driver;
   driver ??= await browserDriver();
   let touched = false, outcome, failure;
@@ -179,32 +234,31 @@ export async function runPropagation({ root = repoRoot, adapter, baseURL = studi
   try {
     if (signal?.aborted) throw new Error('Propagation was cancelled before source mutation.');
     const before = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
-    const mutation = createMutations(...originals, before.radius, adapter.primaryOccurrence, adapter.cssVariable);
+    const mutation = createMutations(originals[0], originals[1], before.radius, adapter.primaryOccurrence, adapter.cssVariable, adapter.primaryFormat);
+    const mutated = [mutation.primary, mutation.button, ...(adapter.pinPath ? [repin(originals[2], mutation.primary)] : [])];
     // Source backups default to the OS temp directory: a write under the checkout dirties the tree.
     const evidenceDir = artifactDir ?? join(tmpdir(), 'p0-propagate', `${Date.now()}-${process.pid}`);
     await mkdir(evidenceDir, { recursive: true });
     await writeFile(join(evidenceDir, 'primary.original.txt'), originals[0]);
     await writeFile(join(evidenceDir, 'button.original.txt'), originals[1]);
+    if (adapter.pinPath) await writeFile(join(evidenceDir, 'pin.original.txt'), originals[2]);
     touched = true;
-    await writeFile(adapter.primaryPath, mutation.primary);
-    await writeFile(adapter.buttonPath, mutation.button);
+    for (const [index, path] of paths.entries()) await writeFile(path, mutated[index]);
     await build(false);
     if (signal?.aborted) throw new Error('Propagation was cancelled during source build.');
     const after = await driver.sample(url.href, adapter.buttonSelector, adapter.cssVariable);
     if (after.primary === before.primary || after.background === before.background || after.background !== after.resolvedPrimary) throw new Error(`The mutated ${adapter.cssVariable} did not reach the rendered primary button. Rebuild/restart the process serving ${new URL(baseURL).origin} through the adapter buildCommands (or pass --own-studio).`);
     if (Math.abs(after.radius - mutation.nextRadius) > 0.1) throw new Error('The actual shadcn button class mutation did not reach the rendered button.');
-    outcome = { status: 'passed', url: url.href, primarySource: adapter.primarySource, buttonSource: adapter.buttonSource, cssVariable: adapter.cssVariable, buttonSelector: adapter.buttonSelector, originalClass: mutation.originalClass, before, after, sourceRestored: false };
+    outcome = { status: 'passed', url: url.href, primarySource: adapter.primarySource, primaryFormat: adapter.primaryFormat, buttonSource: adapter.buttonSource, cssVariable: adapter.cssVariable, buttonSelector: adapter.buttonSelector, originalClass: mutation.originalClass, before, after, sourceRestored: false };
   } catch (error) { failure = error; }
   finally {
     try {
       if (touched) {
-        const restoration = await Promise.allSettled([
-          writeFile(adapter.primaryPath, originals[0]), writeFile(adapter.buttonPath, originals[1]),
-        ]);
+        const restoration = await Promise.allSettled(paths.map((path, index) => writeFile(path, originals[index])));
         const restoreFailures = restoration.filter(item => item.status === 'rejected').map(item => item.reason);
         if (restoreFailures.length) throw new AggregateError(restoreFailures, 'Source restoration failed; original source backups are retained.');
         await build(true);
-        const restored = await Promise.all([readFile(adapter.primaryPath, 'utf8'), readFile(adapter.buttonPath, 'utf8')]);
+        const restored = await Promise.all(paths.map(path => readFile(path, 'utf8')));
         if (restored.some((text, index) => text !== originals[index])) throw new Error('Propagation source restoration did not preserve the original bytes.');
         if (outcome) outcome.sourceRestored = true;
       }

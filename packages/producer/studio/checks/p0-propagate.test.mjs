@@ -1,10 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createMutations, discoverAdapter, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
+import { createMutations, discoverAdapter, repin, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
 import { studioOrigin } from './studio-origin.mjs';
 
 // Fixtures live in the OS temp directory, never under the checkout (a write there dirties the tree).
@@ -188,12 +189,82 @@ test('CLI rejects ambiguous or shell-shaped build commands and invalid CSS prope
 test('the checked-in adapter resolves the real tree without discovery (F3)', async () => {
   const repository = fileURLToPath(new URL('../../../../', import.meta.url));
   const adapter = await discoverAdapter(repository);
-  assert.equal(adapter.primarySource, 'packages/designer/ui/src/index.css');
+  // --primary is mutated at its compiled source (the pinned themes.primary candidate), not a hand copy.
+  assert.equal(adapter.primarySource, 'clossys/agents/designer/themes.primary/candidates/primary-v1.json');
+  assert.equal(adapter.primaryFormat, 'theme-json');
+  assert.equal(adapter.pinPath, resolve(repository, 'clossys/agents/designer/themes.primary/pin.json'));
+  assert.match(adapter.buttonSelector, /\[data-size="default"\]/);
   assert.equal(adapter.buttonSource, 'packages/designer/ui/src/components/ui/button.tsx');
   assert.deepEqual(adapter.buildCommands, [['node', 'packages/producer/scripts/build-studio.mjs']]);
   // The adapter's sources are the ones the real tree mutates: a literal --primary and the primary shadcn button.
   const [primary, button] = await Promise.all([readFile(adapter.primaryPath, 'utf8'), readFile(adapter.buttonPath, 'utf8')]);
-  const mutation = createMutations(primary, button, 8, adapter.primaryOccurrence, adapter.cssVariable);
+  const mutation = createMutations(primary, button, 8, adapter.primaryOccurrence, adapter.cssVariable, adapter.primaryFormat);
   assert.notEqual(mutation.primary, primary);
+  assert.match(JSON.parse(mutation.primary).cssVars.light.primary, /^color-mix\(in srgb, .+ 70%, transparent\)$/);
   assert.notEqual(mutation.button, button);
+});
+
+const sha = text => createHash('sha256').update(text).digest('hex');
+const canonical = value => `${JSON.stringify(value, null, 2)}\n`;
+const themeItem = canonical({ name: 'primary', type: 'registry:theme', cssVars: { light: { primary: '#8250DF' }, dark: { primary: '#A371F7' } } });
+
+async function themeFixture({ item = themeItem, pin } = {}) {
+  const f = await fixture();
+  const slot = join(f.root, 'clossys/agents/designer/themes.primary');
+  await mkdir(join(slot, 'candidates'), { recursive: true });
+  await writeFile(join(slot, 'candidates/primary-v1.json'), item);
+  const pinText = pin ?? canonical({ candidate: 'primary-v1.json', sha256: sha(item), decidedBy: 'owner:fixture', basis: 'bulk', at: '2026-11-03T08:58:02Z' });
+  await writeFile(join(slot, 'pin.json'), pinText);
+  const adapter = { ...f.adapter, primarySource: 'clossys/agents/designer/themes.primary/candidates/primary-v1.json' };
+  const contents = () => Promise.all(['clossys/agents/designer/themes.primary/candidates/primary-v1.json', adapter.buttonSource, 'clossys/agents/designer/themes.primary/pin.json'].map(path => readFile(join(f.root, path), 'utf8')));
+  return { ...f, adapter, contents, pinText };
+}
+
+test('a compiled-theme source mutates the pinned candidate cssVars in compiled order and keeps the pin selecting it', async () => {
+  const light = createMutations(themeItem, originalButton, 6, 0, '--primary', 'theme-json');
+  assert.equal(JSON.parse(light.primary).cssVars.light.primary, 'color-mix(in srgb, #8250DF 70%, transparent)');
+  assert.equal(JSON.parse(light.primary).cssVars.dark.primary, '#A371F7');
+  assert.equal(light.primary, canonical(JSON.parse(light.primary)));
+  const dark = createMutations(themeItem, originalButton, 6, 1, '--primary', 'theme-json');
+  assert.equal(JSON.parse(dark.primary).cssVars.dark.primary, 'color-mix(in srgb, #A371F7 70%, transparent)');
+  assert.throws(() => createMutations(themeItem, originalButton, 6, 2, '--primary', 'theme-json'), /declares no matching --primary/);
+  assert.throws(() => createMutations(JSON.stringify(JSON.parse(themeItem)), originalButton, 6, 0, '--primary', 'theme-json'), /not canonical JSON/);
+  assert.throws(() => createMutations(canonical({ type: 'registry:theme', cssVars: { light: { primary: 'var(--brand)' } } }), originalButton, 6, 0, '--primary', 'theme-json'), /literal CSS color/);
+  const f = await themeFixture();
+  const next = JSON.parse(repin(f.pinText, light.primary));
+  assert.deepEqual(next, { ...JSON.parse(f.pinText), sha256: sha(light.primary) });
+});
+
+test('a compiled-theme source refuses a pin that does not select its exact bytes', async () => {
+  const other = await themeFixture({ pin: canonical({ candidate: 'primary-v2.json', sha256: sha(themeItem) }) });
+  await assert.rejects(validateAdapter(other.root, other.adapter), /selects primary-v2\.json/);
+  const drifted = await themeFixture({ pin: canonical({ candidate: 'primary-v1.json', sha256: '0'.repeat(64) }) });
+  await assert.rejects(validateAdapter(drifted.root, drifted.adapter), /does not match primary-v1\.json/);
+  const loose = await themeFixture({ pin: JSON.stringify({ candidate: 'primary-v1.json', sha256: sha(themeItem) }) });
+  await assert.rejects(validateAdapter(loose.root, loose.adapter), /not canonical JSON/);
+});
+
+test('compiled-theme propagation builds with the candidate and its pin mutated together, then restores all three files', async () => {
+  const f = await themeFixture();
+  const originals = await f.contents();
+  const seen = [];
+  const after = { ...propagated, primary: 'color-mix(in srgb, #8250DF 70%, transparent)' };
+  const states = [{ ...baseline, primary: '#8250DF' }, after];
+  const outcome = await runPropagation({ root: f.root, adapter: f.adapter, artifactDir: join(f.root, '..', `evidence-${sequence++}`), driver: { sample: async () => states.shift(), close: async () => {} }, execute: async () => {
+    const [item, button, pin] = await f.contents();
+    seen.push({ item, button, pin });
+  } });
+  assert.equal(outcome.status, 'passed');
+  assert.equal(outcome.primaryFormat, 'theme-json');
+  assert.equal(outcome.sourceRestored, true);
+  // The fixture adapter has two build commands: both mutated builds, then both restoration builds.
+  assert.equal(seen.length, 4);
+  const [mutated, , restored] = seen;
+  assert.deepEqual(seen[1], mutated);
+  assert.deepEqual(seen[3], restored);
+  assert.equal(JSON.parse(mutated.item).cssVars.light.primary, 'color-mix(in srgb, #8250DF 70%, transparent)');
+  assert.equal(JSON.parse(mutated.pin).sha256, sha(mutated.item));
+  assert.notEqual(mutated.button, originals[1]);
+  assert.deepEqual([restored.item, restored.button, restored.pin], originals);
+  assert.deepEqual(await f.contents(), originals);
 });

@@ -25,6 +25,11 @@ export interface LibrarySourceOptions {
    * exactly as `shadcn add` fetches an unnamespaced dependency from the shadcn registry.
    */
   readonly registryBase?: string;
+  /**
+   * The pinned Writer copy specimen inputs read (`pinnedWriterCopy` of the one root), taken once by
+   * a caller that loads many candidates in one pass. Without it each candidate load scans Writer.
+   */
+  readonly writerCopy?: Readonly<Record<string, string>>;
 }
 
 function versions(entry: SlotEntry, element: string): { name: string; version: number }[] {
@@ -140,8 +145,9 @@ function pinFingerprint(roots: readonly string[]): string {
 }
 
 /** Every byte and the pin come from the common model reader. No store fallback. */
-export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string } = {}): SpecimenRecordStore {
+export function libraryRecordStore(rootsIn: readonly string[], options: { readonly registryBase?: string; readonly writerCopy?: Readonly<Record<string, string>> } = {}): SpecimenRecordStore {
   const roots = rootsIn.map(root => resolve(root));
+  if (options.writerCopy && roots.length !== 1) throw new Error("a Writer copy snapshot belongs to exactly one consumer root");
   let cached: { at: number; fingerprint: string; index: InstallIndex } | undefined;
   const index = (): InstallIndex => {
     // One fingerprint pass per second at most: alias lookups come in bursts per build.
@@ -151,6 +157,8 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
     cached = { at: now, fingerprint, index: cached?.fingerprint === fingerprint ? cached.index : installIndex(roots) };
     return cached.index;
   };
+  // A caller's Writer snapshot (one scan per specimen pass) or a scan of the root per load.
+  const writer = (root: string) => options.writerCopy ? () => options.writerCopy! : () => pinnedWriterCopy(root);
   const store: SpecimenRecordStore = {
     async alias(alias, context) {
       const id = aliasProvider(index(), alias);
@@ -176,7 +184,7 @@ export function libraryRecordStore(rootsIn: readonly string[], options: { readon
       if (issues.length) throw new RecordError(`candidate ${slot}/${candidate.name}`, issues);
       const item = JSON.parse(read.bytes);
       if (item.name !== element || (item.meta?.element?.id !== undefined && item.meta.element.id !== element) || (item.meta?.element?.slot !== undefined && item.meta.element.slot !== slot)) throw new Error(`candidate ${slot}/${candidate.name}: element identity differs from the candidate name or slot`);
-      const specimen = specimenInputs(root, `${slot}/${candidate.name}`, item);
+      const specimen = specimenInputs(root, `${slot}/${candidate.name}`, item, true, writer(root));
       const row: SpecimenElementVersion = {
         id: `${slot}/${element}`, version: chosen, kind: item.type, layer: entry.position.l0 ?? slot.split(".")[0]!,
         files: [{ path: `${element}.json`, content: read.bytes }], preview: specimen.preview, contentHash: read.sha256,
@@ -239,7 +247,7 @@ function withCopy(value: unknown, copy: Readonly<Record<string, string>>): unkno
  * A fixture element tree (see server/specimen-tree.ts) is checked as before: every `$component`
  * must be an export of the fixture's own file and every `$copy` a pinned Writer key.
  */
-function specimenInputs(root: string, where: string, item: CandidateItem, mounting = true): SpecimenInputs {
+function specimenInputs(root: string, where: string, item: CandidateItem, mounting = true, writerSource: () => Readonly<Record<string, string>> = () => pinnedWriterCopy(root)): SpecimenInputs {
   const preview = { ...(item.meta?.preview && typeof item.meta.preview === "object" ? item.meta.preview as Record<string, unknown> : {}) };
   const fixtures = preview.fixtures as Record<string, unknown> | undefined;
   const raw = preview.inputs;
@@ -252,8 +260,8 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
   const own = preview.copy;
   if (own !== undefined && (!own || typeof own !== "object" || Object.keys(own).length)) issues.push("preview.copy is a copy snapshot; the specimen reads Writer copy from the pinned Writer slots through meta.preview.inputs.copy");
   // Read lazily: most candidates declare no copy, and a Writer scan per load is the slow part.
-  let cached: Record<string, string> | undefined;
-  const writer = () => cached ??= pinnedWriterCopy(root);
+  let cached: Readonly<Record<string, string>> | undefined;
+  const writer = () => cached ??= writerSource();
   const tree = fixtureChildren(fixtures);
   if (tree !== undefined) {
     const file = typeof fixtures?.file === "string" ? fixtures.file : typeof preview.entry === "string" ? preview.entry : undefined;
@@ -271,7 +279,7 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
   for (const entry of copySlots) if (!copyKeys.includes(entry.previewKey)) issues.push(`copy slot ${entry.slot} previews with ${entry.previewKey}, which is not a declared input (meta.preview.inputs.copy)`);
   const slots: SlotInput[] = [];
   if (mounting) for (const slot of slotIds) {
-    const input = slotInput(root, slot);
+    const input = slotInput(root, slot, writerSource);
     if (typeof input === "string") issues.push(input);
     else slots.push(input);
   }
@@ -286,7 +294,7 @@ function specimenInputs(root: string, where: string, item: CandidateItem, mounti
 }
 
 /** The pinned item a `$element` input mounts, or why it cannot be mounted. */
-function slotInput(root: string, slot: string): SlotInput | string {
+function slotInput(root: string, slot: string, writerSource: () => Readonly<Record<string, string>>): SlotInput | string {
   const entry = readSlotEntry(root, "designer", slot);
   if (!entry?.pin) return `input slot ${slot} has no Designer pin`;
   let read: { bytes: string; sha256: string };
@@ -295,7 +303,7 @@ function slotInput(root: string, slot: string): SlotInput | string {
   let item: CandidateItem;
   try { item = JSON.parse(read.bytes); } catch (error) { return `input slot ${slot}: the pinned candidate is not JSON (${error instanceof Error ? error.message : String(error)})`; }
   let own: SpecimenInputs;
-  try { own = specimenInputs(root, `${slot}/${entry.pin.candidate}`, item, false); } catch (error) { return `input slot ${slot}: ${error instanceof Error ? error.message : String(error)}`; }
+  try { own = specimenInputs(root, `${slot}/${entry.pin.candidate}`, item, false, writerSource); } catch (error) { return `input slot ${slot}: ${error instanceof Error ? error.message : String(error)}`; }
   const fixtures = own.preview.fixtures as Record<string, unknown> | undefined;
   if (!fixtures || typeof fixtures.file !== "string" || typeof fixtures.export !== "string" || !fixtures.props || typeof fixtures.props !== "object") return `input slot ${slot}: its pinned preview names no fixture file, export and props`;
   const file = item.files?.find(row => row.path === fixtures.file);
@@ -473,7 +481,7 @@ export function pinnedLibraryTheme(rootsIn: readonly string[]): SpecimenTheme | 
  * `themes`) gets every pinned theme variable, light and dark, not one `themes.*` leaf.
  */
 export function libraryRecordSource(options: LibrarySourceOptions): SpecimenRecordSource {
-  const base = recordStoreSource(libraryRecordStore(options.roots, options.registryBase ? { registryBase: options.registryBase } : {}), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
+  const base = recordStoreSource(libraryRecordStore(options.roots, { ...(options.registryBase ? { registryBase: options.registryBase } : {}), ...(options.writerCopy ? { writerCopy: options.writerCopy } : {}) }), options.defaultTheme ? { defaultTheme: options.defaultTheme } : {});
   return {
     ...base,
     async theme(id) {

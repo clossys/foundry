@@ -184,6 +184,16 @@ describe("canonical specimen records through the common slot reader", () => {
     expect((await libraryRecordStore([root]).load("sample-card"))!.preview).toMatchObject({ copy: { ...WRITER_COPY, "card.title": "Monthly report ready" } });
   });
 
+  it("reads a caller's Writer snapshot instead of scanning Writer per load (a scan per load held Studio's event loop for minutes)", async () => {
+    const snapshot = { ...WRITER_COPY, "card.title": "Snapshot title" };
+    expect((await libraryRecordStore([root], { writerCopy: snapshot }).load("sample-card"))!.preview).toMatchObject({ copy: snapshot });
+    expect((await libraryRecordSource({ roots: [root], writerCopy: snapshot }).read("sample-card"))!.preview).toMatchObject({ copy: { "card.title": { text: "Snapshot title" } } });
+    // The snapshot is the pass's Writer state: a declared key it lacks is refused like a missing Writer key.
+    const { "card.body": _body, ...partial } = WRITER_COPY;
+    await expect(libraryRecordStore([root], { writerCopy: partial }).load("sample-card")).rejects.toThrow(/card\.body/);
+    expect(() => libraryRecordStore([root, root], { writerCopy: snapshot })).toThrow(/exactly one consumer root/);
+  });
+
   it("refuses a preview.copy snapshot and an undeclared copy key", async () => {
     const slot = card(), item = JSON.parse(readFileSync(candidate(), "utf8"));
     const repin = (preview: unknown) => {

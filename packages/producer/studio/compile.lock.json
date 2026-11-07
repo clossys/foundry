@@ -1610,12 +1610,12 @@
       "sha256": "3f4f3b2baa16de28242c9e964cf41590697d7c0ed8754c83a29db64fd1fb7f6b"
     },
     {
-      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v20.json",
-      "sha256": "e65dda2f40ccc8edf8649d73dc2f3d633635a6b2312e2ddb562c811d5c497e30"
+      "path": "clossys/agents/designer/frames.studio-shell/candidates/studio-shell-v21.json",
+      "sha256": "dbdb2f92cf5fcbeffa47a7a775d8e2dbcba89ca75f5bfa3b9c12889a80c04069"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/pin.json",
-      "sha256": "11c79d48841b8f565afa30d689b57ce8ae3dbf0d48ea18f4376f58c3425a8b8f"
+      "sha256": "74ded98fe6c1fad20da857f59862865a2235e84df86958ecc218d8796dd37445"
     },
     {
       "path": "clossys/agents/designer/frames.studio-shell/slot.json",
@@ -6557,7 +6557,7 @@
     },
     {
       "path": "generated/studio-map.json",
-      "sha256": "65f12571e5e15c747c43bb04e6e959701d784abd2fb574634e1c907a17980c5d"
+      "sha256": "b17de102f655ccb89bc4efc57e5c35f50a39105b069a7a14a759d8feac6fcb91"
     },
     {
       "path": "generated/studio-map.ts",
@@ -6565,7 +6565,7 @@
     },
     {
       "path": "generated/studio-provenance.json",
-      "sha256": "a3020f00029ef33354074efdaa7933e94f1ec26552dcf93165a9eaa184ee88c3"
+      "sha256": "2ec67ecc5977d32f51974cead7e637618bd64179e5b87a477d4b5eb60142d038"
     }
   ]
 }

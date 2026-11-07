@@ -161,7 +161,7 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
       if (pathname === "/api/designer/globals.css") {
         const globals = await consumerGlobals(options.root).catch(() => undefined);
         response.writeHead(200, { "Content-Type": "text/css; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...(globals ? { ETag: `"${globals.hash}"` } : {}) });
-        response.end(globals?.css ?? "/* The consumer has no Designer globals; Studio keeps its stock component theme. */\n"); return;
+        response.end(globals?.css ?? "/* The consumer's Designer globals could not be compiled. */\n"); return;
       }
       if (pathname.startsWith(DESIGNER_FONT_PREFIX)) {
         const font = await consumerFontFile(options.root, pathname).catch(() => undefined);

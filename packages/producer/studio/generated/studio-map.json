@@ -46072,7 +46072,7 @@
     {
       "slot": "frames.studio-shell",
       "element": "studio-shell",
-      "version": 20
+      "version": 21
     },
     {
       "slot": "sections.studio.page-header",
