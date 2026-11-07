@@ -8,9 +8,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { GlyphProvider } from "./glyph-context.js";
 import type { IconNode } from "../icons/types.js";
 import { Button } from "./preview-runtime/components/button/button.js";
-import { Checkbox } from "./Checkbox.js";
+import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { Switch } from "./Switch.js";
-import { Select } from "./Select.js";
+import { StockSelect as Select } from "../blocks/stock-select.js";
 import { ComboBox } from "./ComboBox.js";
 import { Banner } from "./Banner.js";
 import { Chip } from "./Chip.js";
@@ -20,7 +20,8 @@ import { hostedRender } from "../frames/__fixtures__/shell-copy.js";
 const render = hostedRender(renderBare);
 
 const consumers = ["Select", "ComboBox", "Banner", "Chip", "SearchField", "Checkbox", "StatusMark", "Switch", "Button"];
-const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), `${name}.tsx`), "utf8");
+const stock: Record<string, string> = { Checkbox: "preview-runtime/components/checkbox/checkbox", Select: "../blocks/stock-select" };
+const source = (name: string) => readFileSync(join(dirname(fileURLToPath(import.meta.url)), `${stock[name] ?? name}.tsx`), "utf8");
 // Consumer files may render Icon, but glyph artwork belongs in data bindings.
 function inlineGlyphs(text: string) {
   return /<(?:svg|path|circle|rect|polygon)\b|[✓▾▸×]/.test(text);
@@ -36,22 +37,17 @@ describe("control glyph bindings", () => {
     expect(inlineGlyphs(source("Select") + '<span aria-hidden="true">✓</span>')).toBe(true);
     expect(inlineGlyphs(source("Checkbox") + '<svg><path d="M0 0" /></svg>')).toBe(true);
   });
+  // The stock checkbox and select draw the selected asset glyph, not a GlyphProvider binding.
   it("replaces each interactive affordance through asset bindings", async () => {
     const user = userEvent.setup();
     const { container } = render(<GlyphProvider glyphs={bindings} indeterminateGlyph={replacement}>
       <Button variant="quiet">Continue</Button>
-      <Checkbox defaultSelected>Selected</Checkbox>
-      <Checkbox isIndeterminate>Mixed</Checkbox>
       <Banner onDismiss={() => {}}>Message</Banner>
       <Chip onRemove={() => {}} removeLabel="Remove tag">Tag</Chip>
       <SearchField label="Query" defaultValue="Find" />
-      <Select label="Choice" options={[{ id: "a", label: "Alpha" }]} defaultSelectedKey="a" />
       <ComboBox label="Suggestion" options={[{ id: "a", label: "Alpha" }]} defaultSelectedKey="a" />
     </GlyphProvider>);
-    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(8);
-    await user.click(screen.getByRole("button", { name: /Choice/ }));
-    expect(screen.getByRole("option", { name: "Alpha" }).querySelector('[data-test-glyph="consumer"]')).not.toBeNull();
-    await user.keyboard("{Escape}");
+    expect(container.querySelectorAll('[data-test-glyph="consumer"]')).toHaveLength(4);
     await user.click(screen.getByRole("button", { name: /Suggestion/ }));
     expect(screen.getByRole("option", { name: "Alpha" }).querySelector('[data-test-glyph="consumer"]')).not.toBeNull();
     for (const svg of document.querySelectorAll("svg")) expect(svg).toHaveAttribute("aria-hidden", "true");
@@ -69,12 +65,9 @@ describe("control glyph bindings", () => {
     expect(container.querySelectorAll('[data-test-glyph="explicit"]')).toHaveLength(1);
     expect(screen.getByRole("button", { name: "None" }).querySelector("svg")).toBeNull();
   });
-  it("binds mark and switch geometry to existing control tokens in both states", async () => {
+  it("binds switch geometry to existing control tokens in both states; the stock checkbox toggles", async () => {
     const user = userEvent.setup();
     const { container } = render(<><Checkbox>Check</Checkbox><Switch>Toggle</Switch></>);
-    const box = container.querySelector('[data-part="control-mark"]') as HTMLElement;
-    expect(box.style.width).toBe("var(--ui-control-mark)");
-    expect(box.style.height).toBe("var(--ui-control-mark)");
     const track = container.querySelector('[data-part="switch-track"]') as HTMLElement;
     const thumb = container.querySelector('[data-part="switch-thumb"]') as HTMLElement;
     expect(track.style.width).toBe("var(--ui-control-switch-w)");
@@ -85,6 +78,7 @@ describe("control glyph bindings", () => {
     await user.click(screen.getByRole("switch"));
     expect(thumb.style.insetInlineStart).toBe("calc(var(--ui-control-switch-w) - var(--ui-control-switch-thumb) - 6px)");
     expect(screen.getByRole("switch")).toBeChecked();
+    expect(screen.getByRole("checkbox")).not.toBeChecked();
     await user.click(screen.getByRole("checkbox"));
     expect(screen.getByRole("checkbox")).toBeChecked();
   });

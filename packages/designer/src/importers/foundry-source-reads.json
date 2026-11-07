@@ -2,8 +2,12 @@
   "avatar": [],
   "badge": [],
   "banner": [],
-  "breadcrumbs": [],
-  "button": [],
+  "breadcrumbs": [
+    "themes.spacing"
+  ],
+  "button": [
+    "themes.spacing"
+  ],
   "calendar": [],
   "card": [],
   "chart-area": [],
@@ -15,18 +19,24 @@
   "chart-sparkline": [],
   "chart-status-strip": [],
   "chart-waterfall": [],
-  "checkbox": [],
+  "checkbox": [
+    "themes.spacing"
+  ],
   "color-picker": [],
   "combo-box": [],
   "date-field": [],
   "dialog": [],
-  "disclosure": [],
+  "disclosure": [
+    "themes.spacing"
+  ],
   "field": [],
   "file-trigger": [],
   "form": [],
   "grid-list": [],
   "icon": [],
-  "link": [],
+  "link": [
+    "themes.spacing"
+  ],
   "logo": [],
   "media-player": [],
   "menu": [],
@@ -39,7 +49,9 @@
   "radio-group": [],
   "resize-handle": [],
   "search-field": [],
-  "select": [],
+  "select": [
+    "themes.spacing"
+  ],
   "semantic-content": [],
   "separator": [],
   "skeleton": [],
@@ -60,7 +72,9 @@
   "tag-group": [],
   "text-field": [],
   "toast": [],
-  "toggle-button": [],
+  "toggle-button": [
+    "themes.spacing"
+  ],
   "toggle-group": [],
   "toolbar": [],
   "tooltip": [],

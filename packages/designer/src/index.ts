@@ -30,6 +30,10 @@ export {
   Checkbox,
   Switch,
   Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
   Textarea,
   Avatar,
   Spinner,
@@ -88,7 +92,6 @@ export type {
   CheckboxProps,
   SwitchProps,
   SelectProps,
-  SelectOption,
   TextareaProps,
   AvatarProps,
   AvatarSize,
@@ -496,6 +499,8 @@ export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, S
 
 export { StockItem } from "./blocks/items/StockItem.js";
 export type { StockItemProps } from "./blocks/items/StockItem.js";
+export { StockSelect } from "./blocks/stock-select.js";
+export type { StockSelectProps, StockSelectOption } from "./blocks/stock-select.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
 export { PageBar } from "./blocks/PageBar.js";

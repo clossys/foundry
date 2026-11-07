@@ -3,9 +3,9 @@ import type { SettingsSectionGroup } from "../../blocks/SettingsSection.js";
 
 import { anatomyOf, noop, recordsOf, refuseUnmapped, requiredAnatomy, requireSlot, slotValue, stringField, textOf, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
+import { StockSelect } from "../../blocks/stock-select.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
 const Switch = componentLeaf<typeof import("../../components/Switch.js").Switch>("components.switch");
 
 const LEAF = "sections.settings";
@@ -24,7 +24,7 @@ function control(group: string, row: RuntimeObject, index: number) {
   if (kind === "select") {
     const options = recordsOf(LEAF, "groups", row.options ?? []).map(option => ({ id: stringField(option, "id") ?? "", label: stringField(option, "label") ?? "" }));
     if (!options.length || options.some(option => !option.id || !option.label)) throw new TypeError(`${LEAF}: select ${id} needs options with an id and a label`);
-    return <Select key={id} id={id} label={label} placeholder={stringField(row, "placeholder")} options={options} defaultSelectedKey={stringField(row, "selected")} />;
+    return <StockSelect key={id} id={id} label={label} placeholder={stringField(row, "placeholder")} options={options} defaultSelectedKey={stringField(row, "selected")} />;
   }
   throw new TypeError(`${LEAF}: control kind ${kind} has no component the contract allows`);
 }

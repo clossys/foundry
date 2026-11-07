@@ -11,7 +11,7 @@ import { Matrix } from "../Matrix.js";
 import { PAGINATION_COPY_REFS, Pagination } from "../Pagination.js";
 import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { SearchField } from "../../components/SearchField.js";
-import { Select } from "../../components/Select.js";
+import { StockSelect as Select } from "../stock-select.js";
 import { selectChromium } from "../../__fixtures__/chromium-discovery.js";
 import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
 import type { ShellCopyResolver } from "../../components/Banner.copy.js";

@@ -35,7 +35,7 @@ export interface LeafCellProps extends Omit<HTMLAttributes<HTMLDivElement>, 'chi
  * The slots share one centre line, so a status reads level with its action buttons.
  */
 export function LeafCell({ preview, status, actions, previewState, className, ...rest }: LeafCellProps) {
-  return <Card {...rest} data-candidate-cell="" data-preview-state={previewState} data-ground={LEAF_CELL_FILL} className={['flex w-max items-center gap-md p-sm', className].filter(Boolean).join(' ')}>
+  return <Card {...rest} data-candidate-cell="" data-preview-state={previewState} data-ground={LEAF_CELL_FILL} className={['flex w-max items-center gap-md overflow-visible p-sm', className].filter(Boolean).join(' ')}>
     {preview}
     <SemanticContent as="div" data-cell-status="" hidden={status == null} className={status == null ? undefined : 'text-ink-muted'}>{status}</SemanticContent>
     <SemanticContent as="div" data-cell-actions="" hidden={actions == null} className={actions == null ? undefined : 'flex items-center gap-sm'}>{actions}</SemanticContent>

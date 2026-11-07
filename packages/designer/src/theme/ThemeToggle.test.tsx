@@ -77,7 +77,9 @@ describe("ThemeToggle", () => {
     expect(screen.getByRole("radio", { name: "Dark" })).toBeChecked();
   });
 
-  it("standalone ToggleGroup APG probe: ArrowRight checks the newly focused radio", async () => {
+  // components.toggle-group carries no APG radio contract: the stock RAC
+  // ToggleButtonGroup moves focus on arrows and selects on Space.
+  it("standalone stock ToggleGroup: ArrowRight moves focus, Space checks the focused radio", async () => {
     const user = userEvent.setup();
     render(<ToggleGroup aria-label="Standalone appearance" selectionMode="single" defaultSelectedKeys={["system"]}>
       <ToggleGroupItem id="system">System</ToggleGroupItem><ToggleGroupItem id="light">Light</ToggleGroupItem><ToggleGroupItem id="dark">Dark</ToggleGroupItem>
@@ -86,7 +88,10 @@ describe("ThemeToggle", () => {
     expect(screen.getByRole("radio", {name:"System"})).toHaveFocus();
     await user.keyboard("{ArrowRight}");
     expect(screen.getByRole("radio", {name:"Light"})).toHaveFocus();
+    expect(screen.getByRole("radio", {name:"Light"})).not.toBeChecked();
+    await user.keyboard(" ");
     expect(screen.getByRole("radio", {name:"Light"})).toBeChecked();
+    expect(screen.getByRole("radio", {name:"System"})).not.toBeChecked();
   });
 
   it("persists direct selection and announces the change", async () => {

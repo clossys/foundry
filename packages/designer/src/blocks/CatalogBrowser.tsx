@@ -1,7 +1,7 @@
 import { useEffect, useReducer, useRef, useState, type ReactNode } from "react";
 import { Badge } from "../components/Badge.js";
 import { SearchField } from "../components/SearchField.js";
-import { Select } from "../components/Select.js";
+import { StockSelect } from "./stock-select.js";
 import { Skeleton } from "../components/Skeleton.js";
 import { Switch } from "../components/Switch.js";
 import { Tabs } from "../components/Tabs.js";
@@ -102,9 +102,9 @@ export function CatalogBrowser<C extends CatalogBrowserCatalog>(props: CatalogBr
     <Toolbar aria-label={labels.toolbar}
       search={<SearchField label={labels.search} value={state.query} onChange={query => update({ query })} />}
       trailing={binding.filters?.length || tree.parkedCount ? <>
-        {(binding.filters ?? []).map(filter => <Select key={filter.id} label={filter.label}
-          options={[{ id: ANY_VALUE, label: labels.anyValue }, ...filter.options]} value={own(state.filters, filter.id) ?? ANY_VALUE}
-          onChange={value => { if (value !== null) update({ filters: { ...state.filters, [filter.id]: String(value) } }); }} />)}
+        {(binding.filters ?? []).map(filter => <StockSelect key={filter.id} label={filter.label}
+          options={[{ id: ANY_VALUE, label: labels.anyValue }, ...filter.options]} selectedKey={own(state.filters, filter.id) ?? ANY_VALUE}
+          onSelectionChange={value => { if (value !== null) update({ filters: { ...state.filters, [filter.id]: String(value) } }); }} />)}
         {tree.parkedCount ? <Switch isSelected={state.showParked} onChange={showParked => update({ showParked })}>{labels.showParked(tree.parkedCount)}</Switch> : null}
       </> : undefined} />
     <CatalogWorkspace items={tree.items} selectedId={entry ? entry.id : null}

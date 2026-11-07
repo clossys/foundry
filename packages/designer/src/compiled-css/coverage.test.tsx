@@ -37,7 +37,7 @@ import { Banner } from "../components/Banner.js";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage } from "../components/preview-runtime/components/breadcrumbs/breadcrumb.js";
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Card } from "../components/Card.js";
-import { Checkbox } from "../components/Checkbox.js";
+import { Checkbox } from "../components/preview-runtime/components/checkbox/checkbox.js";
 import { Chip } from "../components/Chip.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { Meter } from "../components/Meter.js";

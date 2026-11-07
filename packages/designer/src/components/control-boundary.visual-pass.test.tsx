@@ -3,13 +3,13 @@ import { CalendarDate } from "@internationalized/date";
 import { DatePicker, Group } from "react-aria-components";
 import { describe, expect, it } from "vitest";
 import { buttonClassName } from "./button-classes.js";
-import { Checkbox } from "./Checkbox.js";
+import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { ComboBox } from "./ComboBox.js";
 import { DateField } from "./DateField.js";
 import { NumberField } from "./NumberField.js";
 import { RadioGroup } from "./RadioGroup.js";
 import { SearchField } from "./SearchField.js";
-import { Select } from "./Select.js";
+import { StockSelect } from "../blocks/stock-select.js";
 import { Switch } from "./Switch.js";
 import { Textarea } from "./Textarea.js";
 import { TextField } from "./TextField.js";
@@ -36,7 +36,6 @@ const fields: Array<[string, Mount, Mount]> = [
   ["TextField", () => { render(<TextField label="Name" />); return screen.getByRole("textbox"); }, () => { render(<TextField label="Name" isInvalid />); return screen.getByRole("textbox"); }],
   ["Textarea", () => { render(<Textarea label="Notes" />); return screen.getByRole("textbox"); }, () => { render(<Textarea label="Notes" isInvalid />); return screen.getByRole("textbox"); }],
   ["SearchField", () => { render(<SearchField label="Search" />); return screen.getByRole("searchbox"); }, () => { render(<SearchField label="Search" isInvalid />); return screen.getByRole("searchbox"); }],
-  ["Select", () => { render(<Select label="Fruit" options={OPTIONS} />); return screen.getByRole("button"); }, () => { render(<Select label="Fruit" options={OPTIONS} isInvalid />); return screen.getByRole("button"); }],
   ["ComboBox", () => { render(<ComboBox label="Fruit" options={OPTIONS} />); return screen.getByRole("combobox").parentElement; }, () => { render(<ComboBox label="Fruit" options={OPTIONS} isInvalid />); return screen.getByRole("combobox").parentElement; }],
   ["NumberField", () => { render(<NumberField {...names} label="Qty" />); return screen.getByRole("textbox").closest("[role=group]"); }, () => { render(<NumberField {...names} label="Qty" isInvalid />); return screen.getByRole("textbox").closest("[role=group]"); }],
   ["DateField", () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} />); return screen.getByRole("group", { name: /Start/ }); }, () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} isInvalid />); return screen.getByRole("group", { name: /Start/ }); }],
@@ -52,6 +51,18 @@ describe("control boundary line (VF-8)", () => {
     expect(classes(el)).not.toContain("border-line-control");
   });
 
+  it.each([
+    ["Select", (isInvalid: boolean) => { render(<StockSelect label="Fruit" options={OPTIONS} isInvalid={isInvalid} errorMessage="Pick a fruit" />); return screen.getByRole("button", { name: /Fruit/ }); }],
+  ] as const)("%s: the stock control is named by its field label and carries the invalid state with its error", (_name, mount) => {
+    const rest = mount(false);
+    expect(rest).toHaveAccessibleName(/Fruit/);
+    expect(rest.closest("[data-invalid]")).toBeNull();
+    document.body.replaceChildren();
+    const invalid = mount(true);
+    expect(invalid.closest("[data-invalid]")).not.toBeNull();
+    expect(invalid).toHaveAccessibleDescription("Pick a fruit");
+  });
+
   it("DateField: the picker trigger button rests on the control line", () => {
     render(<DatePicker defaultValue={new CalendarDate(2024, 1, 15)} aria-label="When">
       <Group><DateField label="When" pickerTrigger={{ label: "Choose date", children: <span /> }} /></Group>
@@ -59,16 +70,15 @@ describe("control boundary line (VF-8)", () => {
     expectControlLine(screen.getByRole("button", { name: /^Choose date/ }));
   });
 
-  it("Checkbox: unchecked mark rests on the control line; checked keeps the action edge; invalid keeps danger", () => {
-    const { rerender, container } = render(<Checkbox>Accept</Checkbox>);
-    const mark = () => container.querySelector('[data-part="control-mark"]');
-    expectControlLine(mark());
+  it("Checkbox: the stock box rests on the strong line and binds selected and invalid to the action and danger edges", () => {
+    const { rerender } = render(<Checkbox>Accept</Checkbox>);
+    const box = () => screen.getByRole("checkbox").closest('[data-slot="checkbox"]');
+    expect(classes(box())).toEqual(expect.arrayContaining(["border-(--color-line-strong)", "data-selected:border-(--color-action)", "data-invalid:border-(--color-status-danger)"]));
+    expect(box()).not.toHaveAttribute("data-selected");
     rerender(<Checkbox isSelected>Accept</Checkbox>);
-    expect(classes(mark())).toContain("border-action");
-    expect(classes(mark())).not.toContain("border-line-control");
+    expect(box()).toHaveAttribute("data-selected", "true");
     rerender(<Checkbox isInvalid>Accept</Checkbox>);
-    expect(classes(mark())).toContain("border-status-danger");
-    expect(classes(mark())).not.toContain("border-line-control");
+    expect(box()).toHaveAttribute("data-invalid", "true");
   });
 
   it("Radio: unselected dot rests on the control line; selected keeps the action edge; invalid keeps danger", () => {

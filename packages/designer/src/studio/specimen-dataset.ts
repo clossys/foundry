@@ -5,7 +5,7 @@ import type { ComboBoxOption } from "../components/ComboBox.js";
 import type { LogomarkProps } from "../components/Logomark.js";
 import type { MeterProps } from "../components/Meter.js";
 import type { ProgressBarProps } from "../components/ProgressBar.js";
-import type { SelectOption } from "../components/Select.js";
+import type { StockSelectOption } from "../blocks/stock-select.js";
 import type { SkeletonProps } from "../components/Skeleton.js";
 import type { SpinnerProps } from "../components/Spinner.js";
 import type { StatusMarkTone } from "../components/StatusMark.js";
@@ -135,7 +135,7 @@ const brandMark = identityStarterSeeds({ name: brandName }, {
   accent: presetInk("themes.primary", "default"), onAccent: presetInk("themes.primary-foreground", "default"), fontFamily: "sans-serif",
 }).mark;
 
-const selectOptions: readonly SelectOption[] = [
+const selectOptions: readonly StockSelectOption[] = [
   { id: "draft", label: "Draft" },
   { id: "review", label: "In review" },
   { id: "published", label: "Published" },

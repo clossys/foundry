@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { LayerId, Placement } from "../../catalog-core/index.js";
 import { SemanticContent } from "../../components/SemanticContent.js";
 import { EmptyState } from "../../blocks/EmptyState.js";
-import { Select } from "../../components/Select.js";
+import { StockSelect } from "../../blocks/stock-select.js";
 import { TreeView, type TreeViewNode } from "../TreeView.js";
 import { useOptionalStudioSession } from "../StudioProvider.js";
 import { useWholeStudio } from "../WholeStudioProvider.js";
@@ -54,5 +54,5 @@ export function LayerSelect(props: ExplorerProps = {}) {
   const session=useOptionalStudioSession(), inherited=useExplorerPlacements();
   const placements=props.placements ?? inherited,labels=props.labels ?? session!.labels,layer=props.activeLayer ?? session?.layer;
   const options=EXPLORER_LAYER_ORDER.filter(id=>placements.some(p=>p.layer===id)).map(id=>({id,label:labels.layers[id]}));
-  return <Select size="sm" label={<SemanticContent as="span" className="sr-only">{labels.layers.label}</SemanticContent>} options={options} selectedKey={layer} onSelectionChange={id=>{ if(typeof id==="string"&&options.some(o=>o.id===id)) (props.onNavigate ?? session!.onNavigate)({layer:id as LayerId}); }} />;
+  return <StockSelect size="sm" label={<SemanticContent as="span" className="sr-only">{labels.layers.label}</SemanticContent>} options={options} selectedKey={layer ?? null} onSelectionChange={id=>{ if(typeof id==="string"&&options.some(o=>o.id===id)) (props.onNavigate ?? session!.onNavigate)({layer:id as LayerId}); }} />;
 }

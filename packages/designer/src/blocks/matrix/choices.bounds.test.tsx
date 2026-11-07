@@ -54,9 +54,10 @@ it("caps every rendered library candidate cell at the one shared panel preset ma
   const editCells = [...edit.querySelectorAll<HTMLElement>("[data-candidate-cell]")];
   expect(editCells.length).toBeGreaterThan(0);
   for (const cell of editCells) { expect(cell).toHaveClass(LIBRARY_COLUMN_BOUND); expect(cell.getAttribute("style")).toBeNull(); }
-  const matrix = edit.querySelector<HTMLElement>("[data-studio-matrix]")!;
-  // A cell's specimen (here an icon at its intrinsic size) sits inside the capped cell; the layout around it never sizes to max-content.
-  for (const node of [matrix, ...matrix.querySelectorAll<HTMLElement>("[class]")].filter(node => !node.closest("[data-asset-specimen]"))) expect(node.className, node.tagName).not.toMatch(UNBOUNDED);
+  // The board has no edit mode (LibraryBoardSection): an edit record renders the same read-only view, so no
+  // choices matrix mounts there; the matrix's own bounds are the first test's subject.
+  expect(edit.querySelector("[data-studio-matrix]")).toBeNull();
+  expect(editCells.length).toBe(viewCells.length);
 });
 
 it("gives a 1-member and a 7-member candidate the identical cap and wraps every member into view", () => {

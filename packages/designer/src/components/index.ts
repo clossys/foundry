@@ -89,8 +89,8 @@ export { LinkButton } from "./preview-runtime/components/button/button.js";
 export { buttonLinkClassName, iconButtonClassName, iconButtonLinkClassName, INVERSE_CONTROL_INK } from "./button-classes.js";
 export type { ControlGround, IconButtonClassOptions, IconButtonLinkGround, IconButtonShape, IconButtonSize } from "./button-classes.js";
 
-export { Checkbox } from "./Checkbox.js";
-export type { CheckboxProps, CheckboxGroupProps } from "./Checkbox.js";
+export { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
+export type CheckboxProps = import("react").ComponentProps<typeof import("./preview-runtime/components/checkbox/checkbox.js").Checkbox>;
 
 export { Switch } from "./Switch.js";
 export type { SwitchProps } from "./Switch.js";
@@ -98,8 +98,8 @@ export type { SwitchProps } from "./Switch.js";
 export { Slider } from "./Slider.js";
 export type { SliderProps, SliderValue } from "./Slider.js";
 
-export { Select } from "./Select.js";
-export type { SelectProps, SelectOption } from "./Select.js";
+export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./preview-runtime/components/select/select.js";
+export type SelectProps = import("react").ComponentProps<typeof import("./preview-runtime/components/select/select.js").Select>;
 
 export { Textarea } from "./Textarea.js";
 export type { TextareaProps } from "./Textarea.js";

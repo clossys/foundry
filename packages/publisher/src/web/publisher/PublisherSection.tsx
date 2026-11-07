@@ -1,7 +1,7 @@
 'use client';
 import { useState } from 'react';
-import { Banner, Button, Card, LinkButton as Link, Select } from '@clossys/designer/components';
-import { DataTable, DetailView, EmptyState, Form, NoticeList, SectionHeader, Toolbar } from '@clossys/designer/blocks';
+import { Banner, Button, Card, LinkButton as Link } from '@clossys/designer/components';
+import { DataTable, DetailView, EmptyState, Form, NoticeList, SectionHeader, StockSelect, Toolbar } from '@clossys/designer/blocks';
 import type { InstanceRegistries } from '../../core/instance-binding.js';
 import type { PublisherConfiguration } from '../../planning/configuration.js';
 import type { PublisherCell, PublisherSectionCommand, PublisherSectionData } from './publisher-sections.js';
@@ -53,7 +53,7 @@ function PlanningSectionForm({ data, fields, onCommand, productionMessages }: Pu
   return <section aria-label={data.label} data-publisher-section={data.id}><Form aria-label={data.label} onSubmit={event => event.preventDefault()}>
     <SectionHeader title={data.label} />
     <p>Planned configuration only · no renderer or adopted binding is supplied.</p>
-    {configuration?.kind === 'concept-only' ? <><Select label="Output format" selectedKey={configuration.format} options={fields.formats.map(format => ({ id: format.id, label: format.label }))} onSelectionChange={key => { if (key) update({ kind: 'concept-only', format: String(key) as typeof configuration.format, deliveries: [] }); }} />
+    {configuration?.kind === 'concept-only' ? <><StockSelect label="Output format" selectedKey={configuration.format} options={fields.formats.map(format => ({ id: format.id, label: format.label }))} onSelectionChange={key => { if (key) update({ kind: 'concept-only', format: String(key) as typeof configuration.format, deliveries: [] }); }} />
       <DeliverySettingsFields format={format} choices={configuration.deliveries} onChange={deliveries => update({ ...configuration, deliveries })} messages={productionMessages} />
     </> : null}
     <InputQuestions requests={data.requests} />

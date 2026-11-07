@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Checkbox } from "../../components/Checkbox.js";
-import { Select } from "../../components/Select.js";
+import { Checkbox } from "../../components/preview-runtime/components/checkbox/checkbox.js";
+import { StockSelect as Select } from "../stock-select.js";
 import { Tooltip } from "../../components/Tooltip.js";
 
 describe("AccessMatrix and ColumnMapper main component integration", () => {

@@ -7,7 +7,7 @@ import {
   type GridListProps as AriaGridListProps,
   type GridListItemProps as AriaGridListItemProps,
 } from "react-aria-components";
-import { Checkbox } from "./Checkbox.js";
+import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { cx } from "./internal/cx.js";
 import { UI_ALPHA_DISABLED, UI_LAYOUT_TAP_TARGET, UI_RING_FOCUS } from "./internal/ui-vars.js";
 

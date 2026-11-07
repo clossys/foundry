@@ -8,7 +8,7 @@ import { Button } from "./preview-runtime/components/button/button.js";
 import { IconButton } from "./IconButton.js";
 import { TextField } from "./TextField.js";
 import { SearchField } from "./SearchField.js";
-import { Select } from "./Select.js";
+import { StockSelect as Select } from "../blocks/stock-select.js";
 import { Toggle } from "./toggle-button/toggle.js";
 import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";

@@ -359,6 +359,10 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
   }
 }
 
+const stockAnatomy: Readonly<Record<string, string>> = {
+  "./components#Select": "components/select/select.tsx#Select",
+};
+
 /** Why sample data cannot draw this export (`./shell#Brandmark`), or undefined when it can. */
 export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavailableReason | undefined =>
   Object.hasOwn(componentSpecimenUnavailable, key) ? componentSpecimenUnavailable[key] : undefined;
@@ -371,6 +375,8 @@ export const componentSpecimenUnavailableReason = (key: string): SpecimenUnavail
  */
 export function componentSpecimenSample(key: string, Component: unknown, exports: Namespace): ComponentSpecimenSample | undefined {
   if (!key.startsWith("./")) return sourceSample(key, exports);
+  // The package Select is the stock shadcn@aria module, drawn with its own barrel-exported parts.
+  if (Object.hasOwn(stockAnatomy, key)) return sourceSample(stockAnatomy[key]!, exports);
   if (key === "./components#Table") return table(Component);
   // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
   // a host-owned native control, so its specimen is that native control.

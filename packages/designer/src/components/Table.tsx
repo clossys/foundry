@@ -17,7 +17,7 @@ import {
   type TableHeaderProps as AriaTableHeaderProps,
   type TableProps as AriaTableProps,
 } from "react-aria-components";
-import { Checkbox } from "./Checkbox.js";
+import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { Icon } from "./Icon.js";
 import { useGlyph } from "./glyph-context.js";
 import { cx } from "./internal/cx.js";

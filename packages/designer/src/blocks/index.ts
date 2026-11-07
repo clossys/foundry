@@ -280,6 +280,8 @@ export type { SceneProps, SceneInput, SceneConverge, SceneEvidenceTrail, SceneAp
 
 export { StockItem } from "./items/StockItem.js";
 export type { StockItemProps } from "./items/StockItem.js";
+export { StockSelect } from "./stock-select.js";
+export type { StockSelectProps, StockSelectOption } from "./stock-select.js";
 export { Tree } from "./tree/Tree.js";
 export type { TreeProps, TreeNodeData } from "./tree/Tree.js";
 export { Items } from "./items/Items.js";
