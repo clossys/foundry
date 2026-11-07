@@ -1,4 +1,4 @@
-import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
+import { useId, useLayoutEffect, useRef, useState, type ComponentPropsWithRef, type KeyboardEvent, type ReactElement, type ReactNode } from "react";
 
 import { cx } from "../components/internal/cx.js";
 import { ChevronRight } from "../icons/ChevronRight.js";
@@ -60,7 +60,11 @@ interface RowProps<T extends TreeNode & { children?: readonly T[] }> {
   renderDetails?: (node: T) => ReactNode;
 }
 
-/** A group is owned by its folder treeitem; Button and Link retain native press semantics. */
+/**
+ * A group is owned by its folder treeitem; Button and Link retain native press semantics. The stock
+ * press controls filter role, tabIndex and the tree ARIA attributes, so each row restores them on
+ * its rendered element through the control's own `render` prop instead of a hand-rolled control.
+ */
 function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T>) {
   const { node, level, position, count, expanded, active, selectedId, activate, focus, keyboard, register, renderDetails } = props;
   const rowId = useId(); const groupId = useId(); const descriptionId = useId();
@@ -89,11 +93,11 @@ function Row<T extends TreeNode & { children?: readonly T[] }>(props: RowProps<T
     <SemanticContent as="div" role="none" ref={element => register(node.id, element?.querySelector<HTMLElement>("button, a") ?? null)}>
       {node.href !== undefined ? <Link id={rowId} href={node.href} buttonVariant={selectedId === node.id ? "secondary" : "ghost"}
         className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
-        {...semantics}
+        render={domProps => <a {...domProps as ComponentPropsWithRef<"a">} {...semantics} />}
         onFocus={() => focus(node.id)} onKeyDown={event => keyboard(event, node)} onPress={() => activate(node)}>{content}</Link> :
         <Button id={rowId} variant={selectedId === node.id ? "secondary" : "ghost"}
           className={ROW} style={style} aria-label={node.label} aria-describedby={details == null ? undefined : descriptionId}
-          {...semantics}
+          render={domProps => <button {...domProps as ComponentPropsWithRef<"button">} {...semantics} />}
           onFocus={() => focus(node.id)} onKeyDown={event => keyboard(event, node)} onPress={() => activate(node)}>{content}</Button>}
     </SemanticContent>
     {folder ? <SemanticContent as="div" id={groupId} role="group" aria-labelledby={rowId} hidden={!open}>

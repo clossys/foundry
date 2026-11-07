@@ -48,18 +48,18 @@ describe("CatalogWorkspace", () => {
     await openTree();
     const selected = screen.getByRole("treeitem", { name: "Second" });
     await userEvent.click(selected); expect(onSelect).toHaveBeenCalledExactlyOnceWith(second.id);
-    expect(selected).toHaveAttribute("aria-selected", "false"); expect(selected).not.toHaveClass("bg-surface-raised");
+    expect(selected).toHaveAttribute("aria-selected", "false"); expect(selected).toHaveAttribute("data-variant", "ghost");
     result.rerender(<CatalogWorkspace {...base} onSelect={onSelect} selectedId={second.id} />);
     await userEvent.keyboard("{ArrowUp}");
     const other = screen.getByRole("treeitem", { name: "First" }); expect(other).toHaveFocus();
     expect(selected).not.toHaveFocus(); expect(selected).toHaveAttribute("aria-selected", "true");
-    // The selected leaf takes the secondary Button look, whose resting edge is line-control since ad1a46c90.
-    expect(selected).toHaveClass("bg-surface-raised", "border", "border-line-control", "text-ink-primary");
-    expect(other).not.toHaveClass("bg-surface-raised");
-    expect(screen.getByRole("treeitem", { name: "Nested" })).not.toHaveClass("bg-surface-raised");
+    // The selected leaf takes the stock secondary Button look; every other row stays ghost.
+    expect(selected).toHaveAttribute("data-variant", "secondary");
+    expect(other).toHaveAttribute("data-variant", "ghost");
+    expect(screen.getByRole("treeitem", { name: "Nested" })).toHaveAttribute("data-variant", "ghost");
     result.rerender(<CatalogWorkspace {...base} onSelect={onSelect} selectedId={first.id} />);
-    expect(other).toHaveFocus(); expect(other).toHaveClass("bg-surface-raised", "border-line-control");
-    expect(selected).not.toHaveClass("bg-surface-raised"); expect(selected).toHaveAttribute("aria-selected", "false");
+    expect(other).toHaveFocus(); expect(other).toHaveAttribute("data-variant", "secondary");
+    expect(selected).toHaveAttribute("data-variant", "ghost"); expect(selected).toHaveAttribute("aria-selected", "false");
   });
   it("passes original selected leaf objects into both slots and follows host rerenders without remount", async () => {
     media(); const { rerender } = render(<CatalogWorkspace {...base} selectedId={second.id} />);
@@ -233,7 +233,9 @@ describe("CatalogWorkspace", () => {
   });
   it("uses the same token-bound surfaces in light and dark with analytical text contrast", () => {
     media(); const { container, rerender } = render(<div data-theme="light"><CatalogWorkspace {...base} selectedId={first.id} /></div>);
-    const panel = screen.getByRole("region", { name: labels.preview }); expect(panel).toHaveClass("bg-surface-raised", "rounded-panel", "p-lg");
+    const panel = screen.getByRole("region", { name: labels.preview });
+    // The preview is the stock Card, painted with the surface-raised token whose contrast is checked below.
+    expect(panel).toHaveAttribute("data-slot", "card"); expect(panel.className).toContain("bg-(--color-surface-raised)");
     const classes = panel.className;
     rerender(<div data-theme="dark"><CatalogWorkspace {...base} selectedId={first.id} /></div>);
     expect(screen.getByRole("region", { name: labels.preview }).className).toBe(classes);

@@ -82,8 +82,10 @@ const CONTROL = "flex min-w-0 items-center justify-start gap-sm rounded-control 
  */
 const ICON_SLOT = { inlineSize: "var(--ui-icon-sm)" } as const;
 const CURRENT = "bg-surface-selected font-medium border-s-primary forced-colors:outline-solid forced-colors:outline-1 forced-colors:outline-current";
+// A host passes the public Icon, this block renders the selected icon leaf: both are glyph-bearing icon elements.
 function smallIcon(icon: ReactNode): ReactNode {
-  return isValidElement(icon) && icon.type === Icon ? cloneElement(icon as ReactElement<{ size?: string }>, { size: "sm" }) : icon;
+  return isValidElement<{ glyph?: unknown; size?: string }>(icon) && (icon.type === Icon || icon.props.glyph !== undefined)
+    ? cloneElement(icon as ReactElement<{ size?: string }>, { size: "sm" }) : icon;
 }
 
 /** Host routes and identity arrive as data and slots; one Drawer owns the narrow modal lifecycle. */

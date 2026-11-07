@@ -13,6 +13,7 @@ import { catalogIndex } from "./catalog-workspace/model.js";
 import { extractStyleCandidates } from "../style-scan.js";
 import { checkTokenPurity } from "../token-gate.js";
 import { TOKENS } from "../tokens/tokens.js";
+import { buttonVariants } from "../components/preview-runtime/components/button/button.js";
 
 function chain(count: number): TreeNode[] {
   let node: TreeNode = { id: String(count), label: `Level ${count}` };
@@ -27,7 +28,7 @@ describe("Explorer", () => {
     const view = render(<Explorer tree={tree} label="Files" selectedId="folder" onSelect={onSelect} />);
     const folder = screen.getByRole("treeitem", { name: "Folder" });
     expect(folder).toHaveAttribute("aria-selected", "true");
-    expect(folder).toHaveClass("bg-surface-raised", "border-line-control");
+    expect(folder).toHaveAttribute("data-variant", "secondary");
     await userEvent.click(folder); expect(folder).toHaveAttribute("aria-expanded", "true");
     expect(action).toHaveBeenCalledTimes(1); expect(onSelect).toHaveBeenCalledExactlyOnceWith("folder");
     await userEvent.keyboard("{ArrowLeft}{ArrowRight}"); expect(folder).toHaveAttribute("aria-expanded", "true");
@@ -37,7 +38,7 @@ describe("Explorer", () => {
     expect(folder).toHaveAttribute("aria-expanded", "true");
     view.rerender(<Explorer tree={tree} label="Files" selectedId={null} onSelect={onSelect} />);
     expect(folder).toHaveAttribute("aria-selected", "false"); expect(action).toHaveBeenCalledTimes(3);
-    expect(folder).not.toHaveClass("bg-surface-raised");
+    expect(folder).toHaveAttribute("data-variant", "ghost");
   });
   it("renders twelve levels, token branch guides, distinct Icon components and capped indentation", () => {
     const { container } = render(<Explorer tree={chain(12)} label="Files" defaultExpandedIds={Array.from({ length: 11 }, (_, i) => String(i + 1))} />);
@@ -113,7 +114,7 @@ describe("Explorer", () => {
     const items = [{ id: "folder", label: "Folder", kind: "collection", children: [] }]; const onSelect = vi.fn();
     render(<Browse items={items} index={catalogIndex(items)} selectedId="folder" onSelect={onSelect} label="Browse" />);
     const folder = screen.getByRole("treeitem", { name: "Folder" });
-    expect(folder).toHaveAttribute("aria-selected", "false"); expect(folder).not.toHaveClass("bg-surface-raised");
+    expect(folder).toHaveAttribute("aria-selected", "false"); expect(folder).toHaveAttribute("data-variant", "ghost");
     await userEvent.click(folder); expect(folder).toHaveAttribute("aria-expanded", "true");
     await userEvent.keyboard("{Enter} "); expect(onSelect).not.toHaveBeenCalled();
   });
@@ -126,13 +127,15 @@ describe("Explorer", () => {
   });
   it("ships the actual rendered deep, selected and collapsed row classes in canonical CSS", () => {
     const css = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
+    // Rows are the stock Button: its own anatomy is stock-owned, so only the classes Explorer adds are pinned here.
+    const stock = new Set((["secondary", "ghost"] as const).flatMap(variant => buttonVariants({ variant }).split(/\s+/)));
     const classes = new Set<string>();
     for (const expanded of [[], Array.from({ length: 11 }, (_, i) => String(i + 1))]) {
       const view = render(<Explorer tree={chain(12)} label="Files" selectedId="12" defaultExpandedIds={expanded} renderDetails={() => "Metadata"} />);
-      for (const element of view.container.querySelectorAll("*")) for (const name of element.classList) classes.add(name);
+      for (const element of view.container.querySelectorAll("*")) for (const name of element.classList) if (!stock.has(name)) classes.add(name);
       view.unmount();
     }
-    expect(classes.size).toBeGreaterThan(20);
+    expect(classes.size).toBeGreaterThan(10);
     const missing = [...classes].filter(name => {
       const selector = "." + name.replace(/[^a-zA-Z0-9_-]/g, "\\$&");
       return ![`${selector} {`, `${selector}:`, `${selector},`].some(form => css.includes(form));
