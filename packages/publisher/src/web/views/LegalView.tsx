@@ -1,6 +1,6 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { mergeUiClasses } from "@clossys/designer/components/server";
+import { cn } from "@clossys/designer/components/server";
 import { ArticleBody, DetailView, PageHeader } from "@clossys/designer/blocks/server";
 import { SiteFooter, SiteHeader } from "@clossys/designer/shell/server";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
@@ -249,7 +249,7 @@ export function LegalView({
   );
 
   return (
-    <div {...rest} className={mergeUiClasses("flex min-h-dvh flex-col", className)} style={style}>
+    <div {...rest} className={cn("flex min-h-dvh flex-col", className)} style={style}>
       <SiteHeader {...siteHeaderPresentation(ground)} brand={brand} nav={nav} actions={<>{secondaryAction}{headerAction}</>} />
       <main className={`${PAGE_COLUMN_CLASSES} max-w-[var(--ui-width-prose-max,none)]`}>
         {content}

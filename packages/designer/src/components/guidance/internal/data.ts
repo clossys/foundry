@@ -82,7 +82,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "Button",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Button has no ground or trailing-icon option; icons are children marked with data-icon.",
   "options": [
     {
       "prop": "variant",
@@ -90,32 +90,28 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "purpose": "Style preset selects the existing Button variant behavior.",
       "values": [
         {
-          "value": "primary",
+          "value": "default",
           "purpose": "Accent-filled primary action."
         },
         {
+          "value": "outline",
+          "purpose": "Unfilled action with an inset edge."
+        },
+        {
           "value": "secondary",
-          "purpose": "Bordered lower-emphasis action."
+          "purpose": "Tonal lower-emphasis action."
         },
         {
           "value": "ghost",
           "purpose": "Unfilled action that gains hover emphasis."
         },
         {
-          "value": "danger",
+          "value": "destructive",
           "purpose": "Destructive action with danger treatment."
         },
         {
-          "value": "outline",
-          "purpose": "Unfilled secondary call to action with an inset edge."
-        },
-        {
-          "value": "tonal",
-          "purpose": "Neutral tonal tertiary action responsive to its ground."
-        },
-        {
-          "value": "quiet",
-          "purpose": "Unboxed text action with a decorative trailing glyph by default."
+          "value": "link",
+          "purpose": "Inline text action with hover underline."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -130,16 +126,36 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "purpose": "Size selects the existing Button size behavior.",
       "values": [
         {
-          "value": "sm",
-          "purpose": "sm size within the existing component scale."
+          "value": "default",
+          "purpose": "Medium control height."
         },
         {
-          "value": "md",
-          "purpose": "md size within the existing component scale."
+          "value": "xs",
+          "purpose": "Extra-small control height."
+        },
+        {
+          "value": "sm",
+          "purpose": "Small control height."
         },
         {
           "value": "lg",
-          "purpose": "lg size within the existing component scale."
+          "purpose": "Large control height."
+        },
+        {
+          "value": "icon",
+          "purpose": "Square medium icon-only control."
+        },
+        {
+          "value": "icon-xs",
+          "purpose": "Square extra-small icon-only control."
+        },
+        {
+          "value": "icon-sm",
+          "purpose": "Square small icon-only control."
+        },
+        {
+          "value": "icon-lg",
+          "purpose": "Square large icon-only control."
         }
       ],
       "applicability": "Effective for this component when supplied.",
@@ -147,74 +163,10 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
         "state": "implemented",
         "reason": "The component consumes or forwards this existing prop in the cited source."
       }
-    },
-    {
-      "prop": "ground",
-      "label": "Surrounding ground",
-      "purpose": "Surrounding ground selects the existing Button ground behavior.",
-      "values": [
-        {
-          "value": "base",
-          "purpose": "Page ground."
-        },
-        {
-          "value": "sunken",
-          "purpose": "Sunken section ground."
-        },
-        {
-          "value": "inverse",
-          "purpose": "Inverse section ground."
-        }
-      ],
-      "applicability": "Accepted but ignored outside tonal and quiet.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
     }
   ],
-  "constraints": [
-    {
-      "kind": "effective-when",
-      "props": [
-        "ground",
-        "variant"
-      ],
-      "reason": "ground affects tonal and quiet only; other variants accept it without a visual effect.",
-      "enforcement": "ignored",
-      "evidence": {
-        "source": "src/components/Button.tsx",
-        "evidence": "variant === \"quiet\""
-      },
-      "effectiveWhen": {
-        "prop": "variant",
-        "values": [
-          "tonal",
-          "quiet"
-        ]
-      }
-    },
-    {
-      "kind": "effective-when",
-      "props": [
-        "trailingIcon",
-        "variant"
-      ],
-      "reason": "trailingIcon applies only to quiet: omission uses ChevronRight and null removes it.",
-      "enforcement": "ignored",
-      "evidence": {
-        "source": "src/components/Button.tsx",
-        "evidence": "trailingIcon === undefined ? ChevronRight : trailingIcon"
-      },
-      "effectiveWhen": {
-        "prop": "variant",
-        "values": [
-          "quiet"
-        ]
-      }
-    }
-  ]
-}, "src/components/Button.tsx"),
+  "constraints": []
+}, "src/components/preview-runtime/components/button/button.tsx"),
   "act.icon-button": entry(
 {
   "purpose": "Carry out a compact action represented by a familiar glyph.",
@@ -2587,64 +2539,50 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "act.button": {
     "exportName": "Button",
-    "source": "src/components/Button.tsx",
+    "source": "src/components/preview-runtime/components/button/button.tsx",
     "options": [
       {
         "prop": "variant",
         "values": [
-          "primary",
+          "default",
+          "outline",
           "secondary",
           "ghost",
-          "danger",
-          "outline",
-          "tonal",
-          "quiet"
+          "destructive",
+          "link"
         ],
         "default": {
           "kind": "value",
-          "value": "primary",
-          "source": "src/components/Button.tsx",
-          "evidence": "variant = \"primary\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "variant = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Button.tsx",
-          "evidence": "buttonClassName(variant, size, ground)"
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "buttonVariants({ variant, size, className })"
         }
       },
       {
         "prop": "size",
         "values": [
+          "default",
+          "xs",
           "sm",
-          "md",
-          "lg"
+          "lg",
+          "icon",
+          "icon-xs",
+          "icon-sm",
+          "icon-lg"
         ],
         "default": {
           "kind": "value",
-          "value": "md",
-          "source": "src/components/Button.tsx",
-          "evidence": "size = \"md\""
+          "value": "default",
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "size = \"default\""
         },
         "forwarding": {
-          "source": "src/components/Button.tsx",
-          "evidence": "buttonClassName(variant, size, ground)"
-        }
-      },
-      {
-        "prop": "ground",
-        "values": [
-          "base",
-          "sunken",
-          "inverse"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "base",
-          "source": "src/components/Button.tsx",
-          "evidence": "ground = \"base\""
-        },
-        "forwarding": {
-          "source": "src/components/Button.tsx",
-          "evidence": "buttonClassName(variant, size, ground)"
+          "source": "src/components/preview-runtime/components/button/button.tsx",
+          "evidence": "buttonVariants({ variant, size, className })"
         }
       }
     ],
@@ -2653,14 +2591,14 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
       "dependencies": [
         {
-          "property": "--ui-ring-focus",
+          "property": "--color-action",
           "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
+          "source": "styles/tokens.css",
+          "evidence": "--color-action:",
           "via": [
             {
-              "source": "src/components/Button.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
+              "source": "src/components/preview-runtime/components/button/button.tsx",
+              "evidence": "bg-(--color-action)"
             }
           ]
         }
@@ -4678,7 +4616,7 @@ function comparison(id: string, column: string, row?: string): ComponentComparis
 
 /** Data only: absence means no represented finite comparison; this renders nothing. */
 export const COMPONENT_COMPARISON = Object.freeze({
-  "act.button": comparison("act.button", "variant", "size"),
+  "act.button": comparison("act.button", "variant"),
   "act.icon-button": comparison("act.icon-button", "shape", "size"),
   "act.link": comparison("act.link", "variant"),
   "act.menu": comparison("act.menu", "triggerAction"),

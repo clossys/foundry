@@ -1,6 +1,6 @@
 import { Children } from "react";
 import type { CSSProperties, HTMLAttributes, ReactNode } from "react";
-import { Card, mergeUiClasses } from "@clossys/designer/components/server";
+import { Card, cn } from "@clossys/designer/components/server";
 import { SectionFrame } from "@clossys/designer/blocks/server";
 
 /**
@@ -48,7 +48,7 @@ export function PageColumn({ measure, centered = false, className, style, childr
     <SectionFrame
       {...rest}
       measure="prose"
-      className={mergeUiClasses(PAGE_SECTION_CLASSES, centered ? "justify-center" : undefined, className)}
+      className={cn(PAGE_SECTION_CLASSES, centered ? "justify-center" : undefined, className)}
       style={pageColumnStyle(measure, style)}
     >
       {children}

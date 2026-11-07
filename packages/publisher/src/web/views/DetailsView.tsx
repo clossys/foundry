@@ -3,7 +3,7 @@
 import type { HTMLAttributes, ReactNode } from "react";
 import { Banner, Skeleton, Tabs } from "@clossys/designer/components";
 import type { BannerProps } from "@clossys/designer/components";
-import { mergeUiClasses } from "@clossys/designer/components/server";
+import { cn } from "@clossys/designer/components/server";
 import { DetailView, EmptyState, Panel, RecordLedger, SectionHeader, Stat, StatusList } from "@clossys/designer/blocks";
 import type { DetailViewProps, EmptyStateProps, PanelProps, RecordLedgerProps, StatProps, StatusListProps } from "@clossys/designer/blocks";
 import { assertViewContentRoot } from "../internal/viewContentRoot.js";
@@ -139,7 +139,7 @@ export function DetailsView({ empty, layout = "main-aside", banner, sections, ta
     assertSections(sections!);
   }
   return (
-    <div {...rest} className={mergeUiClasses("flex min-w-0 flex-col gap-xl", className)}>
+    <div {...rest} className={cn("flex min-w-0 flex-col gap-xl", className)}>
       {banner}
       {tabs === undefined ? sectionLayout(sections!, empty, layout) : (
         <Tabs selectedKey={tab} onSelectionChange={key => onTabChange!(String(key))}>

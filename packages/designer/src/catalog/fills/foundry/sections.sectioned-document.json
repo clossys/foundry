@@ -71,10 +71,8 @@
           ],
           "themes": [
             "themes.accent",
-            "themes.background",
             "themes.font-mono",
-            "themes.primary",
-            "themes.primary-foreground"
+            "themes.primary"
           ]
         },
         "sourceFiles": [
@@ -227,10 +225,6 @@
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
           },
           {
-            "path": "packages/designer/src/components/button-classes.ts",
-            "sha256": "796a1c56174ce3e56fce85fed8de8550a63edc9b3f7f2ea51b40a74c0f2cba16"
-          },
-          {
             "path": "packages/designer/src/components/internal/cx.ts",
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
@@ -323,6 +317,10 @@
             "sha256": "30253772b01aac86950d52035d3ecf21a16b3d7ab581e2ca565ca810a658d9da"
           },
           {
+            "path": "packages/designer/src/runtime/stock-link-button.tsx",
+            "sha256": "add91687706703a8c3999ddbcba7df3c061c9ae4ea3a1bc50b2490ccb9472d80"
+          },
+          {
             "path": "packages/publisher/src/content/copy-provenance.ts",
             "sha256": "40f7b9c7aae31e85532b69ae0791ef29373f17e83c2ef14a64f6a9332848433f"
           },
@@ -376,7 +374,7 @@
           },
           {
             "path": "packages/publisher/src/web/views/SectionedViewActions.tsx",
-            "sha256": "09dafc673a414176939eda9e0e77cadd0006cac2dd694858d66bccd1ae67b3bb"
+            "sha256": "60b1088bc24c781308b4c06776e70905754d09cff439dc7bfddf6fb5c39d8271"
           },
           {
             "path": "packages/publisher/src/web/views/SectionedViewBlocks.tsx",
@@ -388,7 +386,7 @@
           },
           {
             "path": "packages/publisher/src/web/views/SectionedViewContent.tsx",
-            "sha256": "6ef68cfbc785b17b6d82357d32ee7025425aaf5a9310c4659473677ac6022109"
+            "sha256": "b220c4f7a123b7d2465b0c3ba05f5e270ab9ce50d7b5f2974a42b0270af1e96b"
           },
           {
             "path": "packages/publisher/src/web/views/SectionedViewContentSection.tsx",
@@ -437,6 +435,12 @@
             "evidence": "unresolved dynamic import; runtime source is not inferred",
             "file": "packages/designer/src/runtime/component-leaf.tsx",
             "line": 4
+          },
+          {
+            "code": "DF2",
+            "evidence": "unresolved dynamic import; runtime source is not inferred",
+            "file": "packages/designer/src/runtime/stock-link-button.tsx",
+            "line": 3
           },
           {
             "code": "DF5",
@@ -579,10 +583,8 @@
         "assets": [],
         "themes": [
           "themes.accent",
-          "themes.background",
           "themes.font-mono",
-          "themes.primary",
-          "themes.primary-foreground"
+          "themes.primary"
         ]
       },
       "slot": "sections.sectioned-document",

@@ -45,24 +45,21 @@ Consumer-owned demonstration coverage is unassessed here. A fixed controlled val
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Button.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/button/button.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Button`. Source: `src/components/Button.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Button`. Source: `src/components/preview-runtime/components/button/button.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. The stock Button has no ground or trailing-icon option; icons are children marked with data-icon.
 
 | Prop | Selection guidance | Package default | Applicability and support |
 | --- | --- | --- | --- |
-| `variant` — Style preset | `primary`: Accent-filled primary action.<br>`secondary`: Bordered lower-emphasis action.<br>`ghost`: Unfilled action that gains hover emphasis.<br>`danger`: Destructive action with danger treatment.<br>`outline`: Unfilled secondary call to action with an inset edge.<br>`tonal`: Neutral tonal tertiary action responsive to its ground.<br>`quiet`: Unboxed text action with a decorative trailing glyph by default. | `primary` (`src/components/Button.tsx`: `variant = "primary"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Button.tsx`: `buttonClassName(variant, size, ground)` |
-| `size` — Size | `sm`: sm size within the existing component scale.<br>`md`: md size within the existing component scale.<br>`lg`: lg size within the existing component scale. | `md` (`src/components/Button.tsx`: `size = "md"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Button.tsx`: `buttonClassName(variant, size, ground)` |
-| `ground` — Surrounding ground | `base`: Page ground.<br>`sunken`: Sunken section ground.<br>`inverse`: Inverse section ground. | `base` (`src/components/Button.tsx`: `ground = "base"`) | Accepted but ignored outside tonal and quiet. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/Button.tsx`: `buttonClassName(variant, size, ground)` |
+| `variant` — Style preset | `default`: Accent-filled primary action.<br>`outline`: Unfilled action with an inset edge.<br>`secondary`: Tonal lower-emphasis action.<br>`ghost`: Unfilled action that gains hover emphasis.<br>`destructive`: Destructive action with danger treatment.<br>`link`: Inline text action with hover underline. | `default` (`src/components/preview-runtime/components/button/button.tsx`: `variant = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/button/button.tsx`: `buttonVariants({ variant, size, className })` |
+| `size` — Size | `default`: Medium control height.<br>`xs`: Extra-small control height.<br>`sm`: Small control height.<br>`lg`: Large control height.<br>`icon`: Square medium icon-only control.<br>`icon-xs`: Square extra-small icon-only control.<br>`icon-sm`: Square small icon-only control.<br>`icon-lg`: Square large icon-only control. | `default` (`src/components/preview-runtime/components/button/button.tsx`: `size = "default"`) | Effective for this component when supplied. implemented: The component consumes or forwards this existing prop in the cited source. Evidence: `src/components/preview-runtime/components/button/button.tsx`: `buttonVariants({ variant, size, className })` |
 
-- effective-when (ignored; `ground`, `variant`): ground affects tonal and quiet only; other variants accept it without a visual effect. Evidence: `src/components/Button.tsx`: `variant === "quiet"`.
-- effective-when (ignored; `trailingIcon`, `variant`): trailingIcon applies only to quiet: omission uses ChevronRight and null removes it. Evidence: `src/components/Button.tsx`: `trailingIcon === undefined ? ChevronRight : trailingIcon`.
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--ui-ring-focus` (transitive): `src/components/internal/ui-vars.ts`: `var(--ui-ring-focus,`; consumed via `src/components/Button.tsx`: `boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined`.
+- `--color-action` (transitive): `styles/tokens.css`: `--color-action:`; consumed via `src/components/preview-runtime/components/button/button.tsx`: `bg-(--color-action)`.
 
 ##### `act.icon-button` — IconButton
 
@@ -1287,7 +1284,7 @@ Web implementation: `@clossys/designer/components` → `Separator`. Source: `src
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
 - `--color-line-base` (transitive): `styles/theme-keys.css`: `--color-line-base:`; consumed via `src/components/preview-runtime/components/separator/separator.tsx`: `bg-(--color-line-base)`.
 
-##### `reveal.disclosure` — Disclosure
+##### `reveal.disclosure` — Accordion
 
 - Purpose: Reveal or hide one section while retaining its place in the document.
 - Use when: Supplementary content can be expanded without opening a separate overlay.
@@ -1295,24 +1292,24 @@ Token dependency coverage: partial. Representative consumed dependencies only; t
 - Alternatives and boundary: Use Tabs for peer panels; a consumer-owned accordion block for coordinated disclosures.
 - Content: Name the expandable section with a title that predicts its contents.
 - Anatomy: One persistent section trigger and its expandable content.
-- Block composition example: In a consumer-owned FAQ block, repeat Disclosure for independently expandable answers.
+- Block composition example: In a consumer-owned FAQ block, repeat AccordionItem rows for independently expandable answers.
 - Accessibility: Preserve the trigger-to-panel association and expanded state; hidden content remains part of the disclosure.
 - Demonstration coverage: unassessed. Consumer-owned fixtures and interaction evidence have not been assessed here. A supported package option is not proof of a working catalog demonstration.
 
 | Medium | State | Reason and evidence |
 | --- | --- | --- |
-| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/Disclosure.tsx` |
+| web | implemented | The existing component renders or forwards its documented web implementation in the named source. Evidence: `src/components/preview-runtime/components/disclosure/accordion.tsx` |
 | email | unassessed | No email renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | print | unassessed | No print renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 | video | unassessed | No video renderer or supported configuration has been assessed for this leaf. Evidence: `This record documents the existing web component source only; no non-web implementation evidence is recorded.` |
 
-Web implementation: `@clossys/designer/components` → `Disclosure`. Source: `src/components/Disclosure.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
+Web implementation: `@clossys/designer/components` → `Accordion`. Source: `src/components/preview-runtime/components/disclosure/accordion.tsx`. Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.
 
 No finite scalar options are represented here; read the real prop type for authored content and data.
 
 
 Token dependency coverage: partial. Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.
-- `--color-ink-primary` (transitive): `styles/theme-keys.css`: `--color-ink-primary:`; consumed via `src/components/Disclosure.tsx`: `text-ink-primary`.
+- `--color-ink-primary` (transitive): `styles/theme-keys.css`: `--color-ink-primary:`; consumed via `src/components/preview-runtime/components/disclosure/accordion.tsx`: `hover:text-(--color-ink-primary)`.
 
 #### Overlays
 

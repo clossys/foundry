@@ -167,12 +167,18 @@ describe("shadcn-aria-rewrite@1", () => {
     expect(result.reads.themes).toEqual(["themes.ring.default"]);
     expect(result.issues).toEqual([]);
   });
-  it.each(["outline-none", "outline-hidden", "ring-0", "border-transparent", "group-has-[:focus-visible]/field-label:ring-0", "group-has-[:focus-visible]/field-label:border-transparent", "focus-visible:outline-hidden"])("removes %s only beside an expanded focus owner binding", suppression => {
+  it.each(["outline-none", "outline-hidden", "ring-0", "focus-visible:border-transparent", "group-has-[:focus-visible]/field-label:ring-0", "group-has-[:focus-visible]/field-label:border-transparent", "focus-visible:outline-hidden"])("removes %s only beside an expanded focus owner binding", suppression => {
     const result = rewrite(`const value = "cn-focus ${suppression}"`, '.cn-focus { @apply data-focus-visible:ring-3 focus-visible:ring-ring/50; }');
     expect(result.files[0]!.content).not.toContain(suppression);
     expect(result.files[0]!.content).toContain("focus-visible:outline-(length:--ui-border-focus)");
     expect(result.files[0]!.content).toContain("data-focus-visible:outline-(--color-focus-ring)");
     expect(result.notes).toContainEqual(expect.objectContaining({ value: suppression, message: expect.stringContaining("focus owner") }));
+    expect(result.issues).toEqual([]);
+  });
+  it("keeps the stock rest-state border-transparent beside an expanded focus owner", () => {
+    const result = rewrite('const value = "cn-focus border border-transparent"', '.cn-focus { @apply focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50; }');
+    expect(result.files[0]!.content.split(/\s+|"/)).toContain("border-transparent");
+    expect(result.notes ?? []).not.toContainEqual(expect.objectContaining({ value: "border-transparent" }));
     expect(result.issues).toEqual([]);
   });
   it("retains suppressions without same-expression focus ownership", () => {
