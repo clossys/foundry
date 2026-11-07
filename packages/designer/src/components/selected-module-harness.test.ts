@@ -110,12 +110,14 @@ describe("real selected-module harness refusal contracts", () => {
     write("module-manifest", manifest);
     write("bundle-metafile", compiled.metafile ?? { status: "refused", errors: compiled.bundle.errors });
   }, 60_000);
-  it("retains the real resolver source prerequisite refusal before emission", () => {
+  it("resolves the now-unblocked selected descriptors and leaves emission refused at the missing Icon facade", () => {
     const collected = collectProfile({ ...fixture, values }, {});
     expect(collected.status).toBe("unavailable"); expect(collected.axeViolations).toEqual({ status: "unavailable" }); expect(collected.observations).toEqual({});
-    expect(collected.check.ok).toBe(false);
-    expect(() => resolveComponents({ ...fixture, values })).toThrow("blocked materialization components.calendar");
-    write("component-check", { ...collected, resolver: { status: "refused", reason: "blocked materialization components.calendar" }, emission: { status: "unavailable", reason: "real resolver prerequisite refused" } });
+    // The selected stock calendar carries no importer blockers, so the resolver accepts it; only notices remain.
+    expect(fixture.library.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "components.calendar")!.components.calendar!.blockers).toEqual([]);
+    expect(collected.check.findings.filter(finding => finding.severity !== "notice")).toEqual([]);
+    expect(() => resolveComponents({ ...fixture, values })).not.toThrow();
+    write("component-check", { ...collected, resolver: { status: "resolved" }, emission: { status: "unavailable", reason: "import closure refused: missing selected ../icon/index facade" } });
     write("source-measurements", { status: "source-measurement-only", source: fixture.library.files.map(file => ({ path: file.path, sha256: hash(file.content) })), runtime: "unavailable", axeViolations: { status: "unavailable" } });
   });
   it("refuses missing glyph indexes and provider omission", () => {

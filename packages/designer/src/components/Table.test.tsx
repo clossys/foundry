@@ -4,7 +4,7 @@ import { act, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ColumnSize, Key, SortDescriptor } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
-import { Checkbox } from "./Checkbox.js";
+import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { DateField } from "./DateField.js";
 import { TextField } from "./TextField.js";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./preview-runtime/components/table/table.js";

@@ -171,12 +171,15 @@ describe("AppFrame acceptance", () => {
     await user.click(screen.getByRole("button", { name: fixture().account.actor!.name }));
     const control = screen.getByRole("radiogroup", { name: "Host theme" });
     expect(control.closest('[data-application-frame-slot="theme-control"]')).not.toBeNull();
+    // Inside the account menu each radio shows its label and opens no tooltip, so the menu owns Escape.
+    expect(within(control).getByRole("radio", { name: "Dark" })).toHaveTextContent("Dark");
     await user.click(within(control).getByRole("radio", { name: "Dark" }));
     expect(output).toHaveTextContent("dark");
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
     await user.click(within(control).getByRole("radio", { name: "Light" }));
     expect(output).toHaveTextContent("light");
     await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("radiogroup", { name: "Host theme" })).not.toBeInTheDocument());
     expect(screen.getByRole("region", { name: "Themed block" })).toBe(block);
     expect(screen.getByRole("button", { name: "Retained count 1" })).toBeInTheDocument();
     expect(mounted).toHaveBeenCalledOnce();

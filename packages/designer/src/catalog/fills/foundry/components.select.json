@@ -69,16 +69,17 @@
       "props": [
         "aria-label",
         "aria-labelledby",
+        "children",
         "className",
-        "description",
-        "errorMessage",
+        "defaultSelectedKey",
+        "isDisabled",
         "isInvalid",
-        "label",
+        "isRequired",
+        "name",
         "onSelectionChange",
-        "options",
+        "placeholder",
         "selectedKey",
-        "size",
-        "width"
+        "size"
       ],
       "rac": {
         "instance": "react-aria-components",

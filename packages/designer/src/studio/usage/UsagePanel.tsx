@@ -3,7 +3,7 @@ import { useId, useMemo, useState, type ReactNode } from "react";
 import { Badge } from "../../components/preview-runtime/components/badge/badge.js";
 import { BADGE_TONE } from "../../components/surface-tones.js";
 import { Button } from "../../components/preview-runtime/components/button/button.js";
-import { Switch } from "../../components/Switch.js";
+import { StockSwitch } from "../../blocks/stock-switch.js";
 import type { CatalogBrowserReference } from "../../blocks/catalog-browser/types.js";
 import type { UsageEdgeKind, UsageEvidence, UsageGraph, UsageLayer } from "../../catalog-core/usage-graph.js";
 import type { WiringException } from "../../catalog-core/wiring.js";
@@ -100,7 +100,7 @@ export function UsagePanel({ id, copy, onNavigate, canNavigate, graph: supplied,
     <div className="flex flex-wrap items-center gap-sm">
       <h3 className={HEADING}>{labels.title}</h3>
       <Button variant="ghost" size="sm" isDisabled={!navigation.canGoBack} onPress={navigation.back}>{labels.back}</Button>
-      <Switch isSelected={transitive} onChange={setTransitive}>{labels.transitive}</Switch>
+      <StockSwitch isSelected={transitive} onChange={setTransitive}>{labels.transitive}</StockSwitch>
     </div>
     {!model ? <p role="status" className={DETAIL}>{labels.loading}</p> : <>
       {model.usedNowhere ? <p data-usage-used-nowhere=""><Badge {...BADGE_TONE.warning}>{labels.usedNowhere}</Badge></p> : null}

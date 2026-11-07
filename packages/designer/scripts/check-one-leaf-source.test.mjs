@@ -135,3 +135,15 @@ test("H3 component scope ignores surface duplicates and rejects a surface CLI sc
   const duplicate = checkOneLeafSource(root, ["components"]);
   assert.equal(duplicate.exitStatus, 1); assert.deepEqual(duplicate.violations.map(row => row.leaf), ["components.example"]);
 });
+test("a re-export of an installed package component is that package identity; a wrapper rendering it is its own", () => {
+  const { root, write } = fixture();
+  write("packages/designer/node_modules/example-aria/package.json", { name: "example-aria", types: "index.d.ts" });
+  write("packages/designer/node_modules/example-aria/index.d.ts", "export declare const Control: (props: any) => any;\n");
+  write("packages/designer/src/components.tsx", 'export { Control } from "example-aria";\n');
+  write("packages/designer/src/alias.ts", 'import { Control as Original } from "example-aria"; export const Control = Original;\n');
+  const report = checkOneLeafSource(root, ["components"]);
+  assert.equal(report.ok, true, JSON.stringify(report.violations));
+  assert.deepEqual(report.inventory[0].implementations.map(row => row.key), ["example-aria#Control"]);
+  write("packages/designer/src/wrapper.tsx", 'import { Control as Original } from "example-aria"; export function Control(props: any) { return <Original className="copy" {...props} />; }\n');
+  assert.deepEqual(checkOneLeafSource(root, ["components"]).violations.map(row => [row.rule, row.leaf]), [["duplicate-leaf-source", "components.example"]]);
+});

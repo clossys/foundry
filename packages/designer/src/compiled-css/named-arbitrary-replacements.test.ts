@@ -34,7 +34,6 @@ const REPLACEMENTS: readonly Replacement[] = [
   { name: "candidate-variant-min-inline", declarations: [/min-width: var\(--ui-control-h-lg\);/], source: "src/studio/CandidateCell.tsx", retired: ["min-w-[var(--ui-control-h-lg)]"], shipsIn: "compiled" },
   { name: "filter-match-width", declarations: [/max-width: var\(--ui-layout-aside-w, 320px\);/], source: "src/blocks/FilterBuilder.tsx", retired: ["max-w-xs"], shipsIn: "compiled" },
   { name: "designer-rail-width", declarations: [/inline-size: var\(--ui-layout-inspector-w\);/], source: "src/studio/rail/StudioRail.tsx", retired: [], shipsIn: "compiled" },
-  { name: "calendar-cell-size", declarations: [/width: var\(--ui-control-h-sm, 32px\);/, /height: var\(--ui-control-h-sm, 32px\);/], source: "src/components/Calendar.tsx", retired: ["size-[var(--ui-control-h-sm,32px)]"], shipsIn: "compiled" },
   { name: "canvas-caption-zoom-floor", declarations: [/font-size: max\(1em, calc\(var\(--text-caption\) \/ var\(--canvas-zoom, 1\)\)\);/], source: "src/blocks/canvas/CanvasLod.tsx", retired: ["text-[length:max(1em,calc(var(--text-caption)/var(--canvas-zoom,1)))]"], shipsIn: "compiled" },
 ];
 

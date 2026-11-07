@@ -12,7 +12,6 @@ import { specimenDataset as d } from "./specimen-dataset.js";
 export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<string, unknown>>>> = {
   "./components#Avatar": d.avatar,
   "./components#Alert": d.banner,
-  "./components#Calendar": d.dates.calendar,
   "./components#ComboBox": d.combobox,
   "./components#DateField": d.dates.field,
   "./components#Icon": d.icon,
@@ -24,7 +23,6 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./components#ResizeHandle": d.resize,
   "./components#RichText": d.richText,
   "./components#SearchField": d.searchField,
-  "./components#Select": d.select,
   "./components#SemanticContent": d.semantic,
   "./components#Separator": d.separator,
   "./components#Skeleton": d.skeleton,
@@ -53,7 +51,6 @@ export const componentSpecimenText: Readonly<Record<string, string>> = {
   "./components#NativeAction": d.text.draft,
   "./components#SemanticContent": d.text.paragraph,
   "./components#StatusMark": d.text.statusMark,
-  "./components#Switch": d.text.switch,
   "./components#ToggleButton": d.text.toggle,
 };
 
@@ -63,7 +60,6 @@ export const componentSpecimenCollections = {
   "./components#Toolbar": d.toolbar,
   "./components#Tree": d.tree,
   "./components#NavigationTree": d.navigation,
-  "./components#RadioGroup": d.radio,
   "./components#Tabs": d.tabs,
   "./components#TagGroup": d.tags,
   "./components#ToggleGroup": d.toggles,

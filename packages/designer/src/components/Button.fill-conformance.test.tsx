@@ -8,7 +8,7 @@ import { Button } from "./preview-runtime/components/button/button.js";
 import { IconButton } from "./IconButton.js";
 import { TextField } from "./TextField.js";
 import { SearchField } from "./SearchField.js";
-import { Select } from "./Select.js";
+import { StockSelect as Select } from "../blocks/stock-select.js";
 import { Toggle } from "./toggle-button/toggle.js";
 import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
@@ -26,7 +26,6 @@ const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] 
   ["IconButton", d => <IconButton isDisabled={d} icon={X} label={name} />, () => screen.getByRole("button", { name })],
   ["TextField", d => <TextField isDisabled={d} label={name} placeholder="Type here" />, () => screen.getByRole("textbox", { name })],
   ["SearchField", d => <SearchField isDisabled={d} label={name} placeholder="Search here" />, () => screen.getByRole("searchbox", { name })],
-  ["Select", d => <Select isDisabled={d} label={name} options={options} />, () => screen.getByRole("button", { name: /Control/ })],
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
   ["Tabs", d => <Tabs><Tabs.List aria-label="Sections"><Tabs.Tab id="one" isDisabled={d}>{name}</Tabs.Tab></Tabs.List><Tabs.Panel id="one">Panel</Tabs.Panel></Tabs>, () => screen.getByRole("tab", { name })],
@@ -80,8 +79,8 @@ describe("control fill conformance", () => {
   });
 
   it.each(["sm", "md", "lg"] as const)("%s uses the control-height token, including square icon controls", size => {
-    render(<><TextField label="Field" size={size}/><Select label="Choice" size={size} options={options}/><IconButton size={size} icon={X} label="Icon"/></>);
-    for (const control of [screen.getByRole("textbox"), screen.getByRole("button", { name: /Choice/ }), screen.getByRole("button", { name: "Icon" })]) {
+    render(<><TextField label="Field" size={size}/><IconButton size={size} icon={X} label="Icon"/></>);
+    for (const control of [screen.getByRole("textbox"), screen.getByRole("button", { name: "Icon" })]) {
       if (control.style.blockSize) expect(control.style.blockSize).toContain(`--ui-control-h-${size}`);
       else expect(control).toHaveClass(`control-h-${size}`);
     }
@@ -91,11 +90,10 @@ describe("control fill conformance", () => {
     expect(icon.style.inlineSize).toBe(icon.style.blockSize);
   });
 
-  it("search and select suppress native appearance, search chrome, and use token placeholder ink", () => {
-    render(<><SearchField label="Search"/><Select label="Choice" options={options}/></>);
+  it("search suppresses native appearance and search chrome, and uses token placeholder ink", () => {
+    render(<SearchField label="Search"/>);
     const search = screen.getByRole("searchbox");
     expect(search.style.appearance).toBe("none");
-    expect(screen.getByRole("button", { name: /Choice/ }).style.appearance).toBe("none");
     expect(search).toHaveClass("placeholder:text-ink-muted");
     expect(document.head.querySelector('style[data-href="designer-native-search"]')?.textContent).toContain("::-webkit-search-cancel-button");
     expect(document.head.querySelector('style[data-href="designer-native-search"]')?.textContent).toContain("appearance: none");
@@ -133,6 +131,36 @@ describe("control fill conformance", () => {
     expect(button).toBeDisabled();
     await user.click(button);
     expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["sm", "md", "lg"] as const)("the stock select sizes its trigger to the %s control-height token through the selected size axis", size => {
+    render(<Select label="Choice" size={size} options={options}/>);
+    const trigger = screen.getByRole("button", { name: /Choice/ });
+    expect(trigger.closest("[data-slot=select]")).toHaveAttribute("data-size", size);
+    // The trigger carries no size of its own, so the root's size axis picks its height rule.
+    expect(trigger).not.toHaveAttribute("data-size");
+    expect(trigger.className).toContain(size === "md" ? "h-(--ui-control-h-md," : `group-data-[size=${size}]/select:not-data-[size]:h-(--ui-control-h-${size},`);
+  });
+
+  it("the stock select opens and picks from the keyboard, shows keyboard focus, and refuses to open when disabled", async () => {
+    const user = userEvent.setup(), onSelectionChange = vi.fn();
+    const view = render(<><button>Before</button><Select label="Choice" placeholder="Pick one" options={options} onSelectionChange={onSelectionChange}/></>);
+    const trigger = screen.getByRole("button", { name: /Choice/ });
+    await user.hover(trigger);
+    expect(trigger).toHaveAttribute("data-hovered", "true");
+    await user.click(screen.getByRole("button", { name: "Before" }));
+    await user.tab();
+    expect(trigger).toHaveFocus();
+    expect(trigger).toHaveAttribute("data-focus-visible", "true");
+    await user.keyboard("{Enter}");
+    await user.click(await screen.findByRole("option", { name: "One" }));
+    expect(onSelectionChange).toHaveBeenCalledWith("one");
+    expect(trigger).toHaveTextContent("One");
+    view.rerender(<><button>Before</button><Select label="Choice" isDisabled options={options} onSelectionChange={onSelectionChange}/></>);
+    expect(trigger).toBeDisabled();
+    await user.click(trigger);
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(onSelectionChange).toHaveBeenCalledTimes(1);
   });
 
   it.each(["horizontal", "vertical"] as const)("%s tabs have a separate indicator only on the selected tab", orientation => {

@@ -1,8 +1,8 @@
 "use client";
 import { LinkButton as Link } from "@clossys/designer/components";
-import { Button, CARD_SURFACE, Card, Select } from "@clossys/designer/components";
+import { Button, CARD_SURFACE, Card } from "@clossys/designer/components";
 
-import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
+import { DetailView, Panel, SectionHeader, StockSelect } from "@clossys/designer/blocks";
 import { useId, useState } from "react";
 import type { ConsumerInstanceLibrary, FlowInstanceBinding as InstanceBinding } from "../../core/instance-binding.js";
 import { getEffectiveLayoutContract, getLayoutLeaf, LAYOUT_IA, LAYOUT_LEAVES } from "../../layouts/index.js";
@@ -96,7 +96,7 @@ export function PublisherCompositionsView({ library, breakpointValues, designerH
           <Badge {...BADGE_TONE.neutral}>used by {uses} {uses === 1 ? "instance" : "instances"} · selected config</Badge>
         </div>
         {!adopted && <p>No consumer fill for this config. <Link variant="link" href={designerHref}>Adopt in Designer</Link></p>}
-        <Select label="Config" selectedKey={selection.config} onSelectionChange={key => {
+        <StockSelect label="Config" selectedKey={selection.config} onSelectionChange={key => {
           const value = String(key ?? "");
           const owner = offered.find(item => item.contract.configs.some(config => config.id === value));
           if (owner) setSelection({ leaf: owner.id, config: value });

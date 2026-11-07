@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
 import { TextField } from "../../components/TextField.js";
-import { Checkbox } from "../../components/Checkbox.js";
+import { Checkbox } from "../../components/preview-runtime/components/checkbox/checkbox.js";
 import { formInputs, renderForm } from "./form.js";
 import { bindContactFormSpecimen, contactFormSpecimenContent, contactFormSpecimenIdentity } from "../../studio/contact-form-section-specimen.js";
 

@@ -4,12 +4,12 @@ import type { FormError, FormProps } from "../../blocks/Form.js";
 import { actionsOf, anatomyOf, isObject, recordsOf, refuseUnmapped, requireSlot, slotValue, stringField, textOf, type RuntimeObject, type SectionInputs, type SectionRenderer } from "./group-c-content.js";
 import { componentLeaf } from "../component-leaf.js";
 import { ALERT_TONE } from "../../components/surface-tones.js";
+import { StockSelect } from "../../blocks/stock-select.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Alert = componentLeaf<typeof import("../../components/preview-runtime/components/banner/alert.js").Alert>("components.banner");
-const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
+const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
 const ComboBox = componentLeaf<typeof import("../../components/ComboBox.js").ComboBox>("components.combo-box");
-const Select = componentLeaf<typeof import("../../components/Select.js").Select>("components.select");
 const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
 const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
 
@@ -67,7 +67,7 @@ export const renderForm: SectionRenderer = input => {
   const children = fields.map(field => {
     const name = contact ? field.id : undefined;
     const validation = { isInvalid: field.error ? true : undefined, errorMessage: field.error };
-    if (field.kind === "select") return <Select key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder ?? ""} description={field.description} options={field.options} {...validation} />;
+    if (field.kind === "select") return <StockSelect key={field.id} id={field.id} name={name} label={field.label} placeholder={field.placeholder ?? ""} description={field.description} options={field.options} {...validation} />;
     if (field.kind === "combo-box") return <ComboBox key={field.id} id={field.id} name={name} label={field.label} triggerLabel={field.label} placeholder={field.placeholder} description={field.description} options={field.options} {...validation} />;
     if (field.kind === "checkbox") {
       if (field.error) throw new TypeError(`${LEAF}: field ${field.id} NEED registered checkbox error presentation; supply the error-summary slot`);

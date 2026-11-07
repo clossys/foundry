@@ -1,8 +1,8 @@
 "use client";
 import { createPublisherValueNames, publisherValueRef } from "./value-names.js";
 import { publisherCopy, PUBLISHER_COPY_REFS, PUBLISHER_PAGE_DESCRIPTION_REF, type PublisherCopyResolver, type PublisherCopyRef } from "./copy.js";
-import { BADGE_TONE, Badge, Button, LinkButton as Link, Select } from "@clossys/designer/components";
-import { DataTable, DetailView, EmptyState, NoticeList, PageHeader, ResourceList, StatGroup } from "@clossys/designer/blocks";
+import { BADGE_TONE, Badge, Button, LinkButton as Link } from "@clossys/designer/components";
+import { DataTable, DetailView, EmptyState, NoticeList, PageHeader, ResourceList, StatGroup, StockSelect } from "@clossys/designer/blocks";
 import { SlotModule, PageHeaderModule } from "@clossys/designer/shell";
 import { useCallback, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ReactNode } from "react";
@@ -241,7 +241,7 @@ export function PublisherPage({ copyResolver, lanes: _lanes, planStore, draftPla
       <p>{aligned ? copy("plannedDescription") : copy("alignBeforeConfigure")}</p>
       <ConfigurationSummary configuration={chosenConfiguration} messages={productionCopy} />
       {chosenConfiguration?.kind === "concept-only" && <>
-        <Select label={copyText("outputFormat")} selectedKey={chosenFormatId ?? null} options={inputs.registries.formats.filter(format => selectedRow.channel === "messages" ? format.id === "email.html" : selectedRow.channel === "documents" ? !format.id.startsWith("web.") && format.id !== "email.html" : format.id === "web.page.responsive").map(format => ({ id: format.id, label: name("publisher.format", format.id) }))} onSelectionChange={key => { if (key) setPlannedConfigurations(current => ({ ...current, [selectedRow.item.id]: { kind: "concept-only", format: String(key) as FormatId, deliveries: [] } })); }} />
+        <StockSelect label={copyText("outputFormat")} selectedKey={chosenFormatId ?? null} options={inputs.registries.formats.filter(format => selectedRow.channel === "messages" ? format.id === "email.html" : selectedRow.channel === "documents" ? !format.id.startsWith("web.") && format.id !== "email.html" : format.id === "web.page.responsive").map(format => ({ id: format.id, label: name("publisher.format", format.id) }))} onSelectionChange={key => { if (key) setPlannedConfigurations(current => ({ ...current, [selectedRow.item.id]: { kind: "concept-only", format: String(key) as FormatId, deliveries: [] } })); }} />
         <DeliverySettingsFields format={chosenFormat} choices={chosenConfiguration.deliveries} onChange={deliveries => setPlannedConfigurations(current => ({ ...current, [selectedRow.item.id]: { ...chosenConfiguration, deliveries } }))} messages={productionCopy} />
       </>}
     </>}

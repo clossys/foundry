@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import type { CopyRef, CopyResolver } from "@clossys/writer";
-import { Button, Select, TextField, Textarea } from "@clossys/designer/components";
-import { Form, useFormValidation } from "@clossys/designer/blocks";
+import { Button, TextField, Textarea } from "@clossys/designer/components";
+import { Form, StockSelect, useFormValidation } from "@clossys/designer/blocks";
 import { RenderError } from "../../internal/errors.js";
 import type { ContactResult } from "../contact/types.js";
 
@@ -270,7 +270,7 @@ export function ContactForm({
         </Button>
       }
     >
-      <Select
+      <StockSelect
         id={topicField.id}
         name={topicField.name}
         label={text.topicLabel}
@@ -282,7 +282,6 @@ export function ContactForm({
         onBlur={topicField.onBlur}
         isInvalid={topicField.isInvalid}
         errorMessage={topicField.errorMessage}
-        validationBehavior="aria"
       />
       <TextField {...validation.getFieldProps("name")} label={text.nameLabel} autoComplete="name" isRequired />
       <TextField {...validation.getFieldProps("email")} label={text.emailLabel} type="email" autoComplete="email" isRequired />

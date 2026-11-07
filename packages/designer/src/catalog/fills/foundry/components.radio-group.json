@@ -63,13 +63,16 @@
         "state.invalid": "./components#RadioGroup.isInvalid"
       },
       "props": [
+        "aria-label",
+        "aria-labelledby",
         "children",
         "className",
-        "description",
-        "errorMessage",
+        "defaultValue",
+        "isDisabled",
         "isInvalid",
-        "label",
-        "orientation"
+        "onChange",
+        "orientation",
+        "value"
       ],
       "rac": {
         "instance": "react-aria-components",

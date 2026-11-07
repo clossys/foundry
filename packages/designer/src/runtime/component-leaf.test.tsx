@@ -18,7 +18,8 @@ describe("consumer selected component bridge", () => {
     const { container } = render(<ConsumerComponentProvider value={selection(override)}><Suspense><Checkbox onChange={value => events.push(value)}>Select record</Checkbox><Button ref={ref}>Continue</Button></Suspense></ConsumerComponentProvider>);
     await user.click(await screen.findByRole("checkbox", { name: "Select record" }));
     expect(events).toEqual([true]);
-    expect(Boolean(container.querySelector("[data-slot=checkbox]"))).toBe(!override);
+    // R2F-33: the source and the package (override) selections both bind the stock shadcn@aria checkbox.
+    expect(container.querySelector("[data-slot=checkbox]")).not.toBeNull();
     expect(screen.getByRole("checkbox")).toBeChecked();
     expect(ref.current).toBe(screen.getByRole("button", { name: "Continue" }));
   });

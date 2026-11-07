@@ -231,7 +231,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Choice
-  onMain("Checkbox", ["src/components/Checkbox.tsx"], {
+  onMain("Checkbox", ["src/components/preview-runtime/components/checkbox/checkbox.tsx"], {
     id: "enter.checkbox",
     label: "Checkbox",
     racBase: rac("Checkbox"),
@@ -243,13 +243,13 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("CheckboxGroup"),
     disposition: "finish",
   }),
-  onMain("Switch", ["src/components/Switch.tsx"], {
+  onMain("Switch", ["src/components/preview-runtime/components/switch/switch.tsx"], {
     id: "enter.switch",
     label: "Switch",
     racBase: rac("Switch"),
     disposition: "keep",
   }),
-  onMain("RadioGroup", ["src/components/RadioGroup.tsx"], {
+  onMain("RadioGroup", ["src/components/preview-runtime/components/radio-group/radio-group.tsx"], {
     id: "enter.radio-group",
     label: "Radio group",
     racBase: rac("RadioGroup", "Radio", "Label", "Text", "FieldError"),
@@ -261,7 +261,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("ToggleButtonGroup", "ToggleButton", "SelectionIndicator"),
     disposition: "finish",
   }),
-  onMain("Select", ["src/components/Select.tsx"], {
+  onMain("Select", ["src/components/preview-runtime/components/select/select.tsx"], {
     id: "enter.select",
     label: "Select",
     racBase: rac("Select", "SelectValue", "Button", "Popover", "ListBox", "ListBoxItem", "Label", "Text", "FieldError"),

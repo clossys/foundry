@@ -50,6 +50,14 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     return symbol;
   };
   const declarations = node => symbolOf(node)?.declarations ?? [];
+  // An installed package's typed declaration has no body to inspect. When an
+  // export *is* that package symbol (a re-export or direct alias, never a
+  // component that renders it), the package export is the one identity.
+  const installed = node => {
+    const source = node.getSourceFile(), match = source.isDeclarationFile && /.*\/node_modules\/((?:@[^/]+\/)?[^/]+)\//.exec(source.fileName.split(path.sep).join("/"));
+    const name = match && node.name && ts.isIdentifier(node.name) ? node.name.text : undefined;
+    return name ? [{ key: `${match[1]}#${name}`, file: match[1], line: 0, name }] : undefined;
+  };
   const unwrap = node => {
     while (node && (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isSatisfiesExpression(node) || ts.isNonNullExpression(node))) node = node.expression;
     return node;
@@ -71,7 +79,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     if (ts.isVariableDeclaration(node)) {
       const expression = unwrap(node.initializer);
       if (!expression) return [];
-      if (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression)) return declarations(expression).flatMap(item => identity(item, seen));
+      if (ts.isIdentifier(expression) || ts.isPropertyAccessExpression(expression)) return declarations(expression).flatMap(item => installed(item) ?? identity(item, seen));
       if (ts.isArrowFunction(expression) || ts.isFunctionExpression(expression)) return identity(expression, seen);
       if (ts.isCallExpression(expression) && /^(?:React\.)?(?:memo|forwardRef)$/.test(expression.expression.getText())) return wrappedIdentity(expression.arguments[0], seen);
       if (ts.isCallExpression(expression) && expression.expression.getText() === "Object.assign") return declarations(expression.arguments[0]).flatMap(item => identity(item, seen));
@@ -138,7 +146,7 @@ export function checkOneLeafSource(repository, layers = allLayers) {
     const symbol = checker.getSymbolAtLocation(source);
     let target = symbol && checker.getExportsOfModule(symbol).find(item => item.name === name);
     if (target?.flags & ts.SymbolFlags.Alias) target = checker.getAliasedSymbol(target);
-    return (target?.declarations ?? []).flatMap(item => identity(item));
+    return (target?.declarations ?? []).flatMap(item => installed(item) ?? identity(item));
   }
   function packageEntry(impl, pin) {
     const owner = owners.find(row => impl?.module === row.manifest.name || impl?.module?.startsWith(`${row.manifest.name}/`) || row.manifest.name === pin?.package);

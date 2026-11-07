@@ -26,7 +26,7 @@ describe("stored production DatePicker source protocol", () => {
   it("retains the actual missing selected facade after Calendar syntax normalization", () => {
     const { library } = productionCompositionFixture();
     const calendarFile = library.files.find(file => file.path.endsWith("calendar.tsx"))!;
-    expect(() => assertComponentImportClosure([calendarFile, ...library.files.filter(file => file !== calendarFile)], {})).toThrow("components: missing import ../icon/index.js");
+    expect(() => assertComponentImportClosure([calendarFile, ...library.files.filter(file => file !== calendarFile)], {})).toThrow(/^components: missing import \.\.\/icon\/index$/);
     const calendar = library.files.find(file => file.path.endsWith("calendar.tsx"))!.content;
     expect(calendar).not.toContain("buttonVariants");
     expect(calendar).toContain("SelectTrigger");

@@ -1,8 +1,8 @@
 "use client";
 import { LinkButton as Link } from "@clossys/designer/components";
-import { Button, CARD_SURFACE, Card, Select } from "@clossys/designer/components";
+import { Button, CARD_SURFACE, Card } from "@clossys/designer/components";
 
-import { DetailView, Panel, SectionHeader } from "@clossys/designer/blocks";
+import { DetailView, Panel, SectionHeader, StockSelect } from "@clossys/designer/blocks";
 import { useEffect, useId, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { checkInstance, checkInstancePack } from "../../core/instance-binding.check.js";
@@ -145,9 +145,9 @@ export function PublisherInstancesView({ instances, library, registries, compile
         <Panel><section id={assemblyTargetPrefix ? `${assemblyTargetPrefix}-render` : undefined} tabIndex={assemblyTargetPrefix ? -1 : undefined} aria-labelledby={`${id}-preview-title`} className="grid content-start gap-md">
           <SectionHeader level={3} id={`${id}-preview-title`} title={<>{binding.label} · runtime render</>} />
           <div className="flex flex-wrap gap-md">
-            <Select label="Viewport" selectedKey={String(width)} onSelectionChange={key => { if (key != null) setWidth(Number(key) as typeof width); }} options={[320, 768, 1280].map(value => ({ id: String(value), label: `${value} px` }))} />
-            <Select label="Theme" selectedKey={theme} onSelectionChange={key => { if (key != null) setTheme(String(key) as typeof theme); }} options={[{ id: "light", label: "light" }, { id: "dark", label: "dark" }]} />
-            <Select label="State" selectedKey={state ?? ""} onSelectionChange={key => setChosenState(key ? String(key) : undefined)} options={[{ id: "", label: "default" }, ...(binding.states?.filter(value => value !== "default").map(value => ({ id: value, label: value })) ?? [])]} />
+            <StockSelect label="Viewport" selectedKey={String(width)} onSelectionChange={key => { if (key != null) setWidth(Number(key) as typeof width); }} options={[320, 768, 1280].map(value => ({ id: String(value), label: `${value} px` }))} />
+            <StockSelect label="Theme" selectedKey={theme} onSelectionChange={key => { if (key != null) setTheme(String(key) as typeof theme); }} options={[{ id: "light", label: "light" }, { id: "dark", label: "dark" }]} />
+            <StockSelect label="State" selectedKey={state ?? ""} onSelectionChange={key => setChosenState(key ? String(key) : undefined)} options={[{ id: "", label: "default" }, ...(binding.states?.filter(value => value !== "default").map(value => ({ id: value, label: value })) ?? [])]} />
           </div>
           <Card role="region" aria-label="Scrollable instance render" tabIndex={0} className={`${CARD_SURFACE.outline} min-w-0 overflow-x-auto`}>
             <InstanceRuntimeRender binding={binding} routes={runtimeRoutes} width={width} theme={theme} state={state} />

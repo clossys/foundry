@@ -17,7 +17,7 @@ const TableBody = componentLeaf<<T extends object>(props: TableBodyProps<T>) => 
 const TableRow = componentLeaf<<T extends object>(props: RowProps<T>) => ReactElement>("components.table", "TableRow");
 const TableHead = componentLeaf<(props: ColumnProps) => ReactElement>("components.table", "TableHead");
 const TableCell = componentLeaf<(props: CellProps) => ReactElement>("components.table", "TableCell");
-const Checkbox = componentLeaf<typeof import("../../components/Checkbox.js").Checkbox>("components.checkbox");
+const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 function columnStyle(width: string | number | undefined): CSSProperties | undefined {

@@ -30,6 +30,10 @@ export {
   Checkbox,
   Switch,
   Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
   Textarea,
   Avatar,
   AvatarImage,
@@ -68,6 +72,7 @@ export {
   SKELETON_SHAPE,
   TooltipTrigger,
   RadioGroup,
+  RadioGroupItem,
   Popover,
   PopoverTrigger,
   PopoverHeader,
@@ -119,7 +124,6 @@ export type {
   CheckboxProps,
   SwitchProps,
   SelectProps,
-  SelectOption,
   TextareaProps,
   AvatarProps,
   SpinnerProps,
@@ -140,7 +144,7 @@ export type {
   TooltipProps,
   AlertProps,
   RadioGroupProps,
-  RadioGroupRadioProps,
+  RadioGroupItemProps,
   PopoverProps,
   DateFieldProps,
   ComboBoxProps,
@@ -513,6 +517,8 @@ export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, S
 
 export { StockItem } from "./blocks/items/StockItem.js";
 export type { StockItemProps } from "./blocks/items/StockItem.js";
+export { StockSelect } from "./blocks/stock-select.js";
+export type { StockSelectProps, StockSelectOption } from "./blocks/stock-select.js";
 export { AppNavigation } from "./blocks/AppNavigation.js";
 export type { AppNavigationProps } from "./blocks/AppNavigation.js";
 export { PageBar } from "./blocks/PageBar.js";
