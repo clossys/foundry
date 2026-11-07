@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:3dfa62791596763afcf0ff24fff8195503d7873f7fec21717e1e3584ef5bf463",
+  "selectionHash": "sha256:2b9a7075836063baf9e5d07050aafe7ecf750d7b939c73c893d8b89e41d20452",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -254,7 +254,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "9a3d088e3a81da56a141080e0c48117882d2841cea997d7cb5f8ac3a5734cd57",
+        "sha256": "38ec64b6087ddd28066e8e88677cab9514ebed5faea74d406bdbb424ae67f6ae",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -264,7 +264,7 @@
           },
           {
             "path": "components/badge/badge.tsx",
-            "sha256": "9d21d99eb4ca0b0572a881899f1fb5ebfcefabe9b1c36bb183ab32155c2875b8"
+            "sha256": "d65d075d5aeefc859a00b5e0b05e3e4576a74b46b166034cf41042d6ebc9b03f"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -391,7 +391,7 @@
           },
           {
             "path": "components/badge/badge.tsx",
-            "sha256": "9d21d99eb4ca0b0572a881899f1fb5ebfcefabe9b1c36bb183ab32155c2875b8"
+            "sha256": "d65d075d5aeefc859a00b5e0b05e3e4576a74b46b166034cf41042d6ebc9b03f"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -427,7 +427,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "9a3d088e3a81da56a141080e0c48117882d2841cea997d7cb5f8ac3a5734cd57",
+          "sha256": "38ec64b6087ddd28066e8e88677cab9514ebed5faea74d406bdbb424ae67f6ae",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -437,7 +437,7 @@
             },
             {
               "path": "components/badge/badge.tsx",
-              "sha256": "9d21d99eb4ca0b0572a881899f1fb5ebfcefabe9b1c36bb183ab32155c2875b8"
+              "sha256": "d65d075d5aeefc859a00b5e0b05e3e4576a74b46b166034cf41042d6ebc9b03f"
             },
             {
               "path": "notices/THIRD-PARTY.md",
@@ -918,7 +918,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "bd57a4ad2792378d97cbfde27ac7f8255a2d6592f7bb0b2ce9c48df1c33708cf",
+        "sha256": "c51928c26ccb50668206220ca618c484ca49eebbf90df55170c77015af02613d",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -928,7 +928,7 @@
           },
           {
             "path": "components/button/button.tsx",
-            "sha256": "81c519436afe48770064f8b942d58195dcd0133ffbcd18743b60191ff17cfd21"
+            "sha256": "1f436b63a385a29a039619a074e842d93473e8b4ff6ddee9457b3272be55bcaa"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -1098,7 +1098,7 @@
           },
           {
             "path": "components/button/button.tsx",
-            "sha256": "81c519436afe48770064f8b942d58195dcd0133ffbcd18743b60191ff17cfd21"
+            "sha256": "1f436b63a385a29a039619a074e842d93473e8b4ff6ddee9457b3272be55bcaa"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -1140,7 +1140,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "bd57a4ad2792378d97cbfde27ac7f8255a2d6592f7bb0b2ce9c48df1c33708cf",
+          "sha256": "c51928c26ccb50668206220ca618c484ca49eebbf90df55170c77015af02613d",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -1150,7 +1150,7 @@
             },
             {
               "path": "components/button/button.tsx",
-              "sha256": "81c519436afe48770064f8b942d58195dcd0133ffbcd18743b60191ff17cfd21"
+              "sha256": "1f436b63a385a29a039619a074e842d93473e8b4ff6ddee9457b3272be55bcaa"
             },
             {
               "path": "notices/THIRD-PARTY.md",
@@ -4503,7 +4503,7 @@
           "components.date-field",
           "components.popover"
         ],
-        "inputsHash": "fb094db729527e7ec587eb033864e3b0b49989de0c1841f193c41e36436ff147"
+        "inputsHash": "a868b04df99bb54bdbcc93e540863e3b69105c2e9bb194a9beb4c34e1b1e8d69"
       },
       "impl": {
         "entry": "components/date-picker/date-picker.tsx",
@@ -4637,7 +4637,7 @@
             "components.date-field",
             "components.popover"
           ],
-          "inputsHash": "fb094db729527e7ec587eb033864e3b0b49989de0c1841f193c41e36436ff147"
+          "inputsHash": "a868b04df99bb54bdbcc93e540863e3b69105c2e9bb194a9beb4c34e1b1e8d69"
         }
       }
     },
@@ -4917,7 +4917,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "ca889c8c0ecbf61ef4929cdd342e2f84e988d9238dfe264f0c134ccbb1cc489f",
+        "sha256": "d5d46b0ce4f127cf2852f549c037ba5f0f80333de6955bc5007df83c3865291b",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -4927,7 +4927,7 @@
           },
           {
             "path": "components/disclosure/accordion.tsx",
-            "sha256": "3bcee4d26ed735c6a3c79ff95e550d96b9a3b9efe3fb37764c543efedb37f8a6"
+            "sha256": "df58d7812d3f1ce39213ff852ffecede9dd85585778c51eefb1c638534d8a0ce"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -5051,7 +5051,7 @@
           },
           {
             "path": "components/disclosure/accordion.tsx",
-            "sha256": "3bcee4d26ed735c6a3c79ff95e550d96b9a3b9efe3fb37764c543efedb37f8a6"
+            "sha256": "df58d7812d3f1ce39213ff852ffecede9dd85585778c51eefb1c638534d8a0ce"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -5101,7 +5101,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "ca889c8c0ecbf61ef4929cdd342e2f84e988d9238dfe264f0c134ccbb1cc489f",
+          "sha256": "d5d46b0ce4f127cf2852f549c037ba5f0f80333de6955bc5007df83c3865291b",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -5111,7 +5111,7 @@
             },
             {
               "path": "components/disclosure/accordion.tsx",
-              "sha256": "3bcee4d26ed735c6a3c79ff95e550d96b9a3b9efe3fb37764c543efedb37f8a6"
+              "sha256": "df58d7812d3f1ce39213ff852ffecede9dd85585778c51eefb1c638534d8a0ce"
             },
             {
               "path": "notices/THIRD-PARTY.md",
@@ -5809,7 +5809,7 @@
         "reads": [
           "components.button"
         ],
-        "inputsHash": "acf6d21d0501f3b7240b5d049d2492e36b6eece56f01ad658bd8094905bbcff0"
+        "inputsHash": "a844f585049b2aa98652395d894fcf2fbac2932e60903cfa375531e25a4b9d43"
       },
       "impl": {
         "entry": "components/file-trigger/file-trigger.tsx",
@@ -5900,7 +5900,7 @@
           "reads": [
             "components.button"
           ],
-          "inputsHash": "acf6d21d0501f3b7240b5d049d2492e36b6eece56f01ad658bd8094905bbcff0"
+          "inputsHash": "a844f585049b2aa98652395d894fcf2fbac2932e60903cfa375531e25a4b9d43"
         }
       }
     },
@@ -11687,7 +11687,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "c1217585681366fe56e3baed962c9e0118ddd790aa27405b724c6d240c86274b",
+        "sha256": "dec6e2f9d9fec13c8d2f6054232538516cc477e262f1a21f369617980f5b162f",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -11697,7 +11697,7 @@
           },
           {
             "path": "components/switch/switch.tsx",
-            "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+            "sha256": "bb3f36da02b571faf17b9f2eb4f0f8ba9cf7de110a36813f604e30957a7701bc"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -11819,7 +11819,7 @@
           },
           {
             "path": "components/switch/switch.tsx",
-            "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+            "sha256": "bb3f36da02b571faf17b9f2eb4f0f8ba9cf7de110a36813f604e30957a7701bc"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -11855,7 +11855,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "c1217585681366fe56e3baed962c9e0118ddd790aa27405b724c6d240c86274b",
+          "sha256": "dec6e2f9d9fec13c8d2f6054232538516cc477e262f1a21f369617980f5b162f",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -11865,7 +11865,7 @@
             },
             {
               "path": "components/switch/switch.tsx",
-              "sha256": "3fd09f5b623aa1e03cb48f3e9d9dc0f0f024ff2cbb63e5f880182a449330dcb3"
+              "sha256": "bb3f36da02b571faf17b9f2eb4f0f8ba9cf7de110a36813f604e30957a7701bc"
             },
             {
               "path": "notices/THIRD-PARTY.md",
@@ -12138,7 +12138,7 @@
           ]
         },
         "license": "MIT",
-        "sha256": "cb109dc082afcd9fc4aa43113f0091e7f735a74d4f6fa8a9bc1df399dd551e94",
+        "sha256": "efc926cf6cff749daec1a2241eec47c8b49973621a3ad03d63aa4ccb9aa314b2",
         "adoptedAt": "2026-10-26",
         "transform": "shadcn-aria-rewrite@1",
         "outputSha256": [
@@ -12148,7 +12148,7 @@
           },
           {
             "path": "components/tabs/tabs.tsx",
-            "sha256": "463fa0a0dfed07c77607a747e163fe4cdf7eccf1d7abf4d1fe34bb992717e5c2"
+            "sha256": "85f0efdfbdbd40636674c2e3dba1681d7f26bd5f2706cdde126aa70055902455"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -12274,7 +12274,7 @@
           },
           {
             "path": "components/tabs/tabs.tsx",
-            "sha256": "463fa0a0dfed07c77607a747e163fe4cdf7eccf1d7abf4d1fe34bb992717e5c2"
+            "sha256": "85f0efdfbdbd40636674c2e3dba1681d7f26bd5f2706cdde126aa70055902455"
           },
           {
             "path": "notices/THIRD-PARTY.md",
@@ -12324,7 +12324,7 @@
             ]
           },
           "license": "MIT",
-          "sha256": "cb109dc082afcd9fc4aa43113f0091e7f735a74d4f6fa8a9bc1df399dd551e94",
+          "sha256": "efc926cf6cff749daec1a2241eec47c8b49973621a3ad03d63aa4ccb9aa314b2",
           "adoptedAt": "2026-10-26",
           "transform": "shadcn-aria-rewrite@1",
           "outputSha256": [
@@ -12334,7 +12334,7 @@
             },
             {
               "path": "components/tabs/tabs.tsx",
-              "sha256": "463fa0a0dfed07c77607a747e163fe4cdf7eccf1d7abf4d1fe34bb992717e5c2"
+              "sha256": "85f0efdfbdbd40636674c2e3dba1681d7f26bd5f2706cdde126aa70055902455"
             },
             {
               "path": "notices/THIRD-PARTY.md",
@@ -13866,7 +13866,7 @@
     },
     {
       "path": "components/badge/badge.tsx",
-      "content": "import { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\n\nconst badgeVariants = cva(\n  \"h-[var(--spacing-xl)] gap-(--spacing-xs) rounded-4xl border-(length:--ui-border-hairline,1px)  px-(--spacing-sm) py-[var(--spacing-xs)] text-(length:--text-xs) font-(weight:--font-weight-medium) transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&>svg]:size-(--spacing-md)! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:border-(--color-status-danger) aria-invalid:ring-(--color-status-danger)/20 dark:aria-invalid:ring-(--color-status-danger)/40 [&>svg]:pointer-events-none\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-action) text-(--color-ink-on-action) [a]:hover:bg-(--color-action)/80\",\n        secondary: \"bg-(--color-control-tonal) text-(--color-ink-primary) [a]:hover:bg-(--color-control-tonal)/80\",\n        destructive: \"bg-(--color-status-danger)/10 [a]:hover:bg-(--color-status-danger)/20 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) dark:focus-visible:outline-solid dark:focus-visible:outline-(length:--ui-border-focus,3px) dark:focus-visible:outline-offset-(--ui-focus-offset) dark:focus-visible:outline-(--color-focus-ring) text-(--color-status-danger) dark:bg-(--color-status-danger)/20\",\n        outline: \"border-(--color-line-base) text-(--color-ink-primary) [a]:hover:bg-(--color-surface-sunken) [a]:hover:text-(--color-ink-muted)\",\n        ghost: \"hover:bg-(--color-surface-sunken) hover:text-(--color-ink-muted) dark:hover:bg-(--color-surface-sunken)/50\",\n        link: \"text-(--color-accent-text) underline-offset-(--spacing-lg) hover:underline\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction Badge({\n  className,\n  variant = \"default\",\n  render,\n  ...props\n}: React.ComponentProps<\"span\"> &\n  VariantProps<typeof badgeVariants> & {\n    render?: (props: React.HTMLAttributes<HTMLElement>) => React.ReactNode\n  }) {\n  if (render) {\n    const renderProps = {\n      \"data-slot\": \"badge\",\n      \"data-variant\": variant,\n      className: cn(badgeVariants({ variant }), className),\n      ...props,\n    }\n\n    return render(renderProps)\n  }\n\n  return (\n    <span\n      data-slot=\"badge\"\n      data-variant={variant}\n      className={cn(badgeVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nexport { Badge, badgeVariants }\n"
+      "content": "import { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\n\nconst badgeVariants = cva(\n  \"h-[var(--spacing-xl)] gap-(--spacing-xs) rounded-4xl border-(length:--ui-border-hairline,1px) border-transparent px-(--spacing-sm) py-[var(--spacing-xs)] text-(length:--text-xs) font-(weight:--font-weight-medium) transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&>svg]:size-(--spacing-md)! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:border-(--color-status-danger) aria-invalid:ring-(--color-status-danger)/20 dark:aria-invalid:ring-(--color-status-danger)/40 [&>svg]:pointer-events-none\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-action) text-(--color-ink-on-action) [a]:hover:bg-(--color-action)/80\",\n        secondary: \"bg-(--color-control-tonal) text-(--color-ink-primary) [a]:hover:bg-(--color-control-tonal)/80\",\n        destructive: \"bg-(--color-status-danger)/10 [a]:hover:bg-(--color-status-danger)/20 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) dark:focus-visible:outline-solid dark:focus-visible:outline-(length:--ui-border-focus,3px) dark:focus-visible:outline-offset-(--ui-focus-offset) dark:focus-visible:outline-(--color-focus-ring) text-(--color-status-danger) dark:bg-(--color-status-danger)/20\",\n        outline: \"border-(--color-line-base) text-(--color-ink-primary) [a]:hover:bg-(--color-surface-sunken) [a]:hover:text-(--color-ink-muted)\",\n        ghost: \"hover:bg-(--color-surface-sunken) hover:text-(--color-ink-muted) dark:hover:bg-(--color-surface-sunken)/50\",\n        link: \"text-(--color-accent-text) underline-offset-(--spacing-lg) hover:underline\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction Badge({\n  className,\n  variant = \"default\",\n  render,\n  ...props\n}: React.ComponentProps<\"span\"> &\n  VariantProps<typeof badgeVariants> & {\n    render?: (props: React.HTMLAttributes<HTMLElement>) => React.ReactNode\n  }) {\n  if (render) {\n    const renderProps = {\n      \"data-slot\": \"badge\",\n      \"data-variant\": variant,\n      className: cn(badgeVariants({ variant }), className),\n      ...props,\n    }\n\n    return render(renderProps)\n  }\n\n  return (\n    <span\n      data-slot=\"badge\"\n      data-variant={variant}\n      className={cn(badgeVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nexport { Badge, badgeVariants }\n"
     },
     {
       "path": "components/banner/alert.tsx",
@@ -13878,7 +13878,7 @@
     },
     {
       "path": "components/button/button.tsx",
-      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  Button as ButtonPrimitive,\n  Link as LinkPrimitive,\n  type ButtonProps as ButtonPrimitiveProps,\n  type LinkProps as LinkPrimitiveProps,\n} from \"react-aria-components\"\n\nconst buttonVariants = cva(\n  \"focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 rounded-(--radius-control) border-(length:--ui-border-hairline,1px)  bg-clip-padding text-(length:--text-sm) font-(weight:--font-weight-medium) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) active:not-aria-[haspopup]:translate-y-(--ui-border-hairline) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) select-none disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-action) text-(--color-ink-on-action) hover:bg-(--color-action)/80\",\n        outline: \"border-(--color-line-base) bg-(--color-surface-base) hover:bg-(--color-surface-sunken) hover:text-(--color-ink-primary) dark:bg-(--color-line-strong)/30 dark:border-(--color-line-strong) dark:hover:bg-(--color-line-strong)/50 aria-expanded:bg-(--color-surface-sunken) aria-expanded:text-(--color-ink-primary)\",\n        secondary: \"bg-(--color-control-tonal) text-(--color-ink-primary) hover:bg-[color-mix(in_oklch,var(--color-control-tonal),var(--color-ink-primary)_5%)] aria-expanded:bg-(--color-control-tonal) aria-expanded:text-(--color-ink-primary)\",\n        ghost: \"hover:bg-(--color-surface-sunken) hover:text-(--color-ink-primary) dark:hover:bg-(--color-surface-sunken)/50 aria-expanded:bg-(--color-surface-sunken) aria-expanded:text-(--color-ink-primary)\",\n        destructive: \"bg-(--color-status-danger)/10 hover:bg-(--color-status-danger)/20 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) dark:focus-visible:outline-solid dark:focus-visible:outline-(length:--ui-border-focus,3px) dark:focus-visible:outline-offset-(--ui-focus-offset) dark:focus-visible:outline-(--color-focus-ring) dark:bg-(--color-status-danger)/20 text-(--color-status-danger) focus-visible:border-(--color-status-danger)/40 dark:hover:bg-(--color-status-danger)/30\",\n        link: \"text-(--color-accent-text) underline-offset-(--spacing-lg) hover:underline\",\n      },\n      size: {\n        default: \"h-(--ui-control-h-md,calc(var(--spacing)*8)) gap-(--spacing-sm) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)\",\n        xs: \"h-(--spacing-xl) gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-sm) text-(length:--text-xs) in-data-[slot=button-group]:rounded-(--radius-control) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--spacing-md)\",\n        sm: \"h-(--ui-control-h-sm,calc(var(--spacing)*7)) gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) in-data-[slot=button-group]:rounded-(--radius-control) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))\",\n        lg: \"h-(--ui-control-h-lg,calc(var(--spacing)*9)) gap-(--spacing-sm) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)\",\n        icon: \"size-(--ui-control-h-md,calc(var(--spacing)*8))\",\n        \"icon-xs\": \"size-(--spacing-xl) rounded-(--radius-control) in-data-[slot=button-group]:rounded-(--radius-control) [&_svg:not([class*='size-'])]:size-(--spacing-md)\",\n        \"icon-sm\": \"size-(--ui-control-h-sm,calc(var(--spacing)*7)) rounded-(--radius-control) in-data-[slot=button-group]:rounded-(--radius-control)\",\n        \"icon-lg\": \"size-(--ui-control-h-lg,calc(var(--spacing)*9))\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n      size: \"default\",\n    },\n  }\n)\n\nfunction Button({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: Omit<ButtonPrimitiveProps, \"className\"> &\n  React.RefAttributes<HTMLButtonElement> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <ButtonPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction LinkButton({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: Omit<LinkPrimitiveProps, \"className\"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <LinkPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nexport { Button, LinkButton, buttonVariants }\n"
+      "content": "\"use client\"\n\nimport type * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  Button as ButtonPrimitive,\n  Link as LinkPrimitive,\n  type ButtonProps as ButtonPrimitiveProps,\n  type LinkProps as LinkPrimitiveProps,\n} from \"react-aria-components\"\n\nconst buttonVariants = cva(\n  \"focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 rounded-(--radius-control) border-(length:--ui-border-hairline,1px) border-transparent bg-clip-padding text-(length:--text-sm) font-(weight:--font-weight-medium) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) active:not-aria-[haspopup]:translate-y-(--ui-border-hairline) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) group/button inline-flex shrink-0 items-center justify-center whitespace-nowrap transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) select-none disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-action) text-(--color-ink-on-action) hover:bg-(--color-action)/80\",\n        outline: \"border-(--color-line-base) bg-(--color-surface-base) hover:bg-(--color-surface-sunken) hover:text-(--color-ink-primary) dark:bg-(--color-line-strong)/30 dark:border-(--color-line-strong) dark:hover:bg-(--color-line-strong)/50 aria-expanded:bg-(--color-surface-sunken) aria-expanded:text-(--color-ink-primary)\",\n        secondary: \"bg-(--color-control-tonal) text-(--color-ink-primary) hover:bg-[color-mix(in_oklch,var(--color-control-tonal),var(--color-ink-primary)_5%)] aria-expanded:bg-(--color-control-tonal) aria-expanded:text-(--color-ink-primary)\",\n        ghost: \"hover:bg-(--color-surface-sunken) hover:text-(--color-ink-primary) dark:hover:bg-(--color-surface-sunken)/50 aria-expanded:bg-(--color-surface-sunken) aria-expanded:text-(--color-ink-primary)\",\n        destructive: \"bg-(--color-status-danger)/10 hover:bg-(--color-status-danger)/20 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) dark:focus-visible:outline-solid dark:focus-visible:outline-(length:--ui-border-focus,3px) dark:focus-visible:outline-offset-(--ui-focus-offset) dark:focus-visible:outline-(--color-focus-ring) dark:bg-(--color-status-danger)/20 text-(--color-status-danger) focus-visible:border-(--color-status-danger)/40 dark:hover:bg-(--color-status-danger)/30\",\n        link: \"text-(--color-accent-text) underline-offset-(--spacing-lg) hover:underline\",\n      },\n      size: {\n        default: \"h-(--ui-control-h-md,calc(var(--spacing)*8)) gap-(--spacing-sm) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)\",\n        xs: \"h-(--spacing-xl) gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-sm) text-(length:--text-xs) in-data-[slot=button-group]:rounded-(--radius-control) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--spacing-md)\",\n        sm: \"h-(--ui-control-h-sm,calc(var(--spacing)*7)) gap-(--spacing-xs) rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) in-data-[slot=button-group]:rounded-(--radius-control) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))\",\n        lg: \"h-(--ui-control-h-lg,calc(var(--spacing)*9)) gap-(--spacing-sm) px-(--spacing-md) has-data-[icon=inline-end]:pr-(--spacing-sm) has-data-[icon=inline-start]:pl-(--spacing-sm)\",\n        icon: \"size-(--ui-control-h-md,calc(var(--spacing)*8))\",\n        \"icon-xs\": \"size-(--spacing-xl) rounded-(--radius-control) in-data-[slot=button-group]:rounded-(--radius-control) [&_svg:not([class*='size-'])]:size-(--spacing-md)\",\n        \"icon-sm\": \"size-(--ui-control-h-sm,calc(var(--spacing)*7)) rounded-(--radius-control) in-data-[slot=button-group]:rounded-(--radius-control)\",\n        \"icon-lg\": \"size-(--ui-control-h-lg,calc(var(--spacing)*9))\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n      size: \"default\",\n    },\n  }\n)\n\nfunction Button({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: Omit<ButtonPrimitiveProps, \"className\"> &\n  React.RefAttributes<HTMLButtonElement> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <ButtonPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nfunction LinkButton({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: Omit<LinkPrimitiveProps, \"className\"> &\n  VariantProps<typeof buttonVariants> & {\n    className?: string\n  }) {\n  return (\n    <LinkPrimitive\n      data-slot=\"button\"\n      data-variant={variant}\n      data-size={size}\n      className={cn(buttonVariants({ variant, size, className }))}\n      {...props}\n    />\n  )\n}\n\nexport { Button, LinkButton, buttonVariants }\n"
     },
     {
       "path": "components/calendar/calendar.tsx",
@@ -13910,7 +13910,7 @@
     },
     {
       "path": "components/disclosure/accordion.tsx",
-      "content": "\"use client\"\n\nimport { Icon as LibraryIcon } from \"../icon/index\"\nimport * as React from \"react\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  DisclosurePanel as AccordionContentPrimitive,\n  Heading as AccordionHeaderPrimitive,\n  Disclosure as AccordionItemPrimitive,\n  DisclosureGroup as AccordionPrimitive,\n  Button as AccordionTriggerPrimitive,\n  type ButtonProps,\n  type DisclosureGroupProps,\n  type DisclosurePanelProps,\n  type DisclosureProps,\n} from \"react-aria-components\"\n\nfunction Accordion({ className, ...props }: DisclosureGroupProps) {\n  return (\n    <AccordionPrimitive\n      data-slot=\"accordion\"\n      className={cn(\"flex w-full flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction AccordionItem({ className, ...props }: DisclosureProps) {\n  return (\n    <AccordionItemPrimitive\n      data-slot=\"accordion-item\"\n      className={cn(\"not-last:border-b-(length:--ui-border-hairline)\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction AccordionTrigger({\n  className,\n  children,\n  ...props\n}: Omit<ButtonProps, \"children\"> & { children: React.ReactNode }) {\n  return (\n    <AccordionHeaderPrimitive className=\"flex\">\n      <AccordionTriggerPrimitive\n        slot=\"trigger\"\n        data-slot=\"accordion-trigger\"\n        className={cn(\n          \"focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:border-(--color-focus-ring) focus-visible:after:border-(--color-focus-ring) **:data-[slot=accordion-trigger-icon]:text-(--color-ink-muted) rounded-(--radius-control) py-(--spacing-md) text-left text-(length:--text-sm) font-(weight:--font-weight-medium) hover:underline focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-(--spacing-lg,calc(var(--spacing)*4)) group/accordion-trigger relative flex flex-1 items-start justify-between border-(length:--ui-border-hairline,1px) transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%)\",\n          className\n        )}\n        {...props}\n      >\n        {children}\n        <LibraryIcon asset=\"assets.icon-chevron-down\" decorative data-slot=\"accordion-trigger-icon\"\n          className=\"pointer-events-none shrink-0 group-aria-expanded/accordion-trigger:hidden\" />\n        <LibraryIcon asset=\"assets.icon-chevron-up\" decorative data-slot=\"accordion-trigger-icon\"\n          className=\"pointer-events-none hidden shrink-0 group-aria-expanded/accordion-trigger:inline\" />\n      </AccordionTriggerPrimitive>\n    </AccordionHeaderPrimitive>\n  )\n}\n\nfunction AccordionContent({\n  className,\n  children,\n  ...props\n}: DisclosurePanelProps) {\n  return (\n    <AccordionContentPrimitive\n      data-slot=\"accordion-content\"\n      className=\"data-open:library-enter data-open:library-fade data-closed:library-exit data-closed:library-fade text-(length:--text-sm) h-(--disclosure-panel-height) overflow-clip transition-[height] duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n      {...props}\n    >\n      <div\n        className={cn(\n          \"pt-0 pb-(--spacing-md) [&_a]:underline [&_a]:underline-offset-(--spacing-md) [&_a]:hover:text-(--color-ink-primary) [&_p:not(:last-child)]:mb-(--spacing-lg)\",\n          className\n        )}\n      >\n        {children}\n      </div>\n    </AccordionContentPrimitive>\n  )\n}\n\nexport { Accordion, AccordionItem, AccordionTrigger, AccordionContent }\n"
+      "content": "\"use client\"\n\nimport { Icon as LibraryIcon } from \"../icon/index\"\nimport * as React from \"react\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  DisclosurePanel as AccordionContentPrimitive,\n  Heading as AccordionHeaderPrimitive,\n  Disclosure as AccordionItemPrimitive,\n  DisclosureGroup as AccordionPrimitive,\n  Button as AccordionTriggerPrimitive,\n  type ButtonProps,\n  type DisclosureGroupProps,\n  type DisclosurePanelProps,\n  type DisclosureProps,\n} from \"react-aria-components\"\n\nfunction Accordion({ className, ...props }: DisclosureGroupProps) {\n  return (\n    <AccordionPrimitive\n      data-slot=\"accordion\"\n      className={cn(\"flex w-full flex-col\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction AccordionItem({ className, ...props }: DisclosureProps) {\n  return (\n    <AccordionItemPrimitive\n      data-slot=\"accordion-item\"\n      className={cn(\"not-last:border-b-(length:--ui-border-hairline)\", className)}\n      {...props}\n    />\n  )\n}\n\nfunction AccordionTrigger({\n  className,\n  children,\n  ...props\n}: Omit<ButtonProps, \"children\"> & { children: React.ReactNode }) {\n  return (\n    <AccordionHeaderPrimitive className=\"flex\">\n      <AccordionTriggerPrimitive\n        slot=\"trigger\"\n        data-slot=\"accordion-trigger\"\n        className={cn(\n          \"focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:border-(--color-focus-ring) focus-visible:after:border-(--color-focus-ring) **:data-[slot=accordion-trigger-icon]:text-(--color-ink-muted) rounded-(--radius-control) py-(--spacing-md) text-left text-(length:--text-sm) font-(weight:--font-weight-medium) hover:underline focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) **:data-[slot=accordion-trigger-icon]:ml-auto **:data-[slot=accordion-trigger-icon]:size-(--spacing-lg,calc(var(--spacing)*4)) group/accordion-trigger relative flex flex-1 items-start justify-between border-(length:--ui-border-hairline,1px) border-transparent transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%)\",\n          className\n        )}\n        {...props}\n      >\n        {children}\n        <LibraryIcon asset=\"assets.icon-chevron-down\" decorative data-slot=\"accordion-trigger-icon\"\n          className=\"pointer-events-none shrink-0 group-aria-expanded/accordion-trigger:hidden\" />\n        <LibraryIcon asset=\"assets.icon-chevron-up\" decorative data-slot=\"accordion-trigger-icon\"\n          className=\"pointer-events-none hidden shrink-0 group-aria-expanded/accordion-trigger:inline\" />\n      </AccordionTriggerPrimitive>\n    </AccordionHeaderPrimitive>\n  )\n}\n\nfunction AccordionContent({\n  className,\n  children,\n  ...props\n}: DisclosurePanelProps) {\n  return (\n    <AccordionContentPrimitive\n      data-slot=\"accordion-content\"\n      className=\"data-open:library-enter data-open:library-fade data-closed:library-exit data-closed:library-fade text-(length:--text-sm) h-(--disclosure-panel-height) overflow-clip transition-[height] duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n      {...props}\n    >\n      <div\n        className={cn(\n          \"pt-0 pb-(--spacing-md) [&_a]:underline [&_a]:underline-offset-(--spacing-md) [&_a]:hover:text-(--color-ink-primary) [&_p:not(:last-child)]:mb-(--spacing-lg)\",\n          className\n        )}\n      >\n        {children}\n      </div>\n    </AccordionContentPrimitive>\n  )\n}\n\nexport { Accordion, AccordionItem, AccordionTrigger, AccordionContent }\n"
     },
     {
       "path": "components/dropdown-menu/dropdown-menu.tsx",
@@ -13978,7 +13978,7 @@
     },
     {
       "path": "components/switch/switch.tsx",
-      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"data-checked:bg-(--color-action) data-unchecked:bg-(--color-line-strong) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 dark:data-unchecked:bg-(--color-line-strong)/80 shrink-0 rounded-full border-(length:--ui-border-hairline,1px)  focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger)   data-[size=default]:h-(--ui-control-switch-thumb) data-[size=default]:w-(--spacing-2xl) data-[size=sm]:h-(--ui-control-switch-thumb) data-[size=sm]:w-(--spacing-xl) data-selected:bg-(--color-action) not-data-selected:bg-(--color-line-strong) data-focus-visible:border-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) dark:not-data-selected:bg-(--color-line-strong)/80 data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) dark:data-invalid:ring-(--color-status-danger)/40 data-invalid:border-(--color-status-danger) dark:data-invalid:border-(--color-status-danger)/50 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) peer group/switch relative inline-flex items-center transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-(--ui-alpha-disabled,50%)\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"bg-(--color-surface-base) dark:data-unchecked:bg-(--color-ink-primary) dark:data-checked:bg-(--color-ink-on-action) rounded-full group-data-[size=default]/switch:size-(--spacing-lg,calc(var(--spacing)*4)) group-data-[size=sm]/switch:size-(--spacing-md) group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:not-data-selected:bg-(--color-ink-primary) dark:data-selected:bg-(--color-ink-on-action) group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0 pointer-events-none block ring-0 transition-transform duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
+      "content": "\"use client\"\n\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  Switch as SwitchPrimitive,\n  type SwitchProps as SwitchPrimitiveProps,\n} from \"react-aria-components\"\n\nfunction Switch({\n  className,\n  size = \"default\",\n  children,\n  ...props\n}: SwitchPrimitiveProps & {\n  size?: \"sm\" | \"default\"\n}) {\n  return (\n    <SwitchPrimitive\n      data-slot=\"switch\"\n      data-size={size}\n      className={cn(\n        \"data-checked:bg-(--color-action) data-unchecked:bg-(--color-line-strong) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 dark:data-unchecked:bg-(--color-line-strong)/80 shrink-0 rounded-full border-(length:--ui-border-hairline,1px) border-transparent focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger)   data-[size=default]:h-(--ui-control-switch-thumb) data-[size=default]:w-(--spacing-2xl) data-[size=sm]:h-(--ui-control-switch-thumb) data-[size=sm]:w-(--spacing-xl) data-selected:bg-(--color-action) not-data-selected:bg-(--color-line-strong) data-focus-visible:border-(--color-focus-ring) data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) dark:not-data-selected:bg-(--color-line-strong)/80 data-focus-visible:outline-solid data-focus-visible:outline-(length:--ui-border-focus,3px) data-focus-visible:outline-offset-(--ui-focus-offset) data-focus-visible:outline-(--color-focus-ring) data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) dark:data-invalid:ring-(--color-status-danger)/40 data-invalid:border-(--color-status-danger) dark:data-invalid:border-(--color-status-danger)/50 data-invalid:outline-solid data-invalid:outline-(length:--ui-border-focus,3px) data-invalid:outline-offset-(--ui-focus-offset) data-invalid:outline-(--color-status-danger) peer group/switch relative inline-flex items-center transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) after:absolute after:-inset-x-3 after:-inset-y-2 data-disabled:cursor-not-allowed data-disabled:opacity-(--ui-alpha-disabled,50%)\",\n        className\n      )}\n      {...props}\n    >\n      {composeRenderProps(children, (children, { isSelected }) => (\n        <>\n          <span\n            data-slot=\"switch-thumb\"\n            data-selected={isSelected || undefined}\n            className=\"bg-(--color-surface-base) dark:data-unchecked:bg-(--color-ink-primary) dark:data-checked:bg-(--color-ink-on-action) rounded-full group-data-[size=default]/switch:size-(--spacing-lg,calc(var(--spacing)*4)) group-data-[size=sm]/switch:size-(--spacing-md) group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:data-unchecked:translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 dark:not-data-selected:bg-(--color-ink-primary) dark:data-selected:bg-(--color-ink-on-action) group-data-[size=default]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=sm]/switch:data-selected:translate-x-[calc(100%-var(--ui-border-rule))] group-data-[size=default]/switch:not-data-selected:translate-x-0 group-data-[size=sm]/switch:not-data-selected:translate-x-0 pointer-events-none block ring-0 transition-transform duration-(--ui-duration-default) ease-(--default-transition-timing-function)\"\n          />\n          {children}\n        </>\n      ))}\n    </SwitchPrimitive>\n  )\n}\n\nexport { Switch }\n"
     },
     {
       "path": "components/table/table.tsx",
@@ -13986,7 +13986,7 @@
     },
     {
       "path": "components/tabs/tabs.tsx",
-      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  TabList as TabListPrimitive,\n  TabPanel as TabPanelPrimitive,\n  Tab as TabPrimitive,\n  Tabs as TabsPrimitive,\n} from \"react-aria-components\"\n\nfunction Tabs({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabsPrimitive>) {\n  return (\n    <TabsPrimitive\n      data-slot=\"tabs\"\n      className={cn(\n        \"gap-(--spacing-sm) group/tabs flex data-horizontal:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst tabsListVariants = cva(\n  \"rounded-(--radius-control) p-(--spacing-xs) group-data-horizontal/tabs:h-(--spacing-2xl,calc(var(--spacing)*8)) data-[variant=line]:rounded-none group/tabs-list inline-flex w-fit items-center justify-center text-(--color-ink-muted) group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-surface-sunken)\",\n        line: \"gap-(--spacing-xs) bg-transparent\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction TabsList({\n  className,\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<typeof TabListPrimitive> &\n  VariantProps<typeof tabsListVariants>) {\n  return (\n    <TabListPrimitive\n      data-slot=\"tabs-list\"\n      data-variant={variant}\n      className={cn(tabsListVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction TabsTrigger({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPrimitive>) {\n  return (\n    <TabPrimitive\n      data-slot=\"tabs-trigger\"\n      className={cn(\n        \"gap-(--spacing-sm) rounded-(--radius-control) border-(length:--ui-border-hairline,1px)  px-(--spacing-sm) py-[var(--spacing-xs)] text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[variant=default]/tabs-list:data-active:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-active:shadow-(--ui-elevation-none) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) has-data-[icon=inline-end]:pr-(--spacing-xs) has-data-[icon=inline-start]:pl-(--spacing-xs) group-data-[variant=default]/tabs-list:data-selected:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-selected:shadow-(--ui-elevation-none) relative inline-flex h-[calc(100%-var(--ui-border-hairline))] flex-1 cursor-default items-center justify-center whitespace-nowrap text-(--color-ink-primary)/60 transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-(--color-ink-primary) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) data-[disabled]:pointer-events-none data-[disabled]:opacity-(--ui-alpha-disabled,50%) dark:text-(--color-ink-muted) dark:hover:text-(--color-ink-primary) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n        \"group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-selected:bg-transparent dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent dark:group-data-[variant=line]/tabs-list:data-selected:bg-transparent\",\n        \"data-selected:bg-(--color-surface-base) data-selected:text-(--color-ink-primary) dark:data-selected:border-(--color-line-strong) dark:data-selected:bg-(--color-line-strong)/30 dark:data-selected:text-(--color-ink-primary)\",\n        \"after:absolute after:bg-(--color-ink-primary) after:opacity-0 after:transition-opacity after:duration-(--ui-duration-default) after:ease-(--default-transition-timing-function) group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[calc(var(--spacing-xs)*-1)] group-data-horizontal/tabs:after:h-[var(--spacing-xs)] group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-(--spacing-xs) group-data-vertical/tabs:after:w-[var(--spacing-xs)] group-data-[variant=line]/tabs-list:data-selected:after:opacity-100\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TabsContent({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPanelPrimitive>) {\n  return (\n    <TabPanelPrimitive\n      data-slot=\"tabs-content\"\n      className={cn(\"text-(length:--text-sm) flex-1 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }\n"
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  TabList as TabListPrimitive,\n  TabPanel as TabPanelPrimitive,\n  Tab as TabPrimitive,\n  Tabs as TabsPrimitive,\n} from \"react-aria-components\"\n\nfunction Tabs({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabsPrimitive>) {\n  return (\n    <TabsPrimitive\n      data-slot=\"tabs\"\n      className={cn(\n        \"gap-(--spacing-sm) group/tabs flex data-horizontal:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst tabsListVariants = cva(\n  \"rounded-(--radius-control) p-(--spacing-xs) group-data-horizontal/tabs:h-(--spacing-2xl,calc(var(--spacing)*8)) data-[variant=line]:rounded-none group/tabs-list inline-flex w-fit items-center justify-center text-(--color-ink-muted) group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-surface-sunken)\",\n        line: \"gap-(--spacing-xs) bg-transparent\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction TabsList({\n  className,\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<typeof TabListPrimitive> &\n  VariantProps<typeof tabsListVariants>) {\n  return (\n    <TabListPrimitive\n      data-slot=\"tabs-list\"\n      data-variant={variant}\n      className={cn(tabsListVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction TabsTrigger({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPrimitive>) {\n  return (\n    <TabPrimitive\n      data-slot=\"tabs-trigger\"\n      className={cn(\n        \"gap-(--spacing-sm) rounded-(--radius-control) border-(length:--ui-border-hairline,1px) border-transparent px-(--spacing-sm) py-[var(--spacing-xs)] text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[variant=default]/tabs-list:data-active:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-active:shadow-(--ui-elevation-none) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) has-data-[icon=inline-end]:pr-(--spacing-xs) has-data-[icon=inline-start]:pl-(--spacing-xs) group-data-[variant=default]/tabs-list:data-selected:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-selected:shadow-(--ui-elevation-none) relative inline-flex h-[calc(100%-var(--ui-border-hairline))] flex-1 cursor-default items-center justify-center whitespace-nowrap text-(--color-ink-primary)/60 transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-(--color-ink-primary) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) data-[disabled]:pointer-events-none data-[disabled]:opacity-(--ui-alpha-disabled,50%) dark:text-(--color-ink-muted) dark:hover:text-(--color-ink-primary) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n        \"group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-selected:bg-transparent dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent dark:group-data-[variant=line]/tabs-list:data-selected:bg-transparent\",\n        \"data-selected:bg-(--color-surface-base) data-selected:text-(--color-ink-primary) dark:data-selected:border-(--color-line-strong) dark:data-selected:bg-(--color-line-strong)/30 dark:data-selected:text-(--color-ink-primary)\",\n        \"after:absolute after:bg-(--color-ink-primary) after:opacity-0 after:transition-opacity after:duration-(--ui-duration-default) after:ease-(--default-transition-timing-function) group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[calc(var(--spacing-xs)*-1)] group-data-horizontal/tabs:after:h-[var(--spacing-xs)] group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-(--spacing-xs) group-data-vertical/tabs:after:w-[var(--spacing-xs)] group-data-[variant=line]/tabs-list:data-selected:after:opacity-100\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TabsContent({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPanelPrimitive>) {\n  return (\n    <TabPanelPrimitive\n      data-slot=\"tabs-content\"\n      className={cn(\"text-(length:--text-sm) flex-1 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }\n"
     },
     {
       "path": "components/toggle-button/toggle.tsx",

@@ -1028,6 +1028,9 @@ function rewriteSource(input: RewriteInput): RewriteResult {
       notes.push({ file, value, message: "Preserved authenticated selected line-tab border transparency beside its same-element independent token focus outline and selected indicator" });
       return value;
     }
+    // An unprefixed transparent border is the stock rest state that keeps the
+    // hairline invisible until a variant paints it; it suppresses no focus.
+    if (base === "border-transparent" && !prefix) return value;
     const suppression = /^(?:outline-(?:none|hidden)|ring-0|border-transparent)$/.test(base);
     if (base === "border-0" && !prefix && focusOwners.length) { notes.push({file,value,message:"Preserved zero border beside the same element token-bound focus outline"}); return value; }
     if (base === "outline-1" && prefix === "focus-visible:" && focusOwners.some(([owner]) => owner === prefix)) { notes.push({file,value,message:"Removed competing literal focus width beside the same element token-bound focus outline"}); return ""; }

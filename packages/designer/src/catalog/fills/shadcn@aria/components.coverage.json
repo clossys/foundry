@@ -132,11 +132,6 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/button.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/button.tsx",
           "message": "Restyled source: 6px to spacing.sm 8px",
           "value": "gap-1.5"
         },
@@ -453,11 +448,6 @@
       "issues": [],
       "item": "switch",
       "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
         {
           "file": "apps/v4/registry/bases/aria/ui/switch.tsx",
           "message": "Restyled source: Use actual existing switch-thumb role 14px instead of source 18.4px.",
@@ -1105,11 +1095,6 @@
       "notes": [
         {
           "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/badge.tsx",
           "message": "Restyled source: Restyle 20.0px to 24px using the existing spacing scale; variants and branch ownership remain exact.",
           "value": "h-5"
         },
@@ -1303,11 +1288,6 @@
         },
         {
           "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
-        {
-          "file": "apps/v4/registry/bases/aria/ui/tabs.tsx",
           "message": "Removed marker-only class absent from the pinned stylesheet",
           "value": "cn-tabs-list-variant-default"
         },
@@ -1466,11 +1446,6 @@
       "issues": [],
       "item": "accordion",
       "notes": [
-        {
-          "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
-          "message": "Removed suppression beside the same expanded literal's token-bound focus owner",
-          "value": "border-transparent"
-        },
         {
           "file": "apps/v4/registry/bases/aria/ui/accordion.tsx",
           "message": "Removed marker-only class absent from the pinned stylesheet",

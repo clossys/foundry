@@ -67,7 +67,7 @@
         },
         {
           "path": "components/badge/badge.tsx",
-          "sha256": "9d21d99eb4ca0b0572a881899f1fb5ebfcefabe9b1c36bb183ab32155c2875b8"
+          "sha256": "d65d075d5aeefc859a00b5e0b05e3e4576a74b46b166034cf41042d6ebc9b03f"
         },
         {
           "path": "notices/THIRD-PARTY.md",

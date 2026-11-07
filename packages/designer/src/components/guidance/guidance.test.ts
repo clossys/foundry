@@ -248,11 +248,8 @@ describe("shared component guidance", () => {
   it("distinguishes ineffective accepted combinations from type and runtime-invalid input", () => {
     const rules = (id: string) => guidance()[id].media.web.implementation.constraints;
     const find = (id: string, prop: string) => rules(id).find((rule: any) => rule.props[0] === prop);
-    expect(find("act.button", "ground").enforcement).toBe("ignored");
-    for (const variant of ["primary", "secondary", "ghost", "danger", "outline"]) expect(effective(find("act.button", "ground"), { variant })).toBe(false);
-    for (const variant of ["tonal", "quiet"]) expect(effective(find("act.button", "ground"), { variant })).toBe(true);
-    expect(effective(find("act.button", "trailingIcon"), { variant: "quiet" })).toBe(true);
-    expect(effective(find("act.button", "trailingIcon"), { variant: "tonal" })).toBe(false);
+    // The stock Button has no ground or trailing-icon option, so nothing is ineffective.
+    expect(rules("act.button")).toEqual([]);
     expect(effective(find("group.card", "ground"), { variant: "raised" })).toBe(false);
     for (const variant of ["plate", "outline"]) expect(effective(find("group.card", "ground"), { variant })).toBe(true);
     expect(effective(find("inform.meter", "direction"), {})).toBe(false);
@@ -345,10 +342,9 @@ const comparisonGolden: Record<string, {
   retainedCells: number;
 }> = {
   "act.button": {
-    columns: {"option": "variant", "values": ["primary", "secondary", "ghost", "danger", "outline", "tonal", "quiet"]},
-    rows: {"option": "size", "values": ["sm", "md", "lg"]},
-    maxCells: 21,
-    retainedCells: 21,
+    columns: {"option": "variant", "values": ["default", "outline", "secondary", "ghost", "destructive", "link"]},
+    maxCells: 6,
+    retainedCells: 6,
   },
   "act.icon-button": {
     columns: {"option": "shape", "values": ["circle", "square"]},
@@ -608,7 +604,7 @@ describe("finite component comparisons", () => {
 
   it("never excludes cells for applicability, derivation or data guidance", () => {
     const fixtures = [
-      ["act.button", { variant: "primary", ground: "base", trailingIcon: null }],
+      ["act.button", { variant: "default" }],
       ["act.link", { variant: "link" }],
       ["group.card", { variant: "raised", ground: "base" }],
       ["inform.meter", { direction: "higher-is-better" }],

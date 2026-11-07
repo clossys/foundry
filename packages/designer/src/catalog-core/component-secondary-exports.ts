@@ -31,11 +31,11 @@ export function assertComponentSecondaryExports(fill: ComponentCandidate): void 
  */
 const selectedFunctionSources: Readonly<Record<string, { sha256: string; functions: readonly string[] }>> = {
   "components/button/button.tsx": {
-    sha256: "81c519436afe48770064f8b942d58195dcd0133ffbcd18743b60191ff17cfd21",
+    sha256: "1f436b63a385a29a039619a074e842d93473e8b4ff6ddee9457b3272be55bcaa",
     functions: ["Button", "LinkButton"],
   },
   "components/tabs/tabs.tsx": {
-    sha256: "463fa0a0dfed07c77607a747e163fe4cdf7eccf1d7abf4d1fe34bb992717e5c2",
+    sha256: "85f0efdfbdbd40636674c2e3dba1681d7f26bd5f2706cdde126aa70055902455",
     functions: ["Tabs", "TabsList", "TabsTrigger", "TabsContent"],
   },
   "components/sidebar/sidebar.tsx": {
