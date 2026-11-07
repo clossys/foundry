@@ -394,7 +394,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Files
-  onMain("FileTrigger", ["src/components/FileTrigger.tsx"], {
+  onMain("FileTrigger", ["src/components/preview-runtime/components/file-trigger/file-trigger.tsx"], {
     id: "enter.file-trigger",
     label: "File trigger",
     racBase: rac("FileTrigger"),

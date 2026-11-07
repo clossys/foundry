@@ -378,19 +378,6 @@
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
-      "slot": "components.file-trigger",
-      "status": "candidate",
-      "supported": [
-        "accept",
-        "directory",
-        "multiple"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
       "slot": "components.form",
       "status": "candidate",
       "supported": [

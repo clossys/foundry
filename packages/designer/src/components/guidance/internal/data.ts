@@ -1122,7 +1122,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ],
   "constraints": []
-}, "src/components/FileTrigger.tsx"),
+}, "src/components/preview-runtime/components/file-trigger/file-trigger.tsx"),
   "enter.field": entry(
 {
   "purpose": "Associate a label and supporting messages with a custom control.",
@@ -3481,7 +3481,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
   },
   "enter.file-trigger": {
     "exportName": "FileTrigger",
-    "source": "src/components/FileTrigger.tsx",
+    "source": "src/components/preview-runtime/components/file-trigger/file-trigger.tsx",
     "options": [
       {
         "prop": "allowsMultiple",
@@ -3494,8 +3494,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "No local initializer; any inherited default belongs to the installed peer."
         },
         "forwarding": {
-          "source": "src/components/FileTrigger.tsx",
-          "evidence": "<AriaFileTrigger {...rest}>"
+          "source": "src/components/preview-runtime/components/file-trigger/file-trigger.tsx",
+          "evidence": "<AriaFileTrigger {...props} ref={ref}>"
         }
       },
       {
@@ -3509,8 +3509,8 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "reason": "Omitted by default; the package supplies no selected value."
         },
         "forwarding": {
-          "source": "src/components/FileTrigger.tsx",
-          "evidence": "<AriaFileTrigger {...rest}>"
+          "source": "src/components/preview-runtime/components/file-trigger/file-trigger.tsx",
+          "evidence": "<AriaFileTrigger {...props} ref={ref}>"
         }
       }
     ],

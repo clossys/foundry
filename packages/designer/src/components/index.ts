@@ -159,8 +159,8 @@ export type { ComboBoxProps, ComboBoxOption } from "./ComboBox.js";
 export { SearchField } from "./SearchField.js";
 export type { SearchFieldProps } from "./SearchField.js";
 
-export { FileTrigger } from "./FileTrigger.js";
-export type { FileTriggerProps } from "./FileTrigger.js";
+export { FileTrigger } from "./preview-runtime/components/file-trigger/file-trigger.js";
+export type { FileTriggerProps } from "./preview-runtime/components/file-trigger/file-trigger.js";
 
 export { Disclosure } from "./Disclosure.js";
 export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
