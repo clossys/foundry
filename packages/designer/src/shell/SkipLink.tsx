@@ -1,4 +1,4 @@
-import type { ComponentProps, ComponentPropsWithRef, MouseEvent, ReactNode } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
 import { SKIP_LINK_CLASSES } from "../components/Link.styles.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
@@ -66,24 +66,27 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
     return document.activeElement === target;
   };
 
-  // Runs on the anchor's own native click. The link's press handling calls an
-  // `onClick` prop with a synthetic copy on keyboard activation, after the
-  // native Enter click has already followed the `href`, so cancelling that
-  // copy would not keep the route: the handler sits on the rendered anchor.
-  const onClick = (event: MouseEvent<HTMLAnchorElement>) => {
+  const onClick: NonNullable<ComponentProps<typeof Link>["onClick"]> = event => {
     if (event.defaultPrevented) return;
     if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (jumpToTarget()) event.preventDefault();
   };
 
-  // A link activates on Enter natively (as a click); Space is added here so
-  // the control also answers to it, as a button would. Space does not follow
-  // an `href` on its own, so when focus cannot move to the target the handler
+  // A link activates on Enter natively (as a click). The link's press handling
+  // hands `onClick` a synthetic copy of that click only on key release, after
+  // the native click has already followed the `href`, so Enter is cancelled
+  // here, at the key press, once focus has moved. Space is added so the
+  // control also answers to it, as a button would. Space does not follow an
+  // `href` on its own, so when focus cannot move to the target the handler
   // clicks the link, which runs the `href` fragment fallback exactly as Enter
   // does, and also keeps Space from scrolling the page.
   const onKeyDown: NonNullable<ComponentProps<typeof Link>["onKeyDown"]> = event => {
-    if (event.defaultPrevented || event.key !== " ") return;
+    if (event.defaultPrevented || (event.key !== " " && event.key !== "Enter")) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (event.key === "Enter") {
+      if (jumpToTarget()) event.preventDefault();
+      return;
+    }
     event.preventDefault();
     if (!jumpToTarget() && event.currentTarget instanceof HTMLElement) event.currentTarget.click();
   };
@@ -91,11 +94,8 @@ export function SkipLink({ targetId, children, className }: SkipLinkProps) {
   return (
     <Link
       href={`#${targetId}`}
+      onClick={onClick}
       onKeyDown={onKeyDown}
-      render={domProps => {
-        const anchor = domProps as ComponentPropsWithRef<"a">;
-        return <a {...anchor} onClick={event => { onClick(event); anchor.onClick?.(event); }} />;
-      }}
       className={cx(SKIP_LINK_CLASSES, className)}
     >
       {children}
