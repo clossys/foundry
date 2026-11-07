@@ -10,7 +10,7 @@ const css = ':root {\n  --color-action: #123456;\n}\n';
 function fixture(value = css, source = 'consumer') {
   const hash = hashCss(value);
   const theme = { source, css: value, hash };
-  return { config: { theme }, applied: { count: 1, css: value, enabled: true, unbrandedNotice: source === 'foundry', computed: [{ property: '--color-action', expected: '#123456', actual: '#123456' }] } };
+  return { config: { theme }, applied: { count: 1, enabled: true, unbrandedNotice: source === 'foundry', computed: [{ property: '--color-action', expected: '#123456', actual: '#123456' }] } };
 }
 
 // The brand arrives as Studio's projected consumer-precedence document stylesheet.
@@ -32,9 +32,14 @@ test('browser accepts two different consumer brands', async t => {
   assert.notEqual(...result.hashes);
 });
 
-test('browser rejects a projected stylesheet that serves other bytes than the consumer config', async t => {
+test('browser rejects a compiled theme the live root does not apply', async t => {
   const [first, second] = await Promise.all([server(t, fixture()), server(t, fixture(), '/* stock component theme */')]);
-  await assert.rejects(checkThemeParity([first, second]), /applied Studio CSS differs/);
+  await assert.rejects(checkThemeParity([first, second]), /live computed theme properties differ/);
+});
+
+test('browser compares token values, not their spelling', async t => {
+  const origin = await server(t, fixture(), css.replace('#123456', 'rgb(18, 52, 86)'));
+  assert.equal((await checkThemeParity([origin, origin])).studios, 2);
 });
 
 test('browser rejects a live token override despite matching API and stylesheet bytes', async t => {
@@ -44,7 +49,6 @@ test('browser rejects a live token override despite matching API and stylesheet 
 
 test('a different applied token fails even when the config claims consumer equality', () => {
   const original = fixture();
-  assert.throws(() => inspectTheme(original.config, { ...original.applied, css: css.replace('#123456', '#654321') }, 'Studio'), /applied Studio CSS differs/);
   assert.throws(() => inspectTheme(original.config, { ...original.applied, computed: [{ property: '--color-action', expected: '#123456', actual: '#654321' }] }, 'Studio'), /live computed theme properties differ/);
 });
 

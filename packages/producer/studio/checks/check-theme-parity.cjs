@@ -12,16 +12,17 @@ function hashCss(css) {
   return `sha256:${createHash('sha256').update(css, 'utf8').digest('hex')}`;
 }
 
-// The brand stylesheet is Studio's projected consumer-precedence document stylesheet (studio-map
-// `document.stylesheets`); the removed `#studio-brand-theme` element and root hash attributes are gone.
+// Studio's projected consumer-precedence document stylesheet (studio-map `document.stylesheets`). The
+// removed `#studio-brand-theme` element and root hash attributes carried the compiled theme bytes; the
+// projection carries the consumer's authored Designer globals instead, so the proof that the compiled
+// theme is applied is the live computed value of every property it declares.
 const BRAND_LINK = 'link[rel="stylesheet"][data-precedence="consumer"]';
 
 // Serialized into the browser; inspect the applied stylesheet after load.
-async function appliedTheme({ expectedCss, selector }) {
+function appliedTheme({ expectedCss, selector }) {
   const root = document.documentElement;
   const links = [...document.querySelectorAll(selector)];
   const link = links[0];
-  const served = link ? await fetch(link.href, { cache: 'no-store' }) : undefined;
   const reference = document.createElement('iframe');
   reference.hidden = true;
   document.body.append(reference);
@@ -34,15 +35,23 @@ async function appliedTheme({ expectedCss, selector }) {
     doc.head.append(expectedStyle);
     const expected = reference.contentWindow.getComputedStyle(doc.documentElement);
     const actual = getComputedStyle(root);
+    // Compare token values, not their spelling: a color or length resolves through the same probe on both sides.
+    const probe = doc.createElement('div');
+    doc.body.append(probe);
+    const resolve = value => {
+      const property = ['color', 'width'].find(name => CSS.supports(name, value));
+      if (!property) return value.replace(/\s+/g, ' ');
+      probe.style.setProperty(property, value);
+      return reference.contentWindow.getComputedStyle(probe).getPropertyValue(property);
+    };
     const properties = [...new Set(expectedCss.match(/--[a-zA-Z0-9-]+(?=\s*:)/g) ?? [])];
     computed = properties.flatMap(property => {
       const value = expected.getPropertyValue(property).trim();
-      return value ? [{ property, expected: value, actual: actual.getPropertyValue(property).trim() }] : [];
+      return value ? [{ property, expected: resolve(value), actual: resolve(actual.getPropertyValue(property).trim()) }] : [];
     });
   } finally { reference.remove(); }
   return {
     count: links.length,
-    css: served?.ok ? await served.text() : undefined,
     enabled: !!link?.sheet && !link.sheet.disabled && (!link.media || matchMedia(link.media).matches),
     computed,
     unbrandedNotice: [...document.querySelectorAll('[data-frame-notices]')].some(element => element.getClientRects().length > 0 && /Unbranded:/i.test(element.textContent)),
@@ -57,7 +66,6 @@ function inspectTheme(config, applied, label) {
   assert.equal(theme.hash, hash, `${label}: config theme hash does not match its CSS`);
   assert.equal(applied.count, 1, `${label}: expected one applied Studio brand stylesheet`);
   assert.ok(applied.enabled, `${label}: Studio brand stylesheet is disabled or missing`);
-  assert.equal(hashCss(applied.css), hash, `${label}: applied Studio CSS differs from its consumer config`);
   assert.ok(applied.computed?.length > 0, `${label}: no live computed theme properties checked`);
   assert.deepEqual(applied.computed.filter(row => row.actual !== row.expected), [], `${label}: live computed theme properties differ from the consumer CSS`);
   if (theme.source === 'foundry') assert.ok(applied.unbrandedNotice, `${label}: missing visible unbranded notice`);
