@@ -2,10 +2,23 @@
 import { describe, expect, it } from "vitest";
 import { surfaceContractDiff, surfaceEntryOf, surfacePackageDescriptorHash, resolveSurfacePackageDescriptor } from "./surface-library.js";
 import { foundrySurfaceCatalog } from "../library-cli/surface-catalog.js";
+import { importFoundrySections } from "../importers/foundry-sections.js";
+import { importFoundryFrames } from "../importers/foundry-frames.js";
 import { loadFoundrySurfaceHistory } from "./index.js";
 import type { SurfacePackageEntry, SurfacePackageFrameEntry, SurfacePackageOrigin, SurfacePackageSectionEntry } from "./surface-types.js";
 import type { CompositeCatalogData } from "./types.js";
 import type { FrameSlot } from "./types.js";
+
+/**
+ * A mutable copy of the Foundry surface catalog. Specimen transforms carry their run functions, which are code and
+ * not cloneable data, so the copy keeps the catalog's data and drops the transforms these descriptor checks never read.
+ */
+function surfaceCatalogCopy() {
+  const { transforms: _transforms, ...data } = foundrySurfaceCatalog();
+  return { ...structuredClone(data), transforms: [] };
+}
+/** Fills that pin a package export: the descriptors package history retains (specimen sources are not packages). */
+const isPackageFill = (doc: ReturnType<typeof surfaceCatalogCopy>["fills"][number]) => (surfaceEntryOf(doc) as SurfacePackageEntry).impl.kind === "package";
 
 const frame: SurfacePackageFrameEntry = { slot: "frames.reader", members: ["mode.old", "mode.keep"], propMap: { "mode.old": "old", "mode.keep": "keep" }, slots: { main: "children", old: "old" }, statePorts: { old: "old", keep: "keep" }, impl: { kind: "package", module: "@example/kit/frames", export: "Reader" } };
 describe("surface refresh contract diff and descriptor retention", () => {
@@ -42,19 +55,36 @@ describe("surface refresh contract diff and descriptor retention", () => {
     expect(changed.breaking).toBe(false);
     expect(surfaceContractDiff(frame, frame)).toEqual({ fromHash: surfacePackageDescriptorHash(frame), toHash: surfacePackageDescriptorHash(frame), added: { members: [], slots: [], statePorts: [] }, removed: { members: [], slots: [], statePorts: [] }, breaking: false });
   });
-  it("retains all 62 current upstream descriptors and the exact original app-shell after candidates advance", () => {
-    const surfaces = structuredClone(foundrySurfaceCatalog());
-    const current = [...surfaces.fills];
-    surfaces.fills = [];
-    const catalog = { surfaces } as CompositeCatalogData;
-    expect(current).toHaveLength(62);
-    for (const doc of current) {
+  it("resolves every current package descriptor, every registered historical one after candidates advance, and the exact original app-shell", () => {
+    const surfaces = surfaceCatalogCopy();
+    const current = surfaces.fills.filter(isPackageFill);
+    // Every importer descriptor plus the Publisher's pinned sectioned document; no package fill goes unchecked.
+    expect(current).toHaveLength(importFoundrySections().fills.length + importFoundryFrames().fills.length + 1);
+    const identityOf = (doc: (typeof current)[number]) => {
       const entry = surfaceEntryOf(doc) as SurfacePackageEntry, meta = doc.$extensions["com.clossys.fill"];
-      const identity = { source: meta.source, fill: meta.id, pin: meta.pin!, license: meta.license, descriptorHash: surfacePackageDescriptorHash(entry) };
+      return { entry, identity: { source: meta.source, fill: meta.id, pin: meta.pin!, license: meta.license, descriptorHash: surfacePackageDescriptorHash(entry) } };
+    };
+    const live = { surfaces } as unknown as CompositeCatalogData;
+    for (const doc of current) {
+      const { entry, identity } = identityOf(doc);
+      const resolved = resolveSurfacePackageDescriptor(live, entry.slot, identity);
+      expect(resolved.document).toEqual(doc);
+      expect(resolved.contract.id).toBe(entry.slot);
+    }
+    // Once candidates advance, only registered history resolves; each registered descriptor still does, by full identity.
+    // (Unpublished current descriptors under an unchanged pin are not history: the pin names published bytes.)
+    surfaces.fills = [];
+    const catalog = { surfaces } as unknown as CompositeCatalogData;
+    const registered = Object.values(loadFoundrySurfaceHistory()).flat();
+    expect(registered.length).toBeGreaterThan(0);
+    for (const row of registered) {
+      const { entry, identity } = identityOf(row.document as unknown as (typeof current)[number]);
       const archived = resolveSurfacePackageDescriptor(catalog, entry.slot, identity);
-      expect(archived.document).toEqual(doc);
+      expect(archived.document).toEqual(row.document);
       expect(archived.contract.id).toBe(entry.slot);
     }
+    const advanced = current.find(doc => !registered.some(row => surfacePackageDescriptorHash(surfaceEntryOf(row.document) as SurfacePackageEntry) === identityOf(doc).identity.descriptorHash));
+    if (advanced) { const { entry, identity } = identityOf(advanced); expect(() => resolveSurfacePackageDescriptor(catalog, entry.slot, identity)).toThrow(/S2 unique registered historical upstream/); }
     const identity: Pick<SurfacePackageOrigin, "source" | "fill" | "pin" | "license" | "descriptorHash"> = { source: "foundry", fill: "foundry/frames.app-shell", pin: { package: "@clossys/designer", version: "0.12.0", export: "./frames#AppFrame" }, license: "MIT", descriptorHash: "sha256:b740aea8605c3bbbdb3f1c817031a0693965920b2efae0573c312f8c1043a4ed" };
     const legacy = resolveSurfacePackageDescriptor(catalog, "frames.app-shell", identity);
     expect(legacy.document.frames!["app-shell"]!.statePorts).not.toHaveProperty("main-state");
@@ -66,7 +96,7 @@ describe("surface refresh contract diff and descriptor retention", () => {
     const digest = "sha256:b740aea8605c3bbbdb3f1c817031a0693965920b2efae0573c312f8c1043a4ed";
     expect(history).toEqual(again); expect(history).not.toBe(again);
     expect(() => { history[digest]![0]!.contract.contract.members.names = ["poison"]; }).toThrow(TypeError);
-    const surfaces = structuredClone(foundrySurfaceCatalog()), catalog = { surfaces } as CompositeCatalogData;
+    const surfaces = surfaceCatalogCopy(), catalog = { surfaces } as unknown as CompositeCatalogData;
     const current = surfaces.fills.find(doc => doc.$extensions["com.clossys.fill"].slot === "frames.app-shell")!;
     const old = history[digest]![0]!.document;
     for (const document of [current, old]) {

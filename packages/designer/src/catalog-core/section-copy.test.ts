@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { isCopyField, type CopyField } from "./section-copy.js";
 import { loadSectionRegistry, sectionCopyCatalog, sectionRegistryFindings } from "./sections-contract.js";
@@ -12,7 +14,10 @@ const findings = (patch: (contract: any) => void, id?: string) => sectionRegistr
 describe("registered section copy", () => {
   it("lists every registered section and its unique mechanically paired passage through the public catalog API", () => {
     const registry = loadSectionRegistry(), rows = sectionCopyCatalog(registry);
-    expect(rows).toHaveLength(51);
+    // The count is the registered section slot data, not a literal.
+    const slotData = JSON.parse(readFileSync(resolve(import.meta.dirname, "../catalog/slots/sections.json"), "utf8")) as readonly { id: string }[];
+    expect(rows).toHaveLength(slotData.length);
+    expect(rows.map(row => row.id).sort()).toEqual(slotData.map(slot => slot.id).sort());
     expect(registry.aliases).toContainEqual({ id: "sections.error-message", target: "sections.error-state" });
     expect(rows.some(row => row.id === "sections.error-message")).toBe(false);
     expect(rows.find(row => row.id === "sections.error-state")?.passageSchema).toBe("passages.error-state");
@@ -28,7 +33,11 @@ describe("registered section copy", () => {
         expect(field.dir).toBe("auto");
       }
     }
-    expect(rows.filter(row => !row.fields.length).map(row => row.id).sort()).toEqual(["sections.band", "sections.logo-mark"]);
+    // Copy-less sections: a bare band, a media-only mark, and a document whose words are its own records.
+    expect(rows.filter(row => !row.fields.length).map(row => row.id).sort()).toEqual(["sections.band", "sections.logo-mark", "sections.sectioned-document"]);
+    for (const id of ["sections.band", "sections.logo-mark", "sections.sectioned-document"]) {
+      expect(registry.slots.find(slot => slot.id === id)!.contract.slots.some(slot => slot.type === "copy" || slot.type === "region"), id).toBe(false);
+    }
     expect(rows.find(row => row.id === "sections.logo-hero")!.fields.map(field => field.key)).toEqual(["name"]);
     (rows[0]!.fields as unknown[]).pop();
     expect(sectionCopyCatalog()[0]!.fields).toEqual(registry.slots[0]!.contract.copy.fields);

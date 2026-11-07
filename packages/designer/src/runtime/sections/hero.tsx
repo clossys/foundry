@@ -19,7 +19,7 @@ const BarChart = componentLeaf<typeof BarChartComponent>("components.chart-bar")
 const LineChart = componentLeaf<typeof LineChartComponent>("components.chart-line");
 
 export const heroInputs: SectionRendererInputs = {
-  slots: ["actions", "backdrop", "header", "media"],
+  slots: ["actions", "backdrop", "header", "header.description", "header.eyebrow", "media"],
   members: ["layout.editorial", "layout.split", "layout.full-bleed", "ground.base", "ground.inverse", "backdrop.scrim.light", "backdrop.scrim.strong", "size.display", "size.compact", "size.default"],
 };
 
@@ -66,10 +66,14 @@ export function renderHeroSection(input: SectionRenderInput): ReactNode {
         {actions.secondary === undefined ? null : action(actions.secondary, "secondary", "outline")}
       </>}
       media={renderedMedia}
-      backdrop={backdrop as HeroBackdrop | undefined}
-      backdropValues={input.profile.values}
-      backdropMode={input.cell.theme === "dark" ? "dark" : "light"}
-      backdropScrim={memberValue(content, "backdrop.scrim", ["light", "strong"] as const)}
+      {...(backdrop === undefined ? {} : {
+        // Backdrop props exist only with a bound backdrop, so a plain hero stays a
+        // frame-admissible element (SiteFrame's overlay guard refuses unknown props).
+        backdrop: backdrop as HeroBackdrop,
+        backdropValues: input.profile.values,
+        backdropMode: input.cell.theme === "dark" ? "dark" as const : "light" as const,
+        backdropScrim: memberValue(content, "backdrop.scrim", ["light", "strong"] as const),
+      })}
       ground={memberValue(content, "ground", ["base", "inverse"] as const)}
       composition={memberValue(content, "layout", ["editorial", "split", "full-bleed"] as const)}
       size={memberValue(content, "size", ["display", "compact", "default"] as const)}

@@ -12,7 +12,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render as renderBare } from "@testing-library/react";
 import ts from "typescript";
 import { checkWiring } from "../catalog-core/wiring.js";
-import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadComponentCompositionRules, planSurfaceDefaults } from "../catalog-core/index.js";
+import { importFoundryFrames, importFoundrySections, loadBuildCatalog, loadComponentCompositionRules, planSurfaceDefaults, SPECIMEN_SECTION_EXPORTS } from "../catalog-core/index.js";
+import { generatedPublisherSectionFiles } from "../importers/publisher-sections.js";
 import type { CompositeResolved, ResolvedComponent, SurfaceDefaultCandidateDocument, SurfaceDefaultsInput } from "../catalog-core/index.js";
 import { completedCatalogLibrary } from "../catalog-core/__fixtures__/completed-catalog-library.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
@@ -171,6 +172,18 @@ function unfed(value: unknown, path: string, index = datasetIndex()): string[] {
   return index.primitives.has(value) ? [] : [`${path}: inline ${JSON.stringify(value)}`];
 }
 
+/**
+ * Sections and Frames leaves another host previews, derived from their importers rather than listed: the Studio's
+ * intrinsic specimen sections (specimen-registry.test.tsx renders them), Publisher-package section exports (the
+ * Publisher hosts them) and frames.document, which waits for an isolated document renderer (runtime/preview.tsx).
+ * Every other leaf on every layer fills here.
+ */
+const ELSEWHERE_OWNED: ReadonlySet<string> = new Set([
+  ...SPECIMEN_SECTION_EXPORTS.map(row => row.id),
+  ...Object.keys(generatedPublisherSectionFiles()).map(file => file.replace(/\.json$/, "")),
+  "frames.document",
+]);
+
 function realPlan() {
   const slots = loadBuildCatalog().slots.filter(slot => slot.layer === "sections" || slot.layer === "frames") as SurfaceDefaultsInput["catalog"]["slots"];
   const fills: SurfaceDefaultCandidateDocument[] = [...importFoundrySections().fills, ...importFoundryFrames().fills];
@@ -207,8 +220,10 @@ describe("one dataset feeds every layer", () => {
     const { plan, fills } = realPlan();
     const result = planSurfacePreviews({ plan, fills });
     const previews = Object.values(result.previews);
-    expect(previews.filter(preview => preview.slot.startsWith("sections."))).toHaveLength(45);
-    expect(previews.filter(preview => preview.slot.startsWith("frames."))).toHaveLength(8);
+    // Derived from the planned Foundry fills: every section previews; every frame but the elsewhere-owned ones does.
+    const filled = (layer: string) => fills.map(doc => doc.$extensions["com.clossys.fill"].slot).filter(slot => slot.startsWith(`${layer}.`) && !ELSEWHERE_OWNED.has(slot)).sort();
+    expect(previews.filter(preview => preview.slot.startsWith("sections.")).map(preview => preview.slot).sort()).toEqual(filled("sections"));
+    expect(previews.filter(preview => preview.slot.startsWith("frames.")).map(preview => preview.slot).sort()).toEqual(filled("frames"));
     const strings = datasetStrings({ sections: specimenDataset.sections, frames: specimenDataset.frames });
     const unfedSlots = previews.filter(preview => {
       const html = renderToStaticMarkup(createElement("div", null, preview.render()));
@@ -311,11 +326,16 @@ describe("specimen role and reason-coded overrides", () => {
   });
 });
 
+
 /**
- * Leaves of the Frames layer that have no runtime renderer yet. They belong to F-SF-RUNTIME (lane L9), which gives
- * them one; until then they are listed here by name rather than stubbed. Every other leaf on every layer fills.
+ * Stand-in parts for a vendored compound's own module: each named part passes its children through, so a compound
+ * sample (Command, Sheet, Sidebar, ...) yields its dataset props and children here without compiling the source.
  */
-const FRAMES_RUNTIME_OWNED: readonly string[] = ["frames.site-shell"];
+const passThrough = ({ children }: { children?: unknown }) => children;
+const SOURCE_PARTS: Readonly<Record<string, unknown>> = new Proxy({}, {
+  getOwnPropertyDescriptor: (_target, name) => typeof name === "string" ? { configurable: true, enumerable: true, writable: false, value: passThrough } : undefined,
+  get: (_target, name) => typeof name === "string" ? passThrough : undefined,
+});
 
 /** A registered token or asset leaf fills when its Studio cell draws a real specimen: never only its value as text, never "unsupported". */
 const SPECIMEN = "[data-token-specimen],[data-studio-color-swatch],[data-preview-kind='swatch'],[data-preview-kind='font'],[data-preview-kind='ruler'],[data-token-preview-motion],[data-asset-specimen]";
@@ -364,13 +384,15 @@ describe("every leaf on all five layers renders its registered fill from the dat
     const componentSlots = slotsOf("components");
     totals.components = componentSlots.length;
     for (const slot of componentSlots) {
-      const fill = fills.find(candidate => candidate.slot === slot && candidate.source === "foundry" && candidate.impl.kind === "package");
+      // The registered package fill: Foundry's own, else the one package fill another source registers for the leaf.
+      const packaged = fills.filter(candidate => candidate.slot === slot && candidate.impl.kind === "package");
+      const fill = packaged.find(candidate => candidate.source === "foundry") ?? (packaged.length === 1 ? packaged[0] : undefined);
       if (!fill) {
         // A leaf Foundry fills by composition, or only a vendored source fills, draws its source entry's designer sample.
         // component-specimens-adopted.test.tsx compiles that source and renders it; here the sample must come from the dataset.
         const source = fills.find(candidate => candidate.slot === slot && candidate.impl.kind === "source");
         if (!source || source.impl.kind !== "source") { gap("components", slot, "no registered fill"); continue; }
-        const sample = componentSpecimenSample(`${source.impl.entry}#${source.impl.export}`, undefined, {});
+        const sample = componentSpecimenSample(`${source.impl.entry}#${source.impl.export}`, undefined, SOURCE_PARTS);
         if (!sample || !drawsDataset({ props: sample.props, children: sample.children })) gap("components", slot, `source sample ${source.impl.entry} draws no dataset content`);
         continue;
       }
@@ -399,10 +421,13 @@ describe("every leaf on all five layers renders its registered fill from the dat
 
     const counts = Object.fromEntries(Object.entries(totals).map(([layer, total]) => [layer, `${total - Object.keys(gaps[layer] ?? {}).length}/${total}`]));
     console.info(`specimen leaves filled per layer: ${JSON.stringify(counts)}`);
-    const runtimeOwned = Object.keys(gaps.frames ?? {}).filter(slot => FRAMES_RUNTIME_OWNED.includes(slot));
-    for (const slot of runtimeOwned) delete gaps.frames![slot];
-    expect(totals).toEqual({ themes: 42, assets: 48, components: 59, sections: 45, frames: 9 });
+    const elsewhere = (["sections", "frames"] as const).flatMap(layer => Object.keys(gaps[layer] ?? {}).filter(slot => ELSEWHERE_OWNED.has(slot)));
+    for (const slot of elsewhere) delete gaps[slot.split(".")[0]!]![slot];
+    // Every catalog layer is walked, each from its own slot rows: no layer or leaf count is a literal.
+    expect(Object.keys(totals).sort()).toEqual([...new Set(build.slots.map(slot => slot.layer))].sort());
+    for (const [layer, total] of Object.entries(totals)) expect(total, layer).toBe(slotsOf(layer).length);
     expect(Object.fromEntries(Object.entries(gaps).filter(([, rows]) => Object.keys(rows).length > 0))).toEqual({});
-    expect(runtimeOwned).toEqual(FRAMES_RUNTIME_OWNED);
+    // The elsewhere-owned leaves are exactly the ones not previewed here: none is silently previewed or dropped.
+    expect(elsewhere.sort()).toEqual([...ELSEWHERE_OWNED].filter(slot => build.slots.some(row => row.id === slot)).sort());
   }, 240_000);
 });

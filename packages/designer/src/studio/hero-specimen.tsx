@@ -5,7 +5,7 @@ import type { LibraryData, Resolved } from "../catalog-core/types.js";
 import type { ReactNode } from "react";
 import type { StillBackdropArt } from "../backdrop/consumer-art.js";
 import { runtimeHash, type RuntimeContent, type RuntimeJson, type RuntimeRenderInput } from "../catalog-core/runtime-ports.js";
-import type { SpecimenDataset } from "./specimen-dataset.js";
+import { specimenDataset, type SpecimenDataset } from "./specimen-dataset.js";
 import type { CompositeResolved } from "../catalog-core/types.js";
 import { renderHeroSection } from "../runtime/sections/hero.js";
 import { plainJson } from "../runtime/sections/dataset-json.js";
@@ -31,13 +31,8 @@ export function heroCopyFromDataset(dataset: SpecimenDataset): HeroCopy {
   };
 }
 
-/** Inline geometry is the complete fixture; rendering it needs no remote asset. */
-export const HERO_SPECIMEN_BACKDROP = {
-  slot: "backdrop", purpose: "decorative", alt: "", width: 1600, height: 900,
-  aspect: "16:9", fit: "cover", loading: "lazy", bytes: 128,
-  backgroundToken: "--color-surface-base",
-  source: { format: "svg", paths: [{ d: "M0 0H1600V900H0Z", fillToken: "--color-action" }] },
-} as const satisfies StillBackdropArt;
+/** The shared dataset's still backdrop art; its inline geometry is the complete fixture. */
+export const HERO_SPECIMEN_BACKDROP = specimenDataset.assets.heroBackdrop satisfies StillBackdropArt;
 let graphicValues: Resolved | undefined;
 export function heroGraphicSpecimenValues(): Resolved {
   if (graphicValues) return graphicValues;

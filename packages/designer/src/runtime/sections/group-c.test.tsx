@@ -12,6 +12,7 @@ import { runtimeHash, SECTION_HEADER_CONTENT_KEY, type RuntimeContent, type Runt
 import type { CompositeResolved } from "../../catalog-core/types.js";
 import { checkWiring } from "../../catalog-core/wiring.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
+import defaultProfile from "../../studio/default-component-preview-profile.json" with { type: "json" };
 import { ANATOMY_CONTENT_KEY } from "./group-c-content.js";
 import { GROUP_C_LEAVES, sectionDatasetC, sectionInputsC, sectionRenderersC, type GroupCLeaf } from "./group-c.js";
 import { hostedRender, hostedMarkup } from "../../frames/__fixtures__/shell-copy.js";
@@ -106,22 +107,50 @@ const page = dsAttrs("pages", "pages.preview", "foundry/pages.preview");
 const renderLeaf = (leaf: GroupCLeaf, input: RuntimeRenderInput<ReactNode>) => sectionRenderersC[`sections.${leaf}`]!(input);
 const datasetInput = (leaf: GroupCLeaf, members: readonly string[] = []) => inputFor(leaf, sectionDatasetC[leaf](specimenDataset), members);
 
+/** The component fills the default preview profile selects: the ambient selection `componentLeaf` facades resolve against (WL7). */
+const PROFILE_SELECTION: Readonly<Record<string, string>> = Object.fromEntries(Object.entries(defaultProfile.components).flatMap(([leaf, row]) => "fill" in row.origin && typeof row.origin.fill === "string" ? [[leaf, row.origin.fill]] : []));
+
 function provenanceOf(leaf: GroupCLeaf, node: ReactNode) {
   const html = renderToStaticMarkup(h("div", page, node));
   const scan = scanProvenance({
     html,
     route: { id: "preview", binding: { frame: { leaf: "frames.preview" }, frameSlots: {}, sections: { body: [{ leaf: `sections.${leaf}` }] } } },
-    selection: { [`sections.${leaf}`]: `foundry/sections.${leaf}` },
+    selection: { ...PROFILE_SELECTION, [`sections.${leaf}`]: `foundry/sections.${leaf}` },
   });
   return { html, findings: scan.findings };
 }
 
+/**
+ * A `componentLeaf` facade binds a local to the selected fill of one `components.*` leaf (and optional part).
+ * The harness rewrites each facade to an import from a `facade:<leaf>` specifier so checkWiring sees the binding:
+ * a leaf the contract allows joins the assembly, any other leaf is reported outside it.
+ */
+const FACADE = /^const (\w+) = componentLeaf<.*>\("(components\.[\w-]+)"(?:, "\w+")?\);$/gm;
+/** Type-position references (`import type`, `typeof import(...)`) render nothing; each must still name the block or an allowed component's module. */
+const TYPE_REFERENCE = /^(?:import type [^;]+ from "([^"]+)";|type \w+ = typeof import\("([^"]+)"\);)$/gm;
+
 function wiringOf(leaf: GroupCLeaf, source = read(`./${leaf}.tsx`)) {
-  const allowed = allowedModules(leaf);
-  const rows = importsOf(source).filter(row => !row.typeOnly && VISUAL_MODULE.test(row.module));
-  const assembly = rows.filter(row => allowed.has(row.module)).flatMap(row => row.symbols.map(symbol => ({ module: row.module, export: symbol })));
-  const result = checkWiring({ sources: [], routes: { modules: [{ path: `src/runtime/sections/${leaf}.tsx`, content: source }], assembly } });
-  return { result, outside: rows.filter(row => !allowed.has(row.module)).map(row => row.module) };
+  const allowed = allowedModules(leaf), composes = new Set(contracts.get(`sections.${leaf}`)!.allowedComposes);
+  const typeModuleAllowed = (module: string) => allowed.has(module)
+    || [...composes].some(id => module.startsWith(`../../components/preview-runtime/components/${id.replace(/^components\./, "")}/`));
+  const outside: string[] = [], facades: { module: string; export: string }[] = [];
+  const checked = source
+    .replace(FACADE, (_line, local: string, id: string) => {
+      const module = `facade:${id}`;
+      if (composes.has(id)) facades.push({ module, export: local }); else outside.push(module);
+      return `import { ${local} } from "${module}";`;
+    })
+    .replace(TYPE_REFERENCE, (line, imported: string | undefined, aliased: string | undefined) => {
+      const module = (imported ?? aliased)!;
+      if (!VISUAL_MODULE.test(module)) return line;
+      if (!typeModuleAllowed(module)) { outside.push(module); return line; }
+      return "";
+    });
+  const rows = importsOf(checked).filter(row => !row.typeOnly && VISUAL_MODULE.test(row.module));
+  const assembly = [...rows.filter(row => allowed.has(row.module)).flatMap(row => row.symbols.map(symbol => ({ module: row.module, export: symbol }))), ...facades];
+  const result = checkWiring({ sources: [], routes: { modules: [{ path: `src/runtime/sections/${leaf}.tsx`, content: checked }], assembly } });
+  outside.push(...rows.filter(row => !allowed.has(row.module)).map(row => row.module));
+  return { result, outside };
 }
 
 const S = specimenDataset.sections;
@@ -251,6 +280,19 @@ describe("group-c Section runtime renderers", () => {
       expect(outside).toEqual([]);
       expect(result.findings.filter(row => row.code === "WL10")).toEqual([]);
     });
+  });
+});
+
+describe("group-c WL10 harness reads componentLeaf facades", () => {
+  it("reports a facade for a leaf the contract does not compose, and an element no facade binds", () => {
+    const source = read("./consent.tsx");
+    const foreign = source.replace(/^(const Link = componentLeaf<.*;)$/m, '$1\nconst Tabs = componentLeaf<typeof import("../../components/Tabs.js").Tabs>("components.tabs");');
+    expect(foreign).not.toBe(source);
+    expect(wiringOf("consent", foreign).outside).toEqual(["facade:components.tabs"]);
+    const unbound = source.replace(/^const Link = componentLeaf<.*;$/m, "");
+    expect(wiringOf("consent", unbound).result.findings.filter(row => row.code === "WL10").map(row => row.evidence)).toContainEqual(expect.stringContaining("<Link>"));
+    const typed = `${source}\ntype Foreign = typeof import("../../components/preview-runtime/components/tabs/tabs.js");`;
+    expect(wiringOf("consent", typed).outside).toEqual(["../../components/preview-runtime/components/tabs/tabs.js"]);
   });
 });
 

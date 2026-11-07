@@ -13,7 +13,19 @@ import { hostedRender, hostedMarkup } from "../frames/__fixtures__/shell-copy.js
 const render = hostedRender(renderBare);
 const renderToStaticMarkup = hostedMarkup(renderToStaticMarkupBare);
 
-const SITE_SHELL_GAP = { slot: "frames.site-shell", reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" };
+// The one planned leaf whose runtime declines a Studio preview by design (preview.tsx); every other planned fill previews.
+const DOCUMENT_FRAME_GAP = { slot: "frames.document", reason: "frames.document preview requires an isolated document renderer" };
+const HOST_POINTER = "@clossys/publisher/web#SiteFrame";
+const NOT_DESIGNER = `${HOST_POINTER} is not a designer export; the designer does not render it`;
+const filledSlots = (fills: readonly SurfaceDefaultCandidateDocument[], layer: string) => fills.map(doc => doc.$extensions["com.clossys.fill"].slot).filter(slot => slot.startsWith(`${layer}.`)).sort();
+/** One planned fill re-pointed at a non-designer package export: the host-sample path without a literal fill. */
+function hostPointed(fills: readonly SurfaceDefaultCandidateDocument[], slot: string): SurfaceDefaultCandidateDocument {
+  const doc = fills.find(candidate => candidate.$extensions["com.clossys.fill"].slot === slot)!;
+  const [module, exported] = HOST_POINTER.split("#") as [string, string];
+  const layer = "sections" in doc && doc.sections ? "sections" : "frames";
+  const entries = Object.fromEntries(Object.entries(doc[layer] as Record<string, Record<string, unknown>>).map(([key, entry]) => [key, { ...entry, impl: { ...(entry.impl as object), kind: "package", module, export: exported } }]));
+  return { ...doc, [layer]: entries } as SurfaceDefaultCandidateDocument;
+}
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
@@ -31,28 +43,31 @@ describe("planSurfacePreviews", () => {
   it("accounts for every planned Sections/Frames leaf of the real catalog: a preview or a named reason", () => {
     const { plan, fills } = realPlan();
     const planned = plan.rows.filter(row => row.status !== "not-chosen");
-    expect(planned.filter(row => row.slot.startsWith("sections."))).toHaveLength(45);
-    expect(planned.filter(row => row.slot.startsWith("frames."))).toHaveLength(9);
+    // Planned rows are exactly the catalog leaves with a registered Foundry fill, derived from the fill documents.
+    expect(planned.filter(row => row.slot.startsWith("sections.")).map(row => row.slot).sort()).toEqual(filledSlots(fills, "sections"));
+    expect(planned.filter(row => row.slot.startsWith("frames.")).map(row => row.slot).sort()).toEqual(filledSlots(fills, "frames"));
     const result = planSurfacePreviews({ plan, fills });
     const previewed = Object.keys(result.previews), gaps = result.unrenderable.map(gap => gap.slot);
     expect([...previewed, ...gaps].sort()).toEqual(planned.map(row => row.slot).sort());
-    // Every planned designer export has sample content; only the Publisher frame waits for its host.
-    expect(previewed.filter(slot => slot.startsWith("sections."))).toHaveLength(45);
+    // Every planned designer export has sample content; only the document frame waits for its isolated renderer.
+    expect(previewed.filter(slot => slot.startsWith("sections.")).sort()).toEqual(filledSlots(fills, "sections"));
     for (const slot of ["sections.activity-feed", "sections.audit-log", "sections.timeline", "sections.usage"]) expect(previewed, slot).toContain(slot);
     for (const leaf of ["consent", "error-state", "stats", "data-grid", "cards", "call-to-action", "notices", "gallery", "data-table"]) expect(previewed, leaf).toContain(`sections.${leaf}`);
-    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(["frames.app-header", "frames.app-shell", "frames.app-sidebar", "frames.command", "frames.inspector", "frames.sheet", "frames.site-footer", "frames.site-header"]);
-    expect(result.unrenderable).toEqual([SITE_SHELL_GAP]);
+    expect(previewed.filter(slot => slot.startsWith("frames.")).sort()).toEqual(filledSlots(fills, "frames").filter(slot => slot !== DOCUMENT_FRAME_GAP.slot));
+    expect(result.unrenderable).toEqual([DOCUMENT_FRAME_GAP]);
   });
 
   it("renders a non-designer export only from the host's own sample for that exact pointer", () => {
-    const { plan, fills } = realPlan();
-    const host = { "@clossys/publisher/web#SiteFrame": () => <p>host-site-frame</p> };
+    const { plan, fills: real } = realPlan();
+    const fills = real.map(doc => doc.$extensions["com.clossys.fill"].slot === "frames.site-shell" ? hostPointed(real, "frames.site-shell") : doc);
+    expect(planSurfacePreviews({ plan, fills }).unrenderable).toContainEqual({ slot: "frames.site-shell", reason: NOT_DESIGNER });
+    const host = { [HOST_POINTER]: () => <p>host-site-frame</p> };
     const result = planSurfacePreviews({ plan, fills, samples: host });
-    expect(result.unrenderable).toEqual([]);
-    expect(result.previews["frames.site-shell"]).toMatchObject({ pointer: "@clossys/publisher/web#SiteFrame", fill: "foundry/frames.site-shell" });
+    expect(result.unrenderable.map(gap => gap.slot)).not.toContain("frames.site-shell");
+    expect(result.previews["frames.site-shell"]).toMatchObject({ pointer: HOST_POINTER, fill: "foundry/frames.site-shell" });
     expect(renderToStaticMarkup(<>{result.previews["frames.site-shell"]!.render()}</>)).toBe("<p>host-site-frame</p>");
     // A sample for another pointer is never borrowed.
-    expect(planSurfacePreviews({ plan, fills, samples: { "@clossys/publisher/web#Other": host["@clossys/publisher/web#SiteFrame"] } }).previews["frames.site-shell"]).toBeUndefined();
+    expect(planSurfacePreviews({ plan, fills, samples: { "@clossys/publisher/web#Other": host[HOST_POINTER]! } }).previews["frames.site-shell"]).toBeUndefined();
   });
 
   it("previews an adopted package pointer document through the same runtime renderers, and names why it cannot", () => {
@@ -61,7 +76,8 @@ describe("planSurfacePreviews", () => {
     const table = packageSurfacePreview(doc("sections.data-table"));
     expect(table).toMatchObject({ pointer: "@clossys/designer/blocks#DataTable" });
     expect(renderToStaticMarkup(<>{"render" in table ? table.render() : null}</>)).toContain(specimenDataset.sections.dataTable.rows[1]!.customer);
-    expect(packageSurfacePreview(doc("frames.site-shell"))).toEqual({ reason: "@clossys/publisher/web#SiteFrame is not a designer export; the designer does not render it" });
+    expect(packageSurfacePreview(doc("frames.site-shell"))).toMatchObject({ pointer: "@clossys/designer/frames#SiteFrame" });
+    expect(packageSurfacePreview(hostPointed(fills, "frames.site-shell"))).toEqual({ reason: NOT_DESIGNER });
     expect(packageSurfacePreview({ ...doc("sections.faq"), sections: {} } as SurfaceDefaultCandidateDocument)).toEqual({ reason: "planned fill has no package export pointer" });
   });
 
