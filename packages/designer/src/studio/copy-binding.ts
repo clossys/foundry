@@ -25,6 +25,7 @@ export class StudioCopyNeedsError extends Error {
 export function studioCopyNeed(cellId: string): never { throw new StudioCopyNeedsError(cellId); }
 
 export function readStudioMessage(binding: StudioCopyBinding, cellId: string, values?: Readonly<Record<string, string | number | boolean>>): string {
+  if (!binding) throw new StudioCopyNeedsError("studio.copy.binding");
   const ref = binding.messages?.[cellId] ?? studioMessageRef(cellId);
   if (!ref) return studioCopyNeed(cellId);
   return readStudioCopy(binding, ref, values);

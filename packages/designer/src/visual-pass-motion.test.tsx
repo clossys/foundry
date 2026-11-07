@@ -11,6 +11,7 @@ import { Tooltip } from "./components/Tooltip.js";
 import { ThemeProvider } from "./theme/ThemeProvider.js";
 import { ThemeToggle } from "./theme/ThemeToggle.js";
 import { suppressThemeTransitions } from "./theme/internal/theme-core.js";
+import { ShellCopyTestHost } from "./frames/__fixtures__/shell-copy.js";
 
 /*
  * Visual pass (VF-1) motion pins: overlays enter and exit on the overlay
@@ -77,7 +78,7 @@ describe("theme switch (cross-14)", () => {
   it("suppresses transitions when the preference changes, not on the first sync", async () => {
     const frames: FrameRequestCallback[] = [];
     vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => { frames.push(callback); return frames.length; });
-    render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
+    render(<ThemeProvider><ThemeToggle /></ThemeProvider>, { wrapper: ShellCopyTestHost });
     expect(document.documentElement).not.toHaveAttribute("data-theme-switching");
     await userEvent.click(screen.getByRole("radio", { name: "Dark" }));
     expect(document.documentElement).toHaveAttribute("data-theme", "dark");
@@ -89,7 +90,7 @@ describe("theme switch (cross-14)", () => {
 
 describe("theme toggle selected state (cross-19)", () => {
   it("is a surface step with the primary ink and an ink ring, not the action fill, with colour-only fast motion", () => {
-    render(<ThemeProvider><ThemeToggle /></ThemeProvider>);
+    render(<ThemeProvider><ThemeToggle /></ThemeProvider>, { wrapper: ShellCopyTestHost });
     const option = screen.getByRole("radio", { name: "System" });
     expect(option).toHaveClass("data-selected:bg-surface-selected", "data-selected:text-ink-primary", "data-selected:ring-current", "transition-colors", "duration-(--ui-duration-fast)");
     expect(option.className).not.toMatch(/data-selected:bg-\(--color-action\)|data-selected:text-\(--color-ink-on-action\)|\btransition-all\b|duration-\(--ui-duration-default\)/);

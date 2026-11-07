@@ -43,7 +43,7 @@
     },
     {
       "path": "section-defaults.r1.en.json",
-      "sha256": "f8e6f8bb0dd5467b62deb382132e2eb4faf1c6cf1ba13d221cd250622763f85d"
+      "sha256": "da9510db0a19628cb2bd5ae735564e059b7f2753677a42ab695fadd2114a7cb1"
     },
     {
       "path": "sign-in.json",
@@ -133,7 +133,7 @@
       "declaredLocales": [
         "en"
       ],
-      "records": 91
+      "records": 97
     },
     {
       "path": "sign-in.json",
@@ -153,7 +153,7 @@
       "records": 52
     }
   ],
-  "records": 1471,
+  "records": 1477,
   "locales": [
     "ar",
     "en"

@@ -7,9 +7,10 @@ import { AppFrame } from "../frames/AppFrame.js";
 import { Studio } from "./Studio.js";
 import { labels, smallCatalog, emptyLibrary } from "./__fixtures__/studio.js";
 import { hostedMarkup } from "../frames/__fixtures__/shell-copy.js";
+import { studioHostCopy } from "./__fixtures__/copy-hand-roll.js";
 const renderToString = hostedMarkup(renderToStringBare);
 it("mounts only the system page canvas and its right rail on the existing Studio entry", () => {
-  const html = renderToString(<AppFrame brand={{markSrc:"/mark.svg",wordmark:"Example",label:"Home"}} navigation={{tree:[]}} account={{signedOutLabel:"Account",sections:[]}} commands={{heading:"Commands",triggerLabel:"Search",searchLabel:"Search commands",closeLabel:"Close",emptyMessage:"No commands",groups:[]}}><Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }) }} labels={labels} /></AppFrame>);
+  const html = renderToString(<AppFrame brand={{markSrc:"/mark.svg",wordmark:"Example",label:"Home"}} navigation={{tree:[]}} account={{signedOutLabel:"Account",sections:[]}} commands={{heading:"Commands",triggerLabel:"Search",searchLabel:"Search commands",closeLabel:"Close",emptyMessage:"No commands",groups:[]}}><Studio catalog={smallCatalog} adapter={{ load: async () => ({ library: emptyLibrary() }) }} labels={labels} copy={studioHostCopy} /></AppFrame>);
   const host = document.createElement("div"); host.innerHTML = html;
   expect(host.querySelectorAll("[data-application-frame]")).toHaveLength(1);
   expect(host.querySelectorAll("main")).toHaveLength(1);

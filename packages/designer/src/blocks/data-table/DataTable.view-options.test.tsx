@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, render, screen, within, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { DataTable, type DataTableColumn } from "../DataTable.js";
 import type { DataTableMessages } from "./messages.js";
 import { parseDataTableViewModel, type DataTableViewModel, type DataTableViewModelV1 } from "./view-model.js";
 import type { TableModel } from "../table-model/index.js";
+import { ShellCopyProvider } from "../../components/Banner.copy-context.js";
+import { sectionCopyFixtureResolver } from "../../../../writer/src/catalog/__fixtures__/section-copy-resolver.fixture.js";
 
 interface Row { id: string; name: string; team: string; region: string; stage: string; amount: number; tags: string[] }
 const rows: Row[] = [
@@ -35,8 +37,9 @@ const rowKey = (row: Row) => row.id;
 function Harness({ initial = view(), changed = (_next: DataTableViewModel) => {}, children, messages }: { initial?: DataTableViewModel; changed?: (next: DataTableViewModel) => void; children?: React.ReactNode; messages?: DataTableMessages }) {
   const [model, setModel] = useState(initial);
   const [expanded, setExpanded] = useState<ReadonlySet<string> | "all">("all");
-  return <><DataTable aria-label="Records" columns={columns} rows={rows} rowKey={rowKey} model={model} messages={messages}
-    onModelChange={next => { changed(next); setModel(next); }} expandedGroupKeys={expanded} onExpandedGroupKeysChange={setExpanded} />{children}</>;
+  // The consumer host supplies Writer copy; the group toggle reads its label from the Writer record.
+  return <ShellCopyProvider resolver={sectionCopyFixtureResolver}><DataTable aria-label="Records" columns={columns} rows={rows} rowKey={rowKey} model={model} messages={messages}
+    onModelChange={next => { changed(next); setModel(next); }} expandedGroupKeys={expanded} onExpandedGroupKeysChange={setExpanded} />{children}</ShellCopyProvider>;
 }
 function media(wide: boolean) {
   const listeners = new Set<() => void>();
@@ -328,6 +331,17 @@ describe("DataTable host messages", () => {
     await user.click(within(dialog).getByRole("checkbox", { name: "Bucket Team" }));
     expect(changed.mock.lastCall![0].table.groupBy).toEqual([{ column: "team" }]);
     expect(Object.keys(changed.mock.lastCall![0]).sort()).toEqual(["density", "mode", "sort", "table", "version", "visibleColumns"]);
+  });
+  it("names the missing Writer host for a group toggle and needs none for uncontrolled groups", () => {
+    const props = { "aria-label": "Records", columns, rows, rowKey, onModelChange: () => {} };
+    const grouped = view({ mode: "grouped", table: { ...table, groupBy: [{ column: "team" }] } });
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    expect(() => render(<DataTable {...props} model={grouped} onExpandedGroupKeysChange={() => {}} />)).toThrow("Designer shell copy requires a host resolver or explicit host labels");
+    vi.mocked(console.error).mockRestore();
+    cleanup();
+    render(<DataTable {...props} model={grouped} />);
+    expect(screen.queryByRole("button", { name: /group Blue/ })).not.toBeInTheDocument();
+    expect(screen.getAllByText("Blue").length).toBeGreaterThan(0);
   });
   it("uses host chip, expansion and pivot copy", async () => {
     const user = userEvent.setup();

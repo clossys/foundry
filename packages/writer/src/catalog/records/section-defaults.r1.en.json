@@ -109,7 +109,13 @@
     "merge.error-state.header.heading": "st.gdzc1rc0sk",
     "merge.error-state.header.description": "st.hd21vyfgk0",
     "merge.error-state.retry.label": "st.9a3gdn01wa",
-    "merge.error-state.report.label": "st.ye9ybmcxmq"
+    "merge.error-state.report.label": "st.ye9ybmcxmq",
+    "stats.trendLabels.up": "st.v10qsmk2ct",
+    "stats.trendLabels.down": "st.ywh594tsp1",
+    "stats.trendLabels.neutral": "st.r2jc8zrsq6",
+    "stats.states.loading.label": "st.429fbaqy3e",
+    "stats.states.empty.label": "st.56fr0nsdzn",
+    "stats.states.error.label": "st.yk0xxww16p"
   },
   "records": [
     {
@@ -1111,6 +1117,54 @@
       "text": "Report a problem"
     },
     {
+      "id": "st.v10qsmk2ct",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.stats.trendLabels.up",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Increase"
+    },
+    {
+      "id": "st.ywh594tsp1",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.stats.trendLabels.down",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Decrease"
+    },
+    {
+      "id": "st.r2jc8zrsq6",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.stats.trendLabels.neutral",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No change"
+    },
+    {
+      "id": "st.429fbaqy3e",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.stats.states.loading.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Loading figures"
+    },
+    {
+      "id": "st.56fr0nsdzn",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.stats.states.empty.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "No figures yet"
+    },
+    {
+      "id": "st.yk0xxww16p",
+      "leaf": "strings.field-labels",
+      "context": "admin.writer.sections.stats.states.error.label",
+      "status": "draft",
+      "origin": "authored",
+      "text": "Figures unavailable"
+    },
+    {
       "id": "ps.jrbpz6zcs1",
       "leaf": "passages.logo-hero",
       "context": "SU-9W draft logo-mark into logo-hero",
@@ -1844,6 +1898,42 @@
       "cellId": "admin.writer.sections.merge.error-state.report.label",
       "recordId": "st.ye9ybmcxmq",
       "target": "sections.error-state",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.stats.trendLabels.up",
+      "recordId": "st.v10qsmk2ct",
+      "target": "sections.stats",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.stats.trendLabels.down",
+      "recordId": "st.ywh594tsp1",
+      "target": "sections.stats",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.stats.trendLabels.neutral",
+      "recordId": "st.r2jc8zrsq6",
+      "target": "sections.stats",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.stats.states.loading.label",
+      "recordId": "st.429fbaqy3e",
+      "target": "sections.stats",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.stats.states.empty.label",
+      "recordId": "st.56fr0nsdzn",
+      "target": "sections.stats",
+      "kind": "CopyRef"
+    },
+    {
+      "cellId": "admin.writer.sections.stats.states.error.label",
+      "recordId": "st.yk0xxww16p",
+      "target": "sections.stats",
       "kind": "CopyRef"
     }
   ],
