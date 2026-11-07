@@ -7,10 +7,11 @@ describe("header frame preview", () => {
     const defaults = { position: "sticky", surface: "solid" } as const;
     const render = (instance = {}) => renderToStaticMarkup(<FrameHeaderPreview frame="frames.site-header"
       content={{ brand: "Example" }} defaults={defaults} instance={instance} />);
-    expect(render()).toContain("position:sticky");
-    expect(render()).toContain("--ui-z-sticky");
-    expect(render({ position: "static" })).toContain("position:static");
-    expect(render({ position: "static" })).not.toContain("--ui-z-sticky");
+    // The site header positions through named theme-keys utilities, never inline style (header-position.test.tsx).
+    const classes = (html: string) => html.match(/<header[^>]*class="([^"]*)"/)![1]!.split(/\s+/);
+    expect(classes(render())).toEqual(expect.arrayContaining(["sticky", "top-0", "layer-sticky"]));
+    expect(classes(render({ position: "static" }))).toContain("static");
+    for (const absent of ["sticky", "layer-sticky"]) expect(classes(render({ position: "static" }))).not.toContain(absent);
     expect(render()).toContain('data-surface="solid"');
   });
 
