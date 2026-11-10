@@ -1,6 +1,6 @@
 {
   "schema": "designer-foundation/v1",
-  "sourceTree": "bb8114b248b54ecd38081d2e2cccfbc0bea327c6",
+  "sourceTree": "e7812b464297b2d6aa3ef155cf66978c8ea26951",
   "files": {
     "src/backdrop/consumer-art.ts": "b1a1bc6df0176a3b3934065c3080ddf1371914c4dbe39905d0f8adf41c64ee9e",
     "src/backdrop/contract.ts": "5df9f040446b8136b33ecd52a46c4f92ba857420c15b279e8c71a0e3662f4af8",
@@ -693,7 +693,7 @@
     "src/catalog/reports/components-consumption.json": "8f472c829d8a1ed24f3163f9816a959306dc01582c007f5fc1a4aaa4dd7c3577",
     "src/catalog/reports/page-dogfood.json": "bda70d3e4c8bfb9ae426270d10aefee5232fff3ff78e3b83a33900e23026482c",
     "src/catalog/reports/sections-frames-consumption.json": "b2bdd645bb01997a2f6f8264342578fa69b288f6b37b229effda034209902d2e",
-    "src/catalog/reports/usage-graph.json": "50e4c201e1326a3e6f9abc55a00b0210b600cc6391577fd8864f6dc58c77887f",
+    "src/catalog/reports/usage-graph.json": "bf4573b189b4c16661516d8c27033075976257b54069b09e12b636771ae9da3c",
     "src/catalog/retired.json": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
     "src/catalog/retired/frames.json": "54ef36e81a827db573b4033e90d140adeecdfee43b354987443a0490daf12270",
     "src/catalog/retired/sections.json": "1645fb4724e19ee529a4d72ecac9152b2436f7ab302e83633199d3d1de4422c9",
