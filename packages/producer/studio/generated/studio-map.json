@@ -46097,7 +46097,7 @@
     {
       "slot": "sections.producer.team-strip",
       "element": "producer-team-strip",
-      "version": 2
+      "version": 3
     },
     {
       "slot": "sections.producer.pipeline-legend",
@@ -46107,7 +46107,7 @@
     {
       "slot": "sections.producer.pipeline-flow",
       "element": "producer-pipeline-flow",
-      "version": 12
+      "version": 13
     },
     {
       "slot": "sections.studio.page-tabs",

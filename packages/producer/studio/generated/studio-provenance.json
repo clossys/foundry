@@ -26,8 +26,8 @@
   },
   "sections.producer.team-strip": {
     "data-clossys-slot": "sections.producer.team-strip",
-    "data-clossys-candidate": "producer-team-strip-v2.json",
-    "data-clossys-hash": "sha256:d1bcc39f3eea5370bea2b2b14875c00791b706c2b86382d4a07f291d32751085"
+    "data-clossys-candidate": "producer-team-strip-v3.json",
+    "data-clossys-hash": "sha256:4b77c15a14cbb63cfd4c63a92ca78cc9b7fca5934e2cf6ae04177df4979dabc7"
   },
   "sections.producer.pipeline-legend": {
     "data-clossys-slot": "sections.producer.pipeline-legend",
@@ -36,8 +36,8 @@
   },
   "sections.producer.pipeline-flow": {
     "data-clossys-slot": "sections.producer.pipeline-flow",
-    "data-clossys-candidate": "producer-pipeline-flow-v12.json",
-    "data-clossys-hash": "sha256:715cb26b08fd895a918a0aab4a0f1d400fd249dde5ffab97cd455c662ecaf1fc"
+    "data-clossys-candidate": "producer-pipeline-flow-v13.json",
+    "data-clossys-hash": "sha256:a329ee393461c84c5b074b6f6be61c2a64e46b7b60e49646bfe1b2628c2d7cb2"
   },
   "sections.studio.page-tabs": {
     "data-clossys-slot": "sections.studio.page-tabs",
