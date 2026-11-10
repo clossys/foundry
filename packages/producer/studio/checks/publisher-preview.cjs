@@ -15,11 +15,12 @@ async function checkPublisherPreview(origin, mode = 'ready', output) {
   try {
     const page = await browser.newPage({ viewport: { width: 1680, height: 1100 } });
     const errors = []; page.on('pageerror', error => errors.push(error.message));
-    const gallery = await (await fetch(`${origin}/api/slots/publisher`)).json();
-    const firstSlot = gallery.sections?.flatMap(section => section.cards).find(card => card.status !== 'missing')?.id;
-    const selected = publication.state === 'ready' ? publication.pages.find(page => page.cellId)?.cellId : firstSlot;
-    assert.ok(selected, 'The proof requires an actual Publisher slot.');
-    await page.goto(`${origin}/agents/publisher?cell=${encodeURIComponent(selected)}`, { waitUntil: 'domcontentloaded' });
+    // Studio routes come only from the compiled route map (studio/lib/studio-route-map.ts reads the same projection).
+    const leaves = require('../generated/studio-map.json').leaves.filter(leaf => leaf.page.startsWith('publisher-studio.'));
+    const selected = publication.state === 'ready' ? publication.pages.find(page => page.cellId)?.cellId : leaves[0]?.slug;
+    const route = leaves.find(leaf => leaf.slug === selected)?.path;
+    assert.ok(selected && route, 'The proof requires an actual Publisher slot with a mapped Studio route.');
+    await page.goto(`${origin}${route}`, { waitUntil: 'domcontentloaded' });
     await page.waitForFunction(() => document.documentElement.dataset.studioState === 'ready', undefined, { timeout: 90_000 });
     if (mode === 'missing') {
       await page.getByRole('heading', { name: 'Not published yet', exact: true }).waitFor();
