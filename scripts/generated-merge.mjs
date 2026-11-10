@@ -34,8 +34,11 @@ const run = (bin, args, env = process.env) => {
   const result = spawnSync(bin, args, { env, stdio: ["ignore", "inherit", "inherit"] });
   if (result.error || result.status !== 0) throw new Error(`${bin} ${args.join(" ")} failed (exit ${result.status ?? "unknown"}).`);
 };
+// A path selector also matches nested workspaces (packages/designer/ui), which lack the generator script.
+// Select the one package by its exact manifest name instead.
+const workspaceName = path => JSON.parse(readFileSync(`${path}/package.json`, "utf8")).name;
 function generateCss() {
-  run("npm", ["run", "generate:compiled-css", "--workspace=packages/designer"]);
+  run("npm", ["run", "generate:compiled-css", `--workspace=${workspaceName("packages/designer")}`]);
   run("npm", ["run", "generate:preview-css", "--workspace=packages/publisher"]);
 }
 function refreshEvidence() {
