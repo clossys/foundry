@@ -1771,7 +1771,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-grid/slot.json",
-      "sha256": "aba492eb185459d7275124bcf2f1caa601ec76b0077e2f616bc0ac07419b51aa"
+      "sha256": "974021ae7da2c77a8f0aff1bccbbc6cd5fc35c3301579c680e70af850164dd4d"
     },
     {
       "path": "clossys/agents/designer/sections.data-table/candidates/data-table-v3.json",
@@ -1783,7 +1783,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.data-table/slot.json",
-      "sha256": "84143556e3347b7a426b84ea50f30aae075ae0fce41a083600ed8fec382157ad"
+      "sha256": "baee4892644d3fcdb7982d387d6ce6bfd891f86071448883d4ced119a820e20f"
     },
     {
       "path": "clossys/agents/designer/sections.empty-state/candidates/empty-state-v3.json",
@@ -1835,7 +1835,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.features/slot.json",
-      "sha256": "e6a04c12f8be50349159a4308e7f3ae33176ebf7eb8527b5e5332f84ab4a721f"
+      "sha256": "465b00bb01e52c68382358df77cee0c43c556f8bc517b5d20eb16160bf2ed805"
     },
     {
       "path": "clossys/agents/designer/sections.filter-builder/slot.json",
@@ -2083,7 +2083,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.resource-list/slot.json",
-      "sha256": "8d1e6743c5e4f5a58d91580310cc6b906322d7bc60830de08a0860c9aae7054e"
+      "sha256": "ca1304202ac9cde4ae119b8b59bdf146b7ce0b40e27fd7ade4fe57711c510154"
     },
     {
       "path": "clossys/agents/designer/sections.section-header/candidates/section-header-v6.json",
