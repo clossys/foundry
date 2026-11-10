@@ -257,10 +257,6 @@
         },
         {
           "code": "K4",
-          "message": "starters/tailwind/src/Tree.tsx: border-transparent: Design utility needs a consumer binding"
-        },
-        {
-          "code": "K4",
           "message": "starters/tailwind/src/Tree.tsx: border-y-blue-200: Design utility needs a consumer binding"
         },
         {
