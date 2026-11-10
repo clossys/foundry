@@ -6,6 +6,8 @@ import { cardState, recordSpecimenInput, type RecordSpecimenInput, type SlotCard
 import { hasSlotModel, inspectSlot, listSlots, pinHistory, readSlotEntry, readCandidate, readIa, readiness, slotIndex, usedByPlaced, type BlockReason } from "../records/slots.js";
 import { CANDIDATE_NAME, parseFrontmatter, pinStatus, validateCandidate, type PinStatus, type SlotAgent, type SlotModelIssue } from "../records/slot-model/index.js";
 import { parseJson } from "../errors.js";
+import { specimenPreviewIssue } from "../specimen/library-source.js";
+import { pinnedWriterCopy } from "./specimen-tree.js";
 
 export interface DetailCandidate {
   name: string; version: number; sha256: string; pinned: boolean;
@@ -77,6 +79,9 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
   // no preview, no readiness clearance, and a failing placement check.
   const { doc, placed } = inspectSlot(consumer, agent, id);
   const index = slotIndex(consumer);
+  // One pinned Writer scan per detail, shared by every candidate's preview check.
+  let writerCopy: Readonly<Record<string, string>> | undefined;
+  const writer = () => writerCopy ??= pinnedWriterCopy(consumer);
   const candidates = entry.candidates.map(name => {
     const candidate = readCandidate(consumer, agent, id, name);
     let content = candidate.bytes, source: unknown;
@@ -101,7 +106,8 @@ export function slotDetail(root: string, agent: SlotAgent, id: string): SlotDeta
     const validPin = placed && !issues.length && entry.pin?.candidate === name && entry.pin.sha256 === candidate.sha256;
     // A pinned candidate whose bytes drifted from its pin renders nothing: the pin check flags it.
     const renders = placed && !issues.length && (entry.pin?.candidate !== name || validPin);
-    const specimen = renders && agent === "designer" && doc.kind === "element" && name.endsWith(".json") ? `${id}/${element}` : undefined;
+    // A candidate whose preview inputs the specimen build refuses has no specimen to frame (the route answers 404 for it).
+    const specimen = renders && agent === "designer" && doc.kind === "element" && name.endsWith(".json") && !specimenPreviewIssue(consumer, id, name, candidate.bytes, writer) ? `${id}/${element}` : undefined;
     const record = renders && ((agent === "director" && doc.kind === "brief") || (agent === "writer" && doc.kind === "strings")) ? recordSpecimenInput(consumer, agent, id, name) : undefined;
     return { name, version, sha256: candidate.sha256,
       pinned: entry.pin?.candidate === name, content, source,
