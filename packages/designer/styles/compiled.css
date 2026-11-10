@@ -818,16 +818,6 @@
     white-space: nowrap;
     border-width: 0;
   }
-  .slider-rail {
-    position: relative;
-    flex: 1 1 auto;
-    block-size: var(--spacing-xs, 4px);
-  }
-  .slider-rail-vertical {
-    position: relative;
-    flex: 1 1 auto;
-    inline-size: var(--spacing-xs, 4px);
-  }
   .absolute {
     position: absolute;
   }
@@ -988,9 +978,6 @@
   }
   .bottom-md {
     bottom: var(--spacing-md, 12px);
-  }
-  .slider-thumb-vertical {
-    left: 50%;
   }
   .isolate {
     isolation: isolate;
@@ -1794,9 +1781,6 @@
   .max-h-6xl {
     max-height: var(--spacing-6xl, 128px);
   }
-  .max-h-64 {
-    max-height: calc(var(--spacing, 0.25rem) * 64);
-  }
   .max-h-\[calc\(var\(--spacing-6xl\)\*2\)\] {
     max-height: calc(var(--spacing-6xl) * 2);
   }
@@ -1950,9 +1934,6 @@
   }
   .min-w-0 {
     min-width: 0px;
-  }
-  .min-w-40 {
-    min-width: calc(var(--spacing, 0.25rem) * 40);
   }
   .min-w-\[12rem\] {
     min-width: 12rem;
@@ -2131,10 +2112,6 @@
   }
   .ui-pending-label {
     animation: ui-loading-hide 1ms linear var(--ui-duration-loading-delay, 150ms) both;
-  }
-  .control-disabled {
-    opacity: var(--ui-alpha-disabled, 0.5);
-    cursor: not-allowed;
   }
   .cursor-col-resize {
     cursor: col-resize;
@@ -2795,9 +2772,6 @@
       border-color: color-mix(in oklab, var(--color-line-strong) 30%, transparent);
     }
   }
-  .border-action {
-    border-color: var(--color-action, #0A0A0A);
-  }
   .border-background\/14 {
     border-color: var(--background);
     @supports (color: color-mix(in lab, red, red)) {
@@ -3326,9 +3300,6 @@
   }
   .p-xl {
     padding: var(--spacing-xl, 24px);
-  }
-  .p-xs {
-    padding: var(--spacing-xs, 4px);
   }
   .page-inset-x {
     padding-inline: var(--ui-width-page-padding-x, clamp(16px, 4vw, 48px));
@@ -4151,10 +4122,6 @@
   .slider-thumb {
     inline-size: var(--ui-control-mark, 16px);
     block-size: var(--ui-control-mark, 16px);
-  }
-  .slider-track-vertical {
-    min-block-size: var(--spacing-6xl, 128px);
-    min-inline-size: var(--ui-control-h-md, 32px);
   }
   .table-row-density {
     min-block-size: var(--ui-table-row-comfortable, 48px);
