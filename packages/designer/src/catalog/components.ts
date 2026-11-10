@@ -295,7 +295,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: rac("NumberField"),
     disposition: "finish",
   }),
-  onMain("Slider", ["src/components/Slider.tsx"], {
+  onMain("Slider", ["src/components/preview-runtime/components/slider/slider.tsx"], {
     id: "enter.slider",
     label: "Slider",
     racBase: rac("Slider", "SliderTrack", "SliderFill", "SliderThumb", "SliderOutput"),

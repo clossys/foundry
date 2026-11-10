@@ -94,8 +94,8 @@ export type CheckboxProps = import("react").ComponentProps<typeof import("./prev
 export { Switch } from "./preview-runtime/components/switch/switch.js";
 export type SwitchProps = import("react").ComponentProps<typeof import("./preview-runtime/components/switch/switch.js").Switch>;
 
-export { Slider } from "./Slider.js";
-export type { SliderProps, SliderValue } from "./Slider.js";
+export { Slider } from "./preview-runtime/components/slider/slider.js";
+export type SliderProps = import("react").ComponentProps<typeof import("./preview-runtime/components/slider/slider.js").Slider>;
 
 export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./preview-runtime/components/select/select.js";
 export type SelectProps = import("react").ComponentProps<typeof import("./preview-runtime/components/select/select.js").Select>;

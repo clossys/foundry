@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, expect, it } from "vitest";
 import { buildUsageGraph } from "../catalog-core/usage-graph.js";
-import { Slider } from "../components/Slider.js";
+import { Slider } from "../components/preview-runtime/components/slider/slider.js";
 import { CanvasZoom } from "../components/CanvasZoom.js";
 import type { Placement } from "../catalog-core/types.js";
 import { createRouteStudioLabels } from "./route-labels.js";
@@ -31,7 +31,8 @@ it.each(["en", "ar"])("hand-rolls a measured selected Designer page, Explorer, c
   expect(container.querySelector('[data-system-breadcrumb]')).not.toBeNull();
   expect(container.querySelector('[data-system-cell][data-selected], [data-selected-leaf], [data-studio-panel="inspector"]')).toBeNull();
   expect(container.querySelector('[data-studio-panel="minimap"]')).not.toBeNull();
-  expect(container.querySelector('input[type="range"]')).toHaveAttribute("aria-valuetext", "[[st.zhgkbpn8eq]]");
+  // Stock Slider value text: react-aria's Intl percent format of the camera zoom (R2F-33c).
+  expect(container.querySelector('input[type="range"]')).toHaveAttribute("aria-valuetext", "75%");
   expect(requests.some(ref => ref.id === "st.ctpgn255tg")).toBe(true);
   expect(requests.every(ref => ref.locale === locale)).toBe(true);
   expectOnlyResolvedCopy(container);
@@ -45,15 +46,21 @@ it("hand-rolls Usage labels and retains an exact Need for the unrecorded WL5 pro
   expect(() => render(<UsagePanel {...props} findings={[{ code: "WL5", subject: "themes.primary", message: "untranslated host diagnostic" }]} />)).toThrow("studio.usage.finding.WL5");
 });
 
-it("hand-rolls zoom output, reset and Slider spoken values through the existing Writer formatter", () => {
+it("hand-rolls zoom output and reset through the Writer formatter; the stock Slider speaks its Intl percent value", () => {
   const { copy, requests } = pseudoStudioCopy();
   const labels = createRouteStudioLabels(copy);
   const { container } = render(<>
     <CanvasZoom value={1.25} min={0.5} max={2} onChange={() => {}} onFit={() => {}}
       labels={{ group: labels.canvas.zoomLabel, out: labels.canvas.zoomOut, in: labels.canvas.zoomIn, fit: labels.canvas.fit, percent: labels.canvas.zoomLabel }} formatValue={labels.canvas.zoom} />
-    <Slider label={labels.canvas.zoomLabel} value={1.25} minValue={0.5} maxValue={2} onChange={() => {}} formatValue={value => labels.canvas.zoom(value * 100)} />
+    <Slider aria-label={labels.canvas.zoomLabel} value={1.25} minValue={0.5} maxValue={2} step={0.01} onChange={() => {}} formatOptions={{ style: "percent" }} />
   </>);
-  expect(container.querySelector('input[type="range"]')).toHaveAttribute("aria-valuetext", "[[st.zhgkbpn8eq]]");
+  // Stock contract (R2F-33c): the thumb's value text is react-aria's Intl percent format, not Writer copy.
+  expect(container.querySelector('input[type="range"]')).toHaveAttribute("aria-valuetext", "125%");
   expect(requests).toContainEqual({ id: "st.zhgkbpn8eq", locale: "en", values: { value: 125 } });
   expectOnlyResolvedCopy(container);
+});
+
+it("still refuses worded value text on a stock slider thumb", () => {
+  const { container } = render(<><span>[[st.probe]]</span><div data-slot="slider-thumb"><input type="range" aria-valuetext="Zoom 125 percent" readOnly /></div></>);
+  expect(() => expectOnlyResolvedCopy(container)).toThrow("aria-valuetext: Zoom 125 percent");
 });

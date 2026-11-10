@@ -25,7 +25,6 @@ export const componentSpecimenProps: Readonly<Record<string, Readonly<Record<str
   "./components#SemanticContent": d.semantic,
   "./components#Separator": d.separator,
   "./components#Skeleton": d.skeleton,
-  "./components#Slider": d.slider,
   "./components#Spinner": d.spinner,
   "./components#StatusMark": d.statusMark,
   "./components#TextField": d.textField,
