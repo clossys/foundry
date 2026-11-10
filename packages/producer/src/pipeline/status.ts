@@ -1,81 +1,56 @@
-import { createHash } from "node:crypto";
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { STEPS, CHECKS } from "./steps/index.js";
-import type { OpenCounter, Port, Step } from "./define.js";
-import { globRegex, parseGlob, staticPrefix } from "./globs.js";
+import { STEPS } from "./steps/index.js";
+import type { OpenCounter, Step } from "./define.js";
 import { PACKAGE_ROOT } from "./options.js";
 import { readSeats } from "./seats.js";
 import { isModelDir, listModelDir, modelExists, readModelText } from "../records/slots.js";
 import { FOLDER_KIND } from "../records/slot-model/types.js";
 import { errorMessage, isAbsent } from "../errors.js";
 import type { SeatReport } from "./seats.js";
+import { buildGraph } from "./graph.js";
+import { buildWiring } from "./wiring.js";
+import type { Citation, PipelineWiring, RunState, Undrawn, WiringCheck } from "./wiring.js";
 
 /**
- * `clossys pipeline status`: read-only, from real files only. It runs no step and no check, so a
- * check is reported `not-run` and a pending step `pending`; neither is ever reported as passing.
+ * `clossys pipeline status`: what ran, from the run records alone (trace.ts, wiring.ts). A step's
+ * state is its latest run record's: passed, failed (non-zero exit) or stale (an input changed since);
+ * a step with no record is never-run, and a check with no record not-run. No declaration, file time
+ * or output glob makes a step ready or passing.
+ *
+ * Open decisions are counted once each: every agent slot with neither a pin nor a not-needed marker,
+ * plus every decide-step seat not assigned. Each decide step's own counter is reported beside it
+ * (`decisions`), never summed into the total: the counters overlap (slots-undecided:<agent> is part of
+ * the agents' count) or count something other than decisions.
  */
-export const STATUS_SCHEMA = "clossys.pipeline-status/1";
+export const STATUS_SCHEMA = "clossys.pipeline-status/2";
 
-export interface PortStatus { readonly files: number | null; readonly sha256: string | null }
 export interface StepStatus {
-  readonly id: string; readonly kind: Step["kind"]; readonly actor: string;
-  readonly state: "pending" | "ready";
-  readonly pending?: Step["pending"];
-  readonly inputs: PortStatus; readonly outputs: PortStatus;
-  /** The newest output file's modification time; null when the step has no output files here. */
-  readonly lastRun: string | null;
-  readonly checks: readonly { readonly id: string; readonly state: "pending" | "not-run" }[];
-  readonly seat?: SeatReport["state"];
-  readonly open?: { readonly counter: OpenCounter; readonly count: number };
+  /** The wiring node: the step id, plus the invocation's mode words when it ran with any. */
+  readonly id: string;
+  readonly step: string;
+  readonly kind: Step["kind"];
+  readonly invocation: string | null;
+  readonly state: RunState;
+  /** The run record the state comes from; null only for never-run. */
+  readonly citation: Citation | null;
+  readonly changed: readonly string[];
+  readonly changedCount: number;
+  readonly checks: readonly WiringCheck[];
 }
+export interface DecisionCounter { readonly step: string; readonly counter: OpenCounter; readonly count: number }
 export interface SlotCounts { readonly slots: number; readonly candidates: number; readonly pinned: number; readonly notNeeded: number; readonly open: number }
 export interface SlotRow { readonly slot: string; readonly candidates: number; readonly pinned: boolean; readonly notNeeded: boolean }
 export interface PipelineStatus {
   readonly schema: typeof STATUS_SCHEMA;
   readonly steps: readonly StepStatus[];
+  /** Declared steps with no command in this build: not drawn, never run. */
+  readonly undrawn: readonly Undrawn[];
+  readonly counts: PipelineWiring["counts"];
+  readonly decisions: readonly DecisionCounter[];
   readonly agents: Readonly<Record<string, SlotCounts & { readonly bySlot: readonly SlotRow[] }>>;
+  /** Open decisions: undecided agent slots plus unassigned seats, each counted once. */
   readonly open: number;
-}
-
-const SKIP = new Set(["node_modules", ".git", ".next", ".turbo"]);
-function walk(dir: string, rel: string, out: string[]): void {
-  if (!existsSync(dir)) return;
-  for (const entry of readdirSync(dir, { withFileTypes: true })) {
-    if (SKIP.has(entry.name)) continue;
-    const path = join(dir, entry.name), next = rel ? `${rel}/${entry.name}` : entry.name;
-    if (entry.isDirectory()) walk(path, next, out);
-    else if (entry.isFile()) out.push(next);
-  }
-}
-
-class Files {
-  private readonly listed = new Map<string, string[]>();
-  constructor(private readonly root: string, private readonly packageRoot: string) {}
-  /** Files matching one port, as [absolute, display] pairs; null for caller-chosen or cache paths. */
-  match(port: Port): [string, string][] | null {
-    if (port.glob.startsWith("arg:")) return null;
-    const pkg = port.glob.startsWith("pkg:");
-    const { path } = parseGlob(pkg ? port.glob.slice(4) : port.glob, "");
-    if (path.startsWith("node_modules/")) return null;
-    const base = pkg ? this.packageRoot : this.root;
-    const prefix = staticPrefix(path);
-    const key = `${base}\0${prefix}`;
-    let files = this.listed.get(key);
-    if (!files) { files = []; walk(join(base, prefix), prefix, files); files.sort(); this.listed.set(key, files); }
-    const re = globRegex(path);
-    return files.filter(file => re.test(file)).map(file => [join(base, file), pkg ? `pkg:${file}` : file]);
-  }
-}
-
-function portStatus(files: Files, ports: readonly Port[]): PortStatus & { paths: string[] } {
-  const matched = new Map<string, string>();
-  let scanned = false;
-  for (const port of ports) { const hits = files.match(port); if (hits) { scanned = true; for (const [abs, shown] of hits) matched.set(shown, abs); } }
-  if (!scanned) return { files: null, sha256: null, paths: [] };
-  const hash = createHash("sha256");
-  for (const shown of [...matched.keys()].sort()) hash.update(`${shown}\0${createHash("sha256").update(readFileSync(matched.get(shown)!)).digest("hex")}\n`);
-  return { files: matched.size, sha256: matched.size ? hash.digest("hex") : null, paths: [...matched.values()] };
+  readonly openParts: { readonly slots: number; readonly seats: number };
 }
 
 /** A model JSON record, or undefined when the file is absent; an unreadable or malformed one surfaces. */
@@ -116,21 +91,36 @@ function iaSlots(root: string, agent: string): string[] {
   return (ia?.nodes ?? []).flatMap(node => (node.children ?? []).flatMap(child => (child.slots ?? []).filter((slot): slot is string => typeof slot === "string")));
 }
 
+/**
+ * Writer keys awaiting a decision: keys a Writer slot's candidates propose that its pinned candidate
+ * does not hold (every key of an unpinned slot's newest candidate). A pinned key is decided: the
+ * pin is the approval (no `status: approved` field exists in the Writer record format).
+ */
 function writerKeysUnapproved(root: string): number {
   const dir = join(root, "clossys", "agents", "writer");
   if (!modelExists(dir)) return 0;
+  const keysOf = (file: string): Set<string> => {
+    const keys = new Set<string>();
+    for (const match of readModelText(file).matchAll(/^<!-- (\{.*\}) -->$/gm)) {
+      let meta: { id?: unknown } | undefined;
+      try { meta = JSON.parse(match[1]!); }
+      catch (error) { throw new Error(`${file}: malformed record line ${match[0]} (${errorMessage(error)})`); }
+      if (typeof meta?.id === "string") keys.add(meta.id);
+    }
+    return keys;
+  };
+  const version = (name: string) => Number(/-v(\d+)\.md$/.exec(name)?.[1] ?? 0);
   let count = 0;
   for (const slot of listModelDir(dir)) {
     const candidates = join(dir, slot, "candidates");
-    for (const name of listModelDir(candidates).filter(name => name.endsWith(".md"))) {
-      for (const match of readModelText(join(candidates, name)).matchAll(/^<!-- (\{.*\}) -->$/gm)) {
-        let meta: { record?: { status?: unknown }; status?: unknown } | undefined;
-        try { meta = JSON.parse(match[1]!); }
-        catch (error) { throw new Error(`${join(candidates, name)}: malformed record line ${match[0]} (${errorMessage(error)})`); }
-        const status = meta?.record?.status ?? meta?.status;
-        if (status !== "approved") count++;
-      }
-    }
+    const names = listModelDir(candidates).filter(name => name.endsWith(".md")).sort((a, b) => version(a) - version(b));
+    if (!names.length) continue;
+    const pin = readJson(join(dir, slot, "pin.json")) as { candidate?: unknown } | undefined;
+    const pinned = typeof pin?.candidate === "string" && names.includes(pin.candidate) ? keysOf(join(candidates, pin.candidate)) : new Set<string>();
+    const proposed = new Set<string>();
+    const after = typeof pin?.candidate === "string" ? names.filter(name => version(name) > version(pin.candidate as string)) : names.slice(-1);
+    for (const name of after) for (const key of keysOf(join(candidates, name))) if (!pinned.has(key)) proposed.add(key);
+    count += proposed.size;
   }
   return count;
 }
@@ -150,25 +140,18 @@ function openCount(counter: OpenCounter, root: string, agents: PipelineStatus["a
 }
 
 export function pipelineStatus(root: string, steps: readonly Step[] = STEPS, packageRoot = PACKAGE_ROOT): PipelineStatus {
-  const files = new Files(root, packageRoot);
   const agents = slotCounts(root);
   const seats = readSeats(root, steps);
-  const pendingChecks = new Set(CHECKS.filter(check => check.pending).map(check => check.id));
-  let open = 0;
-  const rows = steps.map((step): StepStatus => {
-    const inputs = portStatus(files, step.inputs), outputs = portStatus(files, step.outputs);
-    const times = outputs.paths.map(path => statSync(path).mtimeMs);
-    const count = step.open ? openCount(step.open, root, agents, seats) : undefined;
-    if (count) open += count;
-    return {
-      id: step.id, kind: step.kind, actor: step.actor, state: step.pending?.change === "adds" ? "pending" : "ready",
-      ...(step.pending ? { pending: step.pending } : {}),
-      inputs: { files: inputs.files, sha256: inputs.sha256 }, outputs: { files: outputs.files, sha256: outputs.sha256 },
-      lastRun: times.length ? new Date(Math.max(...times)).toISOString() : null,
-      checks: step.checks.map(id => ({ id, state: pendingChecks.has(id) ? "pending" as const : "not-run" as const })),
-      ...(seats[step.id] ? { seat: seats[step.id]!.state } : {}),
-      ...(step.open ? { open: { counter: step.open, count: count ?? 0 } } : {}),
-    };
-  });
-  return { schema: STATUS_SCHEMA, steps: rows, agents, open };
+  const graph = buildGraph(root, steps, packageRoot);
+  const wiring = buildWiring(root, { graph, packageRoot });
+  // Step fields are read through the graph (the step standard's normalized form), never the definitions.
+  const decisions = graph.nodes.flatMap(node => node.open ? [{ step: node.id, counter: node.open, count: openCount(node.open, root, agents, seats) }] : []);
+  const slots = Object.values(agents).reduce((sum, counts) => sum + counts.open, 0);
+  const seatsOpen = Object.values(seats).filter(seat => seat.state !== "assigned").length;
+  return {
+    schema: STATUS_SCHEMA,
+    steps: wiring.nodes.map(node => ({ id: node.id, step: node.step, kind: node.kind, invocation: node.invocation, state: node.state, citation: node.citation, changed: node.changed, changedCount: node.changedCount, checks: node.checks })),
+    undrawn: wiring.undrawn, counts: wiring.counts, decisions, agents,
+    open: slots + seatsOpen, openParts: { slots, seats: seatsOpen },
+  };
 }

@@ -142,6 +142,12 @@ export async function startProducerServer(options: ProducerServerOptions): Promi
         const graph = await readFile(PIPELINE_GRAPH, "utf8").then(text => JSON.parse(text) as unknown).catch(() => undefined);
         json(response, graph ? 200 : 404, graph ? { state: "ready", graph } : { state: "missing" }); return;
       }
+      // The live wiring: steps that exist and ran, edges their run records observed, states citing those records.
+      // Imported on request: wiring.ts reaches the CLI handlers, which reach this server.
+      if (pathname === "/api/pipeline/wiring") {
+        const { buildWiring } = await import("../pipeline/wiring.js");
+        json(response, 200, { state: "ready", wiring: buildWiring(options.root) }); return;
+      }
       if (pathname === "/api/health") { json(response, 200, { ok: !!child, studio: child ? "ready" : "starting" }); return; }
       // One agent's slots in IA order, grouped as the Studio tabs place them (`<l1>/<l2>` sections).
       const galleryMatch = /^\/api\/slots\/([a-z]+)$/.exec(pathname);
