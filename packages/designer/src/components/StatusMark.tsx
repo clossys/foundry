@@ -59,7 +59,8 @@ const MARK_CLASSES: Record<StatusMarkTone, string> = {
   warning: "text-status-warning",
   danger: "text-status-danger",
   info: "text-status-info",
-  neutral: "text-ink-muted",
+  // Glyph-only colour: the stroke takes muted ink (a non-text mark), never the text colour.
+  neutral: "stroke-ink-muted",
 };
 
 const ASSETS = {
@@ -98,7 +99,7 @@ export function StatusMark({ tone, glyphs, neutralGlyph, className, children, ..
       status={KIBO_STATUS[tone]}
       variant="outline"
       data-tone={tone}
-      className={cx("inline-flex text-body-s font-body", className)}
+      className={cx("inline-flex text-body-s font-body transition-none", className)}
     >
       <Icon
         glyph={glyph ?? SHAPE_GLYPHS[SHAPES[tone]]}

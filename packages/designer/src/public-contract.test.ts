@@ -464,9 +464,9 @@ describe("public UI contract", () => {
   });
 
   it("keeps token-only use free of component runtime installation", () => {
-    // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), clsx and @internationalized/date
-    // are optional peers, so a token-only install pulls none of them; a consumer of RichText, the charts or the
-    // date components installs them. class-variance-authority still depends on clsx, so clsx can arrive transitively.
+    // G20 (planner decision): the rich-text editor (tiptap), charts (recharts), toasts (sonner), the media player
+    // (media-chrome), clsx and @internationalized/date are optional peers, so a token-only install pulls none of
+    // them; a consumer of RichText, the charts, Toaster, MediaPlayer or the date components installs them. class-variance-authority still depends on clsx, so clsx can arrive transitively.
     expect(packageJson.dependencies).toEqual({
       "class-variance-authority": "0.7.1",
       "css-tree": "3.2.1",
@@ -475,14 +475,14 @@ describe("public UI contract", () => {
 
     const optionalPeers = [
       "@internationalized/date", "@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit",
-      "clsx", "react", "react-dom", "react-aria-components", "recharts", "tailwind-merge", "tailwindcss",
+      "clsx", "media-chrome", "react", "react-dom", "react-aria-components", "recharts", "sonner", "tailwind-merge", "tailwindcss",
     ];
     for (const dependency of optionalPeers) {
       expect(packageJson.peerDependencies[dependency], dependency).toBeDefined();
       expect(packageJson.peerDependenciesMeta[dependency]?.optional, dependency).toBe(true);
       expect(packageJson.dependencies[dependency], `${dependency} must not be a runtime dependency`).toBeUndefined();
     }
-    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "clsx", "recharts"]) {
+    for (const dependency of ["@tiptap/extension-table", "@tiptap/markdown", "@tiptap/react", "@tiptap/starter-kit", "clsx", "media-chrome", "recharts", "sonner"]) {
       expect(packageJson.devDependencies[dependency], `${dependency} stays installed for Designer's own build and tests`).toBe(packageJson.peerDependencies[dependency]);
     }
   });
@@ -1098,7 +1098,7 @@ describe("compiled control glyph bindings", () => {
   it("exports the provider only from the client components entry and keeps StatusMark server-safe", () => {
     const clientScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/index.js"))}; process.stdout.write(JSON.stringify(typeof api.GlyphProvider));`;
     expect(execFileSync(process.execPath, ["--input-type=module", "-e", clientScript], { encoding: "utf8", cwd: packageRoot })).toBe('"function"');
-    const serverScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/server.js"))}; const mark = api.StatusMark({ tone: "success", children: "Ready", glyphs: { "assets.icon-success": [["path", { d: "M1 2h3" }]] } }); process.stdout.write(JSON.stringify({ provider: "GlyphProvider" in api, mark: mark.type }));`;
+    const serverScript = `import * as api from ${JSON.stringify(join(packageRoot, "dist/components/server.js"))}; const mark = api.StatusMark({ tone: "success", children: "Ready", glyphs: { "assets.icon-success": [["path", { d: "M1 2h3" }]] } }); let host = mark; while (typeof host.type === "function") host = host.type(host.props); process.stdout.write(JSON.stringify({ provider: "GlyphProvider" in api, mark: host.type }));`;
     expect(JSON.parse(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", serverScript], { encoding: "utf8", cwd: packageRoot }))).toEqual({ provider: false, mark: "span" });
   });
 });

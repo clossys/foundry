@@ -29,7 +29,7 @@ describe("StatusMark", () => {
     expect(root).toHaveAttribute("data-tone", tone);
     if (tone === "neutral") {
       expect(label.className).toContain("text-ink-secondary");
-      expect(mark.getAttribute("class")).toContain("text-ink-muted");
+      expect(mark.getAttribute("class")).toContain("stroke-ink-muted");
     } else {
       expect(label.className).toContain(`text-status-${tone}-text`);
       expect(mark.getAttribute("class")).toContain(`text-status-${tone}`);

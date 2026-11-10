@@ -124,7 +124,9 @@ it("draws every fed Foundry component with dataset content, never its leaf label
   const specimens = componentSpecimenPreview({ modules: hostModules });
   const fills = loadCatalogBundles().componentFills.flatMap(doc => Object.values(doc.components))
     .filter(fill => fill.source === "foundry" && fill.impl.kind === "package" && fedKeys().has(keyOf(fill)));
-  expect(fills.length).toBeGreaterThan(50);
+  // planner:r2f-53: the six zero-caller Foundry charts (sparkline, status-strip, scatter, heatmap, range, waterfall)
+  // were deleted, so the fed Foundry set floor moves from >50 to >45 (49 measured); every remaining fill is still drawn.
+  expect(fills.length).toBeGreaterThan(45);
   const blank = fills.filter(fill => {
     const html = renderToString(<>{specimens.preview(fill.slot, leafProfile(fill))}</>);
     // The base row is labelled with the leaf only when nothing fed it.
