@@ -97,6 +97,38 @@
           "--sidebar-accent-foreground"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "wizard/wizard.tsx",
+        "export": "default",
+        "props": {
+          "submitLabel": "Create workspace",
+          "steps": [
+            {
+              "id": "account",
+              "title": "Account",
+              "content": "Name the workspace and choose its address."
+            },
+            {
+              "id": "team",
+              "title": "Team",
+              "content": "Invite the people who will work in it."
+            },
+            {
+              "id": "plan",
+              "title": "Plan",
+              "content": "Pick the plan that fits the team."
+            }
+          ],
+          "review": "Check the details, then create the workspace."
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

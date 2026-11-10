@@ -1,7 +1,9 @@
 {
   "name": "sidebar-static-row",
   "type": "registry:component",
-  "dependencies": [],
+  "dependencies": [
+    "cn"
+  ],
   "registryDependencies": [
     "sidebar"
   ],
@@ -14,7 +16,7 @@
     {
       "path": "sidebar-static-row.tsx",
       "type": "registry:component",
-      "content": "\"use client\"\n\nimport type { ReactNode } from \"react\"\nimport { cn } from \"../lib/utils\"\nimport { useSidebar } from \"./ui/sidebar\"\n\n// Foundry sidebar extension (not a shadcn slot), lifted unchanged from the stock aria-nova\n// ../components/ui/sidebar.tsx: the SidebarMenuButton base/default/lg classes. It adds no styling of its own.\n\n// Exact SidebarMenuButton base/default/lg presentation from stock aria-nova.\nconst stockRowBase = \"peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-expanded:hover:bg-sidebar-accent aria-expanded:hover:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate\"\nconst stockRowDefault = \"hover:bg-sidebar-accent hover:text-sidebar-accent-foreground\"\nconst stockRowLarge = \"h-12 text-sm group-data-[collapsible=icon]:p-0!\"\n\n/** A non-interactive sidebar row with every stock SidebarMenuButton (size lg) class: no button, ref or press handler. */\nfunction SidebarStaticRow({ children, className }: { children: ReactNode; className?: string }) {\n  useSidebar()\n  return <div data-slot=\"sidebar-menu-button\" data-sidebar=\"menu-button\" data-size=\"lg\" data-active={false}\n    className={cn(stockRowBase, stockRowDefault, stockRowLarge, className)}>{children}</div>\n}\n\nexport { SidebarStaticRow }\n"
+      "content": "\"use client\"\n\nimport type { ReactNode } from \"react\"\nimport { cn } from \"cn\"\nimport { useSidebar } from \"@/components/ui/sidebar\"\n\n// Foundry sidebar extension (not a shadcn slot), lifted unchanged from the stock aria-nova\n// ../components/ui/sidebar.tsx: the SidebarMenuButton base/default/lg classes. It adds no styling of its own.\n\n// Exact SidebarMenuButton base/default/lg presentation from stock aria-nova.\nconst stockRowBase = \"peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 aria-expanded:hover:bg-sidebar-accent aria-expanded:hover:text-sidebar-accent-foreground data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground data-active:bg-sidebar-accent data-active:font-medium data-active:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate\"\nconst stockRowDefault = \"hover:bg-sidebar-accent hover:text-sidebar-accent-foreground\"\nconst stockRowLarge = \"h-12 text-sm group-data-[collapsible=icon]:p-0!\"\n\n/** A non-interactive sidebar row with every stock SidebarMenuButton (size lg) class: no button, ref or press handler. */\nfunction SidebarStaticRow({ children, className }: { children: ReactNode; className?: string }) {\n  useSidebar()\n  return <div data-slot=\"sidebar-menu-button\" data-sidebar=\"menu-button\" data-size=\"lg\" data-active={false}\n    className={cn(stockRowBase, stockRowDefault, stockRowLarge, className)}>{children}</div>\n}\n\nexport { SidebarStaticRow }\n"
     }
   ],
   "meta": {
@@ -58,6 +60,20 @@
           "--radius"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "sidebar-static-row.tsx",
+        "export": "SidebarStaticRow",
+        "props": {
+          "children": "Workspace"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

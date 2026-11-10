@@ -97,6 +97,102 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart.tsx",
+        "export": "ChartContainer",
+        "props": {
+          "config": {
+            "visitors": {
+              "label": "Visitors",
+              "color": "var(--chart-1)"
+            }
+          },
+          "className": "h-48 w-full max-w-md aspect-auto",
+          "children": {
+            "$component": "recharts.AreaChart",
+            "props": {
+              "data": [
+                {
+                  "month": "Jan",
+                  "visitors": 186
+                },
+                {
+                  "month": "Feb",
+                  "visitors": 305
+                },
+                {
+                  "month": "Mar",
+                  "visitors": 237
+                },
+                {
+                  "month": "Apr",
+                  "visitors": 173
+                },
+                {
+                  "month": "May",
+                  "visitors": 209
+                },
+                {
+                  "month": "Jun",
+                  "visitors": 264
+                }
+              ],
+              "accessibilityLayer": true,
+              "margin": {
+                "left": 12,
+                "right": 12
+              }
+            },
+            "children": [
+              {
+                "$component": "recharts.CartesianGrid",
+                "props": {
+                  "vertical": false
+                }
+              },
+              {
+                "$component": "recharts.XAxis",
+                "props": {
+                  "dataKey": "month",
+                  "tickLine": false,
+                  "axisLine": false,
+                  "tickMargin": 8
+                }
+              },
+              {
+                "$component": "ChartTooltip",
+                "props": {
+                  "cursor": false,
+                  "content": {
+                    "$component": "ChartTooltipContent",
+                    "props": {
+                      "hideLabel": true
+                    }
+                  }
+                }
+              },
+              {
+                "$component": "recharts.Area",
+                "props": {
+                  "dataKey": "visitors",
+                  "type": "natural",
+                  "fill": "var(--color-visitors)",
+                  "fillOpacity": 0.4,
+                  "stroke": "var(--color-visitors)",
+                  "isAnimationActive": false
+                }
+              }
+            ]
+          }
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

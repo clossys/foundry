@@ -1,7 +1,9 @@
 {
   "name": "specimen-frame",
   "type": "registry:component",
-  "dependencies": [],
+  "dependencies": [
+    "cn"
+  ],
   "registryDependencies": [],
   "files": [
     {
@@ -12,7 +14,7 @@
     {
       "path": "specimen-frame.tsx",
       "type": "registry:component",
-      "content": "// Studio specimen frame: the shadcn aspect-ratio box (shadcn-aria aspect-ratio@4.23.0,\n// `relative aspect-(--ratio)`) holding the BlockViewer iframe. The ratio is a Designer layout token.\nimport type { ComponentProps } from \"react\"\nimport { cn } from \"../lib/utils\"\n\nconst SPECIMEN_RATIO = {\n  thumbnail: \"aspect-(--specimen-ratio-thumbnail)\",\n  mobile: \"aspect-(--specimen-ratio-mobile)\",\n  tablet: \"aspect-(--specimen-ratio-tablet)\",\n  desktop: \"aspect-(--specimen-ratio-desktop)\",\n} as const\n\nexport type SpecimenRatio = keyof typeof SPECIMEN_RATIO\n\n/** A fixed-ratio specimen window: the framed page fills it and never sets the box's height. */\nfunction SpecimenFrame({ src, title, ratio = \"thumbnail\", interactive = false, className, ...props }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  src: string\n  title: string\n  ratio?: SpecimenRatio\n  /** Thumbnails are inert so the card link owns every pointer and focus event. */\n  interactive?: boolean\n}) {\n  return (\n    <div\n      data-slot=\"specimen-frame\"\n      className={cn(\"relative w-full overflow-hidden rounded-md border bg-background\", SPECIMEN_RATIO[ratio], className)}\n      {...props}\n    >\n      <iframe title={title} src={src} loading=\"lazy\" inert={!interactive} className=\"absolute inset-0 size-full border-0\" />\n    </div>\n  )\n}\n\nexport { SpecimenFrame }\n"
+      "content": "// Studio specimen frame: the shadcn aspect-ratio box (shadcn-aria aspect-ratio@4.23.0,\n// `relative aspect-(--ratio)`) holding the BlockViewer iframe. The ratio is a Designer layout token.\nimport type { ComponentProps } from \"react\"\nimport { cn } from \"cn\"\n\nconst SPECIMEN_RATIO = {\n  thumbnail: \"aspect-(--specimen-ratio-thumbnail)\",\n  mobile: \"aspect-(--specimen-ratio-mobile)\",\n  tablet: \"aspect-(--specimen-ratio-tablet)\",\n  desktop: \"aspect-(--specimen-ratio-desktop)\",\n} as const\n\nexport type SpecimenRatio = keyof typeof SPECIMEN_RATIO\n\n/** A fixed-ratio specimen window: the framed page fills it and never sets the box's height. */\nfunction SpecimenFrame({ src, title, ratio = \"thumbnail\", interactive = false, className, ...props }: Omit<ComponentProps<\"div\">, \"children\"> & {\n  src: string\n  title: string\n  ratio?: SpecimenRatio\n  /** Thumbnails are inert so the card link owns every pointer and focus event. */\n  interactive?: boolean\n}) {\n  return (\n    <div\n      data-slot=\"specimen-frame\"\n      className={cn(\"relative w-full overflow-hidden rounded-md border bg-background\", SPECIMEN_RATIO[ratio], className)}\n      {...props}\n    >\n      <iframe title={title} src={src} loading=\"lazy\" inert={!interactive} className=\"absolute inset-0 size-full border-0\" />\n    </div>\n  )\n}\n\nexport { SpecimenFrame }\n"
     }
   ],
   "meta": {
@@ -53,6 +55,23 @@
           "--radius"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "specimen-frame.tsx",
+        "export": "SpecimenFrame",
+        "props": {
+          "src": "about:blank",
+          "title": "Specimen preview",
+          "ratio": "thumbnail",
+          "className": "max-w-xs"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

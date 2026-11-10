@@ -99,6 +99,48 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart-waterfall.tsx",
+        "export": "ChartWaterfall",
+        "props": {
+          "className": "max-w-md",
+          "steps": [
+            {
+              "label": "Start",
+              "value": 420,
+              "total": true
+            },
+            {
+              "label": "Sales",
+              "value": 180
+            },
+            {
+              "label": "Services",
+              "value": 90
+            },
+            {
+              "label": "Refunds",
+              "value": -60
+            },
+            {
+              "label": "Costs",
+              "value": -140
+            },
+            {
+              "label": "End",
+              "value": 490,
+              "total": true
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

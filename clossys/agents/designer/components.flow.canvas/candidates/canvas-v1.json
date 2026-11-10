@@ -66,6 +66,102 @@
           "--radius"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "flow-canvas.ts",
+        "export": "ReactFlow",
+        "props": {
+          "style": {
+            "width": "100%",
+            "height": 240
+          },
+          "fitView": true,
+          "proOptions": {
+            "hideAttribution": true
+          },
+          "nodes": [
+            {
+              "id": "brief",
+              "position": {
+                "x": 0,
+                "y": 60
+              },
+              "data": {
+                "label": "Brief"
+              }
+            },
+            {
+              "id": "design",
+              "position": {
+                "x": 180,
+                "y": 0
+              },
+              "data": {
+                "label": "Design"
+              }
+            },
+            {
+              "id": "copy",
+              "position": {
+                "x": 180,
+                "y": 120
+              },
+              "data": {
+                "label": "Copy"
+              }
+            },
+            {
+              "id": "publish",
+              "position": {
+                "x": 360,
+                "y": 60
+              },
+              "data": {
+                "label": "Publish"
+              }
+            }
+          ],
+          "edges": [
+            {
+              "id": "brief-design",
+              "source": "brief",
+              "target": "design"
+            },
+            {
+              "id": "brief-copy",
+              "source": "brief",
+              "target": "copy"
+            },
+            {
+              "id": "design-publish",
+              "source": "design",
+              "target": "publish"
+            },
+            {
+              "id": "copy-publish",
+              "source": "copy",
+              "target": "publish"
+            }
+          ],
+          "children": [
+            {
+              "$component": "Background"
+            },
+            {
+              "$component": "Controls",
+              "props": {
+                "showInteractive": false
+              }
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

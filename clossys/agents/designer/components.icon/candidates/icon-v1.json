@@ -68,6 +68,22 @@
           "--spacing"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "icon.tsx",
+        "export": "Icon",
+        "props": {
+          "name": "success",
+          "size": "lg",
+          "label": "Success"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

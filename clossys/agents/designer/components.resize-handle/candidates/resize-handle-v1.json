@@ -67,6 +67,49 @@
           "--sidebar-border"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "resizable.tsx",
+        "export": "ResizablePanelGroup",
+        "props": {
+          "orientation": "horizontal",
+          "className": "min-h-40 max-w-md rounded-lg border",
+          "children": [
+            {
+              "$component": "ResizablePanel",
+              "props": {
+                "defaultSize": 50,
+                "className": "flex items-center justify-center p-6 text-sm font-medium"
+              },
+              "children": [
+                "Sidebar"
+              ]
+            },
+            {
+              "$component": "ResizableHandle",
+              "props": {
+                "withHandle": true
+              }
+            },
+            {
+              "$component": "ResizablePanel",
+              "props": {
+                "defaultSize": 50,
+                "className": "flex items-center justify-center p-6 text-sm font-medium"
+              },
+              "children": [
+                "Content"
+              ]
+            }
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

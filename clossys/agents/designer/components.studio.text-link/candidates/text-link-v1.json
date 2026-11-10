@@ -1,7 +1,9 @@
 {
   "name": "text-link",
   "type": "registry:component",
-  "dependencies": [],
+  "dependencies": [
+    "cn"
+  ],
   "registryDependencies": [],
   "files": [
     {
@@ -12,7 +14,7 @@
     {
       "path": "text-link.tsx",
       "type": "registry:component",
-      "content": "// Studio text link: the underlined text link of shadcn login-03\n// (shadcn login-03@4.23.0, components/login-form.tsx: `underline underline-offset-4`).\nimport type { ComponentProps } from \"react\"\nimport { cn } from \"../lib/utils\"\n\n/** The stock underlined text link of the shadcn card example (apps/v4 card-example.tsx), for a link inside a heading or prose. */\nfunction TextLink({ className, ...props }: ComponentProps<\"a\">) {\n  return <a className={cn(\"underline underline-offset-4\", className)} {...props} />\n}\n\nexport { TextLink }\n"
+      "content": "// Studio text link: the underlined text link of shadcn login-03\n// (shadcn login-03@4.23.0, components/login-form.tsx: `underline underline-offset-4`).\nimport type { ComponentProps } from \"react\"\nimport { cn } from \"cn\"\n\n/** The stock underlined text link of the shadcn card example (apps/v4 card-example.tsx), for a link inside a heading or prose. */\nfunction TextLink({ className, ...props }: ComponentProps<\"a\">) {\n  return <a className={cn(\"underline underline-offset-4\", className)} {...props} />\n}\n\nexport { TextLink }\n"
     }
   ],
   "meta": {
@@ -49,6 +51,21 @@
         "copyKeys": [],
         "themeVars": []
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "text-link.tsx",
+        "export": "TextLink",
+        "props": {
+          "href": "#",
+          "children": "Read the guide"
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

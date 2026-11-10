@@ -87,6 +87,21 @@
           "--sidebar-accent-foreground"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "rich-text.tsx",
+        "export": "RichText",
+        "props": {
+          "label": "Release notes",
+          "value": "## Release notes\n\nThis release adds **scheduled exports** and a faster *search index*.\n\n- Exports run on a schedule\n- Search results load in under a second\n\n> Existing exports keep their settings."
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }

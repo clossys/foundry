@@ -91,6 +91,52 @@
           "--font-mono"
         ]
       }
+    },
+    "preview": {
+      "schema": "clossys.preview/1",
+      "fixtures": {
+        "file": "chart-heatmap.tsx",
+        "export": "ChartHeatmap",
+        "props": {
+          "label": "Sessions by weekday and hour",
+          "className": "max-w-md",
+          "rows": [
+            "Mon",
+            "Tue",
+            "Wed"
+          ],
+          "columns": [
+            "9",
+            "12",
+            "15",
+            "18"
+          ],
+          "values": [
+            [
+              4,
+              9,
+              12,
+              6
+            ],
+            [
+              5,
+              11,
+              14,
+              7
+            ],
+            [
+              3,
+              8,
+              13,
+              9
+            ]
+          ]
+        }
+      },
+      "copy": {},
+      "container": "canvas",
+      "theme": "light",
+      "width": 640
     }
   }
 }
