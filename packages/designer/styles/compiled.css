@@ -1698,6 +1698,9 @@
   .h-\(--spacing-2xl\)\! {
     height: var(--spacing-2xl) !important;
   }
+  .h-\(--spacing-2xl\,calc\(var\(--spacing\)\*8\)\) {
+    height: var(--spacing-2xl,calc(var(--spacing, 0.25rem) * 8));
+  }
   .h-\(--spacing-3xl\) {
     height: var(--spacing-3xl);
   }
@@ -2149,9 +2152,6 @@
   }
   .resize-none {
     resize: none;
-  }
-  .resize-y {
-    resize: vertical;
   }
   .scroll-my-1 {
     scroll-margin-block: var(--spacing, 0.25rem);

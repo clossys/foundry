@@ -10,8 +10,8 @@ import { StockCombobox } from "../../blocks/stock-combobox.js";
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
 const Alert = componentLeaf<typeof import("../../components/preview-runtime/components/banner/alert.js").Alert>("components.banner");
 const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
-const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
-const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
+const TextField = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
+const Textarea = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").Textarea>("components.text-field", "Textarea");
 
 const LEAF = "sections.form";
 const TEXT_TYPES = ["text", "email", "tel", "url", "password", "search"] as const;

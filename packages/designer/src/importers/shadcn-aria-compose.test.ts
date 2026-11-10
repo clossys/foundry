@@ -7,6 +7,8 @@ import datePickerRule from "../catalog/rules/components.date-picker.json" with {
 import composedFileTrigger from "../catalog/fills/shadcn@aria/components.file-trigger.json" with { type: "json" };
 import composedField from "../catalog/fills/shadcn@aria/components.field.json" with { type: "json" };
 import fieldStock from "../catalog/rules/components.field.stock.json" with { type: "json" };
+import composedTextField from "../catalog/fills/shadcn@aria/components.text-field.json" with { type: "json" };
+import textFieldStock from "../catalog/rules/components.text-field.stock.json" with { type: "json" };
 import { loadComponentCompositionRules } from "../catalog-core/component-compositions.js";
 import { validateComponentRuleTemplate } from "../catalog-core/component-rule-validation.js";
 import { stableStringify } from "../catalog-core/stable.js";
@@ -46,12 +48,12 @@ describe("shadcn@aria compose rules", () => {
     // date-picker reads the registered rule's inputs and stays mixed while date-field is a gap seat.
     expect(by["date-picker"]!.constituents.map(leaf => `components.${leaf}`)).toEqual(datePickerRule.inputs);
     expect(by["date-picker"]).toMatchObject({ status: "gap", source: "foundry", reason: "constituent components.date-field=foundry is not shadcn@aria" });
-    expect(result.compose.filter(row => row.status === "composed").map(row => row.leaf)).toEqual(["field", "file-trigger"]);
+    expect(result.compose.filter(row => row.status === "composed").map(row => row.leaf)).toEqual(["field", "text-field", "file-trigger"]);
   });
 
   it("emits the composed file-trigger as a shadcn@aria rule template that validates against its registered rule", () => {
-    expect(result.composed.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(["shadcn@aria/components.field", "shadcn@aria/components.file-trigger"]);
-    expect(stableStringify(result.composed[1])).toBe(stableStringify(composedFileTrigger));
+    expect(result.composed.map(doc => doc.$extensions["com.clossys.fill"].id)).toEqual(["shadcn@aria/components.field", "shadcn@aria/components.text-field", "shadcn@aria/components.file-trigger"]);
+    expect(stableStringify(result.composed[2])).toBe(stableStringify(composedFileTrigger));
     expect(result.fills.some(doc => doc.$extensions["com.clossys.fill"].slot === "components.file-trigger")).toBe(false);
     const rule = loadComponentCompositionRules().find(candidate => candidate.slot === "components.file-trigger")!;
     expect(rule.template).toMatchObject({ source: "shadcn@aria", root: "rac:FileTrigger", composes: ["components.button"], reads: { components: ["components.button"] } });
@@ -83,13 +85,34 @@ describe("shadcn@aria compose rules", () => {
     const label = tampered.items.find(item => item.name === "label")!;
     expect(() => importShadcnAriaComponents({ ...tampered, items: tampered.items.map(item => item === label ? { ...item, files: [{ ...item.files[0], content: item.files[0].content + " " }] } : item) })).toThrow(/sha256 mismatch/);
   });
-  it("records the pinned D1 registry items each seat would wrap and keeps the six unfilled seats on their gap seats with the measured reason", () => {
+  it("composes text-field at one size: stock input and textarea in a RAC TextField over the composed field", () => {
     const by = Object.fromEntries(result.compose.map(row => [row.leaf, row]));
-    const six = ["date-field", "text-field", "search-field", "form", "spinner", "toolbar"];
-    expect(Object.fromEntries(six.map(leaf => [leaf, by[leaf]!.items]))).toEqual({
-      "date-field": ["input-group"], "text-field": ["label", "input"], "search-field": ["input-group", "input"], form: [], spinner: ["spinner"], toolbar: [],
+    expect(by["text-field"]).toMatchObject({ status: "composed", source: "shadcn@aria", constituents: ["field"], items: ["input", "textarea"], depth: 1 });
+    expect(stableStringify(result.composed[1])).toBe(stableStringify(composedTextField));
+    expect(generatedShadcnComposedStockFiles(pinnedInput())["components.text-field.stock.json"]).toBe(readFileSync(resolve(import.meta.dirname, "../catalog/rules/components.text-field.stock.json"), "utf8"));
+    expect(textFieldStock.files.map(file => file.path)).toEqual(["components/text-field/stock/input.tsx", "components/text-field/stock/textarea.tsx", "components/text-field/stock/utils.ts", "notices/text-field.md"]);
+    const template = composedTextField.components["text-field"];
+    // D-b: one control size; no size member survives anywhere in the contract or the template.
+    expect(template.members).toEqual(["line.multiline", "line.single-line", "state.disabled", "state.invalid", "state.read-only"]);
+    expect((slots as Array<{ id: string; contract: { members: { names: string[] } } }>).find(slot => slot.id === "components.text-field")!.contract.members.names.filter(name => name.startsWith("size."))).toEqual([]);
+    expect(template.propMap).toMatchObject({ "line.single-line": "TextField", "line.multiline": "Textarea" });
+    expect(template.secondaryExports).toEqual([{ name: "Textarea", export: "Textarea" }]);
+    const rule = loadComponentCompositionRules().find(candidate => candidate.slot === "components.text-field")!;
+    expect(rule.files.map(file => file.path)).toEqual(["components/text-field/text-field.tsx", ...textFieldStock.files.map(file => file.path)]);
+    expect(rule.files[0]!.content).toContain('from "../field/index"');
+    expect(rule.template).toMatchObject({ source: "shadcn@aria", root: "rac:TextField", composes: ["components.field"], impl: { entry: "components/text-field/text-field.tsx", export: "TextField" } });
+    expect(() => validateComponentRuleTemplate(rule)).not.toThrow();
+    const mutated = structuredClone(rule);
+    mutated.files = mutated.files.map(file => file.path === "components/text-field/stock/input.tsx" ? { ...file, content: `${file.content} ` } : file);
+    expect(() => validateComponentRuleTemplate(mutated)).toThrow();
+  });
+  it("records the pinned D1 registry items each seat would wrap and keeps the five unfilled seats on their gap seats with the measured reason", () => {
+    const by = Object.fromEntries(result.compose.map(row => [row.leaf, row]));
+    const five = ["date-field", "search-field", "form", "spinner", "toolbar"];
+    expect(Object.fromEntries(five.map(leaf => [leaf, by[leaf]!.items]))).toEqual({
+      "date-field": ["input-group"], "search-field": ["input-group", "input"], form: [], spinner: ["spinner"], toolbar: [],
     });
-    for (const leaf of six) expect(by[leaf], leaf).toMatchObject({ status: "gap", source: "foundry" });
+    for (const leaf of five) expect(by[leaf], leaf).toMatchObject({ status: "gap", source: "foundry" });
     for (const row of result.compose) for (const item of row.items) expect(SHADCN_COMPOSE_ITEMS, `${row.leaf}<-${item}`).toContain(item);
     // button-group and form ship no pinned bytes, so no rule may name them.
     for (const absent of ["button-group", "form"]) expect(() => resolveShadcnComposeRules([{ leaf: "toolbar", constituents: [], items: [absent] }], { slots: registered, sources: shadcn(), items: new Set(result.compose.flatMap(row => row.items)) })).toThrow(/not pinned|not a D1/);

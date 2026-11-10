@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Alert } from "../components/preview-runtime/components/banner/alert.js";
 import { ALERT_TONE } from "../components/surface-tones.js";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { TextField } from "../components/TextField.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
 import { Form, type FormError } from "./Form.js";
 
 function deferred() {

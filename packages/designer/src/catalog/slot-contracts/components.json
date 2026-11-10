@@ -4784,12 +4784,6 @@
         "description": "member axis: invalid | disabled | read-only"
       },
       {
-        "name": "size",
-        "kind": "prop",
-        "required": false,
-        "description": "member axis: sm | md | lg"
-      },
-      {
         "name": "themes.border",
         "kind": "theme",
         "required": true
@@ -4831,7 +4825,7 @@
       }
     ],
     "limits": {
-      "members": "line.single-line,line.multiline,state.invalid,state.disabled,state.read-only,size.sm,size.md,size.lg",
+      "members": "line.single-line,line.multiline,state.invalid,state.disabled,state.read-only",
       "members.mode": "closed",
       "root": "rac:TextField"
     },

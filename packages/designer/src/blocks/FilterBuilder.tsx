@@ -6,7 +6,7 @@ import { StockSelect } from "./stock-select.js";
 
 const Button = componentLeaf<import("../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Card = componentLeaf<typeof import("../components/preview-runtime/components/card/card.js").Card>("components.card");
-const TextField = componentLeaf<typeof import("../components/TextField.js").TextField>("components.text-field");
+const TextField = componentLeaf<typeof import("../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
@@ -81,7 +81,7 @@ export function FilterBuilder({ fields, operators, groups, onGroupsChange, label
               onSelectionChange={key => { if (typeof key === "string") update(group.id, condition.id, { field: key }); }} />
             <StockSelect label={labels.operator} size="sm" selectedKey={condition.operator} options={operatorOptions}
               onSelectionChange={key => { if (typeof key === "string") update(group.id, condition.id, { operator: key }); }} />
-            {takesValue ? <TextField label={labels.value} size="sm" value={condition.value} onChange={value => update(group.id, condition.id, { value })} /> : <SemanticContent as="span" aria-hidden="true" />}
+            {takesValue ? <TextField label={labels.value} value={condition.value} onChange={value => update(group.id, condition.id, { value })} /> : <SemanticContent as="span" aria-hidden="true" />}
             <Button variant="ghost" size="sm" onPress={() => replace(group.id, current => ({ ...current, conditions: current.conditions.filter(row => row.id !== condition.id) }))}>
               {labels.removeCondition(conditionIndex + 1)}
             </Button>

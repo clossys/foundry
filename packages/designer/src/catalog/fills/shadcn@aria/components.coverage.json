@@ -44,17 +44,19 @@
       "status": "composed"
     },
     {
-      "constituents": [],
-      "depth": 0,
+      "constituents": [
+        "field"
+      ],
+      "depth": 1,
       "items": [
-        "label",
-        "input"
+        "input",
+        "textarea"
       ],
       "leaf": "text-field",
-      "reason": "K1: size.sm/md/lg unmapped; the RAC TextField wrap maps line and state, but pinned label and input carry one control size and textarea is not a D1 item",
+      "reason": "every constituent is shadcn@aria; no new styling",
       "slot": "components.text-field",
-      "source": "foundry",
-      "status": "gap"
+      "source": "shadcn@aria",
+      "status": "composed"
     },
     {
       "constituents": [

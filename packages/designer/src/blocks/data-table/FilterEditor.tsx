@@ -8,7 +8,7 @@ import { StockSelect } from "../stock-select.js";
 
 const Button = componentLeaf<import("../../runtime/component-leaf.js").ButtonLeaf>("components.button");
 const Checkbox = componentLeaf<typeof import("../../components/preview-runtime/components/checkbox/checkbox.js").Checkbox>("components.checkbox");
-const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
+const TextField = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 type RangeFilter = Extract<TableFilter, { kind: "number" | "date" }>;

@@ -1,6 +1,6 @@
 {
   "blockedCount": 0,
-  "descriptorCount": 36,
+  "descriptorCount": 37,
   "leaves": [
     {
       "blockers": 0,
@@ -166,6 +166,11 @@
       "blockers": 0,
       "codes": [],
       "slot": "components.tabs"
+    },
+    {
+      "blockers": 0,
+      "codes": [],
+      "slot": "components.text-field"
     },
     {
       "blockers": 0,

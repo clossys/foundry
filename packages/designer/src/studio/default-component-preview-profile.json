@@ -1,6 +1,6 @@
 {
   "consumer": "defaults-consumer",
-  "selectionHash": "sha256:7bbe6f124aff6ed980e2d5806dd8817360892ea117aff383e2b7ce24ac72311f",
+  "selectionHash": "sha256:625acbf73628120ca21da2a27d40e34046a0f72149e35d53917313d575dc3038",
   "components": {
     "components.avatar": {
       "slot": "components.avatar",
@@ -13560,183 +13560,156 @@
     },
     "components.text-field": {
       "slot": "components.text-field",
-      "originKind": "adopted",
+      "originKind": "composed",
       "origin": {
-        "kind": "adopted",
-        "source": "foundry",
-        "fill": "foundry/components.text-field",
-        "pin": {
-          "package": "@clossys/designer",
-          "version": "0.12.0",
-          "export": "./components#TextField"
-        },
-        "license": "MIT",
-        "sha256": "3c9c768018047cbbe5414f55646bd94fb94defd6430cf7948839ccdf1c035984",
-        "adoptedAt": "2026-10-26"
+        "kind": "composed",
+        "rule": "compose:text-field@1",
+        "reads": [
+          "components.field"
+        ],
+        "inputsHash": "9bda8760351d97cc0ea57da0fc5a978e0efb402f12c9b756f5978c987c47c3ae"
       },
       "impl": {
-        "kind": "package",
-        "module": "@clossys/designer/components",
-        "export": "TextField"
+        "entry": "components/text-field/text-field.tsx",
+        "export": "TextField",
+        "kind": "source"
       },
       "propMap": {
-        "line.multiline": "./components#Textarea",
-        "line.single-line": "./components#TextField",
-        "size.lg": "./components#TextField.size=lg",
-        "size.md": "./components#TextField.size=md",
-        "size.sm": "./components#TextField.size=sm",
-        "state.disabled": "./components#TextField.isDisabled",
-        "state.invalid": "./components#TextField.isInvalid",
-        "state.read-only": "./components#TextField.isReadOnly"
+        "line.multiline": "Textarea",
+        "line.single-line": "TextField",
+        "state.disabled": "TextField.isDisabled",
+        "state.invalid": "TextField.isInvalid",
+        "state.read-only": "TextField.isReadOnly"
       },
       "reads": {
         "themes": {
-          "themes.accent.default": "--accent",
-          "themes.accent-foreground.default": "--accent-foreground",
-          "themes.background.default": "--background",
-          "themes.border.default": "--border",
-          "themes.card.default": "--card",
-          "themes.card-foreground.default": "--card-foreground",
           "themes.destructive.default": "--destructive",
-          "themes.font-sans.default": "--font-sans",
           "themes.foreground.default": "--foreground",
-          "themes.input.default": "--input",
-          "themes.muted.default": "--muted",
           "themes.muted-foreground.default": "--muted-foreground",
-          "themes.popover.default": "--popover",
-          "themes.popover-foreground.default": "--popover-foreground",
-          "themes.primary.default": "--primary",
-          "themes.primary-foreground.default": "--primary-foreground",
           "themes.radius.default": "--radius",
           "themes.ring.default": "--ring",
-          "themes.secondary.default": "--secondary",
-          "themes.secondary-foreground.default": "--secondary-foreground",
-          "themes.sidebar.default": "--sidebar",
-          "themes.sidebar-accent.default": "--sidebar-accent",
-          "themes.sidebar-accent-foreground.default": "--sidebar-accent-foreground",
-          "themes.sidebar-border.default": "--sidebar-border",
-          "themes.sidebar-foreground.default": "--sidebar-foreground",
-          "themes.sidebar-primary-foreground.default": "--sidebar-primary-foreground",
           "themes.spacing.default": "--spacing"
         },
         "assets": [],
-        "components": []
+        "components": [
+          "components.field"
+        ]
       },
       "descriptor": {
-        "slot": "components.text-field",
-        "source": "defaults-consumer",
-        "root": "rac:TextField",
+        "composes": [
+          "components.field"
+        ],
+        "deps": [
+          {
+            "license": "MIT",
+            "name": "react",
+            "version": ">=18"
+          },
+          {
+            "license": "Apache-2.0",
+            "name": "react-aria-components",
+            "version": "^1.21.0"
+          },
+          {
+            "license": "MIT",
+            "name": "clsx",
+            "version": "2.1.1"
+          },
+          {
+            "license": "MIT",
+            "name": "tailwind-merge",
+            "version": "3.3.1"
+          }
+        ],
+        "impl": {
+          "entry": "components/text-field/text-field.tsx",
+          "export": "TextField",
+          "kind": "source"
+        },
+        "license": "MIT",
         "members": [
           "line.multiline",
           "line.single-line",
-          "size.lg",
-          "size.md",
-          "size.sm",
           "state.disabled",
           "state.invalid",
           "state.read-only"
         ],
-        "props": [
-          "className",
-          "description",
-          "errorMessage",
-          "isDisabled",
-          "isInvalid",
-          "isReadOnly",
-          "label",
-          "onChange",
-          "size",
-          "value"
-        ],
-        "propMap": {
-          "line.multiline": "./components#Textarea",
-          "line.single-line": "./components#TextField",
-          "size.lg": "./components#TextField.size=lg",
-          "size.md": "./components#TextField.size=md",
-          "size.sm": "./components#TextField.size=sm",
-          "state.disabled": "./components#TextField.isDisabled",
-          "state.invalid": "./components#TextField.isInvalid",
-          "state.read-only": "./components#TextField.isReadOnly"
-        },
-        "reads": {
-          "themes": [
-            "themes.accent",
-            "themes.accent-foreground",
-            "themes.background",
-            "themes.border",
-            "themes.card",
-            "themes.card-foreground",
-            "themes.destructive",
-            "themes.font-sans",
-            "themes.foreground",
-            "themes.input",
-            "themes.muted",
-            "themes.muted-foreground",
-            "themes.popover",
-            "themes.popover-foreground",
-            "themes.primary",
-            "themes.primary-foreground",
-            "themes.radius",
-            "themes.ring",
-            "themes.secondary",
-            "themes.secondary-foreground",
-            "themes.sidebar",
-            "themes.sidebar-accent",
-            "themes.sidebar-accent-foreground",
-            "themes.sidebar-border",
-            "themes.sidebar-foreground",
-            "themes.sidebar-primary-foreground",
-            "themes.spacing"
-          ],
-          "assets": [],
-          "components": []
-        },
-        "composes": [],
-        "impl": {
-          "kind": "package",
-          "module": "@clossys/designer/components",
-          "export": "TextField"
-        },
-        "license": "MIT",
-        "pin": {
-          "package": "@clossys/designer",
-          "version": "0.12.0",
-          "export": "./components#TextField"
-        },
-        "deps": [
+        "notice": "notices/text-field.md",
+        "outputSha256": [
           {
-            "name": "react",
-            "version": ">=18",
-            "license": "MIT"
+            "path": "components/text-field/stock/input.tsx",
+            "sha256": "7ee8bacdd258923a1a8d4c948c3cf6bafde14eb65d1b389b7cca2a562b2cff87"
           },
           {
-            "name": "tailwind-merge",
-            "version": "^3.7.0",
-            "license": "MIT"
+            "path": "components/text-field/stock/textarea.tsx",
+            "sha256": "c88f3d6205f00280b330df78336216e459c3bcea4c1a75e3714e948a7ddcfbd7"
           },
           {
-            "name": "react-aria-components",
-            "version": "^1.19.0",
-            "license": "Apache-2.0"
+            "path": "components/text-field/stock/utils.ts",
+            "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+          },
+          {
+            "path": "components/text-field/text-field.tsx",
+            "sha256": "3cdad44d5dc0cd977f7c0eb0d96b6dbbb6194e5d18d3f5bb031c3831c7a71ae4"
+          },
+          {
+            "path": "notices/text-field.md",
+            "sha256": "cc42ddacc11e976c695f10126a216bafce459f894804fa84c3c9627a0bced9b6"
           }
         ],
-        "rac": {
-          "range": "^1.19.0",
-          "peer": true,
-          "instance": "react-aria-components"
+        "propMap": {
+          "line.multiline": "Textarea",
+          "line.single-line": "TextField",
+          "state.disabled": "TextField.isDisabled",
+          "state.invalid": "TextField.isInvalid",
+          "state.read-only": "TextField.isReadOnly"
         },
+        "props": [
+          "label",
+          "value",
+          "onChange",
+          "isInvalid",
+          "isDisabled",
+          "isReadOnly",
+          "description",
+          "errorMessage",
+          "className"
+        ],
+        "rac": {
+          "instance": "react-aria-components",
+          "peer": false,
+          "range": "^1.21.0"
+        },
+        "reads": {
+          "assets": [],
+          "components": [
+            "components.field"
+          ],
+          "themes": [
+            "themes.destructive.default",
+            "themes.foreground.default",
+            "themes.muted-foreground.default",
+            "themes.radius.default",
+            "themes.ring.default",
+            "themes.spacing.default"
+          ]
+        },
+        "root": "rac:TextField",
+        "secondaryExports": [
+          {
+            "export": "Textarea",
+            "name": "Textarea"
+          }
+        ],
+        "slot": "components.text-field",
+        "source": "defaults-consumer",
         "origin": {
-          "kind": "adopted",
-          "source": "foundry",
-          "fill": "foundry/components.text-field",
-          "pin": {
-            "package": "@clossys/designer",
-            "version": "0.12.0",
-            "export": "./components#TextField"
-          },
-          "license": "MIT",
-          "sha256": "3c9c768018047cbbe5414f55646bd94fb94defd6430cf7948839ccdf1c035984",
-          "adoptedAt": "2026-10-26"
+          "kind": "composed",
+          "rule": "compose:text-field@1",
+          "reads": [
+            "components.field"
+          ],
+          "inputsHash": "9bda8760351d97cc0ea57da0fc5a978e0efb402f12c9b756f5978c987c47c3ae"
         }
       }
     },
@@ -15053,6 +15026,22 @@
       "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  TabList as TabListPrimitive,\n  TabPanel as TabPanelPrimitive,\n  Tab as TabPrimitive,\n  Tabs as TabsPrimitive,\n} from \"react-aria-components\"\n\nfunction Tabs({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabsPrimitive>) {\n  return (\n    <TabsPrimitive\n      data-slot=\"tabs\"\n      className={cn(\n        \"gap-(--spacing-sm) group/tabs flex data-horizontal:flex-col\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nconst tabsListVariants = cva(\n  \"rounded-(--radius-control) p-(--spacing-xs) group-data-horizontal/tabs:h-(--spacing-2xl,calc(var(--spacing)*8)) data-[variant=line]:rounded-none group/tabs-list inline-flex w-fit items-center justify-center text-(--color-ink-muted) group-data-vertical/tabs:h-fit group-data-vertical/tabs:flex-col\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-(--color-surface-sunken)\",\n        line: \"gap-(--spacing-xs) bg-transparent\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n    },\n  }\n)\n\nfunction TabsList({\n  className,\n  variant = \"default\",\n  ...props\n}: React.ComponentProps<typeof TabListPrimitive> &\n  VariantProps<typeof tabsListVariants>) {\n  return (\n    <TabListPrimitive\n      data-slot=\"tabs-list\"\n      data-variant={variant}\n      className={cn(tabsListVariants({ variant }), className)}\n      {...props}\n    />\n  )\n}\n\nfunction TabsTrigger({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPrimitive>) {\n  return (\n    <TabPrimitive\n      data-slot=\"tabs-trigger\"\n      className={cn(\n        \"gap-(--spacing-sm) rounded-(--radius-control) border-(length:--ui-border-hairline,1px) border-transparent px-(--spacing-sm) py-[var(--spacing-xs)] text-(length:--text-sm) font-(weight:--font-weight-medium) group-data-[variant=default]/tabs-list:data-active:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-active:shadow-(--ui-elevation-none) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) has-data-[icon=inline-end]:pr-(--spacing-xs) has-data-[icon=inline-start]:pl-(--spacing-xs) group-data-[variant=default]/tabs-list:data-selected:shadow-(--ui-elevation-raised) group-data-[variant=line]/tabs-list:data-selected:shadow-(--ui-elevation-none) relative inline-flex h-[calc(100%-var(--ui-border-hairline))] flex-1 cursor-default items-center justify-center whitespace-nowrap text-(--color-ink-primary)/60 transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) group-data-vertical/tabs:w-full group-data-vertical/tabs:justify-start hover:text-(--color-ink-primary) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) data-[disabled]:pointer-events-none data-[disabled]:opacity-(--ui-alpha-disabled,50%) dark:text-(--color-ink-muted) dark:hover:text-(--color-ink-primary) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n        \"group-data-[variant=line]/tabs-list:bg-transparent group-data-[variant=line]/tabs-list:data-selected:bg-transparent dark:group-data-[variant=line]/tabs-list:data-selected:border-transparent dark:group-data-[variant=line]/tabs-list:data-selected:bg-transparent\",\n        \"data-selected:bg-(--color-surface-base) data-selected:text-(--color-ink-primary) dark:data-selected:border-(--color-line-strong) dark:data-selected:bg-(--color-line-strong)/30 dark:data-selected:text-(--color-ink-primary)\",\n        \"after:absolute after:bg-(--color-ink-primary) after:opacity-0 after:transition-opacity after:duration-(--ui-duration-default) after:ease-(--default-transition-timing-function) group-data-horizontal/tabs:after:inset-x-0 group-data-horizontal/tabs:after:bottom-[calc(var(--spacing-xs)*-1)] group-data-horizontal/tabs:after:h-[var(--spacing-xs)] group-data-vertical/tabs:after:inset-y-0 group-data-vertical/tabs:after:-right-(--spacing-xs) group-data-vertical/tabs:after:w-[var(--spacing-xs)] group-data-[variant=line]/tabs-list:data-selected:after:opacity-100\",\n        className\n      )}\n      {...props}\n    />\n  )\n}\n\nfunction TabsContent({\n  className,\n  ...props\n}: React.ComponentProps<typeof TabPanelPrimitive>) {\n  return (\n    <TabPanelPrimitive\n      data-slot=\"tabs-content\"\n      className={cn(\"text-(length:--text-sm) flex-1 focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring)\", className)}\n      {...props}\n    />\n  )\n}\n\nexport { Tabs, TabsList, TabsTrigger, TabsContent, tabsListVariants }\n"
     },
     {
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"./utils\"\nimport {\n  composeRenderProps,\n  Input as InputPrimitive,\n} from \"react-aria-components\"\n\nfunction Input({\n  className,\n  type,\n  ...props\n}: React.ComponentProps<typeof InputPrimitive>) {\n  return (\n    <InputPrimitive\n      type={type}\n      data-slot=\"input\"\n      className={composeRenderProps(className, (className) =>\n        cn(\n          \"dark:bg-(--color-line-strong)/30 border-(--color-line-strong) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 disabled:bg-(--color-line-strong)/50 dark:disabled:bg-(--color-line-strong)/80 h-(--spacing-2xl,calc(var(--spacing)*8)) rounded-(--radius-control) border-(length:--ui-border-hairline,1px) bg-transparent px-(--spacing-md) py-(--spacing-xs) text-(length:--text-base) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function) file:h-(--spacing-xl) file:text-(length:--text-sm) file:font-(weight:--font-weight-medium) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) md:text-(length:--text-sm) w-full min-w-0 file:inline-flex file:border-0 file:bg-transparent file:text-(--color-ink-primary) placeholder:text-(--color-ink-muted) disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-(--ui-alpha-disabled,50%)\",\n          className\n        )\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Input }\n",
+      "path": "components/text-field/stock/input.tsx"
+    },
+    {
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport { cn } from \"./utils\"\nimport {\n  composeRenderProps,\n  TextArea as TextareaPrimitive,\n} from \"react-aria-components\"\n\nfunction Textarea({\n  className,\n  ...props\n}: React.ComponentProps<typeof TextareaPrimitive>) {\n  return (\n    <TextareaPrimitive\n      data-slot=\"textarea\"\n      className={composeRenderProps(className, (className) =>\n        cn(\n          \"border-(--color-line-strong) dark:bg-(--color-line-strong)/30 focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) dark:aria-invalid:border-(--color-status-danger)/50 disabled:bg-(--color-line-strong)/50 dark:disabled:bg-(--color-line-strong)/80 rounded-(--radius-control) border-(length:--ui-border-hairline,1px) bg-transparent px-(--spacing-md) py-(--spacing-sm) text-(length:--text-base) transition-colors duration-(--ui-duration-default) ease-(--default-transition-timing-function) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:outline-solid aria-invalid:outline-(length:--ui-border-focus,3px) aria-invalid:outline-offset-(--ui-focus-offset) aria-invalid:outline-(--color-status-danger) md:text-(length:--text-sm) flex field-sizing-content min-h-(--spacing-4xl) w-full placeholder:text-(--color-ink-muted) disabled:cursor-not-allowed disabled:opacity-(--ui-alpha-disabled,50%)\",\n          className\n        )\n      )}\n      {...props}\n    />\n  )\n}\n\nexport { Textarea }\n",
+      "path": "components/text-field/stock/textarea.tsx"
+    },
+    {
+      "content": "import { clsx, type ClassValue } from \"clsx\"\nimport { twMerge } from \"tailwind-merge\"\nexport function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)) }\n",
+      "path": "components/text-field/stock/utils.ts"
+    },
+    {
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport {\n  TextField as AriaTextField,\n  type TextFieldProps as AriaTextFieldProps,\n  type ValidationResult,\n} from \"react-aria-components\"\n\nimport { Field, FieldDescription, FieldError, FieldLabel } from \"../field/index\"\nimport { Input } from \"./stock/input\"\nimport { Textarea as StockTextarea } from \"./stock/textarea\"\n\ntype FieldCopyProps = Omit<AriaTextFieldProps, \"children\" | \"className\" | \"render\"> & {\n  /** Visible label; null only when an external label names the control. */\n  label: React.ReactNode\n  placeholder?: string\n  description?: React.ReactNode\n  errorMessage?: React.ReactNode | ((validation: ValidationResult) => React.ReactNode)\n  className?: string\n}\n\nfunction TextField({\n  label,\n  placeholder,\n  description,\n  errorMessage,\n  className,\n  inputClassName,\n  ...props\n}: FieldCopyProps & { inputClassName?: string }) {\n  return (\n    <AriaTextField {...props} className={className} render={domProps => <Field {...domProps} />}>\n      {label != null ? <FieldLabel>{label}</FieldLabel> : null}\n      <Input placeholder={placeholder} className={inputClassName} />\n      {description != null ? <FieldDescription>{description}</FieldDescription> : null}\n      <FieldError>{errorMessage}</FieldError>\n    </AriaTextField>\n  )\n}\n\nfunction Textarea({\n  label,\n  placeholder,\n  description,\n  errorMessage,\n  className,\n  rows,\n  textareaClassName,\n  ...props\n}: FieldCopyProps & { rows?: number; textareaClassName?: string }) {\n  return (\n    <AriaTextField {...props} className={className} render={domProps => <Field {...domProps} />}>\n      {label != null ? <FieldLabel>{label}</FieldLabel> : null}\n      <StockTextarea placeholder={placeholder} rows={rows} className={textareaClassName} />\n      {description != null ? <FieldDescription>{description}</FieldDescription> : null}\n      <FieldError>{errorMessage}</FieldError>\n    </AriaTextField>\n  )\n}\n\nexport { TextField, Textarea }\n",
+      "path": "components/text-field/text-field.tsx"
+    },
+    {
       "path": "components/toggle-button/toggle.tsx",
       "content": "\"use client\"\n\nimport type { ComponentPropsWithRef } from \"react\"\nimport { cva, type VariantProps } from \"class-variance-authority\"\nimport { cn } from \"../_parts/utils/index\"\nimport {\n  composeRenderProps,\n  ToggleButton as TogglePrimitive,\n} from \"react-aria-components\"\n\nconst toggleVariants = cva(\n  \"hover:text-(--color-ink-primary) aria-pressed:bg-(--color-action) aria-pressed:text-(--color-ink-on-action) focus-visible:border-(--color-focus-ring) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) aria-invalid:ring-(--color-status-danger)/20 dark:aria-invalid:ring-(--color-status-danger)/40 aria-invalid:border-(--color-status-danger) data-[state=on]:bg-(--color-action) data-[state=on]:text-(--color-ink-on-action) gap-(--spacing-xs) rounded-(--radius-control) text-(length:--text-sm) font-(weight:--font-weight-medium) transition-all duration-(--ui-duration-default) ease-(--default-transition-timing-function) [&_svg:not([class*='size-'])]:size-(--spacing-lg,calc(var(--spacing)*4)) data-selected:bg-(--color-action) data-selected:text-(--color-ink-on-action) group/toggle inline-flex items-center justify-center whitespace-nowrap hover:bg-(--color-surface-sunken) focus-visible:outline-solid focus-visible:outline-(length:--ui-border-focus,3px) focus-visible:outline-offset-(--ui-focus-offset) focus-visible:outline-(--color-focus-ring) disabled:pointer-events-none disabled:opacity-(--ui-alpha-disabled,50%) [&_svg]:pointer-events-none [&_svg]:shrink-0\",\n  {\n    variants: {\n      variant: {\n        default: \"bg-transparent\",\n        outline: \"border-(--color-line-strong) hover:bg-(--color-surface-sunken) border-(length:--ui-border-hairline,1px) bg-transparent\",\n      },\n      size: {\n        default: \"h-(--ui-control-h-md,calc(var(--spacing)*8)) min-w-(--spacing-2xl) px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)\",\n        sm: \"h-(--ui-control-h-sm,calc(var(--spacing)*7)) min-w-[var(--spacing-2xl)] rounded-(--radius-control) px-(--spacing-md) text-(length:--text-caption) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm) [&_svg:not([class*='size-'])]:size-(--ui-control-switch-thumb,calc(var(--spacing)*3.5))\",\n        lg: \"h-(--ui-control-h-lg,calc(var(--spacing)*9)) min-w-[var(--spacing-2xl)] px-(--spacing-md) has-data-[icon=inline-end]:pe-(--spacing-sm) has-data-[icon=inline-start]:ps-(--spacing-sm)\",\n      },\n    },\n    defaultVariants: {\n      variant: \"default\",\n      size: \"default\",\n    },\n  }\n)\n\nfunction Toggle({\n  className,\n  variant = \"default\",\n  size = \"default\",\n  ...props\n}: ComponentPropsWithRef<typeof TogglePrimitive> & VariantProps<typeof toggleVariants>) {\n  return (\n    <TogglePrimitive\n      data-slot=\"toggle\"\n      className={composeRenderProps(className, (className) => cn(toggleVariants({ variant, size, className })))}\n      {...props}\n    />\n  )\n}\n\nexport { Toggle, toggleVariants }\n"
     },
@@ -15083,6 +15072,10 @@
     {
       "path": "notices/SHADCN-ARIA-RAIL.md",
       "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: 96da9cc7f1aa10580a3741664e2a77c721206c00\nTransform: shadcn-aria-rewrite@2\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n"
+    },
+    {
+      "content": "# Third-party notice\n\nSource: https://github.com/shadcn-ui/ui\nCommit: daaf156ee00ed91cc7e6bdd937c1b4973152d141\nTransform: shadcn-aria-rewrite@1\nItems: input, textarea (components/text-field/stock/), wired by the owned components/text-field/text-field.tsx\n\nMIT License\n\nCopyright (c) 2023 shadcn\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "path": "notices/text-field.md"
     },
     {
       "path": "notices/THIRD-PARTY.md",

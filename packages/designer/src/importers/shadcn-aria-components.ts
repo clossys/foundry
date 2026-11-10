@@ -3,6 +3,7 @@ import componentSlots from "../catalog/slots/components.json" with { type: "json
 import datePickerRule from "../catalog/rules/components.date-picker.json" with { type: "json" };
 import fileTriggerRule from "../catalog/rules/components.file-trigger.json" with { type: "json" };
 import fieldRule from "../catalog/rules/components.field.json" with { type: "json" };
+import textFieldRule from "../catalog/rules/components.text-field.json" with { type: "json" };
 import type { ComponentCheckFill } from "../catalog-core/check-components.js";
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
@@ -66,6 +67,8 @@ const SHADCN_COMPOSED_TEMPLATES: Readonly<Record<string, ComposedTemplate>> = {
   "file-trigger": { rule: fileTriggerRule, export: "FileTrigger", members: { accept: "FileTrigger", directory: "FileTrigger", multiple: "FileTrigger" }, props: ["label", "acceptedFileTypes", "allowsMultiple", "acceptDirectory", "defaultCamera", "onSelect"] },
   // Stock label + field under a Field that owns the field states (data-* on the stock root, FieldError context when invalid).
   field: { rule: fieldRule, export: "Field", members: { "part.label": "FieldLabel", "part.description": "FieldDescription", "part.error": "FieldError", "state.required": "Field.isRequired", "state.invalid": "Field.isInvalid", "state.disabled": "Field.isDisabled" }, props: ["children", "className", "orientation", "isInvalid", "isDisabled", "isRequired"], secondaryExports: fieldParts },
+  // One size (D-b): stock input and textarea inside a RAC TextField whose render target is the composed field.
+  "text-field": { rule: textFieldRule, export: "TextField", members: { "line.single-line": "TextField", "line.multiline": "Textarea", "state.invalid": "TextField.isInvalid", "state.disabled": "TextField.isDisabled", "state.read-only": "TextField.isReadOnly" }, props: ["label", "value", "onChange", "isInvalid", "isDisabled", "isReadOnly", "description", "errorMessage", "className"], secondaryExports: ["Textarea"] },
 };
 /** Stock items a composed leaf wraps: rewritten as one leaf, relocated under `components/<leaf>/stock/`. */
 export interface ShadcnComposedStock { files: readonly SourceFile[]; themes: readonly string[]; components: readonly string[]; issues: readonly RewriteIssue[] }
@@ -141,7 +144,7 @@ export const SHADCN_COMPOSE_RULES: readonly ShadcnComposeRule[] = [
   { leaf: "date-picker", constituents: registeredDatePicker },
   { leaf: "date-field", constituents: ["field"], items: ["input-group"], blocker: "new styling: pinned input and input-group render RAC Input, not DateInput/DateSegment; segment, placeholder and focus styling would be new" },
   { leaf: "field", constituents: ["separator"], items: ["label", "field"] },
-  { leaf: "text-field", constituents: [], items: ["label", "input"], blocker: "K1: size.sm/md/lg unmapped; the RAC TextField wrap maps line and state, but pinned label and input carry one control size and textarea is not a D1 item" },
+  { leaf: "text-field", constituents: ["field"], items: ["input", "textarea"] },
   { leaf: "search-field", constituents: ["button"], items: ["input-group", "input"], blocker: "K1: state.empty/state.filled have no pointer; RAC data-empty is render state, and the propMap grammar admits only exports, props, values and hovered/pressed/focus-visible" },
   { leaf: "form", constituents: [], blocker: "K2: form is absent at the pinned commit (no files), and no D1 item supplies a form; the RAC Form root alone is the Foundry seat" },
   { leaf: "file-trigger", constituents: ["button"] },

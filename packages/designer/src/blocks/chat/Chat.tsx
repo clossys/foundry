@@ -19,7 +19,7 @@ type StockButton = typeof import("../../components/preview-runtime/components/bu
 /** Stock-bound button with the slot's shape axis: shape.icon-only maps to the stock icon size. */
 const IconButton = componentLeaf<(props: ComponentProps<StockButton> & { readonly shape: "icon-only" }) => ReactElement>("components.button");
 const Icon = componentLeaf<typeof import("../../components/index.js").Icon>("components.icon");
-const Textarea = componentLeaf<typeof import("../../components/Textarea.js").Textarea>("components.text-field", "Textarea");
+const Textarea = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").Textarea>("components.text-field", "Textarea");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */

@@ -74,7 +74,7 @@ const EXPECTED_DEFAULTS = {
   "date-field": "foundry", "date-picker": "compose:date-picker@1", dialog: "shadcn@aria", disclosure: "shadcn@aria", field: "compose:field@1", "grid-list": "foundry", "file-trigger": "compose:file-trigger@1", form: "foundry", icon: "derive:icon@1", keyboard: "shadcn@aria", link: "foundry", logo: "foundry",
   menu: "shadcn@aria", meter: "foundry", "native-action": "foundry", "navigation-tree": "foundry", "number-field": "foundry", popover: "shadcn@aria", "progress-bar": "shadcn@aria", "radio-group": "shadcn@aria",
   "resize-handle": "foundry", "search-field": "foundry", select: "shadcn@aria", "semantic-content": "foundry", separator: "shadcn@aria", skeleton: "shadcn@aria", slider: "shadcn@aria",
-  spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "shadcn@aria", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "foundry", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
+  spinner: "foundry", "status-mark": "foundry", switch: "shadcn@aria", table: "shadcn@aria", tabs: "shadcn@aria", "tag-group": "foundry", "text-field": "compose:text-field@1", toast: "foundry", "toggle-button": "shadcn@aria", "toggle-group": "shadcn@aria",
   toolbar: "foundry", tooltip: "shadcn@aria", tree: "foundry",
 };
 /** rac-starter is not a selectable component source (owner rule 2026-10-26); Toolbar, TagGroup and Tree are Foundry's since their measured K5 craft comparison passes. */

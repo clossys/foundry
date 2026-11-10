@@ -1,0 +1,14 @@
+{
+  "files": [
+    {
+      "content": "\"use client\"\n\nimport * as React from \"react\"\nimport {\n  TextField as AriaTextField,\n  type TextFieldProps as AriaTextFieldProps,\n  type ValidationResult,\n} from \"react-aria-components\"\n\nimport { Field, FieldDescription, FieldError, FieldLabel } from \"../field/index\"\nimport { Input } from \"./stock/input\"\nimport { Textarea as StockTextarea } from \"./stock/textarea\"\n\ntype FieldCopyProps = Omit<AriaTextFieldProps, \"children\" | \"className\" | \"render\"> & {\n  /** Visible label; null only when an external label names the control. */\n  label: React.ReactNode\n  placeholder?: string\n  description?: React.ReactNode\n  errorMessage?: React.ReactNode | ((validation: ValidationResult) => React.ReactNode)\n  className?: string\n}\n\nfunction TextField({\n  label,\n  placeholder,\n  description,\n  errorMessage,\n  className,\n  inputClassName,\n  ...props\n}: FieldCopyProps & { inputClassName?: string }) {\n  return (\n    <AriaTextField {...props} className={className} render={domProps => <Field {...domProps} />}>\n      {label != null ? <FieldLabel>{label}</FieldLabel> : null}\n      <Input placeholder={placeholder} className={inputClassName} />\n      {description != null ? <FieldDescription>{description}</FieldDescription> : null}\n      <FieldError>{errorMessage}</FieldError>\n    </AriaTextField>\n  )\n}\n\nfunction Textarea({\n  label,\n  placeholder,\n  description,\n  errorMessage,\n  className,\n  rows,\n  textareaClassName,\n  ...props\n}: FieldCopyProps & { rows?: number; textareaClassName?: string }) {\n  return (\n    <AriaTextField {...props} className={className} render={domProps => <Field {...domProps} />}>\n      {label != null ? <FieldLabel>{label}</FieldLabel> : null}\n      <StockTextarea placeholder={placeholder} rows={rows} className={textareaClassName} />\n      {description != null ? <FieldDescription>{description}</FieldDescription> : null}\n      <FieldError>{errorMessage}</FieldError>\n    </AriaTextField>\n  )\n}\n\nexport { TextField, Textarea }\n",
+      "path": "components/text-field/text-field.tsx"
+    }
+  ],
+  "id": "compose:text-field@1",
+  "inputs": [
+    "components.field"
+  ],
+  "kind": "compose",
+  "slot": "components.text-field"
+}

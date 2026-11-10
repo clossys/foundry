@@ -6,7 +6,6 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./preview-runtime/components/button/button.js";
 import { IconButton } from "./IconButton.js";
-import { TextField } from "./TextField.js";
 import { SearchField } from "./SearchField.js";
 import { StockSelect as Select } from "../blocks/stock-select.js";
 import { Toggle } from "./toggle-button/toggle.js";
@@ -22,9 +21,9 @@ const CommandMenu = withShellCopy(CommandMenuBase);
 afterEach(cleanup);
 const name = "Control";
 const options = [{ id: "one", label: "One" }];
+// R2F-33d1: the text field is the stock shadcn@aria input; its states are stock classes, pinned in control-boundary and field-focus.
 const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] = [
   ["IconButton", d => <IconButton isDisabled={d} icon={X} label={name} />, () => screen.getByRole("button", { name })],
-  ["TextField", d => <TextField isDisabled={d} label={name} placeholder="Type here" />, () => screen.getByRole("textbox", { name })],
   ["SearchField", d => <SearchField isDisabled={d} label={name} placeholder="Search here" />, () => screen.getByRole("searchbox", { name })],
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
@@ -78,9 +77,10 @@ describe("control fill conformance", () => {
     await user.pointer({ keys: "[/MouseLeft]" });
   });
 
-  it.each(["sm", "md", "lg"] as const)("%s uses the control-height token, including square icon controls", size => {
-    render(<><TextField label="Field" size={size}/><IconButton size={size} icon={X} label="Icon"/></>);
-    for (const control of [screen.getByRole("textbox"), screen.getByRole("button", { name: "Icon" })]) {
+  // R2F-33d1 D-b: the text field is the stock one-size input; only the icon control keeps the size axis.
+  it.each(["sm", "md", "lg"] as const)("%s uses the control-height token on square icon controls", size => {
+    render(<IconButton size={size} icon={X} label="Icon"/>);
+    for (const control of [screen.getByRole("button", { name: "Icon" })]) {
       if (control.style.blockSize) expect(control.style.blockSize).toContain(`--ui-control-h-${size}`);
       else expect(control).toHaveClass(`control-h-${size}`);
     }

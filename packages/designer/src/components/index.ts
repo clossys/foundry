@@ -69,8 +69,9 @@ export { Icon } from "./preview-runtime/components/icon/icon.js";
 export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
 export type { IconSize } from "../catalog/types.js";
 
-export { TextField } from "./TextField.js";
-export type { TextFieldProps } from "./TextField.js";
+export { TextField, Textarea } from "./preview-runtime/components/text-field/text-field.js";
+export type TextFieldProps = import("react").ComponentProps<typeof import("./preview-runtime/components/text-field/text-field.js").TextField>;
+export type TextareaProps = import("react").ComponentProps<typeof import("./preview-runtime/components/text-field/text-field.js").Textarea>;
 
 export { Badge } from "./preview-runtime/components/badge/badge.js";
 export type BadgeProps = import("react").ComponentProps<typeof import("./preview-runtime/components/badge/badge.js").Badge>;
@@ -99,9 +100,6 @@ export type SliderProps = import("react").ComponentProps<typeof import("./previe
 
 export { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "./preview-runtime/components/select/select.js";
 export type SelectProps = import("react").ComponentProps<typeof import("./preview-runtime/components/select/select.js").Select>;
-
-export { Textarea } from "./Textarea.js";
-export type { TextareaProps } from "./Textarea.js";
 
 export { Avatar, AvatarImage, AvatarFallback } from "./preview-runtime/components/avatar/avatar.js";
 export type AvatarProps = import("react").ComponentProps<typeof import("./preview-runtime/components/avatar/avatar.js").Avatar>;

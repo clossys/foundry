@@ -12592,172 +12592,11 @@
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.accent"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.accent-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.card"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.card-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.destructive"
-    },
-    {
-      "evidence": [
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.font-heading"
-    },
-    {
-      "evidence": [
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.font-mono"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.font-sans"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.input"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.muted"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.popover"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.popover-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.primary"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.radius"
+      "kind": "composes",
+      "to": "components.field"
     },
     {
       "evidence": [
@@ -12765,88 +12604,47 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.ring"
+      "to": "themes.destructive.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.secondary"
+      "to": "themes.foreground.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.secondary-foreground"
+      "to": "themes.muted-foreground.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.sidebar"
+      "to": "themes.radius.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.sidebar-accent"
+      "to": "themes.ring.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.sidebar-accent-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.sidebar-border"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.sidebar-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.sidebar-primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.spacing"
+      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -18700,6 +18498,54 @@
       "kind": "reads",
       "message": "themes.destructive.default is not in the catalog inventory",
       "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.destructive.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.foreground.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.foreground.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.muted-foreground.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.muted-foreground.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.radius.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.radius.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.ring.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.ring.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.spacing.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.spacing.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.destructive.default is not in the catalog inventory",
+      "severity": "warning",
       "subject": "components.toggle-button",
       "target": "themes.destructive.default"
     },
@@ -20444,14 +20290,6 @@
       "kind": "reads",
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
-      "subject": "components.text-field",
-      "target": "themes.ring"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
       "subject": "components.toggle-button",
       "target": "themes.destructive.default"
     },
@@ -20848,12 +20686,6 @@
       "message": "selected but used nowhere",
       "severity": "notice",
       "subject": "components.empty"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "components.field"
     },
     {
       "code": "used-nowhere",
@@ -21319,15 +21151,15 @@
     }
   ],
   "inputs": {
-    "components": "sha256:e1cfd0a9a777673158bfc5c10051851a89b13887e029aa8de94ca09ea1182d02",
+    "components": "sha256:97566b0b0267676b8239676f4b2f37ac1d256826e8b78cbcabaae6ec038882ea",
     "consumption": "sha256:4341fe1cf47891aed1b25386f5d7aec6395e0a43b9b09ca16e1bc39d74b6a5aa",
     "inventory": "sha256:9695fecb739e3de12862d4dee6b2f8b504a9f925321784475f32c29126246e13",
     "pages": "absent",
     "runtime": "absent",
-    "selection": "sha256:68ece14de938435ef8d5fec831a4d3fa6865b9b73e39a659997478ec05906df3",
+    "selection": "sha256:064b846e93f7ff243e676b5149d207358a7666fd48f2e8cb7be3433d52d7da5d",
     "surfaces": "sha256:e34dc9b61b83b14482e03791e7c2f743564240a6c0c20eca358fb3c4492dd2c1"
   },
-  "inputsHash": "sha256:6820951fb58202dd5d9fc0248a7df352ab31760f5a25bb359d032ed8d59747a0",
+  "inputsHash": "sha256:2225fd43dcd32173fac416816ead955b6f08f948b8c4f0608d8326092f00b894",
   "nodes": [
     {
       "fill": {
@@ -22552,14 +22384,13 @@
     },
     {
       "fill": {
-        "id": "foundry/components.text-field",
-        "source": "foundry"
+        "id": "shadcn@aria/components.text-field",
+        "source": "shadcn@aria"
       },
       "id": "components.text-field",
       "layer": "components",
       "leaf": "components.text-field",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -23953,15 +23784,15 @@
   "scope": "Catalog default plan over package values; Foundry surfaces; no product routes or runtime capture. Freshness only, not a conformance clearance.",
   "summary": {
     "edges": {
-      "composes": 325,
+      "composes": 326,
       "hosts": 0,
-      "reads": 1677,
+      "reads": 1654,
       "renders": 0
     },
     "evidence": {
-      "declared": 1411,
+      "declared": 1391,
       "runtime": 0,
-      "scanned": 1371
+      "scanned": 1343
     },
     "nodes": {
       "assets": 49,

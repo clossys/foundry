@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { Field } from "./Field.js";
-import { TextField } from "./TextField.js";
+import { TextField } from "./preview-runtime/components/text-field/text-field.js";
 
 /** The registered Field/TextField composition, independent of Studio's specimen wiring. */
 describe("field-specimen-control", () => {

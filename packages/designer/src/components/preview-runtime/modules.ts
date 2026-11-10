@@ -33,9 +33,10 @@ import * as module30 from "./components/slider/slider.js";
 import * as module31 from "./components/switch/switch.js";
 import * as module32 from "./components/table/table.js";
 import * as module33 from "./components/tabs/tabs.js";
-import * as module34 from "./components/toggle-button/toggle.js";
-import * as module35 from "./components/toggle-group/toggle-group.js";
-import * as module36 from "./components/tooltip/tooltip.js";
+import * as module34 from "./components/text-field/text-field.js";
+import * as module35 from "./components/toggle-button/toggle.js";
+import * as module36 from "./components/toggle-group/toggle-group.js";
+import * as module37 from "./components/tooltip/tooltip.js";
 export const defaultSourceModules = {
   "components/avatar/avatar.tsx": module0,
   "components/badge/badge.tsx": module1,
@@ -71,7 +72,8 @@ export const defaultSourceModules = {
   "components/switch/switch.tsx": module31,
   "components/table/table.tsx": module32,
   "components/tabs/tabs.tsx": module33,
-  "components/toggle-button/toggle.tsx": module34,
-  "components/toggle-group/toggle-group.tsx": module35,
-  "components/tooltip/tooltip.tsx": module36,
+  "components/text-field/text-field.tsx": module34,
+  "components/toggle-button/toggle.tsx": module35,
+  "components/toggle-group/toggle-group.tsx": module36,
+  "components/tooltip/tooltip.tsx": module37,
 };
