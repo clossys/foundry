@@ -164,6 +164,40 @@ describe("useFormValidation — timing before the first submit", () => {
     expect(screen.queryByText("Name is too short")).not.toBeInTheDocument();
   });
 
+  it("R2F-33d2 [mutant: validationErrors memoised on errors] keeps a still-invalid error after RAC clears it on a committed change", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const name = screen.getByLabelText("Name");
+    await user.type(name, "A");
+    await user.tab();
+    expect(describedByText(name)).toContain("Name is too short");
+    // Same message after the edit: the hook's errors map is unchanged, but the
+    // native change on blur makes react-aria-components drop the server error
+    // unless `validationErrors` arrives as a new object.
+    await user.type(name, "b");
+    await user.tab();
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(describedByText(name)).toContain("Name is too short");
+  });
+
+  it("R2F-33d2 [mutant: Form drops validationErrors] reaches each RAC field only through the Form's validationErrors, by name", async () => {
+    const user = userEvent.setup();
+    function Unbound() {
+      const v = useFormValidation<Values>({ initialValues: INITIAL, validators: VALIDATORS, onSubmit: () => {} });
+      return <Form validation={{ ...v, validationErrors: {} }} actions={<Button type="submit">Send</Button>}>
+        <TextField label="Name" {...v.getFieldProps("name")} />
+      </Form>;
+    }
+    const { unmount } = render(<Unbound />);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByLabelText("Name")).not.toHaveAttribute("aria-invalid");
+    unmount();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByLabelText("Name")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Name").closest("[data-slot=field]")?.querySelector("[data-slot=field-error]")).toHaveTextContent("Enter your name");
+  });
+
   it("does not re-show an error while typing into a touched field that currently shows none", async () => {
     const user = userEvent.setup();
     render(<Harness />);

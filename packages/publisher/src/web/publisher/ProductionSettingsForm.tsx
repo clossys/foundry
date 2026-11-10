@@ -1,7 +1,7 @@
 "use client";
-import { Button, Checkbox } from "@clossys/designer/components";
+import { Button, Checkbox, FieldGroup, FieldLegend, FieldSet } from "@clossys/designer/components";
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { DetailView, FieldGroup, Form, SectionHeader, StockCombobox, StockSelect } from "@clossys/designer/blocks";
+import { DetailView, Form, SectionHeader, StockCombobox, StockSelect } from "@clossys/designer/blocks";
 import type { PublisherConfiguration, PublisherMediaSettings } from "../../planning/configuration.js";
 import type { FormatLeaf, PublisherDeliveryChoice } from "../../formats/contract.js";
 import type { InstanceRegistries } from "../../core/instance-binding.js";
@@ -140,7 +140,7 @@ export function ProductionSettingsFields({ draft, setDraft, configured, registri
   return <>
     <SectionHeader level={3} title={heading} description={`${statusLabel} ${description}`} />
     {recommendationAnswerIds?.length ? <p>{recommendationLabel} {recommendationAnswerIds.map(id => names?.("publisher.answer", id)).filter(Boolean).join(", ")}</p> : null}
-    <FieldGroup legend={label} layout="multi">
+    <FieldSet><FieldLegend>{label}</FieldLegend><FieldGroup className="grid tablet:grid-cols-2">
       <StockSelect label={formatLabel} selectedKey={draft.format} onSelectionChange={key => { if (key != null) setDraft({ ...draft, format: String(key) as ProductionSettings["format"], deliveries: [], media: undefined, deploymentSurface: undefined }); }} options={[
         ...(!registries?.formats.some(format => format.id === draft.format) ? [{ id: draft.format, label: `${valueName(names, "publisher.format", draft.format, formatLabel)} ${unregisteredLabel}` }] : []),
         ...(registries?.formats.filter(format => !formatIds || formatIds.includes(format.id)).map(format => ({ id: format.id, label: withStatus(valueName(names, "publisher.format", format.id, formatLabel), format.status) })) ?? []),
@@ -155,7 +155,7 @@ export function ProductionSettingsFields({ draft, setDraft, configured, registri
         ...layouts.map(layout => ({ id: layout.id, label: withStatus(valueName(names, "publisher.layout", layout.id, layoutLabel), layout.status) })),
       ]} />
       <NamedValueComboBox label={layoutConfigLabel} isRequired value={draft.layout.config} onChange={value => setDraft({ ...draft, layout: { ...draft.layout, config: value } })} parent={`publisher.layoutConfig.${draft.layout.leaf}`} names={names} ids={layout?.contract.configs.map(config => config.id) ?? []} />
-    </FieldGroup>
+    </FieldGroup></FieldSet>
     {draft.media && <p>{mediaLabel}: <span>{configurationValueLabel(draft.media, names)}</span></p>}
     <DeliverySettingsFields format={format} choices={draft.deliveries ?? []} onChange={deliveries => setDraft({ ...draft, deliveries })} deploymentSurface={draft.deploymentSurface} onSurfaceChange={deploymentSurface => setDraft({ ...draft, deploymentSurface })} deploymentSurfaceIds={deploymentSurfaceIds} messages={messages} />
     <p className="text-sm">{rendererDescription}</p>
@@ -189,14 +189,14 @@ export function DeliverySettingsFields({ format, choices, onChange, deploymentSu
   /** @default 'Choose a host surface ID' */
   const chooseSurfaceLabel = messages?.chooseSurfaceLabel ?? 'Choose a host surface ID';
   const names = messages?.valueNames;
-  return <FieldGroup legend={deliveryLabel}>{format?.deliveries.map(delivery => {
+  return <FieldSet><FieldLegend>{deliveryLabel}</FieldLegend><FieldGroup>{format?.deliveries.map(delivery => {
     const selected = choices.find(choice => choice.id === delivery.id);
     const deliveryName = valueName(names, "publisher.delivery", delivery.id, deliveryLabel);
     const deliveryStatus = names?.("admin.enum", delivery.status);
     return <div key={delivery.id}><Checkbox isSelected={!!selected} onChange={checked => onChange(checked ? [...choices, { id: delivery.id }] : choices.filter(choice => choice.id !== delivery.id))}>{deliveryName}{deliveryStatus ? ` · ${deliveryStatus}` : ""}</Checkbox>
       {selected && delivery.fidelityChoices && <StockSelect label={`${fidelityLabel} · ${deliveryName}`} selectedKey={selected.fidelity ?? ""} onSelectionChange={key => onChange(choices.map(choice => choice.id === delivery.id ? { id: choice.id, ...(key ? { fidelity: String(key) as "editable" | "flat" } : {}) } : choice))} options={[{ id: "", label: chooseFidelityLabel }, { id: "editable", label: editableLabel }, { id: "flat", label: flatLabel }]} />}
     </div>;
-  })}{format?.id === "web.page.responsive" && onSurfaceChange && <NamedValueComboBox label={deploymentSurfaceLabel} placeholder={chooseSurfaceLabel} value={deploymentSurface ?? ""} onChange={value => onSurfaceChange(value || undefined)} ids={deploymentSurfaceIds} parent="publisher.deploymentSurface" names={names} />}</FieldGroup>;
+  })}{format?.id === "web.page.responsive" && onSurfaceChange && <NamedValueComboBox label={deploymentSurfaceLabel} placeholder={chooseSurfaceLabel} value={deploymentSurface ?? ""} onChange={value => onSurfaceChange(value || undefined)} ids={deploymentSurfaceIds} parent="publisher.deploymentSurface" names={names} />}</FieldGroup></FieldSet>;
 }
 
 /** Values are resolved by exact identity; machine codes never become fallback copy. */

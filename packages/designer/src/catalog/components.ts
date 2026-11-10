@@ -409,7 +409,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Form wiring
-  onMain("Field", ["src/components/Field.tsx"], {
+  onMain("Field", ["src/components/preview-runtime/components/field/field.tsx"], {
     id: "enter.field",
     label: "Field",
     racBase: none("hand-built"),

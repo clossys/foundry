@@ -119,8 +119,8 @@ export type { TabsProps, TabsListProps, TabsTabProps, TabsPanelProps } from "./T
 export { Table, TableHeader, TableHead, TableBody, TableRow, TableCell, TableFooter, TableCaption } from "./preview-runtime/components/table/table.js";
 export type TableProps = import("react").ComponentProps<typeof import("./preview-runtime/components/table/table.js").Table>;
 
-export { Field } from "./Field.js";
-export type { FieldProps, FieldRenderProps } from "./Field.js";
+export { Field, FieldContent, FieldDescription, FieldError, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet, FieldTitle } from "./preview-runtime/components/field/field.js";
+export type FieldProps = import("react").ComponentProps<typeof import("./preview-runtime/components/field/field.js").Field>;
 
 export { Skeleton } from "./preview-runtime/components/skeleton/skeleton.js";
 export type SkeletonProps = import("react").ComponentProps<typeof import("./preview-runtime/components/skeleton/skeleton.js").Skeleton>;

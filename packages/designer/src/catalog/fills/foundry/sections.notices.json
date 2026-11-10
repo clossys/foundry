@@ -63,7 +63,7 @@
           },
           {
             "path": "packages/designer/src/blocks/NoticeList.tsx",
-            "sha256": "a62f568634b2a0b973945af802b9e4c93363e04410e5ccda2843bba53bca2001"
+            "sha256": "cbc091a65442d8b76501359cce1fe38abc4521da7812931f6223803cb57dee2a"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

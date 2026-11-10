@@ -19,6 +19,8 @@ import { componentLeaf } from "../runtime/component-leaf.js";
 const LeafForm = componentLeaf<typeof import("../components/Form.js").Form>("components.form");
 const Link = componentLeaf<typeof import("../components/preview-runtime/components/button/button.js").LinkButton>("components.link");
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+const FieldGroup = componentLeaf<typeof import("../components/preview-runtime/components/field/field.js").FieldGroup>("components.field", "FieldGroup");
+const Alert = componentLeaf<typeof import("../components/preview-runtime/components/banner/alert.js").Alert>("components.banner");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.form", "foundry/sections.form");
@@ -42,10 +44,17 @@ export interface FormError {
 /**
  * What `Form` needs from a validation source to run the submit side of the
  * pattern: `useFormValidation`'s return value satisfies it, and so can a
- * consumer's own adapter over another form library. Kept to these four
- * members so `Form` depends on the shape, not on the hook.
+ * consumer's own adapter over another form library. Kept to these members
+ * so `Form` depends on the shape, not on the hook.
  */
 export interface FormValidationBinding {
+  /**
+   * The errors each field shows, keyed by field `name`. `Form` hands them to
+   * react-aria-components' `Form` `validationErrors`, which is how every RAC
+   * field inside gets its invalid state and `FieldError` text. A new object
+   * re-shows an error RAC cleared when the user changed that field.
+   */
+  validationErrors?: Readonly<Record<string, string | string[]>>;
   /**
    * Runs one submit attempt: prevents the native submission, validates, and
    * either moves focus to the first invalid field or calls the consumer's
@@ -304,6 +313,7 @@ export function Form({
       {...SECTION_STAMP} {...rest}
       ref={validation?.formRef}
       validationBehavior={validation || noValidate ? "aria" : "native"}
+      validationErrors={validation?.validationErrors ?? rest.validationErrors}
       aria-busy={submission === "pending" || validation?.isSubmitting ? true : rest["aria-busy"]}
       onSubmit={
         composition === "contact" ? submitContact : validation
@@ -319,13 +329,13 @@ export function Form({
     >
       {heading ? <SemanticContent as="h2" className="text-h2 font-display text-ink-primary">{heading}</SemanticContent> : null}
       {showSummary ? (
-        <SemanticContent as="div"
+        <Alert
+          variant="destructive"
           ref={summaryRef}
-          role="alert"
           tabIndex={-1}
           onFocus={() => setSummaryFocused(true)}
           onBlur={() => setSummaryFocused(false)}
-          className="flex flex-col gap-sm rounded-control border border-status-danger bg-status-danger-tint p-md text-status-danger-text outline-none"
+          className="outline-none"
           style={summaryFocused ? { boxShadow: UI_RING_FOCUS } : undefined}
         >
           <SemanticContent as="h2" className="text-body font-body font-semibold">{errorSummaryMessage?.(errorList.length)}</SemanticContent>
@@ -335,7 +345,6 @@ export function Form({
                 <Link
                   variant="link"
                   href={`#${error.fieldId}`}
-                  className="text-status-danger-text"
                   style={(renderProps) =>
                     renderProps.isFocusVisible ? { boxShadow: UI_RING_FOCUS } : undefined
                   }
@@ -348,18 +357,13 @@ export function Form({
               </SemanticContent>
             ))}
           </SemanticContent>
-        </SemanticContent>
+        </Alert>
       ) : null}
-      <SemanticContent as="div" className="flex flex-col gap-md">{children}</SemanticContent>
+      <FieldGroup>{children}</FieldGroup>
       {honeypot}
       {turnstile}
       {submitError && composition !== "contact" ? (
-        <SemanticContent as="div"
-          role="alert"
-          className="rounded-control border border-status-danger bg-status-danger-tint p-md text-body-s text-status-danger-text"
-        >
-          {submitError}
-        </SemanticContent>
+        <Alert variant="destructive">{submitError}</Alert>
       ) : null}
       {composition === "contact" && submission === "error" ? submitError : null}
       {composition === "contact" && submission === "success" ? submitSuccess : null}

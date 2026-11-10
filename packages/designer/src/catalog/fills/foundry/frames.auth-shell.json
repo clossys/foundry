@@ -65,10 +65,6 @@
             "sha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0"
           },
           {
-            "path": "packages/designer/src/components/Link.styles.ts",
-            "sha256": "76d536712c69d63dc8285f42ebb663c671f279c124b91e58953ef223578d3951"
-          },
-          {
             "path": "packages/designer/src/frames/AuthFrame.tsx",
             "sha256": "10ec6162ab26e2347355391ddbb437beaebee1216154d913c360f79523ebbc48"
           },
@@ -78,7 +74,7 @@
           },
           {
             "path": "packages/designer/src/shell/SkipLink.tsx",
-            "sha256": "3f0a2f786c0c6fffc04c37711e69be5258954427e41544ccce532455ac812a87"
+            "sha256": "5a179f1c44b24be92d3de21e71de9294cf7fb01434de25b7d61532e04244f86a"
           }
         ],
         "unresolved": [

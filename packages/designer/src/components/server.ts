@@ -7,7 +7,7 @@
  * `react-aria-components`, which reads `useContext` at module scope and
  * fails to import under React's `react-server` condition — a packaging
  * problem, not an architectural one, because several individual components
- * (the stock `Alert`, `Badge`, `Card` and `Skeleton`, and `Field`,
+ * (the stock `Alert`, `Badge`, `Card` and `Skeleton`, and
  * `Icon`, `Meter`, `Spinner`, `StatusMark`, with the hook-free
  * `Meter.server.tsx` and `Spinner.server.tsx` variants of `Meter` and
  * `Spinner`, whose client versions are built on react-aria-components) plus
@@ -46,8 +46,8 @@ import { REACT_DECLARED_RANGE } from "../internal/declared-peer-ranges.js";
 
 /**
  * `react` is this package's one optional peer every safe component below still
- * depends on (`Icon.tsx` calls `createElement`/`forwardRef`; `Field.server.tsx`
- * and others call `useId` — all confirmed RSC-safe by the same probe this
+ * depends on (`Icon.tsx` calls `createElement`/`forwardRef`; others
+ * call `useId` — all confirmed RSC-safe by the same probe this
  * file's own header describes). `react-aria-components` is NOT guarded
  * here: none of these members import it (confirmed by grep), and this
  * subpath's whole reason to exist is to let a consumer reach these
@@ -69,8 +69,6 @@ export type AlertProps = import("react").ComponentProps<typeof import("./preview
 export { Card } from "./preview-runtime/components/card/card.js";
 export type CardProps = import("react").ComponentProps<typeof import("./preview-runtime/components/card/card.js").Card>;
 
-export { Field } from "./Field.server.js";
-export type { FieldProps, FieldRenderProps } from "./Field.js";
 
 export { Icon } from "./preview-runtime/components/icon/icon.js";
 export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";

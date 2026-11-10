@@ -33,8 +33,10 @@ const PLATED_READING = [...GROUNDED_READING, ...RAISED_READING, ...INVERSE_RAISE
 export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   /* The selected stock checkbox paints ink-on-action on action (no CONTRAST_PAIRS entry; action-color.test.ts owns that contrast), not ink-on-accent. */
   { exportName: "AccessMatrix", source: "src/blocks/AccessMatrix.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
-  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised", "status-danger-text/surface-raised"] },
-  { exportName: "FilterBuilder", source: "src/blocks/FilterBuilder.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
+  /* R2F-33d2: the mapping select's label and error are the stock field parts, which own their paint. */
+  { exportName: "ColumnMapper", source: "src/blocks/ColumnMapper.tsx", contrastPairs: [...RAISED_READING, "ink-muted/surface-raised"] },
+  /* R2F-33d2: its select labels are the stock field label, which owns its paint; no ink-secondary of its own. */
+  { exportName: "FilterBuilder", source: "src/blocks/FilterBuilder.tsx", contrastPairs: ["ink-primary/surface-base", "ink-primary/surface-raised"] },
   { exportName: "SettingsSection", source: "src/blocks/SettingsSection.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "FormWizard", source: "src/blocks/FormWizard.tsx", contrastPairs: [...BASE_READING, ...RAISED_READING] },
   { exportName: "Lockup", source: "src/blocks/Lockup.tsx", contrastPairs: ["ink-primary/surface-base", "ink-on-inverse/surface-inverse"] },
@@ -48,7 +50,6 @@ export const BLOCK_THEME_CONFORMANCE: readonly BlockThemeRegistration[] = [
   { exportName: "UsageMeter", source: "src/blocks/UsageMeter.tsx", contrastPairs: BASE_READING },
   { exportName: "Stat", source: "src/blocks/Stat.tsx", contrastPairs: BASE_READING },
   { exportName: "Form", source: "src/blocks/Form.tsx", contrastPairs: ["ink-primary/surface-base"] },
-  { exportName: "FieldGroup", source: "src/blocks/FieldGroup.tsx", contrastPairs: ["ink-secondary/surface-base", "ink-muted/surface-base"] },
   { exportName: "ConfirmDialog", source: "src/blocks/ConfirmDialog.tsx", contrastPairs: RAISED_READING },
   {
     exportName: "Toolbar", source: "src/blocks/Toolbar.tsx", contrastPairs: [],

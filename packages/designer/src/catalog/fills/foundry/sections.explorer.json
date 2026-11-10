@@ -54,7 +54,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Explorer.tsx",
-            "sha256": "1f3580563e9201ad5997eb63b29db57c6b560b880cfcd3a908158c6de0099fef"
+            "sha256": "7e9e4f2df4a301ec617dd9c6f619ea492c04907e57663dfa8cab8821d5a59b3d"
           },
           {
             "path": "packages/designer/src/blocks/tree-model.ts",

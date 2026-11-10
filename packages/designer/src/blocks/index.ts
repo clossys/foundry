@@ -92,8 +92,6 @@ export type {
   FormSubmitButtonProps,
 } from "./useFormValidation.js";
 
-export { FieldGroup } from "./FieldGroup.js";
-export type { FieldGroupProps, FieldGroupLayout } from "./FieldGroup.js";
 
 export { ConfirmDialog } from "./ConfirmDialog.js";
 export type { ConfirmDialogProps, ConfirmDialogTone } from "./ConfirmDialog.js";
