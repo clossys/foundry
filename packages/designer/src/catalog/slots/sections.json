@@ -8112,6 +8112,7 @@
         "components.card",
         "components.disclosure",
         "components.icon",
+        "components.item",
         "components.link",
         "components.semantic-content",
         "components.status-mark"
