@@ -69,7 +69,6 @@ export type AlertProps = import("react").ComponentProps<typeof import("./preview
 export { Card } from "./preview-runtime/components/card/card.js";
 export type CardProps = import("react").ComponentProps<typeof import("./preview-runtime/components/card/card.js").Card>;
 
-
 export { Icon } from "./preview-runtime/components/icon/icon.js";
 export type { IconProps, IconNode } from "./preview-runtime/components/icon/icon.js";
 export type { IconSize } from "../catalog/types.js";

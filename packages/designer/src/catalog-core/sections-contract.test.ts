@@ -51,7 +51,7 @@ const reconciledComposes: Record<string, readonly string[]> = {
   comparison: ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link", "semantic-content"],
   form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select", "link", "semantic-content"],
   "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure", "semantic-content"],
-  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group", "sheet"],
+  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group", "sheet", "field"],
   "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
   notices: ["banner", "button", "icon", "semantic-content"],
   newsletter: ["text-field", "button", "icon"],
@@ -64,6 +64,8 @@ const reconciledComposes: Record<string, readonly string[]> = {
 // Hero copy e14e4471b, features composes sections.media through `composes`; R2F-20 measured composes: data-grid/data-table sheet,
 // resource-list dialog/popover) changed these rows; re-pinned from the data.
 // R2F-29: the stock Alert dismiss moved the button, icon and close-glyph reads from components.banner into sections.notices; re-pinned from the data.
+// R2F-33d2: the stock Field composition makes components.field a measured compose of column-mapper, data-grid, data-table,
+// filter-builder, pagination, settings and sign-in-form (sign-in-form also measures components.banner); re-pinned from the data.
 describe("S2-1 bounded section composition reconciliation", () => {
   it.each(Object.entries(reconciledComposes))("pins the exact component permissions for %s", (leaf, components) => {
     expect(loadSectionRegistry().slots.find(slot => slot.id === id(leaf))!.contract.allowedComposes)
@@ -86,7 +88,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
       return { ...slot, contract };
     });
     expect(createHash("sha256").update(JSON.stringify(invariant)).digest("hex"))
-      .toBe("a8d95ba8c52ff3cf2e4efe72d53ff5487e1246d701abfa9b726af99ef82f2312");
+      .toBe("29cc38ada0e56d696f69e3ad210d90f25adabd2998553e35d7b2d3f84fe8a348");
   });
 
   it("preserves all 46 base rows exactly and pins the six new draft contracts separately", () => {
@@ -95,7 +97,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
     expect(original).toHaveLength(46);
     // SCROLL-1 A158/A159/A161 updates only section-header, table-of-contents and data-table; all 46 rows remain pinned, with no field projected out.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("2411931d738631e20c34bda1610d774837e454c09c11653a5efbcd46430fde74");
+      .toBe("93c62811dd98d7ab04e47d48eb7493d233c4c8534319095fd255912ca8a4dba5");
     // Preserve the original contracts while allowing the three copy-only sign-in
     // configurations covered by sections/sign-in-copy.test.tsx.
     const signInConfigs = ["sign-in.password", "sign-in.provider", "sign-in.verify"];
@@ -106,7 +108,7 @@ describe("S2-1 bounded section composition reconciliation", () => {
     } : slot).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds.filter(slotId => slotId !== id("error-message")));
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
-      .toBe("4717f418913ab184d27ec4c5e21fda81e18cdfb00820d186bce9ed57831287bc");
+      .toBe("96e54f757534d960050d05ddba46bc191318595cca09ce27274beaab9a6eb09a");
   });
 });
 

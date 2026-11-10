@@ -55,7 +55,7 @@ function fedKeys(): Set<string> {
   return new Set([
     ...[componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenStockOverlays, componentSpecimenStockAnatomy].flatMap(map => Object.keys(map)),
     // Drawn from the dataset's table, field, card, color and action records.
-    "./components#Table", "./components#Field", "./components#Card", "./components#ColorPicker", "./components#FileTrigger", "./components#Form", "./components#LinkButton",
+    "./components#Table", "./components#Card", "./components#ColorPicker", "./components#FileTrigger", "./components#Form", "./components#LinkButton",
     // The contained toast region takes the cell's own queue, seeded from the dataset's toasts.
     "./shell#Toaster",
   ]);
@@ -97,8 +97,8 @@ it("carries every kind of sample the specimens need, in each component's own sha
 });
 
 it("feeds every sample from the dataset: no inline per-specimen arrays or literals", () => {
-  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast } = content;
-  const exportsFed = { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenField, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast };
+  const { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast } = content;
+  const exportsFed = { componentSpecimenProps, componentSpecimenText, componentSpecimenCollections, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenSemanticMedia, componentSpecimenCard, componentSpecimenActions, componentSpecimenColor, componentSpecimenToast };
   expect(Object.entries(exportsFed).flatMap(([name, value]) => unfed(value, name))).toEqual([]);
 });
 
@@ -170,11 +170,12 @@ it("adapts the final SemanticContent tag while preserving nonvoid probe content 
   expect(image.id).toBe("effective-probe");
   expect(image.getAttribute("src")).toBe(specimenDataset.assets.mark.src);
   expect(new DOMParser().parseFromString(draw("source"), "text/html").querySelector("picture > source")?.id).toBe("effective-probe");
+  // R2F-33d2: the stock Field is a labelled group around one host control; its label and description name that control.
   const field = componentSpecimenSample("./components#Field", components.Field, components)!;
-  expect(typeof field.children).toBe("function");
-  const html = renderToString(createElement(components.Field, { ...field.props, children: field.children } as never));
-  expect(html).toContain("<input");
-  expect(html).toContain(specimenDataset.field.label);
+  const fieldDoc = new DOMParser().parseFromString(renderToString(createElement(components.Field, { ...field.props, children: field.children } as never)), "text/html");
+  const control = fieldDoc.querySelector('[role="group"] input')!;
+  expect([...fieldDoc.querySelectorAll("label")].find(label => label.htmlFor === control.id)?.textContent).toBe(specimenDataset.field.label);
+  expect(fieldDoc.getElementById(control.getAttribute("aria-describedby")!)?.textContent).toBe(specimenDataset.field.description);
 });
 
 it("draws no raw interactive element in a specimen file without an override reason code", () => {

@@ -2,7 +2,7 @@
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { TooltipTriggerStateContext } from "react-aria-components";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
 
@@ -368,6 +368,8 @@ export const componentSpecimenStockAnatomy: Readonly<Record<string, string>> = {
   "./components#Calendar": "components/calendar/calendar.tsx#Calendar",
   "./components#ComboBox": "components/combo-box/combobox.tsx#Combobox",
   "./components#Slider": "components/slider/slider.tsx#Slider",
+  // R2F-33d2: the package Field is the stock field composition; its specimen is the stock field anatomy.
+  "./components#Field": "components/field/field.tsx#Field",
 };
 
 /** Why sample data cannot draw this export (`./shell#Brandmark`), or undefined when it can. */
@@ -394,9 +396,6 @@ export function componentSpecimenSample(key: string, Component: unknown, exports
   // The package Select, Switch, RadioGroup, Calendar, ComboBox and Slider are the stock shadcn@aria modules, drawn with their own barrel-exported parts.
   if (Object.hasOwn(componentSpecimenStockAnatomy, key)) return sourceSample(componentSpecimenStockAnatomy[key]!, exports);
   if (key === "./components#Table") return table(exports);
-  // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
-  // a host-owned native control, so its specimen is that native control.
-  if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
   if (key === "./components#ColorPicker") return colorPicker(Component);
   if (key === "./components#SemanticContent") {
     const Content = Component as Renderable;

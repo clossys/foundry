@@ -2967,7 +2967,8 @@
         "components.table",
         "components.badge",
         "components.card",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.field"
       ],
       "parts": [
         "sections.band",
@@ -3737,7 +3738,8 @@
         "components.popover",
         "components.semantic-content",
         "components.tag-group",
-        "components.sheet"
+        "components.sheet",
+        "components.field"
       ],
       "parts": [
         "sections.band",
@@ -3995,7 +3997,8 @@
         "components.skeleton",
         "components.semantic-content",
         "components.tag-group",
-        "components.sheet"
+        "components.sheet",
+        "components.field"
       ],
       "parts": [
         "sections.band",
@@ -5002,7 +5005,8 @@
         "components.tag-group",
         "components.text-field",
         "components.card",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.field"
       ],
       "parts": [
         "sections.band",
@@ -6984,7 +6988,8 @@
         "components.link",
         "components.select",
         "components.icon",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.field"
       ],
       "parts": [],
       "allowedReads": {
@@ -8181,7 +8186,8 @@
         "components.select",
         "components.button",
         "components.toast",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.field"
       ],
       "parts": [
         "sections.band",
@@ -8592,7 +8598,9 @@
         "components.button",
         "components.form",
         "components.link",
-        "components.semantic-content"
+        "components.semantic-content",
+        "components.banner",
+        "components.field"
       ],
       "parts": [],
       "allowedReads": {

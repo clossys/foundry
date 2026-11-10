@@ -123,7 +123,6 @@ export type {
 export { Faq } from "./Faq.server.js";
 export type { FaqProps, FaqItem, FaqHeadingLevel } from "./Faq.js";
 
-
 export { Hero } from "./Hero.js";
 export type { HeroProps, HeroHeadingLevel, HeroComposition, HeroAlign } from "./Hero.js";
 

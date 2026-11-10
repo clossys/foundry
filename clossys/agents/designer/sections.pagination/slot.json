@@ -41,7 +41,8 @@
       "components.link",
       "components.select",
       "components.icon",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.field"
     ],
     "parts": [],
     "allowedReads": {

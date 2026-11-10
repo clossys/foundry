@@ -256,7 +256,8 @@ export const BLOCK_ENTRIES: readonly BlockEntry[] = [
   exported("FormWizard", { id: "form.form-wizard", label: "Form wizard" }),
 
   // Collect / Fields
-  built("FieldGroup", { id: "form.field-group", label: "Field group" }),
+  // R2F-33d2: the Foundry FieldGroup block is retired; Form (and SettingsSection) render the stock components.field FieldGroup part.
+  recipe("form.form", { id: "form.field-group", label: "Field group" }),
   spec({
     id: "form.file-field",
     label: "File field",
