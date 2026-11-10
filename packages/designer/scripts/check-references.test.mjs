@@ -37,12 +37,23 @@ describe("check-references", () => {
   });
 
   it("covers every registry with items and a license file", () => {
-    assert.deepEqual(Object.keys(manifest.registries).sort(), ["assistant-ui", "corsair-ui", "diceui", "fontsource", "lucide", "magicui", "shadcn", "shadcn-app", "shadcn-aria", "tailark-oss", "tailwindcss-typography"]);
+    assert.deepEqual(Object.keys(manifest.registries).sort(), ["assistant-ui", "corsair-ui", "diceui", "fontsource", "fontsource-source-serif-4", "lucide", "magicui", "reactflow", "shadcn", "shadcn-app", "shadcn-aria", "tailark-oss", "tailwindcss-typography"]);
     for (const id of Object.keys(manifest.registries)) {
       assert.ok(manifest.items.some((item) => item.registry === id), `${id} has items`);
       assert.ok(manifest.licenses.some((license) => license.path.startsWith(`${id}/`)), `${id} keeps its license`);
     }
     for (const item of manifest.items) assert.equal(treeHash(item.files), item.hash, item.dir);
+  });
+
+  it("vendors every item of the shadcn radix-nova and aria-nova registry indexes", () => {
+    for (const [id, style] of [["shadcn", "radix-nova"], ["shadcn-aria", "aria-nova"]]) {
+      const index = manifest.registries[id].index;
+      assert.equal(index?.url, `https://ui.shadcn.com/r/styles/${style}/registry.json`, `${id} records its registry index`);
+      assert.match(index.sha256, /^[0-9a-f]{64}$/);
+      const indexed = manifest.items.filter((item) => item.registry === id && item.indexed === true);
+      assert.equal(indexed.length, index.items, `${id}: one vendored row per index item`);
+      for (const item of indexed) assert.ok(item.direct || item.slots.length === 0, `${item.dir}: an index-only row maps no slot`);
+    }
   });
 
   it("vendors a stock shadcn example for frames.site-shell and sections.content", () => {

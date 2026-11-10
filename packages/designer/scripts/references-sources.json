@@ -7,6 +7,7 @@
       "kind": "registry-json",
       "style": "radix-nova",
       "source": "https://ui.shadcn.com/r/styles/radix-nova/{name}.json",
+      "index": "https://ui.shadcn.com/r/styles/radix-nova/registry.json",
       "special": {
         "neutral": "https://ui.shadcn.com/r/colors/neutral.json"
       },
@@ -23,6 +24,7 @@
       "kind": "registry-json",
       "style": "aria-nova",
       "source": "https://ui.shadcn.com/r/styles/aria-nova/{name}.json",
+      "index": "https://ui.shadcn.com/r/styles/aria-nova/registry.json",
       "bareDependencies": "self",
       "version": "4.23.0",
       "versionBasis": "registry endpoint used by shadcn CLI 4.23.0 for the aria-nova style (components.json style aria-nova), served at the registry's fetchedAt; upstream source commit recorded in upstream",

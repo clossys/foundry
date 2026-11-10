@@ -1,5 +1,7 @@
 #!/usr/bin/env node
-// Fetch raw, untouched upstream sources for every approved mapped item into
+// Fetch raw, untouched upstream sources for every approved mapped item (and,
+// for a registry whose config names an `index`, every item that registry index
+// lists) into
 // packages/designer/references/<registry>/<item>@<version>/ and write
 // references/manifest.json (source URL, version, license, sha256 per file).
 //
@@ -15,8 +17,13 @@
 // items and their same-registry dependencies are fetched, and every other
 // item, license and hash already in the manifest is kept byte-for-byte, so a
 // refresh of one registry can never move the hashes other pins were made from.
+//
+// A registry-json registry may name `index` (its registry.json URL, the list the
+// shadcn CLI reads). Every item of that index is then vendored as well, with no
+// slot: such rows carry `indexed: true` and stay `direct: false` unless a mapped
+// slot also names them. Vendoring is not adoption; catalog leaves are unchanged.
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join, posix, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -31,6 +38,8 @@ const sources = JSON.parse(readFileSync(join(here, "references-sources.json"), "
 const registries = sources.registries;
 if (only !== undefined && !registries[only]) throw new Error(`--registry ${only}: not in references-sources.json`);
 const prior = only ? JSON.parse(readFileSync(join(outDir, "manifest.json"), "utf8")) : undefined;
+// The committed manifest, read in either mode, so owner-approved adaptations survive a refetch.
+const committed = prior ?? (existsSync(join(outDir, "manifest.json")) ? JSON.parse(readFileSync(join(outDir, "manifest.json"), "utf8")) : undefined);
 const now = new Date().toISOString().replace(/\.\d+Z$/, "Z");
 const byNamespace = new Map(Object.entries(registries).map(([id, reg]) => [reg.namespace, id]));
 const HOSTS = new Map([
@@ -109,15 +118,16 @@ const items = new Map();
 const skipped = [...sources.skipped];
 const key = (registry, name) => `${registry}/${name}`;
 
-function enqueue(registry, name, { slots = [], direct = false, requiredBy } = {}) {
+function enqueue(registry, name, { slots = [], direct = false, requiredBy, indexed = false } = {}) {
   const id = key(registry, name);
   let entry = items.get(id);
   if (!entry) {
-    entry = { registry, name, slots: new Set(), direct: false, requiredBy: new Set(), state: "queued" };
+    entry = { registry, name, slots: new Set(), direct: false, indexed: false, requiredBy: new Set(), state: "queued" };
     items.set(id, entry);
   }
   for (const slot of slots) entry.slots.add(slot);
   if (direct) entry.direct = true;
+  if (indexed) entry.indexed = true;
   if (requiredBy) entry.requiredBy.add(requiredBy);
   return entry;
 }
@@ -125,6 +135,24 @@ function enqueue(registry, name, { slots = [], direct = false, requiredBy } = {}
 for (const item of sources.direct) {
   if (only && item.registry !== only) continue;
   enqueue(item.registry, item.name, { slots: item.slots, direct: true });
+}
+
+// Registry indexes: every listed item name is enqueued (no slot). The index is
+// read, hashed and recorded in the manifest; it is not itself vendored.
+const indexes = {};
+for (const [id, reg] of Object.entries(registries)) {
+  if (!reg.index || (only && id !== only)) continue;
+  if (reg.kind !== "registry-json") throw new Error(`${id}: index is only supported for registry-json registries`);
+  const { status, bytes } = await get(reg.index);
+  if (status !== 200) throw new Error(`index ${reg.index}: HTTP ${status}`);
+  const index = JSON.parse(bytes.toString("utf8"));
+  if (!Array.isArray(index.items)) throw new Error(`index ${reg.index}: no items array`);
+  const names = index.items.map((row) => row?.name);
+  for (const name of names) {
+    if (typeof name !== "string" || !/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`index ${reg.index}: unsafe item name ${JSON.stringify(name)}`);
+    enqueue(id, name, { indexed: true });
+  }
+  indexes[id] = { url: reg.index, sha256: sha256(bytes), items: new Set(names).size };
 }
 
 const staging = `${outDir}.staging-${process.pid}`;
@@ -216,6 +244,7 @@ async function fetchItem(entry) {
       sourceUrl,
       license: reg.license,
       direct: entry.direct,
+      ...(entry.indexed ? { indexed: true } : {}),
       slots: [...entry.slots].sort(),
       ...(registryDependencies.length ? { registryDependencies } : {}),
       ...(dependencies?.length ? { dependencies } : {}),
@@ -258,10 +287,31 @@ for (const [id, result] of results) {
     rmSync(join(staging, `${entry.registry}/${entry.name}@${registries[entry.registry].version}`), { recursive: true, force: true });
     continue;
   }
-  const requiredBy = [...entry.requiredBy].sort();
+  // In --registry mode, edges from items of other registries (not re-walked) are carried over.
+  const carried = only
+    ? (prior.items.find((row) => row.registry === entry.registry && row.name === entry.name)?.requiredBy ?? []).filter((ref) => !ref.startsWith(`${registries[only].namespace}/`))
+    : [];
+  const requiredBy = [...new Set([...entry.requiredBy, ...carried])].sort();
   manifestItems.push({ ...result.item, ...(requiredBy.length ? { requiredBy } : {}) });
 }
 manifestItems.sort((a, b) => (a.dir < b.dir ? -1 : 1));
+
+// An item with owner-approved adaptations (for example identity-neutral sample
+// paths) keeps its committed adapted bytes and row only while upstream is
+// unchanged: the fresh tree must hash to the upstream hash each adaptation
+// recorded. Upstream movement stops the run so the adaptation is re-reviewed.
+for (const [index, row] of manifestItems.entries()) {
+  const previous = committed?.items?.find((entry) => entry.dir === row.dir);
+  if (!previous?.adaptations?.length) continue;
+  const upstreams = new Set(previous.adaptations.map((adaptation) => adaptation.upstream?.hash));
+  if (upstreams.size !== 1 || !upstreams.has(row.hash)) {
+    rmSync(staging, { recursive: true, force: true });
+    throw new Error(`${row.dir}: fetched ${row.hash} differs from the upstream hash its adaptations recorded; review the adaptations before refreshing`);
+  }
+  rmSync(join(staging, row.dir), { recursive: true, force: true });
+  cpSync(join(outDir, row.dir), join(staging, row.dir), { recursive: true });
+  manifestItems[index] = { ...row, hash: previous.hash, files: previous.files, adaptations: previous.adaptations };
+}
 
 // One skipped row per ref, slots and reasons merged.
 const skippedByRef = new Map();
@@ -288,6 +338,7 @@ const allItems = [...keptItems, ...manifestItems].sort((a, b) => (a.dir < b.dir 
 const allLicenses = [...keptLicenses, ...licenses].sort((a, b) => (a.path < b.path ? -1 : 1));
 const allSkipped = [...keptSkipped, ...skippedRows].sort((a, b) => (a.ref < b.ref ? -1 : 1));
 const fetchedAtOf = (id) => (only && id !== only ? prior.registries[id]?.fetchedAt : now);
+const indexOf = (id) => (only && id !== only ? prior.registries[id]?.index : indexes[id]);
 
 const manifest = {
   schema: "clossys.references-manifest/1",
@@ -306,6 +357,7 @@ const manifest = {
         upstream: reg.upstream,
         ...(reg.style ? { style: reg.style } : {}),
         ...(fetchedAtOf(id) ? { fetchedAt: fetchedAtOf(id) } : {}),
+        ...(indexOf(id) ? { index: indexOf(id) } : {}),
         license: reg.license,
         licenseFiles: Object.keys(reg.licenseFiles).map((file) => `${id}/${file}`),
       },
