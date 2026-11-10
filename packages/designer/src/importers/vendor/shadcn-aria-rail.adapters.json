@@ -752,7 +752,7 @@
       "consumerImport": "import { mergeUiClasses as cx } from \"@clossys/designer/components\"",
       "packageImport": "import { cx } from \"../../internal/cx\"",
       "source": "components/internal/cx.ts",
-      "sourceSha256": "0a7524b0340fec42e1abb216013a353e950aa738d9ba0f2ebdedd5293337bab3",
+      "sourceSha256": "db61016cece2d645fa7cbac16b5afceeacc64a84ac0b1b6fd7f7b8eeda41e9d0",
       "dependency": {
         "name": "@clossys/designer",
         "version": "0.12.0",

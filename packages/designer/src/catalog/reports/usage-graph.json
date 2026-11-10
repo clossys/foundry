@@ -16083,6 +16083,15 @@
         "declared",
         "scanned"
       ],
+      "from": "sections.media",
+      "kind": "reads",
+      "to": "themes.accent"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
       "from": "sections.newsletter",
       "kind": "composes",
       "to": "components.button"
@@ -21339,9 +21348,9 @@
     "pages": "absent",
     "runtime": "absent",
     "selection": "sha256:10a83aa9b87840cf62299a62f84eaa7a6fceee0b1905c28041395562f9f8d457",
-    "surfaces": "sha256:4065e2c3266ca5c90cd0a1293de733244e189a4e788d607bcc86e9f96fc90354"
+    "surfaces": "sha256:9ccd795b4a5c1c49b59b65f57bf4970cb009a749b3a3f25df999cab8da1d17cf"
   },
-  "inputsHash": "sha256:e3b0183f092294eb038017aacdffd4896c528d930f9460c2b6d20e61bd423bb6",
+  "inputsHash": "sha256:e1866b84702b79cc54ce01d97c7443fba23afd4a3165d4c0333e05a4babb1b7f",
   "nodes": [
     {
       "fill": {
@@ -23970,13 +23979,13 @@
     "edges": {
       "composes": 325,
       "hosts": 0,
-      "reads": 1684,
+      "reads": 1685,
       "renders": 0
     },
     "evidence": {
-      "declared": 1418,
+      "declared": 1419,
       "runtime": 0,
-      "scanned": 1387
+      "scanned": 1388
     },
     "nodes": {
       "assets": 49,
@@ -26046,7 +26055,7 @@
           },
           {
             "path": "packages/designer/src/blocks/library-board/LeafCell.tsx",
-            "sha256": "bf2cb72671fe2f7317fa6b3877571ce1209b2208cbf59774dc30e438428bf38a"
+            "sha256": "6209446c574599c589df0de1f71e9270eb595f092c9726a742643777bf99a5d8"
           },
           {
             "path": "packages/designer/src/blocks/library-board/LibraryBoardSection.tsx",
@@ -26186,7 +26195,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-            "sha256": "ca0d93a1969ccab0fa0cc502a4da8d7fa8e1714cb918aeb3d75942eef857c08d"
+            "sha256": "a141a6704f58cd02ae48955bc320ea30101354bbb01241c7511ccd908b8162c0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -26366,11 +26375,11 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/messages.ts",
-            "sha256": "8a94ebfc6e63c1f43782a2afb158a79ab77ebed517606b3051cd32b3351e94b0"
+            "sha256": "ff3887ed240d3f6588ddcd7f929a8b4a006641f3f786354552995a5e97c42574"
           },
           {
             "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-            "sha256": "70d396221def96251f13a0eddde48aa2f300258b452e7d41b83c5621e3def6d1"
+            "sha256": "427ce186b9dfa602785340cdc31950783b303aebf64ff75ae367fee7f895efb5"
           },
           {
             "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
@@ -26415,6 +26424,14 @@
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -26522,11 +26539,11 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/messages.ts",
-            "sha256": "8a94ebfc6e63c1f43782a2afb158a79ab77ebed517606b3051cd32b3351e94b0"
+            "sha256": "ff3887ed240d3f6588ddcd7f929a8b4a006641f3f786354552995a5e97c42574"
           },
           {
             "path": "packages/designer/src/blocks/data-table/ModelTable.tsx",
-            "sha256": "70d396221def96251f13a0eddde48aa2f300258b452e7d41b83c5621e3def6d1"
+            "sha256": "427ce186b9dfa602785340cdc31950783b303aebf64ff75ae367fee7f895efb5"
           },
           {
             "path": "packages/designer/src/blocks/data-table/PivotGrid.tsx",
@@ -26571,6 +26588,14 @@
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
             "sha256": "8f2a725224764fc1d7cd7ec94f2f569cad02117251bf6c2a668c8a1b51e7c443"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy-context.tsx",
+            "sha256": "fa058a7f7655c4968b4930010d57be56f1136b4c5eda4c6544dca26088edc55a"
+          },
+          {
+            "path": "packages/designer/src/components/Banner.copy.ts",
+            "sha256": "d87e72d4166232a75c16d3fec1e85982f7667573b61247cf08cbc9c5a6883322"
           },
           {
             "path": "packages/designer/src/components/internal/cx.ts",
@@ -27262,7 +27287,7 @@
           },
           {
             "path": "packages/designer/src/blocks/hero/StillBackdrop.tsx",
-            "sha256": "3552086cc372bba12b17cc8b8a3f5e92379c63791393b6414b481501de0537e8"
+            "sha256": "7e4f970b58593caf96074a117298fd901901db942e38217c18b45e2789bafda5"
           },
           {
             "path": "packages/designer/src/blocks/internal/block-vars.ts",
@@ -27730,7 +27755,9 @@
           "components": [
             "components.semantic-content"
           ],
-          "themes": []
+          "themes": [
+            "themes.accent"
+          ]
         },
         "slot": "sections.media",
         "sourceFiles": [
@@ -27760,7 +27787,7 @@
           },
           {
             "path": "packages/designer/src/blocks/MediaFigure.tsx",
-            "sha256": "584bd94f4c9a17a0685ffac72f9f5a614efe30bfcab04dd003f1f375001915eb"
+            "sha256": "93ceb4d51bfb326f2998b28e3c028d0d1272c1c4f34f917646e6927fbe26fa99"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -29512,7 +29539,7 @@
           },
           {
             "path": "packages/designer/src/blocks/TaskList.tsx",
-            "sha256": "0f743fc94e24080b68b6c347a78f7e8c211d0733f910c76266db20fad71a9e45"
+            "sha256": "fa3977a43d5e5b9d5883924d555e1384f3568a02d7d8e9b664c381887dbd7d9e"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

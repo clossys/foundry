@@ -1507,7 +1507,7 @@
     },
     {
       "path": "clossys/agents/designer/frames.app-shell/slot.json",
-      "sha256": "81680be7400d57279223a818cfbc23eecb8120ed00064e9d915867844ae4ca0b"
+      "sha256": "129163cf2d50cbcb721544b8fc090f191c0abf82c28fee15c44e3677f4cf8b82"
     },
     {
       "path": "clossys/agents/designer/frames.app-sidebar/candidates/app-sidebar-v1.json",
@@ -1971,7 +1971,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.notices/slot.json",
-      "sha256": "f118c0251fc54f0c5ba4a88adee40ddb66ca02e03f5c2a6db3daf4394b9cbec9"
+      "sha256": "c7283b1e8cdf0977c3e31959887da86a5ac1a26cb2bbd089c026141c08699d1f"
     },
     {
       "path": "clossys/agents/designer/sections.page-header/candidates/page-header-v6.json",
@@ -2107,7 +2107,7 @@
     },
     {
       "path": "clossys/agents/designer/sections.sectioned-document/slot.json",
-      "sha256": "257d52d9f6675eac477a7ec3fdd316fc86620681d84eb25fbf41d6dc77903448"
+      "sha256": "644e965c5618093f5404f8ef2de4bc5720379ae502ca29ae1647d29c55b8b685"
     },
     {
       "path": "clossys/agents/designer/sections.settings/candidates/settings-v1.json",

@@ -394,9 +394,11 @@ describe("CONSENT-1 card presentation", () => {
     // Default and explicit banner stay one HTML. Re-captured by planner:R2F-05 into a generated file
     // (`vitest run -u`), never a hand-edited hash: the two choice buttons are the selected stock Button
     // (secondary; stock leaf routing ebd6753ac), and diffed against the 90eedc80d capture (a004cf6a…) no
-    // other byte changed. The look is on the owner CREATIVE list.
+    // other byte changed. The look is on the owner CREATIVE list. Re-captured by R2F-15a (`vitest run -u`):
+    // the root gains data-react-aria-top-layer="" (R2F-24 387df7b44, REQ-0010); with that one attribute
+    // removed the HTML hashes to the R2F-05 capture (f96b613f…), so no other byte changed.
     expect(hashes.default).toBe(hashes.banner);
-    await expect(stableStringify({ $capture: "stock Button choices (ebd6753ac); planner:R2F-05", hashes }) + "\n").toMatchFileSnapshot("__golden__/consent-banner.sha256.json");
+    await expect(stableStringify({ $capture: "stock Button choices (ebd6753ac) + React Aria top layer (387df7b44); planner:R2F-15a", hashes }) + "\n").toMatchFileSnapshot("__golden__/consent-banner.sha256.json");
   });
 
   it("keeps a named region, a visually hidden title, equal choices and a placement hook", () => {
