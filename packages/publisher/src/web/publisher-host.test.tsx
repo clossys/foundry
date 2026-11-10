@@ -28,19 +28,20 @@ function servedRoute(): ContentRouteInput {
     components: withStockLeaves({ ...contentRouteComponentSelectionData(), modules: { [CONTENT_ROUTE_COMPONENT_MODULE]: selectedComponents } }) };
 }
 
-/** NoticeList draws the stock Alert and Button leaves, so the consumer selection carries those source picks, every leaf they
+/** NoticeList draws the stock Alert, Button and Icon leaves (NoticeList.tsx componentLeaf calls), so the consumer selection carries those source picks, every leaf they
  * actually read or compose (closed over the picks' own declarations, never listed by hand), and their output files too. */
 function withStockLeaves<T extends ReturnType<typeof contentRouteComponentSelectionData> & { modules: Record<string, unknown> }>(selection: T): T {
+  const roots = ["components.banner", "components.button", "components.icon"];
   const studio = marketingComponentSelection(), leaves: string[] = [], seen = new Set<string>();
   const visit = (leaf: string) => {
     const pick = studio.profile.components.components[leaf];
     if (!pick || seen.has(leaf)) return;
     seen.add(leaf);
     // A dependency the consumer already selected keeps the consumer's own pick.
-    if (!(leaf in selection.profile.components.components) || leaf === "components.banner" || leaf === "components.button") leaves.push(leaf);
-    for (const dependency of [...pick.reads.components, ...pick.composes]) visit(dependency);
+    if (!(leaf in selection.profile.components.components) || roots.includes(leaf)) leaves.push(leaf);
+    for (const dependency of pick.reads.components) visit(dependency); // composes is a subset of reads.components (K3)
   };
-  for (const leaf of ["components.banner", "components.button"]) visit(leaf);
+  for (const leaf of roots) visit(leaf);
   const chosen = Object.fromEntries(leaves.map(leaf => [leaf, studio.profile.components.components[leaf]!]));
   const entries = Object.values(chosen).flatMap(pick => pick.impl.kind === "source" ? [pick.impl.entry] : []);
   const outputs = new Set(Object.values(chosen).flatMap(pick => (pick.descriptor.outputSha256 ?? []).map(receipt => receipt.path)));
