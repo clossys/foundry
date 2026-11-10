@@ -117,8 +117,8 @@ describe("page layout registry", () => {
     expect(landing.slots[0]).toMatchObject({ id: "lead", min: 1, max: 1, accepts: ["sections.hero"] });
     for (const config of ["stack.focus", "stack.index"]) expect(getEffectiveLayoutContract("layouts.stack", config).slots[1]?.max).toBe(1);
     expect(getEffectiveLayoutContract("layouts.sidebar-content", "sidebar-content.docs").slots[2]?.accepts).toEqual(["sections.table-of-contents"]);
-    expect(getEffectiveLayoutContract("layouts.sidebar-content", "sidebar-content.record").reflow).toEqual([{ at: "tokens.breakpoint.tablet", columns: 2 }]);
-    expect(getEffectiveLayoutContract("layouts.sidebar-content").reflow).toEqual([{ at: "tokens.breakpoint.tablet-lg", columns: 2 }]);
+    expect(getEffectiveLayoutContract("layouts.sidebar-content", "sidebar-content.record").reflow).toEqual([{ at: "md", columns: 2 }]);
+    expect(getEffectiveLayoutContract("layouts.sidebar-content").reflow).toEqual([{ at: "lg", columns: 2 }]);
     expect(getLayoutLeaf("layouts.stack")?.contract.slots[0]?.min).toBe(0);
     expect(Object.isFrozen(document.slots)).toBe(true);
   });
@@ -148,7 +148,7 @@ describe("page layout registry", () => {
     expect(stack.slots[1]?.accepts).not.toContain("sections.table-of-contents");
     expect(getLayoutLeaf("layouts.bento")!.contract).toMatchObject({ requiresSection: { container: "adaptive" }, slots: [{ id: "lead" }, { id: "tiles", min: 3, max: 12, tile: { spans: ["1x1", "2x1", "1x2", "2x2"] } }] });
     expect(getLayoutLeaf("layouts.bento")!.contract.reflow.map((step) => step.columns)).toEqual([2, 3, 4]);
-    expect(getLayoutLeaf("layouts.sidebar-content")!.contract.members.breakpoint).toEqual(["tablet", "tablet-lg"]);
+    expect(getLayoutLeaf("layouts.sidebar-content")!.contract.members.breakpoint).toEqual(["md", "lg"]);
   });
   it("rejects duplicate ids, invalid placement and unsafe contract metadata", () => {
     const duplicated = [...copy(), copy()[0]!];

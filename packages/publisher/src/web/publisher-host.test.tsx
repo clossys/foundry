@@ -28,9 +28,19 @@ function servedRoute(): ContentRouteInput {
     components: withStockLeaves({ ...contentRouteComponentSelectionData(), modules: { [CONTENT_ROUTE_COMPONENT_MODULE]: selectedComponents } }) };
 }
 
-/** NoticeList draws the stock Alert and Button leaves, so the consumer selection carries those source picks and their output files too. */
+/** NoticeList draws the stock Alert and Button leaves, so the consumer selection carries those source picks, every leaf they
+ * actually read or compose (closed over the picks' own declarations, never listed by hand), and their output files too. */
 function withStockLeaves<T extends ReturnType<typeof contentRouteComponentSelectionData> & { modules: Record<string, unknown> }>(selection: T): T {
-  const studio = marketingComponentSelection(), leaves = ["components.banner", "components.button"];
+  const studio = marketingComponentSelection(), leaves: string[] = [], seen = new Set<string>();
+  const visit = (leaf: string) => {
+    const pick = studio.profile.components.components[leaf];
+    if (!pick || seen.has(leaf)) return;
+    seen.add(leaf);
+    // A dependency the consumer already selected keeps the consumer's own pick.
+    if (!(leaf in selection.profile.components.components) || leaf === "components.banner" || leaf === "components.button") leaves.push(leaf);
+    for (const dependency of [...pick.reads.components, ...pick.composes]) visit(dependency);
+  };
+  for (const leaf of ["components.banner", "components.button"]) visit(leaf);
   const chosen = Object.fromEntries(leaves.map(leaf => [leaf, studio.profile.components.components[leaf]!]));
   const entries = Object.values(chosen).flatMap(pick => pick.impl.kind === "source" ? [pick.impl.entry] : []);
   const outputs = new Set(Object.values(chosen).flatMap(pick => (pick.descriptor.outputSha256 ?? []).map(receipt => receipt.path)));

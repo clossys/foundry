@@ -5,7 +5,7 @@ import { syntheticSurface } from "../catalog-core/__fixtures__/surface-engine/sy
 import { componentIntegration } from "../catalog-core/__fixtures__/component-integration.js";
 import { runtimeHash } from "../catalog-core/runtime-ports.js";
 import { WholeStudioProvider, useWholeStudio, useDesignerLayerBoardProjection } from "./WholeStudioProvider.js";
-import { createWholeStudioInitialSession, checkWholeStudioInitialSession } from "./designer-layer-boards.js";
+import { createWholeStudioInitialSession, checkWholeStudioInitialSession } from "./route-server.js";
 import { labels, smallCatalog } from "./__fixtures__/studio.js";
 import type { CompositeStudioSnapshot } from "./types.js";
 const wholeLabels = { ...labels, whole: { signoff: "Signoff", proposed: "Proposed", contract: "Contract", contentSlots: "Slots", configurations: "Configurations", unresolved: "Unresolved", unassessed: "Unassessed" } };
@@ -50,12 +50,12 @@ it("a changed local snapshot becomes error without adopting a fresh identity", a
   expect(phase).toBe("ready");
   await screen.findByText("error"); expect(id).toBe(f.initialSession.id);
 });
-it("seals only finite facts and exposes creation/checking from the server-safe public query export", () => {
+it("seals only finite facts and exposes creation/checking from the server route export", () => {
   const f = fixture();
   const sealed = createWholeStudioInitialSession({ id: f.initialSession.id, catalog: f.catalog, snapshot: { ...f.snapshot, preview: () => undefined, fileExists: () => true } });
   expect(runtimeHash(sealed)).toBe(runtimeHash(f.initialSession));
   expect("preview" in sealed.snapshot).toBe(false); expect("fileExists" in sealed.snapshot).toBe(false);
-  expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", 'import { createWholeStudioInitialSession, checkWholeStudioInitialSession } from "@clossys/designer/studio/queries"; console.log(typeof createWholeStudioInitialSession, typeof checkWholeStudioInitialSession)'], { encoding: "utf8" }).trim()).toBe("function function");
+  expect(execFileSync(process.execPath, ["--conditions=react-server", "--input-type=module", "-e", 'import { createWholeStudioInitialSession, checkWholeStudioInitialSession } from "@clossys/designer/studio/route/server"; console.log(typeof createWholeStudioInitialSession, typeof checkWholeStudioInitialSession)'], { encoding: "utf8" }).trim()).toBe("function function");
 });
 
 it("without a handoff keeps the existing loading, one local load and independent generated session behavior", async () => {

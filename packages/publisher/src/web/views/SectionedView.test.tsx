@@ -477,7 +477,10 @@ describe("SectionedView content-section", () => {
     const html=currentHtml({ footnote:{text:"An aside.",link:{label:"Read the guide",href:"/guide"}} });
     expect(html).toMatch(/data-items[\s\S]*data-content-section-media[\s\S]*data-specimen[\s\S]*data-content-section-footnote/);expect(html).toContain('href="/guide"');expect(html).toContain("An aside.");expect(html).not.toContain("data-section-intro-actions");
     const header=currentHtml({ block:undefined,media:undefined,actions:[{id:"more",label:"More",href:"/more",emphasis:"primary"},{id:"faq",label:"FAQ",href:"/faq"}] });
-    expect(header).toMatch(/href="\/more"[^>]*data-action-emphasis="primary"/);expect(header).toMatch(/href="\/faq"[^>]*data-action-emphasis="tertiary"/);expect(header).toContain("bg-primary");expect(header).toContain("bg-control-tonal");expect(header).not.toContain("text-ink-link");
+    // The ladder maps onto stock shadcn button variants: primary filled (default), tertiary tonal (secondary).
+    const anchor=(href:string)=>header.match(new RegExp(`<a[^>]*href="${href}"[^>]*>`))?.[0]??"";
+    expect(anchor("/more")).toContain('data-action-emphasis="primary"');expect(anchor("/more")).toContain('data-slot="button"');expect(anchor("/more")).toContain('data-variant="default"');
+    expect(anchor("/faq")).toContain('data-action-emphasis="tertiary"');expect(anchor("/faq")).toContain('data-slot="button"');expect(anchor("/faq")).toContain('data-variant="secondary"');expect(header).not.toContain("text-ink-link");
     // Canonical rows support eyebrows; split frames keep actions in their text column.
     expect(()=>assertRenderableSectionedViewDocument(currentDocument({ layout:"split-end",actions:[{id:"go",label:"Go",href:"/go"}],footnote:{text:"Aside."} }))).not.toThrow();
   });

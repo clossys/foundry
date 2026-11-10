@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useWholeStudio, useDesignerLayerBoardProjection } from "@clossys/designer/studio/state";
-import { wholeStudioCatalogHash } from "@clossys/designer/studio/queries";
+import { wholeStudioCatalogHash } from "@clossys/designer/studio/route/server";
 import { libraryHash, resolve, runtimeHash } from "@clossys/designer/catalog";
 import { prepareRegisteredRoute } from "./registered-route-binding.js";
 import type { PreparedRegisteredPage, RegisteredRoutePageProps } from "./registered-route-binding.js";

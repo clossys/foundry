@@ -20,9 +20,9 @@ import { registeredDesignerQuerySources } from "./registered-route-query-source.
 const leaves = (node: PlacementNode): readonly string[] => "leaves" in node ? node.leaves : node.children.flatMap(leaves);
 /** Actual shipped placement inventory; synthetic unavailable records and source
  * descriptors exercise joins only, never selected runtime qualification. */
-function fixture(layer: LayerId = "tokens") {
+function fixture(layer: LayerId = "themes") {
   const engine = compiled.input, profile = resolve(engine), catalog = loadBuildCatalog();
-  const route = syntheticRoute(), registered = { ...route.composition.binding, context: { consumer: profile.consumer, medium: "web" as const }, body: { kind: "canvas" as const, source: { kind: "derived" as const, query: DESIGNER_LAYER_BOARDS_QUERY }, boards: [], arrangement: { kind: "grid" as const, columns: 1, gap: { x: 0, y: 0 } }, collapseBelow: "tokens.breakpoint.tablet" as const } };
+  const route = syntheticRoute(), registered = { ...route.composition.binding, context: { consumer: profile.consumer, medium: "web" as const }, body: { kind: "canvas" as const, source: { kind: "derived" as const, query: DESIGNER_LAYER_BOARDS_QUERY }, boards: [], arrangement: { kind: "grid" as const, columns: 1, gap: { x: 0, y: 0 } }, collapseBelow: "md" as const } };
   const { layout: _layout, ...binding } = registered;
   const placement = catalog.placements.find(value => value.layer === layer)!;
   const boards = placement.nodes.flatMap(domain => ("children" in domain ? domain.children : [domain]).map(group => ({ id: `${layer}/${group.id}`, label: group.label, leaves: leaves(group) })));
@@ -42,7 +42,7 @@ function ready(result: ReturnType<ReturnType<typeof fixture>["run"]>) {
   return result;
 }
 describe("one stateless fixed Designer materializer", () => {
-  it.each(["tokens", "assets", "components", "sections", "frames"] as const)("executes the fixed query for actual %s placements and binds actual Stage labels", layer => {
+  it.each(["themes", "assets", "components", "sections", "frames"] as const)("executes the fixed query for actual %s placements and binds actual Stage labels", layer => {
     const f = fixture(layer), before = runtimeHash(f.binding), result = ready(f.run());
     expect(result.materialization.binding.layout).toBeUndefined();
     const body = result.materialization.binding.body!;
@@ -116,7 +116,8 @@ describe("one stateless fixed Designer materializer", () => {
   it("reads the actual fixed Node query and original provider graphs, never a caller source map", async () => {
     const sources = await registeredDesignerQuerySources();
     expect(sources.implementation.source.entry).toBe("studio/designer-layer-boards.js");
-    expect(Object.keys(sources.implementation.source.files)).toHaveLength(6);
+    // The whole fixed query closure, named file by file: pure catalog-core helpers plus the board model, no Studio session or React graph.
+    expect(Object.keys(sources.implementation.source.files).sort()).toEqual(["blocks/library-board/model.js", "catalog-core/body-substrate.js", "catalog-core/breakpoints.js", "catalog-core/digest.js", "catalog-core/runtime-ports.js", "catalog-core/runtime-snapshot-identity.js", "catalog-core/stable.js", "studio/designer-layer-boards.js"]);
     expect(Object.keys(sources.implementation.source.files).some(file => /WholeStudio|react/.test(file))).toBe(false);
     expect(sources.provider.source.files["studio/WholeStudioProvider.js"]).toContain("useDesignerLayerBoardProjection");
     expect(sources.implementation.sourceHash).toBe(runtimeHash(sources.implementation.source));
