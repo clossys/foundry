@@ -89,7 +89,7 @@ interface RegistryFile { readonly path: string; readonly type?: string; readonly
 /**
  * How a slot is placed on a page. `frame` and `section` come from the page record; `part` is a
  * slot another mounted slot's props name with `{ "$element": "<slot>" }`; `dependency` is a
- * pinned slot a registry item names in `registryDependencies` (`@<namespace>/<element>`);
+ * pinned slot a registry item names in `registryDependencies` (`@<namespace>/<element>`, or the slot id);
  * `include` is a page `include` slot. Frames, sections and parts are mounted and bound.
  */
 export type SlotRole = "frame" | "section" | "part" | "dependency" | "include";
@@ -272,6 +272,8 @@ export async function resolvePage(page: InstallPageRecord, pins: InstallPins, so
       const kept: string[] = [];
       for (const dependency of Array.isArray(found.item.registryDependencies) ? found.item.registryDependencies : []) {
         if (typeof dependency !== "string") continue;
+        // A dependency that names a pinned slot (`components.badge`) installs from that slot's record.
+        if (pins[dependency]) { await visit(dependency, "dependency", id); continue; }
         const match = NAMESPACED.exec(dependency);
         if (!match) { kept.push(dependency); continue; }
         const candidates = byElement.get(match[1]!) ?? [];

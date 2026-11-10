@@ -5,10 +5,14 @@
  */
 import { isAbsolute, posix } from "node:path";
 
-/** Where shadcn writes a registry file without a `target`, by registry file type. */
+/**
+ * Where shadcn writes a registry file without a `target`, by registry file type. A
+ * `registry:example` lands in the components directory, as shadcn's own fallback does;
+ * `registry:page` and `registry:file` need a `target`, as they do in shadcn.
+ */
 export const REGISTRY_DEFAULT_DIRS: Readonly<Record<string, string>> = {
   "registry:ui": "components/ui", "registry:component": "components", "registry:block": "components",
-  "registry:hook": "hooks", "registry:lib": "lib",
+  "registry:example": "components", "registry:hook": "hooks", "registry:lib": "lib",
 };
 
 /** The app-relative path a registry file installs to, or undefined when it has none (or leaves the app). */

@@ -227,4 +227,32 @@ describe("registry files without an install path", () => {
     const { findings } = await resolvePage(cardPage, cardPins, sourceOf(item([{ path: "card.tsx", type: "registry:file" }])));
     expect(findings).toEqual([{ code: "not-a-registry-item", slot: "components.card", detail: "components.card/card: a registry file has no target or known type" }]);
   });
+  it("places a registry:example without a target in the components directory, as shadcn does", async () => {
+    const { slots, findings } = await resolvePage(cardPage, cardPins, sourceOf(item([{ path: "card-example.tsx", type: "registry:example" }])));
+    expect(findings).toEqual([]);
+    expect(slots.map(slot => slot.files)).toEqual([["components/card-example.tsx"]]);
+  });
+});
+
+describe("slot-id registry dependencies", () => {
+  const record = (id: string, value: unknown) => ({ id, version: 1, kind: "visual" as const, files: [{ path: "item.json", content: JSON.stringify(value) }], preview: {}, contentHash: "" });
+  const items: Record<string, unknown> = {
+    "sections.strip/strip": { name: "strip", type: "registry:block", registryDependencies: ["components.badge", "separator"], files: [{ path: "strip.tsx", type: "registry:component", target: "components/strip/index.tsx", content: "export function Strip() { return null; }\n" }] },
+    "components.badge/badge": { name: "badge", type: "registry:ui", files: [{ path: "badge.tsx", type: "registry:ui", content: "export function Badge() { return null; }\n" }] },
+  };
+  const libSource = recordStoreSource({ async load(id, version) { return version === 1 && items[id] ? record(id, items[id]) : undefined; } });
+  const stripPage: InstallPageRecord = { id: "p", frame: "sections.strip", sections: [] };
+
+  it("installs a dependency named by its pinned slot id from that slot's record, not through shadcn", async () => {
+    const stripPins: InstallPins = { "sections.strip": { element: "strip", version: 1 }, "components.badge": { element: "badge", version: 1 } };
+    const { slots, findings } = await resolvePage(stripPage, stripPins, libSource);
+    expect(findings).toEqual([]);
+    expect(slots.map(slot => [slot.slot, slot.role])).toEqual([["components.badge", "dependency"], ["sections.strip", "frame"]]);
+    expect(JSON.parse(slots[1]!.item).registryDependencies).toEqual(["separator"]);
+  });
+
+  it("leaves an unpinned slot-shaped name to shadcn", async () => {
+    const { slots } = await resolvePage(stripPage, { "sections.strip": { element: "strip", version: 1 } }, libSource);
+    expect(JSON.parse(slots[0]!.item).registryDependencies).toEqual(["components.badge", "separator"]);
+  });
 });
