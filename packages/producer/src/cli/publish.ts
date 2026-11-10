@@ -8,6 +8,7 @@ import { publishSite, siteFailed, siteSummary } from "../publish/install-site.js
 import { nextFailed, nextSummary, publishNext } from "../publish/install-next.js";
 import type { CliArgs } from "./args.js";
 import type { CliResult } from "./main.js";
+import { strictShare, strictShareLine } from "./strict-share.js";
 
 /** `publish --install --page <id>`: install the page's pinned items, bind its copy and render it; `--site <pack id>`: one routed app. */
 export async function runPublish(args: CliArgs, root: string, cwd = process.cwd()): Promise<CliResult> {
@@ -68,10 +69,15 @@ export async function runPublishCheck(args: CliArgs, root: string): Promise<CliR
       rows.push({ page: candidate.id, frame: record.frame, sections: record.sections.length, copy: keys.length });
     }
     if (!pages.length) findings.push({ code: "no-pages", message: "The Publisher has no pinned page slot" });
+    // The Publisher's share of the strict checks: its `check --slots` rows and every page conformance error.
+    const strict = await strictShare(root, "publisher");
+    for (const finding of strict.findings) findings.push({ code: finding.code, page: finding.where, message: finding.message });
     const routes = publication.routes.length;
-    const exitCode = findings.length ? 1 : 0;
-    return { ...base, exitCode, checks: { publication: publication.publicationId, routes, pages: rows, findings }, message: [
+    const exitCode = strict.limits.length ? 2 : findings.length ? 1 : 0;
+    return { ...base, exitCode, checks: { publication: publication.publicationId, routes, pages: rows, findings, strict }, message: [
       `publish: dry run of ${publication.publicationId}: ${rows.length} pinned page(s), ${routes} route(s), ${publication.entries.length} entr${publication.entries.length === 1 ? "y" : "ies"}; ${findings.length} finding(s); nothing installed or written`,
+      strictShareLine(strict),
+      ...strict.limits.map(limit => `Limit strict: ${limit}`),
       ...rows.map(row => `  ${row.page}: ${row.frame} + ${row.sections} section(s), ${row.copy} copy binding(s)`),
       ...findings.map(finding => `${finding.code}${finding.page ? ` (${finding.page})` : ""}: ${finding.message}`),
     ].join("\n") };

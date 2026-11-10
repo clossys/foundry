@@ -84,7 +84,7 @@ export async function consumerPageRecords(root: string): Promise<{ records: unkn
   return { records, routes, directorCells };
 }
 
-async function archetypeSuite(root: string, strict: boolean): Promise<SuiteReport> {
+export async function archetypeSuite(root: string, strict: boolean): Promise<SuiteReport> {
   const set = await consumerPageRecords(root);
   const archetypes = await agentModule("publisher", "archetypes/index.js");
   const result = archetypes.checkPageRecords(set, { strict });
