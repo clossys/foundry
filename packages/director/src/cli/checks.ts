@@ -1,6 +1,7 @@
 import { discoverBriefContracts } from "../brief-contracts.js";
 import { blocks, checkCell, checkCoherence, completion, strategyStatus, type CheckFinding, type StatusReport } from "../checks/index.js";
 import type { StrategyModel } from "../format/types.js";
+import { recordedJudgeVerdicts } from "../checks/judgements.js";
 import { readStrategyRoot } from "../store.js";
 import type { ReadArgs, ReadResult } from "./read.js";
 import { persistReport } from "./reports.js";
@@ -29,13 +30,21 @@ function related(finding: CheckFinding, ids: Set<string>): boolean {
   return finding.cell !== undefined && ids.has(finding.cell) || finding.cells?.some(id => ids.has(id)) === true || finding.cell === undefined && finding.cells === undefined;
 }
 
+/** `--archetype` selects the archetype's core cells (default core plus its extras) for status and completion. */
+function withArchetype(model: StrategyModel, archetype: string | undefined): StrategyModel {
+  if (archetype === undefined || archetype === "default") return model;
+  if (!Object.hasOwn(model.catalog.archetypes.extras, archetype)) throw new Error(`Unknown strategy archetype: ${archetype}`);
+  return model.tree ? { ...model, tree: { ...model.tree, archetype } } : model;
+}
+
 /** Presentation and CLI report persistence around the canonical pure checks. */
 export function executeChecksCommand(args: ReadArgs, store: DirectorStore): ReadResult {
-  const model = readStrategyRoot(args.root, store.reader);
+  const model = withArchetype(readStrategyRoot(args.root, store.reader), args.archetype);
   if (model.issues.length) throw new Error(model.issues.map(issue => `${issue.path}:${issue.line}: ${issue.message}`).join("; "));
   const discovered = discoverBriefContracts(args.root, store.reader, model.catalog);
   if (discovered.issues.length) throw new Error(discovered.issues.map(issue => `${issue.path}: ${issue.message}`).join("; "));
-  const options = { contracts: discovered.contracts };
+  // Judge verdicts are caller-supplied data: the recorded judgement findings that are still current.
+  const options = { contracts: discovered.contracts, judgeVerdicts: recordedJudgeVerdicts(model) };
   if (args.command === "check" || args.command === "cell" && args.verb === "create") {
     const report = quality(model, args.targets);
     if (args.command === "check") persistReport(args.root, store.writer, "cell-quality", report);

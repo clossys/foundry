@@ -63,8 +63,16 @@ describe("read-only cell CLI", () => {
     ["cell", "focus.segment", "--verb", "create"], ["handoff"], ["brief", "one", "two"],
     ["check", "focus.segment.core@0"], ["cohere", "focus"], ["status", "--bogus"],
     ["status", "--level", "mvs"], ["check", "--scope", "full"],
+    ["check", "--archetype", "services"], ["brief", "writer.messaging", "--archetype", "services"],
+    ["complete", "--archetype", "Product SaaS"], ["status", "--archetype"],
+    ["complete", "--archetype", "services", "--archetype", "services"],
   ])("rejects invalid arguments %j", (...args) => {
     expect(() => parseReadArgs(args)).toThrow();
+  });
+  it("passes --archetype for status and complete only", () => {
+    expect(parseReadArgs(["complete", "--level", "mvs", "--archetype", "product-saas"]).archetype).toBe("product-saas");
+    expect(parseReadArgs(["status", "--archetype", "marketplace"]).archetype).toBe("marketplace");
+    expect(parseReadArgs(["complete"]).archetype).toBeUndefined();
   });
   it("returns machine-readable input and execution errors", () => {
     const output = vi.fn();

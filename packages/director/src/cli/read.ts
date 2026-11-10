@@ -14,18 +14,23 @@ export interface ReadArgs {
   level: "mvs" | "l0" | "full";
   verb?: "create" | "cohere" | "unlock" | "normalize";
   write?: boolean;
+  /** Core-cell archetype for status and complete; omitted means the default core. */
+  archetype?: string;
 }
 export interface ReadResult { code: 0 | 1 | 2; data: unknown; text: string[] }
 export interface ReadServices { execute(args: ReadArgs): ReadResult }
 export const READ_USAGE = `Read commands: ${READ_COMMANDS.join(", ")}
-Usage: clossys director check status [--scope core|full]
+Usage: clossys director check status [--scope core|full] [--archetype <name>]
        clossys director check cell <id> --verb create|cohere|unlock|normalize
        clossys director check check [<id>[@N]...]
        clossys director check cohere [<l2-id>...]
-       clossys director check complete [--level mvs|l0|full]
+       clossys director check complete [--level mvs|l0|full] [--archetype <name>]
        clossys director check brief <contract> [--write]
        clossys director check handoff <contract>
 Aliases: cell-quality = check, coherence = cohere, completion = complete.
+--archetype default|product-saas|services|marketplace adds that archetype's extra core cells to the MVS scope.
+Judge verdicts (the storyline critic C4, judge contradiction pairs) come only from judgement findings in
+<consumer>/evidence/director/ whose judged cell versions are all still pinned; a newer pin means not judged.
 Generated files go to the Director output folder: <consumer>/evidence/director/ for the flat-store root
 <consumer>/agents/director, else <root>/. Quality, coherence and completion commands save their returned report under its reports/.
 All read commands accept --root <dir> (default <repo root>/clossys/agents/director), --json and --help.
@@ -51,7 +56,7 @@ export function parseReadArgs(argv: string[]): ReadArgs {
       args.write = true;
       continue;
     }
-    if (["--root", "--scope", "--level", "--verb"].includes(token)) {
+    if (["--root", "--scope", "--level", "--verb", "--archetype"].includes(token)) {
       if (seen.has(token)) throw new Error(`Repeated option ${token}`);
       seen.add(token);
       const value = argv[++i];
@@ -64,6 +69,10 @@ export function parseReadArgs(argv: string[]): ReadArgs {
       if (token === "--level") {
         if (command !== "complete" || !["mvs", "l0", "full"].includes(value)) throw new Error("--level needs complete and mvs|l0|full");
         args.level = value as ReadArgs["level"];
+      }
+      if (token === "--archetype") {
+        if (command !== "status" && command !== "complete" || !/^[a-z]+(?:-[a-z]+)*$/.test(value)) throw new Error("--archetype needs status or complete and an archetype name");
+        args.archetype = value;
       }
       if (token === "--verb") {
         if (command !== "cell" || !["create", "cohere", "unlock", "normalize"].includes(value)) throw new Error("Invalid cell verb");

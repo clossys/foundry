@@ -1,5 +1,5 @@
 import { isPlainObject } from "../validation.js";
-import { isoDate, RECORD_ID_PATTERN } from "./ref.js";
+import { CELL_ID_PATTERN, isoDate, RECORD_ID_PATTERN } from "./ref.js";
 import { parseDocument, readBullet, strings } from "./markdown.js";
 import type { Finding, FormatIssue, FormatResult } from "./types.js";
 
@@ -9,6 +9,24 @@ function source(value: unknown): boolean {
   try { const url = new URL(value); return ["https:", "http:"].includes(url.protocol); } catch { /* Relative evidence path. */ }
   return !value.startsWith("/") && !value.includes("\\") && !/^[A-Za-z]:/.test(value) && !value.split("/").some(p => p === ".." || p === "." || !p);
 }
+const CELL_PART = CELL_ID_PATTERN.source.slice(1, -1);
+/** A judge id the checks accept as a verdict key: the storyline critic, a judge contradiction pair, or one cell's Q judgement. */
+export const JUDGE_ID_PATTERN = new RegExp(`^(?:C4|C2:X[1-9][0-9]*|Q[1-7]:${CELL_PART}@[1-9][0-9]*)$`);
+const JUDGED_REF_PATTERN = new RegExp(`^${CELL_PART}@[1-9][0-9]*$`);
+
+/**
+ * A judgement finding records a judge verdict (the critic's storyline read, a judge contradiction pair)
+ * on exact pinned cell versions: `judge`, `verdict` and `judged` are given together or not at all.
+ */
+function judgement(value: Record<string, unknown>, add: (path: string, message: string) => void): void {
+  const given = ["judge", "verdict", "judged"].filter(key => value[key] !== undefined);
+  if (!given.length) return;
+  if (given.length !== 3) { add(given[0]!, "Expected judge, verdict and judged together"); return; }
+  if (typeof value.judge !== "string" || !JUDGE_ID_PATTERN.test(value.judge)) add("judge", "Expected C4, C2:X<n> or Q<n>:<cell-id>@<N>");
+  if (value.verdict !== "pass" && value.verdict !== "fail") add("verdict", "Expected pass or fail");
+  if (!strings(value.judged) || !value.judged.length || value.judged.some(ref => !JUDGED_REF_PATTERN.test(ref)) || new Set(value.judged).size !== value.judged.length) add("judged", "Expected unique <cell-id>@<N> refs");
+}
+
 /** Findings have scalar evidence values; nested data is outside the YAML subset. */
 export function validateFinding(value: unknown): FormatResult<Finding> {
   const issues: FormatIssue[] = []; const add = (path: string, message: string) => issues.push({ path, line: 1, message });
@@ -22,12 +40,13 @@ export function validateFinding(value: unknown): FormatResult<Finding> {
   if (value.aliases !== undefined && !strings(value.aliases)) add("aliases", "Expected a list of strings");
   if (!Array.isArray(value.bullets) || value.bullets.some(b => !isPlainObject(b) || typeof b.text !== "string" || !b.text.trim() || !Array.isArray(b.refs) || !Number.isSafeInteger(b.line) || Number(b.line) < 1)) add("bullets", "Expected parsed bullets");
   if (value.path !== undefined && typeof value.path !== "string") add("path", "Expected a string");
+  judgement(value, add);
   return issues.length ? { ok: false, issues } : { ok: true, value: { ...value, path: value.path ?? "" } as unknown as Finding };
 }
 export function parseFinding(text: string, path = ""): FormatResult<Finding> {
   const doc = parseDocument(text); if (!doc.ok) return doc;
   const { fields, fieldLines, body } = doc.value; const issues: FormatIssue[] = []; const bullets: Finding["bullets"] = [];
-  for (const key of Object.keys(fields)) if (!["id", "source", "observed", "by", "value", "unit", "aliases"].includes(key)) issues.push({ path: key, line: fieldLines[key]!, message: "Unknown finding field" });
+  for (const key of Object.keys(fields)) if (!["id", "source", "observed", "by", "value", "unit", "aliases", "judge", "verdict", "judged"].includes(key)) issues.push({ path: key, line: fieldLines[key]!, message: "Unknown finding field" });
   for (const row of body) {
     if (!row.text.trim()) continue;
     const bullet = readBullet(row.text, row.line);

@@ -117,3 +117,37 @@ Why it passes:
 | C1 | `advantage.proposition.promise@1` must cite `context.customer.need@1`. `focus.reach.channel` will need to cite `focus.segment.core@2` |
 | Effect on v1 | v1 stays in `candidates/`, unpinned and unchanged |
 | Effect on citations | anything citing `focus.segment.core@1` is now stale |
+
+## Owner-words finding
+
+After each answer the interview records the owner's words verbatim, one finding per answer, in `clossys/evidence/director/owner-<topic>-<YYYY-MM-DD>.md`. The `Informs:` bullet routes the answer to every cell it touches. This example is fictional.
+
+```markdown
+---
+id: owner-kiln-queue-2026-10-29
+source: user
+observed: 2026-10-29
+by: director
+---
+- Asked who feels the pain first, the owner said: "The studio owner. Every Friday is the weekly fire drill: who gets the kiln, whose pots wait."
+- Informs: context.customer.need, focus.segment.core
+```
+
+## Judgement finding
+
+A judge a script cannot replace (the storyline critic `C4`, the pairs `C2:X3` and `C2:X7`, or a cell check `Q<n>:<cell-id>@<N>`) is recorded as a finding once the owner has heard the reading. `judged` lists every cell the judge read at its pinned version; for `C4` that is all seven storyline cells. The CLI counts the verdict only while every listed version is still the pinned one, so a newer pin of any of them means not judged again. When two current verdicts for one judge disagree, `fail` wins. This example is fictional.
+
+```markdown
+---
+id: critic-storyline-2026-11-10
+source: user
+observed: 2026-11-10
+by: critic
+judge: C4
+verdict: pass
+judged: ["context.customer.need@1", "aspiration.purpose.mission@1", "focus.segment.core@2", "advantage.proposition.promise@1", "identity.brand.essence@1", "capability.operation.delivery@1", "execution.priority.bet@1"]
+---
+- Pre-mortem, read in a fresh context with the pinned core cells only: the likeliest failures are a second kiln-booking tool bundling scheduling for free, and studios under 40 members signing up and churning.
+- Storyline: need, mission, core segment, promise, essence, delivery and bet read as one argument; no cell breaks it.
+- The owner heard both risks and said: "Add the churn tripwire to the segment; the bundling one we accept."
+```
