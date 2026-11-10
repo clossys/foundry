@@ -39,17 +39,27 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
 
 ## Loop (one slot)
 
-1. **Read the contract.** Find the slot's row in `<layer>.json` under
+1. **Walk the source ladder first** (a few minutes; spend build time only at
+   L4). L1: stock shadcn (React Aria base). L2: else the most popular
+   shadcn-compatible partner part (MIT, Apache-2.0, BSD or ISC). L3: else
+   question the slot (delete, merge, or compose stock). L4: only then a Foundry
+   part. A stock pick needs no record; any other source writes a `ladder` on its
+   offer in Foundry's `src/catalog/rules/source-roster.json` (from a consumer
+   repository, request it upstream with the record): `rung`, `chosen` (`id`,
+   `url`, `stars`, `weeklyDownloads`, `licence`), at most 2 `rejected` with the
+   same numbers and a one-line `reason` each, `slotNeeded` (L4 only),
+   `category` and `reason`. `npm run check:source-ladder` fails without it.
+2. **Read the contract.** Find the slot's row in `<layer>.json` under
    `src/catalog/slot-contracts/` of the installed `@clossys/designer` (one file per layer: themes, assets, components, sections, frames; every Designer slot has a row).
    Note every required input: copy keys (`kind: copy`), theme variables
    (`themes.*`) and assets. Read the Director brief:
    `npx clossys design --brief --root clossys --json` (exit 1 names each
    missing Director input). A missing input blocks the slot; ask the Director
    for it instead of guessing.
-2. **Read the references.** Each `references[]` row names a registry, item and
+3. **Read the references.** Each `references[]` row names a registry, item and
    version (shadcn, Magic UI, Tailark and other trusted free registries). Read
    that item before building anything.
-3. **Choose a path** for each option:
+4. **Choose a path** for each option:
    - **pick**: the reference item as is (`meta.source.kind: registry`, with
      `meta.source.ref` = the reference row);
    - **adopt**: the reference item with edits (`derived`, same ref);
@@ -74,7 +84,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    never invent an item. Stock shadcn first. Read every copy input from props, never hard-coded
    text; mark each copy element with `data-copy="<key>"`; use only the
    contract's theme variables.
-4. **Write each option as a candidate.** From the consumer repository, with the
+5. **Write each option as a candidate.** From the consumer repository, with the
    installed Producer API (it numbers the candidate and refuses an invalid one):
    ```sh
    node --input-type=module -e '
@@ -95,14 +105,14 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    `creator`, `reason`, `createdAt`, `checks`, `deps`, `reads.copyKeys`,
    `reads.themeVars`) and `preview` (`fixtures`, sample `copy`, `container`,
    `theme`, `width`).
-5. **Show the options.** Snapshot each one at desktop and narrow widths:
+6. **Show the options.** Snapshot each one at desktop and narrow widths:
    ```sh
    npx clossys specimen snapshot --records clossys --element <id> --v <N> --width 1280,390
    ```
    or browse them all in Studio with `npx clossys produce`
    (`/designer/<slot>`). Give the owner the image paths, the path taken (pick,
    adopt or create) and one line on each trade-off. Do not pin anything yet.
-6. **Pin the approved option** only after the owner's explicit yes, and only
+7. **Pin the approved option** only after the owner's explicit yes, and only
    when its provenance and its code pass. Pin it, then run the gate over every
    pin; a non-zero exit means unpin it (restore the previous `pin.json`), then
    re-source the item from a trusted reference, cut the failing hunks, or raise a NEED:
@@ -112,7 +122,7 @@ change is `v<N+1>`. The pin is the only selection; its history is git.
    ```
    `--by` names the owner's approval message; never pin without it, and never
    hand-edit `pin.json`. To go back, pin the earlier candidate again.
-7. **Check and commit.**
+8. **Check and commit.**
    ```sh
    npx clossys check --suites
    git add clossys/agents/designer/<slot>   # consumer files, not shipped
