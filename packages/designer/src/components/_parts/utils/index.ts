@@ -4,13 +4,15 @@ import { MERGE_THEME_SCALE } from "../../../tokens/merge-scale.js"
 // Resolve the optional peer once, before any caller receives this module.
 // Extend the default merge configuration with the theme's spacing and radius scale only:
 // cn stays distinct from token-aware cx, but a consumer's `gap-sm` must replace a default `gap-lg`.
+// Only an absent peer degrades; an installed peer that fails to configure or merge propagates.
 const twMerge = await (async () => {
+  let peer: typeof import("tailwind-merge")
   try {
-    const { extendTailwindMerge } = await import("tailwind-merge")
-    return extendTailwindMerge({ extend: { theme: { spacing: [...MERGE_THEME_SCALE.spacing], radius: [...MERGE_THEME_SCALE.radius] } } })
+    peer = await import("tailwind-merge")
   } catch {
     return undefined
   }
+  return peer.extendTailwindMerge({ extend: { theme: { spacing: [...MERGE_THEME_SCALE.spacing], radius: [...MERGE_THEME_SCALE.radius] } } })
 })()
 
 let warnedAbsent = false

@@ -1,8 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MERGE_THEME_SCALE } from "../../../tokens/merge-scale.js";
 
-// Literal outputs recorded from the original helper with the default merge config.
-// Token-named classes intentionally retain that config's existing behavior.
+// Literal outputs of the default merge config extended with the theme's spacing and radius scale
+// (DECIDED D1M cn): theme-named spacing and radius classes now resolve as conflicts; every other
+// class keeps the default config's behavior.
 const goldens: Array<{ name: string; inputs: ClassValue[]; output: string }> = [
   {
     "name": "structured-arrays-objects",
@@ -64,7 +66,7 @@ const goldens: Array<{ name: string; inputs: ClassValue[]; output: string }> = [
       "px-md",
       "px-lg"
     ],
-    "output": "px-md px-lg"
+    "output": "px-lg"
   },
   {
     "name": "token-spacing-reverse",
@@ -72,7 +74,31 @@ const goldens: Array<{ name: string; inputs: ClassValue[]; output: string }> = [
       "px-lg",
       "px-md"
     ],
-    "output": "px-lg px-md"
+    "output": "px-md"
+  },
+  {
+    "name": "token-gap-consumer-override",
+    "inputs": [
+      "gap-lg",
+      "gap-sm"
+    ],
+    "output": "gap-sm"
+  },
+  {
+    "name": "token-radius-forward",
+    "inputs": [
+      "rounded-control",
+      "rounded-panel"
+    ],
+    "output": "rounded-panel"
+  },
+  {
+    "name": "token-radius-reverse",
+    "inputs": [
+      "rounded-panel",
+      "rounded-control"
+    ],
+    "output": "rounded-control"
   },
   {
     "name": "token-type-color",
@@ -99,7 +125,7 @@ const goldens: Array<{ name: string; inputs: ClassValue[]; output: string }> = [
         "text-ink-on-accent": true
       }
     ],
-    "output": "px-md px-lg text-ink-on-accent"
+    "output": "px-lg text-ink-on-accent"
   }
 ];
 
@@ -123,23 +149,31 @@ function absentPeer() {
 
 describe("cn with its optional peer present", () => {
   for (const { name, inputs, output } of goldens) {
-    it(`preserves the original default merge output for ${name}`, async () => {
+    it(`matches the theme-extended default merge output for ${name}`, async () => {
       const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
       const { cn } = await import("./index.js");
-      const { twMerge } = await vi.importActual<typeof import("tailwind-merge")>("tailwind-merge");
+      const { extendTailwindMerge } = await vi.importActual<typeof import("tailwind-merge")>("tailwind-merge");
+      const merge = extendTailwindMerge({ extend: { theme: { spacing: [...MERGE_THEME_SCALE.spacing], radius: [...MERGE_THEME_SCALE.radius] } } });
       expect(cn(...inputs)).toBe(output);
-      expect(cn(...inputs)).toBe(twMerge(clsx(inputs)));
+      expect(cn(...inputs)).toBe(merge(clsx(inputs)));
       expect(warn).not.toHaveBeenCalled();
     });
   }
   it("propagates installed merge execution errors instead of degrading", async () => {
     const error = new Error("Installed merge execution failed");
     const merge = vi.fn(() => { throw error; });
-    vi.doMock("tailwind-merge", () => ({ twMerge: merge }));
+    vi.doMock("tailwind-merge", () => ({ extendTailwindMerge: () => merge }));
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const { cn } = await import("./index.js");
     expect(() => cn(["p-4", { "p-8": true }])).toThrow(error);
     expect(merge).toHaveBeenCalledWith("p-4 p-8");
+    expect(warn).not.toHaveBeenCalled();
+  });
+  it("propagates installed merge configuration errors instead of degrading", async () => {
+    const error = new Error("Installed merge configuration failed");
+    vi.doMock("tailwind-merge", () => ({ extendTailwindMerge: () => { throw error; } }));
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    await expect(import("./index.js")).rejects.toThrow(error);
     expect(warn).not.toHaveBeenCalled();
   });
 });
