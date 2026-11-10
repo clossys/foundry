@@ -68,6 +68,7 @@ test("light categories need only category and reason; other categories still nee
   assert.deepEqual(rules(checkSourceLadder(input({ ladder: { category: "brand-asset" } }))), ["ladder-fields"]);
   assert.deepEqual(rules(checkSourceLadder(input({ ladder: { category: "icon-standard", reason: "most used icon set" } }))), ["ladder-fields"]);
   assert.deepEqual(checkSourceLadder(input({ ladder: { ...L2(), category: "icon-standard" } })), []);
+  assert.deepEqual(rules(checkSourceLadder(input({ ladder: { category: "brand-asset", reason: "logo", rejected: [part("partner-x", 10)] } }))), ["popularity"]);
 });
 
 test("l4-justification: L4 passes with slotNeeded and reason, fails without slotNeeded", () => {

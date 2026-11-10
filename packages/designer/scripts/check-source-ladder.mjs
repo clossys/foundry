@@ -115,6 +115,13 @@ export function checkSourceLadder({ roster, stockItems, stockFills, componentMod
     if (rejected.length > MAX_REJECTED) add("ladder-fields", `at most ${MAX_REJECTED} rejected candidates (${rejected.length} recorded)`);
     if (rejected.length + (ladder.chosen ? 1 : 0) > MAX_CANDIDATES) add("ladder-fields", `at most ${MAX_CANDIDATES} candidates in all`);
     rejected.forEach((entry, index) => partFields(entry, `rejected[${index}]`, add, { numbers: true }));
+    const chosenStars = count(ladder.chosen?.stars) ? ladder.chosen.stars : -1;
+    rejected.forEach((entry, index) => {
+      if (!entry || typeof entry !== "object" || text(entry.reason)) return;
+      const more = count(entry.stars) && entry.stars > chosenStars;
+      add("popularity", `rejected[${index}] (${entry.id ?? "?"}) has no one-line reason${more ? `; it has more stars (${entry.stars}) than the chosen part` : ""}`);
+    });
+    if (ladder.chosen?.licence !== undefined && !licenceAllowed(ladder.chosen.licence)) add("licence", `chosen licence ${JSON.stringify(ladder.chosen.licence)} is not MIT, Apache-2.0, BSD or ISC`);
     if (LIGHT_CATEGORIES.includes(ladder.category)) continue;
 
     if (!RUNGS.includes(ladder.rung)) { add("ladder-fields", `rung must be one of ${RUNGS.join(", ")}`); continue; }
@@ -122,15 +129,6 @@ export function checkSourceLadder({ roster, stockItems, stockFills, componentMod
     if (ladder.rung === "L3") partFields(ladder.chosen, "chosen", add, { numbers: false });
     if (ladder.rung === "L4" && (!text(ladder.slotNeeded) || !text(ladder.reason))) add("l4-justification", "rung L4 needs slotNeeded and reason");
     if (ladder.rung !== "L4" && ladder.slotNeeded !== undefined) add("ladder-fields", "slotNeeded is recorded only on rung L4");
-
-    const chosenStars = count(ladder.chosen?.stars) ? ladder.chosen.stars : -1;
-    rejected.forEach((entry, index) => {
-      if (!entry || typeof entry !== "object" || text(entry.reason)) return;
-      const more = count(entry.stars) && entry.stars > chosenStars;
-      add("popularity", `rejected[${index}] (${entry.id ?? "?"}) has no one-line reason${more ? `; it has more stars (${entry.stars}) than the chosen part` : ""}`);
-    });
-    if (ladder.chosen && ladder.chosen.licence !== undefined && !licenceAllowed(ladder.chosen.licence)) add("licence", `chosen licence ${JSON.stringify(ladder.chosen.licence)} is not MIT, Apache-2.0, BSD or ISC`);
-    if (ladder.rung === "L2" && ladder.chosen && ladder.chosen.licence === undefined) add("licence", "chosen partner part records no licence");
   }
 
   for (const module of componentModules) {
