@@ -1,0 +1,18 @@
+{
+  "why": "Designer tests import built output that other workspaces produce: @clossys/writer, @clossys/publisher and @clossys/producer depend on @clossys/designer, so this manifest cannot declare them without a cycle. The root topological build (`npm run build` at the repository root) produces every file below. scripts/lib/vitest-build-package.mjs refuses to start the designer tests, naming each missing file, until all of them exist; nothing is skipped and nothing falls back to source.",
+  "requires": [
+    { "path": "packages/director/dist/index.js", "builtBy": "@clossys/director", "importedAs": "@clossys/director" },
+    { "path": "packages/director/src/generated/contract-schema.generated.ts", "builtBy": "@clossys/director", "importedAs": "packages/director/src/brief-contract.ts" },
+    { "path": "packages/director/src/generated/brief-contracts.generated.ts", "builtBy": "@clossys/director", "importedAs": "packages/director/src/brief-contract.ts" },
+    { "path": "packages/writer/dist/index.js", "builtBy": "@clossys/writer", "importedAs": "@clossys/writer" },
+    { "path": "packages/writer/dist/locale.js", "builtBy": "@clossys/writer", "importedAs": "@clossys/writer/locale" },
+    { "path": "packages/writer/dist/admin-copy.js", "builtBy": "@clossys/writer", "importedAs": "@clossys/writer/admin-copy" },
+    { "path": "packages/writer/src/generated/contract-schema.generated.ts", "builtBy": "@clossys/writer", "importedAs": "packages/writer/src/plan-authority.ts" },
+    { "path": "packages/writer/src/generated/advisor-plan-contract.generated.ts", "builtBy": "@clossys/writer", "importedAs": "packages/writer/src/plan-contract.ts" },
+    { "path": "packages/publisher/dist/web/index.js", "builtBy": "@clossys/publisher", "importedAs": "@clossys/publisher/web" },
+    { "path": "packages/publisher/dist/web/registered-route.js", "builtBy": "@clossys/publisher", "importedAs": "@clossys/publisher/web/registered-route" },
+    { "path": "packages/producer/dist/records/slots.js", "builtBy": "@clossys/producer", "importedAs": "@clossys/producer/records/slots" },
+    { "path": "packages/producer/dist/server/selection-defaults.js", "builtBy": "@clossys/producer", "importedAs": "packages/producer/dist/server/selection-defaults.js" },
+    { "path": "packages/designer/dist/catalog/native-specimen-evidence.json", "builtBy": "@clossys/producer (generate:specimen-evidence)", "importedAs": "src/library-cli/qualify-specimen-surfaces.ts" }
+  ]
+}

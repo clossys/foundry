@@ -11,7 +11,7 @@ import { FOUNDRY_COMPONENT_MAP } from "./foundry-components.map.js";
 /**
  * Foundry's chart fills go through the persist emitter (emitComponents, component-index target)
  * one at a time. Every chart member is a capability the chart root itself renders, so each pointer
- * is the bare root export and the generated adapter is a transparent alias of that export.
+ * is the bare root export and the generated adapter is a provenance-stamped identity forward of that export.
  */
 const barrel = (subpath: string): string[] => [...readFileSync(resolve(import.meta.dirname, `../${subpath}/index.ts`), "utf8").matchAll(/export\s*\{([^}]+)\}/g)]
   .flatMap(match => match[1]!.split(",").map(binding => binding.trim().replace(/^type\s+/, "").split(/\s+as\s+/).at(-1)!)).filter(Boolean);
@@ -60,6 +60,15 @@ describe("Foundry chart fills persist", () => {
     expect(Object.values(committed.components)[0]!.propMap).toEqual(descriptor.propMap);
     const leaf = persist(doc).find(file => file.path === `components/${descriptor.slot.slice(11)}/index.ts`)!;
     const name = descriptor.slot.slice(11).split("-").map(part => part[0]!.toUpperCase() + part.slice(1)).join("");
-    expect(leaf.content).toBe(`import { ${descriptor.impl.export} as Impl0 } from "@clossys/designer/charts";\nexport { Impl0 as ${name} };\n`);
+    // Since e742c97f6 (DOM provenance) the identity adapter stamps data-ds-* and forwards to the bare root
+    // export unchanged: one import, the provenance stamp, and the root's own type on the stamped export.
+    const lines = leaf.content.split("\n");
+    expect(lines[0]).toBe('import { createElement, forwardRef, type ComponentType } from "react";');
+    expect(lines[1]).toBe(`import { ${descriptor.impl.export} as Impl0 } from "@clossys/designer/charts";`);
+    expect(lines[2]).toBe(`const stamp = ${JSON.stringify({ "data-ds-layer": "components", "data-ds-leaf": descriptor.slot, "data-ds-fill": fillId(doc) })} as const;`);
+    expect(leaf.content.match(/^import /gm)).toHaveLength(2);
+    expect(leaf.content).toContain("const target = Impl0 satisfies ((props: never) => unknown) | (new (props: never) => unknown);");
+    expect(leaf.content).toContain("  return createElement(target as unknown as ComponentType<Record<string, unknown>>, { ...props, ...stamp, ref });");
+    expect(leaf.content.endsWith(`export const ${name} = Object.assign(Stamped, statics(Impl0)) as unknown as typeof Impl0;\n`)).toBe(true);
   });
 });

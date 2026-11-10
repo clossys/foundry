@@ -159,8 +159,8 @@ export type { ComboBoxProps, ComboBoxOption } from "./ComboBox.js";
 export { SearchField } from "./SearchField.js";
 export type { SearchFieldProps } from "./SearchField.js";
 
-export { FileTrigger } from "./FileTrigger.js";
-export type { FileTriggerProps } from "./FileTrigger.js";
+export { FileTrigger } from "./preview-runtime/components/file-trigger/file-trigger.js";
+export type { FileTriggerProps } from "./preview-runtime/components/file-trigger/file-trigger.js";
 
 export { Disclosure } from "./Disclosure.js";
 export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
@@ -168,8 +168,8 @@ export type { DisclosureProps, DisclosureGroupProps } from "./Disclosure.js";
 export { ProgressBar } from "./ProgressBar.js";
 export type { ProgressBarProps } from "./ProgressBar.js";
 
-export { Separator } from "./Separator.js";
-export type { SeparatorProps } from "./Separator.js";
+export { Separator } from "./preview-runtime/components/separator/separator.js";
+export type SeparatorProps = import("react").ComponentProps<typeof import("./preview-runtime/components/separator/separator.js").Separator>;
 
 export { Chip } from "./Chip.js";
 export type { ChipProps } from "./Chip.js";

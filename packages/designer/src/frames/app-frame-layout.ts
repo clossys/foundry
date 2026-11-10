@@ -1,4 +1,4 @@
-import { TOKENS } from "../tokens/index.js";
+import { TOKENS } from "../tokens/tokens.js";
 
 /** Shared technical threshold for AppFrame navigation and contextual sheets. */
 export const APP_FRAME_WIDE_QUERY = `(min-width: ${TOKENS["--breakpoint-tablet-lg"]!.value})`;

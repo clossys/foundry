@@ -12,10 +12,13 @@ import { checkWiring } from "../../catalog-core/wiring.js";
 import { GROUP_A_CONTENT, GROUP_A_LEAVES, GROUP_A_MEMBERS, groupASectionInput, type GroupAFillDocument, type GroupALeaf } from "./group-a-dataset.js";
 import { GROUP_A_SECTION_INPUTS, GROUP_A_SECTION_RENDERERS } from "./group-a.js";
 import { specimenDataset } from "../../studio/specimen-dataset.js";
+import defaultProfile from "../../studio/default-component-preview-profile.json" with { type: "json" };
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fill = (leaf: GroupALeaf): GroupAFillDocument => JSON.parse(readFileSync(resolve(here, `../../catalog/fills/foundry/sections.${leaf}.json`), "utf8")) as GroupAFillDocument;
 const contracts = sectionSlots as unknown as readonly SectionSlot[];
+/** The component fills the default preview profile selects: the ambient selection `componentLeaf` facades resolve against (WL7). */
+const PROFILE_SELECTION: Readonly<Record<string, string>> = Object.fromEntries(Object.entries(defaultProfile.components).flatMap(([leaf, row]) => "fill" in row.origin && typeof row.origin.fill === "string" ? [[leaf, row.origin.fill]] : []));
 const PAGE = dsAttrs("pages", "pages.sx-a-sections", "foundry/pages.sx-a-sections");
 
 /** The renderer's output from its generated fill and the dataset, inside a stamped page root, as SSR markup. */
@@ -37,14 +40,21 @@ function wiring(leaf: GroupALeaf, html: string) {
   return scanProvenance({
     html,
     route: { id: "sx-a-sections", binding: { frame: { leaf: "frames.app-shell" }, frameSlots: {}, sections: { main: [{ leaf: `sections.${leaf}`, fill: `foundry/sections.${leaf}` }] } } },
-    selection: { [`sections.${leaf}`]: `foundry/sections.${leaf}` },
+    // The article's dataset toc composes the registered table-of-contents Section inside it.
+    selection: { ...PROFILE_SELECTION, ...(leaf === "article" ? { "sections.table-of-contents": "foundry/sections.table-of-contents" } : {}), [`sections.${leaf}`]: `foundry/sections.${leaf}` },
   }).findings;
 }
 
 const S = specimenDataset.sections;
 /** Real registered component roles each leaf must render from its dataset content. */
 const ROLES: Readonly<Record<GroupALeaf, (view: ReturnType<typeof within>, container: HTMLElement) => void>> = {
-  article: view => { expect(view.getByRole("heading", { level: 2, name: S.articleBody.heading })).toBeInTheDocument(); expect(view.getByText(S.articleBody.body)).toBeInTheDocument(); },
+  // The body paragraph is quoted back as the pull-quote and the footnote, so it renders more than once.
+  article: (view, container) => {
+    expect(view.getByRole("heading", { level: 2, name: S.articleBody.heading })).toBeInTheDocument();
+    expect(view.getAllByText(S.articleBody.body).map(node => node.tagName)).toContain("P");
+    expect(container.querySelector("blockquote")).toHaveTextContent(S.articleBody.body);
+    expect(container.querySelector("[data-article-toc]"), "dataset toc region").not.toBeNull();
+  },
   // FeatureGrid item headings are plain paragraphs under the grid's own heading level.
   band: view => { expect(view.getByText(S.featureGrid.items[0]!.heading)).toBeInTheDocument(); },
   "call-to-action": view => { expect(view.getByRole("heading", { name: S.callToAction.title })).toBeInTheDocument(); expect(view.getByRole("link", { name: S.callToAction.primary.label })).toHaveAttribute("href", S.callToAction.primary.href); expect(view.getByRole("link", { name: S.callToAction.secondary.label })).toBeInTheDocument(); },
@@ -59,7 +69,8 @@ const ROLES: Readonly<Record<GroupALeaf, (view: ReturnType<typeof within>, conta
   media: (view, container) => { expect(view.getAllByRole("figure").length).toBeGreaterThan(0); expect([...container.querySelectorAll("figcaption")].map(caption => caption.textContent)).toContain(S.mediaFigure.caption); },
   newsletter: (view, container) => { expect(view.getByRole("textbox", { name: new RegExp(S.newsletter.emailLabel) })).toHaveAttribute("type", "email"); expect(view.getByRole("button", { name: S.newsletter.submitLabel })).toBeInTheDocument(); expect(container.querySelector("form")).toHaveAttribute("action", S.newsletter.action); },
   people: view => { expect(view.getAllByRole("listitem")).toHaveLength(S.peopleGrid.people.length); expect(view.getByText(S.peopleGrid.people[0].name)).toBeInTheDocument(); },
-  pricing: view => { for (const tier of S.pricing.tiers) expect(view.getByRole("link", { name: tier.cta })).toHaveAttribute("href", `#${tier.id}`); expect(view.getByText(S.pricing.tiers[1]!.price)).toBeInTheDocument(); },
+  // The dataset carries no prices (public repo), so each plan is found by its name and its call to action.
+  pricing: view => { for (const tier of S.pricing.tiers) { expect(view.getByRole("link", { name: tier.cta })).toHaveAttribute("href", `#${tier.id}`); expect(view.getByText(tier.name)).toBeInTheDocument(); } },
   testimonials: (view, container) => {
     const rows = view.getAllByRole("listitem");
     expect(rows).toHaveLength(S.testimonials.items.length);

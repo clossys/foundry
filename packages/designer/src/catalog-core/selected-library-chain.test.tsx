@@ -15,7 +15,7 @@ import { packageBarrelExports, readSurfacePackageEvidence } from "../library-cli
 import { specimenDataset } from "../studio/specimen-dataset.js";
 import { shellCopyFixtureResolver } from "../frames/__fixtures__/shell-copy-resolver.js";
 import { completedCatalogLibrary } from "./__fixtures__/completed-catalog-library.js";
-import { componentAdoptions, selectedComponentClosure, selectedComponentFills } from "./__fixtures__/surface-engine/selected-package-closure.js";
+import { componentAdoptions, installedSourceImportExports, selectedComponentClosure, selectedComponentFills } from "./__fixtures__/surface-engine/selected-package-closure.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import { applyLibraryChange, emit, libraryHash, resolve } from "./api.js";
 import { loadBuildCatalog, loadCatalog, loadComponentRegistry, loadSectionRegistry } from "./index.js";
@@ -55,7 +55,9 @@ beforeAll(async () => {
       ...[SECTION, FRAME].map(slot => ({ portion: "surfaces" as const, change: { op: "adopt" as const, slot: slot as `sections.${string}`, source: "foundry" } })),
     ], bundles: loadCatalogBundles().sourceBundles,
   }, { componentOptions, surfaceOptions });
-  selected = { catalog, library, componentOptions, surfaceOptions };
+  // Stock source files import their installed packages; observe those exports so emit closes over real modules.
+  const installed = await installedSourceImportExports(library.components.files);
+  selected = { catalog, library, componentOptions: { ...componentOptions, packageExports: { ...componentOptions.packageExports, ...installed } }, surfaceOptions };
 }, 120_000);
 afterAll(async () => { if (temporary) await rm(temporary, { recursive: true, force: true }); });
 
@@ -78,6 +80,8 @@ async function compile(files: readonly CompositeEmitFile[]) {
   sources.set("page.tsx", PAGE);
   const result = await build({
     entryPoints: ["page.tsx"], bundle: true, format: "esm", platform: "node", packages: "external", write: false, logLevel: "silent",
+    // Stock shadcn@aria sources are written for the automatic JSX runtime, as the consumer's own build compiles them.
+    jsx: "automatic",
     plugins: [{ name: "emitted-consumer-library", setup(builder) {
       builder.onResolve({ filter: /.*/ }, args => {
         if (args.kind !== "entry-point" && !args.path.startsWith(".")) return { path: args.path, external: true };
@@ -127,7 +131,8 @@ async function draw(input: CompositeEngineInput, changeOutput: (files: Composite
   const button = section.querySelector('[data-ds-leaf="components.button"]')!;
   expect(button, "selected component must reach the Section action slot").not.toBeNull();
   expect(button.textContent).toBe(app.body);
-  expect(button.getAttribute("data-ds-fill")).toBe("foundry/components.button");
+  // Strict stock-first (D3): the selected button is the stock shadcn@aria fill.
+  expect(button.getAttribute("data-ds-fill")).toBe("shadcn@aria/components.button");
   const icon = button.querySelector('[data-ds-leaf="components.icon"]')!;
   expect(icon, "selected asset adapter must render within the selected component").not.toBeNull();
   const glyph = Object.values(profile.values.members).find(member => member.slot === GLYPH)!;

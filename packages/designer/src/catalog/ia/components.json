@@ -281,5 +281,19 @@
         }
       ]
     }
+  ],
+  "parked": [
+    {
+      "leaf": "components.chart-area",
+      "basis": "register §20 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "components.chart-bar",
+      "basis": "register §20 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+    },
+    {
+      "leaf": "components.chart-line",
+      "basis": "register §20 H4c (planner, 2026-11-06): not consumed today (consumed-only rule); no fill is required while parked"
+    }
   ]
 }

@@ -93,6 +93,14 @@ describe("generateCompiledCss", () => {
     expect(result.css).not.toContain(":root, :host {");
   });
 
+  it("keeps a literal fallback for plain @theme keys the stripped reflection block declared [mutant: bare var(--spacing)]", async () => {
+    const result = await generateCompiledCss({ stylesDir, candidates: ["max-w-40", "bg-primary"] });
+    expect(result.css).toContain("max-width: calc(var(--spacing, 0.25rem) * 40);");
+    expect(result.css).not.toMatch(/var\(\s*--spacing\s*\)/);
+    // Live keys stay live: only literal-valued reflections gain a fallback.
+    expect(result.css).toMatch(/background-color:\s*var\(--primary\);/);
+  });
+
   it("never re-declares tokens.css's own content (no dev-mode badge, no sentinel)", async () => {
     const result = await generateCompiledCss({ stylesDir, candidates: ["bg-primary"] });
     expect(result.css).not.toContain("No brand binding");

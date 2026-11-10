@@ -40,6 +40,13 @@ export function componentRegistryFindings(registry: ComponentRegistry): string[]
   visit(registry.placement.nodes, 1);
   for (const id of ids) if (!counts.has(id)) findings.push(`placement: missing component slot ${id}`);
   for (const [id, count] of counts) if (count !== 1) findings.push(`placement: ${id} appears ${count} times`);
+  const parked = new Set<string>();
+  for (const entry of registry.placement.parked ?? []) {
+    if (!counts.has(entry.leaf)) findings.push(`parked: ${entry.leaf} is not a placed component leaf`);
+    if (parked.has(entry.leaf)) findings.push(`parked: duplicate ${entry.leaf}`);
+    if (!entry.basis) findings.push(`parked: ${entry.leaf} has no basis`);
+    parked.add(entry.leaf);
+  }
   const aliasIds = new Set<string>();
   for (const alias of registry.aliases) {
     if (!isValidId("slot", alias.id) || !alias.id.startsWith("components.")) findings.push(`alias: invalid id ${alias.id}`);

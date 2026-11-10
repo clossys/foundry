@@ -6,11 +6,17 @@ import { loadComponentRegistry } from "./component-registry.js";
 import { isValidId } from "./ids.js";
 import { loadSectionRegistry, sectionRegistryFindings, type SectionRegistry } from "./sections-contract.js";
 import type { PlacementNode } from "./types.js";
+import { STUDIO_SPECIMEN_HOST_PARTS } from "./studio-host-parts.js";
+import { SPECIMEN_RENDER_PARTS } from "../studio/specimen-render-part-identities.js";
 
 // Audit inventory independent of the mutable placement and descriptor documents.
+// R2F-11: the Studio specimen sections (commit 25a8fc7b2, bound to the owner-signed components.specimen-* leaves)
+// and the native sectioned document (fa249b450) joined the committed section data; the audit inventory follows it.
+const specimenLeaves = ["specimen-swatch", "specimen-color-ramp", "specimen-type-ladder", "specimen-spacing-ladder", "specimen-radius-ladder", "specimen-motion-player", "specimen-asset-grid", "specimen-icon-grid", "specimen-variant-matrix", "specimen-section-viewports", "specimen-frame-viewports", "specimen-rich-passage", "specimen-copy-in-context", "specimen-page-viewports"];
 const families: Record<string, readonly string[]> = {
+  specimens: specimenLeaves,
   parts: ["band", "section-header", "pagination"],
-  explain: ["hero", "logo-hero", "logo-mark", "page-header", "content", "article", "legal-prose", "features", "testimonials", "logo-cloud", "people", "media", "gallery", "faq", "steps", "timeline", "call-to-action"],
+  explain: ["hero", "logo-hero", "logo-mark", "page-header", "content", "article", "sectioned-document", "legal-prose", "features", "testimonials", "logo-cloud", "people", "media", "gallery", "faq", "steps", "timeline", "call-to-action"],
   organize: ["cards", "resource-list", "task-list", "comparison", "pricing", "stats", "status-list", "usage", "account-summary", "data-table", "data-grid", "record-detail", "activity-feed", "audit-log"],
   collect: ["form", "newsletter", "sign-in-form", "wizard", "settings", "column-mapper", "access-matrix", "chat"],
   navigate: ["link-index", "table-of-contents", "explorer", "filter-builder"],
@@ -19,6 +25,11 @@ const families: Record<string, readonly string[]> = {
 const id = (leaf: string) => `sections.${leaf}`;
 const waveOneIds = ["account-summary", "boundary-message", "error-message", "legal-prose", "logo-mark", "sign-in-form"].map(id);
 const isWaveOne = (slot: { id: string }) => waveOneIds.includes(slot.id);
+// Rows added after the S2-1 pins: Studio-hosted specimens and the section-composing sectioned document carry no band or header.
+const laterIds = [...specimenLeaves, "sectioned-document"].map(id);
+const isLater = (slot: { id: string }) => laterIds.includes(slot.id);
+// Typed non-section parts (SectionContract.parts): Studio host parts and section-owned specimen render ports.
+const hostParts: readonly string[] = [...Object.keys(STUDIO_SPECIMEN_HOST_PARTS), ...Object.values(SPECIMEN_RENDER_PARTS).flat()];
 // The expressive amendment's surviving read is the marquee animation (its shift distance was deleted); retain every earlier field pin.
 const withoutExpressiveMotionReads = (slots: SectionRegistry["slots"]): SectionRegistry["slots"] => slots.map(slot => ({
   ...slot, contract: { ...slot.contract, allowedReads: {
@@ -40,13 +51,17 @@ const reconciledComposes: Record<string, readonly string[]> = {
   comparison: ["table", "status-mark", "badge", "card", "icon", "radio-group", "tooltip", "button", "dialog", "menu", "link", "semantic-content"],
   form: ["form", "field", "text-field", "button", "banner", "checkbox", "combo-box", "select", "link", "semantic-content"],
   "record-detail": ["card", "tabs", "badge", "skeleton", "button", "link", "disclosure", "semantic-content"],
-  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group"],
+  "data-table": ["table", "toolbar", "checkbox", "menu", "button", "dialog", "icon", "popover", "select", "text-field", "badge", "status-mark", "tooltip", "link", "skeleton", "semantic-content", "tag-group", "sheet"],
   "link-index": ["link", "card", "icon", "badge", "button", "status-mark", "semantic-content"],
   newsletter: ["text-field", "button", "icon"],
   "table-of-contents": ["link", "disclosure", "semantic-content"],
   "task-list": ["checkbox", "avatar", "badge", "icon", "status-mark", "link", "meter", "semantic-content"],
 };
 
+// R2F-11 re-pin (planner:R2C-designer): the three hashes below were last pinned at d523717cf (2026-10-29). Committed
+// data since then (themes rename 736153e72, kebab copy ports 4308b487f, measured composes/reads ad225f2f2 and 25ec7c105,
+// Hero copy e14e4471b, features composes sections.media through `composes`; R2F-20 measured composes: data-grid/data-table sheet,
+// resource-list dialog/popover) changed these rows; re-pinned from the data.
 describe("S2-1 bounded section composition reconciliation", () => {
   it.each(Object.entries(reconciledComposes))("pins the exact component permissions for %s", (leaf, components) => {
     expect(loadSectionRegistry().slots.find(slot => slot.id === id(leaf))!.contract.allowedComposes)
@@ -56,11 +71,11 @@ describe("S2-1 bounded section composition reconciliation", () => {
   it("preserves every other accepted contract field and limits parts to the three locked parts", () => {
     const slots = withoutExpressiveMotionReads(loadSectionRegistry().slots);
     for (const slot of slots) {
-      for (const part of slot.contract.parts) expect(families.parts!.map(id)).toContain(part);
+      for (const part of slot.contract.parts) expect([...families.parts!.map(id), ...(isLater(slot) ? hostParts : [])]).toContain(part);
       for (const component of slot.contract.allowedComposes) expect(component).toMatch(/^components\./);
     }
     // SCROLL-1 A158/A159/A161: stats, TOC label, typed table cells and native band header are the exact new contract delta; keep existing normalization and unrelated pins unchanged.
-    const invariant = slots.filter(slot => !isWaveOne(slot) && slot.id !== "sections.logo-hero").map(slot => {
+    const invariant = slots.filter(slot => !isWaveOne(slot) && !isLater(slot) && slot.id !== "sections.logo-hero").map(slot => {
       const { substrates: _substrates, substrateTests: _tests, copy: _copy, passageSchema: _passage, ...rest } = slot.contract;
       const base = slot.id === "sections.table-of-contents" ? { ...rest, slots: rest.slots.map(item => item.name === "active-id" ? { ...item, type: "copy" } : item) } : rest;
       const original = slot.id === "sections.comparison" ? { ...base, surface: "site", slots: base.slots.filter(item => item.name !== "controls"), members: { ...base.members, names: [] } } : base;
@@ -69,16 +84,16 @@ describe("S2-1 bounded section composition reconciliation", () => {
       return { ...slot, contract };
     });
     expect(createHash("sha256").update(JSON.stringify(invariant)).digest("hex"))
-      .toBe("84bd4fafa1e157ef1a7092bb3360decb1b502e93e780a989e6b39b545cf27721");
+      .toBe("60ddb4b7afd83bcf779356daa5e82cda9af7979589857a93eebb8134597111be");
   });
 
   it("preserves all 46 base rows exactly and pins the six new draft contracts separately", () => {
     const slots = withoutExpressiveMotionReads(loadSectionRegistry().slots);
-    const original = slots.filter(slot => !isWaveOne(slot));
+    const original = slots.filter(slot => !isWaveOne(slot) && !isLater(slot));
     expect(original).toHaveLength(46);
     // SCROLL-1 A158/A159/A161 updates only section-header, table-of-contents and data-table; all 46 rows remain pinned, with no field projected out.
     expect(createHash("sha256").update(JSON.stringify(original)).digest("hex"))
-      .toBe("4d59000a56e5d89cf1281a80800c8e78931edb850ba157182b6e7d130989de1e");
+      .toBe("94ef3e0c0a7937db7a1399f49ab3421531772dd3131022733ce3796a4b1b1159");
     // Preserve the original contracts while allowing the three copy-only sign-in
     // configurations covered by sections/sign-in-copy.test.tsx.
     const signInConfigs = ["sign-in.password", "sign-in.provider", "sign-in.verify"];
@@ -89,17 +104,18 @@ describe("S2-1 bounded section composition reconciliation", () => {
     } : slot).sort((a, b) => a.id.localeCompare(b.id));
     expect(additions.map(slot => slot.id)).toEqual(waveOneIds.filter(slotId => slotId !== id("error-message")));
     expect(createHash("sha256").update(JSON.stringify(additions)).digest("hex"))
-      .toBe("a007a3bb8e41f57372a3b3b3bb9066965fda134103bf9d3f8037b99b11c360ee");
+      .toBe("4717f418913ab184d27ec4c5e21fda81e18cdfb00820d186bce9ed57831287bc");
   });
 });
 
 describe("section build IA registry", () => {
-  it("loads exactly the 51 permanent draft ids without claiming a freeze or runtime fill", () => {
+  it("loads exactly the 66 permanent draft ids without claiming a freeze or runtime fill", () => {
     const registry = loadSectionRegistry();
     expect(registry.status).toBe("build-unfrozen");
-    expect(registry.slots.map(slot => slot.id)).toEqual(inventory);
-    expect(registry.slots).toHaveLength(51);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(51);
+    // The owner-signed specimen rows lead the data in IA order; every other row stays sorted.
+    expect(registry.slots.map(slot => slot.id)).toEqual([...specimenLeaves.map(id), ...inventory.filter(slotId => !specimenLeaves.map(id).includes(slotId))]);
+    expect(registry.slots).toHaveLength(66);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(66);
     for (const slot of registry.slots) {
       expect(isValidId("slot", slot.id)).toBe(true);
       expect(slot.layer).toBe("sections");
@@ -124,9 +140,9 @@ describe("section build IA registry", () => {
   it("pins the owner-decided site, app and shared section surfaces", () => {
     const registry = loadSectionRegistry();
     // Site content and visitor communication.
-    const site = ["hero", "logo-hero", "logo-mark", "legal-prose", "features", "testimonials", "logo-cloud", "people", "pricing", "gallery", "timeline", "newsletter", "steps", "article", "table-of-contents", "status-list", "call-to-action", "consent"];
+    const site = ["hero", "logo-hero", "logo-mark", "legal-prose", "features", "testimonials", "logo-cloud", "people", "pricing", "gallery", "timeline", "newsletter", "steps", "article", "table-of-contents", "status-list", "call-to-action", "consent", "sectioned-document"];
     // Authenticated records, workflows and operational tools.
-    const app = ["access-matrix", "audit-log", "activity-feed", "data-grid", "data-table", "resource-list", "record-detail", "task-list", "column-mapper", "filter-builder", "settings", "chat", "explorer", "usage", "sign-in-form", "boundary-message", "account-summary"];
+    const app = ["access-matrix", "audit-log", "activity-feed", "data-grid", "data-table", "resource-list", "record-detail", "task-list", "column-mapper", "filter-builder", "settings", "chat", "explorer", "usage", "sign-in-form", "boundary-message", "account-summary", ...specimenLeaves];
     // Shared structure, content, input and feedback work on either surface.
     const both = ["band", "section-header", "pagination", "page-header", "content", "media", "faq", "cards", "stats", "form", "wizard", "link-index", "empty-state", "error-state", "notices", "comparison"];
     const expected = Object.fromEntries([
@@ -136,14 +152,15 @@ describe("section build IA registry", () => {
     ]);
     expect(Object.keys(expected).sort()).toEqual(inventory);
     expect(Object.fromEntries(registry.slots.map(slot => [slot.id, slot.contract.surface]))).toEqual(expected);
-    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 18, app: 17, both: 16 });
+    expect(Object.fromEntries(["site", "app", "both"].map(surface => [surface, registry.slots.filter(slot => slot.contract.surface === surface).length]))).toEqual({ site: 19, app: 31, both: 16 });
   });
 
   it("declares consent as a site contract with host copy and lower-layer composition", () => {
     const consent = loadSectionRegistry().slots.find(slot => slot.id === id("consent"));
     expect(consent).toMatchObject({ layer: "sections", status: "draft", requires: [], contract: {
       kind: "section", data: "host-injected", surface: "site",
-      allowedComposes: ["components.button", "components.link", "components.card"],
+      // GATES-RED G3 (25ec7c105): icon and semantic-content are the measured composes of the consent implementation.
+      allowedComposes: ["components.button", "components.link", "components.card", "components.icon", "components.semantic-content"],
       slots: [
         { name: "copy", type: "copy", required: true },
         { name: "actions", type: "action", required: true, max: 2 },
@@ -184,12 +201,12 @@ describe("section build IA registry", () => {
       expect(path.includes(key), [...path, key].join(" -> ")).toBe(false);
       const slot = slots.get(key);
       expect(slot, key).toBeDefined();
-      for (const part of slot?.contract.parts ?? []) visit(part, [...path, key]);
+      for (const part of slot?.contract.parts ?? []) if (part.startsWith("sections.")) visit(part, [...path, key]);
     };
     for (const slot of registry.slots) {
       const part = families.parts?.map(id).includes(slot.id);
-      expect(slot.contract.anatomy.band).toBe(slot.id !== id("section-header") && (part || ["sign-in-form", "boundary-message", "error-message"].map(id).includes(slot.id)) ? null : id("band"));
-      expect(slot.contract.anatomy.header).toBe(part || isWaveOne(slot) || [id("table-of-contents"), id("logo-hero")].includes(slot.id) ? null : id("section-header"));
+      expect(slot.contract.anatomy.band).toBe(slot.id !== id("section-header") && (part || isLater(slot) || ["sign-in-form", "boundary-message", "error-message"].map(id).includes(slot.id)) ? null : id("band"));
+      expect(slot.contract.anatomy.header).toBe(part || isWaveOne(slot) || isLater(slot) || [id("table-of-contents"), id("logo-hero")].includes(slot.id) ? null : id("section-header"));
       for (const target of Object.values(slot.contract.anatomy)) if (target) expect(slot.contract.parts).toContain(target);
       visit(slot.id, []);
     }
@@ -255,7 +272,7 @@ describe("section build IA registry", () => {
     const registry = loadSectionRegistry();
     (registry.slots as unknown as unknown[]).pop();
     (registry.aliases as unknown as unknown[]).pop();
-    expect(loadSectionRegistry().slots).toHaveLength(51);
+    expect(loadSectionRegistry().slots).toHaveLength(66);
     expect(loadSectionRegistry().aliases).toHaveLength(58);
   });
 });

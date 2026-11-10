@@ -30,13 +30,13 @@ export interface PackageSurfaceLibrary {
 export async function packageSurfaceLibrary(): Promise<PackageSurfaceLibrary> {
   const fills = [...importFoundrySections().fills, ...importFoundryFrames().fills] as unknown as SurfaceCandidateDocument[];
   const slots = [...loadSectionRegistry().slots, ...loadBuildCatalog().slots.filter((slot): slot is FrameSlot => slot.layer === "frames")];
-  // Components with no Foundry candidate come from the selected stock source (shadcn@aria) with its materialized
-  // source bundle, as the shipped selection does; every other component stays a Foundry package pointer.
-  const foundryComponents = importFoundryComponents().fills;
-  const covered = new Set(foundryComponents.map(doc => doc.$extensions["com.clossys.fill"].slot));
+  // Strict stock-first (planner:R2C-designer D3): components come from the selected stock source (shadcn@aria) with
+  // its materialized source bundle; a Foundry package pointer is used only where no stock item exists.
   const bundles = loadCatalogBundles();
-  const stockComponents = bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria" && !covered.has(doc.$extensions["com.clossys.fill"].slot));
-  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: [...foundryComponents, ...stockComponents] as unknown as CompositeCatalogData["components"]["fills"] }, surfaces: { slots, fills, transforms: [], rules: [], materializations: [] } };
+  const stockComponents = bundles.componentFills.filter(doc => doc.$extensions["com.clossys.fill"].source === "shadcn@aria");
+  const covered = new Set(stockComponents.map(doc => doc.$extensions["com.clossys.fill"].slot));
+  const foundryComponents = importFoundryComponents().fills.filter(doc => !covered.has(doc.$extensions["com.clossys.fill"].slot));
+  const catalog: CompositeCatalogData = { values: loadCatalog(), components: { slots: loadComponentRegistry().slots, fills: [...stockComponents, ...foundryComponents] as unknown as CompositeCatalogData["components"]["fills"] }, surfaces: { slots, fills, transforms: [], rules: [], materializations: [] } };
   const packages = await readSurfacePackageEvidence(fills);
   const options: SurfaceResolutionOptions = { packages, measurements: [] };
   const decisions = planSurfaceDefaults({ catalog: { slots, fills: fills as unknown as SurfaceDefaultCandidateDocument[] }, slots: slots.map(slot => slot.id), preference: ["foundry"] }).decisions;

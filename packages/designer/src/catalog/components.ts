@@ -394,7 +394,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Files
-  onMain("FileTrigger", ["src/components/FileTrigger.tsx"], {
+  onMain("FileTrigger", ["src/components/preview-runtime/components/file-trigger/file-trigger.tsx"], {
     id: "enter.file-trigger",
     label: "File trigger",
     racBase: rac("FileTrigger"),
@@ -621,7 +621,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "presentational-exception",
     notes: [PRESENTATIONAL, "Used by 6 block files. Interactive cards use a stretched react-aria-components Link."],
   }),
-  onMain("Separator", ["src/components/Separator.tsx"], {
+  onMain("Separator", ["src/components/preview-runtime/components/separator/separator.tsx"], {
     id: "group.separator",
     label: "Separator",
     racBase: rac("Separator"),

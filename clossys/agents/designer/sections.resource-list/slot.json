@@ -50,7 +50,9 @@
       "components.button",
       "components.skeleton",
       "components.semantic-content",
-      "components.icon"
+      "components.icon",
+      "components.dialog",
+      "components.popover"
     ],
     "composes": [
       "sections.empty-state"

@@ -74,7 +74,8 @@
       "components.link",
       "components.skeleton",
       "components.semantic-content",
-      "components.tag-group"
+      "components.tag-group",
+      "components.sheet"
     ],
     "parts": [
       "sections.band",

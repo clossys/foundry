@@ -59,7 +59,11 @@ export interface ConsentBannerProps {
  * actions; it is empty until a `status` is passed, and neither button is
  * ever disabled by it. The root carries
  * `data-consent-banner` so a consumer can pass it as an overlay selector
- * (`overlayIntersectingFold`) when positioning it over the page.
+ * (`overlayIntersectingFold`) when positioning it over the page, and
+ * `data-react-aria-top-layer` so a live modal (the site menu Sheet) admits
+ * the notice into focus and the accessibility tree instead of hiding it. A
+ * host that opens the notice while a modal is live mounts it at the document
+ * body (a portal), outside the subtree the modal hides.
  */
 export function ConsentBanner({
   presentation = "banner",
@@ -81,6 +85,7 @@ export function ConsentBanner({
     <SemanticContent as="section"
       {...SECTION_STAMP}
       data-consent-banner=""
+      data-react-aria-top-layer=""
       data-consent-presentation={card ? "card" : undefined}
       aria-labelledby={titleId}
       style={style}

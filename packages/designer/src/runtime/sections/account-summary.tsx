@@ -5,7 +5,10 @@ import type { SurfaceRendererEntry } from "../contract.js";
 import { object, optionalText, readSectionContent, required, SectionContentError, text, type JsonObject, type SectionContent } from "./group-a-content.js";
 import { componentLeaf } from "../component-leaf.js";
 
-const Avatar = componentLeaf<typeof import("../../components/Avatar.js").Avatar>("components.avatar");
+type StockAvatar = typeof import("../../components/preview-runtime/components/avatar/avatar.js");
+const Avatar = componentLeaf<StockAvatar["Avatar"]>("components.avatar");
+const AvatarImage = componentLeaf<StockAvatar["AvatarImage"]>("components.avatar", "AvatarImage");
+const AvatarFallback = componentLeaf<StockAvatar["AvatarFallback"]>("components.avatar", "AvatarFallback");
 const Link = componentLeaf<typeof import("../../components/Link.js").Link>("components.link");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
@@ -26,6 +29,19 @@ function destination(content: SectionContent, value: unknown, path: string): str
   if (href !== href.trim() || /[\u0000-\u0020\u007f\\]/.test(href) || !(/^(?:\/(?!\/)|#|https?:\/\/)/i.test(href))) throw new SectionContentError(LEAF, `${path} must be a local path, fragment or HTTP(S) URL`);
   return href;
 }
+/** Initials for the avatar fallback: the first letter of the first and last words of the name. */
+function initials(name: string): string {
+  const words = name.trim().split(/\s+/u).filter(Boolean);
+  return [words[0], words.length > 1 ? words[words.length - 1] : undefined].map(word => word ? Array.from(word)[0]!.toLocaleUpperCase() : "").join("");
+}
+/**
+ * The stock Avatar anatomy: a host image names the member through its own alt text with the initials as the
+ * fallback; without one, the root is the named image and the initials are decorative.
+ */
+function avatarOf(name: string, src: string | undefined) {
+  if (src !== undefined) return <Avatar><AvatarImage src={src} alt={name} /><AvatarFallback aria-hidden="true">{initials(name)}</AvatarFallback></Avatar>;
+  return <Avatar role="img" aria-label={name}><AvatarFallback aria-hidden="true">{initials(name)}</AvatarFallback></Avatar>;
+}
 const copy = (value: string) => <SemanticContent as="span" dir="auto">{value}</SemanticContent>;
 
 /** Display-only consumer data and navigation. The host owns identity, destinations and authentication. */
@@ -45,7 +61,7 @@ export const accountSummaryRenderer: SurfaceRendererEntry = {
     const name = text(content, identity.name, "identity.name");
     const avatar = optionalText(content, identity.avatar, "identity.avatar");
     const fields: DetailViewField[] = [
-      { label: copy(text(content, identity["name-label"], "identity.name-label")), value: <SemanticContent as="div" className="flex items-center gap-sm"><Avatar alt={name} {...(avatar === undefined ? {} : { src: destination(content, avatar, "identity.avatar") })} />{copy(name)}</SemanticContent> },
+      { label: copy(text(content, identity["name-label"], "identity.name-label")), value: <SemanticContent as="div" className="flex items-center gap-sm">{avatarOf(name, avatar === undefined ? undefined : destination(content, avatar, "identity.avatar"))}{copy(name)}</SemanticContent> },
       { label: copy(text(content, identity["email-label"], "identity.email-label")), value: copy(text(content, identity.email, "identity.email")) },
       ...records(content, "rows").map((row, index) => {
         closed(content, row, ["label", "value"], `rows.${index}`);

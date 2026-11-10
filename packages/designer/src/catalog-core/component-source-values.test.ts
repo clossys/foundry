@@ -8,6 +8,7 @@ import { secondaryFixture } from "./__fixtures__/component-engine/secondary-expo
 import { sha256 } from "./digest.js";
 import { assertComponentImportClosure } from "./emit-components.js";
 import { assertComponentNamespaceClosure } from "./component-source-values.js";
+import { componentSourceProof } from "./component-source-proofs.js";
 import { loadCatalogBundles } from "../catalog-bundles.js";
 import * as ReactRuntime from "react";
 import { verifyComponentOutput, componentLibraryHash } from "./resolve-components.js";
@@ -199,12 +200,23 @@ describe("stock namespace closure reads stock source with the TypeScript AST", (
   it.each(paths)("admits the unmodified stock %s (indexed types, generic annotations, regex literals)", path => {
     expect(() => close(path, stock(path))).not.toThrow();
   });
+  // Since GATES-RED O2 (371778efe) the bounded grammar reads indexed access types, so it can read some stock files
+  // (command, toggle-group) by itself. A byte change still always loses the proof; files the grammar cannot read are
+  // then refused outright, and a grammar-readable mutant is admitted only on its own grammar reads, so an injected
+  // unavailable namespace member is refused either way.
+  const grammarReads = (content: string) => { try { assertComponentNamespaceClosure(content, namespacesOf(content), observed); return true; } catch { return false; } };
   it.each(paths)("refuses any byte change to stock %s, even one the compiler reads unchanged", path => {
-    const content = stock(path);
-    for (const mutant of [`${content}\n`, ` ${content}`, `${content}\nexport function Extra() { return React.Missing() }\n`]) {
+    const content = stock(path), readable = grammarReads(content);
+    expect(componentSourceProof(path, content)).toBeDefined();
+    for (const mutant of [`${content}\n`, ` ${content}`]) {
       expect(mutant).not.toBe(content);
-      expect(() => close(path, mutant)).toThrow(/components:/);
+      expect(componentSourceProof(path, mutant)).toBeUndefined();
+      if (readable) expect(() => close(path, mutant)).not.toThrow();
+      else expect(() => close(path, mutant)).toThrow(/components:/);
     }
+    const injected = `${content}\nexport function Extra() { return React.Missing() }\n`;
+    expect(componentSourceProof(path, injected)).toBeUndefined();
+    expect(() => close(path, injected)).toThrow(/components:/);
   });
   it("refuses stock bytes whose caller inventory disagrees with the proof", () => {
     const path = "components/command/command.tsx", content = stock(path);
@@ -213,9 +225,13 @@ describe("stock namespace closure reads stock source with the TypeScript AST", (
     expect(() => close(path, content, new Map([["React", { module: "other", erased: false }]]))).toThrow(/namespace import syntax/);
   });
   it("binds a proof to its script kind: stock .tsx bytes read as .ts have no proof", () => {
-    const path = "components/command/command.tsx", content = stock(path);
-    expect(() => close(path.replace(/\.tsx$/, ".ts"), content)).toThrow(/components:/);
-    expect(() => assertComponentNamespaceClosure(content, namespacesOf(content), observed)).toThrow(/components:/);
+    for (const path of paths.filter(path => path.endsWith(".tsx"))) {
+      const content = stock(path);
+      expect(componentSourceProof(path, content), path).toBeDefined();
+      expect(componentSourceProof(path.replace(/\.tsx$/, ".ts"), content), path).toBeUndefined();
+      // Without the proof only the bounded grammar remains: it refuses what it cannot read.
+      if (!grammarReads(content)) expect(() => close(path.replace(/\.tsx$/, ".ts"), content)).toThrow(/components:/);
+    }
   });
   it("still refuses a proven runtime read the module does not export", () => {
     const path = "components/_parts/rail-use-mobile/index.ts", content = stock(path);

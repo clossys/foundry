@@ -17,8 +17,9 @@ const families: Record<string, readonly string[]> = {
   "inputs-files": ["file-trigger"],
   "display-data": ["table", "grid-list", "tree", "meter"],
   "display-labels": ["badge", "keyboard"],
-  "display-content": ["semantic-content", "item"],
-  "display-media": ["avatar"],
+  "display-content": ["semantic-content", "rich-text", "item"],
+  "display-specimens": ["specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"],
+  "display-media": ["avatar", "media-player"],
   "display-assets": ["icon", "logo"],
   "charts-core": ["chart-bar", "chart-line", "chart-area"],
   "charts-compact": ["chart-sparkline", "chart-status-strip"],
@@ -44,28 +45,40 @@ const roots: Record<string, string> = {
   tabs: "Tabs", "navigation-tree": "NavigationTree", separator: "Separator", disclosure: "Disclosure", dialog: "Dialog",
   popover: "Popover", tooltip: "Tooltip",
 };
-const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area"];
+const specimens = ["specimen-swatch", "specimen-ladder", "specimen-player", "specimen-grid", "specimen-matrix", "specimen-viewport", "specimen-passage", "specimen-copy-in-context"];
+const presentational = ["badge", "avatar", "icon", "logo", "status-mark", "skeleton", "card", "banner", "semantic-content", "sidebar", "empty", "item", "scroll-area", "rich-text", "media-player", ...specimens];
 const fullId = (leaf: string) => `components.${leaf}`;
 const inventory = Object.values(families).flat().map(fullId).sort();
-const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu"].map(fullId);
+// Appended in amendment order: components.leaf-amendments.json, then the owner-signed 2026-11-05
+// specimen leaves (components.specimen-leaf-amendments.json).
+const addedInventory = ["sidebar", "command", "sheet", "empty", "item", "scroll-area", "dropdown-menu", "rich-text", "media-player", ...specimens].map(fullId);
 const leafNodes = (nodes: readonly PlacementNode[]): PlacementNode[] => nodes.flatMap(node => "leaves" in node ? [node] : leafNodes(node.children));
 
 // These prove shape only; component execution belongs to later implementation units.
 describe("component build IA registry", () => {
+  it("records the consumed-only parked charts in IA data and rejects a parked id that is not placed (register H4c)", () => {
+    const registry = loadComponentRegistry();
+    expect(registry.placement.parked?.map(entry => entry.leaf)).toEqual(["components.chart-area", "components.chart-bar", "components.chart-line"]);
+    for (const entry of registry.placement.parked ?? []) expect(entry.basis).toMatch(/H4c/);
+    const forged = { ...registry, placement: { ...registry.placement, parked: [...registry.placement.parked!, { leaf: "components.unplaced", basis: "x" }] } };
+    expect(componentRegistryFindings(forged)).toEqual(["parked: components.unplaced is not a placed component leaf"]);
+  });
+
+
   it("registers the 57 signed ids and two explicit local drafts once as draft contracts without a freeze claim", () => {
     const registry = loadComponentRegistry();
     expect(registry.status).toBe("build-unfrozen");
-    expect(registry.slots).toHaveLength(66);
+    expect(registry.slots).toHaveLength(76);
     expect(registry.slots.map(slot => slot.id)).toEqual([...inventory.filter(id => !addedInventory.includes(id)), ...addedInventory]);
-    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(66);
+    expect(new Set(registry.slots.map(slot => slot.id)).size).toBe(76);
     expect(registry.slots.every(slot => isValidId("slot", slot.id) && slot.layer === "components" && slot.status === "draft" && slot.signoff === undefined)).toBe(true);
     expect(componentRegistryFindings(registry)).toEqual([]);
   });
 
-  it("places every id once under six L1 groups and twenty-seven L2 families", () => {
+  it("places every id once under six L1 groups and twenty-eight L2 families", () => {
     const registry = loadComponentRegistry();
     expect(registry.placement.nodes.map(node => node.id)).toEqual(["actions", "inputs", "display", "feedback", "navigation", "containment"]);
-    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(27);
+    expect(registry.placement.nodes.flatMap(node => "children" in node ? node.children : [])).toHaveLength(28);
     const nodes = leafNodes(registry.placement.nodes);
     expect(Object.fromEntries(nodes.map(node => [node.id, "leaves" in node ? node.leaves : []]))).toEqual(Object.fromEntries(Object.entries(families).map(([id, leaves]) => [id, leaves.map(fullId)])));
     expect(nodes.flatMap(node => "leaves" in node ? node.leaves : []).sort()).toEqual(inventory);
@@ -73,7 +86,16 @@ describe("component build IA registry", () => {
     expect(registry.slots.find(slot => slot.id === "components.dialog")?.contract.members).toEqual({ mode: "closed", names: ["role.modal", "dismissable"] });
   });
 
-  it("records all audited runtime roots: 39 React Aria, nine presentational, eleven without an engine", () => {
+  // R2F-11: the amended rich-text, media-player and owner-signed specimen leaves declare typed props; every other leaf declares none.
+  const specimenProps = ["items", "axes", "context", "need", "renderParts", "expanded", "labels"];
+  const declaredProps: Record<string, readonly string[]> = {
+    "semantic-content": ["as"],
+    "rich-text": ["value", "readOnly", "onChange", "className", "id", "dir", "aria-label", "aria-labelledby"],
+    "media-player": ["video", "poster", "passage", "captions", "muted", "autoplay", "loop", "controls", "className", "decorative"],
+    ...Object.fromEntries(["swatch", "ladder", "grid", "viewport"].map(leaf => [`specimen-${leaf}`, [...specimenProps, "variant"]])),
+    ...Object.fromEntries(["player", "matrix", "passage", "copy-in-context"].map(leaf => [`specimen-${leaf}`, specimenProps])),
+  };
+  it("records all audited runtime roots: 42 React Aria, 23 presentational, eleven without an engine", () => {
     const registry = loadComponentRegistry();
     for (const slot of registry.slots) {
       const leaf = slot.id.slice("components.".length);
@@ -81,10 +103,10 @@ describe("component build IA registry", () => {
       expect(slot.contract.root, slot.id).toBe(expected);
       expect(slot.contract.kind).toBe("component");
       expect(slot.contract.members.mode).toBe("closed");
-      expect(slot.contract.props).toEqual(slot.id === "components.semantic-content" ? ["as"] : []);
+      expect(slot.contract.props, slot.id).toEqual(declaredProps[leaf] ?? []);
     }
     expect(registry.slots.filter(slot => slot.contract.root.startsWith("rac:"))).toHaveLength(42);
-    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(13);
+    expect(registry.slots.filter(slot => slot.contract.root === "presentational")).toHaveLength(23);
     expect(registry.slots.filter(slot => slot.contract.root === "engine:none")).toHaveLength(11);
   });
 
@@ -108,11 +130,12 @@ describe("component build IA registry", () => {
     expect(slots.get("components.date-picker")?.contract.composes).toEqual(["components.date-field", "components.popover", "components.calendar"]);
   });
 
-  it("exposes fresh build IA while retaining all 98 runtime leaves and their existing fills", () => {
+  it("exposes fresh build IA while retaining all 90 runtime leaves and their existing fills", () => {
     const runtime = loadCatalog();
     const build = loadBuildCatalog();
-    expect(runtime.slots.filter(slot => slot.id !== "assets.icon-panel-left")).toHaveLength(98);
-    expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(157);
+    // 42 themes (shadcn theme leaves since 736153e72) + 49 assets, less the panel icon.
+    expect(runtime.slots.filter(slot => slot.id !== "assets.icon-panel-left")).toHaveLength(90);
+    expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets" || slot.layer === "components")).toHaveLength(167);
     expect(build.registryStatus).toBe("build-unfrozen");
     expect(build.slots.filter(slot => slot.layer === "themes" || slot.layer === "assets")).toEqual(runtime.slots);
     expect(build.fills).toEqual(runtime.fills);

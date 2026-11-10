@@ -13,12 +13,14 @@ const fixtures = [tokens, assets, components, sections, frames];
 // G6 (GATES-RED round 4): the restore checks compare against the owner-signed tree, not a stale
 // literal. The owner re-sign of 2026-11-02 (leaf-freeze.test.ts) signs 236 canonical leaves;
 // the build catalog measured before any mutation must be that tree, and every guarded
-// mutation below must leave it exactly as loaded.
-const OWNER_SIGNED_LEAVES = 236;
+// mutation below must leave it exactly as loaded. The owner sign of 2026-11-05 adds the eight
+// components.specimen-* leaves (ia/components.specimen-leaf-amendments.json): 236 + 8 = 244.
+const OWNER_SIGNED_LEAVES = 244;
 const BUILD_SLOTS = loadBuildCatalog().slots.map(slot => slot.id);
 // Group/family/leaf counts of the committed IA trees (components and sections re-measured in GATES-RED round 4;
-// both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too).
-const counts = { themes: [6, 11, 42], assets: [4, 10, 49], components: [6, 27, 68], sections: [7, 24, 66], frames: [3, 9, 11] };
+// both were already 68 and 7/24/66 at 35c58c51f, so the old literals failed there too). Components
+// re-measured at d42a35110: the owner-signed display-specimens family holds the eight specimen leaves.
+const counts = { themes: [6, 11, 42], assets: [4, 10, 49], components: [6, 28, 76], sections: [7, 24, 66], frames: [3, 9, 11] };
 const leafIds = (tree: Placement): string[] => tree.nodes.flatMap(group => "children" in group ? group.children.flatMap(family => "leaves" in family ? family.leaves : []) : []);
 
 describe("IA1 exact three levels and IA2 unmixed nodes", () => {

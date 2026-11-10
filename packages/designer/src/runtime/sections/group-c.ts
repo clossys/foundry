@@ -78,7 +78,7 @@ const rows = (list: readonly RuntimeObject[]): readonly RuntimeObject[] => list;
  */
 export const sectionDatasetC: Readonly<Record<GroupCLeaf, (dataset: SpecimenDataset) => Content>> = {
   cards: ({ sections: S }) => ({
-    records: plainJson(blogSpecimenRecords(S.recordCards.records)),
+    records: plainJson(blogSpecimenRecords(S.recordCards.records, S.recordEditorial)),
   }),
   chat: ({ sections: S }) => ({
     parts: plainJson(S.chat.messages),

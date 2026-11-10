@@ -219,7 +219,7 @@
         },
         {
           "path": "packages/designer/src/frames/app-frame-layout.ts",
-          "sha256": "79cc6d9dbcfb09ce19f781d0bf7fe0495f13807c54e086ae1653e618993e03af"
+          "sha256": "a6d0aea4f4b0565e96050f782bb1ca675b9575b787ae3d8d257415d324e12e34"
         },
         {
           "path": "packages/designer/src/frames/app-frame-size-classes.ts",
@@ -239,7 +239,7 @@
         },
         {
           "path": "packages/designer/src/frames/frame-dock-layout.ts",
-          "sha256": "cca0c414d9ccdfd1302a092956cb6550cc9718c5d706c73426a21680f9a12fcf"
+          "sha256": "820a02d6b380fd323a502d2f20c07b82cb1adf5b45c5061e0d5d557f7218ccfe"
         },
         {
           "path": "packages/designer/src/frames/frame-notices.tsx",
@@ -327,7 +327,7 @@
         },
         {
           "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/frames/app-frame-layout.ts",
           "line": 1
         },
@@ -363,7 +363,7 @@
         },
         {
           "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/frames/frame-dock-layout.ts",
           "line": 1
         },
@@ -780,7 +780,7 @@
         },
         {
           "path": "packages/designer/src/frames/right-panel-config.ts",
-          "sha256": "6ec16fdd02b06c1285e72b71adacb7567558f9c7c49fd17ab31308a5144e1fe9"
+          "sha256": "61e568622459344a0fd1fc8737d8b3a11af155f929f18c743cc8b3bfc836570b"
         },
         {
           "path": "packages/designer/src/runtime/component-leaf.tsx",
@@ -802,7 +802,7 @@
         },
         {
           "code": "DF2",
-          "evidence": "unresolved injected runtime inventory ../tokens/index.js#TOKENS",
+          "evidence": "unresolved injected runtime inventory ../tokens/tokens.js#TOKENS",
           "file": "packages/designer/src/frames/right-panel-config.ts",
           "line": 1
         },
@@ -2158,7 +2158,7 @@
       "sourceFiles": [
         {
           "path": "packages/designer/src/blocks/ConsentBanner.tsx",
-          "sha256": "61fba7843dc3b778f7f83988565537211c6a7620823c3826cacbc19aa4ff74bf"
+          "sha256": "0e63423e56ea82e44cdc1ebcfbe35be2ff1fc0b6881ee7d3db4fd4293b482122"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -5380,7 +5380,7 @@
         },
         {
           "path": "packages/designer/src/blocks/TaskList.tsx",
-          "sha256": "0f743fc94e24080b68b6c347a78f7e8c211d0733f910c76266db20fad71a9e45"
+          "sha256": "fa3977a43d5e5b9d5883924d555e1384f3568a02d7d8e9b664c381887dbd7d9e"
         },
         {
           "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

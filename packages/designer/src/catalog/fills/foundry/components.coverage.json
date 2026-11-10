@@ -378,19 +378,6 @@
       "notes": [
         "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
       ],
-      "slot": "components.file-trigger",
-      "status": "candidate",
-      "supported": [
-        "accept",
-        "directory",
-        "multiple"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
       "slot": "components.form",
       "status": "candidate",
       "supported": [
@@ -704,18 +691,6 @@
         "as.sup",
         "as.time",
         "as.ul"
-      ]
-    },
-    {
-      "missing": [],
-      "notes": [
-        "Descriptor only; source, accessibility, contrast and consumer runtime conformance are unmeasured."
-      ],
-      "slot": "components.separator",
-      "status": "candidate",
-      "supported": [
-        "orientation.horizontal",
-        "orientation.vertical"
       ]
     },
     {

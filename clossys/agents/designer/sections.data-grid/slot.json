@@ -47,7 +47,8 @@
       "components.icon",
       "components.popover",
       "components.semantic-content",
-      "components.tag-group"
+      "components.tag-group",
+      "components.sheet"
     ],
     "parts": [
       "sections.band",

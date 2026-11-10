@@ -1,4 +1,4 @@
-import { TOKENS } from "../tokens/index.js";
+import { TOKENS } from "../tokens/tokens.js";
 
 export interface FrameDockBounds {
   min?: number;

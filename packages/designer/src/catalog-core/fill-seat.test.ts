@@ -26,12 +26,12 @@ const pendingFamilies: Readonly<Record<string, string>> = {
   "rac-starter/components.": NEVER,
 };
 /** Leaves on L2s shadcn@aria covers in full whose Foundry fill still ships. */
-const COVERED_IN_FULL = ["avatar", "badge", "checkbox", "combo-box", "dialog", "file-trigger", "menu", "popover", "radio-group", "select", "switch", "tabs", "toggle-group", "tooltip"];
+const COVERED_IN_FULL = ["avatar", "badge", "checkbox", "combo-box", "dialog", "menu", "popover", "radio-group", "select", "switch", "tabs", "toggle-group", "tooltip"];
 /** Single fills pending replacement, by fill id, with the reason they still ship. */
 export const PENDING_REPLACEMENT: Readonly<Record<string, string>> = {
   "foundry/assets.image-ratio": "waits for Open Props (SF14-A); the Foundry fill stays until then",
   ...Object.fromEntries(["lockup", "mark", "favicon", "app-icon"].map(leaf => [`foundry/assets.${leaf}`, BRAND_DERIVE])),
-  ...Object.fromEntries(["banner", "breadcrumbs", "button", "calendar", "card", "chart-area", "chart-bar", "chart-line", "disclosure", "progress-bar", "separator", "skeleton", "slider", "table", "toggle-button"]
+  ...Object.fromEntries(["banner", "breadcrumbs", "button", "calendar", "card", "chart-area", "chart-bar", "chart-line", "disclosure", "progress-bar", "skeleton", "slider", "table", "toggle-button"]
     .map(leaf => [`foundry/components.${leaf}`, U4_TAIL])),
   ...Object.fromEntries(COVERED_IN_FULL.map(leaf => [`foundry/components.${leaf}`, GENERATED])),
 };

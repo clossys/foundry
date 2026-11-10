@@ -765,6 +765,16 @@
         "required": true
       },
       {
+        "name": "themes.foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.popover",
         "kind": "theme",
         "required": true

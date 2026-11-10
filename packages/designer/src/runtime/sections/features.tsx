@@ -31,5 +31,6 @@ export function renderFeaturesSection(input: SectionRenderInput): ReactNode {
     return { id: text(content, item.id, `${path}.id`), heading: text(content, item.heading, `${path}.heading`), description: optionalText(content, item.description, `${path}.description`), span: span as ItemSpan | undefined, visual };
   });
   const props = { items, eyebrow: header ? optionalText(content, header.eyebrow, "header.eyebrow") : undefined, heading: header ? optionalText(content, header.heading, "header.heading") : undefined, description: header ? optionalText(content, header.description, "header.description") : undefined };
-  return <FeatureCard data-features-component="components.card"><FeatureSurface mode="runtime" props={{ ...dsAttrs("sections", "sections.features", "foundry/sections.features"), ...props, ...(layout ? { layout } : {}), ground: "base" }} /></FeatureCard>;
+  // The selected Card is the Section's outermost element, so it carries the Section stamp (WL1: no chrome outside it).
+  return <FeatureCard {...dsAttrs("sections", "sections.features", "foundry/sections.features")} data-features-component="components.card"><FeatureSurface mode="runtime" props={{ ...props, ...(layout ? { layout } : {}), ground: "base" }} /></FeatureCard>;
 }

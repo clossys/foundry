@@ -172,7 +172,9 @@ export interface LibraryData {
   selection?: Selection;
 }
 export type PlacementNode = { id: string; label: string; children: readonly PlacementNode[] } | { id: string; label: string; leaves: readonly string[] };
-export interface Placement { layer: LayerId; nodes: readonly PlacementNode[] }
+/** A placed leaf that is not consumed today (consumed-only rule); it keeps its id and placement but needs no fill. */
+export interface ParkedLeaf { leaf: string; basis: string }
+export interface Placement { layer: LayerId; nodes: readonly PlacementNode[]; parked?: readonly ParkedLeaf[] }
 export interface Retired { id: string; retiredAt: string; replacedBy?: string }
 export interface CatalogData {
   slots: readonly Slot[]; standards: readonly Standard[]; sources: readonly Source[]; fills: readonly FillDoc[];

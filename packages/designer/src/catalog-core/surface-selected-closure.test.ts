@@ -65,9 +65,14 @@ it("accepts real package Frame and Section with their selected component and des
   expect(libraryHash(selected.library)).toBe(beforeLibrary);
 });
 
+/** Drop one component's fill and the materialized stock files only it receipts, as unselecting a source fill does. */
+function dropComponent<L extends { components: { fills: readonly any[]; files: readonly { path: string }[] } }>(library: L, id: string): L {
+  const fills = library.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== id);
+  const receipted = new Set(fills.flatMap(doc => Object.values(doc.components as Record<string, { outputSha256?: { path: string }[] }>).flatMap(fill => fill.outputSha256?.map(receipt => receipt.path) ?? [])));
+  return { ...library, components: { ...library.components, fills, files: library.components.files.filter(file => receipted.has(file.path)) } };
+}
 function withoutComponent(id: string) {
-  const library = { ...selected.library, components: { ...selected.library.components, fills: selected.library.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== id) } };
-  return resolve({ ...selected, library });
+  return resolve({ ...selected, library: dropComponent(selected.library, id) });
 }
 function withoutValue(id: string) {
   const library = { ...selected.library, values: { ...selected.library.values, fills: selected.library.values.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== id) } };
@@ -82,9 +87,11 @@ it("refuses a real package Frame when a measured composed component is not selec
 });
 
 it("refuses a real package Section when a measured composed component is not selected", () => {
-  const profile = withoutComponent("components.button");
-  expect(profile.components.components["components.button"]).toBeUndefined();
-  expect(profile.surfaces!.check.findings).toContainEqual({ code: "S4", rule: "surfaces", severity: "error", subject: "sections.pagination", message: "selected component missing components.button" });
+  // Stock-first (D3): stock select, dialog and the other stock parts compose button themselves, so dropping it is refused
+  // at the component layer; select is composed by the Section alone, so its absence reaches the S4 surface check.
+  const profile = withoutComponent("components.select");
+  expect(profile.components.components["components.select"]).toBeUndefined();
+  expect(profile.surfaces!.check.findings).toContainEqual({ code: "S4", rule: "surfaces", severity: "error", subject: "sections.pagination", message: "selected component missing components.select" });
 });
 
 it("refuses measured token reads when the selected consumer has no member of that slot", () => {
@@ -170,10 +177,7 @@ it.each([
 });
 
 it("retains S4 composition checks while reading legacy dependencies", () => {
-  const library = { ...historical.library, components: { ...historical.library.components,
-    fills: historical.library.components.fills.filter(doc => doc.$extensions["com.clossys.fill"].slot !== "components.avatar"),
-  } };
-  const profile = resolve({ ...historical, library });
+  const profile = resolve({ ...historical, library: dropComponent(historical.library, "components.avatar") });
   expect(profile.surfaces!.check.findings).toContainEqual({ code: "S4", rule: "surfaces", severity: "error", subject: "frames.app-shell", message: "selected component missing components.avatar" });
 });
 

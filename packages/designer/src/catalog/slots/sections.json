@@ -3736,7 +3736,8 @@
         "components.icon",
         "components.popover",
         "components.semantic-content",
-        "components.tag-group"
+        "components.tag-group",
+        "components.sheet"
       ],
       "parts": [
         "sections.band",
@@ -3993,7 +3994,8 @@
         "components.link",
         "components.skeleton",
         "components.semantic-content",
-        "components.tag-group"
+        "components.tag-group",
+        "components.sheet"
       ],
       "parts": [
         "sections.band",
@@ -4855,7 +4857,9 @@
         "components.link",
         "components.item",
         "components.tabs",
-        "components.semantic-content",
+        "components.semantic-content"
+      ],
+      "composes": [
         "sections.media"
       ],
       "parts": [
@@ -7714,7 +7718,9 @@
         "components.button",
         "components.skeleton",
         "components.semantic-content",
-        "components.icon"
+        "components.icon",
+        "components.dialog",
+        "components.popover"
       ],
       "composes": [
         "sections.empty-state"

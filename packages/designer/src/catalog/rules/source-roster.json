@@ -854,6 +854,26 @@
   ],
   "sections": [
     {
+      "l2": "specimens-content",
+      "leaves": [
+        "sections.specimen-swatch",
+        "sections.specimen-color-ramp",
+        "sections.specimen-type-ladder",
+        "sections.specimen-spacing-ladder",
+        "sections.specimen-radius-ladder",
+        "sections.specimen-motion-player",
+        "sections.specimen-asset-grid",
+        "sections.specimen-icon-grid",
+        "sections.specimen-variant-matrix",
+        "sections.specimen-section-viewports",
+        "sections.specimen-frame-viewports",
+        "sections.specimen-rich-passage",
+        "sections.specimen-copy-in-context",
+        "sections.specimen-page-viewports"
+      ],
+      "offers": []
+    },
+    {
       "l2": "parts-structure",
       "leaves": [
         "sections.band",
@@ -890,7 +910,8 @@
       "leaves": [
         "sections.hero",
         "sections.logo-hero",
-        "sections.page-header"
+        "sections.page-header",
+        "sections.logo-mark"
       ],
       "offers": [
         {
@@ -898,7 +919,8 @@
           "leaves": [
             "sections.hero",
             "sections.logo-hero",
-            "sections.page-header"
+            "sections.page-header",
+            "sections.logo-mark"
           ],
           "reason": "no external covers"
         }
@@ -908,14 +930,18 @@
       "l2": "explain-reading",
       "leaves": [
         "sections.content",
-        "sections.article"
+        "sections.article",
+        "sections.sectioned-document",
+        "sections.legal-prose"
       ],
       "offers": [
         {
           "source": "foundry",
           "leaves": [
             "sections.content",
-            "sections.article"
+            "sections.article",
+            "sections.sectioned-document",
+            "sections.legal-prose"
           ],
           "reason": "no external covers"
         }
@@ -1034,7 +1060,8 @@
       "leaves": [
         "sections.stats",
         "sections.status-list",
-        "sections.usage"
+        "sections.usage",
+        "sections.account-summary"
       ],
       "offers": [
         {
@@ -1042,7 +1069,8 @@
           "leaves": [
             "sections.stats",
             "sections.status-list",
-            "sections.usage"
+            "sections.usage",
+            "sections.account-summary"
           ],
           "reason": "no external covers"
         }
@@ -1164,6 +1192,21 @@
       ]
     },
     {
+      "l2": "collect-inputs",
+      "leaves": [
+        "sections.sign-in-form"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "sections.sign-in-form"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
       "l2": "navigate-indexes",
       "leaves": [
         "sections.link-index",
@@ -1201,14 +1244,16 @@
       "l2": "respond-states",
       "leaves": [
         "sections.empty-state",
-        "sections.error-state"
+        "sections.error-state",
+        "sections.boundary-message"
       ],
       "offers": [
         {
           "source": "foundry",
           "leaves": [
             "sections.empty-state",
-            "sections.error-state"
+            "sections.error-state",
+            "sections.boundary-message"
           ],
           "reason": "no external covers"
         }
@@ -1260,6 +1305,21 @@
           "source": "foundry",
           "leaves": [
             "frames.app-shell"
+          ],
+          "reason": "no external covers"
+        }
+      ]
+    },
+    {
+      "l2": "page-shells-authentication",
+      "leaves": [
+        "frames.auth-shell"
+      ],
+      "offers": [
+        {
+          "source": "foundry",
+          "leaves": [
+            "frames.auth-shell"
           ],
           "reason": "no external covers"
         }

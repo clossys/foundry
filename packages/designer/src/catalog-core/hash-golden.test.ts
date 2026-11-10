@@ -140,13 +140,19 @@ describe("real package-surface library golden", () => {
     const { library } = fixture;
     // Re-captured by R2F-06 integration (`vitest run -u`): the surface fixture unions R2F-05/R2F-20 fills with GATES-RED's
     // contracts, so composite 99f57293 -> 50ddc6b7, component 865bcf5f -> 9f5690b4, surface ef442840 -> f80ff291, whole 9d90ba33 -> abac3d51.
-    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:50ddc6b71c425ad5437540d119c0d81450d2b3f926784946ed84f0f132ae4758"`);
+    // Re-captured by planner:R2C-designer (`vitest run -u`): R2F-11 parks the charts in components IA data and moves features'
+    // sections.media into `composes`; R2F-20 residuals add the measured sheet/dialog/popover composes. Values unchanged:
+    // composite 50ddc6b7 -> e6de19f5, component 9f5690b4 -> 3dda4793, surface f80ff291 -> fd4c1310, whole abac3d51 -> e7e52d3f.
+    // Re-captured by planner:R2C-designer D3 (`vitest run -u`): the fixture takes strict stock-first components (shadcn@aria
+    // wherever a stock item exists, Foundry only otherwise). Values and surfaces unchanged:
+    // composite 43f7fb11 -> c07617e9, component 3dda4793 -> d0dfe6b0, whole 1ce98182 -> 04daad96.
+    expect(compositeLibraryHash(library)).toMatchInlineSnapshot(`"sha256:c07617e9f9d0111e26447f26ba99d96874cab9e44a9cdc1b40cddc77fb4a9022"`);
     const values = { ...library.values, source: library.source, adoptedAt: library.adoptedAt } as LibraryData;
     expect(libraryHash(values)).toMatchInlineSnapshot(`"fnv1a64:717688cc7f83e4bf"`);
     expect(libraryHash(values)).toBe(referenceLibraryHash(values));
-    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:9f5690b4e3a3b7b5029caabb8f0bbd4f82f913cf3f9af046486016f65924250b"`);
-    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:f80ff2915654ec8bc20cc6d457248804a3a3335900d516d8023e2c4b945bc350"`);
-    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"abac3d51d76687b6443761912898e8a123646cb8477175dfd0c17ce5dcaf753c"`);
+    expect(componentLibraryHash({ ...library.components, source: library.source, adoptedAt: library.adoptedAt })).toMatchInlineSnapshot(`"sha256:d0dfe6b02302abff9cdf79d4dce7555036b9f39184c777bed68bf990e798b583"`);
+    expect(surfacePortionHash(library.surfaces!)).toMatchInlineSnapshot(`"sha256:f5388d9a150eaa51b42c6746eeeb9ed152ab6670c7f7bb25f732659d485bb585"`);
+    expect(nodeSha256(stableStringify(library))).toMatchInlineSnapshot(`"04daad96e9b7b31c0376bc187bd0afcd3899b86d03450ce2af678741adefd213"`);
     expect(stableStringify(library)).toBe(referenceStringify(library));
   });
 });
