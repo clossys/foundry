@@ -21,10 +21,12 @@ import { ScrollArea } from "../components/scroll-area/index.js";
 import { DropdownMenuTrigger, DropdownMenu, DropdownMenuItem } from "../components/dropdown-menu/index.js";
 import { DialogFooter } from "../components/_parts/rail-dialog/dialog.js";
 import adaptations from "./vendor/shadcn-aria-rail.adapters.json" with { type: "json" };
+import { writerRecordsWithExternals } from "../studio/__fixtures__/copy-hand-roll.js";
 import { Kbd } from "../components/preview-runtime/components/keyboard/kbd.js";
-const drafts = JSON.parse(readFileSync(pathResolve(import.meta.dirname, "../../../writer/src/catalog/records/admin-studio.r1.en.json"), "utf8"));
+// admin-studio's own records plus its external references (common-labels and others), resolved from their owners.
+const drafts = writerRecordsWithExternals("admin-studio.r1.en.json");
 const draftResolver = (ref: { readonly id: string }) => {
-  const record = drafts.records.find((row: { id: string }) => row.id === ref.id);
+  const record = drafts.find(row => row.id === ref.id);
   if (!record || record.status !== "draft") throw new Error(`Missing Writer draft ${ref.id}`);
   return { ref, text: record.text as string };
 };
