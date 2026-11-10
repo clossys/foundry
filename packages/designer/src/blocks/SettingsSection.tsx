@@ -1,10 +1,14 @@
 import { useId, type ReactNode } from "react";
 import { cx } from "../components/internal/cx.js";
-import { FieldGroup, type FieldGroupLayout } from "./FieldGroup.js";
 import { dsAttrs } from "../catalog-core/provenance-attrs.js";
 import { componentLeaf } from "../runtime/component-leaf.js";
 
 const SemanticContent = componentLeaf<typeof import("../components/SemanticContent.js").SemanticContent>("components.semantic-content");
+type FieldModule = typeof import("../components/preview-runtime/components/field/field.js");
+const FieldSet = componentLeaf<FieldModule["FieldSet"]>("components.field", "FieldSet");
+const FieldLegend = componentLeaf<FieldModule["FieldLegend"]>("components.field", "FieldLegend");
+const FieldDescription = componentLeaf<FieldModule["FieldDescription"]>("components.field", "FieldDescription");
+const FieldGroup = componentLeaf<FieldModule["FieldGroup"]>("components.field", "FieldGroup");
 
 /** Section root provenance (D1): the selected Foundry fill this block is. */
 const SECTION_STAMP = dsAttrs("sections", "sections.settings", "foundry/sections.settings");
@@ -13,7 +17,8 @@ export interface SettingsSectionGroup {
   readonly id: string;
   readonly legend: ReactNode;
   readonly description?: ReactNode;
-  readonly layout?: FieldGroupLayout;
+  /** `multi` lays the group's fields out in two columns from tablet up. */
+  readonly layout?: "single" | "multi";
   /** The group's own fields (Switch, Select, TextField...); values stay host-owned. */
   readonly children: ReactNode;
 }
@@ -45,12 +50,15 @@ export function SettingsSection({ heading, description, groups, dirty = [], save
       <SemanticContent as="h2" id={headingId} className="m-0 text-h3 font-display leading-heading text-ink-primary">{heading}</SemanticContent>
       {description ? <SemanticContent as="p" className="m-0 text-body-s text-ink-secondary">{description}</SemanticContent> : null}
     </header>
-    {groups.map(group => <FieldGroup key={group.id} layout={group.layout} description={group.description}
-      className="rounded-surface border border-line-base bg-surface-raised p-md"
-      legend={<SemanticContent as="span" className="inline-flex flex-wrap items-baseline gap-sm"><SemanticContent as="span" className="text-body font-medium text-ink-primary">{group.legend}</SemanticContent>
-        {dirty.includes(group.id) ? <>{" "}<SemanticContent as="span" className="text-caption text-ink-secondary">{labels.unsaved}</SemanticContent></> : null}</SemanticContent>}>
-      {group.children}
-    </FieldGroup>)}
+    {groups.map(group => {
+      const descriptionId = group.description ? `${headingId}-${group.id}-description` : undefined;
+      return <FieldSet key={group.id} aria-describedby={descriptionId} className="rounded-surface border border-line-base bg-surface-raised p-md">
+        <FieldLegend><SemanticContent as="span" className="inline-flex flex-wrap items-baseline gap-sm"><SemanticContent as="span" className="text-body font-medium text-ink-primary">{group.legend}</SemanticContent>
+          {dirty.includes(group.id) ? <>{" "}<SemanticContent as="span" className="text-caption text-ink-secondary">{labels.unsaved}</SemanticContent></> : null}</SemanticContent></FieldLegend>
+        {group.description ? <FieldDescription id={descriptionId}>{group.description}</FieldDescription> : null}
+        <FieldGroup className={group.layout === "multi" ? "grid tablet:grid-cols-2" : undefined}>{group.children}</FieldGroup>
+      </FieldSet>;
+    })}
     {saveBar && dirty.length ? <SemanticContent as="div" role="region" aria-label={labels.saveBar} className="sticky bottom-0 flex flex-wrap items-center justify-end gap-sm border-t border-line-base bg-surface-base py-sm">{saveBar}</SemanticContent> : null}
   </SemanticContent>;
 }

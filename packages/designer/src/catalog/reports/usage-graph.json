@@ -6443,138 +6443,75 @@
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
-      "kind": "reads",
-      "to": "themes.accent-foreground"
+      "kind": "composes",
+      "to": "components.separator"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.card-foreground"
+      "to": "themes.background.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.destructive"
+      "to": "themes.destructive.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.font-heading"
+      "to": "themes.muted-foreground.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.font-mono"
+      "to": "themes.muted.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.font-sans"
+      "to": "themes.primary.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.foreground"
+      "to": "themes.radius.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.muted-foreground"
+      "to": "themes.ring.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.field",
       "kind": "reads",
-      "to": "themes.popover-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.field",
-      "kind": "reads",
-      "to": "themes.primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.field",
-      "kind": "reads",
-      "to": "themes.secondary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.field",
-      "kind": "reads",
-      "to": "themes.sidebar-accent-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.field",
-      "kind": "reads",
-      "to": "themes.sidebar-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.field",
-      "kind": "reads",
-      "to": "themes.sidebar-primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.field",
-      "kind": "reads",
-      "to": "themes.spacing"
+      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -12655,172 +12592,11 @@
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.accent"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.accent-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.background"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.border"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.card"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.card-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.destructive"
-    },
-    {
-      "evidence": [
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.font-heading"
-    },
-    {
-      "evidence": [
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.font-mono"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.font-sans"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.input"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.muted"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.muted-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.popover"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.popover-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.primary"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.radius"
+      "kind": "composes",
+      "to": "components.field"
     },
     {
       "evidence": [
@@ -12828,88 +12604,47 @@
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.ring"
+      "to": "themes.destructive.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.secondary"
+      "to": "themes.foreground.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.secondary-foreground"
+      "to": "themes.muted-foreground.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.sidebar"
+      "to": "themes.radius.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.sidebar-accent"
+      "to": "themes.ring.default"
     },
     {
       "evidence": [
-        "declared",
-        "scanned"
+        "declared"
       ],
       "from": "components.text-field",
       "kind": "reads",
-      "to": "themes.sidebar-accent-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.sidebar-border"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.sidebar-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.sidebar-primary-foreground"
-    },
-    {
-      "evidence": [
-        "declared",
-        "scanned"
-      ],
-      "from": "components.text-field",
-      "kind": "reads",
-      "to": "themes.spacing"
+      "to": "themes.spacing.default"
     },
     {
       "evidence": [
@@ -15203,6 +14938,15 @@
       ],
       "from": "sections.column-mapper",
       "kind": "composes",
+      "to": "components.field"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.column-mapper",
+      "kind": "composes",
       "to": "components.select"
     },
     {
@@ -15428,6 +15172,15 @@
       ],
       "from": "sections.data-grid",
       "kind": "composes",
+      "to": "components.field"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.data-grid",
+      "kind": "composes",
       "to": "components.icon"
     },
     {
@@ -15546,6 +15299,15 @@
       "from": "sections.data-table",
       "kind": "composes",
       "to": "components.dialog"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.data-table",
+      "kind": "composes",
+      "to": "components.field"
     },
     {
       "evidence": [
@@ -15806,6 +15568,15 @@
       ],
       "from": "sections.filter-builder",
       "kind": "composes",
+      "to": "components.field"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.filter-builder",
+      "kind": "composes",
       "to": "components.select"
     },
     {
@@ -15825,6 +15596,24 @@
       "from": "sections.filter-builder",
       "kind": "composes",
       "to": "components.text-field"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.form",
+      "kind": "composes",
+      "to": "components.banner"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.form",
+      "kind": "composes",
+      "to": "components.field"
     },
     {
       "evidence": [
@@ -16202,6 +15991,15 @@
       ],
       "from": "sections.pagination",
       "kind": "composes",
+      "to": "components.field"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.pagination",
+      "kind": "composes",
       "to": "components.icon"
     },
     {
@@ -16562,7 +16360,34 @@
       ],
       "from": "sections.settings",
       "kind": "composes",
+      "to": "components.field"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.settings",
+      "kind": "composes",
       "to": "components.semantic-content"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.sign-in-form",
+      "kind": "composes",
+      "to": "components.banner"
+    },
+    {
+      "evidence": [
+        "declared",
+        "scanned"
+      ],
+      "from": "sections.sign-in-form",
+      "kind": "composes",
+      "to": "components.field"
     },
     {
       "evidence": [
@@ -17827,6 +17652,70 @@
     {
       "code": "dangling-endpoint",
       "kind": "reads",
+      "message": "themes.background.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.background.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.destructive.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.destructive.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.muted-foreground.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.muted-foreground.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.muted.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.muted.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.primary.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.primary.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.radius.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.radius.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.ring.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.ring.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.spacing.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.field",
+      "target": "themes.spacing.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
       "message": "themes.border.default is not in the catalog inventory",
       "severity": "warning",
       "subject": "components.item",
@@ -18710,6 +18599,54 @@
       "message": "themes.spacing.default is not in the catalog inventory",
       "severity": "warning",
       "subject": "components.tabs",
+      "target": "themes.spacing.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.destructive.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.destructive.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.foreground.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.foreground.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.muted-foreground.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.muted-foreground.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.radius.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.radius.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.ring.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
+      "target": "themes.ring.default"
+    },
+    {
+      "code": "dangling-endpoint",
+      "kind": "reads",
+      "message": "themes.spacing.default is not in the catalog inventory",
+      "severity": "warning",
+      "subject": "components.text-field",
       "target": "themes.spacing.default"
     },
     {
@@ -20461,14 +20398,6 @@
       "kind": "reads",
       "message": "declared reads not observed in the scanned source",
       "severity": "notice",
-      "subject": "components.text-field",
-      "target": "themes.ring"
-    },
-    {
-      "code": "unused-declaration",
-      "kind": "reads",
-      "message": "declared reads not observed in the scanned source",
-      "severity": "notice",
       "subject": "components.toggle-button",
       "target": "themes.destructive.default"
     },
@@ -20870,12 +20799,6 @@
       "code": "used-nowhere",
       "message": "selected but used nowhere",
       "severity": "notice",
-      "subject": "components.field"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
       "subject": "components.file-trigger"
     },
     {
@@ -20907,12 +20830,6 @@
       "message": "selected but used nowhere",
       "severity": "notice",
       "subject": "components.search-field"
-    },
-    {
-      "code": "used-nowhere",
-      "message": "selected but used nowhere",
-      "severity": "notice",
-      "subject": "components.separator"
     },
     {
       "code": "used-nowhere",
@@ -21342,15 +21259,15 @@
     }
   ],
   "inputs": {
-    "components": "sha256:992142d0444b60d7a8ae6b88590da32ad29bff60cb395047e825406e889facd5",
+    "components": "sha256:97566b0b0267676b8239676f4b2f37ac1d256826e8b78cbcabaae6ec038882ea",
     "consumption": "sha256:4341fe1cf47891aed1b25386f5d7aec6395e0a43b9b09ca16e1bc39d74b6a5aa",
     "inventory": "sha256:9695fecb739e3de12862d4dee6b2f8b504a9f925321784475f32c29126246e13",
     "pages": "absent",
     "runtime": "absent",
-    "selection": "sha256:10a83aa9b87840cf62299a62f84eaa7a6fceee0b1905c28041395562f9f8d457",
-    "surfaces": "sha256:9ccd795b4a5c1c49b59b65f57bf4970cb009a749b3a3f25df999cab8da1d17cf"
+    "selection": "sha256:064b846e93f7ff243e676b5149d207358a7666fd48f2e8cb7be3433d52d7da5d",
+    "surfaces": "sha256:700a14e314a6ce95e021ba1636e0e5fc769bf9196847d61c1baded2ff47f126c"
   },
-  "inputsHash": "sha256:e1866b84702b79cc54ce01d97c7443fba23afd4a3165d4c0333e05a4babb1b7f",
+  "inputsHash": "sha256:557c758c0dd859da08377d50957779da0a02ca1bacce581c46a6391e3c6d3247",
   "nodes": [
     {
       "fill": {
@@ -22125,14 +22042,13 @@
     },
     {
       "fill": {
-        "id": "foundry/components.field",
-        "source": "foundry"
+        "id": "shadcn@aria/components.field",
+        "source": "shadcn@aria"
       },
       "id": "components.field",
       "layer": "components",
       "leaf": "components.field",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -22576,14 +22492,13 @@
     },
     {
       "fill": {
-        "id": "foundry/components.text-field",
-        "source": "foundry"
+        "id": "shadcn@aria/components.text-field",
+        "source": "shadcn@aria"
       },
       "id": "components.text-field",
       "layer": "components",
       "leaf": "components.text-field",
-      "origin": "inventory",
-      "scan": "lower-bound"
+      "origin": "inventory"
     },
     {
       "fill": {
@@ -23977,15 +23892,15 @@
   "scope": "Catalog default plan over package values; Foundry surfaces; no product routes or runtime capture. Freshness only, not a conformance clearance.",
   "summary": {
     "edges": {
-      "composes": 325,
+      "composes": 337,
       "hosts": 0,
-      "reads": 1685,
+      "reads": 1655,
       "renders": 0
     },
     "evidence": {
-      "declared": 1419,
+      "declared": 1403,
       "runtime": 0,
-      "scanned": 1388
+      "scanned": 1355
     },
     "nodes": {
       "assets": 49,
@@ -25841,7 +25756,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/chat/Chat.tsx",
-            "sha256": "6db5b786d086f7c95d1ec93d486493576a451efad9e798c102252d64ae5da915"
+            "sha256": "af805536af8e366052e4e68a7db4b376f6450595236e7e6a398e6809b36eca11"
           },
           {
             "path": "packages/designer/src/blocks/chat/content.tsx",
@@ -25919,6 +25834,7 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.card",
+          "components.field",
           "components.select",
           "components.semantic-content"
         ],
@@ -25926,6 +25842,7 @@
           "assets": [],
           "components": [
             "components.card",
+            "components.field",
             "components.select",
             "components.semantic-content"
           ],
@@ -25950,12 +25867,8 @@
             "sha256": "63abab6fb0ee7f77a2b807c5c7c33d780090a7d246c18218edd8d3a642978556"
           },
           {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
-          },
-          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -26329,6 +26242,7 @@
           "components.button",
           "components.checkbox",
           "components.dialog",
+          "components.field",
           "components.icon",
           "components.popover",
           "components.select",
@@ -26348,6 +26262,7 @@
             "components.button",
             "components.checkbox",
             "components.dialog",
+            "components.field",
             "components.icon",
             "components.popover",
             "components.select",
@@ -26367,7 +26282,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-            "sha256": "11f20d1918e847f5a3c26acd0f3e731f8e41dc9d4fdb34fa3ec1a32603a4abdd"
+            "sha256": "649a588f4359073af9ba101b9c8f4a4c2a5a95c200b18d183497385ea90a1971"
           },
           {
             "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
@@ -26406,12 +26321,8 @@
             "sha256": "df52d679fe7ade59ae3c782b344cdd25f321bf407ba2003d47879b15c592fbe1"
           },
           {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
-          },
-          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/blocks/table-model/index.ts",
@@ -26493,6 +26404,7 @@
           "components.button",
           "components.checkbox",
           "components.dialog",
+          "components.field",
           "components.icon",
           "components.popover",
           "components.select",
@@ -26512,6 +26424,7 @@
             "components.button",
             "components.checkbox",
             "components.dialog",
+            "components.field",
             "components.icon",
             "components.popover",
             "components.select",
@@ -26531,7 +26444,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-            "sha256": "11f20d1918e847f5a3c26acd0f3e731f8e41dc9d4fdb34fa3ec1a32603a4abdd"
+            "sha256": "649a588f4359073af9ba101b9c8f4a4c2a5a95c200b18d183497385ea90a1971"
           },
           {
             "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
@@ -26570,12 +26483,8 @@
             "sha256": "df52d679fe7ade59ae3c782b344cdd25f321bf407ba2003d47879b15c592fbe1"
           },
           {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
-          },
-          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/blocks/table-model/index.ts",
@@ -27044,6 +26953,7 @@
         "scannedComposes": [
           "components.button",
           "components.card",
+          "components.field",
           "components.select",
           "components.semantic-content",
           "components.text-field"
@@ -27053,6 +26963,7 @@
           "components": [
             "components.button",
             "components.card",
+            "components.field",
             "components.select",
             "components.semantic-content",
             "components.text-field"
@@ -27063,15 +26974,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FilterBuilder.tsx",
-            "sha256": "183f0848ec67b950ddf311dce71bd8afedf9db62c6332996a1798eb6ff286515"
-          },
-          {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
+            "sha256": "ceeafb15e95aff5af1538ba4a1e7fa1f77ae15c70a39571315269912cfa34425"
           },
           {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -27116,6 +27023,8 @@
         },
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.banner",
+          "components.field",
           "components.form",
           "components.link",
           "components.semantic-content"
@@ -27123,6 +27032,8 @@
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.banner",
+            "components.field",
             "components.form",
             "components.link",
             "components.semantic-content"
@@ -27135,7 +27046,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "59ccd01a726dec44be0de0a3af86a4cef70e6bf8b5a243c5afa9b6d6812c5a7f"
+            "sha256": "af4156aa3094cae665cc055dc0de8e4e2efec1d68aa08a79e224498f1d54e76c"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -27851,7 +27762,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/NewsletterBand.tsx",
-            "sha256": "b5b93ff25e57f3e09889ce6fed12cddf1c57a1113244e5445e41195119b241d8"
+            "sha256": "ded1eda3d8dfd6f413f144f68242042e957166f033f45712551994a939f6fab2"
           },
           {
             "path": "packages/designer/src/blocks/section-ground.ts",
@@ -28047,6 +27958,7 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.button",
+          "components.field",
           "components.icon",
           "components.select",
           "components.semantic-content"
@@ -28058,6 +27970,7 @@
           ],
           "components": [
             "components.button",
+            "components.field",
             "components.icon",
             "components.select",
             "components.semantic-content"
@@ -28071,12 +27984,8 @@
             "sha256": "6940f4d9c7da059ed79352cc68e50530e540b025a654c1279f1f9cf8381463e4"
           },
           {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
-          },
-          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -29077,11 +28986,13 @@
         },
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.field",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.field",
             "components.semantic-content"
           ],
           "themes": []
@@ -29089,12 +29000,8 @@
         "slot": "sections.settings",
         "sourceFiles": [
           {
-            "path": "packages/designer/src/blocks/FieldGroup.tsx",
-            "sha256": "84565a33469c93941625708527b706766affec68e30e30b38abe93adb2378bea"
-          },
-          {
             "path": "packages/designer/src/blocks/SettingsSection.tsx",
-            "sha256": "9c7a57357fb6106ae16a3daabb8336d023a308851583e40c5da21a2f75f5f2d5"
+            "sha256": "86064c511b22ddacfc10537f96eba3295fca103f8bfb224aef2358804fbead37"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",
@@ -29139,6 +29046,8 @@
         },
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.banner",
+          "components.field",
           "components.form",
           "components.link",
           "components.semantic-content"
@@ -29146,6 +29055,8 @@
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.banner",
+            "components.field",
             "components.form",
             "components.link",
             "components.semantic-content"
@@ -29158,7 +29069,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "59ccd01a726dec44be0de0a3af86a4cef70e6bf8b5a243c5afa9b6d6812c5a7f"
+            "sha256": "af4156aa3094cae665cc055dc0de8e4e2efec1d68aa08a79e224498f1d54e76c"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

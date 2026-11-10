@@ -8,6 +8,14 @@ import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime
 import { specimenDataset } from "../../studio/specimen-dataset.js";
 import { signInFormInputs, signInFormRenderer as entry } from "./sign-in-form.js";
 
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" next to its control; the form-level regions are the other alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter((alert) => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => {
+  const alerts = formAlerts();
+  expect(alerts).toHaveLength(1);
+  return alerts[0]!;
+};
+
 afterEach(cleanup);
 const sample = () => entry.sample(specimenDataset);
 function input(content = sample(), sectionHost?: object): RuntimeRenderInput<ReactNode> {
@@ -84,7 +92,7 @@ describe("private sign-in Section", () => {
     const callbacks = host({ pending: true });
     const content = { ...sample(), error: { message: "Unable to continue.", identifier: "Check your identifier." } };
     render(<>{entry.render(input(content, callbacks))}</>);
-    expect(screen.getByRole("alert")).toHaveTextContent("Unable to continue.");
+    expect(formAlert()).toHaveTextContent("Unable to continue.");
     expect(screen.getByRole("textbox", { name: "Email or username" })).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("textbox", { name: "Email or username" })).toHaveAccessibleDescription("Check your identifier.");
     expect(screen.getByRole("textbox", { name: "Email or username" })).toHaveAttribute("readonly");

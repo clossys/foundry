@@ -43,7 +43,8 @@
       "components.select",
       "components.button",
       "components.toast",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.field"
     ],
     "parts": [
       "sections.band",

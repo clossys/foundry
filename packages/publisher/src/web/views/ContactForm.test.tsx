@@ -15,6 +15,11 @@ import type { ContactViewCopy, ContactViewProps } from "./ContactView.js";
 import type { ContactResult } from "../contact/types.js";
 import { ContactForm as ServerContactForm } from "./ContactForm.server.js";
 
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" beside its control; these are the form-level alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter(alert => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => { const alerts = formAlerts(); expect(alerts).toHaveLength(1); return alerts[0]!; };
+const findFormAlert = () => waitFor(formAlert);
+
 afterEach(cleanup);
 const keys = ["heading", "description", "topicLabel", "topicPlaceholder", "nameLabel", "emailLabel", "phoneLabel", "messageLabel", "submit", "submitting", "errorSummary", "topicRequired", "nameRequired", "emailRequired", "emailInvalid", "messageRequired", "sentHeading", "sentBody", "failureLabel", "invalid", "rateLimited", "unavailable"] as const;
 const copy = Object.fromEntries(keys.map(key => [key, { id: key }])) as unknown as ContactViewCopy;
@@ -98,9 +103,9 @@ describe("ContactForm extraction", () => {
     render(page(formProps({ onSubmit: async () => result })));
     const u = await fill();
     await u.click(submit());
-    expect(await screen.findByRole("alert")).toHaveTextContent(status === "rate-limited" ? "RATELIMITED-SENTINEL" : `${status.toUpperCase()}-SENTINEL`);
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
-    expect(screen.getByRole("alert")).toHaveTextContent("FAILURELABEL-SENTINEL");
+    expect(await findFormAlert()).toHaveTextContent(status === "rate-limited" ? "RATELIMITED-SENTINEL" : `${status.toUpperCase()}-SENTINEL`);
+    expect(formAlerts()).toHaveLength(1);
+    expect(formAlert()).toHaveTextContent("FAILURELABEL-SENTINEL");
     await waitFor(() => expect(submit()).toHaveFocus());
     expect(screen.getByRole("textbox", { name: /NAMELABEL/ })).toHaveValue("Example Person");
     expect(screen.getByRole("textbox", { name: /EMAILLABEL/ })).toHaveValue("person@example.com");
@@ -108,8 +113,8 @@ describe("ContactForm extraction", () => {
     expect(screen.getByRole("textbox", { name: /MESSAGELABEL/ })).toHaveValue("Example message.");
     await u.clear(screen.getByRole("textbox", { name: /EMAILLABEL/ }));
     await u.click(submit());
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
-    expect(screen.getByRole("alert")).toHaveTextContent("ERRORSUMMARY-SENTINEL");
+    expect(formAlerts()).toHaveLength(1);
+    expect(formAlert()).toHaveTextContent("ERRORSUMMARY-SENTINEL");
     expect(screen.getByRole("textbox", { name: /EMAILLABEL/ })).toHaveFocus();
     const link = screen.getByText("EMAILREQUIRED-SENTINEL", { selector: "a" });
     expect(link).toHaveAttribute("href", `#${screen.getByRole("textbox", { name: /EMAILLABEL/ }).id}`);
@@ -120,7 +125,7 @@ describe("ContactForm extraction", () => {
     await userEvent.setup().click(submit());
     expect(props.onSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /TOPICLABEL/ })).toHaveFocus();
-    expect(screen.getByRole("alert")).toHaveTextContent("ERRORSUMMARY-SENTINEL");
+    expect(formAlert()).toHaveTextContent("ERRORSUMMARY-SENTINEL");
   });
   it.each(["topic", "name", "email", "message"] as const)("refuses missing %s with a linked summary and sends nothing", async field => {
     const props = formProps(field === "topic" ? { initialTopic: "unknown" } : {});
@@ -175,14 +180,14 @@ describe("ContactForm extraction", () => {
     render(page(formProps({ onSubmit: (async () => result) as ContactViewProps["onSubmit"] })));
     const u = await fill();
     await u.click(submit());
-    expect(await screen.findByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+    expect(await findFormAlert()).toHaveTextContent("UNAVAILABLE-SENTINEL");
     expect(screen.queryByRole("status")).toBeNull();
   });
   it("maps a rejection to unavailable", async () => {
     render(page(formProps({ onSubmit: async () => { throw new Error("PRIVATE-SENTINEL"); } })));
     const u = await fill();
     await u.click(submit());
-    expect(await screen.findByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+    expect(await findFormAlert()).toHaveTextContent("UNAVAILABLE-SENTINEL");
     expect(screen.queryByText("PRIVATE-SENTINEL")).toBeNull();
   });
   it.each(["idle", "submitting", "accepted", "invalid", "rate-limited", "unavailable"] as const)("keeps %s preview inert", async devPreview => {

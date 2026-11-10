@@ -11,8 +11,8 @@ import { SearchField } from "./SearchField.js";
 import { StockSelect } from "../blocks/stock-select.js";
 import { StockCombobox } from "../blocks/stock-combobox.js";
 import { Switch } from "./preview-runtime/components/switch/switch.js";
-import { Textarea } from "./Textarea.js";
-import { TextField } from "./TextField.js";
+import { Textarea } from "./preview-runtime/components/text-field/text-field.js";
+import { TextField } from "./preview-runtime/components/text-field/text-field.js";
 import { Toggle } from "./preview-runtime/components/toggle-button/toggle.js";
 
 /*
@@ -33,8 +33,6 @@ function expectControlLine(el: Element | null | undefined): void {
 
 type Mount = () => Element | null | undefined;
 const fields: Array<[string, Mount, Mount]> = [
-  ["TextField", () => { render(<TextField label="Name" />); return screen.getByRole("textbox"); }, () => { render(<TextField label="Name" isInvalid />); return screen.getByRole("textbox"); }],
-  ["Textarea", () => { render(<Textarea label="Notes" />); return screen.getByRole("textbox"); }, () => { render(<Textarea label="Notes" isInvalid />); return screen.getByRole("textbox"); }],
   ["SearchField", () => { render(<SearchField label="Search" />); return screen.getByRole("searchbox"); }, () => { render(<SearchField label="Search" isInvalid />); return screen.getByRole("searchbox"); }],
   ["NumberField", () => { render(<NumberField {...names} label="Qty" />); return screen.getByRole("textbox").closest("[role=group]"); }, () => { render(<NumberField {...names} label="Qty" isInvalid />); return screen.getByRole("textbox").closest("[role=group]"); }],
   ["DateField", () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} />); return screen.getByRole("group", { name: /Start/ }); }, () => { render(<DateField label="Start" defaultValue={new CalendarDate(2024, 1, 15)} isInvalid />); return screen.getByRole("group", { name: /Start/ }); }],
@@ -101,11 +99,23 @@ describe("control boundary line (VF-8)", () => {
     expect(track()).toHaveAttribute("data-selected", "true");
   });
 
-  it("disabled controls keep the disabled alpha on top of the control line", () => {
-    render(<TextField label="Name" isDisabled />);
-    const input = screen.getByRole("textbox");
-    expectControlLine(input);
-    expect(input).toBeDisabled();
+  // R2F-33d1: TextField and Textarea are the stock shadcn@aria input and textarea; stock wins over the Foundry control line.
+  it.each([
+    ["TextField", (props: { isInvalid?: boolean; isDisabled?: boolean }) => render(<TextField label="Name" {...props} />)],
+    ["Textarea", (props: { isInvalid?: boolean; isDisabled?: boolean }) => render(<Textarea label="Name" {...props} />)],
+  ] as const)("%s: the stock control rests on the strong line, marks invalid through aria-invalid and stays disabled", (_name, mount) => {
+    mount({});
+    const rest = screen.getByRole("textbox", { name: "Name" });
+    expect(classes(rest)).toEqual(expect.arrayContaining(["border-(--color-line-strong)", "aria-invalid:border-(--color-status-danger)"]));
+    expect(rest).not.toHaveAttribute("aria-invalid");
+    document.body.replaceChildren();
+    mount({ isInvalid: true });
+    expect(screen.getByRole("textbox", { name: "Name" })).toHaveAttribute("aria-invalid", "true");
+    document.body.replaceChildren();
+    mount({ isDisabled: true });
+    const disabled = screen.getByRole("textbox", { name: "Name" });
+    expect(disabled).toBeDisabled();
+    expect(classes(disabled)).toContain("disabled:opacity-(--ui-alpha-disabled,50%)");
   });
 
   it("Button: the outlined (secondary) look rests on the control line; the outline variant keeps its ink ring", () => {

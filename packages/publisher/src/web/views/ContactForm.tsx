@@ -280,8 +280,6 @@ export function ContactForm({
         selectedKey={topicField.value === "" ? null : topicField.value}
         onSelectionChange={(key) => topicField.onChange(key === null ? "" : String(key))}
         onBlur={topicField.onBlur}
-        isInvalid={topicField.isInvalid}
-        errorMessage={topicField.errorMessage}
       />
       <TextField {...validation.getFieldProps("name")} label={text.nameLabel} autoComplete="name" isRequired />
       <TextField {...validation.getFieldProps("email")} label={text.emailLabel} type="email" autoComplete="email" isRequired />

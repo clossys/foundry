@@ -3,9 +3,17 @@ import { describe, expect, it, vi } from "vitest";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { TextField } from "../components/TextField.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
 import { Form, type FormError } from "./Form.js";
 import { useFormValidation, type FormValidation } from "./useFormValidation.js";
+
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" next to its control; the form-level regions are the other alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter((alert) => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => {
+  const alerts = formAlerts();
+  expect(alerts).toHaveLength(1);
+  return alerts[0]!;
+};
 
 /**
  * The invariant `useFormValidation` exists to hold (the "Form validation
@@ -154,6 +162,40 @@ describe("useFormValidation — timing before the first submit", () => {
     await user.type(name, "da");
     expect(name).not.toHaveAttribute("aria-invalid");
     expect(screen.queryByText("Name is too short")).not.toBeInTheDocument();
+  });
+
+  it("R2F-33d2 [mutant: validationErrors memoised on errors] keeps a still-invalid error after RAC clears it on a committed change", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    const name = screen.getByLabelText("Name");
+    await user.type(name, "A");
+    await user.tab();
+    expect(describedByText(name)).toContain("Name is too short");
+    // Same message after the edit: the hook's errors map is unchanged, but the
+    // native change on blur makes react-aria-components drop the server error
+    // unless `validationErrors` arrives as a new object.
+    await user.type(name, "b");
+    await user.tab();
+    expect(name).toHaveAttribute("aria-invalid", "true");
+    expect(describedByText(name)).toContain("Name is too short");
+  });
+
+  it("R2F-33d2 [mutant: Form drops validationErrors] reaches each RAC field only through the Form's validationErrors, by name", async () => {
+    const user = userEvent.setup();
+    function Unbound() {
+      const v = useFormValidation<Values>({ initialValues: INITIAL, validators: VALIDATORS, onSubmit: () => {} });
+      return <Form validation={{ ...v, validationErrors: {} }} actions={<Button type="submit">Send</Button>}>
+        <TextField label="Name" {...v.getFieldProps("name")} />
+      </Form>;
+    }
+    const { unmount } = render(<Unbound />);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByLabelText("Name")).not.toHaveAttribute("aria-invalid");
+    unmount();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByLabelText("Name")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Name").closest("[data-slot=field]")?.querySelector("[data-slot=field-error]")).toHaveTextContent("Enter your name");
   });
 
   it("does not re-show an error while typing into a touched field that currently shows none", async () => {
@@ -308,14 +350,14 @@ describe("useFormValidation with Form's error summary", () => {
     const user = userEvent.setup();
     render(<Harness />);
     await user.click(screen.getByRole("button", { name: "Send" }));
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(formAlerts()).toHaveLength(0);
   });
 
   it("renders the summary when errorSummaryMessage is supplied, linking each entry to its field in DOM order", async () => {
     const user = userEvent.setup();
     render(<Harness errorSummaryMessage={(count) => `${count} problems`} />);
     await user.click(screen.getByRole("button", { name: "Send" }));
-    const summary = screen.getByRole("alert");
+    const summary = formAlert();
     expect(summary).toContainElement(screen.getByRole("heading", { name: "3 problems" }));
     const links = screen.getAllByRole("link");
     expect(links.map((link) => link.textContent)).toEqual([
@@ -332,7 +374,7 @@ describe("useFormValidation with Form's error summary", () => {
     render(<Harness errorSummaryMessage={(count) => `${count} problems`} />);
     await user.click(screen.getByRole("button", { name: "Send" }));
     await waitFor(() => expect(screen.getByLabelText("Name")).toHaveFocus());
-    expect(screen.getByRole("alert")).not.toHaveFocus();
+    expect(formAlert()).not.toHaveFocus();
   });
 
   it("keeps summaryErrors' identity stable while typing; it changes only when a submit fails", async () => {

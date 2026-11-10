@@ -2,6 +2,8 @@ import adapter from "../catalog/adapters/shadcn@aria.json" with { type: "json" }
 import componentSlots from "../catalog/slots/components.json" with { type: "json" };
 import datePickerRule from "../catalog/rules/components.date-picker.json" with { type: "json" };
 import fileTriggerRule from "../catalog/rules/components.file-trigger.json" with { type: "json" };
+import fieldRule from "../catalog/rules/components.field.json" with { type: "json" };
+import textFieldRule from "../catalog/rules/components.text-field.json" with { type: "json" };
 import type { ComponentCheckFill } from "../catalog-core/check-components.js";
 import type { ComponentSlot, FillMeta } from "../catalog-core/types.js";
 import { sha256 } from "../catalog-core/digest.js";
@@ -50,6 +52,8 @@ export interface ShadcnComponentImport {
   compose: readonly ShadcnComposeReceipt[];
   /** Registered-composition templates for leaves whose every constituent is shadcn@aria. */
   composed: readonly ShadcnComposedFillDoc[];
+  /** Rewritten stock item bytes and notice a composed leaf ships beside its owned wiring, by leaf. */
+  composedFiles: Readonly<Record<string, readonly SourceFile[]>>;
 }
 export interface ShadcnComposedFillDoc {
   $extensions: { "com.clossys.fill": FillMeta & { originKinds: readonly ["composed"] } };
@@ -57,24 +61,62 @@ export interface ShadcnComposedFillDoc {
 }
 interface RegisteredComposeRule { id: string; kind: string; slot: string; inputs: readonly string[]; files: readonly SourceFile[] }
 /** Owned wiring for a composed leaf; the rule file under catalog/rules carries its bytes. Single-axis members are served by the bare root export (pointer-only, no dispatch). */
-const SHADCN_COMPOSED_TEMPLATES: Readonly<Record<string, { rule: RegisteredComposeRule; export: string; members: Readonly<Record<string, string>>; props: readonly string[] }>> = {
+interface ComposedTemplate { rule: RegisteredComposeRule; export: string; members: Readonly<Record<string, string>>; props: readonly string[]; secondaryExports?: readonly string[] }
+const fieldParts = ["FieldContent", "FieldDescription", "FieldError", "FieldGroup", "FieldLabel", "FieldLegend", "FieldSeparator", "FieldSet", "FieldTitle"];
+const SHADCN_COMPOSED_TEMPLATES: Readonly<Record<string, ComposedTemplate>> = {
   "file-trigger": { rule: fileTriggerRule, export: "FileTrigger", members: { accept: "FileTrigger", directory: "FileTrigger", multiple: "FileTrigger" }, props: ["label", "acceptedFileTypes", "allowsMultiple", "acceptDirectory", "defaultCamera", "onSelect"] },
+  // Stock label + field under a Field that owns the field states (data-* on the stock root, FieldError context when invalid).
+  field: { rule: fieldRule, export: "Field", members: { "part.label": "FieldLabel", "part.description": "FieldDescription", "part.error": "FieldError", "state.required": "Field.isRequired", "state.invalid": "Field.isInvalid", "state.disabled": "Field.isDisabled" }, props: ["children", "className", "orientation", "isInvalid", "isDisabled", "isRequired"], secondaryExports: fieldParts },
+  // One size (D-b): stock input and textarea inside a RAC TextField whose render target is the composed field.
+  "text-field": { rule: textFieldRule, export: "TextField", members: { "line.single-line": "TextField", "line.multiline": "Textarea", "state.invalid": "TextField.isInvalid", "state.disabled": "TextField.isDisabled", "state.read-only": "TextField.isReadOnly" }, props: ["label", "value", "onChange", "isInvalid", "isDisabled", "isReadOnly", "description", "errorMessage", "className"], secondaryExports: ["Textarea"] },
 };
-function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot): ShadcnComposedFillDoc | undefined {
+/** Stock items a composed leaf wraps: rewritten as one leaf, relocated under `components/<leaf>/stock/`. */
+export interface ShadcnComposedStock { files: readonly SourceFile[]; themes: readonly string[]; components: readonly string[]; issues: readonly RewriteIssue[] }
+function composedStock(rule: ShadcnComposeRule, items: ReadonlyMap<string, ShadcnRegistryItem>, styles: string, notice: string): ShadcnComposedStock {
+  const own = new Set(rule.items), leafByItem = Object.fromEntries(Object.entries(SHADCN_COMPONENT_ITEMS).filter(([item]) => !own.has(item)));
+  const files: SourceFile[] = [], themes: string[] = [], components: string[] = [], issues: RewriteIssue[] = [];
+  for (const name of rule.items!) {
+    const original = items.get(name)!.files[0]!;
+    const result = rewriteShadcnAria({ item: name, leaf: rule.leaf, files: [original], styles, leafByItem, styleDefaults: true });
+    issues.push(...result.issues); themes.push(...result.reads.themes); components.push(...result.reads.components);
+    for (const file of result.files) {
+      const bound = bindSiblingLeafModules(normalizeSelectedSource(file).content, leafByItem);
+      for (const leaf of bound.ambiguous) issues.push({ code: "K9", file: original.path, value: leaf, message: "Sibling leaf module is ambiguous" });
+      // A row item is a sibling stock file, utils is local, and every other leaf sits one level further up.
+      const content = bound.content.replace(/(from\s*")\.\.\/(_parts\/)?([a-z][a-z0-9-]*)\/(index|[a-z][a-z0-9-]*)(")/g, (all, before: string, part: string | undefined, target: string, module: string, after: string) => {
+        if (!part) return `${before}../../${target}/${module}${after}`;
+        if (target === "utils" || own.has(target)) return `${before}./${target}${after}`;
+        issues.push({ code: "K9", file: original.path, value: target, message: "Composed stock part is not a row item" }); return all;
+      });
+      files.push({ path: `components/${rule.leaf}/stock/${file.path.split("/").at(-1)}`, content });
+    }
+  }
+  const stockComponents = sorted(components);
+  for (const leaf of stockComponents) if (!rule.constituents.includes(leaf.replace(/^components\./, ""))) issues.push({ code: "K9", file: rule.leaf, value: leaf, message: "Stock item reads a leaf the compose rule does not name" });
+  files.push({ path: `components/${rule.leaf}/stock/utils.ts`, content: utils });
+  files.push({ path: `notices/${rule.leaf}.md`, content: `# Third-party notice\n\nSource: ${SHADCN_ARIA_COMPONENT_PIN.url}\nCommit: ${SHADCN_ARIA_COMPONENT_PIN.commit}\nTransform: shadcn-aria-rewrite@1\nItems: ${rule.items!.join(", ")} (components/${rule.leaf}/stock/), wired by the owned components/${rule.leaf}/${rule.leaf}.tsx\n\n${notice}` });
+  return { files: files.sort((a, b) => a.path.localeCompare(b.path)), themes: sorted(themes), components: stockComponents, issues };
+}
+function composedTemplate(row: ShadcnComposeReceipt, slot: ComponentSlot, stock?: ShadcnComposedStock): ShadcnComposedFillDoc | undefined {
   const template = SHADCN_COMPOSED_TEMPLATES[row.leaf];
   if (!template || row.status !== "composed") return;
+  if (!!row.items.length !== !!stock) throw new Error(`shadcn-compose: ${row.leaf} stock items and bytes differ`);
   const { rule } = template, inputs = row.constituents.map(leaf => `components.${leaf}`);
   if (rule.kind !== "compose" || rule.slot !== row.slot || stableStringify([...rule.inputs].sort()) !== stableStringify([...inputs].sort())) throw new Error(`shadcn-compose: registered rule for ${row.leaf} differs from its compose rule`);
   const members = Object.keys(template.members).sort();
+  const files = [...rule.files, ...stock?.files ?? []], code = files.map(file => file.content).join("\n");
+  const rac = { name: "react-aria-components", version: stock ? "^1.21.0" : "^1.19.0", license: "Apache-2.0" };
+  const packages = stock ? npmDeps.filter(dep => ["clsx", "tailwind-merge"].includes(dep.name) || dep.name === "class-variance-authority" && code.includes('from "class-variance-authority"')) : [];
   return {
     $extensions: { "com.clossys.fill": { author: "foundry", builtOn: inputs, conforms: [], evidence: [], id: `${SOURCE}/${row.slot}`, license: "MIT", mode: "implementation", originKinds: ["composed"], relation: "same-contract", slot: row.slot, source: SOURCE, sourceAddress: `rules/components.${row.leaf}.json#${rule.id}`, status: "draft", trust: "foundry" } as FillMeta & { originKinds: readonly ["composed"] } },
     components: { [row.leaf]: {
       slot: row.slot, source: SOURCE, root: slot.contract.root, members, props: [...template.props], propMap: Object.fromEntries(members.map(member => [member, template.members[member]!])),
-      reads: { themes: [], assets: [], components: inputs }, composes: inputs,
+      reads: { themes: [...stock?.themes ?? []], assets: [], components: inputs }, composes: inputs,
       impl: { kind: "source", entry: `components/${row.leaf}/${row.leaf}.tsx`, export: template.export }, license: "MIT", notice: `notices/${row.leaf}.md`,
-      deps: [{ name: "react", version: ">=18", license: "MIT" }, { name: "react-aria-components", version: "^1.19.0", license: "Apache-2.0" }],
-      outputSha256: rule.files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)),
-      rac: componentRacDeclaration({ impl: { kind: "source" }, deps: [{ name: "react-aria-components", version: "^1.19.0", license: "Apache-2.0" }] }, { peer: false }),
+      deps: [{ name: "react", version: ">=18", license: "MIT" }, rac, ...packages],
+      outputSha256: files.map(file => ({ path: file.path, sha256: sha256(file.content) })).sort((a, b) => a.path.localeCompare(b.path)),
+      rac: componentRacDeclaration({ impl: { kind: "source" }, deps: [rac] }, { peer: false }),
+      ...(template.secondaryExports ? { secondaryExports: template.secondaryExports.map(name => ({ name, export: name })) } : {}),
     } as ComponentCheckFill },
   };
 }
@@ -95,14 +137,14 @@ export interface ShadcnComposeReceipt {
 }
 export const SHADCN_COMPOSE_MAX_DEPTH = 1;
 /** Registry items a composition may wrap, by planner decision D1 (amended). */
-export const SHADCN_COMPOSE_ITEMS: readonly string[] = ["input", "label", "field", "input-group", "spinner", "button-group"];
+export const SHADCN_COMPOSE_ITEMS: readonly string[] = ["input", "textarea", "label", "field", "input-group", "spinner", "button-group"];
 /** The registered date-picker composition is the model; its inputs are read, never restated. */
 const registeredDatePicker = datePickerRule.inputs.map(input => input.replace(/^components\./, ""));
 export const SHADCN_COMPOSE_RULES: readonly ShadcnComposeRule[] = [
   { leaf: "date-picker", constituents: registeredDatePicker },
   { leaf: "date-field", constituents: ["field"], items: ["input-group"], blocker: "new styling: pinned input and input-group render RAC Input, not DateInput/DateSegment; segment, placeholder and focus styling would be new" },
-  { leaf: "field", constituents: [], items: ["label", "field"], blocker: "K1: state.required/invalid/disabled have no owner, since a Label+Text+FieldError root takes them only from a parent field context; and K2: pinned field.tsx renders description and error as p/div, so a RAC Text/FieldError wrap needs new structure" },
-  { leaf: "text-field", constituents: [], items: ["label", "input"], blocker: "K1: size.sm/md/lg unmapped; the RAC TextField wrap maps line and state, but pinned label and input carry one control size and textarea is not a D1 item" },
+  { leaf: "field", constituents: ["separator"], items: ["label", "field"] },
+  { leaf: "text-field", constituents: ["field"], items: ["input", "textarea"] },
   { leaf: "search-field", constituents: ["button"], items: ["input-group", "input"], blocker: "K1: state.empty/state.filled have no pointer; RAC data-empty is render state, and the propMap grammar admits only exports, props, values and hovered/pressed/focus-visible" },
   { leaf: "form", constituents: [], blocker: "K2: form is absent at the pinned commit (no files), and no D1 item supplies a form; the RAC Form root alone is the Foundry seat" },
   { leaf: "file-trigger", constituents: ["button"] },
@@ -496,10 +538,19 @@ export function importShadcnAriaComponents(input: ShadcnComponentInput): ShadcnC
   if (!inputGroup) throw new Error("shadcn-components: missing inspection input input-group");
   receipt.push({ item: "input-group", slot: "components.text-field", runtime: "X", status: "rejected", reason: "K2: Group is not TextField; retained only as a private registry part", issues: [] });
   receipt.push({ item: "button#LinkButton", slot: "components.link", runtime: "U-V", status: "alternate", reason: "Pinned button item imports Link; a derived link rule belongs to the component change engine", issues: [] });
-  const compose = resolveShadcnComposeRules(SHADCN_COMPOSE_RULES, { slots: new Set(slots.keys()), sources: new Map([...filled].map(slot => [slot, SOURCE])),
+  // A composed leaf's stock items must rewrite cleanly; any issue keeps that leaf (and its dependents) on the gap seat.
+  const stock = new Map<string, ShadcnComposedStock>();
+  const rules = SHADCN_COMPOSE_RULES.map(rule => {
+    if (rule.blocker || !rule.items?.length || !SHADCN_COMPOSED_TEMPLATES[rule.leaf] || rule.items.some(item => !items.get(item)?.files.length)) return rule;
+    const built = composedStock(rule, items, input.styles.content, input.notice.content);
+    if (built.issues.length) return { ...rule, blocker: `K1: stock rewrite issues ${built.issues.map(issue => `${issue.code} ${issue.value}`).join(", ")}` };
+    stock.set(rule.leaf, built); return rule;
+  });
+  const compose = resolveShadcnComposeRules(rules, { slots: new Set(slots.keys()), sources: new Map([...filled].map(slot => [slot, SOURCE])),
     items: new Set([...items].filter(([, item]) => !item.missing && item.files.length).map(([name]) => name)) });
-  const composed = compose.flatMap(row => composedTemplate(row, slots.get(row.slot)!) ?? []);
-  return { fills: fills.sort((a, b) => a.$extensions["com.clossys.fill"].slot.localeCompare(b.$extensions["com.clossys.fill"].slot)), receipt, rewrites, compose, composed };
+  const composed = compose.flatMap(row => composedTemplate(row, slots.get(row.slot)!, row.status === "composed" ? stock.get(row.leaf) : undefined) ?? []);
+  const composedFiles = Object.fromEntries(compose.filter(row => row.status === "composed" && stock.has(row.leaf)).map(row => [row.leaf, stock.get(row.leaf)!.files]));
+  return { fills: fills.sort((a, b) => a.$extensions["com.clossys.fill"].slot.localeCompare(b.$extensions["com.clossys.fill"].slot)), receipt, rewrites, compose, composed, composedFiles };
 }
 
 /** Adoption may only consume a fully rewritten bundle; draft descriptors are inspectable. */
@@ -519,4 +570,10 @@ export function generatedShadcnComponentFiles(input: ShadcnComponentInput): Read
   const result = importShadcnAriaComponents(input);
   return Object.fromEntries([...[...result.fills, ...result.composed].map(fill => [fill.$extensions["com.clossys.fill"].slot + ".json", stableStringify(fill)]),
     ["components.coverage.json", stableStringify({ source: SOURCE, pin: SHADCN_ARIA_COMPONENT_PIN, receipt: result.receipt, compose: result.compose, unmeasured: ["ref and render-prop forwarding", "consumer RAC singleton", "axe", "keyboard", "forced colours", "contrast", "state/mode/ground matrix", "consumer Tailwind v4 build"] })]]);
+}
+/** `catalog/rules/components.<leaf>.stock.json`: the stock bytes a composed rule merges beside its owned wiring. */
+export function generatedShadcnComposedStockFiles(input: ShadcnComponentInput): Readonly<Record<string, string>> {
+  const result = importShadcnAriaComponents(input);
+  return Object.fromEntries(Object.entries(result.composedFiles).map(([leaf, files]) => [`components.${leaf}.stock.json`,
+    stableStringify({ $generated: "src/importers/__fixtures__/shadcn-aria/regenerate.mjs; do not edit", files, slot: `components.${leaf}` })]));
 }

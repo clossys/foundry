@@ -18,7 +18,7 @@
       "constituents": [
         "field"
       ],
-      "depth": 0,
+      "depth": 1,
       "items": [
         "input-group"
       ],
@@ -29,30 +29,34 @@
       "status": "gap"
     },
     {
-      "constituents": [],
+      "constituents": [
+        "separator"
+      ],
       "depth": 0,
       "items": [
         "label",
         "field"
       ],
       "leaf": "field",
-      "reason": "K1: state.required/invalid/disabled have no owner, since a Label+Text+FieldError root takes them only from a parent field context; and K2: pinned field.tsx renders description and error as p/div, so a RAC Text/FieldError wrap needs new structure",
+      "reason": "every constituent is shadcn@aria; no new styling",
       "slot": "components.field",
-      "source": "foundry",
-      "status": "gap"
+      "source": "shadcn@aria",
+      "status": "composed"
     },
     {
-      "constituents": [],
-      "depth": 0,
+      "constituents": [
+        "field"
+      ],
+      "depth": 1,
       "items": [
-        "label",
-        "input"
+        "input",
+        "textarea"
       ],
       "leaf": "text-field",
-      "reason": "K1: size.sm/md/lg unmapped; the RAC TextField wrap maps line and state, but pinned label and input carry one control size and textarea is not a D1 item",
+      "reason": "every constituent is shadcn@aria; no new styling",
       "slot": "components.text-field",
-      "source": "foundry",
-      "status": "gap"
+      "source": "shadcn@aria",
+      "status": "composed"
     },
     {
       "constituents": [

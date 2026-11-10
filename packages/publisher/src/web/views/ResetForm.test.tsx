@@ -12,6 +12,11 @@ import { ResetForm } from "./ResetForm.js";
 import { ResetForm as ServerResetForm } from "./ResetForm.server.js";
 import type { ResetDetails, ResetFailure, ResetFormProps, ResetResult } from "./ResetForm.js";
 
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" beside its control; these are the form-level alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter(alert => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => { const alerts = formAlerts(); expect(alerts).toHaveLength(1); return alerts[0]!; };
+const findFormAlerts = () => waitFor(() => { const alerts = formAlerts(); expect(alerts.length).toBeGreaterThan(0); return alerts; });
+
 afterEach(cleanup);
 
 const OK: ResetResult = { status: "ok" };
@@ -213,7 +218,7 @@ describe("ResetForm :: empty and blur", () => {
     const { handlers, user } = setup();
     await user.click(requestButton());
     expect(screen.getAllByText(defaultText("identifier-required.notice"))).toHaveLength(1);
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(identifierField()).toHaveAttribute("aria-invalid", "true");
     await waitFor(() => expect(identifierField()).toHaveFocus());
     expect(handlers.request).not.toHaveBeenCalled();
@@ -229,7 +234,7 @@ describe("ResetForm :: empty and blur", () => {
 
     expect(screen.getAllByText(defaultText("code-required.notice"))).toHaveLength(1);
     expect(screen.getAllByText(defaultText("password-required.notice"))).toHaveLength(1);
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     await waitFor(() => expect(codeField()).toHaveFocus());
 
     await user.type(codeField(), "123456");
@@ -265,7 +270,7 @@ describe("ResetForm :: empty and blur", () => {
     }
     expect(screen.queryByText(defaultText("code-required.notice"))).toBeNull();
     expect(screen.queryByText(defaultText("password-required.notice"))).toBeNull();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(handlers.reset).not.toHaveBeenCalled();
   });
 });
@@ -280,11 +285,11 @@ describe("ResetForm :: failures on the identifier step", () => {
     expect(await screen.findAllByText(defaultText("identifier-not-found.notice"))).toHaveLength(1);
     expect(identifierField()).toHaveAttribute("aria-invalid", "true");
     await waitFor(() => expect(identifierField()).toHaveFocus());
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
 
     request.mockResolvedValueOnce({ status: "rateLimited" });
     await user.click(requestButton());
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("rate-limited.notice"));
     expect(screen.queryByText(defaultText("identifier-not-found.notice"))).toBeNull();
@@ -302,7 +307,7 @@ describe("ResetForm :: failures on the identifier step", () => {
     await user.type(identifierField(), IDENTIFIER);
     await user.click(requestButton());
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText(id, NOUNS));
     expect(identifierField()).toHaveValue(IDENTIFIER);
@@ -316,7 +321,7 @@ describe("ResetForm :: failures on the identifier step", () => {
       await user.type(identifierField(), IDENTIFIER);
       await user.click(requestButton());
 
-      const alerts = await screen.findAllByRole("alert");
+      const alerts = await findFormAlerts();
       expect(alerts).toHaveLength(1);
       expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
       expect(screen.getByRole("form", { name: defaultText("reset.title") })).toBeInTheDocument();
@@ -331,7 +336,7 @@ describe("ResetForm :: failures on the identifier step", () => {
     });
     await user.type(identifierField(), IDENTIFIER);
     await user.click(requestButton());
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
   });
@@ -353,7 +358,7 @@ describe("ResetForm :: failures on the code step", () => {
     expect(await screen.findAllByText(defaultText("code.notice"))).toHaveLength(1);
     expect(codeField()).toHaveAttribute("aria-invalid", "true");
     expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     await waitFor(() => expect(codeField()).toHaveFocus());
 
     await user.type(codeField(), "1");
@@ -369,7 +374,7 @@ describe("ResetForm :: failures on the code step", () => {
     expect(await screen.findAllByText(defaultText("password-weak.notice"))).toHaveLength(1);
     expect(passwordField()).toHaveAttribute("aria-invalid", "true");
     expect(codeField()).not.toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     await waitFor(() => expect(passwordField()).toHaveFocus());
 
     await user.type(passwordField(), "x");
@@ -381,7 +386,7 @@ describe("ResetForm :: failures on the code step", () => {
     await reachResetStep(user);
     await fillAndReset(user, "123456", "a long new password");
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText(id, NOUNS));
     expect(codeField()).not.toHaveAttribute("aria-invalid", "true");
@@ -395,7 +400,7 @@ describe("ResetForm :: failures on the code step", () => {
     await reachResetStep(user);
     await fillAndReset(user);
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
     expect(screen.queryByText(defaultText("identifier-not-found.notice"))).toBeNull();
@@ -409,7 +414,7 @@ describe("ResetForm :: failures on the code step", () => {
     });
     await reachResetStep(user);
     await fillAndReset(user);
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
   });
@@ -436,7 +441,7 @@ describe("ResetForm :: resend", () => {
     expect(codeField()).toHaveValue("");
     expect(passwordField()).toHaveValue("a long new password");
     await waitFor(() => expect(codeField()).toHaveFocus());
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(reset).toHaveBeenCalledTimes(1);
   });
 
@@ -446,7 +451,7 @@ describe("ResetForm :: resend", () => {
     await reachResetStep(user);
     await user.type(codeField(), "123456");
     await user.click(screen.getByRole("button", { name: defaultText("code.secondary") }));
-    let alerts = await screen.findAllByRole("alert");
+    let alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("rate-limited.notice"));
     expect(codeField()).toHaveValue("123456");
@@ -454,13 +459,13 @@ describe("ResetForm :: resend", () => {
     for (const answer of [{ status: "credential" }, { status: "weakPassword" }, { status: "notFound" }]) {
       resendCode.mockResolvedValueOnce(answer as ResetResult);
       await user.click(screen.getByRole("button", { name: defaultText("code.secondary") }));
-      await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(defaultText("unavailable.notice")));
-      alerts = screen.getAllByRole("alert");
+      await waitFor(() => expect(formAlert()).toHaveTextContent(defaultText("unavailable.notice")));
+      alerts = formAlerts();
       expect(alerts).toHaveLength(1);
       expect(screen.queryByText(defaultText("code.notice"))).toBeNull();
       resendCode.mockResolvedValueOnce({ status: "rateLimited" });
       await user.click(screen.getByRole("button", { name: defaultText("code.secondary") }));
-      await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(defaultText("rate-limited.notice")));
+      await waitFor(() => expect(formAlert()).toHaveTextContent(defaultText("rate-limited.notice")));
     }
   });
 
@@ -471,7 +476,7 @@ describe("ResetForm :: resend", () => {
     const { user } = setup({ resendCode });
     await reachResetStep(user);
     await user.click(screen.getByRole("button", { name: defaultText("code.secondary") }));
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
   });
@@ -529,7 +534,7 @@ describe("ResetForm :: unavailable", () => {
     expect(screen.getByRole("form", { name: defaultText("reset.title") })).toBeInTheDocument();
     expect(identifierField()).toBeDisabled();
     expect(requestButton()).toBeDisabled();
-    const alerts = screen.getAllByRole("alert");
+    const alerts = formAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
 
@@ -540,7 +545,7 @@ describe("ResetForm :: unavailable", () => {
     expect(handlers.reset).not.toHaveBeenCalled();
     expect(resendCode).not.toHaveBeenCalled();
     expect(screen.queryByText(defaultText("identifier-required.notice"))).toBeNull();
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(formAlerts()).toHaveLength(1);
   });
 
   it("disables the code step too when it becomes unavailable, and calls no handler", async () => {
@@ -558,7 +563,7 @@ describe("ResetForm :: unavailable", () => {
     expect(resetButton()).toBeDisabled();
     expect(screen.getByRole("button", { name: defaultText("code.secondary") })).toBeDisabled();
     expect(screen.getByRole("button", { name: defaultText("password.secondary") })).toBeDisabled();
-    expect(screen.getByRole("alert")).toHaveTextContent(defaultText("unavailable.notice"));
+    expect(formAlert()).toHaveTextContent(defaultText("unavailable.notice"));
 
     fireEvent.submit(container.querySelector("form") as HTMLFormElement);
     await Promise.resolve();
@@ -570,7 +575,7 @@ describe("ResetForm :: unavailable", () => {
     setup();
     expect(identifierField()).toBeEnabled();
     expect(requestButton()).toBeEnabled();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
   });
 });
 

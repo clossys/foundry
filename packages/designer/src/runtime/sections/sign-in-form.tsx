@@ -11,7 +11,7 @@ import { object, optionalText, readSectionContent, required, SectionContentError
 import { componentLeaf } from "../component-leaf.js";
 
 const Button = componentLeaf<import("../component-leaf.js").ButtonLeaf>("components.button");
-const TextField = componentLeaf<typeof import("../../components/TextField.js").TextField>("components.text-field");
+const TextField = componentLeaf<typeof import("../../components/preview-runtime/components/text-field/text-field.js").TextField>("components.text-field");
 const SemanticContent = componentLeaf<typeof import("../../components/SemanticContent.js").SemanticContent>("components.semantic-content");
 
 const LEAF = "sections.sign-in-form";

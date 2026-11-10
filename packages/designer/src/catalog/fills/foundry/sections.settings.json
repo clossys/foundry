@@ -27,29 +27,28 @@
   "sections": {
     "settings": {
       "composes": [
+        "components.field",
         "components.semantic-content"
       ],
       "configs": {},
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.field",
           "components.semantic-content"
         ],
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.field",
             "components.semantic-content"
           ],
           "themes": []
         },
         "sourceFiles": [
           {
-            "path": "packages/designer/src/blocks/FieldGroup.tsx",
-            "sha256": "84565a33469c93941625708527b706766affec68e30e30b38abe93adb2378bea"
-          },
-          {
             "path": "packages/designer/src/blocks/SettingsSection.tsx",
-            "sha256": "9c7a57357fb6106ae16a3daabb8336d023a308851583e40c5da21a2f75f5f2d5"
+            "sha256": "86064c511b22ddacfc10537f96eba3295fca103f8bfb224aef2358804fbead37"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

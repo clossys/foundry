@@ -56,8 +56,8 @@ import { Skeleton } from "../components/preview-runtime/components/skeleton/skel
 import { Spinner } from "../components/Spinner.js";
 import { StatusMark } from "../components/StatusMark.js";
 import { Switch } from "../components/preview-runtime/components/switch/switch.js";
-import { TextField } from "../components/TextField.js";
-import { Textarea } from "../components/Textarea.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
+import { Textarea } from "../components/preview-runtime/components/text-field/text-field.js";
 import { Hero } from "../blocks/Hero.js";
 import { AccountMenu } from "../blocks/AccountMenu.js";
 import { StockItem } from "../blocks/items/StockItem.js";

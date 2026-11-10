@@ -42,7 +42,8 @@
       "components.table",
       "components.badge",
       "components.card",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.field"
     ],
     "parts": [
       "sections.band",

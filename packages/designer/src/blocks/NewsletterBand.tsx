@@ -4,7 +4,7 @@ import {
 } from "react";
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Icon } from "../components/preview-runtime/components/icon/icon.js";
-import { TextField } from "../components/TextField.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_LAYOUT_TAP_TARGET } from "../components/internal/ui-vars.js";
 import { XCircle } from "../icons/XCircle.js";

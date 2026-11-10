@@ -3,10 +3,18 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import type { RuntimeJson, RuntimeRenderInput } from "../../catalog-core/runtime-ports.js";
-import { TextField } from "../../components/TextField.js";
+import { TextField } from "../../components/preview-runtime/components/text-field/text-field.js";
 import { Checkbox } from "../../components/preview-runtime/components/checkbox/checkbox.js";
 import { formInputs, renderForm } from "./form.js";
 import { bindContactFormSpecimen, contactFormSpecimenContent, contactFormSpecimenIdentity } from "../../studio/contact-form-section-specimen.js";
+
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" next to its control; the form-level regions are the other alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter((alert) => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => {
+  const alerts = formAlerts();
+  expect(alerts).toHaveLength(1);
+  return alerts[0]!;
+};
 
 const content: Record<string, RuntimeJson> = {
   fields: [
@@ -72,7 +80,7 @@ describe("registered contact form runtime", () => {
     expect(email).toHaveAccessibleDescription("Check the email address");
     expect(message).toHaveAttribute("aria-invalid", "true");
     expect(message).toHaveAccessibleDescription("Add a message");
-    await userEvent.click(within(screen.getByRole("alert")).getByRole("link", { name: "Add a message" }));
+    await userEvent.click(within(formAlert()).getByRole("link", { name: "Add a message" }));
     expect(message).toHaveFocus();
   });
 

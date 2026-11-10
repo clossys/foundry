@@ -1265,7 +1265,12 @@
           "themes.sidebar-accent-foreground",
           "themes.font-sans",
           "themes.font-heading",
-          "themes.font-mono"
+          "themes.font-mono",
+          "themes.background",
+          "themes.muted",
+          "themes.primary",
+          "themes.radius",
+          "themes.ring"
         ],
         "assets": []
       }
@@ -2616,10 +2621,7 @@
           "line.multiline",
           "state.invalid",
           "state.disabled",
-          "state.read-only",
-          "size.sm",
-          "size.md",
-          "size.lg"
+          "state.read-only"
         ]
       },
       "props": [],

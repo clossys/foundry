@@ -27,6 +27,8 @@
   "sections": {
     "form": {
       "composes": [
+        "components.banner",
+        "components.field",
         "components.form",
         "components.link",
         "components.semantic-content"
@@ -37,6 +39,8 @@
       "consumption": {
         "scanStatus": "lower-bound",
         "scannedComposes": [
+          "components.banner",
+          "components.field",
           "components.form",
           "components.link",
           "components.semantic-content"
@@ -44,6 +48,8 @@
         "scannedReads": {
           "assets": [],
           "components": [
+            "components.banner",
+            "components.field",
             "components.form",
             "components.link",
             "components.semantic-content"
@@ -55,7 +61,7 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/Form.tsx",
-            "sha256": "59ccd01a726dec44be0de0a3af86a4cef70e6bf8b5a243c5afa9b6d6812c5a7f"
+            "sha256": "af4156aa3094cae665cc055dc0de8e4e2efec1d68aa08a79e224498f1d54e76c"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

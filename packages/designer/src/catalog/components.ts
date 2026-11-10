@@ -204,13 +204,13 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Text entry
-  onMain("TextField", ["src/components/TextField.tsx"], {
+  onMain("TextField", ["src/components/preview-runtime/components/text-field/text-field.tsx"], {
     id: "enter.text-field",
     label: "Text field",
     racBase: rac("TextField", "Input", "Label", "Text", "FieldError"),
     disposition: "keep",
   }),
-  onMain("Textarea", ["src/components/Textarea.tsx"], {
+  onMain("Textarea", ["src/components/preview-runtime/components/text-field/text-field.tsx"], {
     id: "enter.textarea",
     label: "Text area",
     racBase: rac("TextField", "TextArea", "Label", "Text", "FieldError"),
@@ -409,7 +409,7 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
   }),
 
   // Interaction / Form wiring
-  onMain("Field", ["src/components/Field.tsx"], {
+  onMain("Field", ["src/components/preview-runtime/components/field/field.tsx"], {
     id: "enter.field",
     label: "Field",
     racBase: none("hand-built"),

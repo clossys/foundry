@@ -78,7 +78,7 @@ export interface CaptureViewProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * Consumer-owned fields and controls. CaptureView does not submit,
    * validate, or inspect this content; a consumer may compose Designer's
-   * Form/FieldGroup blocks or its own form implementation here.
+   * Form block and field parts or its own form implementation here.
    */
   form?: ReactNode;
   /**

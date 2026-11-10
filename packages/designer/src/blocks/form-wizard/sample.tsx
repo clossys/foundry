@@ -1,4 +1,4 @@
-import { TextField } from "../../components/TextField.js";
+import { TextField } from "../../components/preview-runtime/components/text-field/text-field.js";
 import type { FormWizardProps } from "../FormWizard.js";
 
 export const formWizardSample: FormWizardProps = {

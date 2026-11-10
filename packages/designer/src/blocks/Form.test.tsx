@@ -4,8 +4,11 @@ import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { TextField } from "../components/TextField.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
 import { Form, type FormError } from "./Form.js";
+
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" next to its control; the form-level regions are the other alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter((alert) => alert.getAttribute("data-slot") !== "field-error");
 
 // Every summary heading is consumer copy — `Form` ships none of its own.
 const summaryHeading = (count: number) => `${count} problems`;
@@ -217,9 +220,9 @@ describe("Form", () => {
         <TextField id="email" label="Email" isInvalid errorMessage="Enter an email address" />
       </Form>,
     );
-    expect(screen.getByText("Enter your name")).toBeInTheDocument();
-    expect(screen.getByText("Enter an email address")).toBeInTheDocument();
-    const alerts = screen.getAllByRole("alert");
+    expect(screen.getByText("Enter your name").closest("[data-slot=field-error]")).toHaveAttribute("role", "alert");
+    expect(screen.getByText("Enter an email address").closest("[data-slot=field-error]")).toHaveAttribute("role", "alert");
+    const alerts = formAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent("Try again in a few minutes");
     expect(alerts[0]).not.toHaveTextContent("Enter your name");

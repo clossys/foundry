@@ -2499,12 +2499,37 @@
         "description": "member axis: required | invalid | disabled"
       },
       {
+        "name": "themes.background",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.destructive",
         "kind": "theme",
         "required": true
       },
       {
+        "name": "themes.muted",
+        "kind": "theme",
+        "required": true
+      },
+      {
         "name": "themes.muted-foreground",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.primary",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.radius",
+        "kind": "theme",
+        "required": true
+      },
+      {
+        "name": "themes.ring",
         "kind": "theme",
         "required": true
       },
@@ -4759,12 +4784,6 @@
         "description": "member axis: invalid | disabled | read-only"
       },
       {
-        "name": "size",
-        "kind": "prop",
-        "required": false,
-        "description": "member axis: sm | md | lg"
-      },
-      {
         "name": "themes.border",
         "kind": "theme",
         "required": true
@@ -4806,7 +4825,7 @@
       }
     ],
     "limits": {
-      "members": "line.single-line,line.multiline,state.invalid,state.disabled,state.read-only,size.sm,size.md,size.lg",
+      "members": "line.single-line,line.multiline,state.invalid,state.disabled,state.read-only",
       "members.mode": "closed",
       "root": "rac:TextField"
     },

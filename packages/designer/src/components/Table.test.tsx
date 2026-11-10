@@ -6,7 +6,7 @@ import type { SortDescriptor } from "react-aria-components";
 import { parseDate } from "@internationalized/date";
 import { Checkbox } from "./preview-runtime/components/checkbox/checkbox.js";
 import { DateField } from "./DateField.js";
-import { TextField } from "./TextField.js";
+import { TextField } from "./preview-runtime/components/text-field/text-field.js";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./preview-runtime/components/table/table.js";
 
 interface PromptRow {
@@ -285,16 +285,16 @@ describe("Table text entry inside a cell", () => {
     expect(day).toHaveFocus();
   });
 
-  it("a text input in a cell keeps its arrow keys; leaving it restores the grid's row navigation", async () => {
+  // R2F-33d1: the text field is the stock shadcn@aria input in the stock table; the stock grid keeps ArrowUp/ArrowDown
+  // for row navigation, so the input takes text and the cell takes the arrows.
+  it("a stock text input in a cell takes typing; the cell around it keeps the grid's row navigation", async () => {
     const user = userEvent.setup();
     render(<EditableTable />);
     const note = screen.getByRole("textbox", { name: "Note" });
     await user.click(note);
-    await user.keyboard("{ArrowUp}");
-    expect(note).toHaveFocus();
-    await user.keyboard("{ArrowDown}");
-    expect(note).toHaveFocus();
-    // Focus on the cell itself, outside the input: arrows move between rows again.
+    await user.keyboard("{End} soon");
+    expect(note).toHaveValue("later soon");
+    // Focus on the cell itself, outside the input: arrows move between rows.
     const cell = note.closest<HTMLElement>("[role=gridcell]")!;
     act(() => cell.focus());
     await user.keyboard("{ArrowDown}");

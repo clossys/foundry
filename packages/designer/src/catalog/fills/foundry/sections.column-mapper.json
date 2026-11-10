@@ -28,6 +28,7 @@
     "column-mapper": {
       "composes": [
         "components.card",
+        "components.field",
         "components.select",
         "components.semantic-content"
       ],
@@ -36,6 +37,7 @@
         "scanStatus": "lower-bound",
         "scannedComposes": [
           "components.card",
+          "components.field",
           "components.select",
           "components.semantic-content"
         ],
@@ -43,6 +45,7 @@
           "assets": [],
           "components": [
             "components.card",
+            "components.field",
             "components.select",
             "components.semantic-content"
           ],
@@ -66,12 +69,8 @@
             "sha256": "63abab6fb0ee7f77a2b807c5c7c33d780090a7d246c18218edd8d3a642978556"
           },
           {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
-          },
-          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

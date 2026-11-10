@@ -1,34 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { Field } from "./Field.js";
-import { TextField } from "./TextField.js";
+import { Field, FieldDescription, FieldError, FieldLabel } from "./preview-runtime/components/field/field.js";
+import { TextField } from "./preview-runtime/components/text-field/text-field.js";
 
-/** The registered Field/TextField composition, independent of Studio's specimen wiring. */
+/** The composed stock field parts around a control, independent of Studio's specimen wiring. */
 describe("field-specimen-control", () => {
-  it("keeps the visible external label and description on the nested registered control", () => {
-    const { container } = render(<Field label="Dataset field" description="Choose a field name">
-      {field => <TextField label={null} id={field.id} aria-describedby={field["aria-describedby"]} />}
-    </Field>);
-    const input = screen.getByRole("textbox", { name: "Dataset field" });
-    expect(input).toHaveAccessibleDescription("Choose a field name");
-    expect(container.querySelectorAll("label")).toHaveLength(1);
-    expect(container.querySelector("label")).toHaveAttribute("for", input.id);
-    expect(input).not.toHaveAttribute("aria-invalid");
-    expect(input).not.toBeDisabled();
-  });
-
-  it("retains external naming, description, error, required and disabled state", () => {
-    render(<Field label="Dataset field" description="Choose a field name" errorMessage="A field is required"
-      isInvalid isRequired isDisabled>
-      {field => <TextField label={null} id={field.id} aria-describedby={field["aria-describedby"]}
-        isInvalid={field["aria-invalid"]} isRequired={field["aria-required"]} isDisabled={field.disabled}
-        validationBehavior="aria" />}
-    </Field>);
-    const input = screen.getByRole("textbox", { name: "Dataset field" });
-    expect(input).toHaveAccessibleDescription("Choose a field name A field is required");
-    expect(input).toHaveAttribute("aria-invalid", "true");
-    expect(input).toHaveAttribute("aria-required", "true");
-    expect(input).toBeDisabled();
+  it("names a native control with the stock label and shows the stock error only while invalid", () => {
+    const { rerender } = render(<Field><FieldLabel htmlFor="dataset">Dataset field</FieldLabel><input id="dataset" />
+      <FieldDescription>Choose a field name</FieldDescription><FieldError>A field is required</FieldError></Field>);
+    expect(screen.getByRole("textbox", { name: "Dataset field" })).toBeInTheDocument();
+    expect(screen.getByRole("group")).toHaveAttribute("data-slot", "field");
+    expect(screen.queryByRole("alert")).toBeNull();
+    rerender(<Field isInvalid><FieldLabel htmlFor="dataset">Dataset field</FieldLabel><input id="dataset" />
+      <FieldError>A field is required</FieldError></Field>);
+    expect(screen.getByRole("alert")).toHaveTextContent("A field is required");
+    expect(screen.getByRole("group")).toHaveAttribute("data-invalid", "true");
   });
 
   it("supports an explicit external aria-labelledby through the existing TextField API", () => {

@@ -8,7 +8,7 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { SemanticContent } from "../components/SemanticContent.js";
-import { TextField } from "../components/TextField.js";
+import { TextField } from "../components/preview-runtime/components/text-field/text-field.js";
 import { Chat } from "../blocks/chat/Chat.js";
 import { CommandMenu } from "../blocks/CommandMenu.js";
 import { ContentSection } from "../blocks/ContentSection.js";

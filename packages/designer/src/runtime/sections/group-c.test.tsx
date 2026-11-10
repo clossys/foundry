@@ -110,12 +110,15 @@ const datasetInput = (leaf: GroupCLeaf, members: readonly string[] = []) => inpu
 /** The component fills the default preview profile selects: the ambient selection `componentLeaf` facades resolve against (WL7). */
 const PROFILE_SELECTION: Readonly<Record<string, string>> = Object.fromEntries(Object.entries(defaultProfile.components).flatMap(([leaf, row]) => "fill" in row.origin && typeof row.origin.fill === "string" ? [[leaf, row.origin.fill]] : []));
 
+// R2F-33d1: the stock text-field composes the field leaf through its stamped index (D-a); the preview default
+// profile selects that composed field, so the scan selection names it beside the section.
+const COMPOSED_SELECTION = { "components.field": "defaults-consumer/components.field" } as const;
 function provenanceOf(leaf: GroupCLeaf, node: ReactNode) {
   const html = renderToStaticMarkup(h("div", page, node));
   const scan = scanProvenance({
     html,
     route: { id: "preview", binding: { frame: { leaf: "frames.preview" }, frameSlots: {}, sections: { body: [{ leaf: `sections.${leaf}` }] } } },
-    selection: { ...PROFILE_SELECTION, [`sections.${leaf}`]: `foundry/sections.${leaf}` },
+    selection: { ...PROFILE_SELECTION, ...COMPOSED_SELECTION, [`sections.${leaf}`]: `foundry/sections.${leaf}` },
   });
   return { html, findings: scan.findings };
 }

@@ -17,6 +17,11 @@ import * as webEntry from "../index.js";
 import * as webServerEntry from "../server.js";
 import { RenderError } from "../../internal/errors.js";
 
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" beside its control; these are the form-level alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter(alert => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => { const alerts = formAlerts(); expect(alerts).toHaveLength(1); return alerts[0]!; };
+const findFormAlert = () => waitFor(formAlert);
+
 afterEach(cleanup);
 
 // Placeholder markers only: every string is an obviously-fake sentinel, so an
@@ -359,7 +364,7 @@ describe("ContactView results", () => {
     await fill(u);
     await u.type(screen.getByRole("textbox", { name: /PHONELABEL-SENTINEL/ }), "555 0100");
     await u.click(submitButton());
-    const alert = await screen.findByRole("alert");
+    const alert = await findFormAlert();
     expect(alert).toHaveTextContent(sentinel);
     // A failure leads with its own text label, so it is not told apart by colour alone.
     expect(alert.firstElementChild?.firstElementChild).toHaveTextContent("FAILURELABEL-SENTINEL");
@@ -384,7 +389,7 @@ describe("ContactView results", () => {
     await u.click(screen.getByRole("textbox", { name: /NAMELABEL-SENTINEL/ }));
     expect(screen.getByRole("textbox", { name: /NAMELABEL-SENTINEL/ })).toHaveFocus();
     finish({ status: "unavailable" });
-    await screen.findByRole("alert");
+    await findFormAlert();
     await waitFor(() => expect(submitButton()).toHaveFocus());
   });
 
@@ -401,7 +406,7 @@ describe("ContactView results", () => {
     const u = user();
     await fill(u);
     await u.click(submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+    expect(await findFormAlert()).toHaveTextContent("UNAVAILABLE-SENTINEL");
   });
 
   it("clears a server failure when the next attempt is refused by a client check: one alert only", async () => {
@@ -409,11 +414,11 @@ describe("ContactView results", () => {
     const u = user();
     await fill(u);
     await u.click(submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent("RATELIMITED-SENTINEL");
+    expect(await findFormAlert()).toHaveTextContent("RATELIMITED-SENTINEL");
     await u.clear(screen.getByRole("textbox", { name: /EMAILLABEL-SENTINEL/ }));
     await u.click(submitButton());
     await screen.findByText("EMAILREQUIRED-SENTINEL", { selector: "a" });
-    const alerts = screen.getAllByRole("alert");
+    const alerts = formAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent("ERRORSUMMARY-SENTINEL");
     expect(screen.queryByText("RATELIMITED-SENTINEL")).toBeNull();
@@ -428,7 +433,7 @@ describe("ContactView results", () => {
     const u = user();
     await fill(u);
     await u.click(submitButton());
-    expect(await screen.findByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+    expect(await findFormAlert()).toHaveTextContent("UNAVAILABLE-SENTINEL");
     expect(screen.queryByRole("status")).toBeNull();
   });
 
@@ -438,15 +443,15 @@ describe("ContactView results", () => {
     const u = user();
     await fill(u);
     await u.click(submitButton());
-    const first = await screen.findByRole("alert");
+    const first = await findFormAlert();
     await waitFor(() => expect(submitButton()).toHaveFocus());
     await u.click(screen.getByRole("textbox", { name: /NAMELABEL-SENTINEL/ }));
     expect(submitButton()).not.toHaveFocus();
     await u.click(submitButton());
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
-    await waitFor(() => expect(screen.getByRole("alert")).not.toBe(first));
+    await waitFor(() => expect(formAlert()).not.toBe(first));
     await waitFor(() => expect(submitButton()).toHaveFocus());
-    expect(screen.getByRole("alert")).toHaveTextContent("UNAVAILABLE-SENTINEL");
+    expect(formAlert()).toHaveTextContent("UNAVAILABLE-SENTINEL");
   });
 
   it("can send again after a failure", async () => {
@@ -456,7 +461,7 @@ describe("ContactView results", () => {
     const u = user();
     await fill(u);
     await u.click(submitButton());
-    await screen.findByRole("alert");
+    await findFormAlert();
     await u.click(submitButton());
     expect(await screen.findByRole("heading", { name: "SENTHEADING-SENTINEL" })).toBeInTheDocument();
     expect(onSubmit).toHaveBeenCalledTimes(2);

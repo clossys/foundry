@@ -19,10 +19,7 @@
         "line.multiline",
         "state.invalid",
         "state.disabled",
-        "state.read-only",
-        "size.sm",
-        "size.md",
-        "size.lg"
+        "state.read-only"
       ]
     },
     "props": [],

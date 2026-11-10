@@ -12,6 +12,11 @@ import { ActivateForm } from "./ActivateForm.js";
 import { ActivateForm as ServerActivateForm } from "./ActivateForm.server.js";
 import type { ActivateDetails, ActivateFailure, ActivateFormProps, ActivateResult } from "./ActivateForm.js";
 
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" beside its control; these are the form-level alerts.
+const formAlerts = () => screen.queryAllByRole("alert").filter(alert => alert.getAttribute("data-slot") !== "field-error");
+const formAlert = () => { const alerts = formAlerts(); expect(alerts).toHaveLength(1); return alerts[0]!; };
+const findFormAlerts = () => waitFor(() => { const alerts = formAlerts(); expect(alerts.length).toBeGreaterThan(0); return alerts; });
+
 afterEach(cleanup);
 
 const OK: ActivateResult = { status: "ok" };
@@ -128,7 +133,7 @@ describe("ActivateForm :: empty and blur", () => {
     await user.click(submitButton());
 
     expect(screen.getAllByText(defaultText("password-required.notice"))).toHaveLength(1);
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(passwordField()).toHaveAttribute("aria-invalid", "true");
     await waitFor(() => expect(passwordField()).toHaveFocus());
     expect(handlers.activate).not.toHaveBeenCalled();
@@ -189,7 +194,7 @@ describe("ActivateForm :: empty and blur", () => {
     }
     expect(screen.queryByText(defaultText("name-required.notice"))).toBeNull();
     expect(screen.queryByText(defaultText("password-required.notice"))).toBeNull();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     expect(handlers.activate).not.toHaveBeenCalled();
   });
 });
@@ -209,7 +214,7 @@ describe("ActivateForm :: failures", () => {
 
     expect(await screen.findAllByText(defaultText("password-weak.notice"))).toHaveLength(1);
     expect(passwordField()).toHaveAttribute("aria-invalid", "true");
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
     await waitFor(() => expect(passwordField()).toHaveFocus());
 
     await user.type(passwordField(), "x");
@@ -222,7 +227,7 @@ describe("ActivateForm :: failures", () => {
     await user.type(passwordField(), "secret words");
     await user.click(submitButton());
 
-    const alerts = await screen.findAllByRole("alert");
+    const alerts = await findFormAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText(id, NOUNS));
     expect(passwordField()).not.toHaveAttribute("aria-invalid", "true");
@@ -235,12 +240,12 @@ describe("ActivateForm :: failures", () => {
     const { user } = setup({ activate });
     await user.type(passwordField(), "secret words");
     await user.click(submitButton());
-    expect(await screen.findAllByRole("alert")).toHaveLength(1);
+    expect(await findFormAlerts()).toHaveLength(1);
 
     activate.mockResolvedValueOnce({ status: "network" });
     await user.click(submitButton());
-    await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent(defaultText("network.notice", NOUNS)));
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    await waitFor(() => expect(formAlert()).toHaveTextContent(defaultText("network.notice", NOUNS)));
+    expect(formAlerts()).toHaveLength(1);
   });
 
   it("reads a throwing handler, an undefined answer and a status outside the union as unavailable in one alert", async () => {
@@ -250,15 +255,15 @@ describe("ActivateForm :: failures", () => {
     const { user } = setup({ activate });
     await user.type(passwordField(), "secret words");
     await user.click(submitButton());
-    expect(await screen.findAllByRole("alert")).toHaveLength(1);
-    expect(screen.getByRole("alert")).toHaveTextContent(defaultText("unavailable.notice"));
+    expect(await findFormAlerts()).toHaveLength(1);
+    expect(formAlert()).toHaveTextContent(defaultText("unavailable.notice"));
 
     for (const answer of [undefined, { status: "locked" }, { status: "constructor" }, { status: "credential" }]) {
       activate.mockResolvedValueOnce(answer as unknown as ActivateResult);
       await user.click(submitButton());
       await waitFor(() => expect(activate.mock.calls.length).toBeGreaterThan(1));
       await waitFor(() => expect(submitButton()).not.toHaveAttribute("aria-disabled", "true"));
-      const alerts = screen.getAllByRole("alert");
+      const alerts = formAlerts();
       expect(alerts).toHaveLength(1);
       expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
     }
@@ -274,7 +279,7 @@ describe("ActivateForm :: unavailable", () => {
     expect(screen.getByLabelText(defaultText("activation-last-name.label"))).toBeDisabled();
     expect(passwordField()).toBeDisabled();
     expect(submitButton()).toBeDisabled();
-    const alerts = screen.getAllByRole("alert");
+    const alerts = formAlerts();
     expect(alerts).toHaveLength(1);
     expect(alerts[0]).toHaveTextContent(defaultText("unavailable.notice"));
 
@@ -284,14 +289,14 @@ describe("ActivateForm :: unavailable", () => {
     expect(handlers.activate).not.toHaveBeenCalled();
     expect(handlers.onActivated).not.toHaveBeenCalled();
     expect(screen.queryByText(defaultText("password-required.notice"))).toBeNull();
-    expect(screen.getAllByRole("alert")).toHaveLength(1);
+    expect(formAlerts()).toHaveLength(1);
   });
 
   it("is not unavailable by default: fields and button are enabled and no alert shows", () => {
     setup({ collectName: true });
     expect(passwordField()).toBeEnabled();
     expect(submitButton()).toBeEnabled();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
   });
 
   it("enables the form again when unavailable is turned off", () => {
@@ -300,7 +305,7 @@ describe("ActivateForm :: unavailable", () => {
     expect(passwordField()).toBeDisabled();
     rerender(<ActivateForm {...handlers} nouns={NOUNS} unavailable={false} />);
     expect(passwordField()).toBeEnabled();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(formAlerts()).toHaveLength(0);
   });
 });
 

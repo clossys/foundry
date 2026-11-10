@@ -29,6 +29,7 @@
       "composes": [
         "components.button",
         "components.card",
+        "components.field",
         "components.select",
         "components.semantic-content",
         "components.text-field"
@@ -39,6 +40,7 @@
         "scannedComposes": [
           "components.button",
           "components.card",
+          "components.field",
           "components.select",
           "components.semantic-content",
           "components.text-field"
@@ -48,6 +50,7 @@
           "components": [
             "components.button",
             "components.card",
+            "components.field",
             "components.select",
             "components.semantic-content",
             "components.text-field"
@@ -57,15 +60,11 @@
         "sourceFiles": [
           {
             "path": "packages/designer/src/blocks/FilterBuilder.tsx",
-            "sha256": "183f0848ec67b950ddf311dce71bd8afedf9db62c6332996a1798eb6ff286515"
-          },
-          {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
+            "sha256": "ceeafb15e95aff5af1538ba4a1e7fa1f77ae15c70a39571315269912cfa34425"
           },
           {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/catalog-core/provenance-attrs.ts",

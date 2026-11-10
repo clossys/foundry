@@ -248,7 +248,9 @@
       "components.button",
       "components.form",
       "components.link",
-      "components.semantic-content"
+      "components.semantic-content",
+      "components.banner",
+      "components.field"
     ],
     "parts": [],
     "allowedReads": {

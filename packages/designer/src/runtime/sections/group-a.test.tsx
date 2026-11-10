@@ -36,12 +36,15 @@ function mounted(html: string): HTMLElement {
   document.body.append(container);
   return container;
 }
+// R2F-33d1: the stock text-field composes the field leaf through its stamped index (D-a); the preview default
+// profile selects that composed field, so the scan selection names it beside the section.
+const COMPOSED_SELECTION = { "components.field": "defaults-consumer/components.field" } as const;
 function wiring(leaf: GroupALeaf, html: string) {
   return scanProvenance({
     html,
     route: { id: "sx-a-sections", binding: { frame: { leaf: "frames.app-shell" }, frameSlots: {}, sections: { main: [{ leaf: `sections.${leaf}`, fill: `foundry/sections.${leaf}` }] } } },
     // The article's dataset toc composes the registered table-of-contents Section inside it.
-    selection: { ...PROFILE_SELECTION, ...(leaf === "article" ? { "sections.table-of-contents": "foundry/sections.table-of-contents" } : {}), [`sections.${leaf}`]: `foundry/sections.${leaf}` },
+    selection: { ...PROFILE_SELECTION, ...COMPOSED_SELECTION, ...(leaf === "article" ? { "sections.table-of-contents": "foundry/sections.table-of-contents" } : {}), [`sections.${leaf}`]: `foundry/sections.${leaf}` },
   }).findings;
 }
 

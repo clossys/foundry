@@ -2,7 +2,7 @@
 import { cloneElement, useId, useRef, useState, type ComponentType, type ContextType, type FormEvent, type ReactElement, type ReactNode } from "react";
 import { TooltipTriggerStateContext } from "react-aria-components";
 import { Button } from "../components/preview-runtime/components/button/button.js";
-import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenField, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
+import { componentSpecimenActions, componentSpecimenCard, componentSpecimenCollections, componentSpecimenColor, componentSpecimenProps, componentSpecimenSemanticMedia, componentSpecimenSourceSamples, componentSpecimenTable, componentSpecimenText, componentSpecimenToast, componentSpecimenUnavailable } from "./component-specimen-sample-content.js";
 import type { SpecimenUnavailableReason } from "./preview-outcome.js";
 import { containedDialog, containedToaster } from "./component-specimen-contained.js";
 
@@ -61,6 +61,8 @@ const stateProps: Readonly<Record<string, StateProps>> = {
   "components/checkbox/checkbox.tsx#Checkbox": { ...toggle, invalid: { isInvalid: true } },
   "components/switch/switch.tsx#Switch": toggle,
   "components/toggle-button/toggle.tsx#Toggle": { ...toggle, pressed: { isSelected: true } },
+  "components/text-field/text-field.tsx#TextField": field,
+  "components/field/field.tsx#Field": { ...disabled, invalid: { isInvalid: true } },
 };
 
 /** The props that force `state` on the export at `key`, or undefined when the component has no prop for it. */
@@ -179,6 +181,14 @@ function HeldTooltip({ trigger, specimen }: { readonly trigger: ReactNode; reado
     <div ref={anchorRef} data-specimen-tooltip-anchor="" className="inline-flex"><Button variant="secondary" aria-describedby={id}>{trigger}</Button></div>
     {cloneElement(specimen, { id, triggerRef: anchorRef, UNSTABLE_portalContainer: container })}
   </TooltipTriggerStateContext.Provider>}</OverlayHost>;
+}
+
+/** The composed field around one native input: its stock label names the input by id, its description follows it. */
+function FieldSpecimenControl({ Label, Description, label, description }: { readonly Label: Renderable; readonly Description: Renderable; readonly label: string; readonly description: string }) {
+  const id = useId();
+  const descriptionId = id + "-description";
+  // override: field-host-control. The composed stock field exports no input part; it hosts a native control.
+  return <><Label htmlFor={id}>{label}</Label><input id={id} aria-describedby={descriptionId} /><Description id={descriptionId}>{description}</Description></>;
 }
 
 /** Vendored shadcn@aria compounds, drawn with the parts their own module exports. */
@@ -332,6 +342,13 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
     }
     // The composed wrapper calls a render-function child, so it draws its own default content from its naming props alone.
     case "components/file-trigger/file-trigger.tsx#FileTrigger": return { props: { label: componentSpecimenActions.upload } };
+    // R2F-33d1: the stock text field names its own control from its label; the composed field hosts one native control.
+    case "components/text-field/text-field.tsx#TextField": return { props: { ...s[key] } };
+    case "components/field/field.tsx#Field": {
+      const found = parts("FieldLabel", "FieldDescription"); if (!found) return undefined;
+      const [Label, Description] = found as [Renderable, Renderable];
+      return { props: {}, children: <FieldSpecimenControl Label={Label} Description={Description} {...s[key]} /> };
+    }
     case "components/date-picker/date-picker.tsx#DatePicker": return { props: { label: s[key].label, triggerLabel: s[key].triggerLabel, defaultValue: s[key].defaultValue } };
     case "components/keyboard/kbd.tsx#Kbd":
     case "components/badge/badge.tsx#Badge":
@@ -351,6 +368,8 @@ export const componentSpecimenStockAnatomy: Readonly<Record<string, string>> = {
   "./components#Calendar": "components/calendar/calendar.tsx#Calendar",
   "./components#ComboBox": "components/combo-box/combobox.tsx#Combobox",
   "./components#Slider": "components/slider/slider.tsx#Slider",
+  // R2F-33d2: the package Field is the stock field composition; its specimen is the stock field anatomy.
+  "./components#Field": "components/field/field.tsx#Field",
 };
 
 /** Why sample data cannot draw this export (`./shell#Brandmark`), or undefined when it can. */
@@ -377,9 +396,6 @@ export function componentSpecimenSample(key: string, Component: unknown, exports
   // The package Select, Switch, RadioGroup, Calendar, ComboBox and Slider are the stock shadcn@aria modules, drawn with their own barrel-exported parts.
   if (Object.hasOwn(componentSpecimenStockAnatomy, key)) return sourceSample(componentSpecimenStockAnatomy[key]!, exports);
   if (key === "./components#Table") return table(exports);
-  // override: field-host-control. Field's contract is a render prop that hands its label, description and ids to
-  // a host-owned native control, so its specimen is that native control.
-  if (key === "./components#Field") return { props: { ...componentSpecimenField }, children: (field: Record<string, unknown>) => <input {...field} /> };
   if (key === "./components#ColorPicker") return colorPicker(Component);
   if (key === "./components#SemanticContent") {
     const Content = Component as Renderable;

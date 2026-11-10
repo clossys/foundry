@@ -1,0 +1,135 @@
+{
+  "$extensions": {
+    "com.clossys.fill": {
+      "author": "foundry",
+      "builtOn": [
+        "components.field"
+      ],
+      "conforms": [],
+      "evidence": [],
+      "id": "shadcn@aria/components.text-field",
+      "license": "MIT",
+      "mode": "implementation",
+      "originKinds": [
+        "composed"
+      ],
+      "relation": "same-contract",
+      "slot": "components.text-field",
+      "source": "shadcn@aria",
+      "sourceAddress": "rules/components.text-field.json#compose:text-field@1",
+      "status": "draft",
+      "trust": "foundry"
+    }
+  },
+  "components": {
+    "text-field": {
+      "composes": [
+        "components.field"
+      ],
+      "deps": [
+        {
+          "license": "MIT",
+          "name": "react",
+          "version": ">=18"
+        },
+        {
+          "license": "Apache-2.0",
+          "name": "react-aria-components",
+          "version": "^1.21.0"
+        },
+        {
+          "license": "MIT",
+          "name": "clsx",
+          "version": "2.1.1"
+        },
+        {
+          "license": "MIT",
+          "name": "tailwind-merge",
+          "version": "3.3.1"
+        }
+      ],
+      "impl": {
+        "entry": "components/text-field/text-field.tsx",
+        "export": "TextField",
+        "kind": "source"
+      },
+      "license": "MIT",
+      "members": [
+        "line.multiline",
+        "line.single-line",
+        "state.disabled",
+        "state.invalid",
+        "state.read-only"
+      ],
+      "notice": "notices/text-field.md",
+      "outputSha256": [
+        {
+          "path": "components/text-field/stock/input.tsx",
+          "sha256": "7ee8bacdd258923a1a8d4c948c3cf6bafde14eb65d1b389b7cca2a562b2cff87"
+        },
+        {
+          "path": "components/text-field/stock/textarea.tsx",
+          "sha256": "c88f3d6205f00280b330df78336216e459c3bcea4c1a75e3714e948a7ddcfbd7"
+        },
+        {
+          "path": "components/text-field/stock/utils.ts",
+          "sha256": "d3753f708b15cc1ec47bc3136827134b702e2069eebdb0ddefb1806b95d7c1d9"
+        },
+        {
+          "path": "components/text-field/text-field.tsx",
+          "sha256": "3cdad44d5dc0cd977f7c0eb0d96b6dbbb6194e5d18d3f5bb031c3831c7a71ae4"
+        },
+        {
+          "path": "notices/text-field.md",
+          "sha256": "cc42ddacc11e976c695f10126a216bafce459f894804fa84c3c9627a0bced9b6"
+        }
+      ],
+      "propMap": {
+        "line.multiline": "Textarea",
+        "line.single-line": "TextField",
+        "state.disabled": "TextField.isDisabled",
+        "state.invalid": "TextField.isInvalid",
+        "state.read-only": "TextField.isReadOnly"
+      },
+      "props": [
+        "label",
+        "value",
+        "onChange",
+        "isInvalid",
+        "isDisabled",
+        "isReadOnly",
+        "description",
+        "errorMessage",
+        "className"
+      ],
+      "rac": {
+        "instance": "react-aria-components",
+        "peer": false,
+        "range": "^1.21.0"
+      },
+      "reads": {
+        "assets": [],
+        "components": [
+          "components.field"
+        ],
+        "themes": [
+          "themes.destructive.default",
+          "themes.foreground.default",
+          "themes.muted-foreground.default",
+          "themes.radius.default",
+          "themes.ring.default",
+          "themes.spacing.default"
+        ]
+      },
+      "root": "rac:TextField",
+      "secondaryExports": [
+        {
+          "export": "Textarea",
+          "name": "Textarea"
+        }
+      ],
+      "slot": "components.text-field",
+      "source": "shadcn@aria"
+    }
+  }
+}

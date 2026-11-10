@@ -1,7 +1,7 @@
 import { Button } from "../../components/preview-runtime/components/button/button.js";
 import { StockSelect } from "../stock-select.js";
 import { StockSwitch } from "../stock-switch.js";
-import { TextField } from "../../components/TextField.js";
+import { TextField } from "../../components/preview-runtime/components/text-field/text-field.js";
 import type { CatalogBrowserConfig, CatalogBrowserControl } from "./types.js";
 
 /** One labelled component per control; every change reports the whole resolved configuration. */

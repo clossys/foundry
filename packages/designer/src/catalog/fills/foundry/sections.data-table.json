@@ -30,6 +30,7 @@
         "components.button",
         "components.checkbox",
         "components.dialog",
+        "components.field",
         "components.icon",
         "components.popover",
         "components.select",
@@ -47,6 +48,7 @@
           "components.button",
           "components.checkbox",
           "components.dialog",
+          "components.field",
           "components.icon",
           "components.popover",
           "components.select",
@@ -66,6 +68,7 @@
             "components.button",
             "components.checkbox",
             "components.dialog",
+            "components.field",
             "components.icon",
             "components.popover",
             "components.select",
@@ -84,7 +87,7 @@
           },
           {
             "path": "packages/designer/src/blocks/data-table/FilterEditor.tsx",
-            "sha256": "11f20d1918e847f5a3c26acd0f3e731f8e41dc9d4fdb34fa3ec1a32603a4abdd"
+            "sha256": "649a588f4359073af9ba101b9c8f4a4c2a5a95c200b18d183497385ea90a1971"
           },
           {
             "path": "packages/designer/src/blocks/data-table/FlatGrid.tsx",
@@ -123,12 +126,8 @@
             "sha256": "df52d679fe7ade59ae3c782b344cdd25f321bf407ba2003d47879b15c592fbe1"
           },
           {
-            "path": "packages/designer/src/blocks/stock-field.tsx",
-            "sha256": "0bed842f04fed7dfac7264589213ce7aaec024a5a780101afa864ce91cdbc71c"
-          },
-          {
             "path": "packages/designer/src/blocks/stock-select.tsx",
-            "sha256": "47499f110d39110755bcf7fef4532c0fe668c3256508316845d89930b51fa416"
+            "sha256": "9cfba933882648ee323b78a5f64c94cd088c2880a8600fbf4cdbd3dc94023af0"
           },
           {
             "path": "packages/designer/src/blocks/table-model/index.ts",
