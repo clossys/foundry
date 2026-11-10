@@ -1,7 +1,7 @@
 {
   "candidate": "logo-cloud-v1.json",
-  "sha256": "7644588d874a81da01d25f1dd58de6d7c96088cf02ab975566725563d03cd765",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "f22756cbb8836796df3d581a02cbac3fd7bf2b7ca5cd6a09b399c6a749d6b869",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T12:00:03.153Z"
 }

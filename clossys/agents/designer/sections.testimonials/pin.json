@@ -1,7 +1,7 @@
 {
   "candidate": "testimonials-v1.json",
-  "sha256": "709233bda1176040e321e936e615fa8a3671a1b46d86d8e3779c76cb34758aef",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "95055735b5bd87de9903ced759820aef16e106b9008186c6278d26edc0e84a87",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T12:00:04.725Z"
 }

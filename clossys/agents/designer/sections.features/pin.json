@@ -1,7 +1,7 @@
 {
   "candidate": "features-v2.json",
-  "sha256": "171062fbfe74a9f37224e7053cbcc5a6890f62074264061bd7c5307cb9fca2d2",
-  "decidedBy": "owner:2026-11-03 planner pins that pass the gate (SECTION-SPECIMENS)",
+  "sha256": "f0631481abadfc866aec2ab0c795da54ba3e0e184845a14f207395f3db4be422",
+  "decidedBy": "planner:R2F-39",
   "basis": "planner",
-  "at": "2026-11-03T12:50:09Z"
+  "at": "2026-11-10T12:00:02.017Z"
 }

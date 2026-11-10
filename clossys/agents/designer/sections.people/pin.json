@@ -1,7 +1,7 @@
 {
   "candidate": "people-v1.json",
-  "sha256": "25f225b9acc3fc4b514d1ff93b3b2d909d1c2f0d34e73dc1389c1e3f2bc2120c",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "28d45e04da69926fa6a1c5f711fc969cfafd05c92953b4555d6ea302eef02677",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T12:00:03.671Z"
 }

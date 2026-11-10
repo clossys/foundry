@@ -1,7 +1,7 @@
 {
   "candidate": "producer-pipeline-legend-v3.json",
-  "sha256": "41fc6a637ad8ad4dac154506a8b97c86d0b283d7157799b1ff0676c4eee95525",
-  "decidedBy": "planner:PIPELINE-CANVAS",
+  "sha256": "799312f4ec7c8eec2590a9434ea7ceb4f366f039eb3a5eeeceba2338a0bcd1da",
+  "decidedBy": "planner:R2F-39",
   "basis": "planner",
-  "at": "2026-11-04T06:17:13.613Z"
+  "at": "2026-11-10T12:00:05.765Z"
 }

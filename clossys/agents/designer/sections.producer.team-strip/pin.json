@@ -1,7 +1,7 @@
 {
   "candidate": "producer-team-strip-v3.json",
-  "sha256": "4b77c15a14cbb63cfd4c63a92ca78cc9b7fca5934e2cf6ae04177df4979dabc7",
-  "decidedBy": "planner:R2F-42c",
+  "sha256": "1e1c2a19ab7444e2200fe015c8af6ea8f4f384c0564297ab39dff7f89a14b198",
+  "decidedBy": "planner:R2F-39",
   "basis": "planner",
-  "at": "2026-11-07T16:21:23.080Z"
+  "at": "2026-11-10T12:00:06.791Z"
 }

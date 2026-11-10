@@ -1,7 +1,7 @@
 {
   "candidate": "app-header-v1.json",
-  "sha256": "df3c738a69792387f91d0ba76312048773ea9bc4817e865ddefeac8c080d4ac5",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "d1c276f58b02ed5a707c0d6829aafe2d8fec7da2462bd9159a170e05912caac0",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T11:59:55.314Z"
 }

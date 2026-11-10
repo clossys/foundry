@@ -1,7 +1,7 @@
 {
   "candidate": "sign-in-form-v1.json",
-  "sha256": "b1be50b1eab64496fa4e238ce6b1537188584495c784d5295b59e42e668e7922",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "b61fd65bd0dc4d912266c77a0173fb300c1d0fb08a5eacf0e18ef9489625306a",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T11:59:57.896Z"
 }

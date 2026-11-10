@@ -2,7 +2,7 @@
   "name": "features",
   "type": "registry:block",
   "registryDependencies": [
-    "@tailark-oss/mist-card"
+    "components.card"
   ],
   "dependencies": [],
   "files": [
@@ -72,7 +72,7 @@
       "deps": {
         "npm": {},
         "registry": [
-          "@tailark-oss/mist-card"
+          "components.card"
         ]
       },
       "reads": {

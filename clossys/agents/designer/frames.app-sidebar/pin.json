@@ -1,7 +1,7 @@
 {
   "candidate": "app-sidebar-v1.json",
-  "sha256": "4854e37556ff76fb49c35e7f88ed9086a15cd1615f3bd187d7241419bc4dd874",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "03807b88a954c35fd32c45f3082a169d5ca2038d2617683cc52c4efbf4cacb1d",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T11:59:56.602Z"
 }

@@ -1,7 +1,7 @@
 {
   "candidate": "comparison-v1.json",
-  "sha256": "6149fd11eafe2411382c619a990b8ec6429c3d219a35037fa1fcc3d8678f1431",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "85a67fbef7f008922f4c0f81f001a9a9bec7284260187e49d8a24ba9f1c3fff4",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T11:59:58.575Z"
 }

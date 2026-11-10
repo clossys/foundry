@@ -1,7 +1,7 @@
 {
   "candidate": "auth-shell-v1.json",
-  "sha256": "58509402e91b168301cf6ef35e7cfecf8447da6bf64529d856fc729b901793fb",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "3404aaf4760a8f6fa8d9d6568ab70772f66db16494f7c8937302c467c474c2f8",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T11:59:57.200Z"
 }

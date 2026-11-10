@@ -79,6 +79,7 @@
     {
       "path": "index.tsx",
       "type": "registry:component",
+      "target": "components/producer/system-empty/index.tsx",
       "content": "import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@clossys/designer-ui';\n\n/** The `empty` input of `sections.producer.system-empty`: resolved Writer copy for a system that is not set up yet. */\nexport interface SystemEmptyInput { title: string; description: string }\n\n/** `sections.producer.system-empty`: a system with no team or steps yet, as the stock shadcn Empty (header, title, description). */\nexport default function SystemEmptySection({ empty, ...provenance }: { empty: SystemEmptyInput } & { [marker: `data-clossys-${string}`]: string }) {\n  return <Empty {...provenance}>\n    <EmptyHeader>\n      <EmptyTitle role=\"heading\" aria-level={1}>{empty.title}</EmptyTitle>\n      <EmptyDescription>{empty.description}</EmptyDescription>\n    </EmptyHeader>\n  </Empty>;\n}\n"
     },
     {

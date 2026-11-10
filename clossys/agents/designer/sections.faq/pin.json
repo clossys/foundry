@@ -1,7 +1,7 @@
 {
   "candidate": "faq-v1.json",
-  "sha256": "a2719e4b35f53dd703fe4469e99c39e4039038d45f10e4a64f066aca05db5cff",
-  "decidedBy": "owner:2026-11-03 pin-if-agree",
-  "basis": "bulk",
-  "at": "2026-11-03T08:58:02Z"
+  "sha256": "b50c90cb8faa8eb17cea2fd159ef2548f8b26943f06d75f3fc3b4f886e3ba010",
+  "decidedBy": "planner:R2F-39",
+  "basis": "planner",
+  "at": "2026-11-10T12:00:01.300Z"
 }
