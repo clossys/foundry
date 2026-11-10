@@ -79,7 +79,7 @@ describe("shared component guidance", () => {
     expect(components).toHaveLength(46);
     expect(Object.values(facts()).map(fact => fact.exportName).sort()).toEqual(components);
     expect(Object.keys(guidance()).sort()).toEqual(Object.keys(facts()).sort());
-    const legacy = { ResizeHandle: "enter", Button: "act", IconButton: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", Chip: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", GridList: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
+    const legacy = { ResizeHandle: "enter", Button: "act", IconButton: "act", Link: "act", Breadcrumb: "act", Menu: "act", TextField: "enter", Textarea: "enter", SearchField: "enter", DateField: "enter", Select: "enter", ComboBox: "enter", Checkbox: "enter", Switch: "enter", RadioGroup: "enter", FileTrigger: "enter", Field: "enter", Badge: "inform", Banner: "inform", StatusMark: "inform", Meter: "inform", ProgressBar: "inform", Spinner: "inform", Skeleton: "inform", Card: "group", Table: "group", GridList: "group", Separator: "group", Avatar: "depict", Icon: "depict", Dialog: "reveal", Popover: "reveal", Tooltip: "reveal", Disclosure: "reveal", Tabs: "reveal" };
     for (const [id, fact] of Object.entries(facts())) {
       const prefix = legacy[fact.exportName as keyof typeof legacy] ?? "depict";
       expect(id).toBe(`${prefix}.${fact.exportName.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()}`);
@@ -136,18 +136,15 @@ describe("shared component guidance", () => {
     const paths = Object.values(facts()).map(fact => join(root, fact.source));
     const filename = join(root, "component-guidance-consumer.check.ts");
     const consumer = `
-      import type {IconProps, IconNode, ChipProps} from ${JSON.stringify(join(root, "src/components/index.js"))};
+      import type {IconProps, IconNode} from ${JSON.stringify(join(root, "src/components/index.js"))};
       declare const glyph: IconNode;
       const decorative: IconProps = {glyph, decorative: true};
       const labelled: IconProps = {glyph, label: "Search"};
       const innerMarkup: IconProps = {children: "Markup", label: "Symbol"};
-      const removable: ChipProps = {children: "Filter", onRemove: () => {}, removeLabel: "Remove Filter"};
-      const staticChip: ChipProps = {children: "Filter"};
       const unnamed: IconProps = {glyph};
       const conflictingName: IconProps = {glyph, decorative: true, label: "Search"};
       const conflictingContent: IconProps = {glyph, children: "Markup", decorative: true};
       const missingContent: IconProps = {label: "Search"};
-      const unnamedRemoval: ChipProps = {children: "Filter", onRemove: () => {}};
     `;
     const compilerOptions = { strict: true, noEmit: true, skipLibCheck: true, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, moduleResolution: ts.ModuleResolutionKind.Bundler };
     const host = ts.createCompilerHost(compilerOptions);
@@ -157,8 +154,8 @@ describe("shared component guidance", () => {
     const checker = program.getTypeChecker();
     const consumerSource = program.getSourceFile(filename)!;
     const diagnostics = program.getSemanticDiagnostics(consumerSource);
-    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual([2322, 2322, 2322, 2322, 2322]);
-    expect(diagnostics.map(diagnostic => consumerSource.text.slice(diagnostic.start!, diagnostic.start! + diagnostic.length!))).toEqual(["unnamed", "conflictingName", "conflictingContent", "missingContent", "unnamedRemoval"]);
+    expect(diagnostics.map(diagnostic => diagnostic.code)).toEqual([2322, 2322, 2322, 2322]);
+    expect(diagnostics.map(diagnostic => consumerSource.text.slice(diagnostic.start!, diagnostic.start! + diagnostic.length!))).toEqual(["unnamed", "conflictingName", "conflictingContent", "missingContent"]);
     for (const [id, fact] of Object.entries(facts())) {
       const source = program.getSourceFile(join(root, fact.source))!;
       const symbol = checker.getSymbolAtLocation(source)!;
@@ -256,7 +253,6 @@ describe("shared component guidance", () => {
     expect(effective(find("inform.meter", "direction"), { limit: 0 })).toBe(true);
     expect(rules("act.link")).toEqual([]);
     expect(find("inform.meter", "previous")).toMatchObject({ kind: "paired", props: ["previous", "previousText"], enforcement: "runtime" });
-    expect(find("inform.chip", "onRemove")).toMatchObject({ kind: "requires", props: ["onRemove", "removeLabel"], enforcement: "type" });
     expect(find("depict.icon", "decorative")).toMatchObject({ kind: "exclusive", props: ["decorative", "label"], enforcement: "type" });
     expect(find("depict.icon", "glyph")).toMatchObject({ kind: "exclusive", props: ["glyph", "children"], enforcement: "type" });
     expect(find("depict.icon", "glyph").presence).toBe("exactly-one");
@@ -436,11 +432,6 @@ const comparisonGolden: Record<string, {
   },
   "inform.banner": {
     columns: {"option": "variant", "values": ["default", "destructive"]},
-    maxCells: 2,
-    retainedCells: 2,
-  },
-  "inform.chip": {
-    columns: {"option": "isDisabled", "values": [false, true]},
     maxCells: 2,
     retainedCells: 2,
   },
@@ -654,7 +645,7 @@ describe("finite component comparisons", () => {
     }
   });
 
-  it("flags concrete non-axis Icon, Chip and Meter violations from retained rules", () => {
+  it("flags concrete non-axis Icon and Meter violations from retained rules", () => {
     expect(comparisons()).toBeDefined();
     const fixtures: { id: string; valid: Record<string, unknown>[]; invalid: { values: Record<string, unknown>; kinds: string[] }[] }[] = [
       {
@@ -667,11 +658,6 @@ describe("finite component comparisons", () => {
           { values: { glyph: [], decorative: false }, kinds: ["requires"] },
           { values: { glyph: [] }, kinds: ["requires"] },
         ],
-      },
-      {
-        id: "inform.chip",
-        valid: [{ children: "Filter" }, { children: "Filter", onRemove: () => {}, removeLabel: "Remove Filter" }],
-        invalid: [{ values: { children: "Filter", onRemove: () => {} }, kinds: ["requires"] }],
       },
       {
         id: "inform.meter",

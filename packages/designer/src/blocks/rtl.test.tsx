@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { ArticleBody } from "./ArticleBody.js";
 import { SearchField } from "../components/SearchField.js";
-import { Chip } from "../components/Chip.js";
 import { Toolbar } from "./Toolbar.js";
 import { ContentSection } from "./ContentSection.js";
 import { Matrix } from "./Matrix.js";
@@ -22,19 +21,6 @@ describe("blocks and components RTL logical-direction utilities (#951)", () => {
     const button = screen.getByRole("button");
     expect(button.className).toContain("end-sm");
     expect(button.className).not.toContain("right-sm");
-  });
-
-  it("uses logical padding on Chip remove affordance", () => {
-    render(
-      <div dir="rtl">
-        <Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>
-      </div>,
-    );
-    const chip = screen.getByText("Tag").closest("span.inline-flex") as HTMLElement;
-    expect(chip.className).toContain("ps-sm");
-    expect(chip.className).toContain("pe-xs");
-    expect(chip.className).not.toMatch(/\bpl-/);
-    expect(chip.className).not.toMatch(/\bpr-/);
   });
 
   it("pushes Toolbar trailing actions to inline-end with ms-auto", () => {

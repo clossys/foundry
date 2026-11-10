@@ -25,9 +25,7 @@ export type TestimonialProps = TestimonialBaseProps &
         /**
          * Accessible name for the avatar image — REQUIRED whenever
          * `avatarSrc` is supplied, the exact same "no way to supply an
-         * image without also supplying its alt text" enforcement `Chip`'s
-         * own `removeLabel`/`onRemove` pairing already establishes in this
-         * package (see that component's own doc comment): this prop is
+         * image without also supplying its alt text" enforcement: this prop is
          * only optional in the branch of `TestimonialProps` where
          * `avatarSrc` is absent too. Rendered via this package's own
          * `Avatar` component, which independently requires `alt` at ITS own

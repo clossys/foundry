@@ -1035,7 +1035,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "purpose": "Attach a compact static category or status label to content.",
   "useWhen": "A short label helps scanning without becoming another interaction.",
   "avoidWhen": "The reader needs to remove the label or perform an action.",
-  "alternatives": "Use Chip for a removable label; StatusMark for a lighter labelled state.",
+  "alternatives": "Use TagGroup for a removable label; StatusMark for a lighter labelled state.",
   "content": "Write the category or state explicitly instead of communicating it through color alone.",
   "anatomy": "One compact label enclosed in a small visual treatment.",
   "composition": "In a consumer-owned result-card block, place Badge beside a release-state title.",
@@ -1137,66 +1137,6 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ]
 }, "src/components/preview-runtime/components/banner/alert.tsx"),
-  "inform.chip": entry(
-{
-  "purpose": "Represent a compact label with an optional removal action.",
-  "useWhen": "A selected filter or entity may be removed as a single unit.",
-  "avoidWhen": "The label needs only passive status or opens a separate destination.",
-  "alternatives": "Use Badge for static status; Link for a navigable label.",
-  "content": "Name the represented item and, when removable, name exactly which item removal affects.",
-  "anatomy": "A compact item label plus a conditional remove affordance.",
-  "composition": "In a consumer-owned selected-filters block, remove the corresponding filter when Chip requests removal.",
-  "accessibility": "Supplying onRemove requires a specific removeLabel in the type contract; disabled removal stays inert."
-},
-{
-  "exportName": "Chip",
-  "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied.",
-  "options": [
-    {
-      "prop": "isDisabled",
-      "label": "Removal availability",
-      "purpose": "Removal availability selects the existing Chip isDisabled behavior.",
-      "values": [
-        {
-          "value": false,
-          "purpose": "Removal may be activated when present."
-        },
-        {
-          "value": true,
-          "purpose": "Removal is disabled and the label is dimmed."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
-  "constraints": [
-    {
-      "kind": "requires",
-      "props": [
-        "onRemove",
-        "removeLabel"
-      ],
-      "reason": "onRemove requires an accessible removeLabel in the type contract; this is not a runtime validation guard.",
-      "enforcement": "type",
-      "evidence": {
-        "source": "src/components/Chip.tsx",
-        "evidence": "onRemove: () => void;"
-      },
-      "when": {
-        "prop": "onRemove",
-        "present": true
-      },
-      "requires": [
-        "removeLabel"
-      ]
-    }
-  ]
-}, "src/components/Chip.tsx"),
   "inform.status-mark": entry(
 {
   "purpose": "Name one data state with a small distinctive mark.",
@@ -3323,47 +3263,6 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       ]
     }
   },
-  "inform.chip": {
-    "exportName": "Chip",
-    "source": "src/components/Chip.tsx",
-    "options": [
-      {
-        "prop": "isDisabled",
-        "values": [
-          false,
-          true
-        ],
-        "default": {
-          "kind": "value",
-          "value": false,
-          "source": "src/components/Chip.tsx",
-          "evidence": "isDisabled = false"
-        },
-        "forwarding": {
-          "source": "src/components/Chip.tsx",
-          "evidence": "isDisabled={isDisabled}"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-ring-focus",
-          "kind": "transitive",
-          "source": "src/components/internal/ui-vars.ts",
-          "evidence": "var(--ui-ring-focus,",
-          "via": [
-            {
-              "source": "src/components/Chip.tsx",
-              "evidence": "boxShadow: renderProps.isFocusVisible ? UI_RING_FOCUS : undefined"
-            }
-          ]
-        }
-      ]
-    }
-  },
   "inform.status-mark": {
     "exportName": "StatusMark",
     "source": "src/components/StatusMark.tsx",
@@ -4381,7 +4280,6 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "enter.resize-handle": comparison("enter.resize-handle", "orientation", "dir"),
   "inform.badge": comparison("inform.badge", "variant"),
   "inform.banner": comparison("inform.banner", "variant"),
-  "inform.chip": comparison("inform.chip", "isDisabled"),
   "inform.status-mark": comparison("inform.status-mark", "tone"),
   "inform.meter": comparison("inform.meter", "tone", "emphasis"),
   "inform.progress-bar": comparison("inform.progress-bar", "isIndeterminate"),

@@ -434,12 +434,12 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     disposition: "presentational-exception",
     notes: [PRESENTATIONAL, "Parks if the exception is declined. Used by 7 block files."],
   }),
-  onMain("Chip", ["src/components/Chip.tsx"], {
+  gap({
     id: "inform.chip",
     label: "Chip",
     racBase: rac("Button"),
-    disposition: "keep",
-    notes: ["Tag groups cover multi-select tags."],
+    disposition: "not-now",
+    notes: ["Uncalled Foundry Chip removed; removable labels use the tag-group leaf.", DEMAND],
   }),
   onMain("Meter", ["src/components/Meter.tsx"], {
     id: "inform.meter",

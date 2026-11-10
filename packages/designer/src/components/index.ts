@@ -4,7 +4,7 @@
  * component is single-purpose: it either composes no other component (`TextField`, `Badge`, `Card`, `Checkbox`, `Switch`, `Select`, `Textarea`,
  * `Avatar`, `Spinner`, `Dialog`, `Field`, `Skeleton`, `Tooltip`, `Banner`,
  * `Popover`, `DateField`, `ComboBox`, `SearchField`, `FileTrigger`,
- * `Disclosure`, `ProgressBar`, `Separator`, `Chip`, `StatusMark`,
+ * `Disclosure`, `ProgressBar`, `Separator`, `StatusMark`,
  * `Meter`), or its parts are
  * homogeneous repeats rather than named regions (`Breadcrumb`, `Menu`,
  * `Tabs`, `RadioGroup` — a trail of interchangeable crumbs, a list of
@@ -161,9 +161,6 @@ export type { ProgressBarProps } from "./ProgressBar.js";
 
 export { Separator } from "./preview-runtime/components/separator/separator.js";
 export type SeparatorProps = import("react").ComponentProps<typeof import("./preview-runtime/components/separator/separator.js").Separator>;
-
-export { Chip } from "./Chip.js";
-export type { ChipProps } from "./Chip.js";
 
 export { StatusMark } from "./StatusMark.js";
 export type { StatusMarkProps, StatusMarkTone } from "./StatusMark.js";

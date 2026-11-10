@@ -39,7 +39,6 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Button } from "../components/preview-runtime/components/button/button.js";
 import { Card } from "../components/preview-runtime/components/card/card.js";
 import { Checkbox } from "../components/preview-runtime/components/checkbox/checkbox.js";
-import { Chip } from "../components/Chip.js";
 import { LinkButton as Link } from "../components/preview-runtime/components/button/button.js";
 import { Meter } from "../components/Meter.js";
 import { Separator } from "../components/preview-runtime/components/separator/separator.js";
@@ -474,7 +473,6 @@ describe("coverage: real rendered classes are all present in compiled.css", () =
       ),
     ]);
     trees.push(["LinkButton link", render(<Link href="/x" variant="link">Go</Link>)]);
-    trees.push(["Chip", render(<Chip onRemove={() => {}} removeLabel="Remove">Tag</Chip>)]);
     trees.push(["Separator", render(<Separator />)]);
     trees.push(["Skeleton", render(<Skeleton style={{ width: 100, height: 20 }} />)]);
     trees.push(["Alert info", render(<Alert {...ALERT_TONE.info}>Heads up</Alert>)]);
