@@ -1,18 +1,15 @@
 import type { ReactElement } from "react";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import { fireEvent, render, screen, cleanup } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { Button } from "./preview-runtime/components/button/button.js";
-import { IconButton } from "./IconButton.js";
 import { SearchField } from "./SearchField.js";
 import { StockSelect as Select } from "../blocks/stock-select.js";
 import { Toggle } from "./toggle-button/toggle.js";
 import { Toggle as StockToggle } from "./preview-runtime/components/toggle-button/toggle.js";
 import { ToggleGroup, ToggleGroupItem } from "./ToggleGroup.js";
-import { Popover, PopoverTrigger } from "./preview-runtime/components/popover/popover.js";
 import { X } from "../icons/X.js";
+import { Icon } from "./preview-runtime/components/icon/icon.js";
 import { CommandMenu as CommandMenuBase } from "../blocks/CommandMenu.js";
 import { withShellCopy } from "../frames/__fixtures__/shell-copy.js";
 
@@ -22,11 +19,9 @@ const name = "Control";
 const options = [{ id: "one", label: "One" }];
 // R2F-33d1: the text field is the stock shadcn@aria input; its states are stock classes, pinned in control-boundary and field-focus.
 const cases: [string, (disabled: boolean) => ReactElement, () => HTMLElement][] = [
-  ["IconButton", d => <IconButton isDisabled={d} icon={X} label={name} />, () => screen.getByRole("button", { name })],
   ["SearchField", d => <SearchField isDisabled={d} label={name} placeholder="Search here" />, () => screen.getByRole("searchbox", { name })],
   ["Toggle", d => <Toggle isDisabled={d}>{name}</Toggle>, () => screen.getByRole("button", { name })],
   ["ToggleGroup", d => <ToggleGroup isDisabled={d} aria-label="Format" selectionMode="multiple"><ToggleGroupItem id="one">{name}</ToggleGroupItem></ToggleGroup>, () => screen.getByRole("button", { name })],
-  ["Popover trigger", d => <PopoverTrigger><IconButton isDisabled={d} icon={X} label={name} /><Popover aria-label="Details">Details</Popover></PopoverTrigger>, () => screen.getByRole("button", { name })],
 ];
 const layer = (control: HTMLElement) => control.style.backgroundImage;
 
@@ -76,16 +71,13 @@ describe("control fill conformance", () => {
   });
 
   // R2F-33d1 D-b: the text field is the stock one-size input; only the icon control keeps the size axis.
-  it.each(["sm", "md", "lg"] as const)("%s uses the control-height token on square icon controls", size => {
-    render(<IconButton size={size} icon={X} label="Icon"/>);
-    for (const control of [screen.getByRole("button", { name: "Icon" })]) {
-      if (control.style.blockSize) expect(control.style.blockSize).toContain(`--ui-control-h-${size}`);
-      else expect(control).toHaveClass(`control-h-${size}`);
-    }
-    const compiled = readFileSync(resolve(import.meta.dirname, "../../styles/compiled.css"), "utf8");
-    expect(compiled).toContain(`&.control-h-${size} {\n      min-block-size: var(--ui-control-h-${size}, ${size === "sm" ? 28 : size === "md" ? 32 : 36}px);`);
+  // R2F-52: the icon control is the stock Button at size icon-sm/icon/icon-lg (Foundry IconButton removed);
+  // the same guarantee holds: a square box bound to the control-height token for the size.
+  it.each([["sm", "icon-sm"], ["md", "icon"], ["lg", "icon-lg"]] as const)("%s uses the control-height token on square icon controls", (size, stock) => {
+    render(<Button size={stock} variant="ghost" aria-label="Icon"><Icon glyph={X} decorative /></Button>);
     const icon = screen.getByRole("button", { name: "Icon" });
-    expect(icon.style.inlineSize).toBe(icon.style.blockSize);
+    expect(icon.className.split(" ")).toContainEqual(expect.stringMatching(new RegExp(`^size-\\(--ui-control-h-${size},`)));
+    expect(icon.className).not.toMatch(/(^|\s)(h|w)-\(/);
   });
 
   it("search suppresses native appearance and search chrome, and uses token placeholder ink", () => {

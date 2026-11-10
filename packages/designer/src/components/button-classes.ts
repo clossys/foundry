@@ -1,8 +1,13 @@
 import type { CSSProperties } from "react";
 import { UI_ALPHA_DISABLED, UI_FOCUS_OFFSET, UI_OUTLINE_FOCUS, UI_OUTLINE_FOCUS_INVERSE } from "./internal/ui-vars.js";
 /**
- * The looks the class helpers below draw on a plain element (`buttonLinkClassName`,
- * `buttonClassName`). The `Button` component itself is the stock shadcn@aria button.
+ * Internal looks still drawn by native controls that have not moved to the stock
+ * shadcn@aria `buttonVariants` (NativeAction, SearchField). Public callers use
+ * `buttonVariants` from the stock button; the mapping from these looks is
+ * primary -> default, secondary -> secondary, ghost -> ghost, danger -> destructive,
+ * outline -> outline, tonal -> secondary, quiet -> link; sizes sm/md/lg -> sm/default/lg
+ * and icon sizes sm/md/lg -> icon-sm/icon/icon-lg. The ground axis (base/sunken/inverse)
+ * and the icon shape have no stock axis and are dropped.
  */
 export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline" | "tonal" | "quiet";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -90,10 +95,9 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 };
 
 /**
- * The class string `Button` applies for a variant, size and ground, shared
- * so that `Link` can render the identical look on a link element without
- * copying it. `ground` (default `"base"`) only changes `tonal` and `quiet`;
- * every other variant reads the same on every ground.
+ * The class string a native control applies for a variant, size and ground.
+ * `ground` (default `"base"`) only changes `tonal` and `quiet`; every other
+ * variant reads the same on every ground.
  */
 export function buttonClassName(variant: ButtonVariant, size: ButtonSize, ground: ControlGround = "base"): string {
   if (variant === "primary" && ground === "inverse") return [BASE, SIZE_CLASSES[size], "bg-primary-foreground text-ink-primary hover:bg-primary-foreground/90"].join(" ");
@@ -102,24 +106,8 @@ export function buttonClassName(variant: ButtonVariant, size: ButtonSize, ground
   return [BASE, SIZE_CLASSES[size], VARIANT_CLASSES[variant]].join(" ");
 }
 
-/** The package-standard keyboard focus outline, for a link that takes the button look. */
+/** The package-standard keyboard focus outline, for a native control drawn with an icon look. */
 const LINK_FOCUS_CLASSES = "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
-
-/**
- * The `Button` look for a plain `<a>` (no React Aria, so server-safe): the
- * same variant and size classes, without `outline-none` (which would also
- * suppress the focus outline) and `disabled:cursor-not-allowed` (a link is
- * never disabled), plus the package-standard `focus-visible` outline. For a
- * call to action that navigates, such as a hero or closing band's action.
- * A `quiet` link carries its own trailing icon: put a decorative
- * `ChevronRight` `Icon` last inside the link.
- */
-export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, ground: ControlGround = "base"): string {
-  const look = buttonClassName(variant, size, ground)
-    .split(" ")
-    .filter((token) => token !== "outline-none" && token !== "disabled:cursor-not-allowed");
-  return [...look, LINK_FOCUS_CLASSES].join(" ");
-}
 
 /**
  * The inverse-plate ink for a native control drawn with a base look: the
@@ -127,9 +115,6 @@ export function buttonLinkClassName(variant: ButtonVariant, size: ButtonSize, gr
  * an on-inverse focus outline.
  */
 export const INVERSE_CONTROL_INK = "text-background hover:text-background focus-visible:text-background hover:bg-background/16 focus-visible:outline-background";
-
-/** The grounds a round icon link is drawn for. Kept as a name for `ControlGround`. */
-export type IconButtonLinkGround = ControlGround;
 
 /** The visual size of an icon control on the shared sm/md/lg control-height scale. */
 export type IconButtonSize = "sm" | "md" | "lg";
@@ -192,20 +177,11 @@ const ICON_DISABLED_CLASSES = "disabled:pointer-events-none aria-disabled:pointe
  * inverse ground, with the package-standard `focus-visible` outline. For a
  * control whose glyph says what it does (a scroll cue, carousel or step
  * navigation, a dialog close). The element still needs an accessible name;
- * this class string ships no copy. `IconButton` is the React component that
- * applies it to a button and requires the name.
+ * this class string ships no copy. Icon-only buttons are the stock
+ * `Button size="icon"` with an `aria-label`.
  */
 export function iconButtonClassName({ size = "md", shape = "square", ground = "base" }: IconButtonClassOptions = {}): string {
   return [ICON_BASE, ICON_SIZE_CLASSES[size], ICON_SHAPE_CLASSES[shape], ICON_GROUND_CLASSES[ground], ICON_DISABLED_CLASSES, LINK_FOCUS_CLASSES].join(" ");
-}
-
-/**
- * The round icon-only look for a plain `<a>`: `iconButtonClassName` for a
- * 44px circle on `ground`. Kept for existing callers (a scroll cue, a
- * back-to-top link); the link still needs an accessible name.
- */
-export function iconButtonLinkClassName(ground: IconButtonLinkGround = "base"): string {
-  return iconButtonClassName({ size: "md", shape: "circle", ground });
 }
 
 /** The control-height token of each size, as literal reads so every var() names its property. */

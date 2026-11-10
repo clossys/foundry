@@ -3,9 +3,7 @@ import {
   buttonClassName,
   type ButtonSize,
   type ButtonVariant,
-  buttonLinkClassName,
   iconButtonClassName,
-  iconButtonLinkClassName,
   type ControlGround,
   type IconButtonShape,
   type IconButtonSize,
@@ -93,21 +91,8 @@ describe("buttonClassName: variant x size x ground", () => {
   });
 });
 
-describe("buttonLinkClassName: the same looks on a link", () => {
-  for (const variant of VARIANTS) {
-    for (const ground of GROUNDS) {
-      it(`${variant} / ${ground} drops outline-none and the disabled cursor, adds the focus outline`, () => {
-        const classes = classesOf(buttonLinkClassName(variant, "md", ground));
-        expect(classes).not.toContain("outline-none");
-        expect(classes).not.toContain("disabled:cursor-not-allowed");
-        expect(classes).toEqual(expect.arrayContaining(["focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-focus-ring"]));
-        const look = classesOf(buttonClassName(variant, "md", ground)).filter((c) => c !== "outline-none" && c !== "disabled:cursor-not-allowed");
-        expect(classes).toEqual(expect.arrayContaining(look));
-      });
-    }
-  }
-});
-
+// R2F-52: buttonLinkClassName was removed for the stock buttonVariants; its link focus-outline guarantee is
+// pinned on the stock look in blocks/SectionIntro.test.tsx ("buttonVariants on a link").
 describe("iconButtonClassName: size x shape x ground", () => {
   const ICON_SIZES: readonly IconButtonSize[] = ["sm", "md"];
   const SHAPES: readonly IconButtonShape[] = ["circle", "square"];
@@ -135,12 +120,8 @@ describe("iconButtonClassName: size x shape x ground", () => {
     }
   }
 
-  it("defaults to a md square on base, while iconButtonLinkClassName keeps the circle per ground", () => {
+  it("defaults to a md square on base", () => {
     expect(iconButtonClassName()).toBe(iconButtonClassName({ size: "md", shape: "square", ground: "base" }));
-    expect(iconButtonLinkClassName()).toBe(iconButtonClassName({ shape: "circle" }));
-    for (const ground of GROUNDS) {
-      expect(iconButtonLinkClassName(ground)).toBe(iconButtonClassName({ size: "md", shape: "circle", ground }));
-    }
   });
 
   it("uses no var() arbitrary class, so every class compiles into compiled.css", () => {

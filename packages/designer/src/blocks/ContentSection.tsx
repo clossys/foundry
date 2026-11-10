@@ -46,7 +46,7 @@ interface ContentSectionBaseProps extends Omit<HTMLAttributes<HTMLDivElement>, "
   description?: ReactNode;
   /**
    * The section's own actions, under the description: one or two
-   * button-styled links (`buttonLinkClassName`), at most one `primary` and
+   * button-styled links (the stock `LinkButton`), at most one `default` and
    * the rest `outline`. An action closes what it follows, so where actions
    * go depends on the shape:
    * - A stacked section with modules or media after its header takes none,

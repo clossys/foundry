@@ -50,7 +50,8 @@ describe("one IA display tree", () => {
     expect(api.componentSelection).toBeTypeOf("function");
     expect(api.componentSelection?.("components.button")?.guidance).toBe(components.COMPONENT_GUIDANCE["act.button"]);
     expect(api.componentSelection?.("act.button")).toEqual(api.componentSelection?.("components.button"));
-    expect(api.componentSelection?.("act.icon-button")?.facts).toBe(components.COMPONENT_API_FACTS["act.icon-button"]);
+    // R2F-52: the act.icon-button alias resolves to the stock Button record (Foundry IconButton removed).
+    expect(api.componentSelection?.("act.icon-button")?.facts).toBe(components.COMPONENT_API_FACTS["act.button"]);
     expect(api.componentSelection?.("unknown.component")).toBeUndefined();
   });
 });

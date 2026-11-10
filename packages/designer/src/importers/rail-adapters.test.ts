@@ -38,9 +38,9 @@ describe("generated Aria rail adaptation contract", () => {
     expect(generated.copy.map(row => row.key)).toEqual(["command.title", "command.description", "command.search", "sheet.close", "sidebar.title", "sidebar.description", "sidebar.toggle"]);
     expect(generated.host).toHaveLength(1);
     const host = generated.host[0]!;
-    expect(host.consumerImport).toBe('import { mergeUiClasses as cx } from "@clossys/designer/components"');
+    expect(host.consumerImport).toBe('import { cn as cx } from "@clossys/designer/components"');
     expect(createHash("sha256").update(readFileSync(join(import.meta.dirname, "..", host.source))).digest("hex")).toBe(host.sourceSha256);
-    expect(readFileSync(join(import.meta.dirname, "../components/index.ts"), "utf8")).toContain('export { cx as mergeUiClasses }');
+    expect(readFileSync(join(import.meta.dirname, "../components/index.ts"), "utf8")).toContain('export { cn } from "./_parts/utils/index.js"');
     const manifest = JSON.parse(readFileSync(join(import.meta.dirname, "../../package.json"), "utf8"));
     expect(manifest.exports["./components"].import).toBe("./dist/components/index.js");
   });
@@ -93,7 +93,7 @@ describe("generated Aria rail adaptation contract", () => {
       const consumer = await import(pathToFileURL(outfile).href);
       const host = await import("@clossys/designer/components");
       const values = ["px-md", "px-lg", { block: true, hidden: false }];
-      process.stdout.write(JSON.stringify({ actual: consumer.cn(...values), expected: host.mergeUiClasses("px-md px-lg block"), ref: consumer.RAIL_COPY_REFS["sheet.close"], imports: Object.values(built.metafile.outputs).flatMap(row => row.imports.map(entry => entry.path)) }));
+      process.stdout.write(JSON.stringify({ actual: consumer.cn(...values), expected: host.cn("px-md px-lg block"), ref: consumer.RAIL_COPY_REFS["sheet.close"], imports: Object.values(built.metafile.outputs).flatMap(row => row.imports.map(entry => entry.path)) }));
     `], { cwd: join(import.meta.dirname, "../.."), input: JSON.stringify({ utility: generated.utility, types: generated.utilityTypes, copy: generated.copySource }), encoding: "utf8" }));
     expect(result.actual).toBe(result.expected);
     expect(result.ref).toEqual(generated.copy.find(row => row.key === "sheet.close")!.ref);

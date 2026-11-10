@@ -24,6 +24,11 @@
       "composes": [],
       "deps": [
         {
+          "license": "ISC",
+          "name": "lucide-react",
+          "version": "1.65.0"
+        },
+        {
           "license": "MIT",
           "name": "react",
           "version": ">=18"
@@ -44,11 +49,11 @@
       "outputSha256": [
         {
           "path": "components/icon/icon.tsx",
-          "sha256": "7cf07f9abdb241070486f452beb22405e6327bae8a8e4976f734d57e6a36962c"
+          "sha256": "d678ecb857dbbe3dee720bb0b162c9ef80aed96b4f6a7d7e682fb16498f726cb"
         },
         {
           "path": "notices/icon.md",
-          "sha256": "a53f8eedf5d88896fb98f9e0ec3cc269f613ed026ba4548550a413f2175afa22"
+          "sha256": "141eb6f2cf29983960d417a1c8d3729df6d05df71d860865a41f9bcb22b0bfff"
         }
       ],
       "propMap": {
