@@ -1,0 +1,28 @@
+{
+  "schema": "clossys.slot/1",
+  "id": "context.market.size",
+  "agent": "director",
+  "ia": {
+    "l1": "context",
+    "l2": "context.market",
+    "order": 0
+  },
+  "kind": "brief",
+  "contract": {
+    "question": "How big is the reachable market, counted in a unit you can check?",
+    "mustContain": [
+      {
+        "key": "Unit"
+      },
+      {
+        "key": "Reachable"
+      },
+      {
+        "key": "Method"
+      }
+    ]
+  },
+  "inputs": [],
+  "uses": [],
+  "options": 1
+}

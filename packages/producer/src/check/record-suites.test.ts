@@ -4,7 +4,6 @@ import { join } from "node:path";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { runCli } from "../cli/main.js";
 import { parseArgs } from "../cli/args.js";
-// @ts-expect-error untyped test-support module
 import { writeDesignerSlot } from "../../../designer/scripts/__fixtures__/slot-model.mjs";
 import { recordSuitesSummary, refVerbatimSuite, runRecordSuites, slotContractSuite } from "./record-suites.js";
 

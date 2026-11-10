@@ -1,6 +1,6 @@
-import { test } from 'node:test';
+import { after, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -8,8 +8,9 @@ import { fileURLToPath } from 'node:url';
 import { createMutations, discoverAdapter, repin, runCommand, runPropagation, validateAdapter, parseArgs } from './p0-propagate.mjs';
 import { studioOrigin } from './studio-origin.mjs';
 
-// Fixtures live in the OS temp directory, never under the checkout (a write there dirties the tree).
+// Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
 const artifacts = await mkdtemp(join(tmpdir(), 'p0-propagate-'));
+after(() => rm(artifacts, { recursive: true, force: true }));
 let sequence = 0;
 const originalCSS = ':root { --primary: oklch(0.42 0.09 243); }\n.dark { --primary: #ffffff; }\n';
 const originalButton = 'const buttonVariants = cva("inline-flex rounded-md", { default: "bg-primary text-primary-foreground" });\n';

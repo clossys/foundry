@@ -15,7 +15,7 @@ describe("Studio missing selection defaults", () => {
     expect(profile.components.components["components.tooltip"]).toBeDefined();
     expect(profile.components.check.findings.filter(finding => finding.severity === "error")).toEqual([]);
     expect(profile.surfaces?.check.findings.filter(finding => finding.severity === "error")).toEqual([]);
-  });
+  }, 30_000); // one full default-fill prepare: 9.5 s measured under load 2026-11-06 (11.3 s profiled)
 
   it("preserves a consumer's explicit fill instead of replacing it with a preferred default", async () => {
     const { input } = await prepareStudioSelection();
@@ -27,7 +27,7 @@ describe("Studio missing selection defaults", () => {
     expect(prepared.leaves.find(leaf => leaf.leaf === "components.badge")).toMatchObject({ source: "consumer", fill: "foundry/components.badge" });
     expect(libraryHash(library)).toBe(before);
     expect(prepared.leaves.every(leaf => leaf.source === "consumer" || leaf.source === "unavailable")).toBe(true);
-  });
+  }, 60_000); // two full default-fill prepares: 23.3 s measured under load 2026-11-06
 });
 
 it("ships all14 native specimen bundles with prepared receipts and preserves explicit surface selections", async () => {

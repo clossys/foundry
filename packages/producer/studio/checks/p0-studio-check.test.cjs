@@ -4,13 +4,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { test } = require('node:test');
+const { after, test } = require('node:test');
 const { ROUTE_MARKER, readStudioPublication } = require('./check-studio-routes.cjs');
 const { initialResource, initialExpectation, initialDataFindings, discoverRoutePlan, checkCommand, parseArgs, browserRuntime } = require('./p0-studio-check.cjs');
 
 const repositoryRoot = path.resolve(__dirname, '../../../..');
-// Fixtures live in the OS temp directory, never under the checkout (a write there dirties the tree).
+// Fixtures live in the OS temp directory (TMPDIR), never under the checkout (a write there dirties the tree), and are removed after the run.
 const evidenceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'p0-studio-check-'));
+after(() => fs.rmSync(evidenceRoot, { recursive: true, force: true }));
 function directory(label) { return fs.mkdtempSync(path.join(evidenceRoot, `${label}-`)); }
 function write(root, name, content) {
   const target = path.join(root, name);

@@ -475,21 +475,32 @@ describe("direct-path reachability — the real compiled dist/cli.js", () => {
  * directory listing, because a listing that silently came back empty would
  * turn this block into a test that measures nothing and still passes — which
  * is the exact failure the `2` exit code exists to prevent, relocated into a
- * test file. Instead the five names are written down, each one's presence is
+ * test file. Instead the names are written down, each one's presence is
  * asserted explicitly, and a name whose package is not in this tree is
  * reported as absent rather than skipped in silence.
  */
-const CONTROL_PACKAGES = ["director", "writer", "butler", "bouncer", "giver"] as const;
+const CONTROL_SPECS = [
+  // @clossys/director is a library (its store commands run through Producer), so its
+  // controls are the bin it ships and the clossys verb that runs its commands.
+  { name: "director-rate-check", path: ["director", "dist", "strategy-traceability-rate-cli.js"], argv: [] },
+  { name: "clossys director", path: ["producer", "dist", "cli", "index.js"], argv: ["director"] },
+  { name: "writer", path: ["writer", "dist", "cli.js"], argv: [] },
+  { name: "butler", path: ["butler", "dist", "cli.js"], argv: [] },
+  { name: "bouncer", path: ["bouncer", "dist", "cli.js"], argv: [] },
+  { name: "giver", path: ["giver", "dist", "cli.js"], argv: [] },
+] as const;
+const CONTROL_NAMES = CONTROL_SPECS.map((spec) => spec.name);
 
 interface Control {
   name: string;
   cliPath: string;
+  argv: readonly string[];
   present: boolean;
 }
 
-const controls: Control[] = CONTROL_PACKAGES.map((name) => {
-  const path = join(packagesDir, name, "dist", "cli.js");
-  return { name, cliPath: path, present: existsSync(path) };
+const controls: Control[] = CONTROL_SPECS.map(({ name, path: segments, argv }) => {
+  const path = join(packagesDir, ...segments);
+  return { name, cliPath: path, argv, present: existsSync(path) };
 });
 
 describe("the house exit-code contract, against the pinned controls", () => {
@@ -497,17 +508,17 @@ describe("the house exit-code contract, against the pinned controls", () => {
     // Absence is reported, never skipped. A control package that is not in
     // this checkout is a fact about the checkout; a control block that quietly
     // measured nothing would be a fact about nothing.
-    expect(CONTROL_PACKAGES).toEqual(["director", "writer", "butler", "bouncer", "giver"]);
+    expect(CONTROL_NAMES).toEqual(["director-rate-check", "clossys director", "writer", "butler", "bouncer", "giver"]);
     const present = controls.filter((control) => control.present).map((control) => control.name);
     const absent = controls.filter((control) => !control.present).map((control) => control.name);
-    expect(present.length + absent.length).toBe(CONTROL_PACKAGES.length);
+    expect(present.length + absent.length).toBe(CONTROL_NAMES.length);
     expect(present.length).toBeGreaterThan(0);
   });
 
   it("case 1 — a bare invocation exits 2, with usage on stderr and stdout untouched", () => {
-    for (const control of [{ name: "keeper", cliPath, present: true }, ...controls]) {
+    for (const control of [{ name: "keeper", cliPath, argv: [], present: true }, ...controls]) {
       if (!control.present) continue;
-      const result = runCli(control.cliPath, []);
+      const result = runCli(control.cliPath, [...control.argv]);
       expect({ name: control.name, status: result.status }).toEqual({ name: control.name, status: 2 });
       expect({ name: control.name, stdout: result.stdout }).toEqual({ name: control.name, stdout: "" });
       expect(result.stderr.length).toBeGreaterThan(0);
@@ -515,18 +526,18 @@ describe("the house exit-code contract, against the pinned controls", () => {
   });
 
   it("case 2 — an unknown subcommand exits 2", () => {
-    for (const control of [{ name: "keeper", cliPath, present: true }, ...controls]) {
+    for (const control of [{ name: "keeper", cliPath, argv: [], present: true }, ...controls]) {
       if (!control.present) continue;
-      const result = runCli(control.cliPath, ["__no_such_gate__"]);
+      const result = runCli(control.cliPath, [...control.argv, "__no_such_gate__"]);
       expect({ name: control.name, status: result.status }).toEqual({ name: control.name, status: 2 });
     }
   });
 
   it("case 3 — an explicitly requested --help exits 0, on both spellings", () => {
-    for (const control of [{ name: "keeper", cliPath, present: true }, ...controls]) {
+    for (const control of [{ name: "keeper", cliPath, argv: [], present: true }, ...controls]) {
       if (!control.present) continue;
       for (const flag of ["--help", "-h"]) {
-        const result = runCli(control.cliPath, [flag]);
+        const result = runCli(control.cliPath, [...control.argv, flag]);
         expect({ name: control.name, flag, status: result.status }).toEqual({ name: control.name, flag, status: 0 });
         expect(result.stdout.length).toBeGreaterThan(0);
       }
@@ -535,9 +546,9 @@ describe("the house exit-code contract, against the pinned controls", () => {
 
   it("case 4 — a real gate with missing input exits 2", () => {
     const missing = join(dir, "does-not-exist.json");
-    for (const control of [{ name: "keeper", cliPath, present: true }, ...controls]) {
+    for (const control of [{ name: "keeper", cliPath, argv: [], present: true }, ...controls]) {
       if (!control.present) continue;
-      const result = runCli(control.cliPath, [missing]);
+      const result = runCli(control.cliPath, [...control.argv, missing]);
       expect({ name: control.name, status: result.status }).toEqual({ name: control.name, status: 2 });
     }
   });

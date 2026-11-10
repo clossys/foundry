@@ -9,7 +9,7 @@ import { directorStoreReader } from "../../producer/src/records/slots.js";
 
 /**
  * Stages one pinned Director slot: `<id>/{slot.json, candidates/fixture-v1.md, pin.json}`, the
- * same shape as @clossys/director's own test fixtures (src/ground/fixtures.ts), kept local so the
+ * same shape as @clossys/director's own test fixtures (src/__fixtures__/slot-model.ts), kept local so the
  * package's public exports stay unchanged.
  */
 function stageSlot(root: string, id: string, cite?: string): void {

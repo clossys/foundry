@@ -1,0 +1,15 @@
+{
+  "asOf": "2026-09-18T12:00:00Z",
+  "declaredClaims": [{ "id": "claim-one" }],
+  "observations": [
+    {
+      "claimId": "claim-one",
+      "independent": true,
+      "currentEvidence": true,
+      "derived": true,
+      "approved": true,
+      "observerRef": "observer-a",
+      "evidence": [{ "id": "evidence-one", "description": "Independent observation evidence." }]
+    }
+  ]
+}

@@ -46,18 +46,5 @@ const lineage: ElementRecord["lineage"] = { mode: "customized", adaptations };
   expect(result.map(d => `${d.code}: ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`)).toEqual([]);
 });
 
-it("keeps unknown operations and mismatched finite binding values unassignable", () => {
-  const result = diagnostics(prelude + `
-// @ts-expect-error No arbitrary replay operation.
-const unknown: Adaptation = { ...base, kind: "data-fit", operation: "invent-layout", sourceHash, bindings: {} };
-// @ts-expect-error Frame split has only app/page regions.
-const region: Adaptation = { ...base, kind: "data-fit", operation: "sidebar15-frame-split", sourceHash, bindings: { region: "footer" } };
-// @ts-expect-error Right/offcanvas does not accept the left edge.
-const edge: Adaptation = { ...base, kind: "data-fit", operation: "sidebar15-right-offcanvas", sourceHash, bindings: { side: "left", collapsible: "offcanvas" } };
-// @ts-expect-error Panel replay is horizontal only.
-const orientation: Adaptation = { ...base, kind: "data-fit", operation: "sidebar-resizable-panels", sourceHash, bindings: { orientation: "vertical" } };
-// @ts-expect-error Existing Hash contract requires its prefix.
-const hash: Adaptation = { ...base, kind: "data-fit", operation: "sidebar-mirrored-edge", sourceHash: "not-a-hash", bindings: { side: "left" } };
-`);
-  expect(result.map(d => `${d.code}: ${ts.flattenDiagnosticMessageText(d.messageText, " ")}`)).toEqual([]);
-});
+// The refused shapes (unknown operation, mismatched finite bindings, unprefixed hash) are compile-time
+// assertions in adaptation-types.check.ts, which the package's real tsc run compiles.

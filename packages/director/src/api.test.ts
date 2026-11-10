@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { openStrategy } from "./api.js";
-import { stageSlot } from "./ground/fixtures.js";
+import { stageSlot } from "./__fixtures__/slot-model.js";
 import { reader } from "../test/store.js";
 
 const roots: string[] = [];

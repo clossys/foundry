@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { main } from "../cli.js";
 import { executeBriefCommand } from "./brief.js";
 import { runReadCommand } from "./read.js";
-import { stageSlot } from "../ground/fixtures.js";
+import { stageSlot } from "../__fixtures__/slot-model.js";
 
 const roots: string[] = [];
 const id = "context.customer.need";

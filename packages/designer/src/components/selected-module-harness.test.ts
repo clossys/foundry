@@ -12,10 +12,11 @@ import { writeFixture, createRun, assertManifest, assertFacadeIdentity, assertGl
 import { calendarCaller } from "./__fixtures__/selected-module-harness/calendar-caller.js";
 import { menuCaller } from "./__fixtures__/selected-module-harness/menu-caller.js";
 import { dialogCaller } from "./__fixtures__/selected-module-harness/dialog-caller.js";
+import { harnessTemp } from "./__fixtures__/selected-module-harness/temp.js";
 
 const packageDirectory = resolve(import.meta.dirname, "../..");
 const repository = resolve(packageDirectory, "../..");
-const temp = mkdtempSync(resolve(repository, ".selected-harness-"));
+const temp = harnessTemp("selected-harness-", repository);
 const artifacts: DependencyArtifact[] = [];
 const inspections: { specifier: string; status: string; error?: string }[] = [];
 let run: string;
@@ -47,8 +48,9 @@ beforeAll(async () => {
 
 afterAll(() => {
   write("receipt", { version: 1, identity: `h1-${process.pid}`, run, status: "refusal-tests-only", emittedCohort: "unavailable", axeViolations: { status: "unavailable" }, inspections });
-  // Evidence requested by the caller is retained; only this test's own temp tree is removed.
-  if (process.env.FOUNDRY_SELECTED_EVIDENCE_ROOT) rmSync(temp, { recursive: true, force: true });
+  // Evidence requested by the caller (FOUNDRY_SELECTED_EVIDENCE_ROOT) lives outside this tree and is retained;
+  // this test's own temp tree, with any default evidence run inside it, is always removed.
+  rmSync(temp, { recursive: true, force: true });
 });
 
 describe("real selected-module harness refusal contracts", () => {
