@@ -121,6 +121,8 @@ export const componentSpecimenSourceSamples = {
   "components/menu/dropdown-menu.tsx#DropdownMenu": d.menu,
   "components/tooltip/tooltip.tsx#Tooltip": d.tooltip,
   "components/date-picker/date-picker.tsx#DatePicker": d.dates.picker,
+  "components/text-field/text-field.tsx#TextField": d.textField,
+  "components/field/field.tsx#Field": d.field,
   "components/dialog/dialog.tsx#Dialog": { trigger: d.dialog.trigger, title: d.dialog.title, content: d.dialog.body },
   "components/keyboard/kbd.tsx#Kbd": { text: d.text.keyboard },
   "components/badge/badge.tsx#Badge": { text: d.text.badge },

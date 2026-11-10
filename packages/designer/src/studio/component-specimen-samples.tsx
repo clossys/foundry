@@ -61,6 +61,8 @@ const stateProps: Readonly<Record<string, StateProps>> = {
   "components/checkbox/checkbox.tsx#Checkbox": { ...toggle, invalid: { isInvalid: true } },
   "components/switch/switch.tsx#Switch": toggle,
   "components/toggle-button/toggle.tsx#Toggle": { ...toggle, pressed: { isSelected: true } },
+  "components/text-field/text-field.tsx#TextField": field,
+  "components/field/field.tsx#Field": { ...disabled, invalid: { isInvalid: true } },
 };
 
 /** The props that force `state` on the export at `key`, or undefined when the component has no prop for it. */
@@ -179,6 +181,14 @@ function HeldTooltip({ trigger, specimen }: { readonly trigger: ReactNode; reado
     <div ref={anchorRef} data-specimen-tooltip-anchor="" className="inline-flex"><Button variant="secondary" aria-describedby={id}>{trigger}</Button></div>
     {cloneElement(specimen, { id, triggerRef: anchorRef, UNSTABLE_portalContainer: container })}
   </TooltipTriggerStateContext.Provider>}</OverlayHost>;
+}
+
+/** The composed field around one native input: its stock label names the input by id, its description follows it. */
+function FieldSpecimenControl({ Label, Description, label, description }: { readonly Label: Renderable; readonly Description: Renderable; readonly label: string; readonly description: string }) {
+  const id = useId();
+  const descriptionId = id + "-description";
+  // override: field-host-control. The composed stock field exports no input part; it hosts a native control.
+  return <><Label htmlFor={id}>{label}</Label><input id={id} aria-describedby={descriptionId} /><Description id={descriptionId}>{description}</Description></>;
 }
 
 /** Vendored shadcn@aria compounds, drawn with the parts their own module exports. */
@@ -332,6 +342,13 @@ function sourceSample(key: string, exports: Namespace): ComponentSpecimenSample 
     }
     // The composed wrapper calls a render-function child, so it draws its own default content from its naming props alone.
     case "components/file-trigger/file-trigger.tsx#FileTrigger": return { props: { label: componentSpecimenActions.upload } };
+    // R2F-33d1: the stock text field names its own control from its label; the composed field hosts one native control.
+    case "components/text-field/text-field.tsx#TextField": return { props: { ...s[key] } };
+    case "components/field/field.tsx#Field": {
+      const found = parts("FieldLabel", "FieldDescription"); if (!found) return undefined;
+      const [Label, Description] = found as [Renderable, Renderable];
+      return { props: {}, children: <FieldSpecimenControl Label={Label} Description={Description} {...s[key]} /> };
+    }
     case "components/date-picker/date-picker.tsx#DatePicker": return { props: { label: s[key].label, triggerLabel: s[key].triggerLabel, defaultValue: s[key].defaultValue } };
     case "components/keyboard/kbd.tsx#Kbd":
     case "components/badge/badge.tsx#Badge":

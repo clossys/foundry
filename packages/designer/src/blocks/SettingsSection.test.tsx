@@ -5,13 +5,15 @@ import type { SettingsSectionProps } from "./SettingsSection.js";
 import { settingsSectionSample } from "./settings-section/sample.js";
 
 const SettingsSection = (blocks as Record<string, unknown>).SettingsSection as (props: SettingsSectionProps) => JSX.Element;
+// R2F-33d1: a stock shadcn@aria field root is itself role="group"; the settings groups are the fieldsets.
+const fieldsets = (groups: HTMLElement[]) => groups.filter(group => group.tagName === "FIELDSET");
 
 describe("SettingsSection", () => {
   it("is a public blocks export: a named section with one fieldset per settings group", () => {
     render(<SettingsSection {...settingsSectionSample} />);
     const section = screen.getByRole("region", { name: "Workspace settings" });
     expect(section.tagName).toBe("SECTION");
-    const groups = within(section).getAllByRole("group");
+    const groups = fieldsets(within(section).getAllByRole("group"));
     expect(groups.map(group => group.tagName)).toEqual(["FIELDSET", "FIELDSET"]);
     expect(groups[0]).toHaveAccessibleName(/General/);
     expect(within(groups[0]!).getByRole("textbox", { name: "Workspace name" })).toBeInTheDocument();
@@ -19,7 +21,7 @@ describe("SettingsSection", () => {
 
   it("marks only dirty groups with the unsaved label, as text a screen reader reads with the legend", () => {
     render(<SettingsSection {...settingsSectionSample} />);
-    const [general, notifications] = screen.getAllByRole("group");
+    const [general, notifications] = fieldsets(screen.getAllByRole("group"));
     expect(general).toHaveAccessibleName("General Unsaved changes");
     expect(notifications).toHaveAccessibleName("Notifications");
   });

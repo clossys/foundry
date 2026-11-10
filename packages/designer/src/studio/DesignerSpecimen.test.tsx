@@ -74,7 +74,10 @@ it("renders the selected live component variants and real disabled/invalid fixtu
   expect(within(disabled as HTMLElement).getAllByRole("textbox").every(input => (input as HTMLInputElement).disabled)).toBe(true);
   const invalid = result.container.querySelector("[data-specimen-state='invalid']")!;
   expect(invalid.querySelector("[aria-invalid='true']")).toBeTruthy();
-  expect(result.container.querySelector("[data-specimen-source='foundry']")).toBeTruthy();
+  // R2F-33d1 (D-a/D-b): the text-field leaf is composed from stock shadcn@aria over the field leaf, so its specimen
+  // names the composing adopter, not the retired Foundry TextField.
+  expect(result.container.querySelector("[data-specimen-source='defaults-consumer']")).toBeTruthy();
+  expect(result.container.querySelector("[data-specimen-source='foundry']")).toBeNull();
   expect(result.container.querySelectorAll("[data-component-specimen]").length).toBeGreaterThan(5);
   expect(screen.getByText(/Hover the live specimen/)).toBeVisible();
   expect(screen.getByText(/Focus the live specimen/)).toBeVisible();

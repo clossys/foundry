@@ -106,12 +106,15 @@ const page = dsAttrs("pages", "pages.preview", "foundry/pages.preview");
 const renderLeaf = (leaf: GroupCLeaf, input: RuntimeRenderInput<ReactNode>) => sectionRenderersC[`sections.${leaf}`]!(input);
 const datasetInput = (leaf: GroupCLeaf, members: readonly string[] = []) => inputFor(leaf, sectionDatasetC[leaf](specimenDataset), members);
 
+// R2F-33d1: the stock text-field composes the field leaf through its stamped index (D-a); the preview default
+// profile selects that composed field, so the scan selection names it beside the section.
+const COMPOSED_SELECTION = { "components.field": "defaults-consumer/components.field" } as const;
 function provenanceOf(leaf: GroupCLeaf, node: ReactNode) {
   const html = renderToStaticMarkup(h("div", page, node));
   const scan = scanProvenance({
     html,
     route: { id: "preview", binding: { frame: { leaf: "frames.preview" }, frameSlots: {}, sections: { body: [{ leaf: `sections.${leaf}` }] } } },
-    selection: { [`sections.${leaf}`]: `foundry/sections.${leaf}` },
+    selection: { ...COMPOSED_SELECTION, [`sections.${leaf}`]: `foundry/sections.${leaf}` },
   });
   return { html, findings: scan.findings };
 }

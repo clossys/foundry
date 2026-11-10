@@ -13,6 +13,8 @@ import { bindSignInCopy } from "../runtime/sections/sign-in-copy.js";
 import { signInFormInputs, signInFormRenderer } from "../runtime/sections/sign-in-form.js";
 
 afterEach(cleanup);
+// R2F-33d1: the stock shadcn@aria FieldError is its own role="alert" next to its control; the form-level region is the other alert.
+const formAlert = () => { const alerts = screen.queryAllByRole("alert").filter(alert => alert.getAttribute("data-slot") !== "field-error"); expect(alerts).toHaveLength(1); return alerts[0]!; };
 
 type Locale = "en" | "ar";
 type Config = "sign-in.password" | "sign-in.provider" | "sign-in.verify";
@@ -90,7 +92,7 @@ describe.each(configs)("Writer sign-in copy binding: %s", config => {
     expect(screen.getByLabelText(fieldValue(values, "credentials.password-label") as string)).toBeDisabled();
     expect(screen.getByRole("button", { name: fieldValue(values, "providers[].label") as string })).toBeDisabled();
     expect(screen.getByRole("button", { name: fieldValue(values, "actions.submit") as string })).toBeDisabled();
-    expect(screen.getByRole("alert")).toHaveTextContent(fieldValue(values, "error.message") as string);
+    expect(formAlert()).toHaveTextContent(fieldValue(values, "error.message") as string);
     expect(container.querySelectorAll('[data-ds-leaf="sections.sign-in-form"]').length).toBeGreaterThan(0);
     expect(container.querySelector("a")).toBeNull();
   });
