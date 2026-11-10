@@ -443,7 +443,7 @@ export type {
 export type { BrandmarkPlate } from "./shell/index.js";
 export { BADGE_INSET_SHARE, BADGE_RADIUS_SHARE, badgePlatePath } from "./shell/index.js";
 
-export { ChartFrame, BarChart, LineChart, WaterfallChart, Sparkline } from "./charts/index.js";
+export { ChartFrame, BarChart, LineChart } from "./charts/index.js";
 export type {
   ChartFrameProps,
   ChartMargin,
@@ -455,8 +455,6 @@ export type {
   BarChartSeries,
   LineChartProps,
   LineChartSeries,
-  WaterfallChartProps,
-  SparklineProps,
 } from "./charts/index.js";
 
 export { DEFAULT_STORAGE_KEY, THEME_PREFERENCES, ThemeProvider, ThemeToggle, useTheme, getThemeInitScript } from "./theme/index.js";
@@ -512,14 +510,8 @@ export {
   XCircle,
 } from "./icons/index.js";
 
-export { RangeChart } from "./charts/RangeChart.js";
-export type { RangeChartProps } from "./charts/RangeChart.js";
-
-export { ScatterChart } from "./charts/ScatterChart.js";
-export type { ScatterChartProps } from "./charts/ScatterChart.js";
-
-export { AreaChart, Heatmap, StatusStrip } from "./charts/index.js";
-export type { AreaChartProps, AreaChartSeries, HeatmapProps, StatusStripProps, StatusStripSegment } from "./charts/index.js";
+export { AreaChart } from "./charts/index.js";
+export type { AreaChartProps, AreaChartSeries } from "./charts/index.js";
 
 export { StockItem } from "./blocks/items/StockItem.js";
 export type { StockItemProps } from "./blocks/items/StockItem.js";

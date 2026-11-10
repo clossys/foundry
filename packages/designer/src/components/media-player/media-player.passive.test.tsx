@@ -50,9 +50,10 @@ describe("MediaPlayer passive decoration", () => {
   });
   it.each(["full", "minimal"] as const)("preserves normal %s control mode", controls => {
     const passage = { title: "ExampleCo. film", play: "Play", pause: "Pause", mute: "Mute", seek: "Seek", captions: "Captions", error: { title: "Unavailable", description: "Try again" } };
-    render(<MediaPlayer video={video} poster={poster} passage={passage} controls={controls} />);
+    const { container } = render(<MediaPlayer video={video} poster={poster} passage={passage} controls={controls} />);
     expect(screen.getByRole("group", { name: passage.title })).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("button", { name: passage.play })).toBeInTheDocument();
-    expect(Boolean(screen.queryByRole("slider"))).toBe(controls === "full");
+    // The seek bar is media-chrome's time range (a slider in the browser; jsdom leaves media-chrome inert).
+    expect(Boolean(container.querySelector("media-time-range"))).toBe(controls === "full");
   });
 });

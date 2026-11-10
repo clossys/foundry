@@ -82,14 +82,14 @@ describe("Item status", () => {
     const status = row.querySelector("[data-item-status]")!;
     expect(row).toHaveTextContent("ProductUpdatedAvailable");
     expect(status).toHaveAttribute("data-tone", "success");
-    expect(status.querySelector("[data-part=mark]")).toHaveAttribute("data-shape", "circle");
+    expect(status.querySelector("[data-part=mark]")).toHaveAttribute("data-shape", "circle-check");
     expect(status.querySelector("svg")).toHaveAttribute("aria-hidden", "true");
     expect(status).toContainElement(screen.getByText("Available"));
     expect(screen.getByText("Available")).toBeVisible();
     expect(status.querySelector(".sr-only")).toBeNull();
   });
 
-  it.each([["success", "circle"], ["warning", "triangle"], ["danger", "diamond"], ["info", "open-circle"], ["neutral", "dash"]] as const)("keeps the %s mark's non-colour shape", (tone, shape) => {
+  it.each([["success", "circle-check"], ["warning", "triangle-alert"], ["danger", "circle-x"], ["info", "info"], ["neutral", "minus"]] as const)("keeps the %s mark's non-colour shape", (tone, shape) => {
     const { container } = render(<Item {...single} status={{ tone, label: "State" }} />);
     expect(container.querySelector("[data-shape]")).toHaveAttribute("data-shape", shape);
     expect(screen.getByText("State")).toBeVisible();
@@ -129,7 +129,7 @@ describe("Item status", () => {
     expect(rows).toHaveLength(4);
     rows.forEach((row, index) => {
       expect(row.querySelector("[data-item-status]")).toHaveTextContent(`Available ${index}`);
-      expect(row.querySelector("[data-shape]")).toHaveAttribute("data-shape", "circle");
+      expect(row.querySelector("[data-shape]")).toHaveAttribute("data-shape", "circle-check");
     });
   });
 

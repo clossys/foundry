@@ -58,11 +58,14 @@ describe("shell RTL logical-direction utilities", () => {
     expect(surface.className.split(" ")).toEqual(expect.arrayContaining(["data-[side=left]:start-0", "data-[side=left]:border-e-(length:--ui-border-hairline)"]));
   });
 
-  it("anchors toasts at inline-end", () => {
+  it("anchors toasts at inline-end", async () => {
     const { unmount } = render(<Toaster />);
     act(() => toast.info("A notification"));
-    const region = screen.getByRole("region");
-    expect(region.className).toContain("end-md");
+    await screen.findByText("A notification");
+    // Sonner draws the list (`ol`) inside its labelled region; the inline end is the right in left-to-right.
+    const list = screen.getByRole("region", { name: "Notifications" }).querySelector("ol")!;
+    expect(list.className).toContain("end-md");
+    expect(list).toHaveAttribute("data-x-position", "right");
     act(() => toast.dismissAll());
     unmount();
   });

@@ -236,9 +236,9 @@ describe("compiled AccessMatrix and ColumnMapper public contract", () => {
 });
 
 describe("compiled signature chart public contract", () => {
-  it.each(["index", "server"])("exports all three charts from the compiled charts/%s entry", async entry => {
+  it.each(["index", "server"])("exports the AreaChart signature chart from the compiled charts/%s entry", async entry => {
     const exports = await import(pathToFileURL(join(packageRoot, `dist/charts/${entry}.js`)).href);
-    for (const name of ["AreaChart", "Heatmap", "StatusStrip"]) expect(exports[name]).toBeTypeOf("function");
+    for (const name of ["AreaChart"]) expect(exports[name]).toBeTypeOf("function");
   });
 });
 

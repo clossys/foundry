@@ -691,25 +691,7 @@ export const specimenDataset = {
     rows: { categoryKey: "category", frame: { width: 320, height: 200 } },
     area: { title: "Weekly visits", x: MONTHS.slice(0, 4), series: [{ name: "Visits", values: visits }, { name: "Returns", values: returns }] },
     bar: { title: "Orders by region", categories: ["North", "South", "East"], series: [{ name: "Orders", values: series(3, 6, 20) }] },
-    heatmap: { title: "Activity by day", rows: ["Mon", "Tue", "Wed"], columns: ["Morning", "Midday", "Evening"], values: [series(3, 0, 6), series(3, 0, 6), series(3, 0, 6)] },
     line: { title: "Response time", x: [1, 2, 3, 4], series: [{ name: "Median", values: series(4, 100, 130) }] },
-    range: {
-      title: "Project schedule", ticks: ["Phase A", "Phase B", "Phase C", "Phase D"],
-      rows: [{ id: "design", label: "Design", from: 0, to: 1.5 }, { id: "build", label: "Build", from: 1, to: 3.5 }],
-      labels: { table: "Schedule data", category: "Activity", from: "Start", to: "End", status: "State" },
-    },
-    scatter: {
-      title: "Size and cost", labels: { table: "Show values", category: "Item" },
-      x: { label: "Size", min: 0, max: 100 }, y: { label: "Cost", min: 0, max: 100 },
-      points: ["a", "b", "c"].map((id, index) => ({ id, label: `Item ${id.toUpperCase()}`, x: 20 + index * 25, y: int(20, 80) })),
-    },
-    sparkline: { title: "Daily signups", values: series(6, 2, 9) },
-    statusStrip: { title: "Service status", segments: [{ from: 0, to: 6, status: "ok" }, { from: 6, to: 8, status: "warn" }, { from: 8, to: 12, status: "ok" }] },
-    waterfall: {
-      title: "Balance change", start: { label: "Opening", value: 100 },
-      steps: [{ id: "in", label: "Added", value: int(10, 40) }, { id: "out", label: "Removed", value: -int(5, 25) }], end: { label: "Closing" },
-      labels: { table: "Show values", category: "Stage", value: "Amount" },
-    },
   },
 } as const;
 

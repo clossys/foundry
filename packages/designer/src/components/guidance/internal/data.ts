@@ -1151,7 +1151,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
 {
   "exportName": "StatusMark",
   "entrypoint": "components",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. tone is required with no package default. Shape follows tone: success circle, warning triangle, danger diamond, info open-circle, neutral dash.",
+  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. tone is required with no package default. Shape follows tone: success circle-check, warning triangle-alert, danger circle-x, info circle, neutral dash.",
   "options": [
     {
       "prop": "tone",
@@ -1160,19 +1160,19 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
       "values": [
         {
           "value": "success",
-          "purpose": "Success circle."
+          "purpose": "Success circle check."
         },
         {
           "value": "warning",
-          "purpose": "Warning triangle."
+          "purpose": "Warning triangle alert."
         },
         {
           "value": "danger",
-          "purpose": "Danger diamond."
+          "purpose": "Danger circle x."
         },
         {
           "value": "info",
-          "purpose": "Information open circle."
+          "purpose": "Information circle."
         },
         {
           "value": "neutral",
@@ -1899,7 +1899,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "purpose": "Compare magnitudes across discrete categories.",
   "useWhen": "A common numeric scale makes category differences easy to judge.",
   "avoidWhen": "The story is continuous change, paired numeric relationships or incompatible units.",
-  "alternatives": "Use LineChart for change, ScatterChart for relationships, or separate charts for unlike units.",
+  "alternatives": "Use LineChart for change, or separate charts for unlike units.",
   "content": "Supply category labels and aligned series values with stable series identity.",
   "anatomy": "Discrete category marks sharing one magnitude scale and a text alternative.",
   "composition": "In a consumer-owned comparison block, combine BarChart with a question heading and explanatory caption.",
@@ -1958,7 +1958,7 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "purpose": "Show how one or more series change over ordered positions.",
   "useWhen": "Time or another meaningful ordered numeric axis explains the trend.",
   "avoidWhen": "Unordered categories or unrelated measurement scales would imply a misleading connection.",
-  "alternatives": "Use BarChart for categories; ScatterChart for numeric association without a connecting sequence.",
+  "alternatives": "Use BarChart for categories.",
   "content": "Supply a shared ordered x domain, aligned series values and stable names.",
   "anatomy": "Ordered connected observations on one x scale and one y scale.",
   "composition": "In a consumer-owned trend block, pair LineChart with an explanation of the shared units and period.",
@@ -1971,141 +1971,6 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
   "options": [],
   "constraints": []
 }, "src/charts/LineChart.tsx"),
-  "depict.sparkline": entry(
-{
-  "purpose": "Summarize a small inline sequence as a compact trend.",
-  "useWhen": "A nearby number or text supplies context and a full chart would be disproportionate.",
-  "avoidWhen": "The reader needs detailed axis reading, multiple series comparison or hover inspection.",
-  "alternatives": "Use LineChart for an inspectable trend; plain text for a value with no meaningful sequence.",
-  "content": "Provide the sequence and a title that explains its meaning.",
-  "anatomy": "One compact trend line with an end marker and a text data alternative.",
-  "composition": "In a consumer-owned metric-tile block, place Sparkline beside the current figure and period label.",
-  "accessibility": "The required title names the otherwise uncaptioned graphic; its native table remains available."
-},
-{
-  "exportName": "Sparkline",
-  "entrypoint": "charts",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Intrinsic dimensions default to 120 by 24. The component owns its SVG title and native table disclosure; it does not use ChartFrame or supply hover, axes or legend.",
-  "options": [],
-  "constraints": []
-}, "src/charts/Sparkline.tsx"),
-  "depict.waterfall-chart": entry(
-{
-  "purpose": "Explain how signed changes connect an opening and closing total.",
-  "useWhen": "The reader needs to account for contributions to a cumulative change.",
-  "avoidWhen": "The values are unrelated category totals or percentages without a meaningful accumulation.",
-  "alternatives": "Use BarChart for independent magnitudes; LineChart for a temporal sequence.",
-  "content": "Author opening total, uniquely identified signed steps, closing label and table headings.",
-  "anatomy": "Opening and closing totals connected by successive positive or negative changes.",
-  "composition": "In a consumer-owned reconciliation block, pair WaterfallChart with the accounting period and units.",
-  "accessibility": "Keep signed value labels and the table; a supplied closing value asserts the calculated total."
-},
-{
-  "exportName": "WaterfallChart",
-  "entrypoint": "charts",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Fluid fit, width 360 and height 280 are the defaults. All values and accumulated totals must be finite. Step IDs are unique/nonblank. Optional end.value asserts the accumulated closing total. valueFormat receives unsigned magnitude; the chart owns signs. Authored table/category/value labels are required.",
-  "options": [
-    {
-      "prop": "fit",
-      "label": "Sizing behavior",
-      "purpose": "Sizing behavior selects the existing WaterfallChart fit behavior.",
-      "values": [
-        {
-          "value": "fixed",
-          "purpose": "Intrinsic fixed-size graphic."
-        },
-        {
-          "value": "fluid",
-          "purpose": "Fluid fitting of the intrinsic chart."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
-  "constraints": []
-}, "src/charts/WaterfallChart.tsx"),
-  "depict.range-chart": entry(
-{
-  "purpose": "Compare intervals against an authored sequence of periods.",
-  "useWhen": "Start and end boundaries within known tick periods describe the records accurately.",
-  "avoidWhen": "The task requires arbitrary date parsing, overlapping dependency management or an interactive scheduler.",
-  "alternatives": "Use a consumer-owned planning block for scheduling; Table for detailed interval records.",
-  "content": "Supply nonblank period names and rows with unique IDs, ordered bounds and optional labelled status.",
-  "anatomy": "Repeated labelled intervals over a shared ordered period scale.",
-  "composition": "In a consumer-owned timeline-summary block, combine RangeChart with the period definition and status explanation.",
-  "accessibility": "Retain complete row and status text and the table; status shape follows its tone rather than a separate option."
-},
-{
-  "exportName": "RangeChart",
-  "entrypoint": "charts",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Fluid fit and width 360 are defaults; height is derived from complete row/status text. Bounds satisfy 0 <= from < to <= ticks.length. Nonblank tick periods, row IDs and labels are required. Status requires labels.status; shape follows tone. No independent status-shape option.",
-  "options": [
-    {
-      "prop": "fit",
-      "label": "Sizing behavior",
-      "purpose": "Sizing behavior selects the existing RangeChart fit behavior.",
-      "values": [
-        {
-          "value": "fixed",
-          "purpose": "Intrinsic fixed-size graphic."
-        },
-        {
-          "value": "fluid",
-          "purpose": "Fluid fitting of the intrinsic chart."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
-  "constraints": []
-}, "src/charts/RangeChart.tsx"),
-  "depict.scatter-chart": entry(
-{
-  "purpose": "Compare the relationship between two numeric measures across observations.",
-  "useWhen": "Three to twelve labelled observations can be read on shared numeric axes.",
-  "avoidWhen": "The claim implies causation, needs a dense point cloud or exceeds the declared series limit.",
-  "alternatives": "Use LineChart for ordered change; a consumer-owned analysis view for dense exploration.",
-  "content": "Author point identities and labels, axis names and any declared size or series meaning.",
-  "anatomy": "Labelled observations located by two measures, with optional area and series encoding.",
-  "composition": "In a consumer-owned analysis block, place ScatterChart beside the question, units and interpretation.",
-  "accessibility": "Keep direct labels and the table; area-scaled size needs a truthful named measure for every point."
-},
-{
-  "exportName": "ScatterChart",
-  "entrypoint": "charts",
-  "notes": "Represented scalar options are a bounded selection; consult the real prop type for content, data, state, callbacks and compound parts. No Cartesian combination support is implied. Fluid fit, width 360 and height 300 are defaults. Requires 3–12 points and at most four declared series. Point series must match the declared domain. Size encoding requires finite nonnegative size on every point and is forbidden without size. Dimensions are at least 240; axis names are at most 32 graphemes and point labels at most 20.",
-  "options": [
-    {
-      "prop": "fit",
-      "label": "Sizing behavior",
-      "purpose": "Sizing behavior selects the existing ScatterChart fit behavior.",
-      "values": [
-        {
-          "value": "fixed",
-          "purpose": "Intrinsic fixed-size graphic."
-        },
-        {
-          "value": "fluid",
-          "purpose": "Fluid fitting of the intrinsic chart."
-        }
-      ],
-      "applicability": "Effective for this component when supplied.",
-      "support": {
-        "state": "implemented",
-        "reason": "The component consumes or forwards this existing prop in the cited source."
-      }
-    }
-  ],
-  "constraints": []
-}, "src/charts/ScatterChart.tsx"),
   "depict.area-chart": entry(
 {
   "purpose": "Compare how one or several quantities change or accumulate across ordered categories or time.",
@@ -2192,92 +2057,6 @@ export const COMPONENT_GUIDANCE: Readonly<Record<string, ComponentGuidance>> = {
     }
   ]
 }, "src/charts/AreaChart.tsx"),
-  "depict.heatmap": entry(
-{
-  "purpose": "Compare a rectangular set of magnitudes or categorical identities across named rows and columns.",
-  "useWhen": "The question concerns variation across two discrete dimensions and complete values remain available for inspection.",
-  "avoidWhen": "An unordered set needs precise rank comparisons, the category count exceeds eight identities or missing cells would be interpreted as zero.",
-  "alternatives": "Use BarChart for ranked magnitude, StatusStrip for interval history or a table when the cell values themselves are the primary task.",
-  "content": "Provide unique row and column names and a rectangular matrix; sequential data are finite numbers or null, while categorical identities use a stable domain.",
-  "anatomy": "A labelled matrix of cells shares a sequential ramp or categorical legend, a focused value readout and a complete native table.",
-  "composition": "In a consumer-owned capacity block, place Heatmap beside the meaning of each matrix dimension and its magnitude or identity legend.",
-  "accessibility": "Each cell exposes row, column and value in its name; arrow navigation and the native table retain access without colour matching."
-},
-{
-  "exportName": "Heatmap",
-  "entrypoint": "charts",
-  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. The categorical domain bounds identity encoding to eight entries. Controlled inspection uses row-major cell indices; the server export retains a static grid and native data table.",
-  "options": [
-    {
-      "prop": "categorical",
-      "label": "Encoding mode",
-      "purpose": "Choose a single-hue numeric magnitude ramp or stable categorical identity colours.",
-      "values": [
-        {
-          "value": false,
-          "purpose": "Map finite numeric magnitudes onto the seven-step sequential ramp."
-        },
-        {
-          "value": true,
-          "purpose": "Assign stable colours to at most eight distinct categorical identities."
-        }
-      ],
-      "applicability": "Sequential mode requires numbers or null; categorical mode accepts names or numbers within the declared identity domain.",
-      "support": {
-        "state": "implemented",
-        "reason": "The directly imported shared chart view consumes this implemented boolean; callers still author data and accessible labels."
-      }
-    }
-  ],
-  "constraints": [
-    {
-      "kind": "data",
-      "props": [
-        "rows",
-        "columns",
-        "values"
-      ],
-      "reason": "The matrix dimensions exactly match its unique nonblank row and column labels; null is a missing value rather than numeric zero.",
-      "enforcement": "runtime",
-      "evidence": {
-        "source": "src/charts/internal/signature-views.tsx",
-        "evidence": "Heatmap requires one value per row and column."
-      }
-    }
-  ]
-}, "src/charts/Heatmap.tsx"),
-  "depict.status-strip": entry(
-{
-  "purpose": "Show a compact chronological history of labelled states with widths proportional to their observed duration.",
-  "useWhen": "Uptime or program history consists of nonoverlapping intervals within a known observation window.",
-  "avoidWhen": "The task needs dependency editing or scheduling, interval bounds overlap or unobserved time would be presented as healthy operation.",
-  "alternatives": "Use RangeChart for authored activity intervals, LineChart for measured numeric trends or a table for detailed incident narratives.",
-  "content": "Author finite increasing bounds with ok, warn, error or unknown states; an optional full domain makes leading and trailing unknown periods explicit.",
-  "anatomy": "Chronological patterned segments share a time axis, a visible status legend, interval inspection and a gap-inclusive native table.",
-  "composition": "In a consumer-owned service-health block, place StatusStrip beside the observation window and the meaning of each operational state.",
-  "accessibility": "Every segment is named with its state and interval; distinct patterns, visible labels, keyboard inspection and table rows supplement colour."
-},
-{
-  "exportName": "StatusStrip",
-  "entrypoint": "charts",
-  "notes": "Represented scalar options are a bounded source-checked selection; consult the public prop type and chart README for data, labels, callbacks and other supported props. No Cartesian combination support or consumer demonstration is implied. No finite scalar configuration axis is represented for this interval-data component. Status keys belong to authored segment data. The server export retains the same chronological intervals, patterns and native table.",
-  "options": [],
-  "constraints": [
-    {
-      "kind": "data",
-      "props": [
-        "segments",
-        "domain"
-      ],
-      "reason": "Intervals must be finite, forward and nonoverlapping inside the observation domain; uncovered intervals are derived unknown segments.",
-      "enforcement": "runtime",
-      "evidence": {
-        "source": "src/charts/internal/signature-geometry.ts",
-        "evidence": "StatusStrip intervals overlap or fall outside the domain."
-      }
-    }
-  ]
-}, "src/charts/StatusStrip.tsx"),
   "enter.resize-handle": entry({
     purpose: "Adjust the bounded size of one adjacent content pane.",
     useWhen: "A host exposes a user-adjustable inline width or block height.",
@@ -3298,7 +3077,7 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
           "via": [
             {
               "source": "src/components/StatusMark.tsx",
-              "evidence": "fill-status-success"
+              "evidence": "text-status-success"
             }
           ]
         }
@@ -3945,152 +3724,6 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
       ]
     }
   },
-  "depict.sparkline": {
-    "exportName": "Sparkline",
-    "source": "src/charts/Sparkline.tsx",
-    "options": [],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--color-chart-categorical-1",
-          "kind": "transitive",
-          "source": "src/charts/internal/chart-vars.ts",
-          "evidence": "TOKENS[\"--color-chart-categorical-1\"]!.value",
-          "via": [
-            {
-              "source": "src/charts/Sparkline.tsx",
-              "evidence": "color ?? assignCategoricalColor(0)"
-            }
-          ]
-        }
-      ]
-    }
-  },
-  "depict.waterfall-chart": {
-    "exportName": "WaterfallChart",
-    "source": "src/charts/WaterfallChart.tsx",
-    "options": [
-      {
-        "prop": "fit",
-        "values": [
-          "fixed",
-          "fluid"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "fluid",
-          "source": "src/charts/WaterfallChart.tsx",
-          "evidence": "fit = \"fluid\""
-        },
-        "forwarding": {
-          "source": "src/charts/WaterfallChart.tsx",
-          "evidence": "fit={fit}"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-border-hairline",
-          "kind": "transitive",
-          "source": "src/charts/internal/marks.ts",
-          "evidence": "var(--ui-border-hairline,",
-          "via": [
-            {
-              "source": "src/charts/WaterfallChart.tsx",
-              "evidence": "strokeWidth={CHART_HAIRLINE}"
-            }
-          ]
-        }
-      ]
-    }
-  },
-  "depict.range-chart": {
-    "exportName": "RangeChart",
-    "source": "src/charts/RangeChart.tsx",
-    "options": [
-      {
-        "prop": "fit",
-        "values": [
-          "fixed",
-          "fluid"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "fluid",
-          "source": "src/charts/RangeChart.tsx",
-          "evidence": "fit = \"fluid\""
-        },
-        "forwarding": {
-          "source": "src/charts/RangeChart.tsx",
-          "evidence": "fit={fit}"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-border-hairline",
-          "kind": "transitive",
-          "source": "src/charts/internal/marks.ts",
-          "evidence": "var(--ui-border-hairline,",
-          "via": [
-            {
-              "source": "src/charts/RangeChart.tsx",
-              "evidence": "strokeWidth={CHART_HAIRLINE}"
-            }
-          ]
-        }
-      ]
-    }
-  },
-  "depict.scatter-chart": {
-    "exportName": "ScatterChart",
-    "source": "src/charts/ScatterChart.tsx",
-    "options": [
-      {
-        "prop": "fit",
-        "values": [
-          "fixed",
-          "fluid"
-        ],
-        "default": {
-          "kind": "value",
-          "value": "fluid",
-          "source": "src/charts/ScatterChart.tsx",
-          "evidence": "fit = \"fluid\""
-        },
-        "forwarding": {
-          "source": "src/charts/ScatterChart.tsx",
-          "evidence": "fit={fit}"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "Representative consumed dependencies only; this is not an exhaustive token or generated utility inventory.",
-      "dependencies": [
-        {
-          "property": "--ui-border-hairline",
-          "kind": "transitive",
-          "source": "src/charts/internal/marks.ts",
-          "evidence": "var(--ui-border-hairline,",
-          "via": [
-            {
-              "source": "src/charts/ScatterChart.tsx",
-              "evidence": "strokeWidth={CHART_HAIRLINE}"
-            }
-          ]
-        }
-      ]
-    }
-  },
   "depict.area-chart": {
     "exportName": "AreaChart",
     "source": "src/charts/AreaChart.tsx",
@@ -4147,78 +3780,6 @@ export const COMPONENT_API_FACTS: Readonly<Record<string, ComponentApiFacts>> = 
             {
               "source": "src/charts/AreaChart.tsx",
               "evidence": "<AreaView"
-            }
-          ]
-        }
-      ]
-    }
-  },
-  "depict.heatmap": {
-    "exportName": "Heatmap",
-    "source": "src/charts/Heatmap.tsx",
-    "options": [
-      {
-        "prop": "categorical",
-        "values": [
-          false,
-          true
-        ],
-        "default": {
-          "kind": "value",
-          "value": false,
-          "source": "src/charts/internal/signature-views.tsx",
-          "evidence": "categorical = false"
-        },
-        "forwarding": {
-          "source": "src/charts/internal/signature-views.tsx",
-          "evidence": "categorical = false"
-        }
-      }
-    ],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
-      "dependencies": [
-        {
-          "property": "--color-chart-sequential-100",
-          "kind": "transitive",
-          "source": "src/charts/internal/chart-vars.ts",
-          "evidence": "TOKENS[\"--color-chart-sequential-100\"]",
-          "via": [
-            {
-              "source": "src/charts/internal/signature-views.tsx",
-              "evidence": "chartSequentialVar("
-            },
-            {
-              "source": "src/charts/Heatmap.tsx",
-              "evidence": "<HeatmapView"
-            }
-          ]
-        }
-      ]
-    }
-  },
-  "depict.status-strip": {
-    "exportName": "StatusStrip",
-    "source": "src/charts/StatusStrip.tsx",
-    "options": [],
-    "tokens": {
-      "coverage": "partial",
-      "reason": "One representative chart colour binding is recorded with its actual helper and view consumption; this is not an exhaustive token inventory.",
-      "dependencies": [
-        {
-          "property": "--color-chart-categorical-1",
-          "kind": "transitive",
-          "source": "src/charts/internal/chart-vars.ts",
-          "evidence": "TOKENS[\"--color-chart-categorical-1\"]",
-          "via": [
-            {
-              "source": "src/charts/internal/signature-views.tsx",
-              "evidence": "fill={assignCategoricalColor(index)}"
-            },
-            {
-              "source": "src/charts/StatusStrip.tsx",
-              "evidence": "<StatusView"
             }
           ]
         }
@@ -4293,9 +3854,5 @@ export const COMPONENT_COMPARISON = Object.freeze({
   "reveal.dialog": comparison("reveal.dialog", "isDismissable"),
   "reveal.tabs": comparison("reveal.tabs", "orientation", "isDisabled"),
   "depict.bar-chart": comparison("depict.bar-chart", "fit", "marks"),
-  "depict.waterfall-chart": comparison("depict.waterfall-chart", "fit"),
-  "depict.range-chart": comparison("depict.range-chart", "fit"),
-  "depict.scatter-chart": comparison("depict.scatter-chart", "fit"),
   "depict.area-chart": comparison("depict.area-chart", "normalized", "smooth"),
-  "depict.heatmap": comparison("depict.heatmap", "categorical"),
 });

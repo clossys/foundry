@@ -239,7 +239,8 @@ describe("component default fills", () => {
     expect(row("dialog")).toMatchObject({ status: "default", source: "shadcn@aria", fill: "shadcn@aria/components.dialog" });
     expect(reasons(plan, "table")).not.toContain("K1");
     expect(row("menu")).toMatchObject({ status: "default", source: "shadcn@aria", fill: "shadcn@aria/components.menu", reasons: [] });
-    expect(row("chart-sparkline")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.chart-sparkline" });
+    // planner:r2f-53: chart-sparkline was deleted with no callers; the line chart is the surviving Foundry chart fill.
+    expect(row("chart-line")).toMatchObject({ status: "default", source: "foundry", fill: "foundry/components.chart-line" });
     expect(row("date-picker")).toMatchObject({ status: "default", basis: "rule", rule: "compose:date-picker@1" });
   });
   it("seats the composed shadcn@aria file-trigger by preference and by choice, ahead of the Foundry fill", () => {

@@ -18,13 +18,7 @@
   "card": [],
   "chart-area": [],
   "chart-bar": [],
-  "chart-heatmap": [],
   "chart-line": [],
-  "chart-range": [],
-  "chart-scatter": [],
-  "chart-sparkline": [],
-  "chart-status-strip": [],
-  "chart-waterfall": [],
   "checkbox": [
     "themes.spacing"
   ],

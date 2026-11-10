@@ -1,12 +1,11 @@
+"use client";
 import { useLocale } from "react-aria-components";
-import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
-import type { QueuedToast, UNSTABLE_ToastQueue as ToastQueue } from "react-aria-components";
-import { Button } from "../components/preview-runtime/components/button/button.js";
-import { Toast, ToastContent, ToastRegion, ToastText, type ToastPlacement } from "../components/Toast.js";
+import { createContext, useContext, type CSSProperties } from "react";
+import { Toaster as SonnerToaster } from "../components/partners/shadcn/sonner.js";
 import { cx } from "../components/internal/cx.js";
 import { UI_ELEVATION_FLOATING } from "../components/internal/ui-vars.js";
 import { UI_Z_TOAST } from "../components/internal/ui-vars.js";
-import { toastQueue, type ToastRecord, type ToastVariant } from "./internal/toast-queue.js";
+import type { ToastVariant } from "./internal/toast-queue.js";
 
 export {
   toast,
@@ -17,27 +16,28 @@ export {
   type ToastVariant,
 } from "./internal/toast-queue.js";
 
-const VARIANT_CLASSES: Record<ToastVariant, string> = {
-  success: "border-status-success bg-status-success-tint text-status-success-text",
-  warning: "border-status-warning bg-status-warning-tint text-status-warning-text",
-  danger: "border-status-danger bg-status-danger-tint text-status-danger-text",
-  info: "border-status-info bg-status-info-tint text-status-info-text",
-};
+/** Sonner's rich-colour variables per toast type, read from the status tokens. */
+const SONNER_TYPE = { success: "success", danger: "error", info: "info", warning: "warning" } as const satisfies Record<ToastVariant, string>;
+const VARIANT_VARS = Object.fromEntries((Object.keys(SONNER_TYPE) as ToastVariant[]).flatMap(variant => [
+  [`--${SONNER_TYPE[variant]}-bg`, `var(--color-status-${variant}-tint)`],
+  [`--${SONNER_TYPE[variant]}-border`, `var(--color-status-${variant})`],
+  [`--${SONNER_TYPE[variant]}-text`, `var(--color-status-${variant}-text)`],
+])) as CSSProperties;
 
 /**
  * Viewport-edge distances, in px, of the area a frame reserves for toasts (its stage). A frame supplies it so the
- * portalled viewport anchors to the stage corner instead of the window corner, clear of the frame's header and dock.
+ * viewport anchors to the stage corner instead of the window corner, clear of the frame's header and dock.
  * Internal to the frame contract; not a public prop.
  */
 export interface ToasterFrameInset { blockEnd: number; inlineEnd: number; direction: "ltr" | "rtl" }
 const ToasterFrameInsetContext = createContext<ToasterFrameInset | null>(null);
 export const ToasterFrameInsetProvider = ToasterFrameInsetContext.Provider;
-function frameInsetStyle(inset: ToasterFrameInset | null): CSSProperties {
-  if (!inset) return {};
-  const edge = (px: number) => `calc(${px}px + var(--spacing-md))`;
-  // Physical sides override both logical class insets, whatever direction the toast region itself resolves.
-  return inset.direction === "rtl" ? { bottom: edge(inset.blockEnd), left: edge(inset.inlineEnd), right: "auto" } : { bottom: edge(inset.blockEnd), right: edge(inset.inlineEnd), left: "auto" };
-}
+const edge = (px: number) => `calc(${px}px + var(--spacing-md))`;
+/** Sonner's "system" theme reads `matchMedia`; where there is none (a server, jsdom) it draws the light scheme. */
+const sonnerTheme = (): "system" | "light" => (typeof window !== "undefined" && typeof window.matchMedia === "function" ? "system" : "light");
+
+/** Where a toast stack draws: the window (or frame stage) corner, or in place inside the mounting element. */
+export type ToastPlacement = "viewport" | "container";
 
 export interface ToasterProps {
   /**
@@ -45,15 +45,16 @@ export interface ToasterProps {
    * @default "Notifications"
    */
   "aria-label"?: string;
-  /** Merged onto the toast viewport's own root element. */
+  /** Merged onto the toast list sonner draws. */
   className?: string;
   /**
-   * The queue this Toaster draws. Defaults to the app-wide queue the `toast` API feeds; a bounded host
-   * (a preview cell) passes its own so its toasts never reach the page's Toaster.
+   * The sonner Toaster `id` this Toaster draws. Omitted, it draws the app-wide toasts the `toast` API adds; a bounded
+   * host (a preview cell) passes its own id and adds through `createToastScope(id)`, so its toasts never reach the
+   * page's Toaster.
    */
-  queue?: ToastQueue<ToastRecord>;
+  toasterId?: string;
   /**
-   * `viewport` portals the stack to the window (or frame stage) corner; `container` draws it in place
+   * `viewport` fixes the stack to the window (or frame stage) corner; `container` draws it in place
    * inside whatever element mounts the Toaster.
    * @default "viewport"
    */
@@ -72,10 +73,10 @@ export interface ToasterProps {
  *      still there after it, the same reason `Shell` itself has to live in
  *      `layout.tsx` rather than `page.tsx`. That's why it ships from
  *      `/shell` instead of, say, its own top-level subpath.
- *   2. It is not itself part of `Shell`'s SLOT structure. `Toast`'s
- *      viewport renders through a React portal straight to `document.body`
- *      (via react-aria-components' `ToastRegion`) regardless of where in
- *      the component tree `<Toaster />` is mounted — nesting it inside
+ *   2. It is not itself part of `Shell`'s SLOT structure. the
+ *      toast list is fixed to the viewport (sonner's own
+ *      `[data-sonner-toaster]` styles) regardless of where in the component
+ *      tree `<Toaster />` is mounted — nesting it inside
  *      `<Shell>` as a `Shell.Toaster` slot would misleadingly imply its
  *      on-screen position is controlled by `Shell`'s grid, the way
  *      `Shell.Rail`'s or `Shell.Header`'s actually is. It isn't; it's
@@ -87,108 +88,43 @@ export interface ToasterProps {
  * `toast(...)`, also `info`-variant) from anywhere in the application,
  * including code with no JSX in it at all.
  *
- * Drawn through the Foundry Toast parts (`components/Toast.tsx`), which wrap
- * react-aria-components' `ToastRegion`/`ToastList`/`Toast`/`ToastContent` —
- * the installed version (1.20.0) ships them (as `UNSTABLE_*`, its own
- * naming for a still-evolving API surface, not a signal that the behavior
- * itself is unreliable). Between them these primitives supply: portal
- * rendering to `document.body`; per-toast focus management, including
- * moving focus to the next/previous toast when a focused one is removed;
- * pausing every visible toast's auto-dismiss timer while the region has
- * mouse hover OR keyboard focus anywhere inside it, and resuming when
- * both end (`useToastRegion`'s own `pauseAll`/`resumeAll` wiring — nothing
- * about hover/focus pausing is reimplemented here); and the region's own
- * `role="region"` landmark. None of that is hand-rolled here. The
- * `container` placement keeps the per-toast parts but draws the queue in
- * place through `ToastList`, without the portal, landmark or region-level
- * timer pause; it exists for bounded hosts such as a preview cell.
- *
- * One thing IS overridden from react-aria-components' own default: its
- * `ToastContent` always renders `role="alert"` (assertive) for every
- * variant, with no notion of a lower-urgency toast. That's wrong for this
- * package's success/info/warning toasts, which should interrupt a screen
- * reader user no more than a status update does — see `ToasterContent`
- * below, which passes `urgency` to the Foundry `ToastContent`, which sets
- * `role`/`aria-live` on react-aria-components' `ToastContent` instead
- * (`alert`/`assertive` for `danger` only; `status`/`polite` for the rest).
- * That part accepts both as ordinary `HTMLAttributes`, and merges its
- * own react-aria-components-supplied defaults with whatever's passed to it
- * via `mergeProps(contextProps, props)` — the caller's value applies last,
- * so this override is a normal prop, not a hack.
+ * Drawn through the stock shadcn Sonner Toaster (`components/partners/shadcn/sonner.tsx`, MIT)
+ * over sonner itself (MIT). Sonner supplies the store, stacking, swipe and
+ * close dismissal, the auto-dismiss timer and its pause while the stack is
+ * hovered, and the `section` landmark, labelled by `aria-label`, whose
+ * `aria-live="polite"` region announces each toast. F6 moves focus to the
+ * stack (`hotkey`), as the react-aria-components region did before. Sonner
+ * has no assertive announcement, so a danger toast's body carries its own
+ * `role="alert"` (see `internal/toast-body.tsx`); the other variants are
+ * announced politely by the region. The `container` placement draws the same
+ * sonner list in place, for bounded hosts such as a preview cell.
  */
-export function Toaster({ "aria-label": ariaLabel, className, queue = toastQueue, placement = "viewport" }: ToasterProps) {
+export function Toaster({ "aria-label": ariaLabel = "Notifications", className, toasterId, placement = "viewport" }: ToasterProps) {
   const { direction } = useLocale();
   const frameInset = useContext(ToasterFrameInsetContext);
-  if (placement === "container") {
-    return (
-      <ToastRegion style={{ direction }} queue={queue} placement="container" className={cx("flex flex-col gap-sm", className)}>
-        {queuedToast => <ToasterItem toast={queuedToast} queue={queue} />}
-      </ToastRegion>
-    );
-  }
-  return (
-    <ToastRegion
-      queue={queue}
-      aria-label={ariaLabel}
-      className={cx("fixed bottom-md end-md flex flex-col gap-sm", className)}
-      style={{ direction: frameInset?.direction ?? direction, zIndex: UI_Z_TOAST, ...frameInsetStyle(frameInset) }}
-      data-toaster-placement={frameInset ? "frame" : "viewport"}
-    >
-      {queuedToast => <ToasterItem toast={queuedToast} queue={queue} />}
-    </ToastRegion>
+  const inContainer = placement === "container";
+  const dir = (inContainer ? null : frameInset?.direction) ?? direction;
+  // Sonner positions by physical side; the inline end is the right in left-to-right and the left in right-to-left.
+  const side = dir === "rtl" ? "left" : "right";
+  const offset = !inContainer && frameInset ? { bottom: edge(frameInset.blockEnd), [side]: edge(frameInset.inlineEnd) } : undefined;
+  const toaster = (
+    <SonnerToaster
+      {...(toasterId ? { id: toasterId } : {})}
+      theme={sonnerTheme()}
+      position={`bottom-${side}`}
+      dir={dir}
+      hotkey={["F6"]}
+      customAriaLabel={ariaLabel}
+      containerAriaLabel={ariaLabel}
+      closeButton
+      richColors
+      visibleToasts={inContainer ? 1 : 5}
+      {...(offset ? { offset } : {})}
+      className={cx(inContainer ? "toaster group" : "toaster group end-md", className)}
+      style={{ ...VARIANT_VARS, ["--border-radius" as string]: "var(--radius-control)", ...(inContainer ? { position: "relative", insetInline: "auto", insetBlock: "auto", transform: "none" } : { zIndex: UI_Z_TOAST }) } as CSSProperties}
+      toastOptions={{ closeButtonAriaLabel: "Close", classNames: { toast: "cn-toast" }, style: { boxShadow: UI_ELEVATION_FLOATING } }}
+    />
   );
-}
-
-function ToasterItem({ toast: queuedToast, queue }: { toast: QueuedToast<ToastRecord>; queue: ToastQueue<ToastRecord> }) {
-  const { variant, title, description, action } = queuedToast.content;
-  return (
-    <Toast
-      toast={queuedToast}
-      className={cx(
-        "flex w-[min(24rem,90vw)] items-start gap-sm rounded-control border p-md",
-        VARIANT_CLASSES[variant],
-      )}
-      style={{ boxShadow: UI_ELEVATION_FLOATING }}
-    >
-      <ToasterContent variant={variant}>
-        <ToastText slot="title" className="block text-body font-body">
-          {title}
-        </ToastText>
-        {description ? (
-          <ToastText slot="description" className="mt-xs block text-body-s">
-            {description}
-          </ToastText>
-        ) : null}
-        {action ? <Button data-toast-part="action" variant="secondary" size="sm" onPress={event => { action.onPress(event); queue.close(queuedToast.key); }} isDisabled={action.isDisabled}>
-          {action.label}
-        </Button> : null}
-      </ToasterContent>
-      {/*
-        Plain `variant="ghost"` — its default `text-ink-primary`, not this
-        toast's own status color. Matching the glyph's color to the variant
-        would need either a fifth `Button` variant just for this one glyph
-        or a `style` override on the color — not worth it for a "×" that
-        already reads clearly in the default ink color.
-      */}
-      <Button slot="close" variant="ghost" size="sm" className="shrink-0 px-xs py-xs">
-        <span aria-hidden="true">×</span>
-      </Button>
-    </Toast>
-  );
-}
-
-/**
- * Wraps a toast's title/description in the Foundry `ToastContent` (over
- * react-aria-components' own), overriding `role`/`aria-live` per variant — see
- * `Toaster`'s own docs above for why the override is necessary and why
- * it's safe (a normal prop, merged over react-aria-components' own default
- * via `mergeProps`, with this component's value applying last).
- */
-function ToasterContent({ variant, children }: { variant: ToastVariant; children: ReactNode }) {
-  const isError = variant === "danger";
-  return (
-    <ToastContent urgency={isError ? "alert" : "status"} className="flex-1">
-      {children}
-    </ToastContent>
-  );
+  if (inContainer) return toaster;
+  return <div data-toaster-placement={frameInset ? "frame" : "viewport"} className="contents">{toaster}</div>;
 }

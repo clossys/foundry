@@ -46,7 +46,7 @@ describe("UsageMeter", () => {
     expect(screen.queryByText(thresholds[0]!.message)).toBeNull();
     const message = screen.getByText(thresholds[1]!.message);
     expect(message).toBeVisible();
-    expect(message.closest("[data-tone]")?.querySelector("[data-part='mark']")).toHaveAttribute("data-shape", "diamond");
+    expect(message.closest("[data-tone]")?.querySelector("[data-part='mark']")).toHaveAttribute("data-shape", "circle-x");
     expect(container.querySelectorAll("[data-part='mark']")).toHaveLength(1);
   });
 

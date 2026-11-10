@@ -497,7 +497,9 @@
   "dependencies": {
     "class-variance-authority": "0.7.1",
     "css-tree": "3.2.1",
-    "@clossys/director": "0.6.0"
+    "@clossys/director": "0.6.0",
+    "media-chrome": "4.19.3",
+    "sonner": "2.0.8"
   },
   "imports": {
     "#designer-frame-i18n": {

@@ -522,48 +522,54 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     racBase: none("hand-built"),
     disposition: "park",
   }),
-  parked("Sparkline", "src/charts/Sparkline.tsx", {
+  gap({
     id: "depict.sparkline",
     label: "Sparkline",
     racBase: none("hand-built"),
-    disposition: "park",
+    disposition: "not-now",
+    notes: ["Zero-caller Foundry Sparkline removed (planner:r2f-53); the leaf id stays parked under the signed freeze.", DEMAND],
   }),
-  parked("WaterfallChart", "src/charts/WaterfallChart.tsx", {
+  gap({
     id: "depict.waterfall-chart",
     label: "Waterfall chart",
     racBase: none("hand-built"),
-    disposition: "park",
+    disposition: "not-now",
+    notes: ["Zero-caller Foundry WaterfallChart removed (planner:r2f-53); the leaf id stays parked under the signed freeze.", DEMAND],
   }),
-  parked("RangeChart", "src/charts/RangeChart.tsx", {
+  gap({
     id: "depict.range-chart",
     label: "Range chart",
     racBase: none("hand-built"),
-    disposition: "park",
+    disposition: "not-now",
+    notes: ["Zero-caller Foundry RangeChart removed (planner:r2f-53); the leaf id stays parked under the signed freeze.", DEMAND],
   }),
-  parked("ScatterChart", "src/charts/ScatterChart.tsx", {
+  gap({
     id: "depict.scatter-chart",
     label: "Scatter chart",
     racBase: none("hand-built"),
-    disposition: "park",
+    disposition: "not-now",
+    notes: ["Zero-caller Foundry ScatterChart removed (planner:r2f-53); the leaf id stays parked under the signed freeze.", DEMAND],
   }),
   parked("AreaChart", "src/charts/AreaChart.tsx", {
     id: "depict.area-chart",
     label: "Area chart",
     racBase: none("hand-built"),
     disposition: "park",
+    notes: ["ChartFrame parks with the set and is not a leaf."],
   }),
-  parked("Heatmap", "src/charts/Heatmap.tsx", {
+  gap({
     id: "depict.heatmap",
     label: "Heatmap",
     racBase: none("hand-built"),
-    disposition: "park",
+    disposition: "not-now",
+    notes: ["Zero-caller Foundry Heatmap removed (planner:r2f-53); the leaf id stays parked under the signed freeze.", DEMAND],
   }),
-  parked("StatusStrip", "src/charts/StatusStrip.tsx", {
+  gap({
     id: "depict.status-strip",
     label: "Status strip",
     racBase: none("hand-built"),
-    disposition: "park",
-    notes: ["ChartFrame parks with the set and is not a leaf."],
+    disposition: "not-now",
+    notes: ["Zero-caller Foundry StatusStrip removed (planner:r2f-53); the leaf id stays parked under the signed freeze.", DEMAND],
   }),
 
   // Feedback / Messages
@@ -579,15 +585,16 @@ export const COMPONENT_ENTRIES: readonly ComponentEntry[] = [
     label: "Status mark",
     racBase: none("presentational"),
     disposition: "presentational-exception",
-    notes: [PRESENTATIONAL, "12 consumers, including the range chart."],
+    notes: [PRESENTATIONAL, "Kibo UI Status (MIT) on the stock Badge; each tone adds its own Lucide glyph so tone is not carried by colour alone."],
   }),
   onMain("Toaster", ["src/shell/Toaster.tsx"], {
     id: "inform.toast",
     label: "Toast",
-    racBase: rac("UNSTABLE_ToastRegion", "UNSTABLE_Toast", "UNSTABLE_ToastContent", "Text"),
+    racBase: rac("Button"),
     disposition: "register",
     notes: [
       "Exported from the shell entry, not the components entry. It stays shell infrastructure and is listed here once for preview.",
+      "Stock shadcn Sonner (MIT) on sonner; the region, timers and F6 landmark are sonner's, and the action is the React Aria Button.",
     ],
   }),
 
