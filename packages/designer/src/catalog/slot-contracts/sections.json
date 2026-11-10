@@ -6730,6 +6730,11 @@
         "name": "themes.spacing",
         "kind": "theme",
         "required": true
+      },
+      {
+        "name": "assets.icon-close",
+        "kind": "asset",
+        "required": false
       }
     ],
     "limits": {
